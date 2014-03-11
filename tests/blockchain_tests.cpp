@@ -1,8 +1,10 @@
 #define BOOST_TEST_MODULE BlockchainTests
 #include <boost/test/unit_test.hpp>
-//#include <bts/wallet/wallet.hpp>
+#include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <fc/filesystem.hpp>
 
+using namespace bts::wallet;
 
 /**
  *  The purpose of this test is to make sure that the network will
@@ -30,7 +32,11 @@ BOOST_AUTO_TEST_CASE( blockchain_endurence )
  */
 BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 {
+   fc::temp_directory dir;
+   wallet             wall;
+   wall.create( dir.path() / "wallet.dat", "pass", "pass", true );
 
+   
 }
 
 /**
