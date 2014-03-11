@@ -1,6 +1,6 @@
 [submodule "libraries/fc"]
 	path = libraries/fc
-	url = git@github.com:InvictusInnovations/fc.git
+	url = https://github.com/InvictusInnovations/fc.git
 [submodule "vendor"]
 	path = vendor
 	url = https://github.com/BitShares/vendor.git
