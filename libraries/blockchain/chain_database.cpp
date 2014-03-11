@@ -419,11 +419,13 @@ namespace bts { namespace blockchain {
         if( b.block_num >= 1 )
         {
            FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
+           /*
            FC_ASSERT( b.get_difficulty() >= b.get_required_difficulty( 
                                                  my->head_block.next_difficulty,
                                                  my->head_block.avail_coindays ), "",
                       ("required_difficulty",b.get_required_difficulty( my->head_block.next_difficulty, my->head_block.avail_coindays )  )
                       ("block_difficulty", b.get_difficulty() ) );
+                      */
         }
 
         //validate_issuance( b, my->head_block /*aka new prev*/ );

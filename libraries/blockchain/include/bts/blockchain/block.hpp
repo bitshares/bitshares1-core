@@ -21,7 +21,7 @@ namespace bts { namespace blockchain {
       
        block_id_type       id()const;
        /** given the total cdd by this block, calculate the adjusted difficulty */
-       uint64_t            get_required_difficulty(uint64_t prev_difficulty, uint64_t prev_avail_cdays)const;
+       //uint64_t            get_required_difficulty(uint64_t prev_difficulty, uint64_t prev_avail_cdays)const;
        uint64_t            get_missing_cdd(uint64_t prev_avail_cdays)const;
        uint64_t            get_difficulty()const;
        bool                validate_work()const;

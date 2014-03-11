@@ -3,7 +3,9 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <fc/filesystem.hpp>
+#include <fc/log/logger.hpp>
 
+#include <iostream>
 using namespace bts::wallet;
 
 /**
@@ -32,11 +34,18 @@ BOOST_AUTO_TEST_CASE( blockchain_endurence )
  */
 BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 {
-   fc::temp_directory dir;
-   wallet             wall;
-   wall.create( dir.path() / "wallet.dat", "pass", "pass", true );
+   try {
+       fc::temp_directory dir;
+       wallet             wall;
+       wall.create( dir.path() / "wallet.dat", "password", "password", true );
 
-   
+   } 
+   catch ( const fc::exception& e )
+   {
+      std::cerr<<e.to_detail_string()<<"\n";
+      elog( "${e}", ( "e", e.to_detail_string() ) );
+      throw;
+   }
 }
 
 /**

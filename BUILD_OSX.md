@@ -21,7 +21,9 @@ Building BitShares Toolkit on OS X 10.9
     sudo make install
 
 4) Build BitShares Toolkit with CMake
- 
+
+    git submodule init
+    git submodule update
     cmake -DCMAKE_PREFIX_PATH=/usr/local/ssl .
     make
 
