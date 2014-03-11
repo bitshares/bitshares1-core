@@ -1,0 +1,9 @@
+*.swp
+*.a
+*.o
+*.dylib
+*.lib
+*.cmake
+CMakeCache.txt
+Makefile
+CMakeFiles
