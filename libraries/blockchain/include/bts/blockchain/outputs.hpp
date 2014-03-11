@@ -16,7 +16,8 @@ enum claim_type_enum
    claim_by_signature   = 2, ///< someone signs with an address
    claim_by_multi_sig   = 3, ///< N of M signatures required
    claim_by_password    = 4, ///< used for cross-chain trading
-   num_claim_types
+   // 10->19 reserved for BitShares X
+   // 20->29 reserved for BitShares DNS
 };
 
 //typedef fc::enum_type<fc::unsigned_int,claim_type_enum> claim_type;

@@ -51,6 +51,9 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t,block_header>           blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
 
+            pow_validator_ptr                                   _pow_validator;
+            transaction_validator_ptr                           _trx_validator;
+
 
             /** cache this information because it is required in many calculations  */
             trx_block                                           head_block;
@@ -106,6 +109,8 @@ namespace bts { namespace blockchain {
 
                 blocks.store( b.block_num, b );
                 block_trxs.store( b.block_num, trxs_ids );
+
+                blk_id2num.store( b.id(), b.block_num );
             }
       };
     }
@@ -419,6 +424,7 @@ namespace bts { namespace blockchain {
         if( b.block_num >= 1 )
         {
            FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
+           my->_pow_validator->validate_work( b );
            /*
            FC_ASSERT( b.get_difficulty() >= b.get_required_difficulty( 
                                                  my->head_block.next_difficulty,
@@ -431,24 +437,22 @@ namespace bts { namespace blockchain {
         //validate_issuance( b, my->head_block /*aka new prev*/ );
         validate_unique_inputs( b.trxs );
 
-        // evaluate all trx and sum the results
-       /*
-        trx_eval total_eval = evaluate_signed_transactions( b.trxs, matched.size() );
-        
-        wlog( "total_fees: ${tf}", ("tf", total_eval.fees ) );
-
-
-        for( auto pt : order_stats )
+        transaction_summary summary;
+        for( auto strx : b.trxs )
         {
-           my->_market_db.push_price_point( pt );
+            summary += my->_trx_validator->evaluate( strx ); 
         }
-        */
-        my->store( b );
 
-        my->blk_id2num.store( b.id(), b.block_num );
+        // TODO: validate that the header records the proper fees
+        store( b );
         
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
+
+    void chain_database::store( const trx_block& blk )
+    {
+        my->store( blk ); 
+    }
 
     /**
      *  Removes the top block from the stack and marks all spent outputs as 
@@ -663,6 +667,15 @@ namespace bts { namespace blockchain {
        return asset( uint64_t(my->head_block.next_fee) );
     }
 
+    void chain_database::set_pow_validator( const pow_validator_ptr& v )
+    {
+       my->_pow_validator = v;
+    }
+
+    void chain_database::set_transaction_validator( const transaction_validator_ptr& v )
+    {
+       my->_trx_validator = v;
+    }
 
 }  } // bts::blockchain
 

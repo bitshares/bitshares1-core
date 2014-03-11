@@ -1,6 +1,8 @@
 #pragma once
 #include <bts/blockchain/block.hpp>
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/transaction_validator.hpp>
+#include <bts/blockchain/pow_validator.hpp>
 
 namespace fc 
 {
@@ -27,9 +29,24 @@ namespace bts { namespace blockchain {
      */
     class chain_database 
     {
+       protected:
+          /** 
+           *  Called after a block has been validated and appends
+           *  it to the block chain.
+           */
+          virtual void store( const trx_block& blk );
+
        public:
           chain_database();
-          ~chain_database();
+          virtual ~chain_database();
+
+
+          /**
+           * When testing the chain there are different POW validation checks, so
+           * this must be set by the creator of the chain.
+           */
+          void set_pow_validator( const pow_validator_ptr& v );
+          void set_transaction_validator( const transaction_validator_ptr& v );
 
           void open( const fc::path& dir, bool create = true );
           void close();
@@ -71,6 +88,8 @@ namespace bts { namespace blockchain {
          trx_block      fetch_trx_block( uint32_t block_num );
 
          /**
+          *  Validates the block and then pushes it into the database.
+          *
           *  Attempts to append block b to the block chain with the given trxs.
           */
          void push_block( const trx_block& b );
@@ -79,12 +98,12 @@ namespace bts { namespace blockchain {
           *  Removes the top block from the stack and marks all spent outputs as 
           *  unspent.
           */
-         trx_block pop_block();
+         virtual trx_block pop_block();
 
        private:
          void   store_trx( const signed_transaction& trx, const trx_num& t );
          std::unique_ptr<detail::chain_database_impl> my;          
-    };
+    }; // chain_database
 
     typedef std::shared_ptr<chain_database> chain_database_ptr;
 
