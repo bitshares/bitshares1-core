@@ -10,3 +10,16 @@ Building BitShares on OS X 10.9
     ./bootstrap
     sudo ./b2 toolset=clang cxxflags="-stdlib=libc++" linkflags="-stdlib=libc++" link=static install
 
+3) Download OpenSSL  https://www.openssl.org/source/
+
+    tar -xzvf openssl-1.0.1f.tar.gz
+    cd openssl-1.0.1f
+    ./Configure darwin64-x86_64-cc  
+    make
+    sudo make install
+
+4) Build BitShares Toolkit with CMake
+ 
+    cmake -DCMAKE_PREFIX_PATH=/usr/local/ssl .
+    make
+
