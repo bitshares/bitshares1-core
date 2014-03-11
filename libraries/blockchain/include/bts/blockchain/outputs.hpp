@@ -20,7 +20,7 @@ enum claim_type_enum
 };
 
 //typedef fc::enum_type<fc::unsigned_int,claim_type_enum> claim_type;
-typedef fc::unsigned_int claim_type;
+typedef uint8_t claim_type;
 
 /**
  *   An input that references an output that can be claimed by

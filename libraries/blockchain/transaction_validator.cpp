@@ -70,7 +70,7 @@ namespace bts { namespace blockchain {
    void transaction_validator::validate_input( const meta_trx_input& in, 
                                                transaction_evaluation_state& state )
    {
-      switch( in.output.claim_func.value )
+      switch( in.output.claim_func )
       {
          case claim_by_pts:
             validate_pts_signature_input( in, state );            
