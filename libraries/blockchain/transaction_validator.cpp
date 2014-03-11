@@ -51,28 +51,32 @@ namespace bts { namespace blockchain {
 
    transaction_summary transaction_validator::evaluate( const signed_transaction& trx )
    {
+       transaction_evaluation_state state(trx);
+       return on_evaluate( state );
+   }
+
+   transaction_summary transaction_validator::on_evaluate( transaction_evaluation_state& state )
+   {
        transaction_summary sum;
 
-       transaction_evaluation_state state(trx);
-       state.inputs = _db->fetch_inputs( trx.inputs );
+       state.inputs = _db->fetch_inputs( state.trx.inputs );
 
        /** make sure inputs are unique */
        std::unordered_set<output_reference> unique_inputs;
-       for( auto in : trx.inputs )
+       for( auto in : state.trx.inputs )
        {
           FC_ASSERT( unique_inputs.insert( in.output_ref ).second, 
-              "transaction references same output more than once.", ("trx",trx) )
+              "transaction references same output more than once.", ("trx",state.trx) )
        }
 
        /** validate all inputs */
        for( auto in : state.inputs ) 
        {
-          FC_ASSERT( !in.meta_output.is_spent(), "", ("trx",trx) );
+          FC_ASSERT( !in.meta_output.is_spent(), "", ("trx",state.trx) );
           validate_input( in, state );
        }
 
        // TODO: move fee summary to sum and return it
-
        return sum;
    }
 

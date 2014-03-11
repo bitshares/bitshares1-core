@@ -4,6 +4,10 @@
 *.dylib
 *.lib
 *.cmake
+*.sw*
+docs/html
+docs/latex
+tests/blockchain_test
 CMakeCache.txt
 Makefile
 CMakeFiles
