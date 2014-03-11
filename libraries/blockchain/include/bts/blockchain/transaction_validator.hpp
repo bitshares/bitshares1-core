@@ -16,6 +16,7 @@ namespace bts { namespace blockchain {
          asset  fees;
          
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
+         transaction_summary& operator +=( const transaction_summary& a );
    };
 
    /** 
@@ -59,13 +60,14 @@ namespace bts { namespace blockchain {
           transaction_validator( chain_database* db );
           virtual ~transaction_validator();
           
-          virtual void evaluate( const signed_transaction& trx, transaction_summary& summary );
+          virtual transaction_summary evaluate( const signed_transaction& trx );
 
           virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state );
           
           virtual void validate_pts_signature_input( const meta_trx_input& in,
                                                      transaction_evaluation_state& state );
-          virtual void validate_signature_input ( const meta_trx_input& in, 
+
+          virtual void validate_signature_input(  const meta_trx_input& in, 
                                                   transaction_evaluation_state& state );
 
           virtual void validate_signature_output( const trx_output& out, 
@@ -76,5 +78,6 @@ namespace bts { namespace blockchain {
        private:
           chain_database* _db;
    };
+   typedef std::shared_ptr<transaction_validator> transaction_validator_ptr;
 
 } } // namespace bts::blockchain

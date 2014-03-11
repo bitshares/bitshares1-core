@@ -1,6 +1,6 @@
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../db/include" )
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../blockchain/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/db/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/librariesblockchain/include" )
 
 add_library( bts_wallet 
              wallet.cpp
