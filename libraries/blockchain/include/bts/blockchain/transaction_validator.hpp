@@ -75,7 +75,10 @@ namespace bts { namespace blockchain {
           virtual void validate_pts_signature_output( const trx_output& out, 
                                                       transaction_evaluation_state& state );
 
+       protected:
+          virtual transaction_summary on_evaluate( transaction_evaluation_state& state );
        private:
+
           chain_database* _db;
    };
    typedef std::shared_ptr<transaction_validator> transaction_validator_ptr;
