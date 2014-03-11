@@ -1,6 +1,6 @@
 #define BOOST_TEST_MODULE BlockchainTests
 #include <boost/test/unit_test.hpp>
-#include <bts/wallet/wallet.hpp>
+//#include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/chain_database.hpp>
 
 
