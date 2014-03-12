@@ -12,6 +12,8 @@ namespace bts { namespace btsx {
           btsx_db();
           ~btsx_db();
     
+          void  open( const fc::path& dir, bool create );
+          void  close();
     
        private:
           std::unique_ptr<detail::btsx_db_impl> my;

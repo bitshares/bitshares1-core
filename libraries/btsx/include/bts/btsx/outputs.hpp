@@ -11,7 +11,8 @@ namespace bts { namespace btsx {
       claim_by_bid         = 10, ///< someone makes an acceptable bid
       claim_by_long        = 11, ///< someone agrees to go long against a short
       claim_by_cover       = 12, ///< someone covers a short, freeing collateral
-      claim_by_opt_execute = 13, ///< someone executes an option
+      claim_by_cover_bid   = 13, ///< someone wanting to use their collateral to place a bid
+      claim_by_opt_execute = 14, ///< someone executes an option
    };
 
    /**
@@ -22,6 +23,7 @@ namespace bts { namespace btsx {
    struct claim_by_bid_input         { static const claim_type_enum type; };
    struct claim_by_long_input        { static const claim_type_enum type; };
    struct claim_by_cover_input       { static const claim_type_enum type; };
+   struct claim_by_cover_bid_input   { static const claim_type_enum type; };
    struct claim_by_opt_execute_input { static const claim_type_enum type; };
 
    /** 
@@ -139,6 +141,7 @@ FC_REFLECT_ENUM( bts::btsx::claim_type_enum,
          (claim_by_bid)
          (claim_by_long)
          (claim_by_cover)
+         (claim_by_cover_bid)
          (claim_by_opt_execute) 
       )
 

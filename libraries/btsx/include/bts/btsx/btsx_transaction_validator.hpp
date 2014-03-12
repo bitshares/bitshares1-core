@@ -3,6 +3,7 @@
 
 namespace bts { namespace btsx {
    using namespace bts::blockchain;
+   class btsx_db;
    
    class btsx_evaluation_state : public transaction_evaluation_state
    {
@@ -14,6 +15,8 @@ namespace bts { namespace btsx {
    class btsx_transaction_validator : public bts::blockchain::transaction_validator
    {
        public:
+          btsx_transaction_validator( btsx_db* db );
+
           virtual transaction_summary evaluate( const signed_transaction& trx );
 
           virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state );

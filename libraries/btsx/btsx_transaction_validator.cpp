@@ -1,10 +1,15 @@
 #include <bts/btsx/btsx_transaction_validator.hpp>
+#include <bts/btsx/btsx_db.hpp>
 #include <bts/btsx/outputs.hpp>
 #include <fc/reflect/variant.hpp>
 
 
 namespace bts { namespace btsx {
 
+   btsx_transaction_validator::btsx_transaction_validator( btsx_db* db )
+   :transaction_validator(db)
+   {
+   }
 
     transaction_summary btsx_transaction_validator::evaluate( const signed_transaction& trx )
     { try {
@@ -25,6 +30,8 @@ namespace bts { namespace btsx {
             case claim_by_cover:
                validate_cover_input( in, state );            
                break;
+            case claim_by_cover_bid:
+               // TODO: implement this
             default:
                transaction_validator::validate_input( in, state );
          }
