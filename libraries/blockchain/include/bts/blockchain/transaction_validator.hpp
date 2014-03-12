@@ -63,6 +63,7 @@ namespace bts { namespace blockchain {
           virtual transaction_summary evaluate( const signed_transaction& trx );
 
           virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state );
+          virtual void validate_output( const trx_output& in, transaction_evaluation_state& state );
           
           virtual void validate_pts_signature_input( const meta_trx_input& in,
                                                      transaction_evaluation_state& state );

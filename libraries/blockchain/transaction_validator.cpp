@@ -76,6 +76,11 @@ namespace bts { namespace blockchain {
           validate_input( in, state );
        }
 
+
+       /** validate all inputs */
+       for( auto out : state.trx.outputs ) 
+          validate_output( out, state );
+
        // TODO: move fee summary to sum and return it
        return sum;
    }
