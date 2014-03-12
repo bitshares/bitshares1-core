@@ -12,12 +12,19 @@ namespace bts { namespace blockchain {
          transaction_summary();
          virtual ~transaction_summary(){};
          
-         asset  valid_votes;  // votes for valid blocks
-         asset  invalid_votes; // votes for invalid blocks
-         asset  fees;
+         int64_t valid_votes;  // votes for valid blocks
+         int64_t invalid_votes; // votes for invalid blocks
+         int64_t fees;
          
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
          transaction_summary& operator +=( const transaction_summary& a );
+   };
+
+   struct asset_io
+   {
+      asset_io():in(0),out(0){}
+      int64_t in;
+      int64_t out;
    };
 
    /** 
@@ -30,8 +37,8 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state( const signed_transaction& trx );
           virtual ~transaction_evaluation_state();
           
-          uint64_t get_total_in( asset::type t )const;
-          uint64_t get_total_out( asset::type t )const;
+          int64_t  get_total_in( asset::type t )const;
+          int64_t  get_total_out( asset::type t )const;
           void     add_input_asset( asset a );
           void     add_output_asset( asset a );
           
@@ -43,11 +50,19 @@ namespace bts { namespace blockchain {
 
           bool has_signature( const address& a )const;
           bool has_signature( const pts_address& a )const;
-      private:
+
           std::unordered_set<address>               sigs;
           std::unordered_set<pts_address>           pts_sigs;
-          std::unordered_map<asset::type,uint64_t>  total_in;
-          std::unordered_map<asset::type,uint64_t>  total_out;
+
+          /** valid votes are those where one of the previous two blocks
+           * is referenced by the transaction and the input 
+           */
+          uint64_t                                  valid_votes;
+          uint64_t                                  invalid_votes;
+
+          void balance_assets()const;
+      private:
+          std::unordered_map<asset::type,asset_io>  total;
           std::unordered_set<uint8_t>               used_outputs;
    };
 
@@ -82,6 +97,8 @@ namespace bts { namespace blockchain {
           virtual void validate_pts_signature_output( const trx_output& out, 
                                                       transaction_evaluation_state& state );
 
+          void accumulate_votes( uint64_t amnt, uint32_t source_block_num,
+                                    transaction_evaluation_state& state );
        protected:
           virtual transaction_summary on_evaluate( transaction_evaluation_state& state );
        private:

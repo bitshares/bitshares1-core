@@ -5,6 +5,7 @@
 
 namespace bts { namespace blockchain {
    transaction_summary::transaction_summary()
+   :valid_votes(0),invalid_votes(0),fees(0)
    {}
 
    transaction_summary& transaction_summary::operator+=( const transaction_summary& a )
@@ -15,8 +16,10 @@ namespace bts { namespace blockchain {
       return *this;
    }
    transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
-   :trx(t)
+   :trx(t),valid_votes(0),invalid_votes(0)
    {
+        sigs     = trx.get_signed_addresses();
+        pts_sigs = trx.get_signed_pts_addresses();
    }
 
    bool transaction_evaluation_state::has_signature( const address& a )const
@@ -29,32 +32,32 @@ namespace bts { namespace blockchain {
         return pts_sigs.find( a ) != pts_sigs.end();
    }
 
-   uint64_t transaction_evaluation_state::get_total_in( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_in( asset::type t )const
    {
-       auto itr = total_in.find( t );
-       if( itr == total_in.end() ) return 0;
-       return itr->second;
+       auto itr = total.find( t );
+       if( itr == total.end() ) return 0;
+       return itr->second.in;
    }
 
-   uint64_t transaction_evaluation_state::get_total_out( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_out( asset::type t )const
    {
-       auto itr = total_out.find( t );
-       if( itr == total_out.end() ) return 0;
-       return itr->second;
+       auto itr = total.find( t );
+       if( itr == total.end() ) return 0;
+       return itr->second.out;
    }
 
    void transaction_evaluation_state::add_input_asset( asset a )
    {
-       auto itr = total_in.find( a.unit );
-       if( itr == total_in.end() ) total_in[a.unit] = a.get_rounded_amount();
-       itr->second += a.get_rounded_amount();
+       auto itr = total.find( a.unit );
+       if( itr == total.end() ) total[a.unit].in = a.get_rounded_amount();
+       itr->second.in += a.get_rounded_amount();
    }
 
    void transaction_evaluation_state::add_output_asset( asset a )
    {
-       auto itr = total_out.find( a.unit );
-       if( itr == total_out.end() ) total_out[a.unit] = a.get_rounded_amount();
-       itr->second += a.get_rounded_amount();
+       auto itr = total.find( a.unit );
+       if( itr == total.end() ) total[a.unit].out = a.get_rounded_amount();
+       itr->second.out += a.get_rounded_amount();
    }
 
    bool transaction_evaluation_state::is_output_used( uint8_t out )const
@@ -106,8 +109,23 @@ namespace bts { namespace blockchain {
        for( auto out : state.trx.outputs ) 
           validate_output( out, state );
 
-       // TODO: move fee summary to sum and return it
+       state.balance_assets();
+
+       sum.valid_votes   = state.valid_votes;
+       sum.invalid_votes = state.invalid_votes;
+       sum.fees          = state.get_total_in(0) - state.get_total_out(0);
        return sum;
+   }
+
+   void transaction_evaluation_state::balance_assets()const
+   {
+      for( auto itr = total.begin(); itr != total.end(); ++itr )
+      {
+         if( itr->first != 0 )
+         {
+            FC_ASSERT( itr->second.out == itr->second.in );
+         }
+      }
    }
 
    void transaction_validator::validate_input( const meta_trx_input& in, 
@@ -141,12 +159,31 @@ namespace bts { namespace blockchain {
        }
    }
 
+   void transaction_validator::accumulate_votes( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
+   {
+       uint32_t headnum = _db->head_block_num();
+       uint32_t votes =  amnt * (headnum-source_block_num);
+
+       if( _db->get_stake() == state.trx.stake || 
+           _db->get_stake2() == state.trx.stake )
+       {
+          state.valid_votes += votes;
+       }
+       else
+       {
+          state.invalid_votes += votes;
+       }
+   }
+
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 
                                                              transaction_evaluation_state& state )
    {
        auto claim = in.output.as<claim_by_pts_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
        state.add_input_asset( in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
@@ -155,6 +192,9 @@ namespace bts { namespace blockchain {
        auto claim = in.output.as<claim_by_signature_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
        state.add_input_asset( in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
 

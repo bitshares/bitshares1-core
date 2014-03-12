@@ -29,7 +29,7 @@ struct trx_stat
 // sort with highest fees first
 bool operator < ( const trx_stat& a, const trx_stat& b )
 {
-  return a.eval.fees.amount > b.eval.fees.amount;
+  return a.eval.fees > b.eval.fees;
 }
 FC_REFLECT( trx_stat, (trx_idx)(eval) )
 
