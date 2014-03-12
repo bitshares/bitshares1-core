@@ -23,8 +23,8 @@ namespace bts { namespace blockchain {
    struct asset_io
    {
       asset_io():in(0),out(0){}
-      uint64_t in;
-      uint64_t out;
+      int64_t in;
+      int64_t out;
    };
 
    /** 
@@ -37,8 +37,8 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state( const signed_transaction& trx );
           virtual ~transaction_evaluation_state();
           
-          uint64_t get_total_in( asset::type t )const;
-          uint64_t get_total_out( asset::type t )const;
+          int64_t  get_total_in( asset::type t )const;
+          int64_t  get_total_out( asset::type t )const;
           void     add_input_asset( asset a );
           void     add_output_asset( asset a );
           
@@ -59,6 +59,8 @@ namespace bts { namespace blockchain {
            */
           uint64_t                                  valid_votes;
           uint64_t                                  invalid_votes;
+
+          void balance_assets()const;
       private:
           std::unordered_map<asset::type,asset_io>  total;
           std::unordered_set<uint8_t>               used_outputs;

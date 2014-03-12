@@ -32,14 +32,14 @@ namespace bts { namespace blockchain {
         return pts_sigs.find( a ) != pts_sigs.end();
    }
 
-   uint64_t transaction_evaluation_state::get_total_in( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_in( asset::type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
        return itr->second.in;
    }
 
-   uint64_t transaction_evaluation_state::get_total_out( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_out( asset::type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
@@ -109,8 +109,23 @@ namespace bts { namespace blockchain {
        for( auto out : state.trx.outputs ) 
           validate_output( out, state );
 
-       // TODO: move fee summary to sum and return it
+       state.balance_assets();
+
+       sum.valid_votes   = state.valid_votes;
+       sum.invalid_votes = state.invalid_votes;
+       sum.fees          = state.get_total_in(0) - state.get_total_out(0);
        return sum;
+   }
+
+   void transaction_evaluation_state::balance_assets()const
+   {
+      for( auto itr = total.begin(); itr != total.end(); ++itr )
+      {
+         if( itr->first != 0 )
+         {
+            FC_ASSERT( itr->second.out == itr->second.in );
+         }
+      }
    }
 
    void transaction_validator::validate_input( const meta_trx_input& in, 
