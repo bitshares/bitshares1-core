@@ -144,7 +144,7 @@ namespace bts { namespace blockchain {
        }
    }
 
-   void transaction_validator::accumulate_coindays( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
+   void transaction_validator::accumulate_votes( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
    {
        uint32_t headnum = _db->head_block_num();
        uint32_t votes =  amnt * (headnum-source_block_num);
@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
        state.add_input_asset( in.output.amount );
 
        if( in.output.amount.unit == 0 )
-          accumulate_coindays( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
@@ -179,7 +179,7 @@ namespace bts { namespace blockchain {
        state.add_input_asset( in.output.amount );
 
        if( in.output.amount.unit == 0 )
-          accumulate_coindays( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
 

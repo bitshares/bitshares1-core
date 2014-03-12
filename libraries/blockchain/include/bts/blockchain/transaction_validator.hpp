@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
           virtual void validate_pts_signature_output( const trx_output& out, 
                                                       transaction_evaluation_state& state );
 
-          void accumulate_coindays( uint64_t amnt, uint32_t source_block_num,
+          void accumulate_votes( uint64_t amnt, uint32_t source_block_num,
                                     transaction_evaluation_state& state );
        protected:
           virtual transaction_summary on_evaluate( transaction_evaluation_state& state );
