@@ -11,3 +11,4 @@ tests/blockchain_test
 CMakeCache.txt
 Makefile
 CMakeFiles
+tests/blockchain_tests
