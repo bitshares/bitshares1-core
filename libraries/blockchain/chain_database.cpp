@@ -132,7 +132,7 @@ namespace bts { namespace blockchain {
               if( !create )
               {
                  FC_THROW_EXCEPTION( file_not_found_exception, 
-                     "Unable to open name database ${dir}", ("dir",dir) );
+                     "Unable to open blockchain database ${dir}", ("dir",dir) );
               }
               fc::create_directories( dir );
          }
