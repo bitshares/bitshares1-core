@@ -3,6 +3,20 @@
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace blockchain {
+   transaction_summary::transaction_summary()
+   {}
+
+   transaction_summary& transaction_summary::operator+=( const transaction_summary& a )
+   {
+      valid_votes   += a.valid_votes;
+      invalid_votes += a.invalid_votes;
+      fees          += a.fees;
+      return *this;
+   }
+   transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
+   :trx(t)
+   {
+   }
 
    uint64_t transaction_evaluation_state::get_total_in( asset::type t )const
    {
@@ -88,17 +102,32 @@ namespace bts { namespace blockchain {
    void transaction_validator::validate_input( const meta_trx_input& in, 
                                                transaction_evaluation_state& state )
    {
-      switch( in.output.claim_func )
-      {
-         case claim_by_pts:
-            validate_pts_signature_input( in, state );            
-            break;
-         case claim_by_signature:
-            validate_signature_input( in, state );            
-            break;
-         default:
-            FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
-      }
+       switch( in.output.claim_func )
+       {
+          case claim_by_pts:
+             validate_pts_signature_input( in, state );            
+             break;
+          case claim_by_signature:
+             validate_signature_input( in, state );            
+             break;
+          default:
+             FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
+       }
+   }
+
+   void transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state )
+   {
+       switch( out.claim_func )
+       {
+          case claim_by_pts:
+             validate_pts_signature_output( out, state );            
+             break;
+          case claim_by_signature:
+             validate_signature_output( out, state );            
+             break;
+          default:
+             FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",out.claim_func) );
+       }
    }
 
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 
@@ -114,13 +143,13 @@ namespace bts { namespace blockchain {
    }
 
 
-   void validate_signature_output( const trx_output& out, 
+   void transaction_validator::validate_signature_output( const trx_output& out, 
                                    transaction_evaluation_state& state )
    {
 
    }
 
-   void validate_pts_signature_output( const trx_output& out, 
+   void transaction_validator::validate_pts_signature_output( const trx_output& out, 
                                        transaction_evaluation_state& state )
    {
         

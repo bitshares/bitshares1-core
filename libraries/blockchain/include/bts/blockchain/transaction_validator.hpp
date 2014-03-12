@@ -9,7 +9,8 @@ namespace bts { namespace blockchain {
    class transaction_summary
    {
       public:
-         virtual ~transaction_summary();
+         transaction_summary();
+         virtual ~transaction_summary(){};
          
          asset  valid_votes;  // votes for valid blocks
          asset  invalid_votes; // votes for invalid blocks
