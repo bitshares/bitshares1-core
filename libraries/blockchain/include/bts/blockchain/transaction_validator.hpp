@@ -22,9 +22,10 @@ namespace bts { namespace blockchain {
 
    struct asset_io
    {
-      asset_io():in(0),out(0){}
+      asset_io():in(0),out(0),required_fees(0){}
       int64_t in;
       int64_t out;
+      int64_t required_fees; ///< extra fees that are required
    };
 
    /** 
@@ -37,8 +38,11 @@ namespace bts { namespace blockchain {
           transaction_evaluation_state( const signed_transaction& trx );
           virtual ~transaction_evaluation_state();
           
-          int64_t  get_total_in( asset::type t )const;
-          int64_t  get_total_out( asset::type t )const;
+          int64_t  get_total_in( asset::type t = 0 )const;
+          int64_t  get_total_out( asset::type t = 0 )const;
+          int64_t  get_required_fees( asset::type t = 0 )const;
+
+          void     add_required_fees( asset a );
           void     add_input_asset( asset a );
           void     add_output_asset( asset a );
           
@@ -101,10 +105,10 @@ namespace bts { namespace blockchain {
                                     transaction_evaluation_state& state );
        protected:
           virtual transaction_summary on_evaluate( transaction_evaluation_state& state );
-       private:
-
           chain_database* _db;
    };
    typedef std::shared_ptr<transaction_validator> transaction_validator_ptr;
 
 } } // namespace bts::blockchain
+
+FC_REFLECT( bts::blockchain::transaction_summary, (valid_votes)(invalid_votes)(fees) )

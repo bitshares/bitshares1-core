@@ -46,18 +46,31 @@ namespace bts { namespace blockchain {
        return itr->second.out;
    }
 
+   int64_t transaction_evaluation_state::get_required_fees( asset::type t )const
+   {
+       auto itr = total.find( t );
+       if( itr == total.end() ) return 0;
+       return itr->second.required_fees;
+   }
+
    void transaction_evaluation_state::add_input_asset( asset a )
    {
        auto itr = total.find( a.unit );
        if( itr == total.end() ) total[a.unit].in = a.get_rounded_amount();
-       itr->second.in += a.get_rounded_amount();
+       else itr->second.in += a.get_rounded_amount();
    }
 
    void transaction_evaluation_state::add_output_asset( asset a )
    {
        auto itr = total.find( a.unit );
        if( itr == total.end() ) total[a.unit].out = a.get_rounded_amount();
-       itr->second.out += a.get_rounded_amount();
+       else itr->second.out += a.get_rounded_amount();
+   }
+   void transaction_evaluation_state::add_required_fees( asset a )
+   {
+       auto itr = total.find( a.unit );
+       if( itr == total.end() ) total[a.unit].required_fees = a.get_rounded_amount();
+       else itr->second.required_fees += a.get_rounded_amount();
    }
 
    bool transaction_evaluation_state::is_output_used( uint8_t out )const
@@ -111,9 +124,10 @@ namespace bts { namespace blockchain {
 
        state.balance_assets();
 
-       sum.valid_votes   = state.valid_votes;
-       sum.invalid_votes = state.invalid_votes;
-       sum.fees          = state.get_total_in(0) - state.get_total_out(0);
+       sum.valid_votes     = state.valid_votes;
+       sum.invalid_votes   = state.invalid_votes;
+       sum.fees            = state.get_total_in(0) - state.get_total_out(0);
+       FC_ASSERT( sum.fees > state.get_required_fees(0) );
        return sum;
    }
 

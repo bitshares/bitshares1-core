@@ -51,15 +51,16 @@ namespace bts { namespace blockchain {
           void open( const fc::path& dir, bool create = true );
           void close();
 
-          uint64_t        current_bitshare_supply();
-          uint64_t        total_shares()const;
-          uint32_t        head_block_num()const;
-          block_id_type   head_block_id()const;
-          uint64_t        get_stake(); // head - 1 
-          uint64_t        get_stake2(); // head - 2 
-          asset           get_fee_rate()const;
-          uint64_t        current_difficulty()const;
-          uint64_t        available_coindays()const;
+          const block_header&    get_head_block()const;
+          uint64_t               current_bitshare_supply();
+          uint64_t               total_shares()const;
+          uint32_t               head_block_num()const;
+          block_id_type          head_block_id()const;
+          uint64_t               get_stake(); // head - 1 
+          uint64_t               get_stake2(); // head - 2 
+          asset                  get_fee_rate()const;
+          uint64_t               current_difficulty()const;
+          uint64_t               available_coindays()const;
 
          /**
           *  Validates that trx could be included in a future block, that

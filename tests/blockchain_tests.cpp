@@ -2,11 +2,40 @@
 #include <boost/test/unit_test.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/config.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/log/logger.hpp>
+#include <fc/io/raw.hpp>
 
 #include <iostream>
 using namespace bts::wallet;
+using namespace bts::blockchain;
+
+trx_block generate_genesis_block( const std::vector<address>& addr )
+{
+    trx_block genesis;
+    genesis.version           = 0;
+    genesis.block_num         = 0;
+    genesis.timestamp         = fc::time_point::now();
+    genesis.next_fee          = block_header::min_fee();
+    genesis.total_shares      = 0;
+    genesis.avail_coindays    = 0;
+    genesis.noncea            = 0;
+    genesis.nonceb            = 0;
+    genesis.next_difficulty   = 0;
+
+    signed_transaction trx;
+    for( uint32_t i = 0; i < addr.size(); ++i )
+    {
+        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
+        genesis.total_shares += amnt;
+    }
+    genesis.trxs.push_back( trx );
+    genesis.trx_mroot = genesis.calculate_merkle_root();
+
+    return genesis;
+}
 
 /**
  *  The purpose of this test is to make sure that the network will
@@ -39,6 +68,33 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        wallet             wall;
        wall.create( dir.path() / "wallet.dat", "password", "password", true );
 
+       std::vector<address> addrs;
+       addrs.reserve(50);
+       for( uint32_t i = 0; i < 50; ++i )
+       {
+          addrs.push_back( wall.new_recv_address() );
+       }
+
+       chain_database     db;
+       auto sim_validator = std::make_shared<sim_pow_validator>( &db );
+       db.set_pow_validator( sim_validator );
+       db.open( dir.path() / "chain" );
+       db.push_block( generate_genesis_block( addrs ) );
+
+       wall.scan_chain( db );
+       wall.set_stake( db.get_stake(), db.get_stake2() );
+       wall.set_fee_rate( db.get_fee_rate() );
+       wall.dump();
+
+       for( uint32_t i = 0; i < 10; ++i )
+       {
+          auto trx = wall.transfer( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
+
+          std::vector<signed_transaction> trxs;
+          trxs.push_back( trx );
+          auto next_block = db.generate_next_block( trxs );
+          db.push_block( next_block );
+       }
    } 
    catch ( const fc::exception& e )
    {

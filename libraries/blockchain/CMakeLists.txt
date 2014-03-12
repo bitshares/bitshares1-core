@@ -10,6 +10,7 @@ add_library( bts_blockchain
              transaction.cpp
              block.cpp
              transaction_validator.cpp
+             pow_validator.cpp
              chain_database.cpp
            )
 

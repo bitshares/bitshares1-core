@@ -24,8 +24,8 @@ namespace bts { namespace blockchain {
       asset( asset::type t = 0):unit(t){}
       asset( uint32_t ul, asset::type t = 0);
       asset( uint64_t ull , asset::type t = 0);
-      explicit asset( double  int_part, asset::type t );
-      explicit asset( float   int_part, asset::type t );
+      explicit asset( double  int_part, asset::type t = 0);
+      explicit asset( float   int_part, asset::type t = 0);
       asset( fc::uint128 amnt, asset::type t )
       :amount(amnt),unit(t){}
 

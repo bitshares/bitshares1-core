@@ -42,7 +42,10 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            chain_database_impl(){}
+            chain_database_impl()
+            {
+               _pow_validator = std::make_shared<pow_validator>();
+            }
 
             //std::unique_ptr<ldb::DB> blk_id2num;  // maps blocks to unique IDs
             bts::db::level_map<block_id_type,uint32_t>          blk_id2num;
@@ -118,6 +121,7 @@ namespace bts { namespace blockchain {
      chain_database::chain_database()
      :my( new detail::chain_database_impl() )
      {
+         my->_trx_validator = std::make_shared<transaction_validator>(this);
      }
 
      chain_database::~chain_database()
@@ -474,13 +478,59 @@ namespace bts { namespace blockchain {
     {
       try {
          trx_block result;
+         std::vector<trx_stat>  stats;
+         stats.reserve(in_trxs.size());
+
+         for( uint32_t i = 0; i < in_trxs.size(); ++i )
+         {
+            try {
+                trx_stat s;
+                s.eval = my->_trx_validator->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
+                ilog( "eval: ${eval}", ("eval",s.eval) );
+
+               // TODO: enforce fees
+                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
+                {
+                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
+                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
+                  continue;
+                }
+                s.trx_idx = i;
+                stats.push_back( s );
+            } 
+            catch ( const fc::exception& e )
+            {
+               wlog( "unable to use trx ${t}\n ${e}", ("t", in_trxs[i] )("e",e.to_detail_string()) );
+            }
+         }
+         std::sort( stats.begin(), stats.end() ); 
+         std::unordered_set<output_reference> consumed_outputs;
+
+         for( size_t i = 0; i < stats.size(); ++i )
+         {
+            const signed_transaction& trx = in_trxs[stats[i].trx_idx]; 
+            for( size_t in = 0; in < trx.inputs.size(); ++in )
+            {
+               if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
+               {
+                    stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
+                    break; 
+               }
+            }
+            result.trxs.push_back(trx);
+         }
+
+
+         result.block_num = head_block_num() + 1;
+         result.prev      = head_block_id();
+         result.trx_mroot = result.calculate_merkle_root();
+         result.next_fee  = result.calculate_next_fee( get_fee_rate().get_rounded_amount(), result.block_size() );
+         result.timestamp = my->_pow_validator->get_time();
+
          return result;
          #if 0
          std::vector<signed_transaction> trxs;// = match_orders();
          size_t num_orders = trxs.size();
-
-         std::vector<trx_stat>  stats;
-         stats.reserve(in_trxs.size());
          ilog( "." );
          for( uint32_t i = 0; i < in_trxs.size(); ++i )
          {
@@ -662,6 +712,9 @@ namespace bts { namespace blockchain {
     {
        return my->head_block.avail_coindays;
     }
+
+    const block_header& chain_database::get_head_block()const { return my->head_block; }
+
     asset chain_database::get_fee_rate()const
     {
        return asset( uint64_t(my->head_block.next_fee) );

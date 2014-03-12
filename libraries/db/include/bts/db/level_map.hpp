@@ -196,6 +196,8 @@ namespace bts { namespace db {
         {
           try
           {
+             FC_ASSERT( _db != nullptr );
+
              std::vector<char> kslice = fc::raw::pack( k );
              ldb::Slice ks( kslice.data(), kslice.size() );
 
@@ -214,6 +216,8 @@ namespace bts { namespace db {
         {
           try
           {
+             FC_ASSERT( _db != nullptr );
+
              std::vector<char> kslice = fc::raw::pack( k );
              ldb::Slice ks( kslice.data(), kslice.size() );
              auto status = _db->Delete( ldb::WriteOptions(), ks );
