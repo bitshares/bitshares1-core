@@ -1,6 +1,7 @@
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace blockchain {
    transaction_summary::transaction_summary()
@@ -16,6 +17,16 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
    :trx(t)
    {
+   }
+
+   bool transaction_evaluation_state::has_signature( const address& a )const
+   {
+        return sigs.find( a ) != sigs.end();
+   }
+
+   bool transaction_evaluation_state::has_signature( const pts_address& a )const
+   {
+        return pts_sigs.find( a ) != pts_sigs.end();
    }
 
    uint64_t transaction_evaluation_state::get_total_in( asset::type t )const
@@ -133,26 +144,30 @@ namespace bts { namespace blockchain {
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 
                                                              transaction_evaluation_state& state )
    {
-
+       auto claim = in.output.as<claim_by_pts_output>(); 
+       FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
+       state.add_input_asset( in.output.amount );
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
                                                          transaction_evaluation_state& state )
    {
-
+       auto claim = in.output.as<claim_by_signature_output>(); 
+       FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
+       state.add_input_asset( in.output.amount );
    }
 
 
    void transaction_validator::validate_signature_output( const trx_output& out, 
                                    transaction_evaluation_state& state )
    {
-
+       state.add_output_asset( out.amount );
    }
 
    void transaction_validator::validate_pts_signature_output( const trx_output& out, 
-                                       transaction_evaluation_state& state )
+                                   transaction_evaluation_state& state )
    {
-        
+       state.add_output_asset( out.amount );
    }
 
 
