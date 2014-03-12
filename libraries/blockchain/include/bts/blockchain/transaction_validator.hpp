@@ -12,12 +12,19 @@ namespace bts { namespace blockchain {
          transaction_summary();
          virtual ~transaction_summary(){};
          
-         asset  valid_votes;  // votes for valid blocks
-         asset  invalid_votes; // votes for invalid blocks
-         asset  fees;
+         int64_t valid_votes;  // votes for valid blocks
+         int64_t invalid_votes; // votes for invalid blocks
+         int64_t fees;
          
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
          transaction_summary& operator +=( const transaction_summary& a );
+   };
+
+   struct asset_io
+   {
+      asset_io():in(0),out(0){}
+      uint64_t in;
+      uint64_t out;
    };
 
    /** 
@@ -43,11 +50,11 @@ namespace bts { namespace blockchain {
 
           bool has_signature( const address& a )const;
           bool has_signature( const pts_address& a )const;
-      private:
+
           std::unordered_set<address>               sigs;
           std::unordered_set<pts_address>           pts_sigs;
-          std::unordered_map<asset::type,uint64_t>  total_in;
-          std::unordered_map<asset::type,uint64_t>  total_out;
+      private:
+          std::unordered_map<asset::type,asset_io>  total;
           std::unordered_set<uint8_t>               used_outputs;
    };
 

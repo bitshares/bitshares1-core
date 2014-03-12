@@ -5,6 +5,7 @@
 
 namespace bts { namespace blockchain {
    transaction_summary::transaction_summary()
+   :valid_votes(0),invalid_votes(0),fees(0)
    {}
 
    transaction_summary& transaction_summary::operator+=( const transaction_summary& a )
@@ -17,6 +18,8 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
    :trx(t)
    {
+        sigs     = trx.get_signed_addresses();
+        pts_sigs = trx.get_signed_pts_addresses();
    }
 
    bool transaction_evaluation_state::has_signature( const address& a )const
@@ -31,30 +34,30 @@ namespace bts { namespace blockchain {
 
    uint64_t transaction_evaluation_state::get_total_in( asset::type t )const
    {
-       auto itr = total_in.find( t );
-       if( itr == total_in.end() ) return 0;
-       return itr->second;
+       auto itr = total.find( t );
+       if( itr == total.end() ) return 0;
+       return itr->second.in;
    }
 
    uint64_t transaction_evaluation_state::get_total_out( asset::type t )const
    {
-       auto itr = total_out.find( t );
-       if( itr == total_out.end() ) return 0;
-       return itr->second;
+       auto itr = total.find( t );
+       if( itr == total.end() ) return 0;
+       return itr->second.out;
    }
 
    void transaction_evaluation_state::add_input_asset( asset a )
    {
-       auto itr = total_in.find( a.unit );
-       if( itr == total_in.end() ) total_in[a.unit] = a.get_rounded_amount();
-       itr->second += a.get_rounded_amount();
+       auto itr = total.find( a.unit );
+       if( itr == total.end() ) total[a.unit].in = a.get_rounded_amount();
+       itr->second.in += a.get_rounded_amount();
    }
 
    void transaction_evaluation_state::add_output_asset( asset a )
    {
-       auto itr = total_out.find( a.unit );
-       if( itr == total_out.end() ) total_out[a.unit] = a.get_rounded_amount();
-       itr->second += a.get_rounded_amount();
+       auto itr = total.find( a.unit );
+       if( itr == total.end() ) total[a.unit].out = a.get_rounded_amount();
+       itr->second.out += a.get_rounded_amount();
    }
 
    bool transaction_evaluation_state::is_output_used( uint8_t out )const
