@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/chain_database.hpp>
 
 namespace bts { namespace dns {
 

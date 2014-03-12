@@ -3,6 +3,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../db/include" )
 add_library( bts_dns
              outputs.cpp
              dns_db.cpp
+             dns_transaction_validator.cpp
            )
 
 
