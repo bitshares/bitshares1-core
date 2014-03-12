@@ -40,7 +40,12 @@ namespace bts { namespace blockchain {
 
           std::vector<meta_trx_input>               inputs;
           signed_transaction                        trx;
+
+          bool has_signature( const address& a )const;
+          bool has_signature( const pts_address& a )const;
       private:
+          std::unordered_set<address>               sigs;
+          std::unordered_set<pts_address>           pts_sigs;
           std::unordered_map<asset::type,uint64_t>  total_in;
           std::unordered_map<asset::type,uint64_t>  total_out;
           std::unordered_set<uint8_t>               used_outputs;
