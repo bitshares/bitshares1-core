@@ -16,7 +16,7 @@ namespace bts { namespace blockchain {
       return *this;
    }
    transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
-   :trx(t)
+   :trx(t),valid_votes(0),invalid_votes(0)
    {
         sigs     = trx.get_signed_addresses();
         pts_sigs = trx.get_signed_pts_addresses();
@@ -144,12 +144,31 @@ namespace bts { namespace blockchain {
        }
    }
 
+   void transaction_validator::accumulate_coindays( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
+   {
+       uint32_t headnum = _db->head_block_num();
+       uint32_t votes =  amnt * (headnum-source_block_num);
+
+       if( _db->get_stake() == state.trx.stake || 
+           _db->get_stake2() == state.trx.stake )
+       {
+          state.valid_votes += votes;
+       }
+       else
+       {
+          state.invalid_votes += votes;
+       }
+   }
+
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 
                                                              transaction_evaluation_state& state )
    {
        auto claim = in.output.as<claim_by_pts_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
        state.add_input_asset( in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+          accumulate_coindays( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
@@ -158,6 +177,9 @@ namespace bts { namespace blockchain {
        auto claim = in.output.as<claim_by_signature_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
        state.add_input_asset( in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+          accumulate_coindays( in.output.amount.get_rounded_amount(), in.source.block_num, state );
    }
 
 

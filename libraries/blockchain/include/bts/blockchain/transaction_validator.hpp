@@ -53,6 +53,12 @@ namespace bts { namespace blockchain {
 
           std::unordered_set<address>               sigs;
           std::unordered_set<pts_address>           pts_sigs;
+
+          /** valid votes are those where one of the previous two blocks
+           * is referenced by the transaction and the input 
+           */
+          uint64_t                                  valid_votes;
+          uint64_t                                  invalid_votes;
       private:
           std::unordered_map<asset::type,asset_io>  total;
           std::unordered_set<uint8_t>               used_outputs;
@@ -89,6 +95,8 @@ namespace bts { namespace blockchain {
           virtual void validate_pts_signature_output( const trx_output& out, 
                                                       transaction_evaluation_state& state );
 
+          void accumulate_coindays( uint64_t amnt, uint32_t source_block_num,
+                                    transaction_evaluation_state& state );
        protected:
           virtual transaction_summary on_evaluate( transaction_evaluation_state& state );
        private:
