@@ -11,7 +11,7 @@ struct dns_record
 {
     bts::blockchain::address           owner;
     std::vector<char>                  value;
-    bts::blockchain::asset             last_price;
+    bts::blockchain::asset             last_price; // TODO delete? this isn't used since it's on the tx out
     bts::blockchain::output_reference  last_update_ref;
 };
 
