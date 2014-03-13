@@ -621,9 +621,7 @@ namespace bts { namespace wallet {
           {
               if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() ); 
 
-              //ilog( "trx: ${trx_idx}", ("trx_idx",trx_idx ) );
-              auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); //blk.trx_ids[trx_idx] );
-              //ilog( "${id} \n\n  ${trx}\n\n", ("id",trx.id())("trx",trx) );
+              auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); 
 
               for( uint32_t in_idx = 0; in_idx < trx.inputs.size(); ++in_idx )
               {
@@ -636,52 +634,7 @@ namespace bts { namespace wallet {
                   const trx_output& out   = trx.outputs[out_idx];
                   const output_reference  out_ref( trx.id(),out_idx );
                   const output_index      oidx( i, trx_idx, out_idx );
-                  switch( out.claim_func )
-                  {
-                     case claim_by_pts:
-                     {
-                        auto owner = out.as<claim_by_pts_output>().owner;
-                        auto aitr  = my->_data.recv_pts_addresses.find(owner); //my_addresses.find(owner);
-                        if( aitr != my->_data.recv_pts_addresses.end() )
-                        {
-                            if( !trx.meta_outputs[out_idx].is_spent() )
-                            {
-                               my->_output_index_to_ref[oidx]    = out_ref;
-                               my->_output_ref_to_index[out_ref] = oidx;
-                               my->_unspent_outputs[oidx] = trx.outputs[out_idx];
-                            }
-                            else
-                            {
-                               mark_as_spent( out_ref );
-                            }
-                           found = true;
-                        }
-                        break;
-                     }
-                     case claim_by_signature:
-                     {
-                        auto owner = out.as<claim_by_signature_output>().owner;
-                        auto aitr  = my->_data.recv_addresses.find(owner); //my_addresses.find(owner);
-                        if( aitr != my->_data.recv_addresses.end() )
-                        {
-                            if( !trx.meta_outputs[out_idx].is_spent() )
-                            {
-                               my->_output_index_to_ref[oidx]    = out_ref;
-                               my->_output_ref_to_index[out_ref] = oidx;
-                               my->_unspent_outputs[oidx] = trx.outputs[out_idx];
-                            }
-                            else
-                            {
-                               mark_as_spent( out_ref ); 
-                            }
-                           found = true;
-                        }
-                        break;
-                     }
-                     default:
-                        FC_ASSERT( !"Invalid Claim Type" );
-                        break;
-                  }
+                  scan_output( out, out_ref, oidx );
               }
           }
        }
@@ -715,6 +668,40 @@ namespace bts { namespace wallet {
            }
        }
        std::cerr<<"===========================================================\n";
+   }
+
+   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
+   { try {
+      switch( out.claim_func )
+      {
+         case claim_by_pts:
+         {
+            auto owner = out.as<claim_by_pts_output>().owner;
+            auto aitr  = my->_data.recv_pts_addresses.find(owner); 
+            if( aitr != my->_data.recv_pts_addresses.end() )
+                cache_output( out, out_ref, oidx );
+            break;
+         }
+
+         case claim_by_signature:
+         {
+            auto owner = out.as<claim_by_signature_output>().owner;
+            auto aitr  = my->_data.recv_addresses.find(owner); 
+            if( aitr != my->_data.recv_addresses.end() )
+                   cache_output( out, out_ref, oidx );
+            break;
+         }
+         default:
+            FC_ASSERT( !"Invalid Claim Type" );
+            break;
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::cache_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
+   {
+       my->_output_index_to_ref[oidx]    = out_ref;
+       my->_output_ref_to_index[out_ref] = oidx;
+       my->_unspent_outputs[oidx]        = out; 
    }
 
     
