@@ -81,14 +81,16 @@ namespace wallet {
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
            address                                 new_recv_address( const std::string& label = "" );
            std::unordered_map<address,std::string> get_recv_addresses()const;
+           bool                                    is_my_address( const address& a )const;
+           bool                                    is_my_address( const pts_address& a )const;
 
-           void                                         add_send_address( const address&, const std::string& label = "" );
+           void                                    add_send_address( const address&, const std::string& label = "" );
            std::unordered_map<address,std::string> get_send_addresses()const;
 
-           asset                                        get_balance( asset::type t );
-           void                                         set_stake( uint64_t stake, uint32_t head_idx  );
-           void                                         set_fee_rate( const asset& pts_per_byte );
-           uint64_t                                     last_scanned()const;
+           asset                                   get_balance( asset::type t );
+           void                                    set_stake( uint64_t stake, uint32_t head_idx  );
+           void                                    set_fee_rate( const asset& pts_per_byte );
+           uint64_t                                last_scanned()const;
 
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
