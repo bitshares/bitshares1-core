@@ -5,18 +5,19 @@
 
 namespace bts { namespace blockchain {
    transaction_summary::transaction_summary()
-   :valid_votes(0),invalid_votes(0),fees(0)
+   :valid_votes(0),invalid_votes(0),spent(0),fees(0)
    {}
 
    transaction_summary& transaction_summary::operator+=( const transaction_summary& a )
    {
       valid_votes   += a.valid_votes;
       invalid_votes += a.invalid_votes;
+      spent         += a.spent;
       fees          += a.fees;
       return *this;
    }
    transaction_evaluation_state::transaction_evaluation_state( const signed_transaction& t )
-   :trx(t),valid_votes(0),invalid_votes(0)
+   :trx(t),valid_votes(0),invalid_votes(0),spent(0)
    {
         sigs     = trx.get_signed_addresses();
         pts_sigs = trx.get_signed_pts_addresses();
@@ -126,6 +127,7 @@ namespace bts { namespace blockchain {
 
        sum.valid_votes      = state.valid_votes;
        sum.invalid_votes    = state.invalid_votes;
+       sum.spent            = state.spent;
        sum.fees             = state.get_total_in(0) - state.get_total_out(0);
        if( state.get_required_fees() > 0 )
        {
@@ -191,6 +193,7 @@ namespace bts { namespace blockchain {
        {
           state.invalid_votes += votes;
        }
+       state.spent += amnt;
    }
 
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 

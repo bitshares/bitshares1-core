@@ -679,7 +679,7 @@ namespace bts { namespace wallet {
       return my->_data.recv_pts_addresses.find(a)  != my->_data.recv_pts_addresses.end();
    }
 
-   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
+   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
    { try {
       switch( out.claim_func )
       {
