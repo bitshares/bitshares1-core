@@ -220,6 +220,11 @@ namespace bts { namespace blockchain {
           return fetch_trx( trx_num );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
 
+    trx_output chain_database::fetch_output(const output_reference& ref) 
+    {
+        auto trx = fetch_transaction(ref.trx_hash);
+        return trx.outputs[ref.output_idx];
+    }
 
     std::vector<meta_trx_input> chain_database::fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head )
     {

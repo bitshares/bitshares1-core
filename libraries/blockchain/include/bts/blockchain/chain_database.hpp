@@ -71,6 +71,8 @@ namespace bts { namespace blockchain {
          signed_transaction          fetch_transaction( const transaction_id_type& trx_id );
          std::vector<meta_trx_input> fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head = trx_num::invalid_block_num );
 
+         trx_output fetch_output(const output_reference& ref);
+
          uint32_t       fetch_block_num( const block_id_type& block_id );
          block_header   fetch_block( uint32_t block_num );
          digest_block   fetch_digest_block( uint32_t block_num );

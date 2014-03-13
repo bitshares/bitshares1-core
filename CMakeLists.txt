@@ -32,6 +32,7 @@ else( WIN32 )
     else( APPLE ) 
         # Linux Specific Options Here
         message( STATUS "Configuring Bitshares on Linux" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
         set( rt_library rt )
         set( pthread_library pthread)
     endif( APPLE )
