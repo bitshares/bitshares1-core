@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <unordered_map>
+#include <map>
 
 namespace bts { 
 
@@ -112,6 +113,8 @@ namespace wallet {
            bool scan_chain( bts::blockchain::chain_database& chain, uint32_t from_block_num = 0,  scan_progress_callback cb = scan_progress_callback() );
            void mark_as_spent( const output_reference& r );
            void dump();
+
+           const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
         protected:
            virtual void dump_output( const trx_output& out );

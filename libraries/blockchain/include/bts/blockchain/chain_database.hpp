@@ -62,18 +62,6 @@ namespace bts { namespace blockchain {
           uint64_t               current_difficulty()const;
           uint64_t               available_coindays()const;
 
-         /**
-          *  Validates that trx could be included in a future block, that
-          *  all inputs are unspent, that it is valid for the current time,
-          *  and that all inputs have proper signatures and input data.
-          *
-          *  @return any trx fees that would be paid if this trx were included
-          *          in the next block.
-          *
-          *  @throw exception if trx can not be applied to the current chain state.
-         trx_eval   evaluate_signed_transaction( const signed_transaction& trx, bool ignore_fees = false, bool is_market = false );       
-         trx_eval   evaluate_signed_transactions( const std::vector<signed_transaction>& trxs, uint64_t ignore_first_n = 0 );
-          */
 
          trx_block  generate_next_block( const std::vector<signed_transaction>& trx );
 
@@ -112,6 +100,5 @@ namespace bts { namespace blockchain {
 
 }  } // bts::blockchain
 
-//FC_REFLECT( bts::blockchain::trx_eval, (fees)(coindays_destroyed) )
 FC_REFLECT( bts::blockchain::trx_num,  (block_num)(trx_idx) );
 
