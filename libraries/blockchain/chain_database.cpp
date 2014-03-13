@@ -175,29 +175,6 @@ namespace bts { namespace blockchain {
        return my->head_block.id();
     }
 
-
-    /**
-     *  @pre trx must pass evaluate_signed_transaction() without exception
-     *  @pre block_num must be a valid block 
-     *
-     *  @param block_num - the number of the block that contains this trx.
-     *
-     *  @return the index / trx number that was assigned to trx as part of storing it.
-    void  chain_database::store_trx( const signed_transaction& trx, const trx_num& trx_idx )
-    {
-       try {
-         my->trx_id2num.store( trx.id(), trx_idx );
-         
-         meta_trx mt(trx);
-         mt.meta_outputs.resize( trx.outputs.size() );
-         my->meta_trxs.store( trx_idx, mt );
-
-       } FC_RETHROW_EXCEPTIONS( warn, 
-          "an error occured while trying to store the transaction", 
-          ("trx",trx) );
-    }
-     */
-
     trx_num    chain_database::fetch_trx_num( const uint160& trx_id )
     { try {
        return my->trx_id2num.fetch(trx_id);
@@ -234,8 +211,6 @@ namespace bts { namespace blockchain {
           auto trx_num = fetch_trx_num(trx_ids[i]);
           fb.trxs.push_back( fetch_trx( trx_num ) );
        }
-       // TODO: fetch each trx and add it to the trx block
-       //fb.trx_ids = my->block_trxs.fetch( block_num );
        return fb;
     } FC_RETHROW_EXCEPTIONS( warn, "block ${block}", ("block",block_num) ) }
 
