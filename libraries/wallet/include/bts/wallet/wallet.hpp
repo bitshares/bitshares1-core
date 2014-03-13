@@ -116,6 +116,8 @@ namespace wallet {
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
+           std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
+
         protected:
            virtual void dump_output( const trx_output& out );
            virtual void scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );

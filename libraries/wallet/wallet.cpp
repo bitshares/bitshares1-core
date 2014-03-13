@@ -711,6 +711,10 @@ namespace bts { namespace wallet {
    {
        return my->_unspent_outputs;
    }
+   std::vector<trx_input> wallet::collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs )
+   {
+      return my->collect_inputs( min_amnt, total_in, req_sigs );
+   }
 
     
 } } // namespace bts::wallet
