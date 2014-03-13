@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/blockchain/transaction.hpp>
+#include <bts/dns/outputs.hpp>
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {
@@ -11,7 +12,10 @@ class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_s
     public:
         dns_tx_evaluation_state( const signed_transaction& tx )
         :transaction_evaluation_state( tx ) {}
-        bool seen_domain_claim; // only one domain output per tx
+        bool seen_domain_input; // only one domain input/output per tx
+        bool seen_domain_output;
+        trx_output claimed; // the previous output, from the tx input
+        claim_domain_output dns_claimed; // the previous output, from the tx input
 };
 
 
@@ -28,4 +32,5 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
 
 }} // bts::dns
 
-FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_domain_claim));
+FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_domain_input)(seen_domain_output)
+                                              (claimed));

@@ -46,17 +46,17 @@ namespace bts { namespace dns {
         my->name2record.close();
     }
 
-    dns_record dns_db::get_record( const std::string& name )
+    dns_record dns_db::get_dns_record( const std::string& name )
     {
         try {
             return my->name2record.fetch(name);
         } FC_RETHROW_EXCEPTIONS( warn, "name: ${name}", ("name", name) )
     }
-    bool dns_db::has_record( const std::string& name ) 
+    bool dns_db::has_dns_record( const std::string& name ) 
     {
         return my->name2record.find(name).valid();
     }
-    void dns_db::store_record( const std::string& name, const dns_record& record)
+    void dns_db::store_dns_record( const std::string& name, const dns_record& record)
     {
         my->name2record.store(name, record); 
     }

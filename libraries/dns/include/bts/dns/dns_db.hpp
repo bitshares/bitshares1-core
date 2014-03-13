@@ -23,9 +23,9 @@ class dns_db : public bts::blockchain::chain_database
     
         void             open( const fc::path& dir, bool create );
         void             close();
-        dns_record       get_record( const std::string& name );
-        bool             has_record( const std::string& name );
-        void             store_record( const std::string& name, const dns_record& record);
+        dns_record       get_dns_record( const std::string& name );
+        bool             has_dns_record( const std::string& name );
+        void             store_dns_record( const std::string& name, const dns_record& record);
 
     private:
          std::unique_ptr<detail::dns_db_impl> my;
