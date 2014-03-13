@@ -670,24 +670,28 @@ namespace bts { namespace wallet {
        std::cerr<<"===========================================================\n";
    }
 
+   bool wallet::is_my_address( const address& a )const
+   {
+      return my->_data.recv_addresses.find(a)  != my->_data.recv_addresses.end();
+   }
+   bool wallet::is_my_address( const pts_address& a )const
+   {
+      return my->_data.recv_pts_addresses.find(a)  != my->_data.recv_pts_addresses.end();
+   }
+
    void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    { try {
       switch( out.claim_func )
       {
          case claim_by_pts:
          {
-            auto owner = out.as<claim_by_pts_output>().owner;
-            auto aitr  = my->_data.recv_pts_addresses.find(owner); 
-            if( aitr != my->_data.recv_pts_addresses.end() )
+            if( is_my_address( out.as<claim_by_pts_output>().owner ) )
                 cache_output( out, out_ref, oidx );
             break;
          }
-
          case claim_by_signature:
          {
-            auto owner = out.as<claim_by_signature_output>().owner;
-            auto aitr  = my->_data.recv_addresses.find(owner); 
-            if( aitr != my->_data.recv_addresses.end() )
+            if( is_my_address( out.as<claim_by_signature_output>().owner ) )
                    cache_output( out, out_ref, oidx );
             break;
          }
