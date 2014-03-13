@@ -1,7 +1,31 @@
 /**
     Namespace:  bts::net
 
+    The network library is used to build a P2P network of nodes that broadcast messages
+    to eachother using the following protocol:
 
+    on message: 
+        if valid 
+          add message id to inventory
+          broadcast inventory to peers
+        else disconnect peer
+
+    on recv_inventory: 
+       add uniquie items to fetch queue
+
+    on get_inventory: 
+       send inventory to peer
+
+    on fetch_message: 
+       send message
+
+    while fetch queue isn't empty
+        find random peer with item, and send fetch_message
+       
+
+    The network also supports the ability to query a ordered list of item ids.  Given the
+    id of an item, the network can return the ids of items that follow it.  Once a node
+    has the id, it can fetch the item using that id.
     
 
 */

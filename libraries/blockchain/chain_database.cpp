@@ -66,10 +66,10 @@ namespace bts { namespace blockchain {
             {
                auto tid    = trx_id2num.fetch( o.trx_hash );
                meta_trx   mtrx   = meta_trxs.fetch( tid );
-               FC_ASSERT( mtrx.meta_outputs.size() > o.output_idx );
+               FC_ASSERT( mtrx.meta_outputs.size() > o.output_idx.value );
 
-               mtrx.meta_outputs[o.output_idx].trx_id    = intrx;
-               mtrx.meta_outputs[o.output_idx].input_num = in;
+               mtrx.meta_outputs[o.output_idx.value].trx_id    = intrx;
+               mtrx.meta_outputs[o.output_idx.value].input_num = in;
 
                meta_trxs.store( tid, mtrx );
             }
@@ -78,8 +78,8 @@ namespace bts { namespace blockchain {
             { try {
                auto tid    = trx_id2num.fetch( ref.trx_hash );
                meta_trx   mtrx   = meta_trxs.fetch( tid );
-               FC_ASSERT( mtrx.outputs.size() > ref.output_idx );
-               return mtrx.outputs[ref.output_idx];
+               FC_ASSERT( mtrx.outputs.size() > ref.output_idx.value );
+               return mtrx.outputs[ref.output_idx.value];
             } FC_RETHROW_EXCEPTIONS( warn, "", ("ref",ref) ) }
             
             /**
@@ -238,12 +238,12 @@ namespace bts { namespace blockchain {
              trx_num tn   = fetch_trx_num( inputs[i].output_ref.trx_hash );
              meta_trx trx = fetch_trx( tn );
              
-             if( inputs[i].output_ref.output_idx >= trx.meta_outputs.size() )
+             if( inputs[i].output_ref.output_idx.value >= trx.meta_outputs.size() )
              {
                 FC_THROW_EXCEPTION( exception, "Input ${i} references invalid output from transaction ${trx}",
                                     ("i",inputs[i])("trx", trx) );
              }
-             if( inputs[i].output_ref.output_idx >= trx.outputs.size() )
+             if( inputs[i].output_ref.output_idx.value >= trx.outputs.size() )
              {
                 FC_THROW_EXCEPTION( exception, "Input ${i} references invalid output from transaction ${t}",
                                     ("i",inputs[i])("o", trx) );
