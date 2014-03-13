@@ -14,6 +14,7 @@ namespace bts { namespace blockchain {
          
          int64_t valid_votes;  // votes for valid blocks
          int64_t invalid_votes; // votes for invalid blocks
+         int64_t spent; // ignoring coindays, what is the total amount spent
          int64_t fees;
          
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
@@ -63,6 +64,7 @@ namespace bts { namespace blockchain {
            */
           uint64_t                                  valid_votes;
           uint64_t                                  invalid_votes;
+          uint64_t                                  spent;
 
           void balance_assets()const;
       private:

@@ -114,6 +114,7 @@ namespace wallet {
            void dump();
 
         protected:
+           virtual void dump_output( const trx_output& out );
            virtual void scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );
            virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
 

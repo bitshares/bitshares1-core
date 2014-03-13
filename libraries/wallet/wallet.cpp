@@ -647,27 +647,27 @@ namespace bts { namespace wallet {
        std::cerr<<"Unspent Outputs: \n";
        for( auto itr = my->_unspent_outputs.begin(); itr != my->_unspent_outputs.end(); ++itr )
        {
-           switch( itr->second.claim_func )
-           {
-              case claim_by_signature:
-                 std::cerr<<std::setw(13)<<std::string(itr->first)<<"]  ";
-                 std::cerr<<std::string(itr->second.amount)<<" ";
-                 std::cerr<<fc::variant(itr->second.claim_func).as_string()<<" ";
-                 std::cerr<< std::string(itr->second.as<claim_by_signature_output>().owner);
-                 std::cerr<<"\n";
-                 break;
-              case claim_by_pts:
-                 std::cerr<<std::setw(13)<<std::string(itr->first)<<"]  ";
-                 std::cerr<<std::string(itr->second.amount)<<" ";
-                 std::cerr<<fc::variant(itr->second.claim_func).as_string()<<" ";
-                 std::cerr<< std::string(itr->second.as<claim_by_pts_output>().owner);
-                 std::cerr<<"\n";
-                 break;
-            //  default:
-            //      std::cerr << "unsupported claim type "<<fc::variant(itr->second.claim_func).as_string() <<" \n";
-           }
+          std::cerr<<std::setw(13)<<std::string(itr->first)<<"]  ";
+          dump_output( itr->second );
+          std::cerr<<"\n";
        }
        std::cerr<<"===========================================================\n";
+   }
+   void wallet::dump_output( const trx_output& out )
+   {
+       switch( out.claim_func )
+       {
+          case claim_by_signature:
+             std::cerr<<std::string(out.amount)<<" ";
+             std::cerr<<"claim_by_signature ";
+             std::cerr<< std::string(out.as<claim_by_signature_output>().owner);
+             break;
+          case claim_by_pts:
+             std::cerr<<std::string(out.amount)<<" ";
+             std::cerr<<"claim_by_pts ";
+             std::cerr<< std::string(out.as<claim_by_pts_output>().owner);
+             break;
+       }
    }
 
    bool wallet::is_my_address( const address& a )const
@@ -679,7 +679,7 @@ namespace bts { namespace wallet {
       return my->_data.recv_pts_addresses.find(a)  != my->_data.recv_pts_addresses.end();
    }
 
-   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
+   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
    { try {
       switch( out.claim_func )
       {
