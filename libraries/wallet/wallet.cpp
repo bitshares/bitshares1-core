@@ -707,6 +707,10 @@ namespace bts { namespace wallet {
        my->_output_ref_to_index[out_ref] = oidx;
        my->_unspent_outputs[oidx]        = out; 
    }
+   const std::map<output_index,trx_output>&  wallet::get_unspent_outputs()const
+   {
+       return my->_unspent_outputs;
+   }
 
     
 } } // namespace bts::wallet
