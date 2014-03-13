@@ -6,16 +6,23 @@
 
 namespace bts { namespace dns {
     namespace detail  { class dns_wallet_impl; }
-
+    using namespace bts::blockchain;
     class dns_wallet : public bts::wallet::wallet
     {
         public:
             bts::blockchain::signed_transaction buy_domain(const std::string& name,
-                                          bts::blockchain::asset amount, dns_db& db);
+                                                        asset amount, dns_db& db);
             bts::blockchain::signed_transaction update_record(const std::string& name,
-                                             bts::blockchain::address addr, fc::variant value);
+                                                    bts::blockchain::address domain_addr,
+                                                    fc::variant value);
             bts::blockchain::signed_transaction sell_domain(const std::string&, 
                                             bts::blockchain::asset amount);
+            // TODO put this in the parent wallet class?
+            bts::blockchain::signed_transaction add_fee_and_sign(
+                                                signed_transaction& trx,
+                                                asset required_in,
+                                                asset& total_in,
+                                                std::unordered_set<address> req_sigs);
 
         protected:
             virtual void scan_output( const bts::blockchain::trx_output& out,

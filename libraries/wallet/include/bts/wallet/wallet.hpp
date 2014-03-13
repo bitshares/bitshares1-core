@@ -91,7 +91,10 @@ namespace wallet {
            asset                                   get_balance( asset::type t );
            void                                    set_stake( uint64_t stake, uint32_t head_idx  );
            void                                    set_fee_rate( const asset& pts_per_byte );
+           asset                                   get_fee_rate();
            uint64_t                                last_scanned()const;
+
+           output_reference                        get_ref_from_output_idx(output_index idx);
 
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
@@ -110,6 +113,9 @@ namespace wallet {
            std::unordered_map<transaction_id_type, transaction_state> get_transaction_history()const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
+
+           void sign_transaction( signed_transaction& trx, const std::unordered_set<address>& addresses, bool mark_output_as_used = true);
+
            bool scan_chain( bts::blockchain::chain_database& chain, uint32_t from_block_num = 0,  scan_progress_callback cb = scan_progress_callback() );
            void mark_as_spent( const output_reference& r );
            void dump();

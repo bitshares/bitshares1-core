@@ -2,6 +2,7 @@
 #include <bts/dns/outputs.hpp>
 #include <bts/dns/dns_db.hpp>
 #include <bts/blockchain/config.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace dns {
 

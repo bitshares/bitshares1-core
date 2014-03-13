@@ -139,6 +139,11 @@ namespace bts { namespace wallet {
               std::unordered_map<address,fc::ecc::private_key>      _my_keys;
               std::unordered_map<transaction_id_type,signed_transaction> _id_to_signed_transaction;
 
+              asset get_fee_rate()
+              {
+                  return _current_fee_rate;
+              }
+
               asset get_balance( asset::type balance_type )
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
@@ -700,6 +705,12 @@ namespace bts { namespace wallet {
             break;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+   output_reference wallet::get_ref_from_output_idx( output_index idx) 
+   {
+       return my->_output_index_to_ref[idx];
+   }
 
    void wallet::cache_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    {
