@@ -94,6 +94,11 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           trxs.push_back( trx );
           auto next_block = db.generate_next_block( trxs );
           db.push_block( next_block );
+
+          wall.scan_chain( db );
+          wall.set_stake( db.get_stake(), db.get_stake2() );
+          wall.set_fee_rate( db.get_fee_rate() );
+          wall.dump();
        }
    } 
    catch ( const fc::exception& e )
@@ -102,7 +107,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
       elog( "${e}", ( "e", e.to_detail_string() ) );
       throw;
    }
-}
+} // blockchain_simple_chain
 
 /**
  *  This test case will generate two wallets, generate

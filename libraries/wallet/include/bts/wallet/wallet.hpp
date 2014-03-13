@@ -111,6 +111,10 @@ namespace wallet {
            void mark_as_spent( const output_reference& r );
            void dump();
 
+        protected:
+           virtual void scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+
         private:
            std::unique_ptr<detail::wallet_impl> my;
    };

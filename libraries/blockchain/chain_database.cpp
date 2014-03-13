@@ -419,7 +419,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         FC_ASSERT( b.trx_mroot    == b.calculate_merkle_root()                                 );
-        FC_ASSERT( b.timestamp    < (fc::time_point::now() + fc::seconds(60))                  );
+        /// time stamps from the future are not allowed
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
                    ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
@@ -427,6 +427,9 @@ namespace bts { namespace blockchain {
 
         if( b.block_num >= 1 )
         {
+           FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
+                      ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
+           
            FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
            my->_pow_validator->validate_work( b );
            /*
