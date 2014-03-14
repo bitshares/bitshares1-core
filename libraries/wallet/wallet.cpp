@@ -267,6 +267,11 @@ namespace bts { namespace wallet {
       };
    } // namespace detail
 
+   asset wallet::get_fee_rate()
+   {
+      return my->get_fee_rate();
+   }
+
    wallet::wallet()
    :my( new detail::wallet_impl() )
    {
