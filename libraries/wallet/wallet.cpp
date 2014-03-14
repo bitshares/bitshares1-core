@@ -605,6 +605,10 @@ namespace bts { namespace wallet {
       trx.sign( priv_key_itr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to sign transaction ${trx} for ${addr}", ("trx",trx)("addr",addr) ) }
 
+   void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& addresses, bool mark_output_as_used )
+   {
+      return my->sign_transaction( trx, addresses, mark_output_as_used );
+   }
 
    /** returns all transactions issued */
    std::unordered_map<transaction_id_type, transaction_state> wallet::get_transaction_history()const

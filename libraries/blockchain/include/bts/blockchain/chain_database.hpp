@@ -73,10 +73,13 @@ namespace bts { namespace blockchain {
 
          trx_output fetch_output(const output_reference& ref);
 
-         uint32_t       fetch_block_num( const block_id_type& block_id );
-         block_header   fetch_block( uint32_t block_num );
-         digest_block   fetch_digest_block( uint32_t block_num );
-         trx_block      fetch_trx_block( uint32_t block_num );
+         uint32_t                   fetch_block_num( const block_id_type& block_id );
+         block_header               fetch_block( uint32_t block_num );
+         digest_block               fetch_digest_block( uint32_t block_num );
+         trx_block                  fetch_trx_block( uint32_t block_num );
+
+         fc::ecc::compact_signature fetch_block_signature( const block_id_type& block_id );
+         void                       set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig );
 
          /**
           *  Validates the block and then pushes it into the database.

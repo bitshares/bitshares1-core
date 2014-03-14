@@ -113,7 +113,6 @@ namespace wallet {
            std::unordered_map<transaction_id_type, transaction_state> get_transaction_history()const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
-
            void sign_transaction( signed_transaction& trx, const std::unordered_set<address>& addresses, bool mark_output_as_used = true);
 
            bool scan_chain( bts::blockchain::chain_database& chain, uint32_t from_block_num = 0,  scan_progress_callback cb = scan_progress_callback() );
@@ -132,6 +131,8 @@ namespace wallet {
         private:
            std::unique_ptr<detail::wallet_impl> my;
    };
+
+   typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
 FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num) )

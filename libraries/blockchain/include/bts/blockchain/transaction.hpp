@@ -13,6 +13,8 @@
 
 namespace bts { namespace blockchain {
 
+typedef uint160 transaction_id_type;
+
 /**
  *  @class trx_input
  *  @brief references an unspent output and provides data required to spend it.
@@ -151,12 +153,11 @@ struct meta_trx_input
    :output_num(-1){}
 
    trx_num           source;
-   uint8_t           output_num;
+   uint32_t          output_num;
    trx_output        output;
    meta_trx_output   meta_output;
 };
 
-typedef uint160 transaction_id_type;
 
 /**
  *  @class transaction
@@ -216,7 +217,6 @@ namespace fc {
 };
 
 
-FC_REFLECT( bts::blockchain::output_reference, (trx_hash)(output_idx) )
 FC_REFLECT( bts::blockchain::trx_input, (output_ref)(input_data) )
 FC_REFLECT( bts::blockchain::trx_output, (amount)(claim_func)(claim_data) )
 FC_REFLECT( bts::blockchain::transaction, (version)(stake)(peer)(valid_until)(inputs)(outputs) )
