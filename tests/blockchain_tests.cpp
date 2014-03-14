@@ -68,6 +68,8 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        wallet             wall;
        wall.create( dir.path() / "wallet.dat", "password", "password", true );
 
+       fc::ecc::private_key auth = fc::ecc::private_key::generate();
+
        std::vector<address> addrs;
        addrs.reserve(50);
        for( uint32_t i = 0; i < 50; ++i )
@@ -76,10 +78,14 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        }
 
        chain_database     db;
+       db.set_signing_authority( auth.get_public_key() );
        auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
        db.set_pow_validator( sim_validator );
        db.open( dir.path() / "chain" );
        db.push_block( generate_genesis_block( addrs ) );
+       auto head_id = db.head_block_id();
+       db.set_block_signature( head_id, auth.sign_compact( fc::sha256::hash((char*)&head_id,sizeof(head_id))) );
+
 
        wall.scan_chain( db );
        wall.set_stake( db.get_stake(), db.get_stake2() );
@@ -96,6 +102,8 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           auto next_block = db.generate_next_block( trxs );
           sim_validator->skip_time( fc::seconds(30) );
           db.push_block( next_block );
+          auto head_id = db.head_block_id();
+          db.set_block_signature( head_id, auth.sign_compact( fc::sha256::hash((char*)&head_id,sizeof(head_id))) );
 
           wall.scan_chain( db );
           wall.set_stake( db.get_stake(), db.get_stake2() );

@@ -40,6 +40,18 @@ namespace bts { namespace blockchain {
           chain_database();
           virtual ~chain_database();
 
+          /**
+           *  The signing authority is a key that signs every block
+           *  once they have successfully pushed it to their chain.  
+           *
+           *  The purpose of the signing authority is to make sure that
+           *  there are no chain forks until the consensus algorithm can
+           *  be reached.  
+           */
+          void                        set_signing_authority( const address& addr );
+          address                     get_signing_authority()const;
+          fc::ecc::compact_signature  fetch_block_signature( const block_id_type& block_id );
+          void                        set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig );
 
           /**
            * When testing the chain there are different POW validation checks, so
@@ -78,8 +90,6 @@ namespace bts { namespace blockchain {
          digest_block               fetch_digest_block( uint32_t block_num );
          trx_block                  fetch_trx_block( uint32_t block_num );
 
-         fc::ecc::compact_signature fetch_block_signature( const block_id_type& block_id );
-         void                       set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig );
 
          /**
           *  Validates the block and then pushes it into the database.

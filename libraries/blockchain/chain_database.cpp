@@ -44,6 +44,7 @@ namespace bts { namespace blockchain {
       {
          public:
             chain_database_impl()
+            :_head_is_signed_by_authority(false)
             {
                _pow_validator = std::make_shared<pow_validator>();
             }
@@ -59,6 +60,7 @@ namespace bts { namespace blockchain {
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
             address                                             _signing_authority;
+            bool                                                _head_is_signed_by_authority;
 
 
             /** cache this information because it is required in many calculations  */
@@ -157,6 +159,9 @@ namespace bts { namespace blockchain {
          {
             my->head_block_id = my->head_block.id();
          }
+
+         if( fc::ecc::compact_signature() != fetch_block_signature( head_block_id() ) )
+            my->_head_is_signed_by_authority = true;
 
        } FC_RETHROW_EXCEPTIONS( warn, "error loading blockchain database ${dir}", ("dir",dir)("create",create) );
      }
@@ -307,6 +312,7 @@ namespace bts { namespace blockchain {
 
         if( b.block_num >= 1 )
         {
+           FC_ASSERT( my->_head_is_signed_by_authority );
            FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
                       ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
            
@@ -332,6 +338,7 @@ namespace bts { namespace blockchain {
 
         // TODO: validate that the header records the proper fees
         store( b );
+        my->_head_is_signed_by_authority = false;
         
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
@@ -620,9 +627,25 @@ namespace bts { namespace blockchain {
         return fc::ecc::compact_signature();
     }
 
+    void chain_database::set_signing_authority( const address& a )
+    {
+       my->_signing_authority = a;
+    }
+    address chain_database::get_signing_authority()const
+    {
+       return my->_signing_authority;
+    }
+
     void chain_database::set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig )
     { try {
         FC_ASSERT( address( fc::ecc::public_key( sig, fc::sha256::hash( (char*)&block_id, sizeof(block_id) ) ) ) == my->_signing_authority );
+
+        if( block_id == head_block_id() ) 
+        {
+           my->_head_is_signed_by_authority = true;
+        }
+
+        fetch_block_num( block_id ); // throws if block_id is invalid
         my->_block2sig.store( block_id, sig );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("sig",sig) ) }
 
