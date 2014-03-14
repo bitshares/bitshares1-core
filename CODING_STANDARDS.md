@@ -10,9 +10,9 @@ BitShares Toolkit is a set C++ libraries that follow conventions similar to boos
   3) The following example is a template of how a high level class should be implemented.  This is done to
      minimize header bloat and keep the private implementation details out of the header.
 
-      namespace a { namespace a { 
+      namespace a { namespace b { 
 
-         deltail { some_class_impl; }
+         namespace deltail { some_class_impl; }
 
          class some_class : public base_class
          {
