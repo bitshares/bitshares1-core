@@ -12,6 +12,10 @@ dns_transaction_validator::dns_transaction_validator(dns_db* db)
     
 }
 
+dns_transaction_validator::~dns_transaction_validator()
+{
+}
+
 transaction_summary dns_transaction_validator::evaluate( const signed_transaction& tx)
 {
     dns_tx_evaluation_state state(tx);
