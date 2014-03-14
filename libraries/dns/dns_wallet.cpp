@@ -10,7 +10,18 @@
 #include<fc/io/raw_variant.hpp>
 
 namespace bts { namespace dns {
+
 using namespace bts::blockchain;
+
+dns_wallet::dns_wallet()
+//:my(new detail::dns_wallet_impl())
+{
+}
+
+dns_wallet::~dns_wallet()
+{
+}
+
 bts::blockchain::signed_transaction dns_wallet::buy_domain(
                     const std::string& name, bts::blockchain::asset amount, dns_db& db)
 { try {
