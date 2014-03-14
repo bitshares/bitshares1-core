@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         dns_wallet             wlt;
         std::vector<address>   addrs;
         dns_db                 dns_db;
-        auto sim_validator = std::make_shared<sim_pow_validator>( &dns_db );
+        auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point() );
 
         wlt.create( dir.path() / "wallet.dat", "password", "password", true );
         auto addr = wlt.new_recv_address();
