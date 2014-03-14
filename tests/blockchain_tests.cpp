@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        }
 
        chain_database     db;
-       auto sim_validator = std::make_shared<sim_pow_validator>( &db );
+       auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
        db.set_pow_validator( sim_validator );
        db.open( dir.path() / "chain" );
        db.push_block( generate_genesis_block( addrs ) );
@@ -92,7 +92,9 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
           std::vector<signed_transaction> trxs;
           trxs.push_back( trx );
+          sim_validator->skip_time( fc::seconds(60*5) );
           auto next_block = db.generate_next_block( trxs );
+          sim_validator->skip_time( fc::seconds(30) );
           db.push_block( next_block );
 
           wall.scan_chain( db );

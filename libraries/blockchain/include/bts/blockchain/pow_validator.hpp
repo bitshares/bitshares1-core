@@ -15,12 +15,14 @@ namespace bts { namespace blockchain {
    class sim_pow_validator : public pow_validator
    {
       public:
-        sim_pow_validator( chain_database* db ):_db(db){};
+        sim_pow_validator( const fc::time_point& start_time ):_time(start_time){}
+
         virtual bool              validate_work( const block_header& header ) { return true; }
-        virtual fc::time_point    get_time()const;
+        virtual void              skip_time( const fc::microseconds& dt ) { _time += dt; }
+        virtual fc::time_point    get_time()const { return _time; }
 
       private:
-        chain_database* _db;
+        fc::time_point   _time;
    };
 
    typedef std::shared_ptr<pow_validator> pow_validator_ptr;
