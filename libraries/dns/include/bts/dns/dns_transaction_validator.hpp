@@ -7,6 +7,8 @@
 namespace bts { namespace dns {
 using namespace bts::blockchain;
 
+class dns_db;
+
 class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_state
 {
     public:
@@ -22,6 +24,9 @@ class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_s
 class dns_transaction_validator : public bts::blockchain::transaction_validator
 {
     public:
+        dns_transaction_validator(dns_db* db);
+        virtual ~dns_transaction_validator();
+
         virtual transaction_summary evaluate( const signed_transaction& tx );
         virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state );
         virtual void validate_output( const trx_output& out, transaction_evaluation_state& state );

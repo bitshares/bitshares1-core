@@ -6,6 +6,12 @@
 
 namespace bts { namespace dns {
 
+dns_transaction_validator::dns_transaction_validator(dns_db* db)
+:transaction_validator(db)
+{
+    
+}
+
 transaction_summary dns_transaction_validator::evaluate( const signed_transaction& tx)
 {
     dns_tx_evaluation_state state(tx);

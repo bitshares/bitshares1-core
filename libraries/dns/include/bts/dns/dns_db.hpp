@@ -3,6 +3,8 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/chain_database.hpp>
 
+#include <bts/dns/dns_transaction_validator.hpp>
+
 namespace bts { namespace dns {
 
 namespace detail  { class dns_db_impl; }

@@ -19,6 +19,7 @@ namespace bts { namespace dns {
     dns_db::dns_db()
     :my( new detail::dns_db_impl() )
     {
+        set_transaction_validator( std::make_shared<dns_transaction_validator>(this) );
     }
 
     dns_db::~dns_db()

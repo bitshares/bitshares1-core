@@ -5,11 +5,13 @@
 #include <bts/dns/dns_db.hpp>
 
 namespace bts { namespace dns {
-    namespace detail  { class dns_wallet_impl; }
+    //namespace detail  { class dns_wallet_impl; }
     using namespace bts::blockchain;
     class dns_wallet : public bts::wallet::wallet
     {
         public:
+            dns_wallet();
+            ~dns_wallet();
             bts::blockchain::signed_transaction buy_domain(const std::string& name,
                                                         asset amount, dns_db& db);
             bts::blockchain::signed_transaction update_record(const std::string& name,
@@ -30,7 +32,7 @@ namespace bts { namespace dns {
                                       const bts::wallet::output_index& oidx );
 
         private:
-             std::unique_ptr<detail::dns_wallet_impl> my;
+             //std::unique_ptr<detail::dns_wallet_impl> my;
      };
 
 } } // bts::dns 
