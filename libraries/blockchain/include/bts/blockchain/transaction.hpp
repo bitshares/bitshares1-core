@@ -13,6 +13,8 @@
 
 namespace bts { namespace blockchain {
 
+typedef uint160 transaction_id_type;
+
 /**
  *  @class trx_input
  *  @brief references an unspent output and provides data required to spend it.
@@ -156,7 +158,6 @@ struct meta_trx_input
    meta_trx_output   meta_output;
 };
 
-typedef uint160 transaction_id_type;
 
 /**
  *  @class transaction

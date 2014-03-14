@@ -18,7 +18,8 @@
 #include <sstream>
 
 namespace fc {
-  template<> struct get_typename<std::vector<uint160>>    { static const char* name()  { return "std::vector<uint160>";  } };
+  template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
+  template<> struct get_typename<fc::ecc::compact_signature>  { static const char* name()  { return "fc::ecc::compact_signature";  } };
 } // namespace fc
 
 struct trx_stat
@@ -53,9 +54,11 @@ namespace bts { namespace blockchain {
             bts::db::level_map<trx_num,meta_trx>                meta_trxs;
             bts::db::level_map<uint32_t,block_header>           blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
+            bts::db::level_pod_map<block_id_type,fc::ecc::compact_signature> _block2sig;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
+            address                                             _signing_authority;
 
 
             /** cache this information because it is required in many calculations  */
@@ -145,6 +148,7 @@ namespace bts { namespace blockchain {
          my->meta_trxs.open(  dir / "meta_trxs",  create );
          my->blocks.open(     dir / "blocks",     create );
          my->block_trxs.open( dir / "block_trxs", create );
+         my->_block2sig.open( dir / "block2sig",  create );
 
          
          // read the last block from the DB
@@ -608,6 +612,19 @@ namespace bts { namespace blockchain {
     {
        my->_trx_validator = v;
     }
+
+    fc::ecc::compact_signature chain_database::fetch_block_signature( const block_id_type& block_id )
+    {
+        auto itr = my->_block2sig.find(block_id);
+        if( itr.valid() ) return itr.value();
+        return fc::ecc::compact_signature();
+    }
+
+    void chain_database::set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig )
+    { try {
+        FC_ASSERT( address( fc::ecc::public_key( sig, fc::sha256::hash( (char*)&block_id, sizeof(block_id) ) ) ) == my->_signing_authority );
+        my->_block2sig.store( block_id, sig );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("sig",sig) ) }
 
 }  } // bts::blockchain
 

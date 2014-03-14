@@ -14,7 +14,6 @@ namespace bts { namespace net {
    */
   struct message_header
   {
-     channel_id channel()const { return channel_id( (channel_proto)proto, chan_num ); }
      uint32_t  size;   // number of bytes in message, max 16 MB per message
      uint32_t  msg_type;  // every channel gets a 16 bit message type specifier
   };
@@ -82,5 +81,5 @@ namespace bts { namespace net {
 } } // bts::network
 
 
-FC_REFLECT( bts::network::message_header, (size)(msg_type) )
-FC_REFLECT_DERIVED( bts::network::message, (bts::network::message_header), (data) )
+FC_REFLECT( bts::net::message_header, (size)(msg_type) )
+FC_REFLECT_DERIVED( bts::net::message, (bts::net::message_header), (data) )

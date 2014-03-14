@@ -26,12 +26,12 @@ namespace bts { namespace net {
           *  Assuming all data elements are ordered in some way, this method should
           *  return up to limit ids that occur *after* from_id.
           */
-         virtual std::vector<item_id> get_headers( const item_id& from_id, uint32_t limit = 2000 ){};
+         virtual std::vector<item_id> get_headers( const item_id& from_id, uint32_t limit = 2000 );
 
          /**
           *  Given the hash of the requested data, fetch the body. 
           */
-         virtual message  get_body( const item_id& id ){}; 
+         virtual message  get_body( const item_id& id ); 
    };
 
    class node
@@ -43,8 +43,8 @@ namespace bts { namespace net {
         void      set_delegate( node_delegate* del );
 
         void      broadcast( const message& msg );
-        void      sync_from( const data_id& );
-        message   fetch( const data_id& );
+        void      sync_from( const item_id& );
+        message   fetch( const item_id& );
 
       private:
         std::unique_ptr<detail::node_impl> my;
