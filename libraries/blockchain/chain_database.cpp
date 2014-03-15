@@ -104,13 +104,20 @@ namespace bts { namespace blockchain {
                }
             }
 
-            void store( const trx_block& b )
+            void store( const trx_block& b, const signed_transactions& deterministic_trxs )
             {
                 std::vector<uint160> trxs_ids;
-                for( uint16_t t = 0; t < b.trxs.size(); ++t )
+                uint16_t t = 0;
+                for( ; t < b.trxs.size(); ++t )
                 {
                    store( b.trxs[t], trx_num( b.block_num, t) );
                    trxs_ids.push_back( b.trxs[t].id() );
+                }
+                for( const signed_transaction& trx : deterministic_trxs )
+                {
+                   store( trx, trx_num( b.block_num, t) );
+                   ++t;
+                  // trxs_ids.push_back( trx.id() );
                 }
                 head_block    = b;
                 head_block_id = b.id();
@@ -350,8 +357,6 @@ namespace bts { namespace blockchain {
                    ("b.votes_cast",b.votes_cast)
                    ("invalid_votes",summary.invalid_votes)); 
 
-        // TODO: validate that the header records the proper fees
-
     } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
     
     /**
@@ -361,15 +366,14 @@ namespace bts { namespace blockchain {
     { try {
         auto deterministic_trxs = generate_determinsitic_transactions();
         validate( b, deterministic_trxs );
-        // TODO: where to store these deterministic transactions in the database?
-        store( b );
+        store( b, deterministic_trxs );
         my->_head_is_signed_by_authority = false;
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
 
-    void chain_database::store( const trx_block& blk )
+    void chain_database::store( const trx_block& blk, const signed_transactions& deterministic_trxs )
     {
-        my->store( blk ); 
+        my->store( blk, deterministic_trxs ); 
     }
 
     /**
@@ -615,12 +619,6 @@ namespace bts { namespace blockchain {
     uint64_t chain_database::get_stake()
     {
        return my->head_block_id._hash[0];
-    }
-    uint64_t chain_database::get_stake2()
-    {
-       if( head_block_num() <= 1 ) return 0;
-       if( head_block_num() == uint32_t(-1) ) return 0;
-       return fetch_block( head_block_num() - 1 ).id()._hash[0];
     }
     uint64_t chain_database::current_difficulty()const
     {

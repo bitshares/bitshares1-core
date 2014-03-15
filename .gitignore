@@ -12,3 +12,4 @@ CMakeCache.txt
 Makefile
 CMakeFiles
 tests/blockchain_tests
+tests/dns_tests

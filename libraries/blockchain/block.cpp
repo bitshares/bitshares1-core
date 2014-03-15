@@ -8,7 +8,17 @@
 namespace bts { namespace blockchain  {
 
 
+   digest_block::digest_block( const block_header& b, const signed_transactions& trxs, const signed_transactions& determinstic_trxs )
+   :block_header(b)
+   {
+      trx_ids.reserve( trxs.size() );
+      for( auto trx : trxs ) 
+         trx_ids.push_back( trx.id() );
+      for( auto trx : determinstic_trxs) 
+         determinsitic_ids.push_back( trx.id() );
+   }
 
+   /*
   trx_block::operator digest_block()const
   {
     digest_block b( (const block_header&)*this );
@@ -19,6 +29,7 @@ namespace bts { namespace blockchain  {
     }
     return b;
   }
+  */
 
 
   uint160 trx_block::calculate_merkle_root( const signed_transactions& determinstic_trxs)const

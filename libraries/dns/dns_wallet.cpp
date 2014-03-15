@@ -209,7 +209,7 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(
 } FC_RETHROW_EXCEPTIONS(warn, "sell_domai ${name} with ${amt}", ("name", name)("amt", amount)) }
 
 
-void dns_wallet::scan_output( const trx_output& out,
+bool dns_wallet::scan_output( const trx_output& out,
                               const output_reference& ref,
                               const bts::wallet::output_index& oidx )
 {
@@ -221,13 +221,12 @@ void dns_wallet::scan_output( const trx_output& out,
                 if (is_my_address( out.as<claim_domain_output>().owner ))
                 {
                     cache_output( out, ref, oidx );
+                    return true;
                 }
+                return false;
             }
             default:
-            {
-                wallet::scan_output( out, ref, oidx );
-                break;
-            }
+                return wallet::scan_output( out, ref, oidx );
         }
     } FC_RETHROW_EXCEPTIONS( warn, "" )
 }

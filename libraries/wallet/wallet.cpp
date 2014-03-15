@@ -29,9 +29,9 @@ namespace bts { namespace wallet {
        uint32_t                                                 version;
        uint32_t                                                 last_used_key;
        uint32_t                                                 last_scanned_block_num;
-       std::unordered_map<address,std::string>             recv_addresses;
-       std::unordered_map<pts_address,address>        recv_pts_addresses;
-       std::unordered_map<address,std::string>             send_addresses;
+       std::unordered_map<address,std::string>                  recv_addresses;
+       std::unordered_map<pts_address,address>                  recv_pts_addresses;
+       std::unordered_map<address,std::string>                  send_addresses;
 
        //std::vector<fc::ecc::private_key>                 keys;
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
@@ -117,7 +117,7 @@ namespace bts { namespace wallet {
       class wallet_impl
       {
           public:
-              wallet_impl():_stake(0),_current_head_idx(0),_exception_on_open(false){}
+              wallet_impl():_stake(0),_exception_on_open(false){}
               std::string _wallet_base_password; // used for saving/loading the wallet
               std::string _wallet_key_password;  // used to access private keys
 
@@ -125,7 +125,6 @@ namespace bts { namespace wallet {
               wallet_data                                                _data;
               asset                                                      _current_fee_rate;
               uint64_t                                                   _stake;
-              uint32_t                                                   _current_head_idx;
               bool                                                       _exception_on_open;
 
               std::map<output_index, output_reference>                   _output_index_to_ref;
@@ -166,7 +165,7 @@ namespace bts { namespace wallet {
               std::vector<trx_input> collect_coindays( uint64_t request_cdd, asset& total_in, 
                                                        std::unordered_set<address>& req_sigs, uint64_t& provided_cdd )
               {
-                   FC_ASSERT( _current_head_idx > 0 );
+                   FC_ASSERT( _data.last_scanned_block_num > 0 );
                    provided_cdd = 0;
                    std::vector<trx_input> inputs;
                    for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
@@ -176,7 +175,7 @@ namespace bts { namespace wallet {
                        {
                            inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
                            total_in += itr->second.amount;
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_current_head_idx - itr->first.block_idx);
+                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx);
                            if( cdd > 0 ) 
                            {
                               provided_cdd += cdd;
@@ -192,7 +191,7 @@ namespace bts { namespace wallet {
                        {
                            inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
                            total_in += itr->second.amount;
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_current_head_idx - itr->first.block_idx);
+                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx);
                            if( cdd > 0 ) 
                            {
                               provided_cdd += cdd;
@@ -432,13 +431,6 @@ namespace bts { namespace wallet {
       return my->get_balance(t);
    }
 
-   void           wallet::set_stake( uint64_t stake, uint32_t head_idx )
-   {
-      wlog( "STAKE ${S}", ("S",stake) );
-      my->_stake = stake;
-      my->_current_head_idx = head_idx;
-   }
-
    address   wallet::import_key( const fc::ecc::private_key& key, const std::string& label )
    { try {
       FC_ASSERT( !is_locked() );
@@ -616,6 +608,25 @@ namespace bts { namespace wallet {
       return my->_data.transactions;
    }
 
+   bool wallet::scan_transaction( const signed_transaction& trx, uint32_t block_idx, uint32_t trx_idx )
+   {
+       bool found = false;
+       for( uint32_t in_idx = 0; in_idx < trx.inputs.size(); ++in_idx )
+       {
+           mark_as_spent( trx.inputs[in_idx].output_ref );
+       }
+
+       // for each output
+       for( uint32_t out_idx = 0; out_idx < trx.outputs.size(); ++out_idx )
+       {
+           const trx_output& out   = trx.outputs[out_idx];
+           const output_reference  out_ref( trx.id(),out_idx );
+           const output_index      oidx( block_idx, trx_idx, out_idx );
+           found |= scan_output( out, out_ref, oidx );
+       }
+       return found;
+   }
+
    /**
     *  Scan the blockchain starting from_block_num until the head block, check every
     *  transaction for inputs or outputs accessable by this wallet.
@@ -636,22 +647,17 @@ namespace bts { namespace wallet {
               if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() ); 
 
               auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); 
-
-              for( uint32_t in_idx = 0; in_idx < trx.inputs.size(); ++in_idx )
-              {
-                  mark_as_spent( trx.inputs[in_idx].output_ref );
-              }
-
-              // for each output
-              for( uint32_t out_idx = 0; out_idx < trx.outputs.size(); ++out_idx )
-              {
-                  const trx_output& out   = trx.outputs[out_idx];
-                  const output_reference  out_ref( trx.id(),out_idx );
-                  const output_index      oidx( i, trx_idx, out_idx );
-                  scan_output( out, out_ref, oidx );
-              }
+              found |= scan_transaction( trx, i, trx_idx );
+          }
+          for( uint32_t trx_idx = 0; trx_idx < blk.determinsitic_ids.size(); ++trx_idx )
+          {
+              auto trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
+              found |= scan_transaction( trx, i, trx_idx );
           }
        }
+       set_fee_rate( chain.get_fee_rate() );
+       my->_stake                       = chain.get_stake();
+       my->_data.last_scanned_block_num = head_block_num;
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -693,26 +699,32 @@ namespace bts { namespace wallet {
       return my->_data.recv_pts_addresses.find(a)  != my->_data.recv_pts_addresses.end();
    }
 
-   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
+   bool wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
    { try {
       switch( out.claim_func )
       {
          case claim_by_pts:
          {
             if( is_my_address( out.as<claim_by_pts_output>().owner ) )
+            {
                 cache_output( out, out_ref, oidx );
-            break;
+                return true;
+            }
+            return false;
          }
          case claim_by_signature:
          {
             if( is_my_address( out.as<claim_by_signature_output>().owner ) )
-                   cache_output( out, out_ref, oidx );
-            break;
+            {
+               cache_output( out, out_ref, oidx );
+               return true;
+            }
+            return false;
          }
          default:
             FC_ASSERT( !"Invalid Claim Type" );
-            break;
       }
+      return false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 

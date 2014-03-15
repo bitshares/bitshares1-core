@@ -184,8 +184,7 @@ namespace bts { namespace blockchain {
        uint32_t headnum = _db->head_block_num();
        uint32_t votes =  amnt * (headnum-source_block_num);
 
-       if( _db->get_stake() == state.trx.stake || 
-           _db->get_stake2() == state.trx.stake )
+       if( _db->get_stake() == state.trx.stake )
        {
           state.valid_votes += votes;
        }

@@ -79,8 +79,6 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         dns_db.push_block( generate_genesis_block( addrs ) );
 
         wlt.scan_chain( dns_db );
-        wlt.set_stake( dns_db.get_stake(), dns_db.get_stake2() );
-        wlt.set_fee_rate( dns_db.get_fee_rate() );
         
         auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
         std::vector<signed_transaction> txs;

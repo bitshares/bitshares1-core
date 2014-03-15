@@ -49,9 +49,16 @@ namespace bts { namespace blockchain {
    {
       digest_block( const block_header& b )
       :block_header(b){}
+
+      digest_block( const block_header& b, const signed_transactions& trxs, const signed_transactions& determinsitic_trxs );
+
       digest_block(){}
+
       uint160 calculate_merkle_root()const;
+
+
       std::vector<uint160>  trx_ids; 
+      std::vector<uint160>  determinsitic_ids; 
    };
 
    /**
@@ -63,14 +70,14 @@ namespace bts { namespace blockchain {
       trx_block( const block_header& b )
       :block_header(b){}
 
-      trx_block( const digest_block& b, std::vector<signed_transaction> trs )
+      trx_block( const block_header& b, std::vector<signed_transaction> trs )
       :block_header(b),trxs( std::move(trs) ){}
 
       size_t block_size()const;
 
       trx_block(){}
 
-      operator digest_block()const;
+     // operator digest_block()const;
       uint160 calculate_merkle_root( const signed_transactions& determinsitic_trxs )const;
 
       signed_transactions trxs;
@@ -85,6 +92,6 @@ namespace fc
 }
 
 FC_REFLECT( bts::blockchain::block_header,  (version)(prev)(block_num)(timestamp)(next_difficulty)(next_fee)(total_shares)(available_votes)(votes_cast)(trx_mroot)(noncea)(nonceb) )
-FC_REFLECT_DERIVED( bts::blockchain::digest_block,  (bts::blockchain::block_header),        (trx_ids) )
+FC_REFLECT_DERIVED( bts::blockchain::digest_block,  (bts::blockchain::block_header),        (trx_ids)(determinsitic_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::trx_block,   (bts::blockchain::block_header),        (trxs) )
 

@@ -89,7 +89,6 @@ namespace wallet {
            std::unordered_map<address,std::string> get_send_addresses()const;
 
            asset                                   get_balance( asset::type t );
-           void                                    set_stake( uint64_t stake, uint32_t head_idx  );
            void                                    set_fee_rate( const asset& pts_per_byte );
            asset                                   get_fee_rate();
            uint64_t                                last_scanned()const;
@@ -125,10 +124,11 @@ namespace wallet {
 
         protected:
            virtual void dump_output( const trx_output& out );
-           virtual void scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual bool scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );
            virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
 
         private:
+           bool scan_transaction( const signed_transaction& trx, uint32_t block_idx, uint32_t trx_idx );
            std::unique_ptr<detail::wallet_impl> my;
    };
 

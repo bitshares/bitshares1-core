@@ -89,8 +89,6 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
 
        wall.scan_chain( db );
-       wall.set_stake( db.get_stake(), db.get_stake2() );
-       wall.set_fee_rate( db.get_fee_rate() );
        wall.dump();
 
        for( uint32_t i = 0; i < 10; ++i )
@@ -107,8 +105,6 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           db.set_block_signature( head_id, auth.sign_compact( fc::sha256::hash((char*)&head_id,sizeof(head_id))) );
 
           wall.scan_chain( db );
-          wall.set_stake( db.get_stake(), db.get_stake2() );
-          wall.set_fee_rate( db.get_fee_rate() );
           wall.dump();
        }
    } 

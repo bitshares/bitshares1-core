@@ -15,6 +15,7 @@ namespace bts { namespace blockchain {
 
     /**
      *  @class chain_database 
+     *  @ingroup blockchain
      *
      *  The chain_database provides the generic implementation of basic 
      *  blockchain semantics which requires that blocks can be pushed,
@@ -30,18 +31,40 @@ namespace bts { namespace blockchain {
     class chain_database 
     {
        protected:
+          /**
+           *  This method should perform the validation step of making sure that the block and
+           *  all associated  determinsitc transactions can be applied.  It should throw an
+           *  exception of the validation fails.
+           */
+          virtual void validate( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+
           /** 
            *  Called after a block has been validated and appends
-           *  it to the block chain.
+           *  it to the block chain storing all relevant transactions.
            */
-          virtual void store( const trx_block& blk );
-          virtual void validate( const trx_block& blk, const std::vector<signed_transaction>& determinsitc_trxs );
-          virtual std::vector<signed_transaction> generate_determinsitic_transactions();
+          virtual void store( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+
+          /**
+           *  There are many kinds of deterministic transactions that various blockchains may require
+           *  such as automatic inactivity fees, lottery winners, and market making.   This method
+           *  can be overloaded to 
+           */
+          virtual signed_transactions generate_determinsitic_transactions();
 
        public:
           chain_database();
           virtual ~chain_database();
 
+          /** Given a set of user-provided transactions, this method will generate a block that
+           * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
+           * are ignored and not included in the set.  
+           *
+           * @note some transaction may be valid stand-alone, but may conflict with other transactions.
+           */
+          virtual trx_block  generate_next_block( const std::vector<signed_transaction>& trx );
+
+
+          //@{
           /**
            *  The signing authority is a key that signs every block
            *  once they have successfully pushed it to their chain.  
@@ -54,6 +77,7 @@ namespace bts { namespace blockchain {
           address                     get_signing_authority()const;
           fc::ecc::compact_signature  fetch_block_signature( const block_id_type& block_id );
           void                        set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig );
+          //@}
 
           /**
            * When testing the chain there are different POW validation checks, so
@@ -66,17 +90,14 @@ namespace bts { namespace blockchain {
           void close();
 
           const block_header&    get_head_block()const;
-          uint64_t               current_bitshare_supply();
           uint64_t               total_shares()const;
           uint32_t               head_block_num()const;
           block_id_type          head_block_id()const;
           uint64_t               get_stake(); // head - 1 
-          uint64_t               get_stake2(); // head - 2 
           asset                  get_fee_rate()const;
           uint64_t               current_difficulty()const;
 
 
-         trx_block  generate_next_block( const std::vector<signed_transaction>& trx );
 
          trx_num    fetch_trx_num( const uint160& trx_id );
          meta_trx   fetch_trx( const trx_num& t );

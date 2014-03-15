@@ -27,7 +27,7 @@ namespace bts { namespace dns {
                                                 std::unordered_set<address> req_sigs);
 
         protected:
-            virtual void scan_output( const bts::blockchain::trx_output& out,
+            virtual bool scan_output( const bts::blockchain::trx_output& out,
                                       const bts::blockchain::output_reference& ref,
                                       const bts::wallet::output_index& oidx );
 

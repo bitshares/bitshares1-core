@@ -60,7 +60,7 @@ namespace bts { namespace btsx {
        }
    }
 
-   void wallet::scan_output( const trx_output& out, const output_reference& out_ref, 
+   bool wallet::scan_output( const trx_output& out, const output_reference& out_ref, 
                              const bts::wallet::output_index& oidx )
    { try {
       switch( out.claim_func )
@@ -68,20 +68,30 @@ namespace bts { namespace btsx {
          case claim_by_bid:
          {
             if( is_my_address( out.as<claim_by_bid_output>().pay_address ) )
+            {
                 cache_output( out, out_ref, oidx );
-            break;
+                return true;
+            }
+            return false;
          }
          case claim_by_long:
          {
             if( is_my_address( out.as<claim_by_long_output>().pay_address ) )
-                   cache_output( out, out_ref, oidx );
+            {
+                cache_output( out, out_ref, oidx );
+                return true;
+            }
+            return false;
             break;
          }
          case claim_by_cover:
          {
             if( is_my_address( out.as<claim_by_cover_output>().owner ) )
-                   cache_output( out, out_ref, oidx );
-            break;
+            {
+                cache_output( out, out_ref, oidx );
+                return true;
+            }
+            return false;
          }
          default:
             FC_ASSERT( !"Invalid Claim Type" );
