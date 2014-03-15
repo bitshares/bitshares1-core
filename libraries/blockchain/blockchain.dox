@@ -29,6 +29,22 @@
   A blockchain has two modes of operation, one for testing and the other for live
   operation.   When testing the proof-of-work and timing requirements must be simulated
   so that thousands of blocks can be built and processed rapidly.  
+
+
+  @section bts_blockchain_timing Blockchain Timining 
+
+  The blockchain attempts to produce one block every 5 minutes by regulating the difficulty of the proof
+  of work.  The network assumes all nodes are synchronized by an external NTP server to within a minute
+  of eachother.   Based upon this assumption the nodes enforce the following rules on all new blocks:
+
+     1) The block time cannot be more than 1 minute in the future (based upon local time)
+     2) The block time must be at least 1 minute after the last block. 
+
+  Given these two rules we can estimate the average block interval by taking the time elapsed for
+  the last 100 blocks and dividing by 100.  The goal is to adjust the difficulty such that this
+  average stays around 5 minutes.  
+
+
 */
 
 

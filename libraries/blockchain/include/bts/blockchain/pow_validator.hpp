@@ -7,9 +7,12 @@ namespace bts { namespace blockchain {
    class pow_validator
    {
       public:
+        pow_validator( chain_database* db = nullptr ):_db(db){}
         virtual ~pow_validator(){}
-        virtual bool              validate_work( const block_header& header ) { return true; }
+        virtual bool              validate_work( const block_header& header );
         virtual fc::time_point    get_time()const { return fc::time_point::now(); }
+
+        chain_database* _db;
    };
 
    class sim_pow_validator : public pow_validator

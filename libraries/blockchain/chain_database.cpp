@@ -277,33 +277,39 @@ namespace bts { namespace blockchain {
     }
 
 
-    void validate_unique_inputs( const std::vector<signed_transaction>& trxs )
+    void validate_unique_inputs( const signed_transactions& deterministic_trxs, const signed_transactions& trxs )
     {
        std::unordered_set<output_reference> ref_outs;
-       for( auto itr = trxs.begin(); itr != trxs.end(); ++itr )
+       for( const signed_transaction& trx : deterministic_trxs )
        {
-          for( auto in = itr->inputs.begin(); in != itr->inputs.end(); ++in )
-          {
-             if( !ref_outs.insert( in->output_ref ).second )
-             {
-                FC_THROW_EXCEPTION( exception, "duplicate input detected",
-                                            ("in", *in )("trx",*itr)  );
-             }
-          }
+            for( const trx_input& in : trx.inputs )
+            {
+               FC_ASSERT( ref_outs.insert( in.output_ref ).second, "duplicate input detected" );
+            }
+       }
+       for( const signed_transaction& trx : trxs )
+       {
+            for( const trx_input& in : trx.inputs )
+            {
+               FC_ASSERT( ref_outs.insert( in.output_ref ).second, "duplicate input detected" );
+            }
        }
     }
-    
-    /**
-     *  Attempts to append block b to the block chain with the given trxs.
-     */
-    void chain_database::push_block( const trx_block& b )
+
+    signed_transactions chain_database::generate_determinsitic_transactions()
     {
-      try {
+       signed_transactions trxs;
+       // TODO: move all unspent outputs over 1 year old to new outputs and charge a 5% fee
+       
+       return trxs;
+    }
+
+    void chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs)
+    { try {
         FC_ASSERT( b.version      == 0                                                         );
         FC_ASSERT( b.trxs.size()  > 0                                                          );
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
-        FC_ASSERT( b.trx_mroot    == b.calculate_merkle_root()                                 );
         /// time stamps from the future are not allowed
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
@@ -317,29 +323,47 @@ namespace bts { namespace blockchain {
                       ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
            
            FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
-           my->_pow_validator->validate_work( b );
-           /*
-           FC_ASSERT( b.get_difficulty() >= b.get_required_difficulty( 
-                                                 my->head_block.next_difficulty,
-                                                 my->head_block.avail_coindays ), "",
-                      ("required_difficulty",b.get_required_difficulty( my->head_block.next_difficulty, my->head_block.avail_coindays )  )
-                      ("block_difficulty", b.get_difficulty() ) );
-                      */
+           FC_ASSERT( my->_pow_validator->validate_work( b ) );
         }
 
-        //validate_issuance( b, my->head_block /*aka new prev*/ );
-        validate_unique_inputs( b.trxs );
+        validate_unique_inputs( b.trxs, deterministic_trxs );
 
+        // TODO: factor in determinstic trxs to merkle root calculation
+        FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
+        
         transaction_summary summary;
         for( auto strx : b.trxs )
         {
             summary += my->_trx_validator->evaluate( strx ); 
         }
 
+        for( auto strx : deterministic_trxs )
+        {
+            summary += my->_trx_validator->evaluate( strx ); 
+        }
+
+        FC_ASSERT( b.votes_cast      == summary.valid_votes )
+        FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees );
+        FC_ASSERT( b.available_votes == my->head_block.available_votes + b.total_shares - b.votes_cast - summary.invalid_votes, "",
+                   ("b.available_votes",b.available_votes)
+                   ("head_block.available_votes",my->head_block.available_votes)
+                   ("b.votes_cast",b.votes_cast)
+                   ("invalid_votes",summary.invalid_votes)); 
+
         // TODO: validate that the header records the proper fees
+
+    } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
+    
+    /**
+     *  Attempts to append block b to the block chain with the given trxs.
+     */
+    void chain_database::push_block( const trx_block& b )
+    { try {
+        auto deterministic_trxs = generate_determinsitic_transactions();
+        validate( b, deterministic_trxs );
+        // TODO: where to store these deterministic transactions in the database?
         store( b );
         my->_head_is_signed_by_authority = false;
-        
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
 
@@ -367,6 +391,8 @@ namespace bts { namespace blockchain {
     trx_block  chain_database::generate_next_block( const std::vector<signed_transaction>& in_trxs )
     {
       try {
+         auto deterministic_trxs = generate_determinsitic_transactions();
+
          trx_block result;
          std::vector<trx_stat>  stats;
          stats.reserve(in_trxs.size());
@@ -396,6 +422,8 @@ namespace bts { namespace blockchain {
          std::sort( stats.begin(), stats.end() ); 
          std::unordered_set<output_reference> consumed_outputs;
 
+
+         transaction_summary summary;
          for( size_t i = 0; i < stats.size(); ++i )
          {
             const signed_transaction& trx = in_trxs[stats[i].trx_idx]; 
@@ -407,15 +435,19 @@ namespace bts { namespace blockchain {
                     break; 
                }
             }
+            summary += stats[i].eval;
             result.trxs.push_back(trx);
          }
 
 
-         result.block_num = head_block_num() + 1;
-         result.prev      = head_block_id();
-         result.trx_mroot = result.calculate_merkle_root();
-         result.next_fee  = result.calculate_next_fee( get_fee_rate().get_rounded_amount(), result.block_size() );
-         result.timestamp = my->_pow_validator->get_time();
+         result.block_num       = head_block_num() + 1;
+         result.prev            = head_block_id();
+         result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
+         result.next_fee        = result.calculate_next_fee( get_fee_rate().get_rounded_amount(), result.block_size() );
+         result.votes_cast      = summary.valid_votes;
+         result.total_shares    = my->head_block.total_shares - summary.fees;
+         result.available_votes = my->head_block.available_votes + result.total_shares - result.votes_cast - summary.invalid_votes;
+         result.timestamp       = my->_pow_validator->get_time();
 
          return result;
          #if 0
@@ -597,10 +629,6 @@ namespace bts { namespace blockchain {
     uint64_t chain_database::total_shares()const
     {
        return my->head_block.total_shares;
-    }
-    uint64_t chain_database::available_coindays()const
-    {
-       return my->head_block.avail_coindays;
     }
 
     const block_header& chain_database::get_head_block()const { return my->head_block; }

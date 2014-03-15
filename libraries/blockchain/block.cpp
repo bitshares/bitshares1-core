@@ -21,16 +21,17 @@ namespace bts { namespace blockchain  {
   }
 
 
-  uint160 trx_block::calculate_merkle_root()const
+  uint160 trx_block::calculate_merkle_root( const signed_transactions& determinstic_trxs)const
   {
      if( trxs.size() == 0 ) return uint160();
      if( trxs.size() == 1 ) return trxs.front().id();
 
      std::vector<uint160> layer_one;
-     for( auto itr = trxs.begin(); itr != trxs.end(); ++itr )
-     {
-       layer_one.push_back(itr->id());
-     }
+     for( const signed_transaction& trx : trxs )
+        layer_one.push_back( trx.id() );
+     for( const signed_transaction& trx : determinstic_trxs )
+        layer_one.push_back( trx.id() );
+
      std::vector<uint160> layer_two;
      while( layer_one.size() > 1 )
      {
@@ -50,10 +51,17 @@ namespace bts { namespace blockchain  {
      return layer_one.front();
   }
 
-  uint64_t block_header::get_missing_cdd( uint64_t prev_avail_cdays )const
+  /**
+   * A block must have at least the required number of votes before the block chain
+   * can be extended.  The number of votes required is a function of the available
+   * votes.   The idea is to spread the available votes evently over the next 
+   * 12 months.  
+   */
+  uint64_t block_header::get_required_votes( uint64_t prev_available_votes )const
   {
-     uint64_t cdd = prev_avail_cdays / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
-     if( cdd < total_cdd ) return total_cdd - cdd;
+     uint64_t min_votes = prev_available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
+     if( min_votes > votes_cast ) 
+        return min_votes - votes_cast;
      return 0;
   }
 

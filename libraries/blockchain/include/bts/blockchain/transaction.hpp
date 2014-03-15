@@ -192,6 +192,8 @@ struct signed_transaction : public transaction
     std::set<fc::ecc::compact_signature> sigs;
 };
 
+typedef std::vector<signed_transaction> signed_transactions;
+
 /**
  *  @class meta_trx 
  *  @brief addes meta information about all outputs of a signed transaction 

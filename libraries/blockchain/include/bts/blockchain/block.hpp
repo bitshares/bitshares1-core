@@ -17,12 +17,10 @@ namespace bts { namespace blockchain {
    struct block_header
    {
        block_header()
-       :version(0),block_num(-1),next_fee(1),next_difficulty(1),total_shares(0),avail_coindays(0),total_cdd(0),noncea(0),nonceb(0){}
+       :version(0),block_num(-1),next_fee(1),next_difficulty(1),total_shares(0),available_votes(0),votes_cast(0),noncea(0),nonceb(0){}
       
        block_id_type       id()const;
-       /** given the total cdd by this block, calculate the adjusted difficulty */
-       //uint64_t            get_required_difficulty(uint64_t prev_difficulty, uint64_t prev_avail_cdays)const;
-       uint64_t            get_missing_cdd(uint64_t prev_avail_cdays)const;
+       uint64_t            get_required_votes(uint64_t prev_avail_cdays)const;
        uint64_t            get_difficulty()const;
        bool                validate_work()const;
        static uint64_t     calculate_next_fee( uint64_t prev_fee, uint64_t block_size );
@@ -35,8 +33,8 @@ namespace bts { namespace blockchain {
        uint64_t            next_fee;        ///< adjusted based upon average block size.
        uint64_t            next_difficulty; ///< difficulty for the next block.
        uint64_t            total_shares; 
-       uint64_t            avail_coindays;  ///< total coin days available in the network
-       uint64_t            total_cdd;       ///< coindays destroyed by this block
+       uint64_t            available_votes; ///< total uncast votes available to the network
+       uint64_t            votes_cast;      ///< votes cast this block
        uint160             trx_mroot;       ///< merkle root of trx included in block, required for light client validation
        uint32_t            noncea;          ///< used for proof of work
        uint32_t            nonceb;          ///< used for proof of work
@@ -73,8 +71,9 @@ namespace bts { namespace blockchain {
       trx_block(){}
 
       operator digest_block()const;
-      uint160 calculate_merkle_root()const;
-      std::vector<signed_transaction> trxs;
+      uint160 calculate_merkle_root( const signed_transactions& determinsitic_trxs )const;
+
+      signed_transactions trxs;
    };
 
 } } // bts::blockchain
@@ -85,7 +84,7 @@ namespace fc
    void from_variant( const variant& var,  bts::blockchain::trx_output& vo );
 }
 
-FC_REFLECT( bts::blockchain::block_header,  (version)(prev)(block_num)(timestamp)(next_difficulty)(next_fee)(total_shares)(avail_coindays)(total_cdd)(trx_mroot)(noncea)(nonceb) )
+FC_REFLECT( bts::blockchain::block_header,  (version)(prev)(block_num)(timestamp)(next_difficulty)(next_fee)(total_shares)(available_votes)(votes_cast)(trx_mroot)(noncea)(nonceb) )
 FC_REFLECT_DERIVED( bts::blockchain::digest_block,  (bts::blockchain::block_header),        (trx_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::trx_block,   (bts::blockchain::block_header),        (trxs) )
 

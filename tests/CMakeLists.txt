@@ -9,6 +9,10 @@ if( WIN32 )
 endif( WIN32 )
 
 add_executable( blockchain_tests blockchain_tests.cpp )
-add_executable( dns_tests dns_tests.cpp )
 target_link_libraries( blockchain_tests bts_wallet bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} crypto )
+
+
+add_executable( dns_tests dns_tests.cpp )
 target_link_libraries( dns_tests bts_wallet bts_dns bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} crypto bts_wallet)
+
+ 

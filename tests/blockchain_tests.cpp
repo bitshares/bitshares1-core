@@ -19,7 +19,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     genesis.timestamp         = fc::time_point::now();
     genesis.next_fee          = block_header::min_fee();
     genesis.total_shares      = 0;
-    genesis.avail_coindays    = 0;
+    genesis.votes_cast        = 0;
     genesis.noncea            = 0;
     genesis.nonceb            = 0;
     genesis.next_difficulty   = 0;
@@ -31,8 +31,9 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
         trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
         genesis.total_shares += amnt;
     }
+    genesis.available_votes   = genesis.total_shares;
     genesis.trxs.push_back( trx );
-    genesis.trx_mroot = genesis.calculate_merkle_root();
+    genesis.trx_mroot = genesis.calculate_merkle_root(signed_transactions());
 
     return genesis;
 }

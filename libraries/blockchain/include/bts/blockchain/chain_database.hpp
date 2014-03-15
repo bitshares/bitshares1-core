@@ -35,6 +35,8 @@ namespace bts { namespace blockchain {
            *  it to the block chain.
            */
           virtual void store( const trx_block& blk );
+          virtual void validate( const trx_block& blk, const std::vector<signed_transaction>& determinsitc_trxs );
+          virtual std::vector<signed_transaction> generate_determinsitic_transactions();
 
        public:
           chain_database();
@@ -72,7 +74,6 @@ namespace bts { namespace blockchain {
           uint64_t               get_stake2(); // head - 2 
           asset                  get_fee_rate()const;
           uint64_t               current_difficulty()const;
-          uint64_t               available_coindays()const;
 
 
          trx_block  generate_next_block( const std::vector<signed_transaction>& trx );
