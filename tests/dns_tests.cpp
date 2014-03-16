@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
     }
     catch (const fc::exception& e)
     {
-
+        elog( "${e}", ("e",e.to_detail_string()) );
         throw;
     }
 

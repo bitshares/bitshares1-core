@@ -45,6 +45,11 @@ namespace bts { namespace net {
         size     = data.size();
      }
 
+     fc::uint160_t id()const
+     {
+        return fc::ripemd160::hash( data.data(), data.size() );
+     }
+
 
     
      /**
