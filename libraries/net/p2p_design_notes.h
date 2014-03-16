@@ -5,11 +5,11 @@ class client : public blockchain_manager
   // corresponding signature/block and added to the end of the block chain.
   unapproved_blocks; // blocks we have the data for, but no signatures
   approved_blocks; // signed blocks not yet in the block chain (we haven't seen/approved the block immediately preceding them)
-  signatures_without_a_block; // signatures we received but did not yet have the blocks for.  
+  signatures_without_a_block; // signatures we received but do not yet have the blocks for.  
                              // when we put a signature here, we will have sent out a request for the block data
   uncommitted_transactions; // transactions we've seen and validated but have not been added to the block chain
   unincludable_transactions; // transactions we've seen but were not valid.  these won't be used in generating the current block,
-                             // but we'll try to validate them again once get a new block.
+                             // but we'll try to validate them again once we get a new block.
   set<header> illegal_transactions; // 
 
   blockchain_database _blockchain_database;
@@ -362,7 +362,7 @@ struct header_inventory_msg
   vector<header> headers_available;
 };
 
-struct signed_header
+struct signed_header : header
 {
   uint160t body_hash;
   uint160t trustee_signature;
