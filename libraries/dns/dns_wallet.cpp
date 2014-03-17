@@ -121,7 +121,6 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
    
     auto change_addr = new_recv_address("Change address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
-    auto inputs = std::vector<trx_input>();
     bts::blockchain::asset total_in; // set by collect_inputs
 
    
@@ -130,7 +129,7 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
         FC_ASSERT(!"Serialized value too long in update_record");
     }
     
-    inputs = collect_inputs( asset(), total_in, req_sigs );
+    trx.inputs = collect_inputs( asset(), total_in, req_sigs );
    
     for (auto pair : get_unspent_outputs())
     {
@@ -173,10 +172,9 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(
     auto change_addr = new_recv_address("Change address");
     auto sale_addr = new_recv_address("Domain sale address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
-    auto inputs = std::vector<trx_input>();
     bts::blockchain::asset total_in; // set by collect_inputs
    
-    inputs = collect_inputs( asset(), total_in, req_sigs );
+    trx.inputs = collect_inputs( asset(), total_in, req_sigs );
    
     for (auto pair : get_unspent_outputs())
     {
