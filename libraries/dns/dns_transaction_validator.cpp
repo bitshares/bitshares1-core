@@ -49,6 +49,7 @@ void dns_transaction_validator::validate_output( const trx_output& out, transact
 
 void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state)
 {
+    //TODO a lot of the input validation logic is in the output validator right now
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT( ! dns_state.seen_domain_input,
                 "More than one domain claim intput in one tx: ${tx}", ("tx", state.trx) );

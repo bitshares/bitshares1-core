@@ -13,7 +13,10 @@ class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_s
 {
     public:
         dns_tx_evaluation_state( const signed_transaction& tx )
-        :transaction_evaluation_state( tx ) {}
+        :transaction_evaluation_state( tx ) {
+            seen_domain_input = false;
+            seen_domain_output = false; 
+        }
         bool seen_domain_input; // only one domain input/output per tx
         bool seen_domain_output;
         trx_output claimed; // the previous output, from the tx input
