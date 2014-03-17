@@ -6,6 +6,7 @@
 #include <fc/filesystem.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/raw.hpp>
+#include <fc/reflect/variant.hpp>
 
 #include <iostream>
 using namespace bts::wallet;
@@ -98,7 +99,8 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           std::vector<signed_transaction> trxs;
           trxs.push_back( trx );
           sim_validator->skip_time( fc::seconds(60*5) );
-          auto next_block = db.generate_next_block( trxs );
+          auto next_block = wall.generate_next_block( db, trxs );
+          ilog( "block: ${b}", ("b", next_block ) );
           sim_validator->skip_time( fc::seconds(30) );
           db.push_block( next_block );
           auto head_id = db.head_block_id();

@@ -1,5 +1,6 @@
 #pragma once
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/block.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -79,6 +80,14 @@ namespace wallet {
 
            void import_bitcoin_wallet( const fc::path& dir, const std::string& passphrase );
 
+          /** Given a set of user-provided transactions, this method will generate a block that
+           * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
+           * are ignored and not included in the set.  
+           *
+           * @note some transaction may be valid stand-alone, but may conflict with other transactions.
+           */
+           trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs );
+
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
            address                                 new_recv_address( const std::string& label = "" );
            std::unordered_map<address,std::string> get_recv_addresses()const;
@@ -105,6 +114,12 @@ namespace wallet {
            void                  lock_wallet();
            bool                  is_locked()const;
 
+           /**
+            *  A mining transaction has a single input, your unspent output with the most accumulated coindays, and
+            *  a single output that is greater than the input by the amount of the mining reward.  This transaction
+            *  is only valid when included as the last transaction in a block.
+            */
+           signed_transaction    create_mining_transaction( const asset& reward, const std::string& label = "mining" );
            signed_transaction    collect_coindays( uint64_t cdd, uint64_t& cdd_collected, const std::string& label = "mining" );
            signed_transaction    transfer( const asset& amnt, const address& to, const std::string& memo = "change" );
 

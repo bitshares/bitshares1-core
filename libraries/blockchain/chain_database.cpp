@@ -22,17 +22,6 @@ namespace fc {
   template<> struct get_typename<fc::ecc::compact_signature>  { static const char* name()  { return "fc::ecc::compact_signature";  } };
 } // namespace fc
 
-struct trx_stat
-{
-   uint16_t trx_idx;
-   bts::blockchain::transaction_summary eval;
-};
-// sort with highest fees first
-bool operator < ( const trx_stat& a, const trx_stat& b )
-{
-  return a.eval.fees > b.eval.fees;
-}
-FC_REFLECT( trx_stat, (trx_idx)(eval) )
 
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
@@ -311,8 +300,10 @@ namespace bts { namespace blockchain {
        return trxs;
     }
 
-    void chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs)
+    void chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs )
     { try {
+        if( b.block_num == 0 ) { return; } // don't check anything for the genesis block;
+
         FC_ASSERT( b.version      == 0                                                         );
         FC_ASSERT( b.trxs.size()  > 0                                                          );
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
@@ -322,16 +313,18 @@ namespace bts { namespace blockchain {
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
                    ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
                    );
+        FC_ASSERT( b.votes_cast      >= my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR, "",
+                   ("b.votes_cast",b.votes_cast)("required_votes",my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR))
 
-        if( b.block_num >= 1 )
-        {
-           FC_ASSERT( my->_head_is_signed_by_authority );
-           FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
-                      ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
-           
-           FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
-           FC_ASSERT( my->_pow_validator->validate_work( b ) );
-        }
+        FC_ASSERT( my->_head_is_signed_by_authority );
+        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
+                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
+        
+        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
+
+         auto next_diff = my->head_block.next_difficulty * 300*1000000ll / (b.timestamp - my->head_block.timestamp).count();
+         FC_ASSERT( b.next_difficulty == (my->head_block.next_difficulty * 24 + next_diff) / 25 );
+
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
 
@@ -339,9 +332,32 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
         
         transaction_summary summary;
-        for( auto strx : b.trxs )
+        transaction_summary trx_summary;
+        int32_t last = b.trxs.size()-1;
+        uint64_t fee_rate = get_fee_rate().get_rounded_amount();
+        for( int32_t i = 0; i <= last; ++i )
         {
-            summary += my->_trx_validator->evaluate( strx ); 
+            trx_summary = my->_trx_validator->evaluate( b.trxs[i] ); 
+            summary += trx_summary;
+
+            if( i == last ) // verify difficulty / mining reward here.
+            { 
+               FC_ASSERT( b.trxs[last].inputs.size() == 1 );
+               FC_ASSERT( b.trxs[last].outputs.size() == 1 );
+               FC_ASSERT( my->_pow_validator->validate_work( b, trx_summary.valid_votes ) );
+
+               int64_t min_votes = my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
+               int64_t max_reward = summary.fees / 2;
+
+               int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+               
+               FC_ASSERT( abs(trx_summary.fees) <= actual_reward );
+            }
+            else
+            {
+               FC_ASSERT( b.trxs[i].version != 1 );
+               FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
+            }
         }
 
         for( auto strx : deterministic_trxs )
@@ -350,7 +366,8 @@ namespace bts { namespace blockchain {
         }
 
         FC_ASSERT( b.votes_cast      == summary.valid_votes )
-        FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees );
+        FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
+                   ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
         FC_ASSERT( b.available_votes == my->head_block.available_votes + b.total_shares - b.votes_cast - summary.invalid_votes, "",
                    ("b.available_votes",b.available_votes)
                    ("head_block.available_votes",my->head_block.available_votes)
@@ -386,236 +403,6 @@ namespace bts { namespace blockchain {
     }
 
 
-
-    /**
-     *  First step to creating a new block is to take all canidate transactions and 
-     *  sort them by fees and filter out transactions that are not valid.  Then
-     *  filter out incompatible transactions (those that share the same inputs).
-     */
-    trx_block  chain_database::generate_next_block( const std::vector<signed_transaction>& in_trxs )
-    {
-      try {
-         auto deterministic_trxs = generate_determinsitic_transactions();
-
-         trx_block result;
-         std::vector<trx_stat>  stats;
-         stats.reserve(in_trxs.size());
-
-         for( uint32_t i = 0; i < in_trxs.size(); ++i )
-         {
-            try {
-                trx_stat s;
-                s.eval = my->_trx_validator->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}", ("eval",s.eval) );
-
-               // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
-                {
-                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
-                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
-                  continue;
-                }
-                s.trx_idx = i;
-                stats.push_back( s );
-            } 
-            catch ( const fc::exception& e )
-            {
-               wlog( "unable to use trx ${t}\n ${e}", ("t", in_trxs[i] )("e",e.to_detail_string()) );
-            }
-         }
-         std::sort( stats.begin(), stats.end() ); 
-         std::unordered_set<output_reference> consumed_outputs;
-
-
-         transaction_summary summary;
-         for( size_t i = 0; i < stats.size(); ++i )
-         {
-            const signed_transaction& trx = in_trxs[stats[i].trx_idx]; 
-            for( size_t in = 0; in < trx.inputs.size(); ++in )
-            {
-               if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
-               {
-                    stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
-                    break; 
-               }
-            }
-            summary += stats[i].eval;
-            result.trxs.push_back(trx);
-         }
-
-
-         result.block_num       = head_block_num() + 1;
-         result.prev            = head_block_id();
-         result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
-         result.next_fee        = result.calculate_next_fee( get_fee_rate().get_rounded_amount(), result.block_size() );
-         result.votes_cast      = summary.valid_votes;
-         result.total_shares    = my->head_block.total_shares - summary.fees;
-         result.available_votes = my->head_block.available_votes + result.total_shares - result.votes_cast - summary.invalid_votes;
-         result.timestamp       = my->_pow_validator->get_time();
-
-         return result;
-         #if 0
-         std::vector<signed_transaction> trxs;// = match_orders();
-         size_t num_orders = trxs.size();
-         ilog( "." );
-         for( uint32_t i = 0; i < in_trxs.size(); ++i )
-         {
-            ilog( "trx: ${t} signed by ${s}", ( "t",in_trxs[i])("s",in_trxs[i].get_signed_addresses() ) );
-         }
-         ilog( "." );
-         
-         // filter out all trx that generate coins from nothing or don't pay fees
-         for( uint32_t i = 0; i < in_trxs.size(); ++i )
-         {
-            try 
-            {
-                trx_stat s;
-                s.eval = evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}", ("eval",s.eval) );
-
-               // TODO: enforce fees
-                if( s.eval.fees.get_rounded_amount() < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
-                {
-                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
-                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
-                  continue;
-                }
-                s.trx_idx = i + trxs.size(); // market trx will go first...
-                stats.push_back( s );
-            } 
-            catch ( const fc::exception& e )
-            {
-               wlog( "unable to use trx ${t}\n ${e}", ("t", in_trxs[i] )("e",e.to_detail_string()) );
-            }
-         }
-         ilog( "." );
-
-         // order the trx by fees (don't sort the market orders which are added next)
-         std::sort( stats.begin(), stats.end() ); 
-         for( uint32_t i = 0; i < stats.size(); ++i )
-         {
-           ilog( "sort ${i} => ${n}", ("i", i)("n",stats[i]) );
-         }
-         ilog( "." );
-
-         // consume the outputs from the market order first
-         std::unordered_set<output_reference> consumed_outputs;
-         for( auto itr = trxs.begin(); itr != trxs.end(); ++itr )
-         {
-            for( uint32_t in = 0; in < itr->inputs.size(); ++in )
-            {
-               FC_ASSERT( consumed_outputs.insert( itr->inputs[in].output_ref).second, 
-                          "output can only be referenced once", ("in",in)("output_ref",itr->inputs[in].output_ref) )
-            }
-         }
-         trxs.insert( trxs.end(), in_trxs.begin(), in_trxs.end() );
-         ilog( "trxs: ${t}", ("t",trxs) );
-
-         // calculate the block size as we go
-         fc::datastream<size_t>  block_size;
-         uint32_t conflicts = 0;
-
-         asset    total_fees;
-         uint64_t total_cdd = 0;
-         uint64_t invalid_cdd = 0;
-         uint64_t total_spent  = 0;
-
-         ilog( "." );
-         // insert other transactions
-         for( size_t i = 0; i < stats.size(); ++i )
-         {
-            const signed_transaction& trx = trxs[stats[i].trx_idx]; 
-            for( size_t in = 0; in < trx.inputs.size(); ++in )
-            {
-               ilog( "input ${in}", ("in", trx.inputs[in]) );
-
-               if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
-               {
-                    stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
-                    wlog( "INPUT CONFLICT!" );
-                    ++conflicts;
-                    break; //in = trx.inputs.size(); // exit inner loop
-               }
-            }
-            if( stats[i].trx_idx != uint16_t(-1) )
-            {
-               fc::raw::pack( block_size, trx );
-               if( block_size.tellp() > MAX_BLOCK_TRXS_SIZE )
-               {
-                  stats.resize(i); // this trx put us over the top, we can stop processing
-                                   // the other trxs.
-                  break;
-               }
-               FC_ASSERT( i < stats.size() );
-               ilog( "total fees ${tf} += ${fees},  total cdd ${tcdd} += ${cdd}", 
-                     ("tf", total_fees)
-                     ("fees",stats[i].eval.fees)
-                     ("tcdd",total_cdd)
-                     ("cdd",stats[i].eval.coindays_destroyed) );
-               total_fees   += stats[i].eval.fees;
-               total_cdd    += stats[i].eval.coindays_destroyed;
-               invalid_cdd  += stats[i].eval.invalid_coindays_destroyed;
-               total_spent  += stats[i].eval.total_spent;
-            }
-         }
-         ilog( "." );
-
-         // at this point we have a list of trxs to include in the block that is sorted by
-         // fee and has a set of unique inputs that have all been validated against the
-         // current state of the chain_database, calculate the total fees paid which are
-         // destroyed as the means of paying dividends.
-         
-       //  wlog( "mining reward: ${mr}", ("mr", calculate_mining_reward( head_block_num() + 1) ) );
-        // asset miner_fees( (total_fees.amount).high_bits(), asset::bts );
-        // wlog( "miner fees: ${t}", ("t", miner_fees) );
-
-         trx_block new_blk;
-         new_blk.trxs.reserve( 1 + stats.size() - conflicts + num_orders ); 
-
-         // add all orders first
-         new_blk.trxs.insert( new_blk.trxs.begin(), trxs.begin(), trxs.begin() + num_orders );
-
-         // add all other transactions to the block
-         for( size_t i = 0; i < stats.size(); ++i )
-         {
-           if( stats[i].trx_idx != uint16_t(-1) )
-           {
-             new_blk.trxs.push_back( trxs[ stats[i].trx_idx] );
-           }
-         }
-
-         new_blk.timestamp                 = fc::time_point::now();
-         FC_ASSERT( new_blk.timestamp > my->head_block.timestamp );
-
-         new_blk.block_num                 = head_block_num() + 1;
-         new_blk.prev                      = my->head_block_id;
-         new_blk.total_shares              = my->head_block.total_shares - total_fees.amount.high_bits(); 
-
-         new_blk.next_difficulty           = my->head_block.next_difficulty;
-         if( my->head_block.block_num > 144 )
-         {
-             auto     oldblock = fetch_block( my->head_block.block_num - 144 ); 
-             auto     delta_time = my->head_block.timestamp - oldblock.timestamp;
-             uint64_t avg_sec_per_block = delta_time.count() / 144000000;
-
-             auto cur_tar = my->head_block.next_difficulty;
-             new_blk.next_difficulty = (cur_tar * 300 /* 300 sec per block */) / avg_sec_per_block;
-         }
-         new_blk.total_cdd                 = total_cdd; 
-
-         new_blk.avail_coindays            = my->head_block.avail_coindays 
-                                             - total_cdd 
-                                             + my->head_block.total_shares - total_spent
-                                             - invalid_cdd;
-
-         new_blk.trx_mroot = new_blk.calculate_merkle_root();
-
-         return new_blk;
-         #endif
-
-      } FC_RETHROW_EXCEPTIONS( warn, "error generating new block" );
-    }
-
     uint64_t chain_database::get_stake()
     {
        return my->head_block_id._hash[0];
@@ -628,6 +415,8 @@ namespace bts { namespace blockchain {
     {
        return my->head_block.total_shares;
     }
+    pow_validator_ptr         chain_database::get_pow_validator()const { return my->_pow_validator; }
+    transaction_validator_ptr chain_database::get_transaction_validator()const { return my->_trx_validator; }
 
     const block_header& chain_database::get_head_block()const { return my->head_block; }
 

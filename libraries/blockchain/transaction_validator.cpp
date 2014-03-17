@@ -182,7 +182,7 @@ namespace bts { namespace blockchain {
    void transaction_validator::accumulate_votes( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
    {
        uint32_t headnum = _db->head_block_num();
-       uint32_t votes =  amnt * (headnum-source_block_num);
+       uint32_t votes =  amnt * (headnum-source_block_num+1);
 
        if( _db->get_stake() == state.trx.stake )
        {
@@ -210,7 +210,7 @@ namespace bts { namespace blockchain {
                                                          transaction_evaluation_state& state )
    {
        auto claim = in.output.as<claim_by_signature_output>(); 
-       FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
+       FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner)("sigs",state.sigs) );
        state.add_input_asset( in.output.amount );
 
        if( in.output.amount.unit == 0 )
