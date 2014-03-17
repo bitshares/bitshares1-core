@@ -16,7 +16,6 @@ using namespace bts::wallet;
 using namespace bts::blockchain;
 using namespace bts::dns;
 
-
 trx_block generate_genesis_block( const std::vector<address>& addr )
 {
     trx_block genesis;
@@ -25,7 +24,6 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     genesis.timestamp         = fc::time_point::now();
     genesis.next_fee          = block_header::min_fee();
     genesis.total_shares      = 0;
-    genesis.available_votes   = 0;
     genesis.votes_cast        = 0;
     genesis.noncea            = 0;
     genesis.nonceb            = 0;
@@ -38,11 +36,13 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
         trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
         genesis.total_shares += amnt;
     }
+    genesis.available_votes   = genesis.total_shares;
     genesis.trxs.push_back( trx );
-    genesis.trx_mroot = genesis.calculate_merkle_root( signed_transactions() );
+    genesis.trx_mroot = genesis.calculate_merkle_root(signed_transactions());
 
     return genesis;
 }
+
 
 /* 
  */
@@ -68,15 +68,23 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         dns_wallet             wlt;
         std::vector<address>   addrs;
         dns_db                 dns_db;
-        auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point() );
+        fc::ecc::private_key   auth;
+
+        auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
+        auth = fc::ecc::private_key::generate();
 
         wlt.create( dir.path() / "wallet.dat", "password", "password", true );
         auto addr = wlt.new_recv_address();
         addrs.push_back( addr );
 
+        dns_db.set_signing_authority( auth.get_public_key() );
         dns_db.set_pow_validator( sim_validator );
         dns_db.open( dir.path() / "dns_db", true);
         dns_db.push_block( generate_genesis_block( addrs ) );
+        auto head_id = dns_db.head_block_id();
+
+        dns_db.set_block_signature( head_id, 
+                auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
 
         wlt.scan_chain( dns_db );
         
@@ -84,6 +92,8 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         std::vector<signed_transaction> txs;
         txs.push_back( buy_tx );
         auto next_block = dns_db.generate_next_block( txs );
+        dns_db.push_block( next_block );
+
 
         wlt.scan_chain( dns_db );
 
@@ -95,6 +105,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
     }
 
 }
+
 
 /* You should be able to start a new auction for an expired name
  */
