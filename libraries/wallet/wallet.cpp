@@ -867,12 +867,12 @@ namespace bts { namespace wallet {
 
          auto head_block = db.get_head_block();
 
-        wlog( "NOW IM HERE -1" );
+         wlog( "NOW IM HERE -1" );
          int64_t min_votes = head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
          int64_t max_reward = summary.fees / 2;
          wlog("summary: ${sum}", ("sum", summary));
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
-         FC_ASSERT( actual_reward > 0 );
+         FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
         wlog( "NOW IM HERE 0" );
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );

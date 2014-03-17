@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         wlt.create( dir.path() / "wallet.dat", "password", "password", true );
 
         addrs.reserve(100);
-        for( uint32_t i = 0; i < 1; ++i )
+        for( uint32_t i = 0; i < 10; ++i )
         {
             addrs.push_back( wlt.new_recv_address() );
         }
@@ -107,6 +107,8 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         }
 
         auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+
         txs.push_back( buy_tx );
         
         auto next_block = wlt.generate_next_block( dns_db, txs );

@@ -91,7 +91,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
     
     // otherwise, you're starting a new auction
     
-    inputs = collect_inputs( amount, total_in, req_sigs );
+    trx.inputs = collect_inputs( amount, total_in, req_sigs );
     auto change_amt = total_in - amount;
 
     auto domain_output = claim_domain_output();
