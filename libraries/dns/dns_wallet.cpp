@@ -9,6 +9,8 @@
 #include<fc/io/raw.hpp>
 #include<fc/io/raw_variant.hpp>
 
+#include <fc/log/logger.hpp>
+
 namespace bts { namespace dns {
 
 using namespace bts::blockchain;
@@ -243,6 +245,7 @@ signed_transaction dns_wallet::add_fee_and_sign(signed_transaction& trx,
     auto change = trx.outputs.back().amount;
     auto change_addr = trx.outputs.back().as<claim_by_signature_output>().owner;
 
+    wlog("req in: ${req}, total in: ${tot}, fee:${fee}", ("req", required_in)("tot", total_in)("fee", fee));
     if (total_in >= required_in + fee)
     {
         change = change - fee;

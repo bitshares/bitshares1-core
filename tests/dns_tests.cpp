@@ -74,6 +74,13 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         auth = fc::ecc::private_key::generate();
 
         wlt.create( dir.path() / "wallet.dat", "password", "password", true );
+
+        addrs.reserve(100);
+        for( uint32_t i = 0; i < 1; ++i )
+        {
+            addrs.push_back( wlt.new_recv_address() );
+        }
+
         auto addr = wlt.new_recv_address();
         addrs.push_back( addr );
 
@@ -87,9 +94,19 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
                 auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
 
         wlt.scan_chain( dns_db );
+        wlt.dump();
         
-        auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
+        sim_validator->skip_time( fc::seconds(60 * 5) );
+
         std::vector<signed_transaction> txs;
+
+        for (auto i = 0; i < 1; ++i )
+        {
+            auto transfer_tx = wlt.transfer(asset(uint64_t(1000000)), addrs[rand()%addrs.size()]);
+            txs.push_back( transfer_tx );
+        }
+
+        auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
         txs.push_back( buy_tx );
         
         auto next_block = wlt.generate_next_block( dns_db, txs );
