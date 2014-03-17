@@ -83,7 +83,8 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
         std::vector<signed_transaction> txs;
         txs.push_back( buy_tx );
-        auto next_block = dns_db.generate_next_block( txs );
+        auto next_block = wlt.generate_next_block( dns_db, txs );
+        dns_db.push_block( next_block );
 
         wlt.scan_chain( dns_db );
 
