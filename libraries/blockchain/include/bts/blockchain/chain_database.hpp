@@ -44,24 +44,17 @@ namespace bts { namespace blockchain {
            */
           virtual void store( const trx_block& blk, const signed_transactions& determinsitc_trxs );
 
+
+       public:
+          chain_database();
+          virtual ~chain_database();
+
           /**
            *  There are many kinds of deterministic transactions that various blockchains may require
            *  such as automatic inactivity fees, lottery winners, and market making.   This method
            *  can be overloaded to 
            */
           virtual signed_transactions generate_determinsitic_transactions();
-
-       public:
-          chain_database();
-          virtual ~chain_database();
-
-          /** Given a set of user-provided transactions, this method will generate a block that
-           * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
-           * are ignored and not included in the set.  
-           *
-           * @note some transaction may be valid stand-alone, but may conflict with other transactions.
-           */
-          virtual trx_block  generate_next_block( const std::vector<signed_transaction>& trx );
 
 
           //@{
@@ -84,7 +77,10 @@ namespace bts { namespace blockchain {
            * this must be set by the creator of the chain.
            */
           void set_pow_validator( const pow_validator_ptr& v );
+          pow_validator_ptr get_pow_validator()const;
+
           void set_transaction_validator( const transaction_validator_ptr& v );
+          transaction_validator_ptr get_transaction_validator()const;
 
           void open( const fc::path& dir, bool create = true );
           void close();
