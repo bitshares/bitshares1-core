@@ -12,6 +12,8 @@ add_library( bts_blockchain
              pow_validator.cpp
              transaction_validator.cpp
              chain_database.cpp
+             block_miner.cpp
+             momentum.cpp
            )
 
 target_link_libraries( bts_blockchain fc bts_db leveldb )

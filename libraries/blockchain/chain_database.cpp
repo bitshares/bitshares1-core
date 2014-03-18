@@ -342,11 +342,12 @@ namespace bts { namespace blockchain {
 
             if( i == last ) // verify difficulty / mining reward here.
             { 
+               int64_t min_votes = my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
+
                FC_ASSERT( b.trxs[last].inputs.size() == 1 );
                FC_ASSERT( b.trxs[last].outputs.size() == 1 );
-               FC_ASSERT( my->_pow_validator->validate_work( b, trx_summary.valid_votes ) );
+               FC_ASSERT( my->_pow_validator->validate_work( b, trx_summary.valid_votes, min_votes ) );
 
-               int64_t min_votes = my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
                int64_t max_reward = summary.fees / 2;
 
                int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);

@@ -874,21 +874,17 @@ namespace bts { namespace wallet {
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
          FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
-        wlog( "NOW IM HERE 0" );
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
-        wlog( "NOW IM HERE 2" );
          trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
-        wlog( "NOW IM HERE 3" );
          summary += trx_sum;
          result.trxs.push_back( mine_trx );
-        wlog( "NOW IM HERE 4" );
 
          result.block_num       = db.head_block_num() + 1;
          result.prev            = db.head_block_id();
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
          result.next_fee        = result.calculate_next_fee( db.get_fee_rate().get_rounded_amount(), result.block_size() );
          result.votes_cast      = summary.valid_votes;
-         wlog( "summary.fees: ${summary.fees}", ("summary.fees", summary.fees) );
+    //     wlog( "summary.fees: ${summary.fees}", ("summary.fees", summary.fees) );
          result.total_shares    = head_block.total_shares - summary.fees;
          result.available_votes = head_block.available_votes + result.total_shares 
                                   - result.votes_cast - summary.invalid_votes;
