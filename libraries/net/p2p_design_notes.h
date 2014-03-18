@@ -1,321 +1,389 @@
-class client : public blockchain_manager
+class client : public node_delegate
 {
-  // both in the syncing phase and during normal operation, blocks and signatures may arrive
-  // out of order.  if they do, we need to store them until they can be paired with their
-  // corresponding signature/block and added to the end of the block chain.
-  unapproved_blocks; // blocks we have the data for, but no signatures
-  approved_blocks; // signed blocks not yet in the block chain (we haven't seen/approved the block immediately preceding them)
-  signatures_without_a_block; // signatures we received but do not yet have the blocks for.  
-                             // when we put a signature here, we will have sent out a request for the block data
-  uncommitted_transactions; // transactions we've seen and validated but have not been added to the block chain
-  unincludable_transactions; // transactions we've seen but were not valid.  these won't be used in generating the current block,
-                             // but we'll try to validate them again once we get a new block.
-  set<header> illegal_transactions; // 
-
-  blockchain_database _blockchain_database;
-  node _node;
-
-  bool is_transaction_legal(transaction)
-  {
-    // return true if this transaction could ever exist in any block chain
-  }
-  bool is_transaction_valid(transaction)
-  {
-    // validates the transaction according to the rules for this blockchain
-  }
-  void add_new_transaction(transaction)
-  {
-    if (is_transaction_legal(transaction))
-    {
-      if (mining)
-      {
-        if (is_transaction_valid(transaction))
-        {
-          // add to uncommitted_transactions
-        }
-        else
-        {
-          // add to unincludable_transactions
-        }
-      }
-      else
-      {
-        // add to unincludable_transactions
-      }
-    }
-    else // not a legal transaction
-    {
-      // discard, never pass this on to another peer
-    }
-  }
-
-  bool is_block_valid(block)
-  {
-    // validates the block according to the rules for this blockchain
-  }
-  void push_block(signed_block signed_block_to_push)
-  {
-    if (is_block_valid(signed_block_to_push.block))
-    {
-      // pushes the block onto the database
-      // remove any block transactions from uncommitted_transactions and unincludable_transactions
-      // does a lookup in the approved block map to see if any blocks are the next block after the block we're pushing.
-      // if they are, we remove them from approved_blocks, validate and push them as well.  keep looping until we 
-      // don't find any more blocks we can add to the chain
-      // call add_new_transaction for all unincludable transactions(but prevent adding dupes)
-    }
-    else
-    {
-      wlog("discarding invalid block");
-    }
-  }
-  void run()
-  {
-    _node.set_blockchain_manager(this);
-    _node.connect();
-    _node.fetch_signed_headers(_blockchain_database.get_top());
-    while(1);
-  }
 public:
-  /** returns a vector of up to 2000 headers from the local blockchain database to the caller
-   * @param last_header_seen  hash of the last header seen.  The application should return
-   *                          a block of headers starting immeditaely after last_header_seen
+  /** returns a vector of up to `limit` item hashes from the local blockchain database to the caller
+   * @param from_id item_id of the last item seen.  The application should return
+   *                 a block of item starting immeditaely after from_id
    */
-  virtual signed_header_vector get_signed_headers(header last_header_seen) override; // from blockchain_manager
+  virtual std::vector<item_hash_t> get_item_ids(const item_id& from_id, 
+                                                uint32_t limit = 2000) override; // from node_delegate
 
-  /** Returns true if the header refers to a block we know about.  It could 
-   * be anywhere in our blockchain database, or our list of approved or
-   * unapproved blocks
+  /** Returns true if the item_id refers to a item we know about.  It could 
+   * be anywhere in our blockchain database, our list of unapproved blocks, 
+   * transactions or signatures
    */
-  virtual bool is_known_block_header(header ) override; // from blockchain_manager
-		  
-  /** called when the remote system sends us a list of signed headers it has seen
-   * and accepted as part of the block chain.  
-   *
-   * This will happen during the initial
-   * synch as a result of a fetch_signed_headers call.
-   * 
-   * When the application gets this, it will look at its unapporved_blocks
-   * to see if it has the block(s) signed by this message.
-   * If the blocks are missing, it will call fetch_bodies() to retreive them,
-   * and store off the signature(s) in signatures_without_blocks to attach to the 
-   * block when it/they come in.
-   * If we already have the block in unapproved_blocks, we remove it and attach 
-   * the signature.
-   * If it can be attached to the end of the block chain, we call push_block(), 
-   * otherwise we insert it into approved_blocks.
-   * 
-   * @param headers the list of signed headers that might be new to us
-   */
-  virtual void on_signed_header_inventory(signed_header_vector headers) override; // from blockchain_manager
-
-  /** called when the remote system sends us a new signed header from the trustee 
-   * approving a block that we will receive separately.
-   *
-   * When the application gets this, it will look at its unapporved_blocks
-   * to see if it has the block signed by this message.
-   * If the block is missing, it will call fetch_bodies() to retreive it,
-   * and store off the signature in signatures_without_blocks to attach to the 
-   * block when it comes in.
-   * If we already have the block in unapproved_blocks, we remove it and attach 
-   * the signature.
-   * If it can be attached to the end of the block chain, we call push_block(), 
-   * otherwise we insert it into approved_blocks.
-   * 
-   * @param approved_header the new signature approved by the trustee
-   */
-  virtual void on_trustee_approval(signed_header approved_header) override; // from blockchain_manager
-
-		  
-  /** called when the remote system sends us a list of headers it has seen
-   * these could be newly-generated blocks or transactions.
-   *
-   * We will check our lists of transactions and blocks to see if we've ever
-   * seen the corresponding body before.  If not, request it from the node
-   * via fetch_body()
-   *
-   * @param headers the list of headers seen.
-   */
-  virtual void on_header_inventory(header_vector headers) override; // from blockchain_manager
-		  
-
-
-  /** returns a vector of bodies corresponding to the headers requested.
+  virtual bool has_item(const item_id& item_id_to_check) override; // from node_delegate
+		  	  
+  /** returns a single item corresponding to the item_id requested.
   * This may be called to provide block data to other peers syncing their blockchain to us,
   * to provide a newly-seen block that isn't signed and is not yet in the blockchain,
   * or to provide a transaction.
   *
-  * Search through our lists of transactions and blocks (both approved and unapproved) and
-  * the blockchain to find the data requested.  
+  * Search through our lists of transactions and blocks and the blockchain to find the 
+  * data requested.  
   *
-  * @param headers_of_bodies_requested the headers of the bodies that should be returned
+  * @param id the id of the item that should be returned
   */
-  virtual body_vector get_bodies(header_vector headers_of_bodies_requested) override; // from blockchain_manager
+  virtual message get_item(const item_id& item_id_to_get) override; // from node_delegate
 		  
-  /** called when the remote system sends us a list of bodies we requested earlier
+  /** called when a peer system sends us an new unseen item
    *
-   * If this body is a block:
+   * If this message contains a block:
    * - we check our list of signatures_without_a_block to see if it is signed.  
-   *   - If it isn't, we store it in unapproved_blocks.
-   *   - If it is, we see if it is the next block in the chain.  If it is then we call push_block() and
-   *     remove the signature from signatures_without_a_block,
-   *     otherwise we insert it and its signature into approved_blocks.
+   *   - If it is signed:
+   *       verify that it is a potential next block.  If it is, push to blockchain, if not, throw
+   *   - if it's not signed:
+   *       verify that it is a potential next block.  if it is, add it to our list of unapproved_blocks.  If not , throw
    * If this is a transaction:
-   * - add it to uncommitted_transactions
+   * - verify that it's a valid transaction.  throw if not.
+   *   add it to uncommitted_transactions
    *   if we're mining, we'll do some transaction validation and add it to our merkle tree
+   * - if it's a signature.  check the signature, throw if invalid
+   *   - if it signs one of our unapproved_blocks.  
+   *     then push that block to the blockchain and clear any other unapproved_blocks
+   *     else add to signatures_without_a_block 
    * 
-   * @param bodies list of the bodies requested
-   * @returns true if valid and node should broadcast, false if invalid and node layer should forget/discard
+   * @param message the message from a peer
+   * @note this should throw if the message is invalid, will cause the originating peer to be disconnected
    */
-  virtual bool on_requested_body(body requested_body) override; // from blockchain_manager
+  virtual void handle_message(const message& message_to_handle) override; // from node_delegate
 
-  /** Notifies the client that synchronization is complete.
-   * The node considers us in the 'synchronizing' state as soon as we call fetch_signed_headers, 
-   * and it will notify us via set_synchronization_state when we have the latest headers from
-   * all connected nodes.
-   * It can also kick us into the unsyncrhonized state if we lose network connection 
-   * from all peers.
+  /** This is called when the node has new information about the synchronization status
+   * In particular, 
+   *   after a call to sync_from():
+   *     the node_delegate will get a call to sync_status() with count_of_unsynchronized_items=0 if
+   *     the node is already synchronized, or with count_of_unsynchronized_items > 0 if the node
+   *     is out of sync.  If the node is out of sync, the node should store and track its 
+   *     own _count_of_unsynchronized_items, decrementing it when it pushes a new block
+   *     onto the blockchain.  When its _count_of_unsynchronized_items reaches zero, it
+   *     is in sync.  The node will not provide any special notification that synchronization
+   *     has been achieved.
+   *     During a long sync, it is likely that the node will discover blocks generated during
+   *     the sync, and will call sync_status() to update the client's count. 
+   *   during normal operation:
+   *     The delegate may get a sync_status call during normal operation to notify the
+   *     client that it has become aout of sync.  This can happen after being disconnected
+   *     from some or all peers (either we were disconnected, or there was a net split that
+   *     has now reunified).  Just like the case where the sync was initiated by the client,
+   *     the delegate can now expect the next count_of_unsynchronized_items to be the missing
+   *     blocks required to resynch.
+   *     
+   *  @param item_type the type of the item we're synchronizing, will be the same as item passed to the sync_from() call
+   *  @param item_count the number of items known to the node that haven't been sent to handle_message() yet.
+   *                    After `item_count` more calls to handle_message(), the node will be in sync
    */
-  virtual void set_synchronization_state(bool is_synchronized) override;  // from blockchain_manager
+  virtual void sync_status(uint32_t item_type, uint32_t count_of_unsynchronized_items) override; // from node_delegate
+
+  /**
+   *  Call any time the number of connected peers changes.
+   */
+  virtual void connection_count_changed(uint32_t new_connection_count) override; // from node_delegate
+}; // end class node_delegate
 
 // peer data is stored as metadata of the connection
 struct peer_data
 {
-  set<header> inventory_peer_advertised_to_us;
-  set<header> inventory_advertised_to_peer;
-  map<header, time> bodies_requested_from_peer;  /// fetch from another peer if this peer disconnects
-  optional<tuple<header, limit, time> > signed_headers_requested_from_peer; /// fetch from another peer if this peer disconnects or we timeout
+  // synch stuff
+  deque<item_hash_t>  ids_of_items_to_get;           // id of items in the blockchain that this peer has told us about
+  uint32_t            number_of_unfetched_item_ids;  // number of items in the blockchain that follow ids_of_items_to_get but the peer hasn't yet told us their ids
+  bool peer_needs_sync_items_from_us;
+  bool we_need_sync_items_from_peer;
+  optional<tuple<item_id, time> > item_ids_requested_from_peer; /// we check this to detect a timed-out request and in busy()
+
+  // non-synch stuff
+  set<item_id> inventory_peer_advertised_to_us;
+  set<item_id> inventory_advertised_to_peer;
+
+  map<item_id, time> items_requested_from_peer;  /// fetch from another peer if this peer disconnects
+  bool busy() { return !items_requested_from_peer.empty() || item_ids_requested_from_peer; }
+  bool idle() { return !busy(); }
 };
 
 class node
 {
   set<connection> connections;
 
-  /** bodies we've received and validated, but have not yet advertised to peers */
-  vector<header> new_inventory;
+  /** messages we've received and validated, but have not yet advertised to peers */
+  set<item_id> _new_inventory;
 private:
-  header_list bodies_to_fetch;
+  queue<item_id> _items_to_fetch;
 
   // syncrhonization state data
   bool _synchronizing;
-  header _synchronization_start_header; /// header of last block on blockchain when synchronization started
-  optional<tuple<header, limit> > _signed_headers_to_fetch;
+  item_id _last_block_in_our_chain; /// id of the last block on blockchain (updated each time we receive a valid block)
+  set<block_message> _received_sync_items; // items waiting to be processed once we get their predecessors
+  uint32_t _total_number_of_unfetched_items;
   // end syncrhonization state data
 
-  fetch_requested_bodies_task()
+  set<item_hash_t> _active_requests; // requests sent out to peers already
+
+
+  fetch_next_batch_of_item_ids_from_peer(peer* , item_id last_item_id_seen)
+  {
+    // send a fetch_blockchain_item_ids_message for the next batch of item_ids after last_item_id_seen
+    // set peer_data->item_ids_requested_from_peer = make_tuple(last_item_id_seen, now());
+  }
+
+  request_item_from_peer(peer* peer_to_request_from, const item_id& item_to_request) 
+  {
+    peer_to_request_from->send(fetch_item_message(item_to_request));
+    _active_requests.insert(item_id.item_hash);
+    peer_data[peer_to_request_from]->items_requested_from_peer[item_id] = now();
+  }
+
+  fetch_requested_items_task()
   {
     // loops forever (or smarter triggering mechanism)
-    // for each item in bodies_to_fetch
+    // for each item in _items_to_fetch
     //   if there is a peer who isn't fetching anything for us *and* they have advertised the item we're looking for
-    //      send them a fetch_bodies_msg to request the body
-    //      move it to the bodies_requested_from_peer list for that peer, and timestamp the request
+    //      send them a fetch_item_message to request the item
+    //      move it to the items_requested_from_peer list for that peer, and timestamp the request
+    //      insert it into _active_requests
   }
   start_synchronizing()
   {
-    // _synchronizing = true
-    // 
     // for each connection
     //   set peer's in_sync to false
-    //   send a fetch_signed_headers_msg for the first LIMIT headers after _synchronization_start_header
-    //   set that peer's signed_headers_requested_from_peer
+    //   send a fetch_item_ids_message for the first LIMIT item after _last_block_in_our_chain
+    //   set that peer's item_ids_requested_from_peer
+    // start up the request_blocks_during_sync_loop() task
   }
-  timeout_requested_bodies_task()
+  void request_blocks_during_sync_loop()
+  {
+    loop forever:
+      wait until we get/valdiate a block, or get a bunch of item_ids
+      for each peer:
+        if !peer->busy():
+          for (unsigned i = 0; i < peer->items_to_get.size(); ++i)
+          {
+            if (peer->items_to_get[i] not in active_requests_set AND
+                peer->items_to_get[i] not in received_item_set)
+            {
+              request_item_from_peer(peer, items_to_get[i]);
+              break;
+            }
+          }
+  }
+  void process_block_during_sync(peer* originating_peer, block_message new_block_message)
+  {
+    bool potential_first_block = false;
+    for each peer:
+      if new_block_message->block_id == peer->items_to_get[0]:
+        potential_first_block = true;
+        break;
+
+    if (potential_first_block):
+      try:
+        _node_delegate->handle_message(new_block)// throws on invalid block
+        --_total_number_of_unfetched_items;
+        for each peer where peer->we_need_sync_items_from_peer:
+          if new_block_message->block_id == peer->items_to_get[0]:
+            peer->items_to_get.pop_front();
+            if (peer->items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
+              fetch_next_batch_of_item_ids_from_peer(new_block_message->block_id) // if peer returns no items, we will start receiving inventory messages from the peer
+          else
+            peer->disconnect()
+        originating_peer->items_requested_from_peer.erase(new_block_message->block_id)
+      catch:
+        originating_peer->disconnect();
+    else:
+      _received_sync_items.insert(new_block_message)
+  }
+  
+  on_trx_message()
+  {
+  }
+  on_block_message(peer* originating_peer, block_message new_block_message)
+  {
+    if (originating_peer->we_need_sync_items_from_peer)
+      process_block_during_sync(originating_peer, new_block_message);
+    else
+    {
+      // the only reason we're getting a block is if we requested it from a peer's inventory
+      if not in originating_peer->items_requested_from_peer:
+        originating_peer->disconnect();
+        return;
+      for each peer:
+        remove from that peer's items_requested_from_peer // probably never happens
+      try
+        _node_delegate->handle_message(new_block_message);
+        _new_inventory.insert(new_block_message->block_id) // advertise_new_inventory_task will take it from here
+        _last_block_in_our_chain = new_block_message.block_id
+      catch:
+        originating_peer->disconnect();
+    }
+  }
+
+  /** the entry point where we start processing any message received from a peer */
+  void on_message(peer* originating_peer, const message& received_message)
+  {
+    message_hash = hash(received_message);
+    if (received_message.type != item_ids_inventory_message::type)
+    {
+      if (not in _active_requests)
+      {
+        originating_peer->disconnect();
+        return;
+      }
+      else
+      {
+        remove from _active_requests
+        remove from originating_peer's items_requested_from_peer
+      }
+    }
+
+    switch (received_message.type)
+    {
+    case block_message::type:
+      on_block_message(originating_peer, received_message.as<block_message>());
+      break;
+    case item_ids_inventory_message::type:
+      on_item_ids_inventory_message(received_message.as<>());
+      break;
+
+    case trx_message::type: /* FALL THROUGH */
+    case signature_message::type: /* FALL THROUGH */
+    default:
+      {
+        assert(!originating_peer->we_need_sync_items_from_peer);      
+        try
+        {
+          _node_delegate->handle_message(received_message);
+          _new_inventory.push_back(received_message);
+        }
+        catch (...)
+        {
+          originating_peer->disconnect();
+          return;
+        }
+      }
+    }
+  }
+  timeout_requested_items_task()
   {
     // loop over each connction/peer
-    //   if any bodies_requested_from_peer or the signed_headers_requested_from_peer is older than our timeout value
+    //   if any items_requested_from_peer is older than our timeout value
     //     disconnect the peer, cleanup will happen in on_connection_disconnected
   }
   advertise_new_inventory_task()
   {
     // loop over each peer
-    //   for each body in new_inventory
-    //     if the connection metadata doesn't indicate that the was already notified about this body _and_ that peer doesn't already have that body (peer advertised it to us)
-    //       send the header inventory message to that peer
-    //       record the headers we sent in the connection metadata
+    //   if (!peer->peer_needs_sync_items_from_us)
+    //     for each item in new_inventory
+    //       if not in peer's inventory_peer_advertised_to_us and not in inventory_advertised_to_peer
+    //         send the item_id_inventory_message to that peer (note, will send one message per item type)
+    //         record the item_ids we sent in inventory_advertised_to_peer
+    //   else:
+    //     TODO: we do not send inventory to peers who are syncing to us,
+    //           but do we need to save the latest inventory to send to them once
+    //           they exit sync? 
     // clear new_inventory
   }
   on_connection_disconnected(connection&) delegate for each connection
   {
-    // move any bodies_requested_from_peer back to our bodies_to_fetch list, so we will ask another peer
-    // move any signed_headers_requested_from_peer for this peer back to our `signed_headers_to_fetch`
+    // move any items_requested_from_peer back to our _items_to_fetch list, so we will ask another peer
     // remove the connection from our `connections` list
+    // _total_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers()
   }
   on_connection_established(connection&) delegate for each connection
   {
-    // if (_synchronizing)
-    //   set peer's in_sync to false
-    //   send a fetch_signed_headers_msg for first LIMIT headers after _synchronization_start_header
-    //   set that peer's signed_headers_requested_from_peer
-    // else if (!blockchain_manager->is_known_block_header(last_block_in_chain)) //  (last_block_in_chain was provided in initial connection message)
-    //   start_synchronizing()
+    // peer->peer_needs_sync_items_from_us = true
+    // peer->we_need_sync_items_from_peer = true
+    // fetch_next_batch_of_item_ids_from_peer(peer, _last_block_in_our_chain)
   }
-public:
-  void set_blockchain_manager(blockchain_manager*); 
 
-  /** _synchronization_start_header = hash_of_last_header_seen
+  /** triggered during a peer's sync, when we receive a fetch_blockchain_item_ids_message from the 
+    * remote peer.
+    * int total_remaining_items;
+    * vector<item_hash_t> items_to_send_peer = node_delegate->get_item_ids(last_item_seen,total_remaining_items) to get the data
+    * if (items_to_send_peer.empty())
+    *   originating_peer->peer_needs_sync_items_from_us = false;
+    * send items_to_send_peer and total_remaining_items packed into a blockchain_item_ids_inventory_message
+    */
+  void on_fetch_blockchain_item_ids_message(item_id last_item_seen)
+
+  uint32_t calculate_unsynced_block_count_from_all_peers()
+  {
+    uint32_t max_number_of_unfetched_items = 0;
+    for each peer:
+      uint32_t this_peer_number_of_unfetched_items = peer->ids_of_items_to_get.size() + peer->number_of_unfetched_item_ids;
+      max_number_of_unfetched_items = max(max_number_of_unfetched_items,
+                                          this_peer_number_of_unfetched_items)
+    return max_number_of_unfetched_items;
+  }
+
+  /** triggered during our sync, when we receive a item_ids_inventory_message from the remote peer
+    * if (total_remaining_item_count == 0 and item_hashes_available.empty() and
+    *     originating_peer->ids_of_items_to_get.empty() and originating_peer->number_of_unfetched_item_ids == 0)
+    *   originating_peer->we_need_sync_items_from_peer = false;
+    *   return
+    * set peer's number_of_unfetched_item_ids = total_remaining_item_count
+    * if peer's ids_of_items_to_get.empty():
+    *   if item_hashes_available[0] is not ids_of_items_to_get[0] for any peer who has returned item_ids to us
+    *     ask _node_delegate->has_item(item_hashes_available[0]) and pop until it returns false
+    * append whatever remains to peer's ids_of_items_to_get
+    * uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers()
+    * if (new_number_of_unfetched_items != _total_number_of_unfetched_items)
+    *   _node_delegate->sync_status(block_type, new_number_of_unfetched_items);
+    *   _total_number_of_unfetched_items = new_number_of_unfetched_items
+    * else if (new_number_of_unfetched_items == 0)
+    *   _node_delegate->sync_status(block_type, 0); // tell client we're synced
+    * if (total_remaining_item_count != 0)
+    *   fetch_next_batch_of_item_ids_from_peer(this_peer, item_id(_last_block_in_our_chain.item_type, ids_of_items_to_get.back()))
+    */
+  void on_blockchain_item_ids_inventory_message(peer* originating_peer,
+                                                uint32_t total_remaining_item_count,
+                                                uint32_t item_type,
+                                                std::vector<item_hash_t> item_hashes_available);
+
+  /** called during normal synchronized operation when a peer sends us an
+   * item_ids_inventory_message to offer us items it thinks we don't know about
+   *
+   * insert into peer's inventory_peer_advertised_to_us
+   * for each item_id in item_hashes_available
+   *   if it's not in any of our peers' inventory_advertised_to_peer and it's not in _active_requests
+   *     then add it to _items_to_fetch
+   */
+  void on_item_ids_inventory_message(uint32_t item_type,
+                                     std::vector<item_hash_t> item_hashes_available);
+		  		  
+  /** triggered when we receive a fetch_item_message from the remote peer
+    * calls the node_delegate->get_item() to get the item's data.
+    * sends the response as a message of the appropriate type
+    */
+  void on_fetch_item_message(const item_id&);
+
+public:
+  void set_delegate(node_delegate* delegate);
+  /** Add endpoint to internal level_map database of potential nodes
+   *   to attempt to connect to.  This database is consulted any time
+   *   the number connected peers falls below the target. */
+  void add_node(const fc::ip::endpoint& ep);
+
+  /** Attempt to connect to the specified endpoint immediately. */
+  void connect_to(const fc::ip::endpoint& ep);
+
+  /** Specifies the network interface and port upon which incoming connections should be accepted. */
+  void listen_on_endpoint(const fc::ip::endpoint& ep);
+
+  /** @return a list of peers that are currently connected. */
+  std::vector<peer_status> get_connected_peers() const;
+
+  /** Add message to outgoing inventory list, notify peers that I have a message ready.
+   * item_id id_for_new_item(item_to_broadcast.type, hash(item_to_broadcast))
+   * _new_inventory.insert(id_for_new_item) // advertise_new_inventory() will grab it from here
+   */
+  void broadcast(const message& item_to_broadcast);
+
+  /** _last_block_in_our_chain = last_item_seen
     * start_synchronizing();
     *
     * returns immediately to caller
-    * later we'll call on_signed_header_inventory() in the blockchain_manager to provide the replies
-    * @note the blockchain_manager may get multiple on_signed_header_inventory() calls in
-    *       response to this, probably at least one per peer connected
+    * this will result in:
+    *   sync_status()
+    *   0 or more handle_message() calls in the blockchain_manager to provide the items (blocks)
     */
-  virtual void fetch_signed_headers(header last_header_seen) = 0;
-		
-  /** triggered when we receive a fetch_signed_headers_msg from the remote peer
-    * calls the blockchain_manager->get_signed_headers() to get the data
-    * sends the response as a signed_header_inventory_msg
-    */
-  virtual void on_fetch_signed_headers_msg(header last_header_seen)
-		  
-  /** triggered when we receive a signed_header_inventory_msg from the remote peer
-    * if (!headers_available.empty())
-    *   call on_signed_header_inventory in the blockchain_manager
-    * set the peers last_header_advertised property
-    * if (headers_available.size() < LIMIT)
-    *   set peer's in_sync property to true
-    *   if all other peers are in sync, we're done synchronizing
-    *     _synchronizing = false
-    *     blockchain_manager->set_synchronization_state(true)
-    * else
-    *   send a fetch_signed_headers_msg for the next LIMIT headers after last_header_advertised
-    *   set that peer's signed_headers_requested_from_peer
-    */
-  virtual void on_signed_header_inventory_msg(signed_header_vector headers_available) = 0;
-		  
-  /** triggered when we receive a trustee_approval_msg from the remote peer
-    * call on_trustee_approval_msg in the blockchain_manager
-    */
-  virtual void on_trustee_approval(signed_header approved_header) = 0;
-		  
-  /** triggered when we receive a header_inventory_msg from the remote peer
-    * call on_header_inventory in the blockchain_manager
-    */
-  virtual void on_header_inventory_msg(header_vector headers_available) = 0;
-		  
-  /** called by app.  fetches the bodies associated with the headers we just received
-   * insert the headers into bodies_to_fetch, will be picked up by fetch_requested_bodies_task()
-   * returns immediately to caller
-   * @note later we'll call on_requested_bodies() in the blockchain_manager to provide the reply
-   */
-  virtual void fetch_bodies(header_vector headers_of_bodies_to_fetch) = 0;
-
-  /** triggered when we receive a fetch_bodies_msg from the remote peer
-    * calls the blockchain_manager->get_bodies() to get the block data
-    * sends the response as a requested_bodies_msg (just a vector of bodies)
-    */
-  virtual void on_fetch_bodies_msg(header_vector) = 0;
-		
-  /** triggered when we receive a requested_bodies_msg from the remote peer
-    * for each body in the body_vector
-    *   remove the request from that peer's bodies_requested_from_peer
-    *   remove the corresponding header from all peers' inventory_peer_advertised_to_us
-    * 
-    *   valid = blockchain_manager->on_requested_bodies()
-    *   if (valid)
-    *     new_inventory.push_back(this body)
-    */
-  virtual void on_requested_bodies_msg(body_vector) = 0;
+  void sync_from(const item_id& last_item_seen);
 }; // end class node
 
 int main()
@@ -324,19 +392,17 @@ int main()
 }
 
 // some message data structures we haven't really discussed much yet:
-struct hello_msg
+struct hello_message
 {
   ip_address  local_ip_address;
   uint16_t    local_tcp_port_number;
   string      user_agent;
   int64_t     current_time;
-  header      last_block_in_chain;  // used to see if the peer needs to sync to us
 };
-struct welcome_msg
+struct welcome_message
 {
   string      user_agent;
   int64_t     current_time;
-  header      last_block_in_chain; // used to see if we need to sync to this peer
 };
 struct node_connection_info
 {
@@ -345,31 +411,9 @@ struct node_connection_info
   ip_address  global_ip_address;
   uint16_t    global_tcp_port_number;
 };
-struct go_away_msg
+struct go_away_message
 {
   uint32_t                     reason_code;
   vector<node_connection_info> try_these_instead;
 };
 
-struct header
-{
-  uint160t body_hash;		
-};
-typedef vector<header> header_vector;
-
-struct header_inventory_msg
-{
-  vector<header> headers_available;
-};
-
-struct signed_header : header
-{
-  uint160t body_hash;
-  uint160t trustee_signature;
-};
-typedef vector<signed_header> signed_header_vector;
-
-struct signed_header_inventory_msg
-{
-  signed_header_vector signed_headers_available;
-};
