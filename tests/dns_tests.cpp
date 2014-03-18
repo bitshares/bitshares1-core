@@ -7,6 +7,7 @@
 
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/pow_validator.hpp>
 #include <bts/wallet/wallet.hpp>
 
 #include <bts/dns/dns_wallet.hpp>
@@ -43,6 +44,75 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     return genesis;
 }
 
+/* State for simulating a DNS chain. It has a default wallet which has the genesis ledger keys.
+ */
+class DNSTestState
+{
+    public:
+        DNSTestState()
+        {
+            fc::temp_directory dir;
+            _validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
+            _auth = fc::ecc::private_key::generate();            
+            _addrs = std::vector<bts::blockchain::address>();
+            _addrs.reserve(100);
+            _botwallet.create( dir.path() / "dns_test_wallet.dat", "password", "password", true );
+            _db.set_signing_authority( _auth.get_public_key() );
+            _db.set_pow_validator( _validator );
+            _db.open( dir.path() / "dns_db", true );
+        }
+        /* Start the blockchain with random balances in new addresses */
+        void normal_genesis()
+        {
+            for ( uint32_t i = 0; i < 100; ++i)
+            {
+                _addrs.push_back( _botwallet.new_recv_address() );
+            }
+
+            _db.push_block( generate_genesis_block( _addrs ) );
+
+            auto head_id = _db.head_block_id();
+            _db.set_block_signature( head_id, 
+                _auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
+            _botwallet.scan_chain( _db );
+        }
+        /* Put these transactions into a block */
+        void next_block( std::vector<signed_transaction> txs )
+        {
+            _validator->skip_time( fc::seconds(5 * 60) );
+            auto next_block = _botwallet.generate_next_block( _db, txs );
+            _db.push_block( next_block );
+
+            auto head_id = _db.head_block_id();
+            _db.set_block_signature( head_id, 
+                _auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
+
+            _botwallet.scan_chain( _db );
+        }
+        /* Give this address funds from some genesis addresses */
+        void top_up( bts::blockchain::address addr, uint64_t amount )
+        {
+            std::vector<signed_transaction> trxs;
+            auto transfer_tx = _botwallet.transfer(asset(amount), addr);
+            trxs.push_back( transfer_tx );
+            next_block( trxs );
+        }
+        /* Get a new address. The global test wallet will also have it. */
+        bts::blockchain::address next_addr()
+        {
+            auto addr = _botwallet.new_recv_address();
+            _addrs.push_back( addr );
+            return addr;
+        }
+    private:
+        std::shared_ptr<bts::blockchain::sim_pow_validator>      _validator;
+        std::vector<bts::blockchain::address>   _addrs;
+        fc::ecc::private_key                    _auth;
+        // the test state gets its own wallet, used by default
+        bts::dns::dns_wallet                     _botwallet;
+        bts::dns::dns_db                         _db;
+
+};
 
 /* 
  */
@@ -64,57 +134,19 @@ BOOST_AUTO_TEST_CASE ( templ )
 BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
 {
     try {
-        fc::temp_directory     dir;
-        dns_wallet             wlt;
-        std::vector<address>   addrs;
-        dns_db                 dns_db;
-        fc::ecc::private_key   auth;
+        auto state = DNSTestState();
+        state.normal_genesis();
 
-        auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
-        auth = fc::ecc::private_key::generate();
-
-        wlt.create( dir.path() / "wallet.dat", "password", "password", true );
-
-        addrs.reserve(100);
-        for( uint32_t i = 0; i < 10; ++i )
-        {
-            addrs.push_back( wlt.new_recv_address() );
-        }
-
-        auto addr = wlt.new_recv_address();
-        addrs.push_back( addr );
-
-        dns_db.set_signing_authority( auth.get_public_key() );
-        dns_db.set_pow_validator( sim_validator );
-        dns_db.open( dir.path() / "dns_db", true);
-        dns_db.push_block( generate_genesis_block( addrs ) );
-        auto head_id = dns_db.head_block_id();
-
-        dns_db.set_block_signature( head_id, 
-                auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
-
-        wlt.scan_chain( dns_db );
-        wlt.dump();
-        
-        sim_validator->skip_time( fc::seconds(60 * 5) );
-
-        std::vector<signed_transaction> txs;
-
-        for (auto i = 0; i < 1; ++i )
-        {
-            auto transfer_tx = wlt.transfer(asset(uint64_t(1000000)), addrs[rand()%addrs.size()]);
-            txs.push_back( transfer_tx );
-        }
-
+        // need to have non-zero CDD output in block, DNS records don't add anything
+        // TODO should they?
+        auto transfer_tx = wlt.transfer(asset(uint64_t(1)), addrs[rand()%addrs.size()]);
+        txs.push_back( transfer_tx );
         auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
-
         txs.push_back( buy_tx );
         
-        auto next_block = wlt.generate_next_block( dns_db, txs );
-        dns_db.push_block( next_block );
-
-        wlt.scan_chain( dns_db );
+        
+        state.next_block( txs );
 
     }
     catch (const fc::exception& e)
