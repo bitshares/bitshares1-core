@@ -54,7 +54,7 @@ namespace bts { namespace wallet {
 
        std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
        { try {
-          ilog( "get_keys with password '${pass}'", ("pass",password) );
+          //ilog( "get_keys with password '${pass}'", ("pass",password) );
           std::unordered_map<address, fc::ecc::private_key> keys;
           if( encrypted_keys.size() == 0 ) return keys;
           //ilog( "encrypted keys.size: ${s}", ("s",encrypted_keys.size() ) );
@@ -68,7 +68,7 @@ namespace bts { namespace wallet {
 
        extended_private_key                                     get_base_key( const std::string& password )
        {
-          ilog( "get_base_key  with password '${pass}'  encrypted_base_key ${ebk}", ("pass",password)("ebk",encrypted_base_key.size()) );
+          //ilog( "get_base_key  with password '${pass}'  encrypted_base_key ${ebk}", ("pass",password)("ebk",encrypted_base_key.size()) );
           extended_private_key base_key;
           if( encrypted_base_key.size() == 0 ) return base_key;
 
@@ -184,7 +184,7 @@ namespace bts { namespace wallet {
                    address mine_addr;
                    for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
                    {
-                       ilog( "unspent outputs ${o}", ("o",*itr) );
+                       //ilog( "unspent outputs ${o}", ("o",*itr) );
                        if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == 0 )
                        {
                            auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx+1);
@@ -205,7 +205,7 @@ namespace bts { namespace wallet {
                            }
                        }
                    }
-                   ilog( "mine addr ${addr}", ("addr",mine_addr) );
+                   //ilog( "mine addr ${addr}", ("addr",mine_addr) );
                    FC_ASSERT( best_cdd != 0 );
                    req_sigs.insert( mine_addr );
                    return inputs;
@@ -219,7 +219,7 @@ namespace bts { namespace wallet {
                    std::vector<trx_input> inputs;
                    for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
                    {
-                       ilog( "unspent outputs ${o}", ("o",*itr) );
+                       //ilog( "unspent outputs ${o}", ("o",*itr) );
                        if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == 0 )
                        {
                            inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
@@ -263,13 +263,13 @@ namespace bts { namespace wallet {
                    std::vector<trx_input> inputs;
                    for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
                    {
-                      ilog( "unspent outputs ${o}", ("o",*itr) );
+                      //ilog( "unspent outputs ${o}", ("o",*itr) );
                        if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == min_amnt.unit )
                        {
                            inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
                            total_in += itr->second.amount;
                            req_sigs.insert( itr->second.as<claim_by_signature_output>().owner );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                           //ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -280,7 +280,7 @@ namespace bts { namespace wallet {
                            inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
                            total_in += itr->second.amount;
                            req_sigs.insert( _data.recv_pts_addresses[itr->second.as<claim_by_pts_output>().owner] );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                           //ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -305,7 +305,7 @@ namespace bts { namespace wallet {
                    {
                       for( auto itr = trx.inputs.begin(); itr != trx.inputs.end(); ++itr )
                       {
-                          elog( "MARK AS SPENT ${B}", ("B",itr->output_ref) );
+                          //elog( "MARK AS SPENT ${B}", ("B",itr->output_ref) );
                           self->mark_as_spent( itr->output_ref );
                       }
                       _data.transactions[trx.id()].trx = trx;
@@ -439,7 +439,7 @@ namespace bts { namespace wallet {
 
    void wallet::save()
    { try {
-      ilog( "saving wallet\n" );
+      //ilog( "saving wallet\n" );
       if(my->_exception_on_open)
           return;
 
@@ -590,7 +590,7 @@ namespace bts { namespace wallet {
 
        uint64_t trx_bytes = fc::raw::pack( trx ).size();
        asset    fee( my->_current_fee_rate * trx_bytes );
-       ilog( "required fee ${f}", ( "f",fee ) );
+       //ilog( "required fee ${f}", ( "f",fee ) );
 
        if( amnt.unit == 0 )
        {
@@ -652,7 +652,7 @@ namespace bts { namespace wallet {
 
    void wallet::sign_transaction( signed_transaction& trx, const address& addr )
    { try {
-      ilog( "Sign ${trx}  ${addr}", ("trx",trx.id())("addr",addr));
+      //ilog( "Sign ${trx}  ${addr}", ("trx",trx.id())("addr",addr));
       FC_ASSERT( my->_wallet_key_password.size() );
       auto keys = my->_data.get_keys( my->_wallet_key_password );
       auto priv_key_itr = keys.find(addr);
@@ -825,7 +825,7 @@ namespace bts { namespace wallet {
             try {
                 trx_stat s;
                 s.eval = db.get_transaction_validator()->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}", ("eval",s.eval) );
+                //ilog( "eval: ${eval}", ("eval",s.eval) );
 
                // TODO: enforce fees
                 if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
@@ -867,21 +867,16 @@ namespace bts { namespace wallet {
 
          auto head_block = db.get_head_block();
 
-         wlog( "NOW IM HERE -1" );
          int64_t min_votes = head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
          int64_t max_reward = summary.fees / 2;
          wlog("summary: ${sum}", ("sum", summary));
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
          FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
-        wlog( "NOW IM HERE 0" );
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
-        wlog( "NOW IM HERE 2" );
          trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
-        wlog( "NOW IM HERE 3" );
          summary += trx_sum;
          result.trxs.push_back( mine_trx );
-        wlog( "NOW IM HERE 4" );
 
          result.block_num       = db.head_block_num() + 1;
          result.prev            = db.head_block_id();

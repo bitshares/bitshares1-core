@@ -11,6 +11,7 @@
 #include <bts/wallet/wallet.hpp>
 
 #include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/dns_config.hpp>
 
 
 using namespace bts::wallet;
@@ -80,6 +81,15 @@ class DNSTestState
         void next_block( std::vector<signed_transaction> txs )
         {
             _validator->skip_time( fc::seconds(5 * 60) );
+            
+            // need to have non-zero CDD output in block, DNS records don't add anything
+            // TODO should they?
+            for (auto i = 0; i < 10; i++ )
+            {
+                auto transfer_tx = _botwallet.transfer( asset(uint64_t(1000000)), random_addr() );
+                txs.push_back( transfer_tx );
+            }
+
             auto next_block = _botwallet.generate_next_block( _db, txs );
             _db.push_block( next_block );
 
@@ -111,6 +121,12 @@ class DNSTestState
             auto addr = _botwallet.new_recv_address();
             _addrs.push_back( addr );
             return addr;
+        }
+        /* Get a random existing address. Good for avoiding dust in certain tests.
+         */
+        bts::blockchain::address random_addr()
+        {
+            return _addrs[random()%(_addrs.size())];
         }
     private:
         std::shared_ptr<bts::blockchain::sim_pow_validator>      _validator;
@@ -146,11 +162,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         state.normal_genesis();
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
-        // need to have non-zero CDD output in block, DNS records don't add anything
-        // TODO should they?
         std::vector<signed_transaction> txs;
-        auto transfer_tx = wallet->transfer( asset(uint64_t(1)), state.next_addr() );
-        txs.push_back( transfer_tx );
         auto buy_tx = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
@@ -171,7 +183,33 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
  */
 BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
 {
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        
+        state.next_block( txs );
+        std::vector<signed_transaction> empty_txs;
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+        {
+            state.next_block( empty_txs ); 
+        }
+
+        auto buy_tx2 = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        empty_txs.push_back( buy_tx2 );
+        state.next_block( empty_txs );
+
+    }
+    catch (const fc::exception& e)
+    {
+        elog( "${e}", ("e",e.to_detail_string()) );
+        throw;
+    }
 }
 
 /* You should not be able to start a new auction on a domain that exists
@@ -179,8 +217,35 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
  */
 BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
 {
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        
+        state.next_block( txs );
+        std::vector<signed_transaction> empty_txs;
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS / 2; i++)
+        {
+            state.next_block( empty_txs ); 
+        }
+
+        auto buy_tx2 = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        empty_txs.push_back( buy_tx2 );
+        state.next_block( empty_txs );
+
+    }
+    catch (const fc::exception& e)
+    {
+        elog( "${e}", ("e",e.to_detail_string()) );
+        throw;
+    }
 }
+
 
 /* You should not be able to start an auction for an invalid name (length)
  */

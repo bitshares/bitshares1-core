@@ -1,6 +1,7 @@
 #include <bts/dns/dns_transaction_validator.hpp>
 #include <bts/dns/outputs.hpp>
 #include <bts/dns/dns_db.hpp>
+#include <bts/dns/dns_config.hpp>
 #include <bts/blockchain/config.hpp>
 #include <fc/io/raw.hpp>
 
@@ -60,6 +61,8 @@ void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, 
 
 void dns_transaction_validator::validate_domain_output(const trx_output& out, transaction_evaluation_state& state)
 {
+    //TODO assert "amount" doesn't change when updating domain record so
+    //that domains can contribute to "valid votes" ??
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT( ! dns_state.seen_domain_output,
             "More than one domain claim output in one tx: ${tx}", ("tx", state.trx) );
@@ -85,7 +88,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
             auto block_num = db->fetch_trx_num(old_tx_id).block_num;
             auto current_block = db->head_block_num();
 
-            if (current_block - block_num < BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
+            if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS)
             {
                 FC_ASSERT(!"Name already exists (and is younger than 1 block-year)"); 
             }
@@ -107,7 +110,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     auto block_num = db->fetch_trx_num(old_tx_id).block_num;
     auto current_block = db->head_block_num();
     auto block_age = current_block - block_num;
-    FC_ASSERT( block_age < BTS_BLOCKCHAIN_BLOCKS_PER_YEAR,
+    FC_ASSERT( block_age < DNS_EXPIRE_DURATION_BLOCKS,
              "Domain transaction references an expired domain as an input");
         
     FC_ASSERT(dns_out.name == dns_state.dns_claimed.name,
@@ -117,7 +120,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     // case on state of claimed output
     //   * if auction is over (not_for_sale OR output is older than 3 days)
     if (dns_out.flags == claim_domain_output::not_for_sale
-       || block_age >= 3 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY) 
+       || block_age >= DNS_AUCTION_DURATION_BLOCKS)
     {
         // If you're the owner, do whatever you like!
         if (! state.has_signature(dns_out.owner) )

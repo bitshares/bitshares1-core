@@ -52,7 +52,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
         auto current_block = db.head_block_num();
         // check age
         // TODO put constant 3 in config
-        if (current_block - block_num < BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 3)
+        if (current_block - block_num < DNS_AUCTION_DURATION_BLOCKS)
         {
 
             auto domain_output = claim_domain_output();
@@ -84,7 +84,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
 
             return trx;
 
-        } else if (current_block - block_num < BTS_BLOCKCHAIN_BLOCKS_PER_YEAR) {
+        } else if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS) {
             FC_ASSERT(!"Tried to bid on domain that is not for sale (auction timed out but not explicitly marked as done)");
         }
     }
