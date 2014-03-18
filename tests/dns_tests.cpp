@@ -97,6 +97,14 @@ class DNSTestState
             trxs.push_back( transfer_tx );
             next_block( trxs );
         }
+        bts::dns::dns_wallet* get_wallet()
+        {
+            return &_botwallet;
+        }
+        bts::dns::dns_db* get_db()
+        {
+            return &_db;
+        }
         /* Get a new address. The global test wallet will also have it. */
         bts::blockchain::address next_addr()
         {
@@ -134,17 +142,18 @@ BOOST_AUTO_TEST_CASE ( templ )
 BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
 {
     try {
-        auto state = DNSTestState();
+        DNSTestState state;
         state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
         // need to have non-zero CDD output in block, DNS records don't add anything
         // TODO should they?
-        auto transfer_tx = wlt.transfer(asset(uint64_t(1)), addrs[rand()%addrs.size()]);
+        std::vector<signed_transaction> txs;
+        auto transfer_tx = wallet->transfer( asset(uint64_t(1)), state.next_addr() );
         txs.push_back( transfer_tx );
-        auto buy_tx = wlt.buy_domain( "TESTNAME", asset(uint64_t(1)), dns_db );
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
-        
         
         state.next_block( txs );
 
