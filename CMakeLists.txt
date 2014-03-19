@@ -3,6 +3,7 @@ project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
@@ -15,11 +16,11 @@ if( WIN32 )
     set( LEVEL_DB_DIR vendor/leveldb-win )
 
     set(BOOST_ROOT $ENV{BOOST_ROOT})
-    set(Boost_USE_DEBUG_PYTHON ON)
+    set(Boost_USE_DEBUG_PYTHON OFF)
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
-
+	
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
@@ -36,9 +37,9 @@ else( WIN32 )
         set( rt_library rt )
         set( pthread_library pthread)
     endif( APPLE )
+	set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )
 
-set(Boost_USE_STATIC_LIBS ON)
 find_package( Boost 1.54 REQUIRED COMPONENTS 
                   thread 
                   date_time 

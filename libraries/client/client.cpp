@@ -45,17 +45,17 @@ namespace bts { namespace client {
              *  Assuming all data elements are ordered in some way, this method should
              *  return up to limit ids that occur *after* from_id.
              */
-            virtual std::vector<net::item_id> get_headers( uint32_t item_type, const net::item_id& from_id, uint32_t limit )
+            virtual std::vector<net::item_hash_t> get_headers( const net::item_id& from_id, uint32_t limit )
             {
                 FC_ASSERT( _chain_db != nullptr );
 
                 if( limit > 2000 ) 
                     limit = 2000;
 
-                std::vector<net::item_id> items; 
+                std::vector<net::item_hash_t> items; 
                 items.reserve( limit );
 
-                auto block_num = _chain_db->fetch_block_num( from_id );
+                auto block_num = _chain_db->fetch_block_num( from_id.item_hash );
                 for( auto i = block_num + 1; i < limit; ++i )
                 {
                    items.push_back( _chain_db->fetch_block( i ).id() );
@@ -72,11 +72,11 @@ namespace bts { namespace client {
             {
                 FC_ASSERT( _chain_db != nullptr );
 
-                auto block_num = _chain_db->fetch_block_num( id );
+                auto block_num = _chain_db->fetch_block_num( id.item_hash );
                 auto blk       = _chain_db->fetch_trx_block( block_num );
-                auto sig       = _chain_db->fetch_block_signature( id );
+                auto sig       = _chain_db->fetch_block_signature( id.item_hash );
 
-                return bts::net::message( block_message( id, blk, sig ) );
+                return bts::net::message( block_message( id.item_hash, blk, sig ) );
             }
 
 

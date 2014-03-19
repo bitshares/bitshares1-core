@@ -97,11 +97,22 @@ struct peer_data
   map<item_id, time> items_requested_from_peer;  /// fetch from another peer if this peer disconnects
   bool busy() { return !items_requested_from_peer.empty() || item_ids_requested_from_peer; }
   bool idle() { return !busy(); }
+
+  enum negotiation_states
+  {
+    disconnected,
+    connected,
+    hello_sent,
+    hello_received,
+    hello_reply_sent,
+    hello_reply_received,
+
 };
 
 class node
 {
-  set<connection> connections;
+  set<connection> connections; // fully established peers
+  set<connection> negotiating_peers; // peers we're trying to connect to or are still handshaking with
 
   /** messages we've received and validated, but have not yet advertised to peers */
   set<item_id> _new_inventory;
@@ -182,10 +193,10 @@ private:
             if (peer->items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
               fetch_next_batch_of_item_ids_from_peer(new_block_message->block_id) // if peer returns no items, we will start receiving inventory messages from the peer
           else
-            peer->disconnect()
+            peer->disconnect(peer_sent_us_bad_data)
         originating_peer->items_requested_from_peer.erase(new_block_message->block_id)
       catch:
-        originating_peer->disconnect();
+        originating_peer->disconnect(peer_sent_us_bad_data);
     else:
       _received_sync_items.insert(new_block_message)
   }
@@ -201,7 +212,7 @@ private:
     {
       // the only reason we're getting a block is if we requested it from a peer's inventory
       if not in originating_peer->items_requested_from_peer:
-        originating_peer->disconnect();
+        originating_peer->disconnect(peer_sent_us_bad_data);
         return;
       for each peer:
         remove from that peer's items_requested_from_peer // probably never happens
@@ -210,7 +221,7 @@ private:
         _new_inventory.insert(new_block_message->block_id) // advertise_new_inventory_task will take it from here
         _last_block_in_our_chain = new_block_message.block_id
       catch:
-        originating_peer->disconnect();
+        originating_peer->disconnect(peer_sent_us_bad_data);
     }
   }
 
@@ -222,7 +233,7 @@ private:
     {
       if (not in _active_requests)
       {
-        originating_peer->disconnect();
+        originating_peer->disconnect(peer_sent_us_bad_data);
         return;
       }
       else
@@ -253,7 +264,7 @@ private:
         }
         catch (...)
         {
-          originating_peer->disconnect();
+          originating_peer->disconnect(peer_sent_us_bad_data);
           return;
         }
       }
@@ -263,7 +274,8 @@ private:
   {
     // loop over each connction/peer
     //   if any items_requested_from_peer is older than our timeout value
-    //     disconnect the peer, cleanup will happen in on_connection_disconnected
+    //     peer->disconnect(peer_time_out)
+    //     cleanup will happen in on_connection_disconnected
   }
   advertise_new_inventory_task()
   {
@@ -353,15 +365,38 @@ private:
     */
   void on_fetch_item_message(const item_id&);
 
+  initiate_connection()
+  {
+    c
+  }
+
+  void connect_to_peers_task()
+  {
+    // while ((number of active peers  plus
+    //         number of connections we're trying to establish < our target value) and
+    //        we still know of more peers we could try connecting to)
+    //   pick a peer from the potential_peer_db
+    //     initiate_connection(ep)
+  }
+
 public:
   void set_delegate(node_delegate* delegate);
   /** Add endpoint to internal level_map database of potential nodes
    *   to attempt to connect to.  This database is consulted any time
    *   the number connected peers falls below the target. */
-  void add_node(const fc::ip::endpoint& ep);
+  void add_node(const fc::ip::endpoint& ep)
+  {
+    potential_peer_db->add(ep);
+  }
 
   /** Attempt to connect to the specified endpoint immediately. */
-  void connect_to(const fc::ip::endpoint& ep);
+  void connect_to(const fc::ip::endpoint& ep)
+  {
+    potential_peer_db->add(ep);
+    if (too many connections)
+      kill_one_connection_at_random()
+    initiate_connection(ep)
+  }
 
   /** Specifies the network interface and port upon which incoming connections should be accepted. */
   void listen_on_endpoint(const fc::ip::endpoint& ep);
@@ -399,11 +434,6 @@ struct hello_message
   string      user_agent;
   int64_t     current_time;
 };
-struct welcome_message
-{
-  string      user_agent;
-  int64_t     current_time;
-};
 struct node_connection_info
 {
   ip_address  local_ip_address;
@@ -417,3 +447,32 @@ struct go_away_message
   vector<node_connection_info> try_these_instead;
 };
 
+/*
+ Peer database rules:
+ - each node broadcasts its timestamped addresses in a message once a day
+   these messages are relayed to a few peers
+ - we remember peers forever
+ - we sort them according to the time they were last seen
+ - when we start up, we try to connect to the most recently-connected
+   peers first
+ - whenever we disconnect from a peer, we update its timestamp
+ - whenever we do some operation that requires us to sort the database,
+   we update all connected peers with the current timestamp first
+ - whenever we get list of addresses from one of our peers, we update
+   our database with the provided timestamps (after some sanity-checking)
+ - if we disconnect from a peer because it sent us invalid data, we 
+   will blacklist it (move it to the bottom of the list, avoid advertising
+   it to peers) for a certain longish amount of time.
+ - if we connect to a peer and it is too busy to add us as a peer, we 
+   will not try it again for some shorter amount of time
+ */
+
+// peer database contains
+struct potential_peer_data
+{
+  vector<fc::endpoint>     peer_addresses;
+  fc::timepoint            last_seen;
+  enum connection_history_type { never_connected, connected_in_past, blocked };
+  connection_history_type  connection_history;
+};
+level_db<potential_peer_data> potential_peer_db;
