@@ -157,4 +157,8 @@ namespace bts { namespace net {
 
    }
 
+   bool node::is_connected()const
+   {
+   }
+
 } } // bts::net

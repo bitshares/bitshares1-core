@@ -35,7 +35,7 @@ namespace bts { namespace client {
              *  Assuming all data elements are ordered in some way, this method should
              *  return up to limit ids that occur *after* from_id.
              */
-            virtual std::vector<net::item_id> get_headers( const net::item_id& from_id, uint32_t limit )
+            virtual std::vector<net::item_id> get_headers( uint32_t item_type, const net::item_id& from_id, uint32_t limit )
             {
                 FC_ASSERT( _chain_db != nullptr );
 
@@ -58,7 +58,7 @@ namespace bts { namespace client {
             /**
              *  Given the hash of the requested data, fetch the body. 
              */
-            virtual bts::net::message  get_body( const net::item_id& id )
+            virtual bts::net::message  get_body( uint32_t item_type, const net::item_id& id )
             {
                 FC_ASSERT( _chain_db != nullptr );
 

@@ -113,8 +113,12 @@ namespace bts { namespace net {
          */
         void      sync_from( uint32_t item_type, const item_id& );
 
+        bool      is_connected()const;
+
       private:
         std::unique_ptr<detail::node_impl> my;
    };
+
+   typedef std::shared_ptr<node> node_ptr;
 
 } } // bts::net
