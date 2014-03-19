@@ -91,13 +91,21 @@ namespace bts { namespace blockchain {
 
    transaction_validator::~transaction_validator(){}
 
-   transaction_summary transaction_validator::evaluate( const signed_transaction& trx )
+
+   block_evaluation_state_ptr transaction_validator::create_block_state()const
    {
-       transaction_evaluation_state state(trx);
-       return on_evaluate( state );
+      return std::make_shared<block_evaluation_state>();
    }
 
-   transaction_summary transaction_validator::on_evaluate( transaction_evaluation_state& state )
+   transaction_summary transaction_validator::evaluate( const signed_transaction& trx, 
+                                                        const block_evaluation_state_ptr& block_state )
+   {
+       transaction_evaluation_state state(trx);
+       return on_evaluate( state, block_state );
+   }
+
+   transaction_summary transaction_validator::on_evaluate( transaction_evaluation_state& state, 
+                                                           const block_evaluation_state_ptr& block_state )
    {
        transaction_summary sum;
 
@@ -115,13 +123,13 @@ namespace bts { namespace blockchain {
        for( auto in : state.inputs ) 
        {
           FC_ASSERT( !in.meta_output.is_spent(), "", ("trx",state.trx) );
-          validate_input( in, state );
+          validate_input( in, state, block_state );
        }
 
 
        /** validate all inputs */
        for( auto out : state.trx.outputs ) 
-          validate_output( out, state );
+          validate_output( out, state, block_state );
 
        state.balance_assets();
 
@@ -149,37 +157,41 @@ namespace bts { namespace blockchain {
    }
 
    void transaction_validator::validate_input( const meta_trx_input& in, 
-                                               transaction_evaluation_state& state )
+                                               transaction_evaluation_state& state,
+                                               const block_evaluation_state_ptr& block_state
+                                               )
    {
        switch( in.output.claim_func )
        {
           case claim_by_pts:
-             validate_pts_signature_input( in, state );            
+             validate_pts_signature_input( in, state, block_state );            
              break;
           case claim_by_signature:
-             validate_signature_input( in, state );            
+             validate_signature_input( in, state, block_state );            
              break;
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
        }
    }
 
-   void transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state )
+   void transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state,
+                                               const block_evaluation_state_ptr& block_state )
    {
        switch( out.claim_func )
        {
           case claim_by_pts:
-             validate_pts_signature_output( out, state );            
+             validate_pts_signature_output( out, state, block_state );            
              break;
           case claim_by_signature:
-             validate_signature_output( out, state );            
+             validate_signature_output( out, state, block_state );            
              break;
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",out.claim_func) );
        }
    }
 
-   void transaction_validator::accumulate_votes( uint64_t amnt, uint32_t source_block_num, transaction_evaluation_state& state )
+   void transaction_validator::accumulate_votes( uint64_t amnt, uint32_t source_block_num, 
+                                                 transaction_evaluation_state& state )
    {
        uint32_t headnum = _db->head_block_num();
        uint32_t votes =  amnt * (headnum-source_block_num+1);
@@ -196,7 +208,8 @@ namespace bts { namespace blockchain {
    }
 
    void transaction_validator::validate_pts_signature_input( const meta_trx_input& in, 
-                                                             transaction_evaluation_state& state )
+                                                             transaction_evaluation_state& state,
+                                                             const block_evaluation_state_ptr& block_state )
    {
        auto claim = in.output.as<claim_by_pts_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner) );
@@ -207,7 +220,8 @@ namespace bts { namespace blockchain {
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
-                                                         transaction_evaluation_state& state )
+                                                         transaction_evaluation_state& state,
+                                                         const block_evaluation_state_ptr& block_state )
    {
        auto claim = in.output.as<claim_by_signature_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner)("sigs",state.sigs) );
@@ -219,13 +233,15 @@ namespace bts { namespace blockchain {
 
 
    void transaction_validator::validate_signature_output( const trx_output& out, 
-                                   transaction_evaluation_state& state )
+                                                          transaction_evaluation_state& state,
+                                                          const block_evaluation_state_ptr& block_state )
    {
        state.add_output_asset( out.amount );
    }
 
    void transaction_validator::validate_pts_signature_output( const trx_output& out, 
-                                   transaction_evaluation_state& state )
+                                                              transaction_evaluation_state& state,
+                                                              const block_evaluation_state_ptr& block_state )
    {
        state.add_output_asset( out.amount );
    }

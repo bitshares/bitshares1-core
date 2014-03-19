@@ -333,13 +333,15 @@ namespace bts { namespace blockchain {
         // TODO: factor in determinstic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
         
+        auto block_state = my->_trx_validator->create_block_state();
+
         transaction_summary summary;
         transaction_summary trx_summary;
         int32_t last = b.trxs.size()-1;
         uint64_t fee_rate = get_fee_rate().get_rounded_amount();
         for( int32_t i = 0; i <= last; ++i )
         {
-            trx_summary = my->_trx_validator->evaluate( b.trxs[i] ); 
+            trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state ); 
 
             if( i == last ) // verify difficulty / mining reward here.
             { 
@@ -367,7 +369,7 @@ namespace bts { namespace blockchain {
 
         for( auto strx : deterministic_trxs )
         {
-            summary += my->_trx_validator->evaluate( strx ); 
+            summary += my->_trx_validator->evaluate( strx, block_state ); 
         }
 
         FC_ASSERT( b.votes_cast      == summary.valid_votes )

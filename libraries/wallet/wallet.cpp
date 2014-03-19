@@ -826,8 +826,10 @@ namespace bts { namespace wallet {
          for( uint32_t i = 0; i < in_trxs.size(); ++i )
          {
             try {
+                // create a new block state to evaluate transactions in isolation to maximize fees
+                auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
-                s.eval = db.get_transaction_validator()->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
+                s.eval = db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
                 ilog( "eval: ${eval}", ("eval",s.eval) );
 
                // TODO: enforce fees
@@ -849,6 +851,9 @@ namespace bts { namespace wallet {
          std::unordered_set<output_reference> consumed_outputs;
 
 
+         // create new block state to reject transactions that conflict with transactions that
+         // have already been included in the block.
+         auto block_state = db.get_transaction_validator()->create_block_state();
          transaction_summary summary;
          for( size_t i = 0; i < stats.size(); ++i )
          {
@@ -861,12 +866,20 @@ namespace bts { namespace wallet {
                     break; 
                }
             }
-            summary += stats[i].eval;
-            result.trxs.push_back(trx);
+            try {
+               summary += db.get_transaction_validator()->evaluate( trx, block_state ); 
+               result.trxs.push_back(trx);
+            } 
+            catch ( const fc::exception& e )
+            {
+               wlog( "caught exception that failed to pass validation: ${e}", ("e",e.to_detail_string() ) );
+            }
          }
          auto mine_trx = create_mining_transaction( asset() );
 
-         auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
+         // we don't want to add this to the combined state just yet... it will get added below.
+         auto tmp_state = db.get_transaction_validator()->create_block_state(); 
+         auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, tmp_state ); 
          miner_votes = trx_sum.valid_votes;
 
          auto head_block = db.get_head_block();
@@ -880,7 +893,7 @@ namespace bts { namespace wallet {
          FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
-         trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
+         trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, block_state ); 
          summary += trx_sum;
          result.trxs.push_back( mine_trx );
 
