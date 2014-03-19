@@ -17,8 +17,8 @@ target_link_libraries( blockchain_tests bts_wallet bts_blockchain fc ${BOOST_LIB
 #add_executable( dns_tests dns_tests.cpp )
 #target_link_libraries( dns_tests bts_wallet bts_dns bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} crypto bts_wallet)
 
-include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
-include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
-add_executable( simple_net_test_client simple_net_test_client.cpp )
-target_link_libraries( simple_net_test_client bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTO_LIB})
+#include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
+#include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
+#add_executable( simple_net_test_client simple_net_test_client.cpp )
+#target_link_libraries( simple_net_test_client bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTO_LIB})
 
