@@ -11,21 +11,21 @@ namespace bts { namespace client {
        class client_impl : public bts::net::node_delegate
        {
           public:
-            virtual bool has_item( const net::item_id& id )
+            virtual bool has_item( const net::item_id& id ) override
             {
                return false;
             }
-            virtual void     sync_status( uint32_t item_type, uint32_t current_item_num, uint32_t item_count ){};
+            virtual void     sync_status( uint32_t item_type, uint32_t item_count ) override {};
             
             /**
              *  Call any time the number of connected peers changes.
              */
-            virtual void     connection_count_changed( uint32_t c ){};
+            virtual void     connection_count_changed( uint32_t c ) override {};
             /**
              *  @brief allows the application to validate a message prior to 
              *         broadcasting to peers.
              */
-            virtual void validate_broadcast( const bts::net::message& msg )
+            virtual void handle_message( const bts::net::message& msg ) override
             {
                  switch( msg.msg_type )
                  {
@@ -45,7 +45,7 @@ namespace bts { namespace client {
              *  Assuming all data elements are ordered in some way, this method should
              *  return up to limit ids that occur *after* from_id.
              */
-            virtual std::vector<net::item_hash_t> get_headers( const net::item_id& from_id, uint32_t limit )
+            virtual std::vector<net::item_hash_t> get_item_ids( const net::item_id& from_id, uint32_t& remaining_to_get, uint32_t limit ) override 
             {
                 FC_ASSERT( _chain_db != nullptr );
 
@@ -61,6 +61,8 @@ namespace bts { namespace client {
                    items.push_back( _chain_db->fetch_block( i ).id() );
                 }
 
+                // TODO: set remaining_to_get to the number of blocks after items.back(), or 0 if there are none
+
                 return items;
             } // get_headers
 
@@ -68,7 +70,7 @@ namespace bts { namespace client {
             /**
              *  Given the hash of the requested data, fetch the body. 
              */
-            virtual bts::net::message  get_body( uint32_t item_type, const net::item_id& id )
+            virtual bts::net::message get_item( const net::item_id& id ) override
             {
                 FC_ASSERT( _chain_db != nullptr );
 

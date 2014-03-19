@@ -149,7 +149,7 @@ namespace bts { namespace net {
 
    }
 
-   void node::sync_from( uint32_t type, const item_id& id )
+   void node::sync_from( const item_id& id )
    {
    }
 

@@ -16,7 +16,7 @@ if( WIN32 )
     set( LEVEL_DB_DIR vendor/leveldb-win )
 
     set(BOOST_ROOT $ENV{BOOST_ROOT})
-    set(Boost_USE_DEBUG_PYTHON OFF)
+    set(Boost_USE_DEBUG_PYTHON ON)
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries

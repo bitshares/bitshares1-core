@@ -29,7 +29,7 @@ namespace bts { namespace net {
          /**
           *  If delegate has the item, the network has no need to fetch it.
           */
-         virtual bool has_item( const net::item_id& id ){return false;};
+         virtual bool has_item( const net::item_id& id ) = 0;
 
          /**
           *  @brief allows the application to validate an item prior to 
@@ -38,7 +38,7 @@ namespace bts { namespace net {
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual void handle_message( const message& ){};
+         virtual void handle_message( const message& ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
@@ -49,12 +49,12 @@ namespace bts { namespace net {
           */
          virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id, 
                                                         uint32_t& remaining_item_count,
-                                                        uint32_t limit = 2000 );
+                                                        uint32_t limit = 2000 ) = 0;
 
          /**
           *  Given the hash of the requested data, fetch the body. 
           */
-         virtual message get_item( const item_id& id ); 
+         virtual message get_item( const item_id& id ) = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.
@@ -63,12 +63,12 @@ namespace bts { namespace net {
           *  @param item_count the number of items known to the node that haven't been sent to handle_item() yet.
           *                    After `item_count` more calls to handle_item(), the node will be in sync
           */
-         virtual void     sync_status( uint32_t item_type, uint32_t item_count );
+         virtual void     sync_status( uint32_t item_type, uint32_t item_count ) = 0;
 
          /**
           *  Call any time the number of connected peers changes.
           */
-         virtual void     connection_count_changed( uint32_t c ){};
+         virtual void     connection_count_changed( uint32_t c ) = 0;
    };
 
    /**
