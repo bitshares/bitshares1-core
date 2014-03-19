@@ -16,7 +16,7 @@ namespace bts { namespace blockchain {
         block_miner();
         ~block_miner();
 
-        void set_block( const block_header& header, uint64_t target_difficulty, uint64_t miner_votes, uint64_t available_votes );
+        void set_block( const block_header& header, const block_header& prev_header, uint64_t miner_votes, uint64_t min_votes );
         void set_effort( float effort );
         void set_callback( const callback& cb );
 

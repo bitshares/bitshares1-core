@@ -309,6 +309,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         /// time stamps from the future are not allowed
+        wlog( "fee rate: ${fee}", ("fee",b.next_fee) );
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
                    ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
@@ -323,7 +324,8 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
 
          auto next_diff = my->head_block.next_difficulty * 300*1000000ll / (b.timestamp - my->head_block.timestamp).count();
-         FC_ASSERT( b.next_difficulty == (my->head_block.next_difficulty * 24 + next_diff) / 25 );
+         FC_ASSERT( b.next_difficulty == (my->head_block.next_difficulty * 24 + next_diff) / 25, "",
+                    ("next_diff",next_diff)("b.next_diff",b.next_difficulty)("head.next_diff",my->head_block.next_difficulty) );
 
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
@@ -338,7 +340,6 @@ namespace bts { namespace blockchain {
         for( int32_t i = 0; i <= last; ++i )
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i] ); 
-            summary += trx_summary;
 
             if( i == last ) // verify difficulty / mining reward here.
             { 
@@ -351,14 +352,17 @@ namespace bts { namespace blockchain {
                int64_t max_reward = summary.fees / 2;
 
                int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+              ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
                
-               FC_ASSERT( abs(trx_summary.fees) <= actual_reward );
+               FC_ASSERT( abs(trx_summary.fees) <= actual_reward, "",
+                          ("trx_summary.fees",trx_summary.fees)("actual_reward",actual_reward));
             }
             else
             {
                FC_ASSERT( b.trxs[i].version != 1 );
                FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
             }
+            summary += trx_summary;
         }
 
         for( auto strx : deterministic_trxs )

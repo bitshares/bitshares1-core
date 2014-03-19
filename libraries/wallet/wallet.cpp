@@ -54,7 +54,7 @@ namespace bts { namespace wallet {
 
        std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
        { try {
-          ilog( "get_keys with password '${pass}'", ("pass",password) );
+          //ilog( "get_keys with password '${pass}'", ("pass",password) );
           std::unordered_map<address, fc::ecc::private_key> keys;
           if( encrypted_keys.size() == 0 ) return keys;
           //ilog( "encrypted keys.size: ${s}", ("s",encrypted_keys.size() ) );
@@ -68,7 +68,7 @@ namespace bts { namespace wallet {
 
        extended_private_key                                     get_base_key( const std::string& password )
        {
-          ilog( "get_base_key  with password '${pass}'  encrypted_base_key ${ebk}", ("pass",password)("ebk",encrypted_base_key.size()) );
+          //ilog( "get_base_key  with password '${pass}'  encrypted_base_key ${ebk}", ("pass",password)("ebk",encrypted_base_key.size()) );
           extended_private_key base_key;
           if( encrypted_base_key.size() == 0 ) return base_key;
 
@@ -184,7 +184,7 @@ namespace bts { namespace wallet {
                    address mine_addr;
                    for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
                    {
-                       ilog( "unspent outputs ${o}", ("o",*itr) );
+                       //ilog( "unspent outputs ${o}", ("o",*itr) );
                        if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == 0 )
                        {
                            auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx+1);
@@ -193,6 +193,7 @@ namespace bts { namespace wallet {
                               inputs.back() = trx_input( _output_index_to_ref[itr->first] );
                               best_cdd = cdd;
                               mine_addr = itr->second.as<claim_by_signature_output>().owner;
+                              total_in = itr->second.amount;
                            }
                        }
                        else if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == 0 )
@@ -202,6 +203,7 @@ namespace bts { namespace wallet {
                            {
                               inputs.back() = trx_input( _output_index_to_ref[itr->first] );
                               best_cdd = cdd;
+                              total_in = itr->second.amount;
                            }
                        }
                    }
@@ -540,6 +542,7 @@ namespace bts { namespace wallet {
 
        signed_transaction trx; 
        trx.inputs = my->collect_mining_input( total_in, req_sigs );
+       wlog( "total_in ${in} + ${reward} = ${out}", ("in",total_in)("reward",reward)("out",total_in+reward) );
        trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), total_in + reward) );
        my->sign_transaction(trx, req_sigs, false);
 
@@ -811,7 +814,7 @@ namespace bts { namespace wallet {
       return my->collect_inputs( min_amnt, total_in, req_sigs );
    }
 
-   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs )
+   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs, int64_t& miner_votes )
    {
       try {
          auto deterministic_trxs = db.generate_determinsitic_transactions();
@@ -864,6 +867,7 @@ namespace bts { namespace wallet {
          auto mine_trx = create_mining_transaction( asset() );
 
          auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
+         miner_votes = trx_sum.valid_votes;
 
          auto head_block = db.get_head_block();
 
@@ -872,6 +876,7 @@ namespace bts { namespace wallet {
          int64_t max_reward = summary.fees / 2;
          wlog("summary: ${sum}", ("sum", summary));
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+         ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
          FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
@@ -891,6 +896,7 @@ namespace bts { namespace wallet {
          result.timestamp       = db.get_pow_validator()->get_time();
 
          // next difficulty =  DESIRED_DELTA_T * CURRENT_DIFFICULTY / PREV_DELTA_T
+         ilog( "head_block.timestamp: ${t}  result: ${r}", ("t",head_block.timestamp)("r",result.timestamp ) );
          auto next_diff = head_block.next_difficulty * 300*1000000ll / (result.timestamp - head_block.timestamp).count();
          result.next_difficulty = (head_block.next_difficulty * 24 + next_diff) / 25;
 

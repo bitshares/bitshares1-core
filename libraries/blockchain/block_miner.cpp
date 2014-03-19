@@ -11,17 +11,17 @@ namespace bts { namespace blockchain {
      {
         public:
            block_miner_impl()
-           :_target(0),_miner_votes(0),_min_votes(0),_effort(0){}
+           :_miner_votes(0),_min_votes(0),_effort(0){}
 
            block_miner::callback _callback;
            fc::thread*           _main_thread;
            fc::thread            _mining_thread;
-           uint64_t              _target;
            uint64_t              _miner_votes;
            uint64_t              _min_votes;
            block_header          _current_block;
            fc::future<void>      _mining_loop_complete;
            float                 _effort;
+           block_header          _prev_header;
 
            void mining_loop()
            {
@@ -29,12 +29,16 @@ namespace bts { namespace blockchain {
               {
                  if( !_callback || _effort < 0.01 )
                  {
-                    fc::usleep( fc::microseconds( 1000*10 ) );
+                    fc::usleep( fc::microseconds( 1000*100 ) );
                     continue;
                  }
                  auto start = fc::time_point::now();
 
                  block_header tmp = _current_block;
+                 tmp.timestamp = fc::time_point::now();
+                 auto next_diff = _prev_header.next_difficulty * 300*1000000ll / (tmp.timestamp - _prev_header.timestamp).count();
+                 tmp.next_difficulty = (_prev_header.next_difficulty * 24 + next_diff ) / 25;
+
                  tmp.noncea = 0;
                  tmp.nonceb = 0;
                  auto tmp_id = tmp.id();
@@ -44,14 +48,16 @@ namespace bts { namespace blockchain {
                  {
                     tmp.noncea = collision.first;
                     tmp.nonceb = collision.second;
-                    if( (tmp.get_difficulty() * _miner_votes)/_min_votes  >= _target )
+                    ilog( "difficlty ${d}  target ${t}  tmp.get_difficulty ${dd}  mv ${mv} min: ${min}", ("min",_min_votes)("mv",_miner_votes)("dd",tmp.get_difficulty())("d",(tmp.get_difficulty() * _miner_votes)/_min_votes)("t",_prev_header.next_difficulty) );
+                    if( (tmp.get_difficulty() * _miner_votes)/_min_votes  >= _prev_header.next_difficulty )
                     {
                        if( _callback )
                        {
                           auto cb = _callback; 
                           _main_thread->async( [cb,tmp](){cb( tmp );} );
                        }
-                       continue;
+                       _effort = 0;
+                       break;
                     }
                  }
 
@@ -68,12 +74,12 @@ namespace bts { namespace blockchain {
                     auto wait_until = end + fc::microseconds(wait_time);
                     if( wait_until > fc::time_point::now() && !_mining_loop_complete.canceled() )
                     {
-                       fc::usleep( fc::microseconds( 1000*10 ) );
+                       fc::usleep( fc::microseconds( 1000*100 ) );
                     }
                  }
                  else
                  {
-                    fc::usleep( fc::microseconds(1000) );
+                    fc::usleep( fc::microseconds(1000*10) );
                  }
               }
            }
@@ -100,12 +106,12 @@ namespace bts { namespace blockchain {
      }
   }
 
-  void block_miner::set_block( const block_header& header, 
-                               uint64_t target_difficulty, 
+  void block_miner::set_block( const block_header& header, const block_header& prev_header,
                                uint64_t miner_votes, uint64_t min_votes )
   {
+     FC_ASSERT( min_votes > 0 );
      my->_current_block = header;
-     my->_target        = target_difficulty;
+     my->_prev_header   = prev_header;
      my->_miner_votes   = miner_votes;
      my->_min_votes     = min_votes;
   }
