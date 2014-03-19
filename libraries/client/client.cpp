@@ -11,6 +11,16 @@ namespace bts { namespace client {
        class client_impl : public bts::net::node_delegate
        {
           public:
+            virtual bool has_item( const net::item_id& id )
+            {
+               return false;
+            }
+            virtual void     sync_status( uint32_t item_type, uint32_t current_item_num, uint32_t item_count ){};
+            
+            /**
+             *  Call any time the number of connected peers changes.
+             */
+            virtual void     connection_count_changed( uint32_t c ){};
             /**
              *  @brief allows the application to validate a message prior to 
              *         broadcasting to peers.

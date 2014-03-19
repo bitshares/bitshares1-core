@@ -20,7 +20,7 @@ namespace bts { namespace net {
          /**
           *  If delegate has the item, the network has no need to fetch it.
           */
-         virtual bool has_item( const item_id& id );
+         virtual bool has_item( const net::item_id& id ){return false;};
 
          /**
           *  @brief allows the application to validate a message prior to 
@@ -37,22 +37,22 @@ namespace bts { namespace net {
           */
          virtual std::vector<item_id> get_headers( uint32_t item_type, 
                                                    const item_id& from_id, 
-                                                   uint32_t limit = 2000 );
+                                                   uint32_t limit = 2000 ) { return std::vector<item_id>(); }
 
          /**
           *  Given the hash of the requested data, fetch the body. 
           */
-         virtual message  get_body( uint32_t type, const item_id& id ); 
+         virtual message  get_body( uint32_t type, const item_id& id ) { return message(); }
 
          /**
           *  Call this after the call to handle_message succeeds.  
           */
-         virtual void     sync_status( uint32_t item_type, uint32_t current_item_num, uint32_t item_count );
+         virtual void     sync_status( uint32_t item_type, uint32_t current_item_num, uint32_t item_count ){};
 
          /**
           *  Call any time the number of connected peers changes.
           */
-         virtual void     connection_count_changed( uint32_t c );
+         virtual void     connection_count_changed( uint32_t c ){};
    };
 
    /**

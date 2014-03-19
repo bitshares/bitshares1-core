@@ -1,6 +1,7 @@
 #include <bts/net/node.hpp>
-#include <bts/net/stcp_socket.hpp>
 #include <bts/net/connection.hpp>
+#include <bts/net/stcp_socket.hpp>
+#include <fc/thread/thread.hpp>
 
 namespace bts { namespace net {
 
@@ -9,13 +10,13 @@ namespace bts { namespace net {
       class connection
       {
          public:
-            connection( const stcp_socket& sock, node_impl& n )
+            connection( const stcp_socket_ptr& sock, node_impl& n )
             :_sock(sock),_node(n){}
 
             stcp_socket_ptr _sock;
             node_impl&      _node;
       };
-      typedef std::shared_pointer<connection> connection_ptr;
+      typedef std::shared_ptr<connection> connection_ptr;
 
       class node_impl
       {
@@ -47,10 +48,10 @@ namespace bts { namespace net {
             {
                try {
                   _tcp_serv.close();
-                  if( accept_loop_complete.valid() )
+                  if( _accept_loop_complete.valid() )
                   {
-                      accept_loop_complete.cancel();
-                      accept_loop_complete.wait();
+                      _accept_loop_complete.cancel();
+                      _accept_loop_complete.wait();
                   }
                } 
                catch( const fc::exception& e )
@@ -148,17 +149,14 @@ namespace bts { namespace net {
 
    }
 
-   void node::sync_from( const item_id& id )
+   void node::sync_from( uint32_t type, const item_id& id )
    {
    }
 
-   message node::fetch( const item_id& id )
-   {
-
-   }
 
    bool node::is_connected()const
    {
+      return false;
    }
 
 } } // bts::net
