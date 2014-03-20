@@ -3,6 +3,7 @@ project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
+list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
@@ -19,11 +20,17 @@ if( WIN32 )
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
-
+	
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
     set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
+
+    find_library(READLINE_LIBRARIES NAMES readline)
+    find_path(READLINE_INCLUDE_DIR readline/readline.h)
+    if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)
+      MESSAGE(FATAL_ERROR "Could not find lib readline.")
+    endif()
     
     if( APPLE )
         # Apple Specific Options Here
@@ -36,9 +43,9 @@ else( WIN32 )
         set( rt_library rt )
         set( pthread_library pthread)
     endif( APPLE )
+	set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )
 
-set(Boost_USE_STATIC_LIBS ON)
 find_package( Boost 1.54 REQUIRED COMPONENTS 
                   thread 
                   date_time 
@@ -59,5 +66,6 @@ include_directories( ${Boost_INCLUDE_DIR} )
 add_subdirectory( libraries )
 add_subdirectory( "${LEVEL_DB_DIR}"    )
 add_subdirectory( vendor/miniupnp/miniupnpc )
+add_subdirectory( programs )
 add_subdirectory( tests )
 #add_subdirectory( programs  )
