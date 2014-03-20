@@ -11,11 +11,21 @@ namespace bts { namespace client {
        class client_impl : public bts::net::node_delegate
        {
           public:
+            virtual bool has_item( const net::item_id& id ) override
+            {
+               return false;
+            }
+            virtual void     sync_status( uint32_t item_type, uint32_t item_count ) override {};
+            
+            /**
+             *  Call any time the number of connected peers changes.
+             */
+            virtual void     connection_count_changed( uint32_t c ) override {};
             /**
              *  @brief allows the application to validate a message prior to 
              *         broadcasting to peers.
              */
-            virtual void validate_broadcast( const bts::net::message& msg )
+            virtual void handle_message( const bts::net::message& msg ) override
             {
                  switch( msg.msg_type )
                  {
@@ -35,21 +45,23 @@ namespace bts { namespace client {
              *  Assuming all data elements are ordered in some way, this method should
              *  return up to limit ids that occur *after* from_id.
              */
-            virtual std::vector<net::item_id> get_headers( const net::item_id& from_id, uint32_t limit )
+            virtual std::vector<net::item_hash_t> get_item_ids( const net::item_id& from_id, uint32_t& remaining_to_get, uint32_t limit ) override 
             {
                 FC_ASSERT( _chain_db != nullptr );
 
                 if( limit > 2000 ) 
                     limit = 2000;
 
-                std::vector<net::item_id> items; 
+                std::vector<net::item_hash_t> items; 
                 items.reserve( limit );
 
-                auto block_num = _chain_db->fetch_block_num( from_id );
+                auto block_num = _chain_db->fetch_block_num( from_id.item_hash );
                 for( auto i = block_num + 1; i < limit; ++i )
                 {
                    items.push_back( _chain_db->fetch_block( i ).id() );
                 }
+
+                // TODO: set remaining_to_get to the number of blocks after items.back(), or 0 if there are none
 
                 return items;
             } // get_headers
@@ -58,15 +70,15 @@ namespace bts { namespace client {
             /**
              *  Given the hash of the requested data, fetch the body. 
              */
-            virtual bts::net::message  get_body( const net::item_id& id )
+            virtual bts::net::message get_item( const net::item_id& id ) override
             {
                 FC_ASSERT( _chain_db != nullptr );
 
-                auto block_num = _chain_db->fetch_block_num( id );
+                auto block_num = _chain_db->fetch_block_num( id.item_hash );
                 auto blk       = _chain_db->fetch_trx_block( block_num );
-                auto sig       = _chain_db->fetch_block_signature( id );
+                auto sig       = _chain_db->fetch_block_signature( id.item_hash );
 
-                return bts::net::message( block_message( id, blk, sig ) );
+                return bts::net::message( block_message( id.item_hash, blk, sig ) );
             }
 
 
@@ -106,6 +118,12 @@ namespace bts { namespace client {
     void client::set_wallet( const bts::wallet::wallet_ptr& wall )
     {
        my->_wallet = wall;
+    }
+
+    bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
+
+    void client::broadcast_transaction( const signed_transaction& trx )
+    {
     }
 
 

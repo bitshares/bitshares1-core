@@ -34,7 +34,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     signed_transaction trx;
     for( uint32_t i = 0; i < addr.size(); ++i )
     {
-        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        uint64_t amnt = rand()%10000 * BTS_BLOCKCHAIN_SHARE;
         trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
         genesis.total_shares += amnt;
     }
@@ -84,7 +84,7 @@ class DNSTestState
             
             // need to have non-zero CDD output in block, DNS records don't add anything
             // TODO should they?
-            for (auto i = 0; i < 10; i++ )
+            for (auto i = 0; i < 3; i++ )
             {
                 auto transfer_tx = _botwallet.transfer( asset(uint64_t(1000000)), random_addr() );
                 txs.push_back( transfer_tx );
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
  */
 BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
 {
-    bool fail = false; // what is best practice for 
+    bool fail = false; // what is best practice for failing tests w/ exceptions?
     try {
         DNSTestState state;
         state.normal_genesis();

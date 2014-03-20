@@ -18,6 +18,8 @@ namespace bts { namespace net {
      uint32_t  msg_type;  // every channel gets a 16 bit message type specifier
   };
 
+  typedef fc::uint160_t message_hash_type;
+
   /**
    *  Abstracts the process of packing/unpacking a message for a 
    *  particular channel.
