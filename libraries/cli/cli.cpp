@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 #include <fc/log/logger.hpp>
 
@@ -41,6 +42,22 @@ namespace bts { namespace cli {
                      std::getline( std::cin, line );
                   #endif ///WIN32
                   return line;
+            }
+            bool check_unlock()
+            {
+               if( _client->get_wallet()->is_locked() )
+               {
+                  auto password = _self->get_line( "key password: " );
+                  try {
+                     _client->get_wallet()->unlock_wallet( password );
+                  } 
+                  catch ( ... ) 
+                  {
+                     std::cout << "Invalid Password\n";
+                     return false;
+                  }
+               }
+               return true;
             }
 
             void process_commands()
@@ -99,7 +116,12 @@ namespace bts { namespace cli {
       std::cout<<"Commands\n";
       std::cout<<"-------------------------------------------------------------\n";
       std::cout<<"help - print available commands\n";
-      std::cout<<"transfer AMOUNT UNIT to ADDRESS\n";
+      std::cout<<"unlock - asks for password to decrypt private keys \n";
+      std::cout<<"listrecvaddresses\n";
+      std::cout<<"getnewaddress [ACCOUNT] \n";
+      std::cout<<"sendtoaddress ADDRESS AMOUNT [MEMO] \n";
+      std::cout<<"getbalance [ACCOUNT] [MIN_CONF] \n";
+      std::cout<<"listtransactions [COUNT]\n";
       std::cout<<"import_bitcoin_wallet WALLET_DAT\n";
       std::cout<<"import_private_key    WALLET_DAT\n";
       std::cout<<"quit - exit cleanly\n";
@@ -108,6 +130,8 @@ namespace bts { namespace cli {
 
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
+       std::stringstream ss(args);
+
        if( cmd == "help" ) print_help();
        else if( cmd == "login" )
        {
@@ -180,20 +204,56 @@ namespace bts { namespace cli {
              std::cout << "Wallet created.\n";
           }
        }
-       else if( cmd == "transfer" )
+       else if( cmd == "getnewaddress" )
        {
+          if( my->check_unlock() )
+          {
+             std::string account;
+             ss >> account;
+
+             auto addr = my->_client->get_wallet()->new_recv_address( account );
+             std::cout << std::string( addr ) << "\n";
+          }
+       }
+       else if( cmd == "sendtoaddress" )
+       {
+          if( my->check_unlock() )
+          {
+             std::string addr;
+             double      amount;
+             std::string memo;
+             ss >> addr >> amount;
+             std::getline( ss, memo );
+
+             auto trx = my->_client->get_wallet()->transfer( asset( amount ), address(addr), memo );
+             my->_client->broadcast_transaction( trx );
+          }
+       }
+       else if( cmd == "listrecvaddresses" )
+       {
+           auto addrs = my->_client->get_wallet()->get_recv_addresses();
+           for( auto addr : addrs )
+              std::cout << std::setw( 30 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
        }
        else if( cmd == "import" )
        {
 
        }
+       else if( cmd == "listtransactions" )
+       {
+          uint32_t count = 0;
+          ss >> count;
+          list_transactions( count );
+       }
        else if( cmd == "export" )
        {
 
        }
-       else if( cmd == "balance" )
+       else if( cmd == "getbalance" )
        {
-
+          uint32_t minconf = 0;
+          ss >> minconf;
+          get_balance(minconf);
        }
        else if( cmd == "quit" )
        {
@@ -204,6 +264,17 @@ namespace bts { namespace cli {
           std::cout<<"Unknown command '"<<cmd<<"'\n\n";
           print_help();
        }
+   }
+
+   void cli::list_transactions( uint32_t count )
+   {
+       auto trxs = my->_client->get_wallet()->get_transaction_history();
+
+   }
+   void cli::get_balance( uint32_t min_conf, uint16_t unit )
+   {
+       asset bal =  my->_client->get_wallet()->get_balance(unit);
+       std::cout << std::string( bal ) << "\n";
    }
    
    void cli::wait()
