@@ -136,6 +136,7 @@ namespace bts { namespace wallet {
               std::string _wallet_key_password;  // used to access private keys
 
               fc::path                                                   _wallet_dat;
+              fc::path                                                   _data_dir;
               wallet_data                                                _data;
               asset                                                      _current_fee_rate;
               uint64_t                                                   _stake;
@@ -373,6 +374,16 @@ namespace bts { namespace wallet {
                FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat)), 
                std::current_exception() ); 
        }
+   }
+
+   void wallet::set_data_directory( const fc::path& dir )
+   {
+      my->_data_dir = dir;
+      my->_wallet_dat = dir / "wallet.bts";
+   }
+   fc::path wallet::get_wallet_file()const
+   {
+      return my->_wallet_dat;
    }
 
    void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )

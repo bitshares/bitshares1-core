@@ -45,6 +45,7 @@ namespace bts { namespace cli {
 
             void process_commands()
             {
+                  _self->process_command( "login", "" );
                   auto line = _self->get_line();
                   while( std::cin.good() )
                   {
@@ -108,6 +109,77 @@ namespace bts { namespace cli {
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
        if( cmd == "help" ) print_help();
+       else if( cmd == "login" )
+       {
+          auto wallet_dat = my->_client->get_wallet()->get_wallet_file();
+          if( fc::exists( wallet_dat ) )
+          {
+             std::cout << "Login\n";
+             auto pass = get_line("password: ");
+             my->_client->get_wallet()->open( wallet_dat, pass );
+             std::cout << "Login Successful.\n";
+             return;
+          }
+          else
+          {
+             std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
+             std::cout << "You will be asked to provide two passwords, the first password \n";
+             std::cout << "encrypts the entire contents of your wallet on disk.  The second\n ";
+             std::cout << "passowrd will only encrypt your private keys.\n\n";
+
+             std::cout << "Please set a password for encrypting your wallet: \n";
+             std::string pass1, pass2;
+             pass1  = get_line("password: ");
+             while( pass1 != pass2 )
+             {
+                pass2 = get_line("password (again): ");
+                if( pass2 != pass1 )
+                {
+                  std::cout << "Your passwords did not match, please try again.\n";
+                  pass2 = std::string();
+                  pass1 = get_line("password: ");
+                }
+             }
+             if( pass1 == std::string() )
+             {
+                std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+             }
+
+             std::cout << "Please set a password for encrypting your private keys: \n";
+             std::string keypass1, keypass2;
+             bool retry = false;
+             keypass1  = get_line("key password: ");
+             while( keypass1 != keypass2 )
+             {
+                if( keypass1.size() > 8 )
+                   keypass2 = get_line("key password (again): ");
+                else
+                {
+                   std::cout << "Your key password must be more than 8 characters.\n";
+                   retry = true;
+                }
+                if( keypass2 != keypass1 )
+                {
+                   std::cout << "Your passwords did not match.\n";
+                   retry = true;
+                }
+                if( retry )
+                {
+                  retry = false;
+                  std::cout << "Please try again.\n";
+                  keypass2 = std::string();
+                  keypass1 = get_line("password: ");
+                }
+             }
+             if( keypass1 == std::string() )
+             {
+                std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+             }
+            
+             my->_client->get_wallet()->create( wallet_dat, pass1, keypass1 );
+             std::cout << "Wallet created.\n";
+          }
+       }
        else if( cmd == "transfer" )
        {
        }

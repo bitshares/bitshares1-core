@@ -120,5 +120,7 @@ namespace bts { namespace client {
        my->_wallet = wall;
     }
 
+    bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
+
 
 } } // bts::client

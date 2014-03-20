@@ -73,6 +73,9 @@ namespace wallet {
            wallet();
            ~wallet();
 
+           void set_data_directory( const fc::path& dir );
+           fc::path get_wallet_file()const;
+
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            void save();
