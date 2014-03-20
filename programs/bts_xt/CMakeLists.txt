@@ -8,4 +8,4 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/cli/include" )
 
 add_executable( bts_xt main.cpp )
-target_link_libraries( bts_xt bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} )
+target_link_libraries( bts_xt bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${ZLIB_LIBRARIES} )
