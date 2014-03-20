@@ -265,7 +265,51 @@ BOOST_AUTO_TEST_CASE( new_auction_name_length_fail )
  */
 BOOST_AUTO_TEST_CASE( bid_on_auction )
 {
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+
+        // Create second wallet
+        fc::temp_directory dir;
+        bts::dns::dns_wallet wallet2;
+        wallet2.create( dir.path() / "dns_test_wallet2.dat", "password", "password", true );
+
+        uint64_t bid1 = 1;
+        uint64_t bid2 = 100;
+
+        // Give second wallet a balance
+        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        auto transfer_tx = wallet->transfer(asset(amnt), wallet2.new_recv_address());
+        wlog( "transfer_trx: ${trx} ", ("trx",transfer_tx) );
+        txs.push_back( transfer_tx );
+        state.next_block( txs );
+        txs.clear();
+        wallet2.scan_chain(*state.get_db());
+
+        // Initial domain purchase
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(bid1), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+        wallet2.scan_chain(*state.get_db());
+
+        // Bid on auction from second wallet
+        buy_tx = wallet2.buy_domain( "TESTNAME", asset(bid2), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+        wallet2.scan_chain(*state.get_db());
+    }
+    catch (const fc::exception& e)
+    {
+        elog( "${e}", ("e",e.to_detail_string()) );
+        throw;
+    }
 }
 
 /* Your bid should fail if the domain is not in an auction
