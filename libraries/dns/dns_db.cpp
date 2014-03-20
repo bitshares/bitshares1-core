@@ -44,6 +44,28 @@ namespace bts { namespace dns {
             return my->name2record.fetch(name);
     } FC_RETHROW_EXCEPTIONS( warn, "name: ${name}", ("name", name) ) }
 
+    void dns_db::store( const trx_block& blk, const bts::blockchain::signed_transactions& deterministic_txs )
+    {
+        for (auto i = 0; i < blk.trxs.size(); i++)
+        {
+            for (auto out : blk.trxs[i].outputs)
+            {
+                if (out.claim_func == 20)
+                {
+                    dns_record record;
+                    auto dns_out = out.as<claim_domain_output>();
+                    record.owner = dns_out.owner;
+                    record.value = dns_out.value;
+                    record.last_price = out.amount; // TODO is this right? should
+                    record.last_update_ref = output_reference( blk.trxs[i].id(), i );
+
+                    store_dns_record( dns_out.name, record );
+                }
+            }
+        }
+        chain_database::store( blk, deterministic_txs );
+    }
+
     bool dns_db::has_dns_record( const std::string& name ) 
     {
         return my->name2record.find(name).valid();

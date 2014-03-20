@@ -5,6 +5,8 @@
 #include <bts/blockchain/config.hpp>
 #include <fc/io/raw.hpp>
 
+#include <fc/log/logger.hpp>
+
 namespace bts { namespace dns {
 
 dns_transaction_validator::dns_transaction_validator(dns_db* db)
@@ -63,6 +65,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
 {
     //TODO assert "amount" doesn't change when updating domain record so
     //that domains can contribute to "valid votes" ??
+    ilog("Validating domain claim output");
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT( ! dns_state.seen_domain_output,
             "More than one domain claim output in one tx: ${tx}", ("tx", state.trx) );
@@ -80,6 +83,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
      */
     if (! dns_state.seen_domain_input)
     {
+        ilog("Have not seen a domain claim input on this tx");
         // name doesn't already exist  (not in DB OR older than 1 year)
         if ( db->has_dns_record(dns_out.name) )
         {
@@ -93,11 +97,13 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
                 FC_ASSERT(!"Name already exists (and is younger than 1 block-year)"); 
             }
         }
+        ilog("Name doesn't exist, or it if does, it is expired");
         FC_ASSERT(dns_out.flags == claim_domain_output::for_auction,
                   "New auction started with for_auction flag not set");
         return;
     }
 
+    ilog("Seen a domain input");
 
     /* Otherwise, the transaction must have a domain input and it must exist
      * in the database, and it can't be expired
@@ -116,21 +122,24 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     FC_ASSERT(dns_out.name == dns_state.dns_claimed.name,
               "bid transaction refers to different input and output names");
 
-    
+   
     // case on state of claimed output
     //   * if auction is over (not_for_sale OR output is older than 3 days)
     if (dns_out.flags == claim_domain_output::not_for_sale
        || block_age >= DNS_AUCTION_DURATION_BLOCKS)
     {
+
+        ilog("Auction is over.");
         // If you're the owner, do whatever you like!
         if (! state.has_signature(dns_out.owner) )
         {
             FC_ASSERT(false, "Domain tx requiring signature doesn't have it: ${tx}",
                      ("tx", state.trx));
         }
-
+        ilog("Tx signed by owner");
     } else {
         // Currently in an auction
+        ilog("Currently in an auction");
         FC_ASSERT(dns_out.flags == claim_domain_output::for_auction,
                   "bid made without keeping for_auction flag");
         //TODO use macros in dns_config.hpp instead of hard-coded constants

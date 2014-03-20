@@ -217,6 +217,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
  */
 BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
 {
+    bool fail = false; // what is best practice for 
     try {
         DNSTestState state;
         state.normal_genesis();
@@ -235,14 +236,19 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
         }
 
         auto buy_tx2 = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        wlog( "buy_trx_2: ${trx} ", ("trx", buy_tx2) );
         empty_txs.push_back( buy_tx2 );
         state.next_block( empty_txs );
-
+        
+        fail = true;
+        FC_ASSERT("!Expected exception");
     }
     catch (const fc::exception& e)
     {
-        elog( "${e}", ("e",e.to_detail_string()) );
-        throw;
+        if (fail)
+            throw;
+        else
+            return;
     }
 }
 
