@@ -6,7 +6,16 @@ namespace bts { namespace net {
 
    namespace detail { class node_impl; }
 
-   typedef fc::ripemd160 item_id;
+   typedef fc::ripemd160 item_hash_t;
+   struct item_id
+   {
+       uint32_t      item_type;
+       item_hash_t   item_hash;
+       item_id() {}
+
+       item_id(uint32_t type, const item_hash_t& hash) 
+       :item_type(type), item_hash(hash){}
+   };
 
    /**
     *  @class node_delegate
@@ -20,39 +29,46 @@ namespace bts { namespace net {
          /**
           *  If delegate has the item, the network has no need to fetch it.
           */
-         virtual bool has_item( const item_id& id );
+         virtual bool has_item( const net::item_id& id ) = 0;
 
          /**
-          *  @brief allows the application to validate a message prior to 
+          *  @brief allows the application to validate an item prior to 
           *         broadcasting to peers.
           *
-          *  @throws exception if error validating message, otherwise the message is
+          *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual void handle_message( const message& ){};
+         virtual void handle_message( const message& ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
           *  return up to limit ids that occur *after* from_id.
+          *  On return, remaining_item_count will be set to the number of items
+          *  in our blockchain after the last item returned in the result,
+          *  or 0 if the result contains the last item in the blockchain
           */
-         virtual std::vector<item_id> get_headers( uint32_t item_type, 
-                                                   const item_id& from_id, 
-                                                   uint32_t limit = 2000 );
+         virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id, 
+                                                        uint32_t& remaining_item_count,
+                                                        uint32_t limit = 2000 ) = 0;
 
          /**
           *  Given the hash of the requested data, fetch the body. 
           */
-         virtual message  get_body( uint32_t type, const item_id& id ); 
+         virtual message get_item( const item_id& id ) = 0;
 
          /**
-          *  Call this after the call to handle_message succeeds.  
+          *  Call this after the call to handle_message succeeds.
+          * 
+          *  @param item_type the type of the item we're synchronizing, will be the same as item passed to the sync_from() call
+          *  @param item_count the number of items known to the node that haven't been sent to handle_item() yet.
+          *                    After `item_count` more calls to handle_item(), the node will be in sync
           */
-         virtual void     sync_status( uint32_t item_type, uint32_t current_item_num, uint32_t item_count );
+         virtual void     sync_status( uint32_t item_type, uint32_t item_count ) = 0;
 
          /**
           *  Call any time the number of connected peers changes.
           */
-         virtual void     connection_count_changed( uint32_t c );
+         virtual void     connection_count_changed( uint32_t c ) = 0;
    };
 
    /**
@@ -69,6 +85,11 @@ namespace bts { namespace net {
    /**
     *  @class node
     *  @brief provides application independent P2P broadcast and data synchronization
+    *
+    *  Unanswered questions:
+    *    when does the node start establishing network connections and accepting peers?
+    *    we don't have enough info to start synchronizing until sync_from() is called,
+    *    would we have any reason to connect before that?
     */
    class node
    {
@@ -105,16 +126,20 @@ namespace bts { namespace net {
          *  Add message to outgoing inventory list, notify peers that
          *  I have a message ready.
          */
-        void      broadcast( const message& msg );
+        void      broadcast( const message& item_to_broadcast );
 
         /**
          *  Node starts the process of fetching all items after item_id of the
-         *  given item_type.   Durring this process messages are not broadcast.
+         *  given item_type.   During this process messages are not broadcast.
          */
-        void      sync_from( uint32_t item_type, const item_id& );
+        void      sync_from( const item_id& );
+
+        bool      is_connected()const;
 
       private:
         std::unique_ptr<detail::node_impl> my;
    };
+
+   typedef std::shared_ptr<node> node_ptr;
 
 } } // bts::net

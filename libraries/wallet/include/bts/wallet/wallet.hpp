@@ -73,6 +73,9 @@ namespace wallet {
            wallet();
            ~wallet();
 
+           void set_data_directory( const fc::path& dir );
+           fc::path get_wallet_file()const;
+
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            void save();
@@ -86,7 +89,7 @@ namespace wallet {
            *
            * @note some transaction may be valid stand-alone, but may conflict with other transactions.
            */
-           trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs );
+           trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs, int64_t& miner_votes );
 
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
            address                                 new_recv_address( const std::string& label = "" );

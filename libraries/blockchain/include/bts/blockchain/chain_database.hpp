@@ -92,6 +92,7 @@ namespace bts { namespace blockchain {
           uint64_t               get_stake(); // head - 1 
           asset                  get_fee_rate()const;
           uint64_t               current_difficulty()const;
+          uint64_t               get_min_votes();
 
 
 

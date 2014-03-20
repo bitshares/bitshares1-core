@@ -136,6 +136,7 @@ namespace bts { namespace wallet {
               std::string _wallet_key_password;  // used to access private keys
 
               fc::path                                                   _wallet_dat;
+              fc::path                                                   _data_dir;
               wallet_data                                                _data;
               asset                                                      _current_fee_rate;
               uint64_t                                                   _stake;
@@ -193,6 +194,7 @@ namespace bts { namespace wallet {
                               inputs.back() = trx_input( _output_index_to_ref[itr->first] );
                               best_cdd = cdd;
                               mine_addr = itr->second.as<claim_by_signature_output>().owner;
+                              total_in = itr->second.amount;
                            }
                        }
                        else if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == 0 )
@@ -202,6 +204,7 @@ namespace bts { namespace wallet {
                            {
                               inputs.back() = trx_input( _output_index_to_ref[itr->first] );
                               best_cdd = cdd;
+                              total_in = itr->second.amount;
                            }
                        }
                    }
@@ -373,6 +376,16 @@ namespace bts { namespace wallet {
        }
    }
 
+   void wallet::set_data_directory( const fc::path& dir )
+   {
+      my->_data_dir = dir;
+      my->_wallet_dat = dir / "wallet.bts";
+   }
+   fc::path wallet::get_wallet_file()const
+   {
+      return my->_wallet_dat;
+   }
+
    void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
    { try {
       FC_ASSERT( !fc::exists( wallet_dat ), "", ("wallet_dat",wallet_dat) );
@@ -540,6 +553,7 @@ namespace bts { namespace wallet {
 
        signed_transaction trx; 
        trx.inputs = my->collect_mining_input( total_in, req_sigs );
+       wlog( "total_in ${in} + ${reward} = ${out}", ("in",total_in)("reward",reward)("out",total_in+reward) );
        trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), total_in + reward) );
        my->sign_transaction(trx, req_sigs, false);
 
@@ -811,7 +825,7 @@ namespace bts { namespace wallet {
       return my->collect_inputs( min_amnt, total_in, req_sigs );
    }
 
-   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs )
+   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs, int64_t& miner_votes )
    {
       try {
          auto deterministic_trxs = db.generate_determinsitic_transactions();
@@ -823,7 +837,10 @@ namespace bts { namespace wallet {
          for( uint32_t i = 0; i < in_trxs.size(); ++i )
          {
             try {
+                // create a new block state to evaluate transactions in isolation to maximize fees
+                auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
+
                 s.eval = db.get_transaction_validator()->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
                 //ilog( "eval: ${eval}", ("eval",s.eval) );
 
@@ -846,6 +863,9 @@ namespace bts { namespace wallet {
          std::unordered_set<output_reference> consumed_outputs;
 
 
+         // create new block state to reject transactions that conflict with transactions that
+         // have already been included in the block.
+         auto block_state = db.get_transaction_validator()->create_block_state();
          transaction_summary summary;
          for( size_t i = 0; i < stats.size(); ++i )
          {
@@ -858,12 +878,21 @@ namespace bts { namespace wallet {
                     break; 
                }
             }
-            summary += stats[i].eval;
-            result.trxs.push_back(trx);
+            try {
+               summary += db.get_transaction_validator()->evaluate( trx, block_state ); 
+               result.trxs.push_back(trx);
+            } 
+            catch ( const fc::exception& e )
+            {
+               wlog( "caught exception that failed to pass validation: ${e}", ("e",e.to_detail_string() ) );
+            }
          }
          auto mine_trx = create_mining_transaction( asset() );
 
-         auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
+         // we don't want to add this to the combined state just yet... it will get added below.
+         auto tmp_state = db.get_transaction_validator()->create_block_state(); 
+         auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, tmp_state ); 
+         miner_votes = trx_sum.valid_votes;
 
          auto head_block = db.get_head_block();
 
@@ -871,10 +900,13 @@ namespace bts { namespace wallet {
          int64_t max_reward = summary.fees / 2;
          wlog("summary: ${sum}", ("sum", summary));
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+         ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
          FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
 
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
-         trx_sum =  db.get_transaction_validator()->evaluate( mine_trx ); 
+         
+         trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, block_state ); 
+         
          summary += trx_sum;
          result.trxs.push_back( mine_trx );
 
@@ -883,13 +915,14 @@ namespace bts { namespace wallet {
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
          result.next_fee        = result.calculate_next_fee( db.get_fee_rate().get_rounded_amount(), result.block_size() );
          result.votes_cast      = summary.valid_votes;
-         wlog( "summary.fees: ${summary.fees}", ("summary.fees", summary.fees) );
+    //     wlog( "summary.fees: ${summary.fees}", ("summary.fees", summary.fees) );
          result.total_shares    = head_block.total_shares - summary.fees;
          result.available_votes = head_block.available_votes + result.total_shares 
                                   - result.votes_cast - summary.invalid_votes;
          result.timestamp       = db.get_pow_validator()->get_time();
 
          // next difficulty =  DESIRED_DELTA_T * CURRENT_DIFFICULTY / PREV_DELTA_T
+         ilog( "head_block.timestamp: ${t}  result: ${r}", ("t",head_block.timestamp)("r",result.timestamp ) );
          auto next_diff = head_block.next_difficulty * 300*1000000ll / (result.timestamp - head_block.timestamp).count();
          result.next_difficulty = (head_block.next_difficulty * 24 + next_diff) / 25;
 

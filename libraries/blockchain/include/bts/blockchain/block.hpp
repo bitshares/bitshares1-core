@@ -1,4 +1,5 @@
 #pragma once
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <fc/uint128.hpp>
@@ -25,6 +26,7 @@ namespace bts { namespace blockchain {
        bool                validate_work()const;
        static uint64_t     calculate_next_fee( uint64_t prev_fee, uint64_t block_size );
        static uint64_t     min_fee();
+       int64_t             min_votes()const { return available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR; }
       
        uint8_t             version;
        block_id_type       prev;
