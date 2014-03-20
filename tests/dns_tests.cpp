@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
         state.next_block( empty_txs );
         
         fail = true;
-        FC_ASSERT("!Expected exception");
+        FC_ASSERT(0);
     }
     catch (const fc::exception& e)
     {
@@ -257,7 +257,34 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
  */
 BOOST_AUTO_TEST_CASE( new_auction_name_length_fail )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        // Build invalid name
+        std::string name = "";
+        for (int i = 0; i < BTS_DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+        auto buy_tx = wallet->buy_domain(name, asset(uint64_t(1)), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        
+        state.next_block( txs );
+        
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+            throw;
+        else
+            return;
+    }
 }
 
 /* You should be able to bid on a domain that is in an auction. The previous

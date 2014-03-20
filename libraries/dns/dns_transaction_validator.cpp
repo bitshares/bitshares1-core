@@ -73,6 +73,8 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
 
     // "name" and "value" length limits
     auto dns_out = out.as<claim_domain_output>();
+    FC_ASSERT(dns_out.name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", dns_out.name.size()));
+    FC_ASSERT(dns_out.value.size() <= BTS_DNS_MAX_VALUE_LEN, "Maximum value length exceeded: ${len}", ("len", dns_out.value.size()));
 
     dns_db* db = dynamic_cast<dns_db*>(_db);
     FC_ASSERT( db != nullptr );

@@ -28,7 +28,9 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
                     const std::string& name, bts::blockchain::asset amount, dns_db& db)
 { try {
     signed_transaction trx;
-    // TODO check name length
+
+    // Check name length
+    FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
    
     auto domain_addr = new_recv_address("Owner address for domain: " + name);
     auto change_addr = new_recv_address("Change address");
