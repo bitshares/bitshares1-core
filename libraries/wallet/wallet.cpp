@@ -840,9 +840,9 @@ namespace bts { namespace wallet {
                 // create a new block state to evaluate transactions in isolation to maximize fees
                 auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
-
-                s.eval = db.get_transaction_validator()->evaluate( in_trxs[i] ); //evaluate_signed_transaction( in_trxs[i] );
-                //ilog( "eval: ${eval}", ("eval",s.eval) );
+                
+                s.eval = db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
+                ilog( "eval: ${eval}", ("eval",s.eval) );
 
                // TODO: enforce fees
                 if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )

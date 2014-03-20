@@ -122,5 +122,9 @@ namespace bts { namespace client {
 
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
 
+    void client::broadcast_transaction( const signed_transaction& trx )
+    {
+    }
+
 
 } } // bts::client
