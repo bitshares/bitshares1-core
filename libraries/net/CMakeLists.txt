@@ -4,6 +4,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 
 add_library( bts_net 
              node.cpp
+             stcp_socket.cpp
            )
 
 target_link_libraries( bts_net fc bts_db leveldb )
