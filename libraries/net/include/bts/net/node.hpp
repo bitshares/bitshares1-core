@@ -6,16 +6,16 @@ namespace bts { namespace net {
 
    namespace detail { class node_impl; }
 
-  typedef fc::ripemd160 item_hash_t;
-  struct item_id
-  {
-    uint32_t      item_type;
-    item_hash_t   item_hash;
-    item_id() {}
-    item_id(uint32_t type, const item_hash_t& hash) :
-      item_type(type), item_hash(hash) 
-    {}
-  };
+   typedef fc::ripemd160 item_hash_t;
+   struct item_id
+   {
+       uint32_t      item_type;
+       item_hash_t   item_hash;
+       item_id() {}
+
+       item_id(uint32_t type, const item_hash_t& hash) 
+       :item_type(type), item_hash(hash){}
+   };
 
    /**
     *  @class node_delegate

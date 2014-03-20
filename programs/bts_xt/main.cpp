@@ -2,6 +2,7 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/cli/cli.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -38,16 +39,20 @@ int main( int argc, char** argv )
       chain->open( datadir / "chain", true );
 
       auto wall    = std::make_shared<bts::wallet::wallet>();
-      wall->open( datadir / "wallet.bts", "" );
+      //wall->open( datadir / "wallet.bts", "" );
 
       auto c = std::make_shared<bts::client::client>();
       c->set_chain( chain );
       c->set_wallet( wall );
 
+      auto cli = std::make_shared<bts::cli::cli>( c );
+
+      cli->wait();
+
    } 
    catch ( const fc::exception& e ) 
    {
-
+      wlog( "${e}", ("e", e.to_detail_string() ) );
    }
    return 0;
 }

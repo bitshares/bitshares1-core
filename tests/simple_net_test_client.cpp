@@ -41,36 +41,36 @@ using namespace boost::multi_index;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 class blockchain_tied_message_cache 
 {
-private:
-  static const uint32_t cache_duration_in_blocks = 2;
+   private:
+     static const uint32_t cache_duration_in_blocks = 2;
 
-  struct message_hash_index{};
-  struct block_clock_index{};
-  struct message_info
-  {
-    message_hash_type message_hash;
-    message           message_body;
-    uint32_t          block_clock_when_received;
-    message_info(const message_hash_type& message_hash,
-                 const message&           message_body,
-                 uint32_t                 block_clock_when_received) :
-      message_hash(message_hash),
-      message_body(message_body),
-      block_clock_when_received (block_clock_when_received)
-    {}
-  };
-  typedef boost::multi_index_container<message_info, indexed_by<ordered_unique<tag<message_hash_index>, member<message_info, message_hash_type, &message_info::message_hash> >,
-                                                                ordered_non_unique<tag<block_clock_index>, member<message_info, uint32_t, &message_info::block_clock_when_received> > > > message_cache_container;
-  message_cache_container _message_cache;
+     struct message_hash_index{};
+     struct block_clock_index{};
+     struct message_info
+     {
+       message_hash_type message_hash;
+       message           message_body;
+       uint32_t          block_clock_when_received;
+       message_info(const message_hash_type& message_hash,
+                    const message&           message_body,
+                    uint32_t                 block_clock_when_received) :
+         message_hash(message_hash),
+         message_body(message_body),
+         block_clock_when_received (block_clock_when_received)
+       {}
+     };
+     typedef boost::multi_index_container<message_info, indexed_by<ordered_unique<tag<message_hash_index>, member<message_info, message_hash_type, &message_info::message_hash> >,
+                                                                   ordered_non_unique<tag<block_clock_index>, member<message_info, uint32_t, &message_info::block_clock_when_received> > > > message_cache_container;
+     message_cache_container _message_cache;
 
-  uint32_t block_clock; //
-public:
-  blockchain_tied_message_cache() :
-    block_clock(0)
-  {}
-  void block_accepted();
-  void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache);
-  message get_message(const message_hash_type& hash_of_message_to_lookup);
+     uint32_t block_clock; //
+   public:
+     blockchain_tied_message_cache() :
+       block_clock(0)
+     {}
+     void block_accepted();
+     void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache);
+     message get_message(const message_hash_type& hash_of_message_to_lookup);
 };
 
 void blockchain_tied_message_cache::block_accepted()
@@ -83,7 +83,7 @@ void blockchain_tied_message_cache::block_accepted()
 
 void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache)
 {
-  _message_cache.emplace(message_info(hash_of_message_to_cache, message_to_cache, block_clock));
+  _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock));
 }
 
 message blockchain_tied_message_cache::get_message(const message_hash_type& hash_of_message_to_lookup)
@@ -96,60 +96,61 @@ message blockchain_tied_message_cache::get_message(const message_hash_type& hash
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 class simple_net_test_miner : public bts::net::node_delegate
 {
-private:
-  node _node;
+   private:
+     node _node;
 
-  // cache of messages we've seen in the past few blocks
-  blockchain_tied_message_cache _message_cache;
+     // cache of messages we've seen in the past few blocks
+     blockchain_tied_message_cache _message_cache;
 
-  // blockchain is a series of block_messages
-  struct block_hash_index{};
-  typedef boost::multi_index_container<block_message, indexed_by<random_access<>, 
-                                                                 ordered_unique<tag<block_hash_index>, member<block_message, block_id_type, &block_message::block_id> > > > ordered_blockchain_container;
-  ordered_blockchain_container _blockchain;
+     // blockchain is a series of block_messages
+     struct block_hash_index{};
+     typedef boost::multi_index_container<block_message, indexed_by<random_access<>, 
+                                                                    ordered_unique<tag<block_hash_index>, member<block_message, block_id_type, &block_message::block_id> > > > ordered_blockchain_container;
+     ordered_blockchain_container _blockchain;
 
-  // the list of unsigned blocks we're considering adding to our chain
-  typedef boost::multi_index_container<block_message, indexed_by<ordered_unique<member<block_message, block_id_type, &block_message::block_id> > > > block_container;
-  block_container _unsigned_blocks;
+     // the list of unsigned blocks we're considering adding to our chain
+     typedef boost::multi_index_container<block_message, indexed_by<ordered_unique<member<block_message, block_id_type, &block_message::block_id> > > > block_container;
+     block_container _unsigned_blocks;
 
-  // the list of transactions we're considering adding to a new block if we mine one.
-  // we expire these after a few blocks.  A real client would also expire them immediately
-  // if it received a block containing the transaction
-  struct transaction_hash_index{};
-  struct chain_length_index{};
-  struct transaction_with_timestamp
-  {
-    bts::blockchain::signed_transaction transaction;
-    transaction_id_type                 transaction_id;
-    uint32_t                            chain_length_when_received;
-  };
-  typedef boost::multi_index_container<transaction_with_timestamp, indexed_by<ordered_unique<tag<transaction_hash_index>, member<transaction_with_timestamp, transaction_id_type, &transaction_with_timestamp::transaction_id> >, 
-                                                                              ordered_non_unique<tag<chain_length_index>, member<transaction_with_timestamp, uint32_t, &transaction_with_timestamp::chain_length_when_received> > > > transaction_container;
-  transaction_container _transactions;
+     // the list of transactions we're considering adding to a new block if we mine one.
+     // we expire these after a few blocks.  A real client would also expire them immediately
+     // if it received a block containing the transaction
+     struct transaction_hash_index{};
+     struct chain_length_index{};
+     struct transaction_with_timestamp
+     {
+       bts::blockchain::signed_transaction transaction;
+       transaction_id_type                 transaction_id;
+       uint32_t                            chain_length_when_received;
+     };
+     typedef boost::multi_index_container<transaction_with_timestamp, indexed_by<ordered_unique<tag<transaction_hash_index>, member<transaction_with_timestamp, transaction_id_type, &transaction_with_timestamp::transaction_id> >, 
+                                                                                 ordered_non_unique<tag<chain_length_index>, member<transaction_with_timestamp, uint32_t, &transaction_with_timestamp::chain_length_when_received> > > > transaction_container;
+     transaction_container _transactions;
 
-  // the list of signatures we've seen but have been unable to pair with a block (maybe the unsigned block hasn't arrived yet).
-  typedef boost::multi_index_container<signature_message, indexed_by<ordered_unique<member<signature_message, block_id_type, &signature_message::block_id> > > > signature_container;
-  signature_container _signatures;
+     // the list of signatures we've seen but have been unable to pair with a block (maybe the unsigned block hasn't arrived yet).
+     typedef boost::multi_index_container<signature_message, indexed_by<ordered_unique<member<signature_message, block_id_type, &signature_message::block_id> > > > signature_container;
+     signature_container _signatures;
 
-  bool _synchronized;
-  uint32_t _remaining_items_to_sync;
+     bool _synchronized;
+     uint32_t _remaining_items_to_sync;
 
-  void push_valid_signed_block(const block_message& block_to_push);
-  bool is_block_valid(const block_message& block_to_check);
-  void store_transaction(const trx_message& transaction_to_store);
-public:
-  simple_net_test_miner();
-  void run();
+     void push_valid_signed_block(const block_message& block_to_push);
+     bool is_block_valid(const block_message& block_to_check);
+     void store_transaction(const trx_message& transaction_to_store);
 
-  /* Implement node_delegate */
-  bool has_item(const item_id& id) override;
-  void handle_message(const message&) override;
-  std::vector<item_hash_t> get_item_ids(const item_id& from_id, 
-                                        uint32_t& remaining_item_count,
-                                        uint32_t limit = 2000) override;
-  message get_item(const item_id& id) override; 
-  void sync_status(uint32_t item_type, uint32_t item_count) override;
-  void connection_count_changed(uint32_t c) override;
+   public:
+     simple_net_test_miner();
+     void run();
+
+     /* Implement node_delegate */
+     bool has_item(const item_id& id) override;
+     void handle_message(const message&) override;
+     std::vector<item_hash_t> get_item_ids(const item_id& from_id, 
+                                           uint32_t& remaining_item_count,
+                                           uint32_t limit = 2000) override;
+     message get_item(const item_id& id) override; 
+     void sync_status(uint32_t item_type, uint32_t item_count) override;
+     void connection_count_changed(uint32_t c) override;
 };
 
 simple_net_test_miner::simple_net_test_miner() :
@@ -170,7 +171,7 @@ void simple_net_test_miner::run()
 
 void simple_net_test_miner::push_valid_signed_block(const block_message& block_to_push)
 {
-  _blockchain.emplace_back(block_to_push);
+  _blockchain.push_back(block_to_push);
 
   // any unsigned blocks we have are garbage
   _unsigned_blocks.clear();

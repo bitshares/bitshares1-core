@@ -25,6 +25,12 @@ else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
     set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
+
+    find_library(READLINE_LIBRARIES NAMES readline)
+    find_path(READLINE_INCLUDE_DIR readline/readline.h)
+    if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)
+      MESSAGE(FATAL_ERROR "Could not find lib readline.")
+    endif()
     
     if( APPLE )
         # Apple Specific Options Here

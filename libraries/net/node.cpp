@@ -38,8 +38,7 @@ namespace bts { namespace net {
 
       ~node_impl()
       {
-        try
-        {
+        try {
           close();
         }
         catch (const fc::exception& e)
@@ -50,19 +49,12 @@ namespace bts { namespace net {
 
       void close()
       {
-        try
-        {
           _tcp_serv.close();
           if (_accept_loop_complete.valid())
           {
             _accept_loop_complete.cancel();
             _accept_loop_complete.wait();
           }
-        }
-        catch (const fc::exception& e)
-        {
-          wlog("unhandled exception ${e}", ("e",e.to_detail_string()));
-        }
       }
 
 
