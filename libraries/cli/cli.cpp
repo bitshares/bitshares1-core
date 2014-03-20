@@ -1,16 +1,16 @@
 #include <bts/cli/cli.hpp>
 #include <fc/thread/thread.hpp>
 
-#ifndef WIN32
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif //!WIN32
-
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 
 #include <fc/log/logger.hpp>
+
+#ifndef WIN32
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif //!WIN32
 
 namespace bts { namespace cli {
    
