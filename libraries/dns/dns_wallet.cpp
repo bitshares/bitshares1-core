@@ -5,10 +5,9 @@
 #include <bts/dns/outputs.hpp>
 #include <bts/dns/dns_config.hpp>
 
-#include<fc/reflect/variant.hpp>
-#include<fc/io/raw.hpp>
-#include<fc/io/raw_variant.hpp>
-
+#include <fc/reflect/variant.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/io/raw_variant.hpp>
 #include <fc/log/logger.hpp>
 
 namespace bts { namespace dns {
@@ -48,7 +47,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
         auto old_dns_output = old_output.as<claim_domain_output>();
         if (old_dns_output.flags != claim_domain_output::for_auction)
         {
-            FC_ASSERT(!"tried to make a bid for a name that is not for sale");
+            FC_ASSERT(0, "Tried to make a bid for a name that is not for sale");
         }
         auto block_num = db.fetch_trx_num(old_utxo_ref.trx_hash).block_num;
         auto current_block = db.head_block_num();
@@ -134,16 +133,20 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
     
     trx.inputs = collect_inputs( asset(), total_in, req_sigs );
    
+    auto found = false;
     for (auto pair : get_unspent_outputs())
     {
         if ( pair.second.claim_func == claim_domain
           && pair.second.as<claim_domain_output>().name == name)
         {
             trx.inputs.push_back( trx_input( get_ref_from_output_idx(pair.first) ) );
+            found = true;
             break;
         }
-        FC_ASSERT(!"Tried to update record but name UTXO not found in wallet");
     } 
+
+    if (!found)
+        FC_ASSERT(0, "Tried to update record but name UTXO not found in wallet");
 
     auto change_amt = total_in;
 
@@ -187,7 +190,7 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(
             trx.inputs.push_back( trx_input( get_ref_from_output_idx(pair.first) ) );
             break;
         }
-        FC_ASSERT(!"Tried to sell a name UTXO not found in wallet");
+        FC_ASSERT(0, "Tried to sell a name UTXO not found in wallet");
     } 
 
     auto change_amt = total_in;
