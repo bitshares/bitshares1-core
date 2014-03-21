@@ -471,6 +471,12 @@ namespace bts { namespace blockchain {
         my->_block2sig.store( block_id, sig );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("sig",sig) ) }
 
+
+    void chain_database::evaluate_transaction( const signed_transaction& trx )
+    {
+       get_transaction_validator()->evaluate( trx, get_transaction_validator()->create_block_state() );
+    }
+
 }  } // bts::blockchain
 
 

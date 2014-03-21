@@ -1,4 +1,4 @@
-#include "chain_server.hpp"
+#include <bts/net/chain_server.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger_config.hpp>
 
@@ -7,8 +7,8 @@ int main( int argc, char** argv )
    try {
        fc::configure_logging( fc::logging_config::default_config() );
 
-       chain_server cserv;
-       chain_server::config cfg;
+       bts::net::chain_server cserv;
+       bts::net::chain_server::config cfg;
        cfg.port = 4567;
        cserv.configure(cfg);
        ilog( "sleep..." );

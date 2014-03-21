@@ -1,12 +1,13 @@
 #pragma once
 #include <bts/net/message.hpp>
 #include <bts/net/stcp_socket.hpp>
-#include "chain_connection.hpp"
+#include <bts/net/chain_connection.hpp>
 #include <bts/db/fwd.hpp>
-#include <bts/blockchain/config.hpp>
 
 #include <set>
 
+
+namespace bts { namespace net {
 
   namespace detail { class chain_server_impl; };
 
@@ -75,8 +76,10 @@
         std::vector<chain_connection_ptr> get_connections()const;
 
       private:
-        std::unique_ptr<::detail::chain_server_impl> my;
+        std::unique_ptr<detail::chain_server_impl> my;
   };
   typedef std::shared_ptr<chain_server> chain_server_ptr;
+
+} } // bts::net
 
 FC_REFLECT( chain_server::config, (port)(mirrors) )

@@ -1,7 +1,7 @@
 #include <fc/crypto/ripemd160.hpp>
-#include "chain_server.hpp" 
-#include "chain_connection.hpp"
-#include "chain_messages.hpp"
+#include <bts/net/chain_server.hpp>
+#include <bts/net/chain_connection.hpp>
+#include <bts/net/chain_messages.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <bts/net/message.hpp>
 #include <bts/net/stcp_socket.hpp>
@@ -23,11 +23,6 @@
 #include <map>
 
 
-fc::ecc::private_key test_genesis_private_key()
-{
-    return fc::ecc::private_key::generate_from_seed( fc::sha256::hash( "freedom!!!!", 10 ) );
-}
-
 struct genesis_block_config
 {
    genesis_block_config():supply(0),blockheight(0){}
@@ -39,6 +34,7 @@ FC_REFLECT( genesis_block_config, (supply)(balances) )
 
 using namespace bts::blockchain;
 
+namespace bts { namespace net {
 bts::blockchain::trx_block create_test_genesis_block()
 {
    try {
@@ -69,19 +65,8 @@ bts::blockchain::trx_block create_test_genesis_block()
       b.timestamp    = fc::time_point::from_iso_string("20131201T054434");
       b.next_fee     = bts::blockchain::block_header::min_fee();
 
-      //coinbase.valid_after = 0;
-      //coinbase.valid_blocks = 0;
-      std::cerr<<"Genesis Private Key: "<<std::string(test_genesis_private_key().get_secret() )<<"\n";
-      // TODO: init from PTS here...
-   //   coinbase.outputs.push_back( 
-   //      bts::blockchain::trx_output( bts::blockchain::claim_by_signature_output( bts::address(test_genesis_private_key().get_public_key()) ), bts::blockchain::asset(b.total_shares, bts::blockchain::asset::bts)) );
-
-      ilog( "..." );
-      ilog( "..." );
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
-      ilog( "..." );
       fc::variant var(b);
-      ilog( "..." );
 
       auto str = fc::json::to_pretty_string(var); //b);
       ilog( "block: \n${b}", ("b", str ) );
@@ -256,7 +241,7 @@ namespace detail
                 ilog( "recv: ${m}", ("m",trx) );
                 try 
                 {
-                   chain.get_transaction_validator()->evaluate( trx.signed_trx, chain.get_transaction_validator()->create_block_state() ); // throws exception if invalid trx.
+                   chain.evaluate_transaction( trx.signed_trx ); // throws if error
                    if( pending.insert( std::make_pair(trx.signed_trx.id(),trx.signed_trx) ).second )
                    {
                       fc::async( [=]() { broadcast( m ); } );
@@ -380,7 +365,7 @@ namespace detail
 
 
 chain_server::chain_server()
-:my( new ::detail::chain_server_impl() ){}
+:my( new detail::chain_server_impl() ){}
 
 chain_server::~chain_server()
 { }
@@ -456,3 +441,4 @@ void chain_server::close()
   } FC_RETHROW_EXCEPTIONS( warn, "error closing server socket" );
 }
 
+} } // bts::net
