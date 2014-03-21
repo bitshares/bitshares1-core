@@ -50,6 +50,7 @@ namespace bts { namespace client {
     }
 
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
+    bts::blockchain::chain_database_ptr client::get_chain()const { return my->_chain_db; }
 
     void client::broadcast_transaction( const signed_transaction& trx )
     {
