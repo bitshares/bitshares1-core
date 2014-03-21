@@ -169,16 +169,13 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         txs.push_back( buy_tx );
         
         state.next_block( txs );
-
     }
     catch (const fc::exception& e)
     {
         elog( "${e}", ("e",e.to_detail_string()) );
         throw;
     }
-
 }
-
 
 /* You should be able to start a new auction for an expired name
  */
@@ -204,7 +201,6 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
         auto buy_tx2 = wallet->buy_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
         empty_txs.push_back( buy_tx2 );
         state.next_block( empty_txs );
-
     }
     catch (const fc::exception& e)
     {
@@ -253,7 +249,6 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
         }
     }
 }
-
 
 /* You should not be able to start an auction for an invalid name (length)
  */
@@ -404,7 +399,30 @@ BOOST_AUTO_TEST_CASE( bid_fail_not_in_auction )
  */
 BOOST_AUTO_TEST_CASE( bid_fail_insufficient_fee )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(wallet->get_balance(0)), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        
+        state.next_block( txs );
+
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+        {
+            elog( "${e}", ("e",e.to_detail_string()) );
+            throw;
+        }
+    }
 }
 
 /* Your bid should fail if you don't pay the previous owner enough
