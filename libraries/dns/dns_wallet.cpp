@@ -119,17 +119,15 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
                                              fc::variant value)
 { try {
     signed_transaction trx;
-     // TODO check name length
+
+    FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Name too long in update_record");
    
     auto change_addr = new_recv_address("Change address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
     bts::blockchain::asset total_in; // set by collect_inputs
 
-   
     auto serialized_value = fc::raw::pack(value);
-    if (serialized_value.size() > BTS_DNS_MAX_VALUE_LEN) {
-        FC_ASSERT(!"Serialized value too long in update_record");
-    }
+    FC_ASSERT(serialized_value.size() <= BTS_DNS_MAX_VALUE_LEN, "Serialized value too long in update_record");
     
     trx.inputs = collect_inputs( asset(), total_in, req_sigs );
    

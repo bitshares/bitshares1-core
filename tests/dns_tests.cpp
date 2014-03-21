@@ -517,7 +517,6 @@ BOOST_AUTO_TEST_CASE( update_record )
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
-        txs.clear();
     }
     catch (const fc::exception& e)
     {
@@ -544,7 +543,55 @@ BOOST_AUTO_TEST_CASE( update_record_expire_fail )
  */
 BOOST_AUTO_TEST_CASE( update_record_val_length_fail )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        // Buy domain
+        std::string name = "TESTNAME";
+        std::string str = "";
+        for (auto i = 0; i < BTS_DNS_MAX_VALUE_LEN + 1; i++)
+            str.append("A");
+        fc::variant value = str;
+
+        dns_wallet* wallet = state.get_wallet();
+        dns_db* db = state.get_db();
+
+        std::vector<signed_transaction> txs;
+
+        auto buy_tx = wallet->buy_domain( name, asset(uint64_t(1)), *db );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Let auction expire
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        // Update record
+        auto record = db->get_dns_record(name);
+        auto utxo_ref = record.last_update_ref;
+        auto output = db->fetch_output(utxo_ref);
+        auto dns_output = output.as<claim_domain_output>();
+
+        auto update_tx = wallet->update_record( name, dns_output.owner, value);
+        wlog( "update_trx: ${trx} ", ("trx", update_tx) );
+        txs.push_back( update_tx );
+        state.next_block( txs );
+
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+        {
+            elog( "${e}", ("e",e.to_detail_string()) );
+            throw;
+        }
+    }
 }
 
 /* You should be able to sell a domain if you own it
