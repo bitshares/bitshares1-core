@@ -20,6 +20,9 @@ namespace bts { namespace cli {
 
          void wait();
 
+         virtual void list_transactions( uint32_t count = 0 );
+         virtual void get_balance( uint32_t min_conf, uint16_t unit = 0 );
+
       private:
          std::unique_ptr<detail::cli_impl> my;
    };

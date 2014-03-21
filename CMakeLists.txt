@@ -10,8 +10,10 @@ get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 
 if( WIN32 )
-    set( DB_VERSION 60 )
     message( STATUS "Configuring Bitshares on WIN32")
+    set( DB_VERSION 60 )
+    set( BDB_STATIC_LIBS 1 )
+
     set( ZLIB_LIBRARIES "" )
     set( LEVEL_DB_DIR vendor/leveldb-win )
 
@@ -21,6 +23,9 @@ if( WIN32 )
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
 	
+     set( PLATFORM_SPECIFIC_LIBS WS2_32 )
+     add_definitions(-DBOOST_TEST_DYN_LINK)
+     set(CRYPTO_LIB)
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
@@ -42,9 +47,12 @@ else( WIN32 )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
         set( rt_library rt )
         set( pthread_library pthread)
+        set( crypto_library crypto)
     endif( APPLE )
 	set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )
+
+find_package( BerkeleyDB )
 
 find_package( Boost 1.53 REQUIRED COMPONENTS 
                    thread 

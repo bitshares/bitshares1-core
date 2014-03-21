@@ -4,6 +4,7 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
 #include <fc/filesystem.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
@@ -39,13 +40,15 @@ int main( int argc, char** argv )
       chain->open( datadir / "chain", true );
 
       auto wall    = std::make_shared<bts::wallet::wallet>();
-      //wall->open( datadir / "wallet.bts", "" );
+      wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>();
       c->set_chain( chain );
       c->set_wallet( wall );
 
       auto cli = std::make_shared<bts::cli::cli>( c );
+
+      c->add_node( "192.168.2.135:4567" );
 
       cli->wait();
 
