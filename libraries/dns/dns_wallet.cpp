@@ -65,6 +65,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
 
             auto old_ask_amt = old_output.amount.get_rounded_amount();
             auto required_in = BTS_DNS_MIN_BID_FROM(old_ask_amt);
+            FC_ASSERT(amount >= required_in, "Minimum bid amount not met");
             trx.inputs = collect_inputs( required_in, total_in, req_sigs);
             auto change_amt = total_in - required_in;
             
@@ -208,7 +209,7 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(
     return trx;
 
 
-} FC_RETHROW_EXCEPTIONS(warn, "sell_domai ${name} with ${amt}", ("name", name)("amt", amount)) }
+} FC_RETHROW_EXCEPTIONS(warn, "sell_domain ${name} with ${amt}", ("name", name)("amt", amount)) }
 
 
 bool dns_wallet::scan_output( const trx_output& out,

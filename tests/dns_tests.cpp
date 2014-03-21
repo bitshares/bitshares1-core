@@ -429,7 +429,55 @@ BOOST_AUTO_TEST_CASE( bid_fail_insufficient_fee )
  */
 BOOST_AUTO_TEST_CASE( bid_fail_prev_owner_payment )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        bts::dns::dns_wallet* wallet = state.get_wallet();
+        std::vector<signed_transaction> txs;
+
+        // Create second wallet
+        fc::temp_directory dir;
+        bts::dns::dns_wallet wallet2;
+        wallet2.create( dir.path() / "dns_test_wallet2.dat", "password", "password", true );
+
+        uint64_t bid1 = 100;
+        uint64_t bid2 = BTS_DNS_MIN_BID_FROM(bid1) - 1;
+
+        // Give second wallet a balance
+        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        auto transfer_tx = wallet->transfer(asset(amnt), wallet2.new_recv_address());
+        wlog( "transfer_trx: ${trx} ", ("trx",transfer_tx) );
+        txs.push_back( transfer_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Initial domain purchase
+        auto buy_tx = wallet->buy_domain( "TESTNAME", asset(bid1), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Bid on auction from second wallet
+        wallet2.scan_chain(*state.get_db());
+        buy_tx = wallet2.buy_domain( "TESTNAME", asset(bid2), *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+        {
+            elog( "${e}", ("e",e.to_detail_string()) );
+            throw;
+        }
+    }
 }
 
 /* You should be able to update a record if you still own the domain
