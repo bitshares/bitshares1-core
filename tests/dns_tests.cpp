@@ -90,7 +90,8 @@ class DNSTestState
                 txs.push_back( transfer_tx );
             }
 
-            auto next_block = _botwallet.generate_next_block( _db, txs );
+            int64_t miner_votes = 0;
+            auto next_block = _botwallet.generate_next_block( _db, txs, miner_votes );
             _db.push_block( next_block );
 
             auto head_id = _db.head_block_id();

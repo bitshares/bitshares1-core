@@ -10,5 +10,4 @@ add_library( bts_dns
              dns_wallet.cpp
            )
 
-
-target_link_libraries( bts_dns bts_blockchain fc bts_db leveldb )
+target_link_libraries( bts_dns bts_wallet fc bts_db bts_blockchain leveldb )

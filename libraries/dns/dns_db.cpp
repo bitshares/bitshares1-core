@@ -46,7 +46,7 @@ namespace bts { namespace dns {
 
     void dns_db::store( const trx_block& blk, const bts::blockchain::signed_transactions& deterministic_txs )
     {
-        for (auto i = 0; i < blk.trxs.size(); i++)
+        for (auto i = 0u; i < blk.trxs.size(); i++)
         {
             for (auto out : blk.trxs[i].outputs)
             {
