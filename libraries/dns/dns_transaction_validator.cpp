@@ -100,7 +100,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
 
             if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS)
             {
-                FC_ASSERT(!"Name already exists (and is younger than 1 block-year)"); 
+                FC_ASSERT(0, "Name already exists (and is younger than 1 block-year)"); 
             }
         }
         ilog("Name doesn't exist, or it if does, it is expired");

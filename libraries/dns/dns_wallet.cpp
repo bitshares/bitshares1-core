@@ -87,7 +87,7 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
             return trx;
 
         } else if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS) {
-            FC_ASSERT(!"Tried to bid on domain that is not for sale (auction timed out but not explicitly marked as done)");
+            FC_ASSERT(0, "Tried to bid on domain that is not for sale (auction timed out but not explicitly marked as done)");
         }
     }
     
