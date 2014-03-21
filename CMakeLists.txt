@@ -10,8 +10,10 @@ get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 
 if( WIN32 )
-    set( DB_VERSION 60 )
     message( STATUS "Configuring Bitshares on WIN32")
+    set( DB_VERSION 60 )
+    set( BDB_STATIC_LIBS 1 )
+
     set( ZLIB_LIBRARIES "" )
     set( LEVEL_DB_DIR vendor/leveldb-win )
 
@@ -49,6 +51,8 @@ else( WIN32 )
     endif( APPLE )
 	set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )
+
+find_package( BerkeleyDB )
 
 find_package( Boost 1.54 REQUIRED COMPONENTS 
                   thread 
