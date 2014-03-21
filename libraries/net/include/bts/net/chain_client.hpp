@@ -25,7 +25,7 @@ namespace bts { namespace net {
          void set_chain( const chain_database_ptr& chain );
          void add_node( const std::string& ep );
 
-         void braodcast_transaction( const signed_transaction& trx );
+         void broadcast_transaction( const signed_transaction& trx );
          bool is_connected()const;
 
       private:

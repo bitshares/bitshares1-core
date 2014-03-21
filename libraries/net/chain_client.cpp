@@ -131,7 +131,7 @@ namespace bts { namespace net {
         my->start_connect_loop();
   }
 
-  void chain_client::braodcast_transaction( const signed_transaction& trx )
+  void chain_client::broadcast_transaction( const signed_transaction& trx )
   {
      my->_pending_trxs[trx.id()] = trx;
   }
