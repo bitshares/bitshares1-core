@@ -123,10 +123,10 @@ namespace bts { namespace blockchain {
 
 namespace fc
 {
-   void to_variant( const bts::blockchain::asset& var,  variant& vo );
-   void from_variant( const variant& var,  bts::blockchain::asset& vo );
-   void to_variant( const bts::blockchain::price& var,  variant& vo );
-   void from_variant( const variant& var,  bts::blockchain::price& vo );
+ //  void to_variant( const bts::blockchain::asset& var,  variant& vo );
+ //  void from_variant( const variant& var,  bts::blockchain::asset& vo );
+ //  void to_variant( const bts::blockchain::price& var,  variant& vo );
+ //  void from_variant( const variant& var,  bts::blockchain::price& vo );
 }
 
 #include <fc/reflect/reflect.hpp>
