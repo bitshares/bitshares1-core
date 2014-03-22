@@ -617,6 +617,7 @@ BOOST_AUTO_TEST_CASE( update_record_expire_fail )
         for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
+        // Attempt to update record
         auto update_tx = wallet->update_record(name, value, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
@@ -633,10 +634,6 @@ BOOST_AUTO_TEST_CASE( update_record_expire_fail )
             throw;
         }
     }
-}
-
-BOOST_AUTO_TEST_CASE( update_record_name_length_fail )
-{
 }
 
 /* You should not be able to update a record with an invalid value (length)
@@ -790,9 +787,44 @@ BOOST_AUTO_TEST_CASE( sell_domain_sig_fail )
  */
 BOOST_AUTO_TEST_CASE( sell_domain_expire_fail )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
-}
+        // Buy domain
+        std::string name = "TESTNAME";
 
-BOOST_AUTO_TEST_CASE( sell_domain_name_length_fail )
-{
+        dns_wallet* wallet = state.get_wallet();
+        dns_db* db = state.get_db();
+
+        std::vector<signed_transaction> txs;
+
+        auto buy_tx = wallet->buy_domain( name, asset(uint64_t(1)), *db );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Let record expire
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        // Attempt to sell domain
+        auto sell_tx = wallet->sell_domain(name, asset(uint64_t(1)), *db);
+        wlog( "sell_trx: ${trx} ", ("trx", sell_tx) );
+        txs.push_back( sell_tx );
+        state.next_block( txs );
+
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+        {
+            elog( "${e}", ("e",e.to_detail_string()) );
+            throw;
+        }
+    }
 }

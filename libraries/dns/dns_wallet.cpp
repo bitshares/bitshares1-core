@@ -188,6 +188,14 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(const std::string& n
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
     FC_ASSERT(amount >= ASSET_ZERO, "Negative amount: ${amt}", ("amt", amount));
 
+    // Check expiry
+    auto record = db.get_dns_record(name);
+    auto utxo_ref = record.last_update_ref;
+    auto block_num = db.fetch_trx_num(utxo_ref.trx_hash).block_num;
+    auto current_block = db.head_block_num();
+
+    FC_ASSERT(current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS, "Tried to sell expired domain");
+
     signed_transaction trx;
    
     auto change_addr = new_recv_address("Change address");
