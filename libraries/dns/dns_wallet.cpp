@@ -115,9 +115,10 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(const std::string& na
 bts::blockchain::signed_transaction dns_wallet::update_record(const std::string& name, fc::variant value,
                                                               dns_db& db)
 { try {
-    signed_transaction trx;
-
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Name too long in update_record");
+
+    auto serialized_value = fc::raw::pack(value);
+    FC_ASSERT(serialized_value.size() <= BTS_DNS_MAX_VALUE_LEN, "Serialized value too long in update_record");
 
     // Check expiry
     auto record = db.get_dns_record(name);
@@ -127,16 +128,13 @@ bts::blockchain::signed_transaction dns_wallet::update_record(const std::string&
 
     FC_ASSERT(current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS, "Tried to update expired record");
    
+    signed_transaction trx;
     auto change_addr = new_recv_address("Change address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
     bts::blockchain::asset total_in; // set by collect_inputs
-    address domain_addr;
-
-    auto serialized_value = fc::raw::pack(value);
-    FC_ASSERT(serialized_value.size() <= BTS_DNS_MAX_VALUE_LEN, "Serialized value too long in update_record");
-    
     trx.inputs = collect_inputs( asset(), total_in, req_sigs );
    
+    address domain_addr;
     auto found = false;
     for (auto pair : get_unspent_outputs())
     {
@@ -159,8 +157,7 @@ bts::blockchain::signed_transaction dns_wallet::update_record(const std::string&
         }
     } 
 
-    if (!found)
-        FC_ASSERT(0, "Tried to update record but name UTXO not found in wallet");
+    FC_ASSERT(found, "Tried to update record but name UTXO not found in wallet");
 
     auto change_amt = total_in;
 

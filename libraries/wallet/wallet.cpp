@@ -845,7 +845,7 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}", ("eval",s.eval) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
+                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
                         ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
