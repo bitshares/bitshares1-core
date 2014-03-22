@@ -635,6 +635,10 @@ BOOST_AUTO_TEST_CASE( update_record_expire_fail )
     }
 }
 
+BOOST_AUTO_TEST_CASE( update_record_name_length_fail )
+{
+}
+
 /* You should not be able to update a record with an invalid value (length)
  */
 BOOST_AUTO_TEST_CASE( update_record_val_length_fail )
@@ -688,7 +692,38 @@ BOOST_AUTO_TEST_CASE( update_record_val_length_fail )
  */
 BOOST_AUTO_TEST_CASE( sell_domain )
 {
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        dns_wallet* wallet = state.get_wallet();
+        dns_db* db = state.get_db();
+
+        // Buy domain
+        std::string name = "TESTNAME";
+        std::vector<signed_transaction> txs;
+        asset price = uint64_t(1);
+
+        auto buy_tx = wallet->buy_domain( name, price, *db );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Let auction expire
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        auto sell_tx = wallet->sell_domain(name, price, *db);
+        wlog( "sell_trx: ${trx} ", ("trx", sell_tx) );
+        txs.push_back( sell_tx );
+        state.next_block( txs );
+    }
+    catch (const fc::exception& e)
+    {
+        elog( "${e}", ("e",e.to_detail_string()) );
+        throw;
+    }
 }
 
 /* You should not be able to sell a domain if you don't own it (sig)
@@ -703,4 +738,8 @@ BOOST_AUTO_TEST_CASE( sell_domain_sig_fail )
 BOOST_AUTO_TEST_CASE( sell_domain_expire_fail )
 {
 
+}
+
+BOOST_AUTO_TEST_CASE( sell_domain_name_length_fail )
+{
 }
