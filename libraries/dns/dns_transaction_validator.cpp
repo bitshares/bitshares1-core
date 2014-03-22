@@ -1,7 +1,7 @@
 #include <bts/dns/dns_transaction_validator.hpp>
 #include <bts/dns/outputs.hpp>
 #include <bts/dns/dns_db.hpp>
-#include <bts/dns/dns_config.hpp>
+#include <bts/dns/dns_util.hpp>
 #include <bts/blockchain/config.hpp>
 #include <fc/io/raw.hpp>
 
@@ -104,7 +104,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
             }
         }
         ilog("Name doesn't exist, or it if does, it is expired");
-        FC_ASSERT(dns_out.flags == claim_domain_output::for_auction,
+        FC_ASSERT(dns_out.state == claim_domain_output::possibly_in_auction,
                   "New auction started with for_auction flag not set");
         return;
     }
@@ -131,7 +131,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
    
     // case on state of claimed output
     //   * if auction is over (not_for_sale OR output is older than 3 days)
-    if (dns_out.flags == claim_domain_output::not_for_sale
+    if (dns_out.state == claim_domain_output::not_in_auction
        || block_age >= DNS_AUCTION_DURATION_BLOCKS)
     {
 
@@ -146,7 +146,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     } else {
         // Currently in an auction
         ilog("Currently in an auction");
-        FC_ASSERT(dns_out.flags == claim_domain_output::for_auction,
+        FC_ASSERT(dns_out.state == claim_domain_output::possibly_in_auction,
                   "bid made without keeping for_auction flag");
         //TODO use macros in dns_config.hpp instead of hard-coded constants
         //TODO restore

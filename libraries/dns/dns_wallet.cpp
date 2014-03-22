@@ -3,7 +3,7 @@
 
 #include <bts/dns/dns_wallet.hpp>
 #include <bts/dns/outputs.hpp>
-#include <bts/dns/dns_config.hpp>
+#include <bts/dns/dns_util.hpp>
 
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
@@ -25,7 +25,7 @@ dns_wallet::~dns_wallet()
 {
 }
 
-bts::blockchain::signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount, dns_db& db)
+signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     // Check inputs
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
@@ -39,73 +39,50 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(const std::string& na
     auto inputs = std::vector<trx_input>();
     auto total_in = bts::blockchain::asset(); // set by collect_inputs
 
-    // if there is record and it's not expired and it's for sale, make a bid
-    if (db.has_dns_record(name))
-    {
-        // check "for sale" state
-        auto old_record = db.get_dns_record(name);
-        auto old_utxo_ref = old_record.last_update_ref;
-        auto old_output = db.fetch_output(old_utxo_ref);
-        auto old_dns_output = old_output.as<claim_domain_output>();
+    signed_transactions empty_txs; // TODO: pass current txs (block eval state)
 
-        FC_ASSERT(old_dns_output.flags == claim_domain_output::for_auction,
-                "Tried to make a bid for a name that is not for sale");
+    // Name should be new or already in an auction
+    auto new_name = !name_exists(name, empty_txs, db);
+    auto prev_output = trx_output();
+    auto existing_auction = name_is_in_auction(name, empty_txs, db, prev_output);
+    FC_ASSERT(new_name || existing_auction, "Name not available");
 
-        auto block_num = db.fetch_trx_num(old_utxo_ref.trx_hash).block_num;
-        auto current_block = db.head_block_num();
-
-        // check age
-        if (current_block - block_num < DNS_AUCTION_DURATION_BLOCKS)
-        {
-
-            auto domain_output = claim_domain_output();
-            domain_output.name = name;
-            domain_output.value = std::vector<char>();
-            domain_output.owner = domain_addr;
-            domain_output.flags = claim_domain_output::for_auction;
-
-            auto old_ask_amt = old_output.amount.get_rounded_amount();
-            auto required_in = BTS_DNS_MIN_BID_FROM(old_ask_amt);
-            FC_ASSERT(amount >= required_in, "Minimum bid amount not met");
-            trx.inputs = collect_inputs( required_in, total_in, req_sigs);
-            auto change_amt = total_in - required_in;
-            
-            //TODO macro-ize
-            auto amt_to_past_owner = old_ask_amt + ((required_in - old_ask_amt) / 2);
-
-            // fee is implicit from difference
-            //auto amt_as_fee = (required_in - old_ask_amt) / 2;
-
-            trx.outputs.push_back( trx_output( claim_by_signature_output( old_dns_output.owner ),
-                                               amt_to_past_owner ) );
-            trx.outputs.push_back( trx_output( domain_output, amount ) );
-            trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );
-
-            trx.sigs.clear();
-            sign_transaction(trx, req_sigs, false);
-
-            trx = add_fee_and_sign(trx, amount, total_in, req_sigs);
-
-            return trx;
-
-        } else if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS) {
-            FC_ASSERT(0, "Tried to bid on domain that is not for sale (auction timed out but not explicitly marked as done)");
-        }
-    }
-    
-    // otherwise, you're starting a new auction
-    
-    trx.inputs = collect_inputs( amount, total_in, req_sigs );
-    auto change_amt = total_in - amount;
-
+    // Init output
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = std::vector<char>();
     domain_output.owner = domain_addr;
-    domain_output.flags = claim_domain_output::for_auction;
+    domain_output.state = claim_domain_output::possibly_in_auction;
 
-    trx.outputs.push_back( trx_output( domain_output, amount ) );
-    trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );
+    if (new_name)
+    {
+        trx.inputs = collect_inputs( amount, total_in, req_sigs );
+        auto change_amt = total_in - amount;
+
+        trx.outputs.push_back( trx_output( domain_output, amount ) );
+        trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );
+    }
+    else
+    {
+        auto prev_dns_output = prev_output.as<claim_domain_output>();
+        auto old_ask_amt = prev_output.amount.get_rounded_amount();
+        auto required_in = BTS_DNS_MIN_BID_FROM(old_ask_amt);
+        FC_ASSERT(amount >= required_in, "Minimum bid amount not met");
+
+        trx.inputs = collect_inputs( required_in, total_in, req_sigs);
+        auto change_amt = total_in - required_in;
+        
+        //TODO macro-ize
+        auto amt_to_past_owner = old_ask_amt + ((required_in - old_ask_amt) / 2);
+
+        // fee is implicit from difference
+        //auto amt_as_fee = (required_in - old_ask_amt) / 2;
+
+        trx.outputs.push_back( trx_output( claim_by_signature_output( prev_dns_output.owner ),
+                                           amt_to_past_owner ) );
+        trx.outputs.push_back( trx_output( domain_output, amount ) );
+        trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );
+    }
 
     trx.sigs.clear();
     sign_transaction(trx, req_sigs, false); //TODO what is last arg?
@@ -113,10 +90,10 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(const std::string& na
     trx = add_fee_and_sign(trx, amount, total_in, req_sigs);
 
     return trx;
+
 } FC_RETHROW_EXCEPTIONS(warn, "buy_domain ${name} with ${amt}", ("name", name)("amt", amount)) }
 
-bts::blockchain::signed_transaction dns_wallet::update_record(const std::string& name, fc::variant value,
-                                                              dns_db& db)
+signed_transaction dns_wallet::update_record(const std::string& name, fc::variant value, dns_db& db)
 { try {
     // Check inputs
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
@@ -169,7 +146,7 @@ bts::blockchain::signed_transaction dns_wallet::update_record(const std::string&
     domain_output.name = name;
     domain_output.value = serialized_value;
     domain_output.owner = domain_addr;
-    domain_output.flags = claim_domain_output::not_for_sale;
+    domain_output.state = claim_domain_output::not_in_auction;
 
     trx.outputs.push_back( trx_output( domain_output, asset() ) );
     trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );
@@ -182,7 +159,7 @@ bts::blockchain::signed_transaction dns_wallet::update_record(const std::string&
     return trx;
 } FC_RETHROW_EXCEPTIONS(warn, "update_record ${name} with value ${val}", ("name", name)("val", value)) }
 
-bts::blockchain::signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount, dns_db& db)
+signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     // Check inputs
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
@@ -233,7 +210,7 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(const std::string& n
     domain_output.name = name;
     domain_output.value = std::vector<char>();
     domain_output.owner = sale_addr;
-    domain_output.flags = claim_domain_output::for_auction;
+    domain_output.state = claim_domain_output::possibly_in_auction;
 
     trx.outputs.push_back( trx_output( domain_output, amount ) );
     trx.outputs.push_back( trx_output( claim_by_signature_output( change_addr ), change_amt ) );

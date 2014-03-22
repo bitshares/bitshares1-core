@@ -12,11 +12,11 @@
 #include <bts/wallet/wallet.hpp>
 
 #include <bts/dns/dns_wallet.hpp>
-#include <bts/dns/dns_config.hpp>
+#include <bts/dns/dns_util.hpp>
 
-using namespace bts::wallet;
 using namespace bts::blockchain;
 using namespace bts::dns;
+using namespace bts::wallet;
 
 trx_block generate_genesis_block( const std::vector<address>& addr )
 {
@@ -62,6 +62,7 @@ class DNSTestState
             _db.set_pow_validator( _validator );
             _db.open( dir.path() / "dns_db", true );
         }
+
         /* Start the blockchain with random balances in new addresses */
         void normal_genesis()
         {
@@ -77,6 +78,7 @@ class DNSTestState
                 _auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
             _botwallet.scan_chain( _db );
         }
+
         /* Put these transactions into a block */
         void next_block( std::vector<signed_transaction> txs )
         {
@@ -100,6 +102,7 @@ class DNSTestState
 
             _botwallet.scan_chain( _db );
         }
+
         /* Give this address funds from some genesis addresses */
         void top_up( bts::blockchain::address addr, uint64_t amount )
         {
@@ -108,14 +111,17 @@ class DNSTestState
             trxs.push_back( transfer_tx );
             next_block( trxs );
         }
+
         bts::dns::dns_wallet* get_wallet()
         {
             return &_botwallet;
         }
+
         bts::dns::dns_db* get_db()
         {
             return &_db;
         }
+
         /* Get a new address. The global test wallet will also have it. */
         bts::blockchain::address next_addr()
         {
@@ -123,12 +129,14 @@ class DNSTestState
             _addrs.push_back( addr );
             return addr;
         }
+
         /* Get a random existing address. Good for avoiding dust in certain tests.
          */
         bts::blockchain::address random_addr()
         {
             return _addrs[random()%(_addrs.size())];
         }
+
     private:
         std::shared_ptr<bts::blockchain::sim_pow_validator>      _validator;
         std::vector<bts::blockchain::address>   _addrs;
@@ -136,7 +144,6 @@ class DNSTestState
         // the test state gets its own wallet, used by default
         bts::dns::dns_wallet                     _botwallet;
         bts::dns::dns_db                         _db;
-
 };
 
 /* 
@@ -395,6 +402,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_not_in_auction )
     }
 }
 
+// TODO: Manually craft transaction with a sufficient network fee but too low auction fee
 /* Your bid should fail if the fee is not sufficient
  */
 BOOST_AUTO_TEST_CASE( bid_fail_insufficient_fee )
