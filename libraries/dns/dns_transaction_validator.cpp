@@ -34,27 +34,27 @@ void dns_transaction_validator::validate_input( const meta_trx_input& in,
      switch( in.output.claim_func )
      {
         case claim_domain:
-            validate_domain_input(in, state);
+            validate_domain_input(in, state, block_state);
            break;
         default:
            transaction_validator::validate_input( in, state, block_state );
      }
 }
 
-void dns_transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state,
-                                                 const block_evaluation_state_ptr& block_state )
+void dns_transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state )
 {
      switch( out.claim_func )
      {
         case claim_domain:
-            validate_domain_output(out, state);
+           validate_domain_output( out, state, block_state );
            break;
         default:
            transaction_validator::validate_output( out, state, block_state );
      }
 }
 
-void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state)
+// 
+void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state)
 {
     //TODO a lot of the input validation logic is in the output validator right now
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
@@ -65,7 +65,7 @@ void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, 
     dns_state.dns_claimed = in.output.as<claim_domain_output>();
 }
 
-void dns_transaction_validator::validate_domain_output(const trx_output& out, transaction_evaluation_state& state)
+void dns_transaction_validator::validate_domain_output(const trx_output& out, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state)
 {
     //TODO assert "amount" doesn't change when updating domain record so
     //that domains can contribute to "valid votes" ??

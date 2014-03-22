@@ -38,12 +38,18 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         virtual void validate_output( const trx_output& out, 
                                      transaction_evaluation_state& state,
                                      const block_evaluation_state_ptr& block_state);
-        void validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state);
+        void validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state);
 
-        void validate_domain_output(const trx_output& out, transaction_evaluation_state& state);
+        void validate_domain_output(const trx_output& out, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state);
 };
 
 }} // bts::dns
+
+class dns_block_eval_state : public bts::blockchain::block_evaluation_state
+{
+    public:
+        virtual ~dns_block_eval_state();
+};
 
 FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_domain_input)(seen_domain_output)
                                               (claimed));
