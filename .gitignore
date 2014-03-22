@@ -7,9 +7,10 @@
 *.sw*
 docs/html
 docs/latex
-tests/blockchain_test
 CMakeCache.txt
 Makefile
 CMakeFiles
 tests/blockchain_tests
 tests/dns_tests
+tests/simple_net_test_client
+programs/bts_xt/bts_xt

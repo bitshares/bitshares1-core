@@ -30,9 +30,14 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         dns_transaction_validator(dns_db* db);
         virtual ~dns_transaction_validator();
 
-        virtual transaction_summary evaluate( const signed_transaction& tx );
-        virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state );
-        virtual void validate_output( const trx_output& out, transaction_evaluation_state& state );
+        virtual transaction_summary evaluate( const signed_transaction& tx, 
+                                              const block_evaluation_state_ptr& block_state );
+        virtual void validate_input( const meta_trx_input& in, 
+                                     transaction_evaluation_state& state,
+                                     const block_evaluation_state_ptr& block_state);
+        virtual void validate_output( const trx_output& out, 
+                                     transaction_evaluation_state& state,
+                                     const block_evaluation_state_ptr& block_state);
         void validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state);
 
         void validate_domain_output(const trx_output& out, transaction_evaluation_state& state);

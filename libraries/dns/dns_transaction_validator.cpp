@@ -19,14 +19,17 @@ dns_transaction_validator::~dns_transaction_validator()
 {
 }
 
-transaction_summary dns_transaction_validator::evaluate( const signed_transaction& tx)
+transaction_summary dns_transaction_validator::evaluate( const signed_transaction& tx, 
+                                                         const block_evaluation_state_ptr& block_state )
 {
     dns_tx_evaluation_state state(tx);
-    return on_evaluate( state );
+    return on_evaluate( state, block_state );
 }
 
 
-void dns_transaction_validator::validate_input( const meta_trx_input& in, transaction_evaluation_state& state )
+void dns_transaction_validator::validate_input( const meta_trx_input& in, 
+                                                transaction_evaluation_state& state,
+                                                const block_evaluation_state_ptr& block_state)
 {
      switch( in.output.claim_func )
      {
@@ -34,11 +37,12 @@ void dns_transaction_validator::validate_input( const meta_trx_input& in, transa
             validate_domain_input(in, state);
            break;
         default:
-           transaction_validator::validate_input( in, state );
+           transaction_validator::validate_input( in, state, block_state );
      }
 }
 
-void dns_transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state )
+void dns_transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state,
+                                                 const block_evaluation_state_ptr& block_state )
 {
      switch( out.claim_func )
      {
@@ -46,7 +50,7 @@ void dns_transaction_validator::validate_output( const trx_output& out, transact
             validate_domain_output(out, state);
            break;
         default:
-           transaction_validator::validate_output( out, state );
+           transaction_validator::validate_output( out, state, block_state );
      }
 }
 
@@ -73,6 +77,8 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
 
     // "name" and "value" length limits
     auto dns_out = out.as<claim_domain_output>();
+    FC_ASSERT(dns_out.name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", dns_out.name.size()));
+    FC_ASSERT(dns_out.value.size() <= BTS_DNS_MAX_VALUE_LEN, "Maximum value length exceeded: ${len}", ("len", dns_out.value.size()));
 
     dns_db* db = dynamic_cast<dns_db*>(_db);
     FC_ASSERT( db != nullptr );
@@ -94,7 +100,7 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
 
             if (current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS)
             {
-                FC_ASSERT(!"Name already exists (and is younger than 1 block-year)"); 
+                FC_ASSERT(0, "Name already exists (and is younger than 1 block-year)"); 
             }
         }
         ilog("Name doesn't exist, or it if does, it is expired");
