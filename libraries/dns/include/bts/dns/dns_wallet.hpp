@@ -12,13 +12,13 @@ namespace bts { namespace dns {
         public:
             dns_wallet();
             ~dns_wallet();
-            bts::blockchain::signed_transaction buy_domain(const std::string& name,
-                                                        asset amount, dns_db& db);
-            bts::blockchain::signed_transaction update_record(const std::string& name,
-                                                    bts::blockchain::address domain_addr,
-                                                    fc::variant value);
-            bts::blockchain::signed_transaction sell_domain(const std::string&, 
-                                            bts::blockchain::asset amount);
+
+            bts::blockchain::signed_transaction buy_domain(const std::string& name, asset amount, dns_db& db);
+            bts::blockchain::signed_transaction sell_domain(const std::string& name, asset amount, dns_db& db);
+
+            bts::blockchain::signed_transaction update_record(const std::string& name, fc::variant value,
+                                                              dns_db& db);
+
             // TODO put this in the parent wallet class?
             bts::blockchain::signed_transaction add_fee_and_sign(
                                                 signed_transaction& trx,

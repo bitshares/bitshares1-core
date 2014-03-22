@@ -507,13 +507,7 @@ BOOST_AUTO_TEST_CASE( update_record )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        // Update record
-        auto record = db->get_dns_record(name);
-        auto utxo_ref = record.last_update_ref;
-        auto output = db->fetch_output(utxo_ref);
-        auto dns_output = output.as<claim_domain_output>();
-
-        auto update_tx = wallet->update_record( name, dns_output.owner, value);
+        auto update_tx = wallet->update_record(name, value, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
@@ -523,6 +517,14 @@ BOOST_AUTO_TEST_CASE( update_record )
         elog( "${e}", ("e",e.to_detail_string()) );
         throw;
     }
+}
+
+// TODO: see todo on line ~150 of dns_wallet.cpp
+/* You should not be able to update a record if you are not the confirmed owner (still in auction)
+ */
+BOOST_AUTO_TEST_CASE( update_record_in_auction_fail)
+{
+
 }
 
 /* You should not be able to update a record if you don't own the domain (wrong sig)
@@ -536,7 +538,46 @@ BOOST_AUTO_TEST_CASE( update_record_sig_fail )
  */
 BOOST_AUTO_TEST_CASE( update_record_expire_fail )
 {
+    bool fail = false; // what is best practice for 
+    try {
+        DNSTestState state;
+        state.normal_genesis();
 
+        // Buy domain
+        std::string name = "TESTNAME";
+        fc::variant value = "TESTVALUE";
+
+        dns_wallet* wallet = state.get_wallet();
+        dns_db* db = state.get_db();
+
+        std::vector<signed_transaction> txs;
+
+        auto buy_tx = wallet->buy_domain( name, asset(uint64_t(1)), *db );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Let auction expire
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        auto update_tx = wallet->update_record(name, value, *db);
+        wlog( "update_trx: ${trx} ", ("trx", update_tx) );
+        txs.push_back( update_tx );
+        state.next_block( txs );
+
+        fail = true;
+        FC_ASSERT(0);
+    }
+    catch (const fc::exception& e)
+    {
+        if (fail)
+        {
+            elog( "${e}", ("e",e.to_detail_string()) );
+            throw;
+        }
+    }
 }
 
 /* You should not be able to update a record with an invalid value (length)
@@ -570,13 +611,7 @@ BOOST_AUTO_TEST_CASE( update_record_val_length_fail )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        // Update record
-        auto record = db->get_dns_record(name);
-        auto utxo_ref = record.last_update_ref;
-        auto output = db->fetch_output(utxo_ref);
-        auto dns_output = output.as<claim_domain_output>();
-
-        auto update_tx = wallet->update_record( name, dns_output.owner, value);
+        auto update_tx = wallet->update_record(name, value, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );

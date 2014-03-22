@@ -23,8 +23,7 @@ dns_wallet::~dns_wallet()
 {
 }
 
-bts::blockchain::signed_transaction dns_wallet::buy_domain(
-                    const std::string& name, bts::blockchain::asset amount, dns_db& db)
+bts::blockchain::signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     signed_transaction trx;
 
@@ -45,14 +44,14 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
         auto old_utxo_ref = old_record.last_update_ref;
         auto old_output = db.fetch_output(old_utxo_ref);
         auto old_dns_output = old_output.as<claim_domain_output>();
-        if (old_dns_output.flags != claim_domain_output::for_auction)
-        {
-            FC_ASSERT(0, "Tried to make a bid for a name that is not for sale");
-        }
+
+        FC_ASSERT(old_dns_output.flags == claim_domain_output::for_auction,
+                "Tried to make a bid for a name that is not for sale");
+
         auto block_num = db.fetch_trx_num(old_utxo_ref.trx_hash).block_num;
         auto current_block = db.head_block_num();
+
         // check age
-        // TODO put constant 3 in config
         if (current_block - block_num < DNS_AUCTION_DURATION_BLOCKS)
         {
 
@@ -111,20 +110,27 @@ bts::blockchain::signed_transaction dns_wallet::buy_domain(
     trx = add_fee_and_sign(trx, amount, total_in, req_sigs);
 
     return trx;
-
 } FC_RETHROW_EXCEPTIONS(warn, "buy_domain ${name} with ${amt}", ("name", name)("amt", amount)) }
 
-bts::blockchain::signed_transaction dns_wallet::update_record(
-                                             const std::string& name, address domain_addr,
-                                             fc::variant value)
+bts::blockchain::signed_transaction dns_wallet::update_record(const std::string& name, fc::variant value,
+                                                              dns_db& db)
 { try {
     signed_transaction trx;
 
     FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Name too long in update_record");
+
+    // Check expiry
+    auto record = db.get_dns_record(name);
+    auto utxo_ref = record.last_update_ref;
+    auto block_num = db.fetch_trx_num(utxo_ref.trx_hash).block_num;
+    auto current_block = db.head_block_num();
+
+    FC_ASSERT(current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS, "Tried to update expired record");
    
     auto change_addr = new_recv_address("Change address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
     bts::blockchain::asset total_in; // set by collect_inputs
+    address domain_addr;
 
     auto serialized_value = fc::raw::pack(value);
     FC_ASSERT(serialized_value.size() <= BTS_DNS_MAX_VALUE_LEN, "Serialized value too long in update_record");
@@ -134,10 +140,20 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
     auto found = false;
     for (auto pair : get_unspent_outputs())
     {
-        if ( pair.second.claim_func == claim_domain
-          && pair.second.as<claim_domain_output>().name == name)
+        if (pair.second.claim_func == claim_domain)
         {
+            auto dns_output = pair.second.as<claim_domain_output>();
+
+            if (dns_output.name != name)
+                continue;
+
+            // TODO: The record needs to be initially set not_for_sale before the first update_record
+            //FC_ASSERT(dns_output.flags == claim_domain_output::not_for_sale,
+                    //"Tried to update record that is still for sale");
+
+            domain_addr = dns_output.owner;
             trx.inputs.push_back( trx_input( get_ref_from_output_idx(pair.first) ) );
+
             found = true;
             break;
         }
@@ -163,12 +179,9 @@ bts::blockchain::signed_transaction dns_wallet::update_record(
     trx = add_fee_and_sign(trx, asset(), total_in, req_sigs);
 
     return trx;
-
 } FC_RETHROW_EXCEPTIONS(warn, "update_record ${name} with value ${val}", ("name", name)("val", value)) }
 
-
-bts::blockchain::signed_transaction dns_wallet::sell_domain(
-                                    const std::string& name, asset amount)
+bts::blockchain::signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     signed_transaction trx;
      // TODO check name length
@@ -208,10 +221,7 @@ bts::blockchain::signed_transaction dns_wallet::sell_domain(
     trx = add_fee_and_sign(trx, asset(), total_in, req_sigs);
 
     return trx;
-
-
 } FC_RETHROW_EXCEPTIONS(warn, "sell_domain ${name} with ${amt}", ("name", name)("amt", amount)) }
-
 
 bool dns_wallet::scan_output( const trx_output& out,
                               const output_reference& ref,
