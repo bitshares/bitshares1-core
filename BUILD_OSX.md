@@ -28,7 +28,17 @@ Building BitShares Toolkit on OS X 10.9
     make
     sudo make install
 
-5) Build BitShares Toolkit with CMake
+5) If you would like support for importing Bitcoin Core wallets then you will require Berkeley DB
+
+    wget http://download.oracle.com/berkeley-db/db-6.0.30.tar.gz
+    tar -xzvf db-6.0.30.tar.gz
+    cd db-6.0.30/build_linux
+    ../dist/configure --enable-cxx --prefix=/usr/local CPPFLAGS=-stdlib=libc++ 
+    make
+    sudo make install
+
+
+6) Build BitShares Toolkit with CMake
 
     git submodule init
     git submodule update

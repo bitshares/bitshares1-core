@@ -50,7 +50,6 @@ size_t   stcp_socket::readsome( char* buffer, size_t len )
     size_t s = _sock.readsome( crypt_buf, len );
     if( s % 16 ) 
     {
-        ilog( "s: %{s}", ("s",s) );
         _sock.read( crypt_buf + s, 16 - (s%16) );
         s += 16-(s%16);
     }

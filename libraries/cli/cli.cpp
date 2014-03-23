@@ -122,6 +122,7 @@ namespace bts { namespace cli {
       std::cout<<"sendtoaddress ADDRESS AMOUNT [MEMO] \n";
       std::cout<<"getbalance [ACCOUNT] [MIN_CONF] \n";
       std::cout<<"listtransactions [COUNT]\n";
+      std::cout<<"rescan [BLOCK_NUM=0]\n";
       std::cout<<"import_bitcoin_wallet WALLET_DAT\n";
       std::cout<<"import_private_key    WALLET_DAT\n";
       std::cout<<"quit - exit cleanly\n";
@@ -245,9 +246,29 @@ namespace bts { namespace cli {
           ss >> count;
           list_transactions( count );
        }
+       else if( cmd == "rescan" )
+       {
+          uint32_t block_num = 0;
+          ss >> block_num;
+          my->_client->get_wallet()->scan_chain( *my->_client->get_chain(), block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
+                                                 {
+                                                     std::cout << "scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
+                                                 });
+          std::cout << "\ndone scanning block chain\n";
+       }
        else if( cmd == "export" )
        {
 
+       }
+       else if( cmd == "import_bitcoin_wallet" )
+       {
+          if( my->check_unlock() )
+          {
+             std::string wallet_dat;
+             ss >> wallet_dat;
+             auto password  = get_line("bitcoin wallet password: ");
+             my->_client->get_wallet()->import_bitcoin_wallet( wallet_dat, password );
+          }
        }
        else if( cmd == "getbalance" )
        {

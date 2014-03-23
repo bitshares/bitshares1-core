@@ -3,6 +3,8 @@
 #include <fc/io/varint.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/io/raw.hpp>
+#include <fc/crypto/ripemd160.hpp>
+
 
 namespace bts { namespace net {
 

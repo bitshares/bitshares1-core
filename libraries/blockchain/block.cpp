@@ -32,7 +32,7 @@ namespace bts { namespace blockchain  {
   */
 
 
-  uint160 trx_block::calculate_merkle_root( const signed_transactions& determinstic_trxs)const
+  uint160 trx_block::calculate_merkle_root( const signed_transactions& determinstic_trxs )const
   {
      if( trxs.size() == 0 ) return uint160();
      if( trxs.size() == 1 ) return trxs.front().id();

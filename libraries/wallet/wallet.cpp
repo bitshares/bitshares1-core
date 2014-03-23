@@ -3,7 +3,7 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/pts_address.hpp>
-//#include <bts/bitcoin_wallet.hpp>
+#include <bts/import_bitcoin_wallet.hpp>
 #include <unordered_map>
 #include <map>
 #include <fc/filesystem.hpp>
@@ -435,7 +435,6 @@ namespace bts { namespace wallet {
     */
    void wallet::import_bitcoin_wallet( const fc::path& wallet_dat, const std::string& passphrase )
    { try {
-    /*
       auto priv_keys = bts::import_bitcoin_wallet(  wallet_dat, passphrase );
    //   ilog( "keys: ${keys}", ("keys",priv_keys) );
       for( auto key : priv_keys )
@@ -443,10 +442,10 @@ namespace bts { namespace wallet {
          auto pts_key = pts_address( key.get_public_key(), false, 0 );
          import_key( key, std::string( pts_key ) );
          my->_data.recv_pts_addresses[ pts_address( key.get_public_key() ) ]           = address( key.get_public_key() );
+         my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = address( key.get_public_key() );
          my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = address( key.get_public_key() );
          my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = address( key.get_public_key() );
       }
-      */
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -773,7 +772,10 @@ namespace bts { namespace wallet {
    }
    bool wallet::is_my_address( const pts_address& a )const
    {
-      return my->_data.recv_pts_addresses.find(a)  != my->_data.recv_pts_addresses.end();
+      if( my->_data.recv_pts_addresses.find(a)  == my->_data.recv_pts_addresses.end() )
+         return false;
+      ilog( "found my address ${a}", ("a",a) );
+      return true;
    }
 
    bool wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
