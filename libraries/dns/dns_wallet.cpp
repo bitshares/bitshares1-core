@@ -17,7 +17,6 @@ namespace bts { namespace dns {
 using namespace bts::blockchain;
 
 dns_wallet::dns_wallet()
-//:my(new detail::dns_wallet_impl())
 {
 }
 
@@ -39,13 +38,11 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
     auto inputs = std::vector<trx_input>();
     auto total_in = bts::blockchain::asset(); // set by collect_inputs
 
-    signed_transactions empty_txs; // TODO: pass current txs (block eval state)
-
     // Name should be new or already in an auction
-    auto new_name = !name_exists(name, empty_txs, db);
+    signed_transactions empty_txs; // TODO: pass current txs (block eval state)
+    auto name_exists = false;
     auto prev_output = trx_output();
-    auto existing_auction = name_is_in_auction(name, empty_txs, db, prev_output);
-    FC_ASSERT(new_name || existing_auction, "Name not available");
+    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output), "Name not available");
 
     // Init output
     auto domain_output = claim_domain_output();
@@ -54,7 +51,7 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
     domain_output.owner = domain_addr;
     domain_output.state = claim_domain_output::possibly_in_auction;
 
-    if (new_name)
+    if (!name_exists)
     {
         trx.inputs = collect_inputs( amount, total_in, req_sigs );
         auto change_amt = total_in - amount;

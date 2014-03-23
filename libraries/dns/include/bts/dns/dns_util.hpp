@@ -27,9 +27,10 @@
 
 namespace bts { namespace dns {
 
-bool name_exists(const std::string &name, const signed_transactions &outstanding_transactions, dns_db &db);
+bool can_bid_on_name(const std::string &name, const signed_transactions &outstanding_transactions, dns_db &db,
+                     bool &name_exists, trx_output &prev_output);
 
-bool name_is_in_auction(const std::string &name, const signed_transactions &outstanding_transactions,
-                        dns_db &db, trx_output &prev_output);
+bool is_valid_bid(const trx_output &output, const signed_transactions &outstanding_transactions, dns_db &db,
+                  bool &name_exists, trx_output &prev_output);
 
 }} // bts::dns
