@@ -14,3 +14,5 @@ tests/blockchain_tests
 tests/dns_tests
 tests/simple_net_test_client
 programs/bts_xt/bts_xt
+programs/bts_xt/bts_xt_client
+programs/bts_xt/bts_xt_server
