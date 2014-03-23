@@ -1,11 +1,5 @@
 #include <bts/dns/dns_transaction_validator.hpp>
-#include <bts/dns/outputs.hpp>
-#include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_util.hpp>
-#include <bts/blockchain/config.hpp>
-#include <fc/io/raw.hpp>
-
-#include <fc/log/logger.hpp>
 
 namespace bts { namespace dns {
 
@@ -76,15 +70,16 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     //TODO assert "amount" doesn't change when updating domain record so
     //that domains can contribute to "valid votes" ??
 
+    // Check inputs
+    FC_ASSERT(is_claim_domain(out), "Invalid output");
+    auto dns_out = output_to_dns(out);
+    FC_ASSERT(is_valid_name(dns_out.name), "Invalid name");
+    FC_ASSERT(is_valid_value(dns_out.value), "Invalid value");
+
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT(!dns_state.seen_domain_output,
               "More than one domain claim output in one tx: ${tx}", ("tx", state.trx) );
     dns_state.seen_domain_output = true;
-
-    // "name" and "value" length limits
-    auto dns_out = out.as<claim_domain_output>();
-    FC_ASSERT(dns_out.name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", dns_out.name.size()));
-    FC_ASSERT(dns_out.value.size() <= BTS_DNS_MAX_VALUE_LEN, "Maximum value length exceeded: ${len}", ("len", dns_out.value.size()));
 
     dns_db* db = dynamic_cast<dns_db*>(_db);
     FC_ASSERT( db != nullptr );

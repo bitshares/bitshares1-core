@@ -1,4 +1,8 @@
 #pragma once
+
+#include <fc/reflect/variant.hpp>
+
+#include <bts/db/level_map.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/chain_database.hpp>
