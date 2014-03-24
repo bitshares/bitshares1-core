@@ -26,7 +26,11 @@ namespace bts { namespace net {
          void add_node( const std::string& ep );
 
          void broadcast_transaction( const signed_transaction& trx );
+         void broadcast_block( const trx_block& blk );
          bool is_connected()const;
+
+
+         signed_transactions get_pending_transactions()const;
 
       private:
          std::unique_ptr<detail::chain_client_impl> my;
