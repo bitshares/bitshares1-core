@@ -1,10 +1,10 @@
 #pragma once
+
 #include <bts/blockchain/transaction_validator.hpp>
-#include <bts/blockchain/transaction.hpp>
 #include <bts/dns/outputs.hpp>
-#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {
+
 using namespace bts::blockchain;
 
 class dns_db;

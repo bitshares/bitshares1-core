@@ -1,11 +1,5 @@
 #include <bts/dns/dns_transaction_validator.hpp>
-#include <bts/dns/outputs.hpp>
-#include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_util.hpp>
-#include <bts/blockchain/config.hpp>
-#include <fc/io/raw.hpp>
-
-#include <fc/log/logger.hpp>
 
 namespace bts { namespace dns {
 
@@ -76,24 +70,27 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     //TODO assert "amount" doesn't change when updating domain record so
     //that domains can contribute to "valid votes" ??
 
+    // Check inputs
+    FC_ASSERT(is_claim_domain(out), "Invalid output");
+    auto dns_out = output_to_dns(out);
+    FC_ASSERT(is_valid_name(dns_out.name), "Invalid name");
+    FC_ASSERT(is_valid_value(dns_out.value), "Invalid value");
+
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT(!dns_state.seen_domain_output,
               "More than one domain claim output in one tx: ${tx}", ("tx", state.trx) );
     dns_state.seen_domain_output = true;
 
-    // "name" and "value" length limits
-    auto dns_out = out.as<claim_domain_output>();
-    FC_ASSERT(dns_out.name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", dns_out.name.size()));
-    FC_ASSERT(dns_out.value.size() <= BTS_DNS_MAX_VALUE_LEN, "Maximum value length exceeded: ${len}", ("len", dns_out.value.size()));
-
     dns_db* db = dynamic_cast<dns_db*>(_db);
     FC_ASSERT( db != nullptr );
 
     // Check if valid bid
-    signed_transactions empty_txs = signed_transactions(); // TODO temp
-    bool name_exists = false;
-    trx_output prev_output = trx_output();
-    auto valid_bid = is_valid_bid(out, empty_txs, *db, name_exists, prev_output);
+    // TODO: Should use tx pool from block evaluation state
+    signed_transactions empty_txs = signed_transactions();
+    bool name_exists;
+    auto prev_output = trx_output();
+    uint32_t prev_output_age;
+    auto valid_bid = is_valid_bid(out, empty_txs, *db, name_exists, prev_output, prev_output_age);
 
     /* If we haven't seen a domain input then the only valid output is a new
      * domain auction. */
@@ -111,48 +108,39 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     /* Otherwise, the transaction must have a domain input and it must exist
      * in the database, and it can't be expired */
     FC_ASSERT(name_exists, "Name doesn't exist");
-
-    FC_ASSERT( db->has_dns_record(dns_out.name),
-               "Transaction references a name that doesn't exist");
-    auto old_record = db->get_dns_record(dns_out.name);
-    auto old_tx_id = old_record.last_update_ref.trx_hash;
-    auto block_num = db->fetch_trx_num(old_tx_id).block_num;
-    auto current_block = db->head_block_num();
-    auto block_age = current_block - block_num;
-    FC_ASSERT( block_age < DNS_EXPIRE_DURATION_BLOCKS,
-             "Domain transaction references an expired domain as an input");
-        
+    FC_ASSERT(!is_expired_age(prev_output_age), "Name is expired");
     FC_ASSERT(dns_out.name == dns_state.dns_claimed.name, "Bid tx refers to different input and output names");
-
    
     // case on state of claimed output
     //   * if auction is over (not_for_sale OR output is older than 3 days)
-    if (dns_out.state == claim_domain_output::not_in_auction
-       || block_age >= DNS_AUCTION_DURATION_BLOCKS)
+    if (dns_out.state == claim_domain_output::not_in_auction || !is_auction_age(prev_output_age))
     {
-
         ilog("Auction is over.");
+
         // If you're the owner, do whatever you like!
-        if (! state.has_signature(dns_out.owner) )
-        {
-            FC_ASSERT(false, "Domain tx requiring signature doesn't have it: ${tx}",
-                     ("tx", state.trx));
-        }
+        FC_ASSERT(state.has_signature(dns_out.owner),
+                  "Domain tx requiring signature doesn't have it: ${tx}", ("tx", state.trx));
+
         ilog("Tx signed by owner");
-    } else {
+    }
+    else
+    {
         // Currently in an auction
         ilog("Currently in an auction");
+
         FC_ASSERT(dns_out.state == claim_domain_output::possibly_in_auction,
-                  "bid made without keeping for_auction flag");
+                  "Bid made without keeping for_auction flag");
+
         //TODO use macros in dns_config.hpp instead of hard-coded constants
         //TODO restore
         FC_ASSERT(out.amount.get_rounded_amount() >= 
                   (11 * dns_state.claimed.amount.get_rounded_amount()) / 10,
                   "Bid was too small: ${trx}", ("trx", state.trx) );
-        // half of difference goes to fee
+
+        // Half of difference goes to fee
         dns_state.add_required_fees((out.amount - dns_state.claimed.amount) / 2);
 
-        // check for output to past owner
+        // Check for output to past owner
         bool found = false;
         for (auto other_out : state.trx.outputs)
         {
@@ -161,16 +149,15 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
                   dns_state.claimed.amount + (out.amount - dns_state.claimed.amount / 2));
             bool to_owner = right_claim && 
                  other_out.as<claim_by_signature_output>().owner == dns_state.dns_claimed.owner;
+
             if (right_claim && enough && to_owner) 
             {
                 found = true;
                 break;
             }
         }
-        if (!found) 
-        {
-            FC_ASSERT(!"Bid did not pay enough to previous owner");
-        }
+
+        FC_ASSERT(found, "Bid did not pay enough to previous owner");
     }
 }
 

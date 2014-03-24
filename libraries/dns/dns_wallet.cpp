@@ -1,16 +1,4 @@
-#include <bts/blockchain/config.hpp>
-#include <bts/wallet/wallet.hpp>
-
 #include <bts/dns/dns_wallet.hpp>
-#include <bts/dns/outputs.hpp>
-#include <bts/dns/dns_util.hpp>
-
-#include <fc/reflect/variant.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/io/raw_variant.hpp>
-#include <fc/log/logger.hpp>
-
-#define ASSET_ZERO (asset(uint64_t(0)))
 
 namespace bts { namespace dns {
 
@@ -27,8 +15,8 @@ dns_wallet::~dns_wallet()
 signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     // Check inputs
-    FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
-    FC_ASSERT(amount >= ASSET_ZERO, "Negative amount: ${amt}", ("amt", amount));
+    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
     signed_transaction trx;
    
@@ -40,9 +28,10 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
 
     // Name should be new or already in an auction
     signed_transactions empty_txs; // TODO: pass current txs (block eval state)
-    auto name_exists = false;
+    bool name_exists;
     auto prev_output = trx_output();
-    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output), "Name not available");
+    uint32_t prev_output_age;
+    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output, prev_output_age), "Name not available");
 
     // Init output
     auto domain_output = claim_domain_output();
@@ -63,7 +52,7 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
     {
         auto prev_dns_output = prev_output.as<claim_domain_output>();
         auto old_ask_amt = prev_output.amount.get_rounded_amount();
-        auto required_in = BTS_DNS_MIN_BID_FROM(old_ask_amt);
+        auto required_in = DNS_MIN_BID_FROM(old_ask_amt);
         FC_ASSERT(amount >= required_in, "Minimum bid amount not met");
 
         trx.inputs = collect_inputs( required_in, total_in, req_sigs);
@@ -93,10 +82,9 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
 signed_transaction dns_wallet::update_record(const std::string& name, fc::variant value, dns_db& db)
 { try {
     // Check inputs
-    FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
-    auto serialized_value = fc::raw::pack(value);
-    FC_ASSERT(serialized_value.size() <= BTS_DNS_MAX_VALUE_LEN,
-            "Maximum serialized value length exceeded: ${len}", ("len", serialized_value.size()));
+    FC_ASSERT(is_valid_name(name), "Invalid name");
+    auto serialized_value = serialize_value(value);
+    FC_ASSERT(is_valid_value(value), "Invalid value");
 
     // Check expiry
     auto record = db.get_dns_record(name);
@@ -159,8 +147,8 @@ signed_transaction dns_wallet::update_record(const std::string& name, fc::varian
 signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount, dns_db& db)
 { try {
     // Check inputs
-    FC_ASSERT(name.size() <= BTS_DNS_MAX_NAME_LEN, "Maximum name length exceeded: ${len}", ("len", name.size()));
-    FC_ASSERT(amount >= ASSET_ZERO, "Negative amount: ${amt}", ("amt", amount));
+    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
     // Check expiry
     auto record = db.get_dns_record(name);

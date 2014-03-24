@@ -1,12 +1,9 @@
 #define BOOST_TEST_MODULE DNSTests
-#include <boost/test/unit_test.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/log/logger.hpp>
-#include <fc/filesystem.hpp>
-#include <fc/reflect/variant.hpp>
-#include <iostream>
 
-#include <bts/blockchain/config.hpp>
+#include <iostream>
+#include <boost/test/unit_test.hpp>
+#include <fc/filesystem.hpp>
+
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/pow_validator.hpp>
 #include <bts/wallet/wallet.hpp>
@@ -268,7 +265,7 @@ BOOST_AUTO_TEST_CASE( new_auction_name_length_fail )
 
         // Build invalid name
         std::string name = "";
-        for (int i = 0; i < BTS_DNS_MAX_NAME_LEN + 1; i++)
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
             name.append("A");
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
@@ -452,7 +449,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_prev_owner_payment )
         wallet2.create( dir.path() / "dns_test_wallet2.dat", "password", "password", true );
 
         uint64_t bid1 = 100;
-        uint64_t bid2 = BTS_DNS_MIN_BID_FROM(bid1) - 1;
+        uint64_t bid2 = DNS_MIN_BID_FROM(bid1) - 1;
 
         // Give second wallet a balance
         uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
@@ -656,7 +653,7 @@ BOOST_AUTO_TEST_CASE( update_record_val_length_fail )
         // Buy domain
         std::string name = "TESTNAME";
         std::string str = "";
-        for (auto i = 0; i < BTS_DNS_MAX_VALUE_LEN + 1; i++)
+        for (auto i = 0; i < DNS_MAX_VALUE_LEN + 1; i++)
             str.append("A");
         fc::variant value = str;
 

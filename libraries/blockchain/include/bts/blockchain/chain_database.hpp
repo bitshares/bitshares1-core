@@ -56,6 +56,8 @@ namespace bts { namespace blockchain {
            */
           virtual signed_transactions generate_determinsitic_transactions();
 
+          void evaluate_transaction( const signed_transaction& trx );
+
 
           //@{
           /**

@@ -1,6 +1,4 @@
-#include <bts/db/level_map.hpp>
 #include <bts/dns/dns_db.hpp>
-#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {
 

@@ -292,6 +292,7 @@ namespace bts { namespace blockchain {
 
 
 } } // bts::blockchain
+/*
 namespace fc
 {
    void to_variant( const bts::blockchain::asset& var,  variant& vo )
@@ -311,3 +312,4 @@ namespace fc
      vo = bts::blockchain::price( var.as_string() );
    }
 }
+*/
