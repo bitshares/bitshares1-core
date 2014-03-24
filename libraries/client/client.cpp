@@ -2,6 +2,7 @@
 #include <bts/client/messages.hpp>
 #include <bts/net/chain_client.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/block_miner.hpp>
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace client {
@@ -15,19 +16,43 @@ namespace bts { namespace client {
             virtual void on_new_block( const trx_block& block )
             {
                _wallet->scan_chain( *_chain_db, block.block_num );
+               start_mining_next_block();
             }
+
             virtual void on_new_transaction( const signed_transaction& trx )
             {
+               start_mining_next_block();
+            }
+
+            void start_mining_next_block()
+            {
+               int64_t miner_votes = 0;
+               _next_block = _wallet->generate_next_block( *_chain_db, _chain_client.get_pending_transactions(), miner_votes ); 
+               auto head_block = _chain_db->get_head_block();
+               _miner.set_block( _next_block, head_block, miner_votes, head_block.min_votes() );
             }
 
             client_impl()
             {
                _chain_client.set_delegate( this );
+               _miner.set_callback( [this](const block_header& h){ on_mined_block( h); } );
             }
 
+            virtual void on_mined_block( const block_header& h )
+            {
+               _next_block.noncea          = h.noncea;
+               _next_block.nonceb          = h.nonceb;
+               _next_block.timestamp       = h.timestamp;
+               _next_block.next_difficulty = h.next_difficulty;
+               
+               _chain_client.broadcast_block( _next_block ); 
+            }
+
+            bts::blockchain::trx_block           _next_block;
             bts::net::chain_client               _chain_client;
             bts::blockchain::chain_database_ptr  _chain_db;
             bts::wallet::wallet_ptr              _wallet;
+            block_miner                          _miner;
        };
     }
 
@@ -37,6 +62,11 @@ namespace bts { namespace client {
     }
 
     client::~client(){}
+
+    void client::set_mining_effort( float e )
+    {
+       my->_miner.set_effort( e );
+    }
 
     void client::set_chain( const bts::blockchain::chain_database_ptr& ptr )
     {

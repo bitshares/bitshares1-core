@@ -183,5 +183,10 @@ namespace bts { namespace rpc {
   {
   }
 
+  void rpc_server::check_login( fc::rpc::json_connection* con )
+  {
+     my->check_login( con );
+  }
+
 
 } } // bts::rpc

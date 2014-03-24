@@ -27,7 +27,6 @@ namespace bts { namespace net {
                for( auto trx : blkmsg.block_data.trxs )
                   _pending_trxs.erase( trx.id() );
 
-               // reset the mining thread...
                _delegate->on_new_block( blkmsg.block_data );
             }
             else if( m.msg_type == trx_message::type )
@@ -36,7 +35,6 @@ namespace bts { namespace net {
                _chain->evaluate_transaction( trx_msg.signed_trx ); // throws exception if invalid trx.
                if( _pending_trxs.insert( std::make_pair(trx_msg.signed_trx.id(),trx_msg.signed_trx) ).second )
                {
-                  // reset the mining thread...
                   _delegate->on_new_transaction( trx_msg.signed_trx );
                }
             }
@@ -136,7 +134,24 @@ namespace bts { namespace net {
   void chain_client::broadcast_transaction( const signed_transaction& trx )
   {
      my->_pending_trxs[trx.id()] = trx;
+     my->_chain_con.send( trx_message( trx ) );
   }
+  signed_transactions chain_client::get_pending_transactions()const
+  {
+     signed_transactions trxs;
+     trxs.reserve( my->_pending_trxs.size() );
+     for( auto trx : my->_pending_trxs )
+     {
+        trxs.push_back( trx.second );
+     }
+     return trxs;
+  }
+
+  void chain_client::broadcast_block( const trx_block& blk )
+  {
+     my->_chain_con.send( block_message( blk ) );
+  }
+
   bool chain_client::is_connected()const
   {
      return my->_chain_connected;

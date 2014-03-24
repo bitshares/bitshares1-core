@@ -31,6 +31,8 @@ namespace bts { namespace client {
          bts::blockchain::chain_database_ptr get_chain()const;
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
+
+         void set_mining_effort( float effort = .9 );
     
        private:
          std::unique_ptr<detail::client_impl> my;

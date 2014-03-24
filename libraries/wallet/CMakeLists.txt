@@ -8,4 +8,4 @@ add_library( bts_wallet
              extended_address.cpp
            )
 
-target_link_libraries( bts_wallet fc bts_db bts_blockchain leveldb )
+target_link_libraries( bts_wallet fc bts_db bts_blockchain leveldb bitcoin_import)
