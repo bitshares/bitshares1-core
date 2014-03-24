@@ -53,9 +53,7 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
                while( !read_loop_complete.canceled() )
                {
                   char tmp[BUFFER_SIZE];
-                  ilog( "read.." );
                   sock->read( tmp, BUFFER_SIZE );
-                  ilog( "." );
                   memcpy( (char*)&m, tmp, sizeof(message_header) );
                   m.data.resize( m.size + 16 ); //give extra 16 bytes to allow for padding added in send call
                   memcpy( (char*)m.data.data(), tmp + sizeof(message_header), LEFTOVER );
@@ -96,9 +94,7 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
             {
               if( con_del )
               {
-                 ilog( ".");
                  fc::async( [=](){con_del->on_connection_disconnected( self );} );
-                 ilog( ".");
               }
               else
               {
@@ -107,7 +103,6 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
             }
             catch ( fc::exception& er )
             {
-               wlog( ".." );
               if( con_del )
               {
                 elog( "disconnected ${er}", ("er", er.to_detail_string() ) );

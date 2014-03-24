@@ -23,6 +23,7 @@ namespace bts { namespace net {
             if( m.msg_type == chain_message_type::block_msg )
             {
                auto blkmsg = m.as<block_message>();
+                ilog( "received message ${m}", ("m",blkmsg) );
                _chain->push_block( blkmsg.block_data );
                for( auto trx : blkmsg.block_data.trxs )
                   _pending_trxs.erase( trx.id() );
@@ -32,6 +33,7 @@ namespace bts { namespace net {
             else if( m.msg_type == trx_message::type )
             {
                auto trx_msg = m.as<trx_message>();
+                ilog( "received message ${m}", ("m",trx_msg) );
                _chain->evaluate_transaction( trx_msg.signed_trx ); // throws exception if invalid trx.
                if( _pending_trxs.insert( std::make_pair(trx_msg.signed_trx.id(),trx_msg.signed_trx) ).second )
                {
