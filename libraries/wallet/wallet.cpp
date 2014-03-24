@@ -51,6 +51,9 @@ namespace bts { namespace wallet {
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
        std::vector<char>                                        encrypted_keys;
        std::vector<char>                                        encrypted_base_key;
+       // 
+       std::unordered_map<transaction_id_type, transaction_state> transactions;
+       std::map<output_index, trx_output>                         unspent_outputs;
 
        std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
        { try {
@@ -99,8 +102,6 @@ namespace bts { namespace wallet {
           FC_ASSERT( check == plain_txt );
        }
 
-       // 
-       std::unordered_map<transaction_id_type, transaction_state> transactions;
    };
 } } // bts::wallet
 
@@ -115,6 +116,7 @@ FC_REFLECT( bts::wallet::wallet_data,
             (encrypted_base_key)
             (encrypted_keys)
             (transactions) 
+            (unspent_outputs)
             )
 
 namespace bts { namespace wallet {
@@ -359,6 +361,7 @@ namespace bts { namespace wallet {
                std::string str( plain_txt.begin(), plain_txt.end() );
                my->_data = fc::json::from_string(str).as<wallet_data>();
            }
+           my->_unspent_outputs = my->_data.unspent_outputs;
        }catch( fc::exception& er ) {
            my->_exception_on_open = true;
            FC_RETHROW_EXCEPTION( er, warn, "unable to load ${wal}", ("wal",wallet_dat) );
@@ -455,6 +458,7 @@ namespace bts { namespace wallet {
       if(my->_exception_on_open)
           return;
 
+      my->_data.unspent_outputs = my->_unspent_outputs;
       auto wallet_json = fc::json::to_pretty_string( my->_data );
       std::vector<char> data( wallet_json.begin(), wallet_json.end() );
 
@@ -723,12 +727,19 @@ namespace bts { namespace wallet {
               if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() ); 
 
               auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); 
-              found |= scan_transaction( trx, i, trx_idx );
+
+              bool found_output = scan_transaction( trx, i, trx_idx );
+              if( found_output )
+                 my->_data.transactions[trx.id()].trx = trx;
+              found |= found_output;
           }
           for( uint32_t trx_idx = 0; trx_idx < blk.determinsitic_ids.size(); ++trx_idx )
           {
               auto trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
-              found |= scan_transaction( trx, i, trx_idx );
+              bool found_output = scan_transaction( trx, i, trx_idx );
+              if( found_output )
+                 my->_data.transactions[trx.id()].trx = trx;
+              found |= found_output;
           }
        }
        set_fee_rate( chain.get_fee_rate() );
