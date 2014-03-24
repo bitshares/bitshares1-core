@@ -4,3 +4,4 @@
 [submodule "vendor"]
 	path = vendor
 	url = https://github.com/BitShares/vendor.git
+    ignore = dirty
