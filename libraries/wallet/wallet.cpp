@@ -54,6 +54,8 @@ namespace bts { namespace wallet {
        // 
        std::unordered_map<transaction_id_type, transaction_state> transactions;
        std::map<output_index, trx_output>                         unspent_outputs;
+       std::map<output_index, trx_output>                         spent_outputs;
+       std::map<output_index, output_reference>                   output_index_to_ref;
 
        std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
        { try {
@@ -117,7 +119,9 @@ FC_REFLECT( bts::wallet::wallet_data,
             (encrypted_keys)
             (transactions) 
             (unspent_outputs)
-            )
+            (spent_outputs)
+            (output_index_to_ref)
+          )
 
 namespace bts { namespace wallet {
   
@@ -144,16 +148,17 @@ namespace bts { namespace wallet {
               uint64_t                                                   _stake;
               bool                                                       _exception_on_open;
 
-              std::map<output_index, output_reference>                   _output_index_to_ref;
+              //std::map<output_index, output_reference>                 _output_index_to_ref;
+              // cached data for rapid lookup
               std::unordered_map<output_reference, output_index>         _output_ref_to_index;
 
               // keep sorted so we spend oldest first to maximize CDD
-              std::map<output_index, trx_output>                         _unspent_outputs;
-              std::map<output_index, trx_output>                         _spent_outputs;
+              //std::map<output_index, trx_output>                       _unspent_outputs;
+              //std::map<output_index, trx_output>                       _spent_outputs;
 
               // maps address to private key index
-              std::unordered_map<address,fc::ecc::private_key>      _my_keys;
-              std::unordered_map<transaction_id_type,signed_transaction> _id_to_signed_transaction;
+              std::unordered_map<address,fc::ecc::private_key>             _my_keys;
+              std::unordered_map<transaction_id_type,signed_transaction>   _id_to_signed_transaction;
 
               asset get_fee_rate()
               {
@@ -164,19 +169,33 @@ namespace bts { namespace wallet {
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
                    std::vector<trx_input> inputs;
-                   for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
+                   for( auto out : _data.unspent_outputs )
                    {
                       //ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == balance_type )
+                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == balance_type )
                        {
-                           total_bal += itr->second.amount; // TODO: apply interest earned 
+                           total_bal += out.second.amount; // TODO: apply interest earned 
                        }
-                       if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == balance_type )
+                       if( out.second.claim_func == claim_by_pts && out.second.amount.unit == balance_type )
                        {
-                           total_bal += itr->second.amount; // TODO: apply interest earned 
+                           total_bal += out.second.amount; // TODO: apply interest earned 
                        }
                    }
                    return total_bal;
+              }
+
+              output_reference get_output_ref( const output_index& idx )
+              {
+                 auto itr = _data.output_index_to_ref.find( idx );
+                 FC_ASSERT( itr != _data.output_index_to_ref.end() );
+                 return itr->second;
+              }
+
+              address pts_to_bts_address( const pts_address& ptsaddr )
+              {
+                 auto pts_addr_itr = _data.recv_pts_addresses.find( ptsaddr );
+                 FC_ASSERT( pts_addr_itr != _data.recv_pts_addresses.end() );
+                 return pts_addr_itr->second;
               }
 
               std::vector<trx_input> collect_mining_input( asset& total_in, std::unordered_set<address>& req_sigs )
@@ -185,35 +204,39 @@ namespace bts { namespace wallet {
                    std::vector<trx_input> inputs;
                    inputs.resize(1);
                    address mine_addr;
-                   for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
+
+                   for( auto out : _data.unspent_outputs  )
                    {
                        //ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == 0 )
+                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == 0 )
                        {
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx+1);
+                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
                            if( cdd > best_cdd )
                            {
-                              inputs.back() = trx_input( _output_index_to_ref[itr->first] );
+                              inputs.back() = trx_input( get_output_ref(out.first) );
                               best_cdd = cdd;
-                              mine_addr = itr->second.as<claim_by_signature_output>().owner;
-                              total_in = itr->second.amount;
+                              mine_addr = out.second.as<claim_by_signature_output>().owner;
+                              total_in = out.second.amount;
                            }
                        }
-                       else if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == 0 )
+                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == 0 )
                        {
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx+1);
+                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
                            if( cdd > best_cdd )
                            {
-                              inputs.back() = trx_input( _output_index_to_ref[itr->first] );
+                              inputs.back() = trx_input( get_output_ref(out.first) );
                               best_cdd = cdd;
-                              total_in = itr->second.amount;
+                              total_in = out.second.amount;
+                              mine_addr = pts_to_bts_address(out.second.as<claim_by_pts_output>().owner);
                            }
                        }
                    }
-                   ilog( "mine addr ${addr}", ("addr",mine_addr) );
                    FC_ASSERT( best_cdd != 0 );
+                   FC_ASSERT( mine_addr != address() );
+                   ilog( "mine addr ${addr}", ("addr",mine_addr) );
                    req_sigs.insert( mine_addr );
                    return inputs;
+
               } // collect_mining_input
 
               std::vector<trx_input> collect_coindays( uint64_t request_cdd, asset& total_in, 
@@ -222,18 +245,18 @@ namespace bts { namespace wallet {
                    FC_ASSERT( _data.last_scanned_block_num > 0 );
                    provided_cdd = 0;
                    std::vector<trx_input> inputs;
-                   for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
+                   for( auto out : _data.unspent_outputs )
                    {
-                       ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == 0 )
+                       ilog( "unspent outputs ${o}", ("o",out) );
+                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == 0 )
                        {
-                           inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
-                           total_in += itr->second.amount;
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx);
+                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
+                           total_in += out.second.amount;
+                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx);
                            if( cdd > 0 ) 
                            {
                               provided_cdd += cdd;
-                              req_sigs.insert( itr->second.as<claim_by_signature_output>().owner );
+                              req_sigs.insert( out.second.as<claim_by_signature_output>().owner );
                              // ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                               if( provided_cdd >= request_cdd )
                               {
@@ -241,15 +264,15 @@ namespace bts { namespace wallet {
                               }
                            }
                        }
-                       else if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == 0 )
+                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == 0 )
                        {
-                           inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
-                           total_in += itr->second.amount;
-                           auto cdd = itr->second.amount.get_rounded_amount() * (_data.last_scanned_block_num - itr->first.block_idx);
+                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
+                           total_in += out.second.amount;
+                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx);
                            if( cdd > 0 ) 
                            {
                               provided_cdd += cdd;
-                              req_sigs.insert( _data.recv_pts_addresses[itr->second.as<claim_by_pts_output>().owner] );
+                              req_sigs.insert( _data.recv_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
                               if( provided_cdd >= request_cdd )
                               {
                                  return inputs;
@@ -266,25 +289,25 @@ namespace bts { namespace wallet {
               std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs )
               {
                    std::vector<trx_input> inputs;
-                   for( auto itr = _unspent_outputs.begin(); itr != _unspent_outputs.end(); ++itr )
+                   for( auto out : _data.unspent_outputs )
                    {
-                      ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( itr->second.claim_func == claim_by_signature && itr->second.amount.unit == min_amnt.unit )
+                      ilog( "unspent outputs ${o}", ("o",out) );
+                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == min_amnt.unit )
                        {
-                           inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
-                           total_in += itr->second.amount;
-                           req_sigs.insert( itr->second.as<claim_by_signature_output>().owner );
+                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
+                           total_in += out.second.amount;
+                           req_sigs.insert( out.second.as<claim_by_signature_output>().owner );
                            ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
                            }
                        }
-                       else if( itr->second.claim_func == claim_by_pts && itr->second.amount.unit == min_amnt.unit )
+                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == min_amnt.unit )
                        {
-                           inputs.push_back( trx_input( _output_index_to_ref[itr->first] ) );
-                           total_in += itr->second.amount;
-                           req_sigs.insert( _data.recv_pts_addresses[itr->second.as<claim_by_pts_output>().owner] );
+                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
+                           total_in += out.second.amount;
+                           req_sigs.insert( _data.recv_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
                            ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
@@ -361,7 +384,10 @@ namespace bts { namespace wallet {
                std::string str( plain_txt.begin(), plain_txt.end() );
                my->_data = fc::json::from_string(str).as<wallet_data>();
            }
-           my->_unspent_outputs = my->_data.unspent_outputs;
+
+           for( auto item : my->_data.output_index_to_ref )
+               my->_output_ref_to_index[item.second] = item.first;
+
        }catch( fc::exception& er ) {
            my->_exception_on_open = true;
            FC_RETHROW_EXCEPTION( er, warn, "unable to load ${wal}", ("wal",wallet_dat) );
@@ -458,7 +484,6 @@ namespace bts { namespace wallet {
       if(my->_exception_on_open)
           return;
 
-      my->_data.unspent_outputs = my->_unspent_outputs;
       auto wallet_json = fc::json::to_pretty_string( my->_data );
       std::vector<char> data( wallet_json.begin(), wallet_json.end() );
 
@@ -560,6 +585,7 @@ namespace bts { namespace wallet {
        trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), total_in + reward) );
        my->sign_transaction(trx, req_sigs, false);
 
+
        return trx;
    }
 
@@ -658,13 +684,13 @@ namespace bts { namespace wallet {
          return;
       }
 
-      auto itr = my->_unspent_outputs.find(ref_itr->second);
-      if( itr == my->_unspent_outputs.end() )
+      auto itr = my->_data.unspent_outputs.find(ref_itr->second);
+      if( itr == my->_data.unspent_outputs.end() )
       {
           return;
       }
-      my->_spent_outputs[ref_itr->second] = itr->second;
-      my->_unspent_outputs.erase(ref_itr->second);      
+      my->_data.spent_outputs[ref_itr->second] = itr->second;
+      my->_data.unspent_outputs.erase(ref_itr->second);      
    }
 
    void wallet::sign_transaction( signed_transaction& trx, const address& addr )
@@ -717,6 +743,8 @@ namespace bts { namespace wallet {
    { try {
        bool found = false;
        auto head_block_num = chain.head_block_num();
+       if( head_block_num == -1 ) return false;
+
        // for each block
        for( uint32_t i = from_block_num; i <= head_block_num; ++i )
        {
@@ -752,10 +780,10 @@ namespace bts { namespace wallet {
    {
        std::cerr<<"===========================================================\n";
        std::cerr<<"Unspent Outputs: \n";
-       for( auto itr = my->_unspent_outputs.begin(); itr != my->_unspent_outputs.end(); ++itr )
+       for( auto out : my->_data.unspent_outputs )
        {
-          std::cerr<<std::setw(13)<<std::string(itr->first)<<"]  ";
-          dump_output( itr->second );
+          std::cerr<<std::setw(13)<<std::string(out.first)<<"]  ";
+          dump_output( out.second );
           std::cerr<<"\n";
        }
        std::cerr<<"===========================================================\n";
@@ -820,18 +848,18 @@ namespace bts { namespace wallet {
 
    output_reference wallet::get_ref_from_output_idx( output_index idx) 
    {
-       return my->_output_index_to_ref[idx];
+       return my->get_output_ref(idx); //_output_index_to_ref[idx];
    }
 
    void wallet::cache_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    {
-       my->_output_index_to_ref[oidx]    = out_ref;
-       my->_output_ref_to_index[out_ref] = oidx;
-       my->_unspent_outputs[oidx]        = out; 
+       my->_data.output_index_to_ref[oidx]  = out_ref;
+       my->_output_ref_to_index[out_ref]    = oidx;
+       my->_data.unspent_outputs[oidx]      = out; 
    }
    const std::map<output_index,trx_output>&  wallet::get_unspent_outputs()const
    {
-       return my->_unspent_outputs;
+       return my->_data.unspent_outputs;
    }
    std::vector<trx_input> wallet::collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs )
    {
@@ -840,6 +868,10 @@ namespace bts { namespace wallet {
 
    trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs, int64_t& miner_votes )
    {
+      wlog( "generate next block ${trxs}", ("trxs",in_trxs) );
+      set_fee_rate( db.get_fee_rate() );
+      my->_stake   = db.get_stake();
+
       try {
          auto deterministic_trxs = db.generate_determinsitic_transactions();
 
@@ -903,6 +935,7 @@ namespace bts { namespace wallet {
 
          // we don't want to add this to the combined state just yet... it will get added below.
          auto tmp_state = db.get_transaction_validator()->create_block_state(); 
+         ilog( "mine_trx: ${mine_trx}", ("mine_trx",mine_trx) );
          auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, tmp_state ); 
          miner_votes = trx_sum.valid_votes;
 
@@ -912,9 +945,18 @@ namespace bts { namespace wallet {
          int64_t min_votes = head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
          int64_t max_reward = summary.fees / 2;
          wlog("summary: ${sum}", ("sum", summary));
+
+         FC_ASSERT( summary.valid_votes > 0 ); 
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
-         ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
-         FC_ASSERT( actual_reward > 0, "", ("actual_reward",actual_reward)("max_reward",max_reward)("valid_votes",summary.valid_votes)("min_votes",min_votes) );
+
+         ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",
+               ("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
+
+         FC_ASSERT( actual_reward > 0, "", 
+                    ("actual_reward",actual_reward)
+                    ("max_reward",max_reward)
+                    ("valid_votes",summary.valid_votes)
+                    ("min_votes",min_votes) );
 
          mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
          trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, block_state ); 

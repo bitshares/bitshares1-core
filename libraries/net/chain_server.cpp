@@ -59,12 +59,14 @@ bts::blockchain::trx_block create_test_genesis_block()
          ++output_idx;
       }
 
-      b.version      = 0;
-      b.prev         = bts::blockchain::block_id_type();
-      b.block_num    = 0;
-      b.total_shares = int64_t(total_supply);
-      b.timestamp    = fc::time_point::from_iso_string("20131201T054434");
-      b.next_fee     = bts::blockchain::block_header::min_fee();
+      b.version         = 0;
+      b.prev            = bts::blockchain::block_id_type();
+      b.block_num       = 0;
+      b.total_shares    = int64_t(total_supply);
+      b.timestamp       = fc::time_point::from_iso_string("20131201T054434");
+      b.next_difficulty = 1;
+      b.next_fee        = bts::blockchain::block_header::min_fee();
+      b.available_votes = b.total_shares;
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
       fc::variant var(b);
