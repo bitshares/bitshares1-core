@@ -28,9 +28,10 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
 
     // Name should be new or already in an auction
     signed_transactions empty_txs; // TODO: pass current txs (block eval state)
-    auto name_exists = false;
+    bool name_exists;
     auto prev_output = trx_output();
-    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output), "Name not available");
+    uint32_t prev_output_age;
+    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output, prev_output_age), "Name not available");
 
     // Init output
     auto domain_output = claim_domain_output();
