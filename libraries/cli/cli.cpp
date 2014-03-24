@@ -224,6 +224,7 @@ namespace bts { namespace cli {
              double      amount;
              std::string memo;
              ss >> addr >> amount;
+             std::cout << "address: "<<addr<< " amount: "<<amount<< "  asset: "<< std::string(asset(amount)) <<"\n";
              std::getline( ss, memo );
 
              auto trx = my->_client->get_wallet()->transfer( asset( amount ), address(addr), memo );
