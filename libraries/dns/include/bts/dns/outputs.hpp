@@ -18,13 +18,13 @@ struct claim_domain_output
 {
     enum states
     {
-        not_in_auction,
-        possibly_in_auction
+        possibly_in_auction,
+        not_in_auction
     };
 
     static const claim_type_enum type;
     
-    claim_domain_output():state(not_in_auction){} // TODO: do we need this
+    claim_domain_output():state(possibly_in_auction){}
 
     std::string                    name;
     std::vector<char>              value; 
@@ -37,4 +37,4 @@ struct claim_domain_output
 FC_REFLECT_ENUM(bts::dns::claim_type_enum, (claim_domain));
 FC_REFLECT(bts::dns::claim_domain_input, BOOST_PP_SEQ_NIL);
 FC_REFLECT(bts::dns::claim_domain_output, (name)(value)(owner)(state));
-FC_REFLECT_ENUM(bts::dns::claim_domain_output::states, (not_in_auction)(possibly_in_auction));
+FC_REFLECT_ENUM(bts::dns::claim_domain_output::states, (possibly_in_auction)(not_in_auction));

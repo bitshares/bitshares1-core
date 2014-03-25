@@ -40,15 +40,13 @@ bool is_expired_age(uint32_t age);
 bool is_useable_age(uint32_t age);
 
 std::vector<std::string> get_unspent_names(const std::map<bts::wallet::output_index, trx_output> &unspent_outputs);
-bool name_is_in_txs(const std::string &name, const signed_transactions &txs, trx_output &name_output);
 bool name_is_in_txs(const std::string &name, const signed_transactions &txs);
 
-bool can_bid_on_name(const std::string &name, const signed_transactions &txs, dns_db &db, bool &name_exists,
-                     trx_output &prev_output, uint32_t &prev_output_age);
-
-bool can_auction_name(const std::string &name, const signed_transactions &txs, dns_db &db,
-                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
-                      output_reference &prev_tx_ref);
+bool name_is_available(const std::string &name, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
+                       output_reference &prev_tx_ref);
+bool name_is_useable(const std::string &name, const signed_transactions &txs, dns_db &db,
+                     const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
+                     output_reference &prev_tx_ref);
 
 std::vector<char> serialize_value(const fc::variant &value);
 
@@ -57,8 +55,9 @@ bool is_valid_amount(const asset &amount);
 bool is_valid_name(const std::string &name);
 bool is_valid_value(const std::vector<char> &value);
 bool is_valid_value(const fc::variant &value);
+bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state);
 
-bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &name_exists,
-                  trx_output &prev_output, uint32_t &prev_output_age);
+bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
+                  output_reference &prev_tx_ref);
 
 }} // bts::dns

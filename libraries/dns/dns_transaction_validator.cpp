@@ -75,31 +75,27 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     // Check inputs
     FC_ASSERT(is_dns_output(out), "Invalid output");
     auto dns_out = to_dns_output(out);
-    FC_ASSERT(is_valid_name(dns_out.name), "Invalid name");
-    FC_ASSERT(is_valid_value(dns_out.value), "Invalid value");
 
     auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
     FC_ASSERT(!dns_state.seen_domain_output,
-              "More than one domain claim output in one tx: ${tx}", ("tx", state.trx) );
+              "More than one domain claim output in one tx: ${tx}", ("tx", state.trx));
     dns_state.seen_domain_output = true;
 
     dns_db* db = dynamic_cast<dns_db*>(_db);
-    FC_ASSERT( db != nullptr );
+    FC_ASSERT(db != nullptr);
 
     // Check if valid bid
-    // TODO: Should use tx pool from block evaluation state
-    signed_transactions empty_txs = signed_transactions();
-    bool name_exists;
-    auto prev_output = trx_output();
-    uint32_t prev_output_age;
-    auto valid_bid = is_valid_bid(out, empty_txs, *db, name_exists, prev_output, prev_output_age);
+    signed_transactions txs = signed_transactions(); // TODO: use current tx pool
+    bool new_or_expired;
+    output_reference prev_tx_ref;
+    auto valid_bid = name_is_available(dns_out.name, txs, *db, new_or_expired, prev_tx_ref);
 
     /* If we haven't seen a domain input then the only valid output is a new
      * domain auction. */
     if (!dns_state.seen_domain_input)
     {
         ilog("Have not seen a domain claim input on this tx");
-        FC_ASSERT(!name_exists, "Name already exists (and is younger than 1 block-year)"); 
+        FC_ASSERT(new_or_expired, "Name already exists (and is younger than 1 block-year)"); 
         FC_ASSERT(valid_bid, "Invalid buy tx on new or expired name");
         return;
     }
@@ -109,13 +105,12 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
     //TODO do this just from the input without looking into the DB?
     /* Otherwise, the transaction must have a domain input and it must exist
      * in the database, and it can't be expired */
-    FC_ASSERT(name_exists, "Name doesn't exist");
-    FC_ASSERT(!is_expired_age(prev_output_age), "Name is expired");
+    FC_ASSERT(!new_or_expired, "Name new or expired");
     FC_ASSERT(dns_out.name == dns_state.prev_dns_output.name, "Bid tx refers to different input and output names");
-   
+
     // case on state of claimed output
     //   * if auction is over (not_for_sale OR output is older than 3 days)
-    if (dns_out.state == claim_domain_output::not_in_auction || !is_auction_age(prev_output_age))
+    if (dns_out.state == claim_domain_output::not_in_auction || !is_auction_age(get_name_tx_age(dns_out.name, *db)))
     {
         ilog("Auction is over.");
 

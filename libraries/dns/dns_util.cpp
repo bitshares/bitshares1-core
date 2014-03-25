@@ -4,12 +4,22 @@ namespace bts { namespace dns {
 
 bool is_dns_output(const trx_output &output)
 {
+    FC_ASSERT(is_valid_amount(output.amount), "Invalid amount");
+
     return output.claim_func == claim_domain;
 }
 
 claim_domain_output to_dns_output(const trx_output &output)
 {
-    return output.as<claim_domain_output>();
+    FC_ASSERT(is_valid_amount(output.amount), "Invalid amount");
+
+    auto dns_output = output.as<claim_domain_output>();
+
+    FC_ASSERT(is_valid_name(dns_output.name), "Invalid name");
+    FC_ASSERT(is_valid_value(dns_output.value), "Invalid value");
+    FC_ASSERT(is_valid_state(dns_output.state), "Invalid state");
+
+    return dns_output;
 }
 
 output_reference get_name_tx_ref(const std::string &name, dns_db &db)
@@ -69,7 +79,7 @@ std::vector<std::string> get_unspent_names(const std::map<bts::wallet::output_in
     return names;
 }
 
-bool name_is_in_txs(const std::string &name, const signed_transactions &txs, trx_output &name_output)
+bool name_is_in_txs(const std::string &name, const signed_transactions &txs)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
@@ -81,51 +91,43 @@ bool name_is_in_txs(const std::string &name, const signed_transactions &txs, trx
                 continue;
 
             if (to_dns_output(output).name == name)
-            {
-                name_output = output;
                 return true;
-            }
         }
     }
 
     return false;
 }
 
-bool name_is_in_txs(const std::string &name, const signed_transactions &txs)
-{
-    FC_ASSERT(is_valid_name(name), "Invalid name");
-
-    trx_output name_output;
-
-    return name_is_in_txs(name, txs, name_output);
-}
-
 /* Check if name is available for bid: new, in auction, or expired */
-// TODO: refactor to more closely match can_auction_name if possible
-bool can_bid_on_name(const std::string &name, const signed_transactions &txs, dns_db &db, bool &name_exists,
-                     trx_output &prev_output, uint32_t &prev_output_age)
+bool name_is_available(const std::string &name, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
+                       output_reference &prev_tx_ref)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
-    name_exists = name_is_in_txs(name, txs, prev_output);
-    if (name_exists)
+    new_or_expired = false;
+
+    if (name_is_in_txs(name, txs))
         return false;
 
-    name_exists = db.has_dns_record(name);
-    if (!name_exists)
+    if (!db.has_dns_record(name))
+    {
+        new_or_expired = true;
         return true;
+    }
 
-    auto tx_ref = get_name_tx_ref(name, db);
-    prev_output = get_tx_ref_output(tx_ref, db);
-    prev_output_age = get_tx_age(tx_ref, db);
+    prev_tx_ref = get_name_tx_ref(name, db);
+    auto prev_tx_age = get_tx_age(prev_tx_ref, db);
 
-    return !is_useable_age(prev_output_age);
+    if (is_expired_age(prev_tx_age))
+        new_or_expired = true;
+
+    return is_auction_age(prev_tx_age) || new_or_expired;
 }
 
-/* Check if name is available for auction */
-bool can_auction_name(const std::string &name, const signed_transactions &txs, dns_db &db,
-                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
-                      output_reference &prev_tx_ref)
+/* Check if name is available for value update or auction */
+bool name_is_useable(const std::string &name, const signed_transactions &txs, dns_db &db,
+                     const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
+                     output_reference &prev_tx_ref)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
@@ -173,29 +175,25 @@ bool is_valid_value(const fc::variant &value)
     return is_valid_value(serialize_value(value));
 }
 
-bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &name_exists,
-                  trx_output &prev_output, uint32_t &prev_output_age)
+bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state)
+{
+    return (state == claim_domain_output::possibly_in_auction) || (state == claim_domain_output::not_in_auction);
+}
+
+bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
+                  output_reference &prev_tx_ref)
 {
     if (!is_dns_output(output))
         return false;
 
-    if (!is_valid_amount(output.amount))
-        return false;
-
     auto dns_output = to_dns_output(output);
-
-    if (!is_valid_name(dns_output.name))
-        return false;
-
-    if (!is_valid_value(dns_output.value))
-        return false;
 
     if (dns_output.state == claim_domain_output::not_in_auction)
         return false;
 
     FC_ASSERT(dns_output.state == claim_domain_output::possibly_in_auction, "Invalid output state");
 
-    return can_bid_on_name(dns_output.name, txs, db, name_exists, prev_output, prev_output_age);
+    return name_is_available(dns_output.name, txs, db, new_or_expired, prev_tx_ref);
 }
 
 }} // bts::dns
