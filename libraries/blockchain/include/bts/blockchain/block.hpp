@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
        bool                validate_work()const;
        static uint64_t     calculate_next_fee( uint64_t prev_fee, uint64_t block_size );
        static uint64_t     min_fee();
-       int64_t             min_votes()const { return available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR; }
+       int64_t             min_votes()const;
       
        uint8_t             version;
        block_id_type       prev;

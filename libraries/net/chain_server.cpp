@@ -38,6 +38,7 @@ namespace bts { namespace net {
 bts::blockchain::trx_block create_test_genesis_block()
 {
    try {
+      FC_ASSERT( fc::exists( "genesis.json" ) );
       auto config = fc::json::from_file( "genesis.json" ).as<genesis_block_config>();
       int64_t total_supply = 0;
       bts::blockchain::trx_block b;
@@ -58,12 +59,14 @@ bts::blockchain::trx_block create_test_genesis_block()
          ++output_idx;
       }
 
-      b.version      = 0;
-      b.prev         = bts::blockchain::block_id_type();
-      b.block_num    = 0;
-      b.total_shares = int64_t(total_supply);
-      b.timestamp    = fc::time_point::from_iso_string("20131201T054434");
-      b.next_fee     = bts::blockchain::block_header::min_fee();
+      b.version         = 0;
+      b.prev            = bts::blockchain::block_id_type();
+      b.block_num       = 0;
+      b.total_shares    = int64_t(total_supply);
+      b.timestamp       = fc::time_point::from_iso_string("20131201T054434");
+      b.next_difficulty = 1;
+      b.next_fee        = bts::blockchain::block_header::min_fee();
+      b.available_votes = b.total_shares;
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
       fc::variant var(b);
@@ -183,12 +186,13 @@ namespace detail
         {
             // copy list to prevent yielding in middle...
             auto cons = connections;
+            ilog( "broadcast" );
             
-            for( auto itr = cons.begin(); itr != cons.end(); ++itr )
+            for( auto con : cons )
             {
                try {
-                 // todo... make sure connection is synced...
-                 itr->second->send( m );
+                 // TODO... make sure connection is synced...
+                 con.second->send( m );
                } 
                catch ( const fc::exception& w )
                {
@@ -244,7 +248,12 @@ namespace detail
                    chain.evaluate_transaction( trx.signed_trx ); // throws if error
                    if( pending.insert( std::make_pair(trx.signed_trx.id(),trx.signed_trx) ).second )
                    {
+                      ilog( "new transaction, broadcasting" );
                       fc::async( [=]() { broadcast( m ); } );
+                   }
+                   else
+                   {
+                      wlog( "duplicate transaction, ignoring" );
                    }
                 } 
                 catch ( const fc::exception& e )

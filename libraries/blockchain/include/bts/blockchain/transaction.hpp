@@ -5,7 +5,6 @@
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/outputs.hpp>
 #include <bts/blockchain/small_hash.hpp>
-#include <fc/network/ip.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/sha224.hpp>
 #include <fc/io/varint.hpp>
@@ -171,7 +170,6 @@ struct transaction
 
    uint8_t                      version;
    uint32_t                     stake;          ///< used for proof of stake, last 8 bytes of block.id()
-   fc::ip::endpoint             peer;           ///< Used to document the existance of a peer on the network
    fc::time_point_sec           valid_until;    ///< trx is only valid until a given time
    std::vector<trx_input>       inputs;
    std::vector<trx_output>      outputs;
@@ -221,7 +219,7 @@ namespace fc {
 
 FC_REFLECT( bts::blockchain::trx_input, (output_ref)(input_data) )
 FC_REFLECT( bts::blockchain::trx_output, (amount)(claim_func)(claim_data) )
-FC_REFLECT( bts::blockchain::transaction, (version)(stake)(peer)(valid_until)(inputs)(outputs) )
+FC_REFLECT( bts::blockchain::transaction, (version)(stake)(valid_until)(inputs)(outputs) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (sigs) );
 FC_REFLECT( bts::blockchain::meta_trx_output, (trx_id)(input_num) )
 FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(output)(meta_output) )

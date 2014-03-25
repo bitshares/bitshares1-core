@@ -75,6 +75,7 @@ namespace bts { namespace blockchain  {
         return min_votes - votes_cast;
      return 0;
   }
+  int64_t block_header::min_votes()const { return std::max<int64_t>(1,available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR); }
 
   /*
   uint64_t block_header::get_required_difficulty(uint64_t prev_difficulty,uint64_t prev_avail_cdays)const
