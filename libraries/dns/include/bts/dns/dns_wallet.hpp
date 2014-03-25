@@ -1,6 +1,5 @@
 #pragma once
 
-#include <bts/wallet/wallet.hpp>
 #include <bts/dns/dns_util.hpp>
 
 namespace bts { namespace dns {

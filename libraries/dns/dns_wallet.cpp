@@ -18,20 +18,19 @@ signed_transaction dns_wallet::buy_domain(const std::string& name, asset amount,
     FC_ASSERT(is_valid_name(name), "Invalid name");
     FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
+    // Name should be new or already in an auction
+    signed_transactions txs = signed_transactions(); // TODO: use current tx pool
+    bool name_exists;
+    auto prev_output = trx_output();
+    uint32_t prev_output_age;
+    FC_ASSERT(can_bid_on_name(name, txs, db, name_exists, prev_output, prev_output_age), "Name not available");
+
     signed_transaction trx;
-   
     auto domain_addr = new_recv_address("Owner address for domain: " + name);
     auto change_addr = new_recv_address("Change address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
     auto inputs = std::vector<trx_input>();
     auto total_in = bts::blockchain::asset(); // set by collect_inputs
-
-    // Name should be new or already in an auction
-    signed_transactions empty_txs; // TODO: pass current txs (block eval state)
-    bool name_exists;
-    auto prev_output = trx_output();
-    uint32_t prev_output_age;
-    FC_ASSERT(can_bid_on_name(name, empty_txs, db, name_exists, prev_output, prev_output_age), "Name not available");
 
     // Init output
     auto domain_output = claim_domain_output();
@@ -125,6 +124,7 @@ signed_transaction dns_wallet::update_record(const std::string& name, fc::varian
 
     FC_ASSERT(found, "Tried to update record but name UTXO not found in wallet");
 
+    // TODO: refactor following code shared with sell_domain
     auto change_amt = total_in;
 
     auto domain_output = claim_domain_output();
@@ -142,6 +142,7 @@ signed_transaction dns_wallet::update_record(const std::string& name, fc::varian
     trx = add_fee_and_sign(trx, asset(), total_in, req_sigs);
 
     return trx;
+
 } FC_RETHROW_EXCEPTIONS(warn, "update_record ${name} with value ${val}", ("name", name)("val", value)) }
 
 signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount, dns_db& db)
@@ -150,45 +151,21 @@ signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount
     FC_ASSERT(is_valid_name(name), "Invalid name");
     FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
-    // Check expiry
-    auto record = db.get_dns_record(name);
-    auto utxo_ref = record.last_update_ref;
-    auto block_num = db.fetch_trx_num(utxo_ref.trx_hash).block_num;
-    auto current_block = db.head_block_num();
-
-    FC_ASSERT(current_block - block_num < DNS_EXPIRE_DURATION_BLOCKS, "Tried to sell expired domain");
+    // Name should exist and be owned
+    signed_transactions txs = signed_transactions(); // TODO: use current tx pool
+    output_reference prev_tx_ref;
+    FC_ASSERT(can_auction_name(name, txs, db, get_unspent_outputs(), prev_tx_ref), "Name cannot be auctioned");
 
     signed_transaction trx;
-   
     auto change_addr = new_recv_address("Change address");
     auto sale_addr = new_recv_address("Domain sale address");
     auto req_sigs = std::unordered_set<bts::blockchain::address>();
     bts::blockchain::asset total_in; // set by collect_inputs
    
     trx.inputs = collect_inputs( asset(), total_in, req_sigs );
-    auto found = false;
-    for (auto pair : get_unspent_outputs())
-    {
-        if (pair.second.claim_func == claim_domain)
-        {
-            auto dns_output = pair.second.as<claim_domain_output>();
+    trx.inputs.push_back( trx_input(prev_tx_ref) );
 
-            if (dns_output.name != name)
-                continue;
-
-            // TODO: The record needs to be initially set not_for_sale before the first update_record
-            //FC_ASSERT(dns_output.flags == claim_domain_output::not_for_sale,
-                    //"Tried to update record that is still for sale");
-
-            trx.inputs.push_back( trx_input( get_ref_from_output_idx(pair.first) ) );
-
-            found = true;
-            break;
-        }
-    } 
-
-    FC_ASSERT(found, "Tried to update record but name UTXO not found in wallet");
-
+    // TODO: refactor following code shared with update_record
     auto change_amt = total_in;
 
     auto domain_output = claim_domain_output();
@@ -206,6 +183,7 @@ signed_transaction dns_wallet::sell_domain(const std::string& name, asset amount
     trx = add_fee_and_sign(trx, asset(), total_in, req_sigs);
 
     return trx;
+
 } FC_RETHROW_EXCEPTIONS(warn, "sell_domain ${name} with ${amt}", ("name", name)("amt", amount)) }
 
 bool dns_wallet::scan_output( const trx_output& out,
