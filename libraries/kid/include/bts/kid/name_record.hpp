@@ -6,6 +6,8 @@ namespace bts { namespace kid
 {
    struct name_record
    {
+       name_record():nonce(0){}
+
        fc::sha256 digest()const;
        fc::sha256 digest512()const;
        uint64_t   difficulty()const;
@@ -23,6 +25,7 @@ namespace bts { namespace kid
    {
       fc::sha256 id()const;
       fc::ecc::public_key get_signee()const;
+      void                sign( const fc::ecc::private_key& master_key );
       fc::ecc::compact_signature master_signature;
    };
  
@@ -56,6 +59,6 @@ namespace bts { namespace kid
 
 FC_REFLECT( bts::kid::name_record, (name)(master_key)(active_key)(prev_block_id)(last_update)(first_update)(nonce) )
 FC_REFLECT_DERIVED( bts::kid::signed_name_record, (bts::kid::name_record), (master_signature) )
-FC_REFLECT( bts::kid::block, (records) )
+FC_REFLECT( bts::kid::block, (number)(timestamp)(difficulty)(records) )
 FC_REFLECT_DERIVED( bts::kid::signed_block, (bts::kid::block), (trustee_signature) )
 FC_REFLECT( bts::kid::stored_key, (encrypted_key)(signature) )

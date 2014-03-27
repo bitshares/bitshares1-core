@@ -38,6 +38,7 @@ int main( int argc, char** argv )
 
       auto chain   = std::make_shared<bts::blockchain::chain_database>();
       chain->open( datadir / "chain", true );
+      chain->set_signing_authority( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
 
       auto wall    = std::make_shared<bts::wallet::wallet>();
       wall->set_data_directory( datadir );
@@ -121,6 +122,8 @@ fc::path get_data_dir( int argc, char** argv )
    return datadir;
 
 } FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
+
+
 
 config load_config( const fc::path& datadir )
 { try {
