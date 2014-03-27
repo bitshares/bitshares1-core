@@ -34,9 +34,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl()
             :_head_is_signed_by_authority(false)
-            {
-               _pow_validator = std::make_shared<pow_validator>();
-            }
+            { }
 
             //std::unique_ptr<ldb::DB> blk_id2num;  // maps blocks to unique IDs
             bts::db::level_map<block_id_type,uint32_t>          blk_id2num;
@@ -82,7 +80,7 @@ namespace bts { namespace blockchain {
              */
             void store( const signed_transaction& t, const trx_num& tn )
             {
-               ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
+               //ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
 
                trx_id2num.store( t.id(), tn ); 
                meta_trxs.store( tn, meta_trx(t) );
@@ -123,6 +121,7 @@ namespace bts { namespace blockchain {
      :my( new detail::chain_database_impl() )
      {
          my->_trx_validator = std::make_shared<transaction_validator>(this);
+         my->_pow_validator = std::make_shared<pow_validator>(this);
      }
 
      chain_database::~chain_database()
@@ -317,7 +316,7 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.votes_cast      >= my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR, "",
                    ("b.votes_cast",b.votes_cast)("required_votes",my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR))
 
-        FC_ASSERT( my->_head_is_signed_by_authority );
+//        FC_ASSERT( my->_head_is_signed_by_authority );
         FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
                    ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
         
@@ -349,11 +348,12 @@ namespace bts { namespace blockchain {
 
                FC_ASSERT( b.trxs[last].inputs.size() == 1 );
                FC_ASSERT( b.trxs[last].outputs.size() == 1 );
+               FC_ASSERT( my->_pow_validator );
                FC_ASSERT( my->_pow_validator->validate_work( b, trx_summary.valid_votes, min_votes ) );
 
                int64_t max_reward = summary.fees / 2;
 
-               int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+               int64_t actual_reward = max_reward;// - ((max_reward * min_votes) / summary.valid_votes);
               ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
                
                FC_ASSERT( abs(trx_summary.fees) <= actual_reward, "",

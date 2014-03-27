@@ -475,6 +475,7 @@ namespace bts { namespace wallet {
          my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = address( key.get_public_key() );
          my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = address( key.get_public_key() );
       }
+      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -529,7 +530,6 @@ namespace bts { namespace wallet {
       keys[addr] = key;
       my->_data.set_keys( keys, my->_wallet_key_password );
       my->_data.recv_addresses[addr] = label;
-      save();
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
@@ -545,7 +545,6 @@ namespace bts { namespace wallet {
    void wallet::add_send_address( const address& addr, const std::string& label )
    { try {
       my->_data.send_addresses[addr] = label;
-      save();
    } FC_RETHROW_EXCEPTIONS( warn, "unable to add send address ${addr} with label ${label}", ("addr",addr)("label",label) ) }
 
    std::unordered_map<address,std::string> wallet::get_recv_addresses()const
@@ -944,10 +943,13 @@ namespace bts { namespace wallet {
          wlog( "NOW IM HERE -1" );
          int64_t min_votes = head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
          int64_t max_reward = summary.fees / 2;
+         /*
          wlog("summary: ${sum}", ("sum", summary));
 
          FC_ASSERT( summary.valid_votes > 0 ); 
          int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
+         */
+         int64_t actual_reward = max_reward;
 
          ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",
                ("actual_reward",actual_reward)("m",max_reward)("min",min_votes));

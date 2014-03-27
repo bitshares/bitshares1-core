@@ -30,11 +30,16 @@ namespace bts { namespace client {
 
             void start_mining_next_block()
             {
-               ilog( "start mining block" );
                int64_t miner_votes = 0;
-               _next_block = _wallet->generate_next_block( *_chain_db, _chain_client.get_pending_transactions(), miner_votes ); 
-               auto head_block = _chain_db->get_head_block();
-               _miner.set_block( _next_block, head_block, miner_votes, head_block.min_votes() );
+               auto pending_trx = _chain_client.get_pending_transactions();
+               if( pending_trx.size() )
+               {
+                  ilog( "n\n\n                                                           start mining block\n\n\n\n" );
+                  _next_block = _wallet->generate_next_block( *_chain_db, pending_trx, miner_votes ); 
+                  auto head_block = _chain_db->get_head_block();
+                  _miner.set_block( _next_block, head_block, miner_votes, head_block.min_votes() );
+                  _miner.set_effort( _effort );
+               }
             }
 
             client_impl()
@@ -58,6 +63,7 @@ namespace bts { namespace client {
             bts::blockchain::chain_database_ptr  _chain_db;
             bts::wallet::wallet_ptr              _wallet;
             block_miner                          _miner;
+            float                                _effort;
        };
     }
 
@@ -68,9 +74,12 @@ namespace bts { namespace client {
 
     client::~client(){}
 
-    void client::set_mining_effort( float e )
+    void client::set_mining_effort( float effort )
     {
-       my->_miner.set_effort( e );
+       FC_ASSERT( effort >= 0  );
+       FC_ASSERT( effort <= 1  );
+       my->_effort = effort;
+       my->_miner.set_effort( effort );
     }
 
     void client::set_chain( const bts::blockchain::chain_database_ptr& ptr )

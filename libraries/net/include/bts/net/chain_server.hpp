@@ -58,6 +58,8 @@ namespace bts { namespace net {
 
         void close();
 
+        void set_trustee_key( const fc::ecc::private_key& k );
+
         /**
          *  @note del must out live this server and the server does not
          *        take ownership of the delegate.

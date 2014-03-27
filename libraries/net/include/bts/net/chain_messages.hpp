@@ -28,6 +28,8 @@ namespace bts { namespace net {
       block_message(){}
       block_message( const bts::blockchain::trx_block& blk )
       :block_data(blk){}
+      block_message( const bts::blockchain::trx_block& blk, const fc::ecc::compact_signature& sig )
+      :block_data(blk){ sigs.insert(sig); }
 
       bts::blockchain::trx_block             block_data;
       std::set<fc::ecc::compact_signature>   sigs;

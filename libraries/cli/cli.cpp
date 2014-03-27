@@ -125,6 +125,7 @@ namespace bts { namespace cli {
       std::cout<<"rescan [BLOCK_NUM=0]\n";
       std::cout<<"import_bitcoin_wallet WALLET_DAT\n";
       std::cout<<"import_private_key    WALLET_DAT\n";
+      std::cout<<"listunspent\n";
       std::cout<<"quit - exit cleanly\n";
       std::cout<<"-------------------------------------------------------------\n";
    } // print_help
@@ -215,6 +216,10 @@ namespace bts { namespace cli {
              auto addr = my->_client->get_wallet()->new_recv_address( account );
              std::cout << std::string( addr ) << "\n";
           }
+       }
+       else if( cmd == "listunspent" )
+       {
+          my->_client->get_wallet()->dump();
        }
        else if( cmd == "sendtoaddress" )
        {
