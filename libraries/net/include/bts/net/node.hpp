@@ -1,21 +1,10 @@
 #pragma once
-#include <fc/crypto/ripemd160.hpp>
+#include <bts/net/core_messages.hpp>
 #include <bts/net/message.hpp>
 
 namespace bts { namespace net {
 
    namespace detail { class node_impl; }
-
-   typedef fc::ripemd160 item_hash_t;
-   struct item_id
-   {
-       uint32_t      item_type;
-       item_hash_t   item_hash;
-       item_id() {}
-
-       item_id(uint32_t type, const item_hash_t& hash) 
-       :item_type(type), item_hash(hash){}
-   };
 
    /**
     *  @class node_delegate
@@ -99,6 +88,10 @@ namespace bts { namespace net {
 
         void      set_delegate( node_delegate* del );
 
+        void      load_configuration( const fc::path& configuration_directory );
+
+        void      connect_to_p2p_network();
+
         /**
          *  Add endpoint to internal level_map database of potential nodes
          *  to attempt to connect to.  This database is consulted any time
@@ -116,6 +109,11 @@ namespace bts { namespace net {
          *  connections should be accepted.
          */
         void      listen_on_endpoint( const fc::ip::endpoint& ep );
+
+        /**
+         *  Specifies the port upon which incoming connections should be accepted.
+         */
+        void      listen_on_port(uint16_t port);
 
         /**
          *  @return a list of peers that are currently connected.

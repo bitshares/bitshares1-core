@@ -5,6 +5,8 @@
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/tag.hpp>
 
+#include <boost/program_options.hpp>
+
 #include <bts/net/node.hpp>
 #include <bts/client/messages.hpp>
 
@@ -14,6 +16,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/thread/thread.hpp>
 
 #include <iostream>
 
@@ -134,12 +137,20 @@ class simple_net_test_miner : public bts::net::node_delegate
      bool _synchronized;
      uint32_t _remaining_items_to_sync;
 
+
+     uint16_t _listening_port;
+     fc::path _config_dir;
+
      void push_valid_signed_block(const block_message& block_to_push);
      bool is_block_valid(const block_message& block_to_check);
      void store_transaction(const trx_message& transaction_to_store);
 
    public:
      simple_net_test_miner();
+     void set_port(uint16_t port);
+     void set_config_dir(const std::string& config_dir);
+     void connect_to(fc::ip::endpoint remote_endpoint);
+     void start();
      void run();
 
      /* Implement node_delegate */
@@ -155,19 +166,48 @@ class simple_net_test_miner : public bts::net::node_delegate
 
 simple_net_test_miner::simple_net_test_miner() :
   _synchronized(false),
-  _remaining_items_to_sync(0)
+  _remaining_items_to_sync(0),
+  _listening_port(6543)
 {
   _node.set_delegate(this);
+  _config_dir = fc::app_path() / "simple_net_test_miner";
   push_valid_signed_block(generate_fake_genesis_block());
+}
+
+void simple_net_test_miner::set_port(uint16_t port)
+{
+  _listening_port = port;
+}
+
+void simple_net_test_miner::set_config_dir(const std::string& config_dir)
+{
+  _config_dir = config_dir.c_str();
+}
+
+void simple_net_test_miner::start()
+{
+  assert(!_blockchain.empty());
+  _synchronized = false;
+
+  if (!fc::exists(_config_dir))
+    fc::create_directories(_config_dir);
+  _node.load_configuration(_config_dir);
+
+  _node.sync_from(item_id(block_message_type, _blockchain.get<0>().back().block_id));
+  _node.listen_on_port(_listening_port);
+  _node.connect_to_p2p_network();
+}
+void simple_net_test_miner::connect_to(fc::ip::endpoint remote_endpoint)
+{
+  _node.connect_to(remote_endpoint);
 }
 
 void simple_net_test_miner::run()
 {
-  assert(!_blockchain.empty());
-  _synchronized = false;
-  _node.sync_from(item_id(block_message_type, _blockchain.get<0>().back().block_id));
+  fc::usleep(fc::seconds(60 * 60 * 24 * 365));
   // run some sort of event loop here
 }
+
 
 void simple_net_test_miner::push_valid_signed_block(const block_message& block_to_push)
 {
@@ -336,9 +376,29 @@ void simple_net_test_miner::connection_count_changed(uint32_t c)
 {
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+  boost::program_options::options_description option_config("Allowed options");
+  option_config.add_options()("port", boost::program_options::value<uint16_t>(), "set port to listen on")
+                             ("connect-to", boost::program_options::value<std::string>(), "set remote host to connect to")
+                             ("config-dir", boost::program_options::value<std::string>(), "directory containing config files");
+  boost::program_options::variables_map option_variables;
+  boost::program_options::store(boost::program_options::parse_command_line(argc, argv, option_config), option_variables);
+  boost::program_options::notify(option_variables);
+
   simple_net_test_miner miner;
+
+  if (option_variables.count("config-dir"))
+    miner.set_config_dir(option_variables["config-dir"].as<std::string>());
+
+  if (option_variables.count("port"))
+    miner.set_port(option_variables["port"].as<uint16_t>());
+
+  miner.start();
+
+  if (option_variables.count("connect-to"))
+    miner.connect_to(fc::ip::endpoint::from_string(option_variables["connect-to"].as<std::string>()));
+
   miner.run();
   return 0;
 }

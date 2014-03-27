@@ -17,30 +17,42 @@ stcp_socket::~stcp_socket()
 {
 }
 
-void     stcp_socket::connect_to( const fc::ip::endpoint& ep )
+void stcp_socket::do_key_exchange()
 {
-    _sock.connect_to( ep );
-    _priv_key = fc::ecc::private_key::generate();
-    fc::ecc::public_key pub = _priv_key.get_public_key();
-    auto s = pub.serialize();
-    _sock.write( (char*)&s, sizeof(s) );
-    fc::ecc::public_key_data rpub;
-    _sock.read( (char*)&rpub, sizeof(rpub) );
+  _priv_key = fc::ecc::private_key::generate();
+  fc::ecc::public_key pub = _priv_key.get_public_key();
+  auto s = pub.serialize();
+  _sock.write( (char*)&s, sizeof(s) );
+  fc::ecc::public_key_data rpub;
+  _sock.read( (char*)&rpub, sizeof(rpub) );
 
-    auto shared_secret = _priv_key.get_shared_secret( rpub );
+  auto shared_secret = _priv_key.get_shared_secret( rpub );
 //    ilog("shared secret ${s}", ("s", shared_secret) );
-    _send_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                    fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
-    _recv_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                    fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
+  _send_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
+                  fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
+  _recv_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
+                  fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
+}
+
+
+void stcp_socket::connect_to( const fc::ip::endpoint& remote_endpoint )
+{
+  _sock.connect_to( remote_endpoint );
+  do_key_exchange();
+}
+
+void stcp_socket::connect_to( const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint )
+{
+  _sock.connect_to(remote_endpoint, local_endpoint);
+  do_key_exchange();
 }
 
 /**
- *   This method must read at least 8 bytes at a time from
+ *   This method must read at least 16 bytes at a time from
  *   the underlying TCP socket so that it can decrypt them. It
  *   will buffer any left-over.
  */
-size_t   stcp_socket::readsome( char* buffer, size_t len )
+size_t stcp_socket::readsome( char* buffer, size_t len )
 { try {
     assert( (len % 16) == 0 );
     assert( len >= 16 );
@@ -57,12 +69,12 @@ size_t   stcp_socket::readsome( char* buffer, size_t len )
     return s;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
 
-bool     stcp_socket::eof()const
+bool stcp_socket::eof()const
 {
   return _sock.eof();
 }
 
-size_t   stcp_socket::writesome( const char* buffer, size_t len )
+size_t stcp_socket::writesome( const char* buffer, size_t len )
 { try {
     assert( len % 16 == 0 );
     assert( len > 0 );
@@ -70,7 +82,7 @@ size_t   stcp_socket::writesome( const char* buffer, size_t len )
     len = std::min<size_t>(sizeof(crypt_buf),len);
     memcpy( crypt_buf, buffer, len );
     /**
-     * every sizeof(crypt_buf) bytes the blowfish channel
+     * every sizeof(crypt_buf) bytes the aes channel
      * has an error and doesn't decrypt properly...  disable
      * for now because we are going to upgrade to something
      * better.
@@ -84,13 +96,13 @@ size_t   stcp_socket::writesome( const char* buffer, size_t len )
     return len;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
 
-void     stcp_socket::flush()
+void stcp_socket::flush()
 {
    _sock.flush();
 }
 
 
-void     stcp_socket::close()
+void stcp_socket::close()
 {
   try 
   {
@@ -98,21 +110,9 @@ void     stcp_socket::close()
   }FC_RETHROW_EXCEPTIONS( warn, "error closing stcp socket" );
 }
 
-void    stcp_socket::accept()
+void stcp_socket::accept()
 {
-    _priv_key = fc::ecc::private_key::generate();
-    fc::ecc::public_key pub = _priv_key.get_public_key();
-    auto s = pub.serialize();
-    _sock.write( (char*)&s, sizeof(s) );
-    fc::ecc::public_key_data rpub;
-    _sock.read( (char*)&rpub, sizeof(rpub) );
-
-    auto shared_secret = _priv_key.get_shared_secret( fc::ecc::public_key(rpub) );
-//    ilog("shared secret ${s}", ("s", shared_secret) );
-    _send_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                    fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
-    _recv_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                    fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
+  do_key_exchange();
 }
 
 
