@@ -8,6 +8,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
 
+
 namespace bts { namespace kid {
    uint64_t   name_record::difficulty()const
    {
@@ -75,6 +76,7 @@ namespace bts { namespace kid {
        {
           public:
              server*                                                   _self;
+             fc::http::server                                          _httpd;
              bts::db::level_map<std::string, history >                 _name_index;
              bts::db::level_map<uint32_t, signed_block>                _block_database;
              bts::db::level_map<std::string,stored_key >               _key_data;
@@ -122,6 +124,36 @@ namespace bts { namespace kid {
                    fc::usleep( fc::seconds( 1 ) );
                 }
              }
+
+             void handle_request( const fc::http::request& r, const fc::http::server::response& s )
+             {
+                 auto pos = r.path.find( "/" );
+                 auto first_dir = r.path.substr(0,pos);
+                 if( first_dir == "update_record" )
+                 {
+                    s.set_status( fc::http::reply::RecordCreated );
+                 }
+                 else if( first_dir == "fetch_by_name" )
+                 {
+                    s.set_status( fc::http::reply::Found );
+                 }
+                 else if( first_dir == "fetch_by_key" )
+                 {
+                    s.set_status( fc::http::reply::Found );
+                 }
+                 else if( first_dir == "store_key" )
+                 {
+                    s.set_status( fc::http::reply::RecordCreated );
+                 }
+                 else if( first_dir == "fetch_key" )
+                 {
+                    s.set_status( fc::http::reply::Found );
+                 }
+                 else
+                 {
+                    s.set_status( fc::http::reply::NotFound );
+                 }
+             }
        };
    } // namespace detail
 
@@ -156,6 +188,8 @@ namespace bts { namespace kid {
 
    void server::listen( const fc::ip::endpoint& ep )
    {
+      my->_httpd.on_request( [=]( const fc::http::request& r, const fc::http::server::response& s ){ my->handle_request( r, s ); } );
+      my->_httpd.listen(ep);
    }
 
    bool server::update_record( const signed_name_record& r )
