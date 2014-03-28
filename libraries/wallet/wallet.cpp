@@ -239,49 +239,6 @@ namespace bts { namespace wallet {
 
               } // collect_mining_input
 
-              std::vector<trx_input> collect_coindays( uint64_t request_cdd, asset& total_in, 
-                                                       std::unordered_set<address>& req_sigs, uint64_t& provided_cdd )
-              {
-                   FC_ASSERT( _data.last_scanned_block_num > 0 );
-                   provided_cdd = 0;
-                   std::vector<trx_input> inputs;
-                   for( auto out : _data.unspent_outputs )
-                   {
-                       ilog( "unspent outputs ${o}", ("o",out) );
-                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == 0 )
-                       {
-                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
-                           total_in += out.second.amount;
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx);
-                           if( cdd > 0 ) 
-                           {
-                              provided_cdd += cdd;
-                              req_sigs.insert( out.second.as<claim_by_signature_output>().owner );
-                             // ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
-                              if( provided_cdd >= request_cdd )
-                              {
-                                 return inputs;
-                              }
-                           }
-                       }
-                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == 0 )
-                       {
-                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
-                           total_in += out.second.amount;
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx);
-                           if( cdd > 0 ) 
-                           {
-                              provided_cdd += cdd;
-                              req_sigs.insert( _data.recv_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
-                              if( provided_cdd >= request_cdd )
-                              {
-                                 return inputs;
-                              }
-                           }
-                       }
-                   }
-                   return inputs;
-              }
 
               /**
                *  Collect inputs that total to at least min_amnt.
@@ -572,45 +529,6 @@ namespace bts { namespace wallet {
    }
    bool   wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
 
-   signed_transaction    wallet::create_mining_transaction( const asset& reward, const std::string& label )
-   {
-       auto   change_address = new_recv_address( label );
-       std::unordered_set<address> req_sigs; 
-       asset  total_in(static_cast<uint64_t>(0ull));
-
-       signed_transaction trx; 
-       trx.inputs = my->collect_mining_input( total_in, req_sigs );
-       wlog( "total_in ${in} + ${reward} = ${out}", ("in",total_in)("reward",reward)("out",total_in+reward) );
-       trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), total_in + reward) );
-       my->sign_transaction(trx, req_sigs, false);
-
-
-       return trx;
-   }
-
-   signed_transaction    wallet::collect_coindays( uint64_t cdd, uint64_t& cdd_collected, const std::string& label )
-   { try {
-       auto   change_address = new_recv_address( label );
-       std::unordered_set<address> req_sigs; 
-       asset  total_in(static_cast<uint64_t>(0ull));
-       signed_transaction trx; 
-       trx.inputs    = my->collect_coindays( cdd, total_in, req_sigs, cdd_collected );
-       asset change = total_in;
-       trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), change) );
-
-       trx.sigs.clear();
-       my->sign_transaction( trx, req_sigs, false );
-
-       uint64_t trx_bytes = fc::raw::pack( trx ).size();
-       asset    fee( my->_current_fee_rate * trx_bytes );
-       FC_ASSERT( total_in > fee );
-       trx.outputs.back() = trx_output( claim_by_signature_output( change_address ), change - fee );
-
-       trx.sigs.clear();
-       my->sign_transaction(trx, req_sigs, false);
-       return trx;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("cdd",cdd)("collected",cdd_collected) ) }
-
 
    signed_transaction    wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
    { try {
@@ -865,7 +783,7 @@ namespace bts { namespace wallet {
       return my->collect_inputs( min_amnt, total_in, req_sigs );
    }
 
-   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs, int64_t& miner_votes )
+   trx_block  wallet::generate_next_block( chain_database& db, const signed_transactions& in_trxs )
    {
       wlog( "generate next block ${trxs}", ("trxs",in_trxs) );
       set_fee_rate( db.get_fee_rate() );
@@ -930,56 +848,14 @@ namespace bts { namespace wallet {
                wlog( "caught exception that failed to pass validation: ${e}", ("e",e.to_detail_string() ) );
             }
          }
-         auto mine_trx = create_mining_transaction( asset() );
-
-         // we don't want to add this to the combined state just yet... it will get added below.
-         auto tmp_state = db.get_transaction_validator()->create_block_state(); 
-         ilog( "mine_trx: ${mine_trx}", ("mine_trx",mine_trx) );
-         auto trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, tmp_state ); 
-         miner_votes = trx_sum.valid_votes;
-
          auto head_block = db.get_head_block();
-
-         wlog( "NOW IM HERE -1" );
-         int64_t min_votes = head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
-         int64_t max_reward = summary.fees / 2;
-         /*
-         wlog("summary: ${sum}", ("sum", summary));
-
-         FC_ASSERT( summary.valid_votes > 0 ); 
-         int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
-         */
-         int64_t actual_reward = max_reward;
-
-         ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",
-               ("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
-
-         FC_ASSERT( actual_reward > 0, "", 
-                    ("actual_reward",actual_reward)
-                    ("max_reward",max_reward)
-                    ("valid_votes",summary.valid_votes)
-                    ("min_votes",min_votes) );
-
-         mine_trx = create_mining_transaction( asset( uint64_t(actual_reward) ) );
-         trx_sum =  db.get_transaction_validator()->evaluate( mine_trx, block_state ); 
-         summary += trx_sum;
-         result.trxs.push_back( mine_trx );
 
          result.block_num       = db.head_block_num() + 1;
          result.prev            = db.head_block_id();
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
          result.next_fee        = result.calculate_next_fee( db.get_fee_rate().get_rounded_amount(), result.block_size() );
-         result.votes_cast      = summary.valid_votes;
-    //     wlog( "summary.fees: ${summary.fees}", ("summary.fees", summary.fees) );
          result.total_shares    = head_block.total_shares - summary.fees;
-         result.available_votes = head_block.available_votes + result.total_shares 
-                                  - result.votes_cast - summary.invalid_votes;
          result.timestamp       = db.get_pow_validator()->get_time();
-
-         // next difficulty =  DESIRED_DELTA_T * CURRENT_DIFFICULTY / PREV_DELTA_T
-         ilog( "head_block.timestamp: ${t}  result: ${r}", ("t",head_block.timestamp)("r",result.timestamp ) );
-         auto next_diff = head_block.next_difficulty * 300*1000000ll / (result.timestamp - head_block.timestamp).count();
-         result.next_difficulty = (head_block.next_difficulty * 24 + next_diff) / 25;
 
          return result;
       } FC_RETHROW_EXCEPTIONS( warn, "error generating new block" );

@@ -68,10 +68,8 @@ namespace bts { namespace blockchain {
            *  there are no chain forks until the consensus algorithm can
            *  be reached.  
            */
-          void                        set_signing_authority( const address& addr );
-          address                     get_signing_authority()const;
-          fc::ecc::compact_signature  fetch_block_signature( const block_id_type& block_id );
-          void                        set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig );
+          void                        set_trustee( const address& addr );
+          address                     get_trustee()const;
           //@}
 
           /**
@@ -87,14 +85,12 @@ namespace bts { namespace blockchain {
           void open( const fc::path& dir, bool create = true );
           void close();
 
-          const block_header&    get_head_block()const;
-          uint64_t               total_shares()const;
-          uint32_t               head_block_num()const;
-          block_id_type          head_block_id()const;
-          uint64_t               get_stake(); // head - 1 
-          asset                  get_fee_rate()const;
-          uint64_t               current_difficulty()const;
-          uint64_t               get_min_votes();
+          const signed_block_header&  get_head_block()const;
+          uint64_t                    total_shares()const;
+          uint32_t                    head_block_num()const;
+          block_id_type               head_block_id()const;
+          uint64_t                    get_stake(); // head - 1 
+          asset                       get_fee_rate()const;
 
 
 
@@ -107,10 +103,9 @@ namespace bts { namespace blockchain {
          trx_output fetch_output(const output_reference& ref);
 
          uint32_t                   fetch_block_num( const block_id_type& block_id );
-         block_header               fetch_block( uint32_t block_num );
+         signed_block_header        fetch_block( uint32_t block_num );
          digest_block               fetch_digest_block( uint32_t block_num );
          trx_block                  fetch_trx_block( uint32_t block_num );
-
 
          /**
           *  Validates the block and then pushes it into the database.

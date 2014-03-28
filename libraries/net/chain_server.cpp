@@ -64,9 +64,7 @@ bts::blockchain::trx_block create_test_genesis_block()
       b.block_num       = 0;
       b.total_shares    = int64_t(total_supply);
       b.timestamp       = fc::time_point::from_iso_string("20131201T054434");
-      b.next_difficulty = 100;
       b.next_fee        = bts::blockchain::block_header::min_fee();
-      b.available_votes = b.total_shares;
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
       fc::variant var(b);
@@ -120,31 +118,24 @@ namespace detail
                 elog( "unexpected exception" );
             }
         }
-        chain_server_delegate*                                                               _ser_del;
-        fc::ip::address                                                                      _external_ip;
-        std::unordered_map<fc::ip::endpoint,chain_connection_ptr>                            _connections;
-                                                                                             
-        chain_server::config                                                                 _cfg;
-        fc::tcp_server                                                                       _tcp_serv;
-
-        fc::ecc::private_key                                                                 _trustee_key;
+        chain_server_delegate*                                                                       _ser_del;
+        fc::ip::address                                                                              _external_ip;
+        std::unordered_map<fc::ip::endpoint,chain_connection_ptr>                                    _connections;
+                                                                                                     
+        chain_server::config                                                                         _cfg;
+        fc::tcp_server                                                                               _tcp_serv;
                                                                                             
-        fc::future<void>                                                                     _accept_loop_complete;
+        fc::future<void>                                                                             _accept_loop_complete;
         bts::blockchain::chain_database                                                              _chain;
         std::unordered_map<bts::blockchain::transaction_id_type,bts::blockchain::signed_transaction> _pending;
 
-        fc::ecc::compact_signature sign_block( const block_id_type& id )
-        {
-           auto digest = fc::sha256::hash( (char*)&id, sizeof(id) );
-           return _trustee_key.sign_compact( digest );
-        }
 
-        void broadcast_block( const bts::blockchain::trx_block& blk, const fc::ecc::compact_signature& blk_sig )
+        void broadcast_block( const bts::blockchain::trx_block& blk )
         {
             // copy list to prevent yielding in middle...
             auto cons = _connections;
             
-            block_message blk_msg(blk,blk_sig);
+            block_message blk_msg(blk);
             for( auto c : cons )
             {
                try {
@@ -203,14 +194,11 @@ namespace detail
                 try {
                    auto blk = m.as<block_message>();
                    _chain.push_block( blk.block_data );
-                   auto blk_id = blk.block_data.id();
-                   auto blk_sig = sign_block( blk_id );
-                   _chain.set_block_signature( blk_id, blk_sig );
                    for( auto trx : blk.block_data.trxs )
                    {
                       _pending.erase( trx.id() );
                    }
-                   broadcast_block( blk.block_data, blk_sig );
+                   broadcast_block( blk.block_data );
                 }
                 catch ( const fc::exception& e )
                 {
@@ -385,9 +373,6 @@ void chain_server::configure( const chain_server::config& c )
          try {
             //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
             my->_chain.push_block( genesis );
-            auto blk_id = genesis.id();
-            auto blk_sig = my->sign_block( blk_id );
-            my->_chain.set_block_signature( blk_id, blk_sig );
          } 
          catch ( const fc::exception& e )
          {
@@ -408,12 +393,6 @@ std::vector<chain_connection_ptr> chain_server::get_connections()const
     return cons;
 }
 
-void chain_server::set_trustee_key( const fc::ecc::private_key& trustee )
-{
-   my->_trustee_key = trustee;
-   my->_chain.set_signing_authority( bts::blockchain::address( trustee.get_public_key() ) );
-}
-
 
 void chain_server::close()
 {
@@ -422,4 +401,8 @@ void chain_server::close()
   } FC_RETHROW_EXCEPTIONS( warn, "error closing server socket" );
 }
 
+chain_database& chain_server::get_chain()const
+{
+   return my->_chain;
+}
 } } // bts::net

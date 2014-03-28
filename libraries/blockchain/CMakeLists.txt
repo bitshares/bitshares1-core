@@ -9,10 +9,8 @@ add_library( bts_blockchain
              outputs.cpp
              transaction.cpp
              block.cpp
-             pow_validator.cpp
              transaction_validator.cpp
              chain_database.cpp
-             block_miner.cpp
              momentum.cpp
            )
 

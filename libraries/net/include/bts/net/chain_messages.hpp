@@ -28,11 +28,8 @@ namespace bts { namespace net {
       block_message(){}
       block_message( const bts::blockchain::trx_block& blk )
       :block_data(blk){}
-      block_message( const bts::blockchain::trx_block& blk, const fc::ecc::compact_signature& sig )
-      :block_data(blk){ sigs.insert(sig); }
 
       bts::blockchain::trx_block             block_data;
-      std::set<fc::ecc::compact_signature>   sigs;
    };
 
    struct trx_message
@@ -54,6 +51,6 @@ namespace bts { namespace net {
 
 FC_REFLECT_ENUM( bts::net::chain_message_type, (subscribe_msg)(block_msg)(trx_msg)(trx_err_msg) )
 FC_REFLECT( bts::net::subscribe_message, (version)(last_block) )
-FC_REFLECT( bts::net::block_message, (block_data)(sigs) )
+FC_REFLECT( bts::net::block_message, (block_data) )
 FC_REFLECT( bts::net::trx_message, (signed_trx) )
 FC_REFLECT( bts::net::trx_err_message, (signed_trx)(err) )

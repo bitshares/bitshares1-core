@@ -58,8 +58,6 @@ namespace bts { namespace net {
 
         void close();
 
-        void set_trustee_key( const fc::ecc::private_key& k );
-
         /**
          *  @note del must out live this server and the server does not
          *        take ownership of the delegate.
@@ -76,6 +74,8 @@ namespace bts { namespace net {
          * Get all connections for any channel.
          */
         std::vector<chain_connection_ptr> get_connections()const;
+
+        chain_database& get_chain()const;
 
       private:
         std::unique_ptr<detail::chain_server_impl> my;

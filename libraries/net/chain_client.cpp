@@ -25,8 +25,6 @@ namespace bts { namespace net {
                auto blkmsg = m.as<block_message>();
                 ilog( "received block num ${n}", ("n",blkmsg.block_data.block_num) );
                _chain->push_block( blkmsg.block_data );
-               if( blkmsg.sigs.size() )
-                  _chain->set_block_signature( blkmsg.block_data.id(), *blkmsg.sigs.begin() );
                for( auto trx : blkmsg.block_data.trxs )
                   _pending_trxs.erase( trx.id() );
 
