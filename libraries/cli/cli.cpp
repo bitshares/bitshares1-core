@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <fc/reflect/variant.hpp>
+#include <fc/io/json.hpp>
 
 #include <fc/log/logger.hpp>
 
@@ -296,6 +298,22 @@ namespace bts { namespace cli {
    void cli::list_transactions( uint32_t count )
    {
        auto trxs = my->_client->get_wallet()->get_transaction_history();
+       for( auto state : trxs )
+       {
+          std::cout << state.second.block_num << "   " << fc::json::to_string( state.second.to ) << " ";
+          for( auto delta : state.second.delta_balance )
+          {
+             if( delta.second > 0 )
+             {
+                std::cout << std::string( asset(uint64_t(delta.second),delta.first)) <<" ";
+             }
+             else if( delta.second < 0 ) 
+             {
+                std::cout << "-"<<std::string( asset(uint64_t(-delta.second),delta.first)) <<" ";
+             }
+          }
+          std::cout <<"\n";
+       }
 
    }
    void cli::get_balance( uint32_t min_conf, uint16_t unit )

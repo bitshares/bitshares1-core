@@ -631,21 +631,44 @@ namespace bts { namespace wallet {
       return my->_data.transactions;
    }
 
-   bool wallet::scan_transaction( const signed_transaction& trx, uint32_t block_idx, uint32_t trx_idx )
+   void wallet::scan_input( transaction_state& state, const output_reference& r )
+   {
+      auto ref_itr = my->_output_ref_to_index.find(r);
+      if( ref_itr == my->_output_ref_to_index.end() ) 
+      {
+         return;
+      }
+
+      auto itr = my->_data.unspent_outputs.find(ref_itr->second);
+      if( itr != my->_data.unspent_outputs.end() )
+      {
+         state.adjust_balance( itr->second.amount, -1 );
+         return;
+      }
+      itr = my->_data.spent_outputs.find( ref_itr->second );
+      if( itr != my->_data.unspent_outputs.end() )
+      {
+         state.adjust_balance( itr->second.amount, -1 );
+         return;
+      }
+   }
+
+   bool wallet::scan_transaction( transaction_state& state, uint32_t block_idx, uint32_t trx_idx )
    {
        bool found = false;
-       for( uint32_t in_idx = 0; in_idx < trx.inputs.size(); ++in_idx )
+       for( uint32_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
        {
-           mark_as_spent( trx.inputs[in_idx].output_ref );
+           scan_input( state, state.trx.inputs[in_idx].output_ref );
+           mark_as_spent( state.trx.inputs[in_idx].output_ref );
        }
 
        // for each output
-       for( uint32_t out_idx = 0; out_idx < trx.outputs.size(); ++out_idx )
+       for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
-           const trx_output& out   = trx.outputs[out_idx];
-           const output_reference  out_ref( trx.id(),out_idx );
+           const trx_output& out   = state.trx.outputs[out_idx];
+           const output_reference  out_ref( state.trx.id(),out_idx );
            const output_index      oidx( block_idx, trx_idx, out_idx );
-           found |= scan_output( out, out_ref, oidx );
+           found |= scan_output( state, out, out_ref, oidx );
        }
        return found;
    }
@@ -673,17 +696,20 @@ namespace bts { namespace wallet {
 
               auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); 
 
-              bool found_output = scan_transaction( trx, i, trx_idx );
+              transaction_state state;
+              state.trx = trx;
+              bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
-                 my->_data.transactions[trx.id()].trx = trx;
+                 my->_data.transactions[trx.id()] = state;
               found |= found_output;
           }
           for( uint32_t trx_idx = 0; trx_idx < blk.determinsitic_ids.size(); ++trx_idx )
           {
-              auto trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
-              bool found_output = scan_transaction( trx, i, trx_idx );
+              transaction_state state;
+              state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
+              bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
-                 my->_data.transactions[trx.id()].trx = trx;
+                 my->_data.transactions[state.trx.id()] = state;
               found |= found_output;
           }
        }
@@ -734,7 +760,7 @@ namespace bts { namespace wallet {
       return true;
    }
 
-   bool wallet::scan_output( const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
+   bool wallet::scan_output( transaction_state& state, const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
    { try {
       switch( out.claim_func )
       {
@@ -743,15 +769,19 @@ namespace bts { namespace wallet {
             if( is_my_address( out.as<claim_by_pts_output>().owner ) )
             {
                 cache_output( out, out_ref, oidx );
+                state.adjust_balance( out.amount, 1 );
                 return true;
             }
             return false;
          }
          case claim_by_signature:
          {
-            if( is_my_address( out.as<claim_by_signature_output>().owner ) )
+            auto owner = out.as<claim_by_signature_output>().owner;
+            if( is_my_address( owner ) ) 
             {
                cache_output( out, out_ref, oidx );
+               state.to.push_back( owner );
+               state.adjust_balance( out.amount, 1 );
                return true;
             }
             return false;

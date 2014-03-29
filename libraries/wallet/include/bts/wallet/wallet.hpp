@@ -52,11 +52,27 @@ namespace wallet {
 
    struct transaction_state
    {
-      transaction_state():block_num(-1),valid(false){}
-      signed_transaction  trx;
-      std::string         memo;
-      uint32_t            block_num; // block that included it, -1 if not included
-      bool                valid;     // is this transaction currently valid if it is not confirmed...
+      transaction_state():delta_balance(0),block_num(-1),valid(false){}
+      signed_transaction   trx;
+      std::vector<address> to;
+      std::vector<address> from;
+      std::string          memo;
+      std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
+      uint32_t             block_num; // block that included it, -1 if not included
+      bool                 valid;     // is this transaction currently valid if it is not confirmed...
+
+      void adjust_balance( asset amnt, int64_t direction = 1 )
+      {
+         auto itr = delta_balance.find(amnt.unit);
+         if( itr == delta_balance.end() )
+         {
+              delta_balance[amnt.unit] = amnt.get_rounded_amount()*direction;
+         }
+         else
+         {
+            itr->second += amnt.get_rounded_amount()*direction;
+         }
+      }
    };
 
    /** takes 4 parameters, current block, last block, current trx, last trx */
@@ -135,17 +151,18 @@ namespace wallet {
 
         protected:
            virtual void dump_output( const trx_output& out );
-           virtual bool scan_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual bool scan_output( transaction_state& state, const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual void scan_input( transaction_state& state, const output_reference& ref );
            virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
 
         private:
-           bool scan_transaction( const signed_transaction& trx, uint32_t block_idx, uint32_t trx_idx );
+           bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );
            std::unique_ptr<detail::wallet_impl> my;
    };
 
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
 
