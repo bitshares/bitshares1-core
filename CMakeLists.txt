@@ -22,8 +22,9 @@ if( WIN32 )
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
+    SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 	
-     set( PLATFORM_SPECIFIC_LIBS WS2_32 )
+     set( PLATFORM_SPECIFIC_LIBS WS2_32.lib iphlpapi.lib )
      add_definitions(-DBOOST_TEST_DYN_LINK)
      set(CRYPTO_LIB)
 else( WIN32 )
