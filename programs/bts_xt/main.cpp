@@ -48,7 +48,8 @@ int main( int argc, char** argv )
 
       auto cli = std::make_shared<bts::cli::cli>( c );
 
-      c->add_node( "192.168.2.135:4567" );
+      c->add_node( "127.0.0.1:4567" );
+      c->set_mining_effort( 0.5 );
 
       cli->wait();
 

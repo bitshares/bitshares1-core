@@ -1,6 +1,7 @@
 #include <bts/blockchain/block_miner.hpp>
 #include <bts/blockchain/momentum.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/reflect/variant.hpp>
 #include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
@@ -11,7 +12,7 @@ namespace bts { namespace blockchain {
      {
         public:
            block_miner_impl()
-           :_miner_votes(0),_min_votes(0),_effort(0){}
+           :_miner_votes(0),_min_votes(1),_effort(0){}
 
            block_miner::callback _callback;
            fc::thread*           _main_thread;
@@ -27,7 +28,7 @@ namespace bts { namespace blockchain {
            {
               while( !_mining_loop_complete.canceled() )
               {
-                 if( !_callback || _effort < 0.01 )
+                 if( _current_block.prev == block_id_type() || !_callback || _effort < 0.01 || _prev_header.next_difficulty == 0 )
                  {
                     fc::usleep( fc::microseconds( 1000*100 ) );
                     continue;
@@ -48,7 +49,10 @@ namespace bts { namespace blockchain {
                  {
                     tmp.noncea = collision.first;
                     tmp.nonceb = collision.second;
-                    ilog( "difficlty ${d}  target ${t}  tmp.get_difficulty ${dd}  mv ${mv} min: ${min}", ("min",_min_votes)("mv",_miner_votes)("dd",tmp.get_difficulty())("d",(tmp.get_difficulty() * _miner_votes)/_min_votes)("t",_prev_header.next_difficulty) );
+                    FC_ASSERT( _min_votes > 0 );
+                    FC_ASSERT( _prev_header.next_difficulty > 0 );
+                    ilog( "difficlty ${d}  target ${t}  tmp.get_difficulty ${dd}  mv ${mv} min: ${min}  block:\n${block}", ("min",_min_votes)("mv",_miner_votes)("dd",tmp.get_difficulty())
+                                                                                          ("d",(tmp.get_difficulty() * _miner_votes)/_min_votes)("t",_prev_header.next_difficulty)("block",_current_block) );
                     if( (tmp.get_difficulty() * _miner_votes)/_min_votes  >= _prev_header.next_difficulty )
                     {
                        if( _callback )

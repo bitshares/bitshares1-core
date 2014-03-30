@@ -3,6 +3,8 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
 
+#include <fc/log/logger.hpp>
+
 namespace bts { namespace blockchain {
    transaction_summary::transaction_summary()
    :valid_votes(0),invalid_votes(0),spent(0),fees(0)
@@ -196,12 +198,16 @@ namespace bts { namespace blockchain {
        uint32_t headnum = _db->head_block_num();
        uint32_t votes =  amnt * (headnum-source_block_num+1);
 
+       ilog( "votes: ${votes}", ("votes",votes) );
+       ilog( "db.stake: ${stake}  vs  trx.stake: ${trx.stake}", ("stake",_db->get_stake())("trx.stake",state.trx.stake) );
        if( _db->get_stake() == state.trx.stake )
        {
+          ilog( "valid++" );
           state.valid_votes += votes;
        }
        else
        {
+          ilog( "invalid++" );
           state.invalid_votes += votes;
        }
        state.spent += amnt;

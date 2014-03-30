@@ -5,6 +5,8 @@
 #include <bts/blockchain/block_miner.hpp>
 #include <fc/reflect/variant.hpp>
 
+#include <fc/log/logger.hpp>
+
 namespace bts { namespace client {
 
     namespace detail 
@@ -15,17 +17,20 @@ namespace bts { namespace client {
 
             virtual void on_new_block( const trx_block& block )
             {
+               ilog( "" );
                _wallet->scan_chain( *_chain_db, block.block_num );
                start_mining_next_block();
             }
 
             virtual void on_new_transaction( const signed_transaction& trx )
             {
+               ilog( "" );
                start_mining_next_block();
             }
 
             void start_mining_next_block()
             {
+               ilog( "start mining block" );
                int64_t miner_votes = 0;
                _next_block = _wallet->generate_next_block( *_chain_db, _chain_client.get_pending_transactions(), miner_votes ); 
                auto head_block = _chain_db->get_head_block();
@@ -76,7 +81,9 @@ namespace bts { namespace client {
 
     void client::set_wallet( const bts::wallet::wallet_ptr& wall )
     {
+       FC_ASSERT( my->_chain_db );
        my->_wallet = wall;
+       my->_wallet->scan_chain( *my->_chain_db, my->_chain_db->head_block_num() );
     }
 
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }

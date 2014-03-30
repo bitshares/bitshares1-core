@@ -12,17 +12,18 @@ class dns_db;
 class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_state
 {
     public:
-        dns_tx_evaluation_state( const signed_transaction& tx )
-        :transaction_evaluation_state( tx ) {
+        dns_tx_evaluation_state(const signed_transaction& tx):transaction_evaluation_state(tx)
+        {
             seen_domain_input = false;
             seen_domain_output = false; 
         }
+
         bool seen_domain_input; // only one domain input/output per tx
         bool seen_domain_output;
-        trx_output claimed; // the previous output, from the tx input
-        claim_domain_output dns_claimed; // the previous output, from the tx input
-};
 
+        trx_output prev_output; // the previous output, from the tx input
+        claim_domain_output prev_dns_output; // the previous output, from the tx input
+};
 
 class dns_transaction_validator : public bts::blockchain::transaction_validator
 {
@@ -51,5 +52,5 @@ class dns_block_eval_state : public bts::blockchain::block_evaluation_state
         virtual ~dns_block_eval_state();
 };
 
-FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_domain_input)(seen_domain_output)
-                                              (claimed));
+FC_REFLECT(bts::dns::dns_tx_evaluation_state,
+        (seen_domain_input)(seen_domain_output)(prev_output)(prev_dns_output));
