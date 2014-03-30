@@ -145,7 +145,8 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
 
 } FC_RETHROW_EXCEPTIONS(warn, "update_or_auction_domain ${name} with ${amt}", ("name", output.name)("amt", amount)) }
 
-bool dns_wallet::scan_output(const trx_output &out, const output_reference &ref, const output_index &oidx)
+bool dns_wallet::scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
+                             const output_index& idx)
 {
     try {
         switch ( out.claim_func )
@@ -154,13 +155,13 @@ bool dns_wallet::scan_output(const trx_output &out, const output_reference &ref,
             {
                 if (is_my_address( out.as<claim_domain_output>().owner ))
                 {
-                    cache_output( out, ref, oidx );
+                    cache_output( out, ref, idx );
                     return true;
                 }
                 return false;
             }
             default:
-                return wallet::scan_output( out, ref, oidx );
+                return wallet::scan_output( state, out, ref, idx );
         }
     } FC_RETHROW_EXCEPTIONS( warn, "" )
 }

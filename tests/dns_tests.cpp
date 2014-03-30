@@ -23,10 +23,6 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     genesis.timestamp         = fc::time_point::now();
     genesis.next_fee          = block_header::min_fee();
     genesis.total_shares      = 0;
-    genesis.votes_cast        = 0;
-    genesis.noncea            = 0;
-    genesis.nonceb            = 0;
-    genesis.next_difficulty   = 0;
 
     signed_transaction trx;
     for( uint32_t i = 0; i < addr.size(); ++i )
@@ -35,7 +31,6 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
         trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
         genesis.total_shares += amnt;
     }
-    genesis.available_votes   = genesis.total_shares;
     genesis.trxs.push_back( trx );
     genesis.trx_mroot = genesis.calculate_merkle_root(signed_transactions());
 
@@ -55,7 +50,7 @@ class DNSTestState
             _addrs = std::vector<bts::blockchain::address>();
             _addrs.reserve(100);
             _botwallet.create( dir.path() / "dns_test_wallet.dat", "password", "password", true );
-            _db.set_signing_authority( _auth.get_public_key() );
+            _db.set_trustee( _auth.get_public_key() );
             _db.set_pow_validator( _validator );
             _db.open( dir.path() / "dns_db", true );
         }
@@ -68,11 +63,9 @@ class DNSTestState
                 _addrs.push_back( _botwallet.new_recv_address() );
             }
 
-            _db.push_block( generate_genesis_block( _addrs ) );
-
-            auto head_id = _db.head_block_id();
-            _db.set_block_signature( head_id, 
-                _auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
+            auto genblk = generate_genesis_block( _addrs );
+            genblk.sign(_auth);
+            _db.push_block( genblk );
             _botwallet.scan_chain( _db );
         }
 
@@ -89,14 +82,9 @@ class DNSTestState
                 txs.push_back( transfer_tx );
             }
 
-            int64_t miner_votes = 0;
-            auto next_block = _botwallet.generate_next_block( _db, txs, miner_votes );
+            auto next_block = _botwallet.generate_next_block( _db, txs );
+            next_block.sign(_auth);
             _db.push_block( next_block );
-
-            auto head_id = _db.head_block_id();
-            _db.set_block_signature( head_id, 
-                _auth.sign_compact( fc::sha256::hash((char*)&head_id, sizeof(head_id)) ));
-
             _botwallet.scan_chain( _db );
         }
 

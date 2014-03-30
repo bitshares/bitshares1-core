@@ -25,7 +25,8 @@ class dns_wallet : public bts::wallet::wallet
                                             std::unordered_set<address> req_sigs);
 
     protected:
-        virtual bool scan_output(const trx_output &out, const output_reference &ref, const output_index &oidx);
+        virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
+                                 const output_index& idx);
 
     private:
  };
