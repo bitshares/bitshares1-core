@@ -26,13 +26,18 @@ namespace bts { namespace client {
          /** verifies and then broadcasts the transaction */
          void broadcast_transaction( const signed_transaction& trx );
 
+         /**
+          *  Produces a block every 30 seconds if there is at least
+          *  once transaction.
+          */
+         void run_trustee( const fc::ecc::private_key& k );
+
          void add_node( const std::string& ep );
 
          bts::blockchain::chain_database_ptr get_chain()const;
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
 
-         void set_mining_effort( float effort = .9 );
     
        private:
          std::unique_ptr<detail::client_impl> my;

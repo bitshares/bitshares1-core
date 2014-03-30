@@ -23,7 +23,7 @@ namespace bts { namespace net {
             if( m.msg_type == chain_message_type::block_msg )
             {
                auto blkmsg = m.as<block_message>();
-                ilog( "received message ${m}", ("m",blkmsg) );
+                ilog( "received block num ${n}", ("n",blkmsg.block_data.block_num) );
                _chain->push_block( blkmsg.block_data );
                for( auto trx : blkmsg.block_data.trxs )
                   _pending_trxs.erase( trx.id() );

@@ -75,6 +75,8 @@ namespace bts { namespace net {
          */
         std::vector<chain_connection_ptr> get_connections()const;
 
+        chain_database& get_chain()const;
+
       private:
         std::unique_ptr<detail::chain_server_impl> my;
   };
