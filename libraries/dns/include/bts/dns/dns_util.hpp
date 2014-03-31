@@ -50,14 +50,12 @@ bool name_is_useable(const std::string &name, const signed_transactions &txs, dn
 
 std::vector<char> serialize_value(const fc::variant &value);
 
-// TODO: Move into validator
 bool is_valid_amount(const asset &amount);
 bool is_valid_name(const std::string &name);
 bool is_valid_value(const std::vector<char> &value);
 bool is_valid_value(const fc::variant &value);
 bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state);
 
-bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
-                  output_reference &prev_tx_ref);
+bool is_valid_bid_amount(const asset &prev_bid, const asset &bid, asset &amount_back, asset &fee);
 
 }} // bts::dns

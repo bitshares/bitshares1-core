@@ -4,8 +4,6 @@ namespace bts { namespace dns {
 
 bool is_dns_output(const trx_output &output)
 {
-    FC_ASSERT(is_valid_amount(output.amount), "Invalid amount");
-
     return output.claim_func == claim_domain;
 }
 
@@ -180,20 +178,18 @@ bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> st
     return (state == claim_domain_output::possibly_in_auction) || (state == claim_domain_output::not_in_auction);
 }
 
-bool is_valid_bid(const trx_output &output, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
-                  output_reference &prev_tx_ref)
+bool is_valid_bid_amount(const asset &prev_bid, const asset &bid, asset &amount_back, asset &fee)
 {
-    if (!is_dns_output(output))
+    FC_ASSERT(is_valid_amount(prev_bid));
+    FC_ASSERT(is_valid_amount(bid));
+
+    if (bid < DNS_MIN_BID_FROM(prev_bid.get_rounded_amount()))
         return false;
 
-    auto dns_output = to_dns_output(output);
+    fee = DNS_BID_FEE_RATIO(bid - prev_bid);
+    amount_back = bid - fee;
 
-    if (dns_output.state == claim_domain_output::not_in_auction)
-        return false;
-
-    FC_ASSERT(dns_output.state == claim_domain_output::possibly_in_auction, "Invalid output state");
-
-    return name_is_available(dns_output.name, txs, db, new_or_expired, prev_tx_ref);
+    return true;
 }
 
 }} // bts::dns

@@ -14,8 +14,6 @@ class dns_wallet : public bts::wallet::wallet
         ~dns_wallet();
 
         signed_transaction bid_on_domain(const std::string &name, asset amount, dns_db &db);
-        signed_transaction update_or_auction_domain(bool update, claim_domain_output &output, asset amount,
-                                                    dns_db &db);
 
         signed_transaction update_domain_record(const std::string &name, fc::variant value, dns_db &db);
         signed_transaction auction_domain(const std::string &name, asset amount, dns_db &db);
@@ -27,6 +25,9 @@ class dns_wallet : public bts::wallet::wallet
     protected:
         virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
                                  const output_index& idx);
+
+        signed_transaction update_or_auction_domain(bool update, claim_domain_output &output, asset amount,
+                                                    dns_db &db);
 
     private:
  };

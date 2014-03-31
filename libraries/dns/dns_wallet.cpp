@@ -49,27 +49,23 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, asset amou
         auto prev_output = get_tx_ref_output(prev_tx_ref, db);
         auto prev_dns_output = to_dns_output(prev_output);
 
-        auto old_ask_amt = prev_output.amount.get_rounded_amount();
-        auto required_in = DNS_MIN_BID_FROM(old_ask_amt);
-        FC_ASSERT(amount >= required_in, "Minimum bid amount not met");
+        asset amount_back;
+        asset fee;
+        FC_ASSERT(is_valid_bid_amount(prev_output.amount, amount, amount_back, fee), "Invalid bid amount");
 
-        trx.inputs = collect_inputs(required_in, total_in, req_sigs);
-        auto change_amt = total_in - required_in;
-        
-        // TODO: macro-ize (also lift from validator)
-        auto amt_to_past_owner = old_ask_amt + ((required_in - old_ask_amt) / 2);
+        trx.inputs = collect_inputs(amount, total_in, req_sigs);
+        auto change_amt = total_in - amount;
 
-        // fee is implicit from difference
-        // auto amt_as_fee = (required_in - old_ask_amt) / 2;
-
-        trx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), amt_to_past_owner));
+        // Fee is implicit from difference
+        trx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), amount_back));
         trx.outputs.push_back(trx_output(domain_output, amount));
         trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
     }
 
     // Sign
     trx.sigs.clear();
-    sign_transaction(trx, req_sigs, false); // TODO: what is last arg
+    sign_transaction(trx, req_sigs, false);
+    // TODO: ?????
     trx = add_fee_and_sign(trx, amount, total_in, req_sigs);
 
     return trx;
@@ -129,7 +125,10 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
 
     // Build outputs
     if (update)
+    {
         output.owner = to_dns_output(get_tx_ref_output(prev_tx_ref, db)).owner;
+        // TODO: set amount to same as prev amount
+    }
 
     auto change_addr = new_recv_address("Change address");
     auto change_amt = total_in;
