@@ -39,12 +39,16 @@ bool is_auction_age(uint32_t age);
 bool is_expired_age(uint32_t age);
 bool is_useable_age(uint32_t age);
 
-std::vector<std::string> get_unspent_names(const std::map<bts::wallet::output_index, trx_output> &unspent_outputs);
-bool name_is_in_txs(const std::string &name, const signed_transactions &txs);
+std::vector<std::string> get_names_from_txs(const signed_transactions &txs);
+std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::output_index, trx_output>
+                                                &unspent_outputs);
 
-bool name_is_available(const std::string &name, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
-                       output_reference &prev_tx_ref);
-bool name_is_useable(const std::string &name, const signed_transactions &txs, dns_db &db,
+bool name_is_available(const std::string &name, const std::vector<std::string> &name_pool, dns_db &db,
+                       bool &new_or_expired, output_reference &prev_tx_ref);
+bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+                       bool &new_or_expired, output_reference &prev_tx_ref);
+
+bool name_is_useable(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
                      output_reference &prev_tx_ref);
 

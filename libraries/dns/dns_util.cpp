@@ -62,7 +62,26 @@ bool is_useable_age(uint32_t age)
     return !is_auction_age(age) && !is_expired_age(age);
 }
 
-std::vector<std::string> get_unspent_names(const std::map<bts::wallet::output_index, trx_output> &unspent_outputs)
+std::vector<std::string> get_names_from_txs(const signed_transactions &txs)
+{
+    std::vector<std::string> names = std::vector<std::string>();
+
+    for (auto &tx : txs)
+    {
+        for (auto &output : tx.outputs)
+        {
+            if (!is_dns_output(output))
+                continue;
+
+            names.push_back(to_dns_output(output).name);
+        }
+    }
+
+    return names;
+}
+
+std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::output_index, trx_output>
+                                                &unspent_outputs)
 {
     std::vector<std::string> names = std::vector<std::string>();
 
@@ -77,34 +96,15 @@ std::vector<std::string> get_unspent_names(const std::map<bts::wallet::output_in
     return names;
 }
 
-bool name_is_in_txs(const std::string &name, const signed_transactions &txs)
-{
-    FC_ASSERT(is_valid_name(name), "Invalid name");
-
-    for (auto &tx : txs)
-    {
-        for (auto &output : tx.outputs)
-        {
-            if (!is_dns_output(output))
-                continue;
-
-            if (to_dns_output(output).name == name)
-                return true;
-        }
-    }
-
-    return false;
-}
-
 /* Check if name is available for bid: new, in auction, or expired */
-bool name_is_available(const std::string &name, const signed_transactions &txs, dns_db &db, bool &new_or_expired,
-                       output_reference &prev_tx_ref)
+bool name_is_available(const std::string &name, const std::vector<std::string> &name_pool, dns_db &db,
+                       bool &new_or_expired, output_reference &prev_tx_ref)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
     new_or_expired = false;
 
-    if (name_is_in_txs(name, txs))
+    if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
     if (!db.has_dns_record(name))
@@ -122,14 +122,23 @@ bool name_is_available(const std::string &name, const signed_transactions &txs, 
     return is_auction_age(prev_tx_age) || new_or_expired;
 }
 
+bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+                       bool &new_or_expired, output_reference &prev_tx_ref)
+{
+    FC_ASSERT(is_valid_name(name), "Invalid name");
+
+    return name_is_available(name, get_names_from_txs(tx_pool), db, new_or_expired, prev_tx_ref);
+}
+
 /* Check if name is available for value update or auction */
-bool name_is_useable(const std::string &name, const signed_transactions &txs, dns_db &db,
+bool name_is_useable(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
                      output_reference &prev_tx_ref)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
-    if (name_is_in_txs(name, txs))
+    std::vector<std::string> name_pool = get_names_from_txs(tx_pool);
+    if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
     if (!db.has_dns_record(name))
@@ -140,8 +149,8 @@ bool name_is_useable(const std::string &name, const signed_transactions &txs, dn
     if (!is_useable_age(get_tx_age(prev_tx_ref, db)))
         return false;
 
-    // Check if spendable
-    std::vector<std::string> unspent_names = get_unspent_names(unspent_outputs);
+    /* Check if spendable */
+    std::vector<std::string> unspent_names = get_names_from_unspent(unspent_outputs);
     if (std::find(unspent_names.begin(), unspent_names.end(), name) == unspent_names.end())
         return false;
 

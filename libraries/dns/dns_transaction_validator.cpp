@@ -3,56 +3,77 @@
 
 namespace bts { namespace dns {
 
-dns_transaction_validator::dns_transaction_validator(dns_db* db)
-:transaction_validator(db)
+dns_transaction_validator::dns_transaction_validator(dns_db *db) : transaction_validator(db)
 {
-    
+    _dns_db = dynamic_cast<dns_db *>(db);
+    FC_ASSERT(_dns_db != nullptr);
 }
 
 dns_transaction_validator::~dns_transaction_validator()
 {
 }
 
-transaction_summary dns_transaction_validator::evaluate( const signed_transaction& tx, 
-                                                         const block_evaluation_state_ptr& block_state )
+
+block_evaluation_state_ptr dns_transaction_validator::create_block_state() const
+{
+    return std::make_shared<dns_block_evaluation_state>();
+}
+
+transaction_summary dns_transaction_validator::evaluate(const signed_transaction &tx, 
+                                                        const block_evaluation_state_ptr &block_state)
 {
     dns_tx_evaluation_state state(tx);
-    return on_evaluate( state, block_state );
+
+    return on_evaluate(state, block_state);
 }
 
-
-void dns_transaction_validator::validate_input(const meta_trx_input& in, transaction_evaluation_state& state,
-                                               const block_evaluation_state_ptr& block_state)
+void dns_transaction_validator::validate_input(const meta_trx_input &in, transaction_evaluation_state &state,
+                                               const block_evaluation_state_ptr &block_state)
 {
     if (is_dns_output(in.output))
-        validate_domain_input(to_dns_output(in.output), in.output.amount,
-                dynamic_cast<dns_tx_evaluation_state &>(state), block_state);
+    {
+        claim_domain_output dns_input = to_dns_output(in.output);
+        dns_tx_evaluation_state dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
+        dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
+        FC_ASSERT(dns_block_state);
+
+        validate_domain_input(dns_input, in.output.amount, dns_state, dns_block_state);
+    }
     else
+    {
         transaction_validator::validate_input(in, state, block_state);
+    }
 }
 
-void dns_transaction_validator::validate_output(const trx_output& out, transaction_evaluation_state& state,
-                                                const block_evaluation_state_ptr& block_state)
+void dns_transaction_validator::validate_output(const trx_output &out, transaction_evaluation_state &state,
+                                                const block_evaluation_state_ptr &block_state)
 {
     if (is_dns_output(out))
-        validate_domain_output(to_dns_output(out), out.amount,
-                dynamic_cast<dns_tx_evaluation_state &>(state), block_state);
+    {
+        claim_domain_output dns_output = to_dns_output(out);
+        dns_tx_evaluation_state dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
+        dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
+        FC_ASSERT(dns_block_state);
+
+        validate_domain_output(dns_output, out.amount, dns_state, dns_block_state);
+
+        /* Add name to name pool */
+        dns_block_state->name_pool.push_back(dns_output.name);
+    }
     else
+    {
         transaction_validator::validate_output(out, state, block_state);
+    }
 }
 
 void dns_transaction_validator::validate_domain_input(const claim_domain_output &input, const asset &amount, 
                                                       dns_tx_evaluation_state &state,
-                                                      const block_evaluation_state_ptr &block_state)
+                                                      const dns_block_evaluation_state_ptr &block_state)
 {
     ilog("Validating domain claim input");
     FC_ASSERT(!state.seen_domain_input, "More than one domain claim input in tx: ${tx}", ("tx", state.trx));
 
-    // TODO: move to constructor
-    auto db = dynamic_cast<dns_db*>(_db);
-    FC_ASSERT(db != nullptr);
-
-    FC_ASSERT(db->has_dns_record(input.name), "Input references invalid name");
+    FC_ASSERT(_dns_db->has_dns_record(input.name), "Input references invalid name");
 
     state.input = input;
     state.input_amount = amount;
@@ -61,7 +82,7 @@ void dns_transaction_validator::validate_domain_input(const claim_domain_output 
 
 void dns_transaction_validator::validate_domain_output(const claim_domain_output &output, const asset &amount, 
                                                        dns_tx_evaluation_state &state,
-                                                       const block_evaluation_state_ptr &block_state)
+                                                       const dns_block_evaluation_state_ptr &block_state)
 {
     ilog("Validating domain claim output");
     FC_ASSERT(!state.seen_domain_output, "More than one domain claim output in tx: ${tx}", ("tx", state.trx));
@@ -72,15 +93,10 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     FC_ASSERT(is_valid_state(output.state), "Invalid state");
     FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
-    // TODO: move to constructor
-    auto db = dynamic_cast<dns_db*>(_db);
-    FC_ASSERT(db != nullptr);
-
-    // Check name status
-    signed_transactions txs = signed_transactions(); // TODO: use current tx pool
+    /* Check name status */
     bool new_or_expired;
     output_reference prev_tx_ref;
-    auto available = name_is_available(output.name, txs, *db, new_or_expired, prev_tx_ref);
+    auto available = name_is_available(output.name, block_state->name_pool, *_dns_db, new_or_expired, prev_tx_ref);
 
     /* If we haven't seen a domain input then the only valid output is a new domain auction */
     if (!state.seen_domain_input)
@@ -98,7 +114,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
 
     /* Bid in existing auction */
     if (output.state == claim_domain_output::possibly_in_auction
-        && is_auction_age(get_name_tx_age(output.name, *db)))
+        && is_auction_age(get_name_tx_age(output.name, *_dns_db)))
     {
         ilog("Currently in an auction");
         FC_ASSERT(available, "Name not available");
@@ -108,7 +124,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
         FC_ASSERT(is_valid_bid_price(state.input_amount, amount, amount_back), "Invalid bid amount");
         state.add_required_fees(amount - amount_back);
 
-        // Check for output to past owner
+        /* Check for output to past owner */
         bool found = false;
         for (auto other_out : state.trx.outputs)
         {
@@ -131,15 +147,16 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
 
     /* Update or sale */
     ilog("Auction is over.");
-    FC_ASSERT(is_useable_age(get_name_tx_age(output.name, *db)), "Invalid input state");
+    FC_ASSERT(is_useable_age(get_name_tx_age(output.name, *_dns_db)), "Invalid input state");
 
+    /* If updating record */
     if (output.state == claim_domain_output::not_in_auction)
     {
-        //TODO assert "amount" doesn't change when updating domain record so
-        //that domains can contribute to "valid votes" ??
+        /* Keep output amount constant when updating domain record */
+        FC_ASSERT(amount == state.input_amount, "Output amount should not change when updating record");
     }
 
-    // If you're the owner, do whatever you like!
+    /* If you're the owner, do whatever you like! */
     FC_ASSERT(state.has_signature(output.owner), "Domain tx missing required signature: ${tx}", ("tx", state.trx));
     ilog("Tx signed by owner");
 }

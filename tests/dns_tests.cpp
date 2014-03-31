@@ -154,9 +154,11 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
         DNSTestState state;
         state.normal_genesis();
 
+        dns_db* db = state.get_db();
         bts::dns::dns_wallet* wallet = state.get_wallet();
-        std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
+        signed_transactions txs = signed_transactions();
+
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -179,20 +181,40 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
+
+        // Create second wallet
+        fc::temp_directory dir;
+        bts::dns::dns_wallet wallet2;
+        wallet2.create( dir.path() / "dns_test_wallet2.dat", "password", "password", true );
+
+        uint64_t bid1 = 1;
+        uint64_t bid2 = 100;
+
+        // Give second wallet a balance
+        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        auto transfer_tx = wallet->transfer(asset(amnt), wallet2.new_recv_address());
+        wlog( "transfer_trx: ${trx} ", ("trx",transfer_tx) );
+        txs.push_back( transfer_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Initial domain purchase
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
-        
         state.next_block( txs );
-        std::vector<signed_transaction> empty_txs;
-        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
-        {
-            state.next_block( empty_txs ); 
-        }
+        txs.clear();
 
-        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), empty_txs, *state.get_db() );
-        empty_txs.push_back( buy_tx2 );
-        state.next_block( empty_txs );
+        // Let domain expire
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block( txs ); 
+
+        // Bid on domain from second wallet
+        wallet2.scan_chain(*state.get_db());
+        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), txs, *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
     }
     catch (const fc::exception& e)
     {
@@ -213,21 +235,40 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
+
+        // Create second wallet
+        fc::temp_directory dir;
+        bts::dns::dns_wallet wallet2;
+        wallet2.create( dir.path() / "dns_test_wallet2.dat", "password", "password", true );
+
+        uint64_t bid1 = 1;
+        uint64_t bid2 = 100;
+
+        // Give second wallet a balance
+        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
+        auto transfer_tx = wallet->transfer(asset(amnt), wallet2.new_recv_address());
+        wlog( "transfer_trx: ${trx} ", ("trx",transfer_tx) );
+        txs.push_back( transfer_tx );
+        state.next_block( txs );
+        txs.clear();
+
+        // Initial domain purchase
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
-        
         state.next_block( txs );
-        std::vector<signed_transaction> empty_txs;
-        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS / 2; i++)
-        {
-            state.next_block( empty_txs ); 
-        }
+        txs.clear();
 
-        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), empty_txs, *state.get_db() );
-        wlog( "buy_trx_2: ${trx} ", ("trx", buy_tx2) );
-        empty_txs.push_back( buy_tx2 );
-        state.next_block( empty_txs );
+        // Let auction end
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block( txs ); 
+
+        // Bid on domain from second wallet
+        wallet2.scan_chain(*state.get_db());
+        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), txs, *state.get_db() );
+        wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
+        txs.push_back( buy_tx );
+        state.next_block( txs );
         
         fail = true;
         FC_ASSERT(0);
