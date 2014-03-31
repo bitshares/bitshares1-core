@@ -33,23 +33,18 @@ namespace bts { namespace blockchain {
       {
          public:
             chain_database_impl()
-            :_head_is_signed_by_authority(false)
-            {
-               _pow_validator = std::make_shared<pow_validator>();
-            }
+            { }
 
             //std::unique_ptr<ldb::DB> blk_id2num;  // maps blocks to unique IDs
             bts::db::level_map<block_id_type,uint32_t>          blk_id2num;
             bts::db::level_map<uint160,trx_num>                 trx_id2num;
             bts::db::level_map<trx_num,meta_trx>                meta_trxs;
-            bts::db::level_map<uint32_t,block_header>           blocks;
+            bts::db::level_map<uint32_t,signed_block_header>    blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
-            bts::db::level_pod_map<block_id_type,fc::ecc::compact_signature> _block2sig;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
-            address                                             _signing_authority;
-            bool                                                _head_is_signed_by_authority;
+            address                                             _trustee;
 
 
             /** cache this information because it is required in many calculations  */
@@ -82,7 +77,7 @@ namespace bts { namespace blockchain {
              */
             void store( const signed_transaction& t, const trx_num& tn )
             {
-               ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
+               //ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
 
                trx_id2num.store( t.id(), tn ); 
                meta_trxs.store( tn, meta_trx(t) );
@@ -123,6 +118,7 @@ namespace bts { namespace blockchain {
      :my( new detail::chain_database_impl() )
      {
          my->_trx_validator = std::make_shared<transaction_validator>(this);
+         my->_pow_validator = std::make_shared<pow_validator>(this);
      }
 
      chain_database::~chain_database()
@@ -146,7 +142,6 @@ namespace bts { namespace blockchain {
          my->meta_trxs.open(  dir / "meta_trxs",  create );
          my->blocks.open(     dir / "blocks",     create );
          my->block_trxs.open( dir / "block_trxs", create );
-         my->_block2sig.open( dir / "block2sig",  create );
 
          
          // read the last block from the DB
@@ -156,8 +151,6 @@ namespace bts { namespace blockchain {
             my->head_block_id = my->head_block.id();
          }
 
-         if( fc::ecc::compact_signature() != fetch_block_signature( head_block_id() ) )
-            my->_head_is_signed_by_authority = true;
 
        } FC_RETHROW_EXCEPTIONS( warn, "error loading blockchain database ${dir}", ("dir",dir)("create",create) );
      }
@@ -195,7 +188,7 @@ namespace bts { namespace blockchain {
        return my->blk_id2num.fetch( block_id ); 
     } FC_RETHROW_EXCEPTIONS( warn, "block id: ${block_id}", ("block_id",block_id) ) }
 
-    block_header chain_database::fetch_block( uint32_t block_num )
+    signed_block_header chain_database::fetch_block( uint32_t block_num )
     {
        return my->blocks.fetch(block_num);
     }
@@ -303,7 +296,7 @@ namespace bts { namespace blockchain {
     void chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs )
     { try {
         if( b.block_num == 0 ) { return; } // don't check anything for the genesis block;
-
+        FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
         FC_ASSERT( b.trxs.size()  > 0                                                          );
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
@@ -314,18 +307,11 @@ namespace bts { namespace blockchain {
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
                    ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
                    );
-        FC_ASSERT( b.votes_cast      >= my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR, "",
-                   ("b.votes_cast",b.votes_cast)("required_votes",my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR))
 
-        FC_ASSERT( my->_head_is_signed_by_authority );
-        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(60)), "",
-                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(60)));
+        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
+                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
         
-        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(30) );
-
-         auto next_diff = my->head_block.next_difficulty * 300*1000000ll / (b.timestamp - my->head_block.timestamp).count();
-         FC_ASSERT( b.next_difficulty == (my->head_block.next_difficulty * 24 + next_diff) / 25, "",
-                    ("next_diff",next_diff)("b.next_diff",b.next_difficulty)("head.next_diff",my->head_block.next_difficulty) );
+        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(10) );
 
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
@@ -342,28 +328,8 @@ namespace bts { namespace blockchain {
         for( int32_t i = 0; i <= last; ++i )
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state ); 
-
-            if( i == last ) // verify difficulty / mining reward here.
-            { 
-               int64_t min_votes = my->head_block.available_votes / BTS_BLOCKCHAIN_BLOCKS_PER_YEAR;
-
-               FC_ASSERT( b.trxs[last].inputs.size() == 1 );
-               FC_ASSERT( b.trxs[last].outputs.size() == 1 );
-               FC_ASSERT( my->_pow_validator->validate_work( b, trx_summary.valid_votes, min_votes ) );
-
-               int64_t max_reward = summary.fees / 2;
-
-               int64_t actual_reward = max_reward - ((max_reward * min_votes) / summary.valid_votes);
-              ilog( "actual_reward: ${actual_reward}   max_reward: ${m} min_votes:${min}",("actual_reward",actual_reward)("m",max_reward)("min",min_votes));
-               
-               FC_ASSERT( abs(trx_summary.fees) <= actual_reward, "",
-                          ("trx_summary.fees",trx_summary.fees)("actual_reward",actual_reward));
-            }
-            else
-            {
-               FC_ASSERT( b.trxs[i].version != 1 );
-               FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
-            }
+            FC_ASSERT( b.trxs[i].version == 0 );
+            FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
             summary += trx_summary;
         }
 
@@ -372,14 +338,8 @@ namespace bts { namespace blockchain {
             summary += my->_trx_validator->evaluate( strx, block_state ); 
         }
 
-        FC_ASSERT( b.votes_cast      == summary.valid_votes )
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
                    ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
-        FC_ASSERT( b.available_votes == my->head_block.available_votes + b.total_shares - b.votes_cast - summary.invalid_votes, "",
-                   ("b.available_votes",b.available_votes)
-                   ("head_block.available_votes",my->head_block.available_votes)
-                   ("b.votes_cast",b.votes_cast)
-                   ("invalid_votes",summary.invalid_votes)); 
 
     } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
     
@@ -391,7 +351,6 @@ namespace bts { namespace blockchain {
         auto deterministic_trxs = generate_determinsitic_transactions();
         validate( b, deterministic_trxs );
         store( b, deterministic_trxs );
-        my->_head_is_signed_by_authority = false;
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
 
@@ -414,18 +373,16 @@ namespace bts { namespace blockchain {
     {
        return my->head_block_id._hash[0];
     }
-    uint64_t chain_database::current_difficulty()const
-    {
-       return my->head_block.next_difficulty;
-    }
+
     uint64_t chain_database::total_shares()const
     {
        return my->head_block.total_shares;
     }
+
     pow_validator_ptr         chain_database::get_pow_validator()const { return my->_pow_validator; }
     transaction_validator_ptr chain_database::get_transaction_validator()const { return my->_trx_validator; }
 
-    const block_header& chain_database::get_head_block()const { return my->head_block; }
+    const signed_block_header& chain_database::get_head_block()const { return my->head_block; }
 
     asset chain_database::get_fee_rate()const
     {
@@ -442,35 +399,15 @@ namespace bts { namespace blockchain {
        my->_trx_validator = v;
     }
 
-    fc::ecc::compact_signature chain_database::fetch_block_signature( const block_id_type& block_id )
+    void chain_database::set_trustee( const address& a )
     {
-        auto itr = my->_block2sig.find(block_id);
-        if( itr.valid() ) return itr.value();
-        return fc::ecc::compact_signature();
+       my->_trustee = a;
     }
 
-    void chain_database::set_signing_authority( const address& a )
+    address chain_database::get_trustee()const
     {
-       my->_signing_authority = a;
+       return my->_trustee;
     }
-    address chain_database::get_signing_authority()const
-    {
-       return my->_signing_authority;
-    }
-
-    void chain_database::set_block_signature( const block_id_type& block_id, const fc::ecc::compact_signature& sig )
-    { try {
-        FC_ASSERT( address( fc::ecc::public_key( sig, fc::sha256::hash( (char*)&block_id, sizeof(block_id) ) ) ) == my->_signing_authority );
-
-        if( block_id == head_block_id() ) 
-        {
-           my->_head_is_signed_by_authority = true;
-        }
-
-        fetch_block_num( block_id ); // throws if block_id is invalid
-        my->_block2sig.store( block_id, sig );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("sig",sig) ) }
-
 
     void chain_database::evaluate_transaction( const signed_transaction& trx )
     {

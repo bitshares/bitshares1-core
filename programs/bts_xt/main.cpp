@@ -38,6 +38,8 @@ int main( int argc, char** argv )
 
       auto chain   = std::make_shared<bts::blockchain::chain_database>();
       chain->open( datadir / "chain", true );
+      chain->set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
+
 
       auto wall    = std::make_shared<bts::wallet::wallet>();
       wall->set_data_directory( datadir );
@@ -46,10 +48,15 @@ int main( int argc, char** argv )
       c->set_chain( chain );
       c->set_wallet( wall );
 
+      if( fc::exists( "trustee.key" ) )
+      {
+         auto key = fc::json::from_file( "trustee.key" ).as<fc::ecc::private_key>();
+         c->run_trustee(key);
+      }
+
       auto cli = std::make_shared<bts::cli::cli>( c );
 
       c->add_node( "127.0.0.1:4567" );
-      c->set_mining_effort( 0.5 );
 
       cli->wait();
 
@@ -121,6 +128,8 @@ fc::path get_data_dir( int argc, char** argv )
    return datadir;
 
 } FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
+
+
 
 config load_config( const fc::path& datadir )
 { try {

@@ -36,11 +36,8 @@ class dns_db : public bts::blockchain::chain_database
 
     private:
          std::unique_ptr<detail::dns_db_impl> my;
-
 };
 
-
 }} // bts::dns
-
 
 FC_REFLECT( bts::dns::dns_record, (owner)(value)(last_price)(last_update_ref) );

@@ -64,9 +64,7 @@ bts::blockchain::trx_block create_test_genesis_block()
       b.block_num       = 0;
       b.total_shares    = int64_t(total_supply);
       b.timestamp       = fc::time_point::from_iso_string("20131201T054434");
-      b.next_difficulty = 1;
       b.next_fee        = bts::blockchain::block_header::min_fee();
-      b.available_votes = b.total_shares;
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
       fc::variant var(b);
@@ -88,7 +86,7 @@ namespace detail
    {
       public:
         chain_server_impl()
-        :ser_del(nullptr)
+        :_ser_del(nullptr)
         {}
 
         ~chain_server_impl()
@@ -100,11 +98,11 @@ namespace detail
             ilog( "closing connections..." );
             try 
             {
-                tcp_serv.close();
-                if( accept_loop_complete.valid() )
+                _tcp_serv.close();
+                if( _accept_loop_complete.valid() )
                 {
-                    accept_loop_complete.cancel();
-                    accept_loop_complete.wait();
+                    _accept_loop_complete.cancel();
+                    _accept_loop_complete.wait();
                 }
             } 
             catch ( const fc::canceled_exception& e )
@@ -120,60 +118,31 @@ namespace detail
                 elog( "unexpected exception" );
             }
         }
-        chain_server_delegate*                                                               ser_del;
-        fc::ip::address                                                                      _external_ip;
-        std::unordered_map<fc::ip::endpoint,chain_connection_ptr>                            connections;
-                                                                                             
-        chain_server::config                                                                 cfg;
-        fc::tcp_server                                                                       tcp_serv;
+        chain_server_delegate*                                                                       _ser_del;
+        fc::ip::address                                                                              _external_ip;
+        std::unordered_map<fc::ip::endpoint,chain_connection_ptr>                                    _connections;
+                                                                                                     
+        chain_server::config                                                                         _cfg;
+        fc::tcp_server                                                                               _tcp_serv;
                                                                                             
-        fc::future<void>                                                                     accept_loop_complete;
-       // fc::future<void>                                                                     block_gen_loop_complete;
-        std::unordered_map<bts::blockchain::transaction_id_type,bts::blockchain::signed_transaction> pending;
+        fc::future<void>                                                                             _accept_loop_complete;
+        bts::blockchain::chain_database                                                              _chain;
+        std::unordered_map<bts::blockchain::transaction_id_type,bts::blockchain::signed_transaction> _pending;
 
 
-       /* void block_gen_loop()
-        {
-             try {
-                while( true )
-                {
-                   fc::usleep( fc::seconds(5) );
-
-                   auto order_trxs   = chain.match_orders(); 
-                   pending.insert( pending.end(), order_trxs.begin(), order_trxs.end() );
-                   if( pending.size() )
-                   {
-                      auto new_block = chain.generate_next_block( pending );
-                      pending.clear();
-                      if( new_block.trxs.size() )
-                      {
-                        chain.push_block( new_block );
-                        fc::async( [=](){ broadcast_block(new_block); } );
-                      }
-                   }
-                }
-             } 
-             catch ( const fc::exception& e )
-             {
-                elog("${e}", ("e", e.to_detail_string()  ) );
-                exit(-1);
-             }
-        }
-        */
         void broadcast_block( const bts::blockchain::trx_block& blk )
         {
             // copy list to prevent yielding in middle...
-            auto cons = connections;
+            auto cons = _connections;
             
-            block_message blk_msg;
-            blk_msg.block_data = blk;
-            for( auto itr = cons.begin(); itr != cons.end(); ++itr )
+            block_message blk_msg(blk);
+            for( auto c : cons )
             {
                try {
-                  if( itr->second->get_last_block_id() == blk.prev )
+                  if( c.second->get_last_block_id() == blk.prev )
                   {
-                    itr->second->send( message( blk_msg ) );
-                    itr->second->set_last_block_id( blk.id() );
+                    c.second->send( message( blk_msg ) );
+                    c.second->set_last_block_id( blk.id() );
                   }
                } 
                catch ( const fc::exception& w )
@@ -182,10 +151,11 @@ namespace detail
                }
             }
         }
+
         void broadcast( const message& m )
         {
             // copy list to prevent yielding in middle...
-            auto cons = connections;
+            auto cons = _connections;
             ilog( "broadcast" );
             
             for( auto con : cons )
@@ -223,10 +193,10 @@ namespace detail
              {
                 try {
                    auto blk = m.as<block_message>();
-                   chain.push_block( blk.block_data );
-                   for( auto itr = blk.block_data.trxs.begin(); itr != blk.block_data.trxs.end(); ++itr )
+                   _chain.push_block( blk.block_data );
+                   for( auto trx : blk.block_data.trxs )
                    {
-                      pending.erase( itr->id() );
+                      _pending.erase( trx.id() );
                    }
                    broadcast_block( blk.block_data );
                 }
@@ -245,8 +215,8 @@ namespace detail
                 ilog( "recv: ${m}", ("m",trx) );
                 try 
                 {
-                   chain.evaluate_transaction( trx.signed_trx ); // throws if error
-                   if( pending.insert( std::make_pair(trx.signed_trx.id(),trx.signed_trx) ).second )
+                   _chain.evaluate_transaction( trx.signed_trx ); // throws if error
+                   if( _pending.insert( std::make_pair(trx.signed_trx.id(),trx.signed_trx) ).second )
                    {
                       ilog( "new transaction, broadcasting" );
                       fc::async( [=]() { broadcast( m ); } );
@@ -283,9 +253,9 @@ namespace detail
               ilog( "cleaning up connection after disconnect ${e}", ("e", c.remote_endpoint()) );
               auto cptr = c.shared_from_this();
               FC_ASSERT( cptr );
-              if( ser_del ) ser_del->on_disconnected( cptr );
-              auto itr = connections.find(c.remote_endpoint());
-              connections.erase( itr ); //c.remote_endpoint() );
+              if( _ser_del ) _ser_del->on_disconnected( cptr );
+              auto itr = _connections.find(c.remote_endpoint());
+              _connections.erase( itr ); //c.remote_endpoint() );
               // we cannot close/delete the connection from this callback or we will hang the fiber
               fc::async( [cptr]() {} );
            } FC_RETHROW_EXCEPTIONS( warn, "error thrown handling disconnect" );
@@ -309,9 +279,9 @@ namespace detail
                     ("ep", std::string(s->get_socket().remote_endpoint()) ) );
               
               auto con = std::make_shared<chain_connection>(s,this);
-              connections[con->remote_endpoint()] = con;
-              con->set_database( &chain );
-              if( ser_del ) ser_del->on_connected( con );
+              _connections[con->remote_endpoint()] = con;
+              con->set_database( &_chain );
+              if( _ser_del ) _ser_del->on_connected( con );
            } 
            catch ( const fc::canceled_exception& e )
            {
@@ -334,10 +304,10 @@ namespace detail
         {
            try
            {
-              while( !accept_loop_complete.canceled() )
+              while( !_accept_loop_complete.canceled() )
               {
                  stcp_socket_ptr sock = std::make_shared<stcp_socket>();
-                 tcp_serv.accept( sock->get_socket() );
+                 _tcp_serv.accept( sock->get_socket() );
 
                  // do the acceptance process async
                  fc::async( [=](){ accept_connection( sock ); } );
@@ -366,7 +336,6 @@ namespace detail
               elog( "unexpected exception" );
            }
         }
-        bts::blockchain::chain_database chain;
    };
 }
 
@@ -382,28 +351,28 @@ chain_server::~chain_server()
 
 void chain_server::set_delegate( chain_server_delegate* sd )
 {
-   my->ser_del = sd;
+   my->_ser_del = sd;
 }
 
 void chain_server::configure( const chain_server::config& c )
 {
   try {
-     my->cfg = c;
+     my->_cfg = c;
      
      ilog( "listening for stcp connections on port ${p}", ("p",c.port) );
-     my->tcp_serv.listen( c.port );
+     my->_tcp_serv.listen( c.port );
      ilog( "..." );
-     my->accept_loop_complete = fc::async( [=](){ my->accept_loop(); } ); 
+     my->_accept_loop_complete = fc::async( [=](){ my->accept_loop(); } ); 
     // my->block_gen_loop_complete = fc::async( [=](){ my->block_gen_loop(); } ); 
      
-     my->chain.open( "chain" );
-     if( my->chain.head_block_num() == uint32_t(-1) )
+     my->_chain.open( "chain" );
+     if( my->_chain.head_block_num() == uint32_t(-1) )
      {
          auto genesis = create_test_genesis_block();
          ilog( "about to push" );
          try {
-         //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
-         my->chain.push_block( genesis );
+            //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
+            my->_chain.push_block( genesis );
          } 
          catch ( const fc::exception& e )
          {
@@ -418,30 +387,12 @@ void chain_server::configure( const chain_server::config& c )
 std::vector<chain_connection_ptr> chain_server::get_connections()const
 { 
     std::vector<chain_connection_ptr>  cons; 
-    cons.reserve( my->connections.size() );
-    for( auto itr = my->connections.begin(); itr != my->connections.end(); ++itr )
-    {
-      cons.push_back(itr->second);
-    }
+    cons.reserve( my->_connections.size() );
+    for( auto c : my->_connections )
+      cons.push_back(c.second);
     return cons;
 }
 
-/*
-void chain_server::broadcast( const message& m )
-{
-    for( auto itr = my->connections.begin(); itr != my->connections.end(); ++itr )
-    {
-      try {
-         itr->second->send(m);
-      } 
-      catch ( const fc::exception& e ) 
-      {
-         // TODO: propagate this exception back via the delegate or some other means... don't just fail
-         wlog( "exception thrown while broadcasting ${e}", ("e", e.to_detail_string() ) );
-      }
-    }
-}
-*/
 
 void chain_server::close()
 {
@@ -450,4 +401,8 @@ void chain_server::close()
   } FC_RETHROW_EXCEPTIONS( warn, "error closing server socket" );
 }
 
+chain_database& chain_server::get_chain()const
+{
+   return my->_chain;
+}
 } } // bts::net

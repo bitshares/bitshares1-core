@@ -21,131 +21,101 @@ transaction_summary dns_transaction_validator::evaluate( const signed_transactio
 }
 
 
-void dns_transaction_validator::validate_input( const meta_trx_input& in, 
-                                                transaction_evaluation_state& state,
+void dns_transaction_validator::validate_input(const meta_trx_input& in, transaction_evaluation_state& state,
+                                               const block_evaluation_state_ptr& block_state)
+{
+    if (is_dns_output(in.output))
+        validate_domain_input(to_dns_output(in.output), in.output.amount,
+                dynamic_cast<dns_tx_evaluation_state &>(state), block_state);
+    else
+        transaction_validator::validate_input(in, state, block_state);
+}
+
+void dns_transaction_validator::validate_output(const trx_output& out, transaction_evaluation_state& state,
                                                 const block_evaluation_state_ptr& block_state)
 {
-     switch( in.output.claim_func )
-     {
-        case claim_domain:
-            validate_domain_input(in, state, block_state);
-            break;
-
-        default:
-            transaction_validator::validate_input( in, state, block_state );
-            break;
-     }
+    if (is_dns_output(out))
+        validate_domain_output(to_dns_output(out), out.amount,
+                dynamic_cast<dns_tx_evaluation_state &>(state), block_state);
+    else
+        transaction_validator::validate_output(out, state, block_state);
 }
 
-void dns_transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state )
+void dns_transaction_validator::validate_domain_input(const claim_domain_output &input, const asset &amount, 
+                                                      dns_tx_evaluation_state &state,
+                                                      const block_evaluation_state_ptr &block_state)
 {
-     switch( out.claim_func )
-     {
-        case claim_domain:
-            validate_domain_output( out, state, block_state );
-            break;
+    ilog("Validating domain claim input");
+    FC_ASSERT(!state.seen_domain_input, "More than one domain claim input in tx: ${tx}", ("tx", state.trx));
 
-        default:
-            transaction_validator::validate_output( out, state, block_state );
-            break;
-     }
-}
-
-// 
-void dns_transaction_validator::validate_domain_input(const meta_trx_input& in, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state)
-{
-    //TODO a lot of the input validation logic is in the output validator right now
-    auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
-
-    FC_ASSERT(!dns_state.seen_domain_input,
-              "More than one domain claim intput in one tx: ${tx}", ("tx", state.trx));
-
-    dns_state.seen_domain_input = true;
-    dns_state.prev_output = in.output;
-    dns_state.prev_dns_output = to_dns_output(dns_state.prev_output);
-}
-
-void dns_transaction_validator::validate_domain_output(const trx_output& out, transaction_evaluation_state& state, const block_evaluation_state_ptr& block_state)
-{
-    ilog("Validating domain claim output");
-
-    //TODO assert "amount" doesn't change when updating domain record so
-    //that domains can contribute to "valid votes" ??
-
-    // Check inputs
-    FC_ASSERT(is_dns_output(out), "Invalid output");
-    auto dns_out = to_dns_output(out);
-
-    auto dns_state = dynamic_cast<dns_tx_evaluation_state&>(state);
-    FC_ASSERT(!dns_state.seen_domain_output,
-              "More than one domain claim output in one tx: ${tx}", ("tx", state.trx));
-    dns_state.seen_domain_output = true;
-
-    dns_db* db = dynamic_cast<dns_db*>(_db);
+    // TODO: move to constructor
+    auto db = dynamic_cast<dns_db*>(_db);
     FC_ASSERT(db != nullptr);
 
-    // Check if valid bid
+    FC_ASSERT(db->has_dns_record(input.name), "Input references invalid name");
+
+    state.input = input;
+    state.input_amount = amount;
+    state.seen_domain_input = true;
+}
+
+void dns_transaction_validator::validate_domain_output(const claim_domain_output &output, const asset &amount, 
+                                                       dns_tx_evaluation_state &state,
+                                                       const block_evaluation_state_ptr &block_state)
+{
+    ilog("Validating domain claim output");
+    FC_ASSERT(!state.seen_domain_output, "More than one domain claim output in tx: ${tx}", ("tx", state.trx));
+    state.seen_domain_output = true;
+
+    FC_ASSERT(is_valid_name(output.name), "Invalid name");
+    FC_ASSERT(is_valid_value(output.value), "Invalid value");
+    FC_ASSERT(is_valid_state(output.state), "Invalid state");
+    FC_ASSERT(is_valid_amount(amount), "Invalid amount");
+
+    // TODO: move to constructor
+    auto db = dynamic_cast<dns_db*>(_db);
+    FC_ASSERT(db != nullptr);
+
+    // Check name status
     signed_transactions txs = signed_transactions(); // TODO: use current tx pool
     bool new_or_expired;
     output_reference prev_tx_ref;
-    auto valid_bid = name_is_available(dns_out.name, txs, *db, new_or_expired, prev_tx_ref);
+    auto available = name_is_available(output.name, txs, *db, new_or_expired, prev_tx_ref);
 
-    /* If we haven't seen a domain input then the only valid output is a new
-     * domain auction. */
-    if (!dns_state.seen_domain_input)
+    /* If we haven't seen a domain input then the only valid output is a new domain auction */
+    if (!state.seen_domain_input)
     {
         ilog("Have not seen a domain claim input on this tx");
-        FC_ASSERT(new_or_expired, "Name already exists (and is younger than 1 block-year)"); 
-        FC_ASSERT(valid_bid, "Invalid buy tx on new or expired name");
+        FC_ASSERT(new_or_expired && available, "Name already exists (and is younger than 1 block-year)"); 
         return;
     }
 
+    /* Otherwise, the transaction must have a domain input and it must exist in the database,
+     * and it can't be expired */
     ilog("Seen a domain input");
-
-    //TODO do this just from the input without looking into the DB?
-    /* Otherwise, the transaction must have a domain input and it must exist
-     * in the database, and it can't be expired */
     FC_ASSERT(!new_or_expired, "Name new or expired");
-    FC_ASSERT(dns_out.name == dns_state.prev_dns_output.name, "Bid tx refers to different input and output names");
+    FC_ASSERT(output.name == state.input.name, "Bid tx refers to different input and output names");
 
-    // case on state of claimed output
-    //   * if auction is over (not_for_sale OR output is older than 3 days)
-    if (dns_out.state == claim_domain_output::not_in_auction || !is_auction_age(get_name_tx_age(dns_out.name, *db)))
+    /* Bid in existing auction */
+    if (output.state == claim_domain_output::possibly_in_auction
+        && is_auction_age(get_name_tx_age(output.name, *db)))
     {
-        ilog("Auction is over.");
-
-        // If you're the owner, do whatever you like!
-        FC_ASSERT(state.has_signature(dns_out.owner),
-                  "Domain tx requiring signature doesn't have it: ${tx}", ("tx", state.trx));
-
-        ilog("Tx signed by owner");
-    }
-    else
-    {
-        // Currently in an auction
         ilog("Currently in an auction");
+        FC_ASSERT(available, "Name not available");
+        FC_ASSERT(state.input.state == claim_domain_output::possibly_in_auction, "Input not for auction");
 
-        FC_ASSERT(dns_out.state == claim_domain_output::possibly_in_auction,
-                  "Bid made without keeping for_auction flag");
-
-        //TODO use macros in dns_config.hpp instead of hard-coded constants
-        //TODO restore
-        FC_ASSERT(out.amount.get_rounded_amount() >= 
-                  (11 * dns_state.prev_output.amount.get_rounded_amount()) / 10,
-                  "Bid was too small: ${trx}", ("trx", state.trx) );
-
-        // Half of difference goes to fee
-        dns_state.add_required_fees((out.amount - dns_state.prev_output.amount) / 2);
+        asset amount_back;
+        FC_ASSERT(is_valid_bid_price(state.input_amount, amount, amount_back), "Invalid bid amount");
+        state.add_required_fees(amount - amount_back);
 
         // Check for output to past owner
         bool found = false;
         for (auto other_out : state.trx.outputs)
         {
             bool right_claim = other_out.claim_func == claim_by_signature;
-            bool enough = (other_out.amount == 
-                  dns_state.prev_output.amount + (out.amount - dns_state.prev_output.amount / 2));
-            bool to_owner = right_claim && 
-                 other_out.as<claim_by_signature_output>().owner == dns_state.prev_dns_output.owner;
+            bool enough = other_out.amount >= amount_back;
+            bool to_owner = right_claim
+                && other_out.as<claim_by_signature_output>().owner == state.input.owner;
 
             if (right_claim && enough && to_owner) 
             {
@@ -155,7 +125,23 @@ void dns_transaction_validator::validate_domain_output(const trx_output& out, tr
         }
 
         FC_ASSERT(found, "Bid did not pay enough to previous owner");
+
+        return;
     }
+
+    /* Update or sale */
+    ilog("Auction is over.");
+    FC_ASSERT(is_useable_age(get_name_tx_age(output.name, *db)), "Invalid input state");
+
+    if (output.state == claim_domain_output::not_in_auction)
+    {
+        //TODO assert "amount" doesn't change when updating domain record so
+        //that domains can contribute to "valid votes" ??
+    }
+
+    // If you're the owner, do whatever you like!
+    FC_ASSERT(state.has_signature(output.owner), "Domain tx missing required signature: ${tx}", ("tx", state.trx));
+    ilog("Tx signed by owner");
 }
 
 }} // bts::blockchain

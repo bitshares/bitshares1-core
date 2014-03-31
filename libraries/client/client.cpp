@@ -2,9 +2,9 @@
 #include <bts/client/messages.hpp>
 #include <bts/net/chain_client.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/block_miner.hpp>
 #include <fc/reflect/variant.hpp>
 
+#include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 
 namespace bts { namespace client {
@@ -19,45 +19,47 @@ namespace bts { namespace client {
             {
                ilog( "" );
                _wallet->scan_chain( *_chain_db, block.block_num );
-               start_mining_next_block();
             }
 
             virtual void on_new_transaction( const signed_transaction& trx )
             {
-               ilog( "" );
-               start_mining_next_block();
-            }
-
-            void start_mining_next_block()
-            {
-               ilog( "start mining block" );
-               int64_t miner_votes = 0;
-               _next_block = _wallet->generate_next_block( *_chain_db, _chain_client.get_pending_transactions(), miner_votes ); 
-               auto head_block = _chain_db->get_head_block();
-               _miner.set_block( _next_block, head_block, miner_votes, head_block.min_votes() );
             }
 
             client_impl()
             {
                _chain_client.set_delegate( this );
-               _miner.set_callback( [this](const block_header& h){ on_mined_block( h); } );
             }
 
-            virtual void on_mined_block( const block_header& h )
+            void trustee_loop()
             {
-               _next_block.noncea          = h.noncea;
-               _next_block.nonceb          = h.nonceb;
-               _next_block.timestamp       = h.timestamp;
-               _next_block.next_difficulty = h.next_difficulty;
-               
-               _chain_client.broadcast_block( _next_block ); 
+               while( !_trustee_loop_complete.canceled() )
+               {
+                  auto pending_trxs = _chain_client.get_pending_transactions();
+                  if( pending_trxs.size() && (fc::time_point::now() - _last_block) > fc::seconds(30) )
+                  {
+                     try {
+                        auto blk = _wallet->generate_next_block( *_chain_db, pending_trxs );
+                        blk.sign( _trustee_key );
+                       // _chain_db->push_block( blk );
+                        _chain_client.broadcast_block( blk );
+                        _last_block = fc::time_point::now();
+                     } catch ( const fc::exception& e )
+                     {
+                        elog( "error producing block?: ${e}", ("e",e.to_detail_string() ) );
+                     }
+                  }
+                  fc::usleep( fc::seconds( 1 ) );
+               }
             }
+            fc::ecc::private_key                                        _trustee_key;
+            fc::time_point                                              _last_block;
 
             bts::blockchain::trx_block           _next_block;
             bts::net::chain_client               _chain_client;
             bts::blockchain::chain_database_ptr  _chain_db;
             bts::wallet::wallet_ptr              _wallet;
-            block_miner                          _miner;
+            float                                _effort;
+            fc::future<void>                     _trustee_loop_complete;
        };
     }
 
@@ -66,11 +68,21 @@ namespace bts { namespace client {
     {
     }
 
-    client::~client(){}
-
-    void client::set_mining_effort( float e )
+    client::~client()
     {
-       my->_miner.set_effort( e );
+       try {
+          if( my->_trustee_loop_complete.valid() )
+          {
+             my->_trustee_loop_complete.cancel();
+             ilog( "waiting for trustee loop to complete" );
+             my->_trustee_loop_complete.wait();
+          } 
+       }
+       catch ( const fc::canceled_exception& ) {}
+       catch ( const fc::exception& e )
+       {
+          wlog( "${e}", ("e",e.to_detail_string() ) );
+       }
     }
 
     void client::set_chain( const bts::blockchain::chain_database_ptr& ptr )
@@ -99,5 +111,10 @@ namespace bts { namespace client {
        my->_chain_client.add_node(ep);
     }
 
+    void client::run_trustee( const fc::ecc::private_key& k )
+    {
+       my->_trustee_key = k;
+       my->_trustee_loop_complete = fc::async( [=](){ my->trustee_loop(); } );
+    }
 
 } } // bts::client
