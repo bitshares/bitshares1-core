@@ -56,6 +56,6 @@ bool is_valid_value(const std::vector<char> &value);
 bool is_valid_value(const fc::variant &value);
 bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state);
 
-bool is_valid_bid_amount(const asset &prev_bid, const asset &bid, asset &amount_back, asset &fee);
+bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount);
 
 }} // bts::dns

@@ -178,16 +178,15 @@ bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> st
     return (state == claim_domain_output::possibly_in_auction) || (state == claim_domain_output::not_in_auction);
 }
 
-bool is_valid_bid_amount(const asset &prev_bid, const asset &bid, asset &amount_back, asset &fee)
+bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount)
 {
-    FC_ASSERT(is_valid_amount(prev_bid));
-    FC_ASSERT(is_valid_amount(bid));
+    FC_ASSERT(is_valid_amount(prev_bid_price));
+    FC_ASSERT(is_valid_amount(bid_price));
 
-    if (bid < DNS_MIN_BID_FROM(prev_bid.get_rounded_amount()))
+    if (bid_price < DNS_MIN_BID_FROM(prev_bid_price.get_rounded_amount()))
         return false;
 
-    fee = DNS_BID_FEE_RATIO(bid - prev_bid);
-    amount_back = bid - fee;
+    transfer_amount = bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
 
     return true;
 }

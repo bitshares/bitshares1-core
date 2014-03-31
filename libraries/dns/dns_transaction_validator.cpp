@@ -105,9 +105,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
         FC_ASSERT(state.input.state == claim_domain_output::possibly_in_auction, "Input not for auction");
 
         asset amount_back;
-        asset fee;
-        FC_ASSERT(is_valid_bid_amount(state.input_amount, amount, amount_back, fee), "Invalid bid amount");
-        state.add_required_fees(fee);
+        FC_ASSERT(is_valid_bid_price(state.input_amount, amount, amount_back), "Invalid bid amount");
+        state.add_required_fees(amount - amount_back);
 
         // Check for output to past owner
         bool found = false;

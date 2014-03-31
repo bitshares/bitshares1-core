@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_new_name )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_expired_name )
             state.next_block( empty_txs ); 
         }
 
-        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), empty_txs, *state.get_db() );
         empty_txs.push_back( buy_tx2 );
         state.next_block( empty_txs );
     }
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE( new_auction_for_unexpired_name_fail )
             state.next_block( empty_txs ); 
         }
 
-        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx2 = wallet->bid_on_domain( "TESTNAME", asset(uint64_t(1)), empty_txs, *state.get_db() );
         wlog( "buy_trx_2: ${trx} ", ("trx", buy_tx2) );
         empty_txs.push_back( buy_tx2 );
         state.next_block( empty_txs );
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE( new_auction_name_length_fail )
 
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
-        auto buy_tx = wallet->bid_on_domain(name, asset(uint64_t(1)), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain(name, asset(uint64_t(1)), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE( bid_on_auction )
         txs.clear();
 
         // Initial domain purchase
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE( bid_on_auction )
 
         // Bid on auction from second wallet
         wallet2.scan_chain(*state.get_db());
-        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), *state.get_db() );
+        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_not_in_auction )
         txs.clear();
 
         // Initial domain purchase
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_not_in_auction )
 
         // Bid on auction from second wallet
         wallet2.scan_chain(*state.get_db());
-        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), *state.get_db() );
+        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_insufficient_fee )
         bts::dns::dns_wallet* wallet = state.get_wallet();
         std::vector<signed_transaction> txs;
         // TODO: proper argument for get_balance?
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(wallet->get_balance(0)), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(wallet->get_balance(0)), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         
@@ -448,7 +448,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_prev_owner_payment )
         txs.clear();
 
         // Initial domain purchase
-        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), *state.get_db() );
+        auto buy_tx = wallet->bid_on_domain( "TESTNAME", asset(bid1), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE( bid_fail_prev_owner_payment )
 
         // Bid on auction from second wallet
         wallet2.scan_chain(*state.get_db());
-        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), *state.get_db() );
+        buy_tx = wallet2.bid_on_domain( "TESTNAME", asset(bid2), txs, *state.get_db() );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -491,7 +491,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record )
 
         std::vector<signed_transaction> txs;
 
-        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        auto update_tx = wallet->update_domain_record(name, value, *db);
+        auto update_tx = wallet->update_domain_record(name, value, txs, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
 
         // Initial domain purchase
         uint64_t bid1 = 1;
-        auto buy_tx = wallet->bid_on_domain( name, asset(bid1), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(bid1), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
 
         // Attempt to update record from second wallet
         wallet2.scan_chain(*state.get_db());
-        auto update_tx = wallet2.update_domain_record(name, value, *db);
+        auto update_tx = wallet2.update_domain_record(name, value, txs, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
 
         std::vector<signed_transaction> txs;
 
-        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
             state.next_block(txs); 
 
         // Attempt to update record
-        auto update_tx = wallet->update_domain_record(name, value, *db);
+        auto update_tx = wallet->update_domain_record(name, value, txs, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
@@ -650,7 +650,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
 
         std::vector<signed_transaction> txs;
 
-        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        auto update_tx = wallet->update_domain_record(name, value, *db);
+        auto update_tx = wallet->update_domain_record(name, value, txs, *db);
         wlog( "update_trx: ${trx} ", ("trx", update_tx) );
         txs.push_back( update_tx );
         state.next_block( txs );
@@ -694,7 +694,7 @@ BOOST_AUTO_TEST_CASE( auction_domain )
         std::vector<signed_transaction> txs;
         asset price = uint64_t(1);
 
-        auto buy_tx = wallet->bid_on_domain( name, price, *db );
+        auto buy_tx = wallet->bid_on_domain( name, price, txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE( auction_domain )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        auto sell_tx = wallet->auction_domain(name, price, *db);
+        auto sell_tx = wallet->auction_domain(name, price, txs, *db);
         wlog( "sell_trx: ${trx} ", ("trx", sell_tx) );
         txs.push_back( sell_tx );
         state.next_block( txs );
@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE( auction_domain_sig_fail )
 
         // Initial domain purchase
         uint64_t bid1 = 1;
-        auto buy_tx = wallet->bid_on_domain( name, asset(bid1), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(bid1), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -758,7 +758,7 @@ BOOST_AUTO_TEST_CASE( auction_domain_sig_fail )
 
         // Attempt to sell record from second wallet
         wallet2.scan_chain(*state.get_db());
-        auto sell_tx = wallet2.auction_domain(name, asset(bid1), *db);
+        auto sell_tx = wallet2.auction_domain(name, asset(bid1), txs, *db);
         wlog( "sell_trx: ${trx} ", ("trx", sell_tx) );
         txs.push_back( sell_tx );
         state.next_block( txs );
@@ -793,7 +793,7 @@ BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
 
         std::vector<signed_transaction> txs;
 
-        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), *db );
+        auto buy_tx = wallet->bid_on_domain( name, asset(uint64_t(1)), txs, *db );
         wlog( "buy_trx: ${trx} ", ("trx",buy_tx) );
         txs.push_back( buy_tx );
         state.next_block( txs );
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
             state.next_block(txs); 
 
         // Attempt to sell domain
-        auto sell_tx = wallet->auction_domain(name, asset(uint64_t(1)), *db);
+        auto sell_tx = wallet->auction_domain(name, asset(uint64_t(1)), txs, *db);
         wlog( "sell_trx: ${trx} ", ("trx", sell_tx) );
         txs.push_back( sell_tx );
         state.next_block( txs );
