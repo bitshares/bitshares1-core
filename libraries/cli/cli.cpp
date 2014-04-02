@@ -332,8 +332,9 @@ namespace bts { namespace cli {
        return my->_cin_thread.async( [=](){ return my->get_line( prompt ); } ).wait();
    }
 
-
-
-
+   client_ptr cli::get_client()
+   {
+       return my->_client;
+   }
 
 } } // bts::cli

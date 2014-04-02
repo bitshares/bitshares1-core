@@ -4,6 +4,8 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/dns/dns_cli.hpp>
+#include <bts/dns/dns_db.hpp>
+#include <bts/dns/dns_wallet.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
@@ -37,12 +39,14 @@ int main( int argc, char** argv )
       auto datadir = get_data_dir(argc,argv);
       auto cfg     = load_config(datadir);
 
-      auto chain   = std::make_shared<bts::blockchain::chain_database>();
+      //auto chain   = std::make_shared<bts::blockchain::chain_database>();
+      auto chain   = std::make_shared<bts::dns::dns_db>();
       chain->open( datadir / "chain", true );
       chain->set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
 
 
-      auto wall    = std::make_shared<bts::wallet::wallet>();
+      //auto wall    = std::make_shared<bts::wallet::wallet>();
+      auto wall    = std::make_shared<bts::dns::dns_wallet>();
       wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>();
@@ -55,7 +59,8 @@ int main( int argc, char** argv )
          c->run_trustee(key);
       }
 
-      auto cli = std::make_shared<bts::cli::cli>( c );
+      //auto cli = std::make_shared<bts::cli::cli>( c );
+      auto cli = std::make_shared<bts::dns::dns_cli>( c );
 
       c->add_node( "127.0.0.1:4567" );
 

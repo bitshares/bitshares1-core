@@ -32,6 +32,8 @@ class dns_wallet : public bts::wallet::wallet
 
         virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
                                  const output_index& idx);
- };
+};
 
-}} // bts::dns 
+typedef std::shared_ptr<dns_wallet> dns_wallet_ptr;
+
+}} // bts::dns
