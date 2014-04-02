@@ -16,12 +16,12 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
     FC_ASSERT(is_valid_name(name), "Invalid name");
     FC_ASSERT(is_valid_amount(bid_price), "Invalid bid price");
 
-    // Name should be new, for auction, or expired
+    /* Name should be new, for auction, or expired */
     bool new_or_expired;
     output_reference prev_tx_ref;
     FC_ASSERT(name_is_available(name, tx_pool, db, new_or_expired, prev_tx_ref), "Name not available");
 
-    // Build domain output
+    /* Build domain output */
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = std::vector<char>();
@@ -45,7 +45,7 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
         asset transfer_amount;
         FC_ASSERT(is_valid_bid_price(prev_output.amount, bid_price, transfer_amount), "Invalid bid price");
 
-        // Fee is implicit from difference
+        /* Fee is implicit from difference */
         auto prev_dns_output = to_dns_output(prev_output);
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
@@ -68,7 +68,7 @@ signed_transaction dns_wallet::update_domain_record(const std::string &name, con
     FC_ASSERT(is_valid_name(name), "Invalid name");
     FC_ASSERT(is_valid_value(value), "Invalid value");
 
-    // Build domain output
+    /* Build domain output */
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = serialize_value(value);
@@ -84,7 +84,7 @@ signed_transaction dns_wallet::auction_domain(const std::string &name, const ass
     FC_ASSERT(is_valid_name(name), "Invalid name");
     FC_ASSERT(is_valid_amount(ask_price), "Invalid amount");
 
-    // Build domain output
+    /* Build domain output */
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = std::vector<char>();
@@ -101,7 +101,7 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
 { try {
     FC_ASSERT(is_valid_amount(amount), "Invalid amount");
 
-    // Name should exist and be owned
+    /* Name should exist and be owned */
     output_reference prev_tx_ref;
     FC_ASSERT(name_is_useable(domain_output.name, tx_pool, db, get_unspent_outputs(), prev_tx_ref),
             "Name unavailable for update or auction");
@@ -116,6 +116,7 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
     signed_transaction tx;
     auto total_in = asset();
     auto req_sigs = std::unordered_set<address>();
+    req_sigs.insert(domain_output.owner);
     tx.inputs = collect_inputs(asset(), total_in, req_sigs);
 
     tx.inputs.push_back(trx_input(prev_tx_ref));
