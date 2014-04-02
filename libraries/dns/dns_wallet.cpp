@@ -116,6 +116,7 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
     signed_transaction tx;
     auto total_in = asset();
     auto req_sigs = std::unordered_set<address>();
+    req_sigs.insert(domain_output.owner);
     tx.inputs = collect_inputs(asset(), total_in, req_sigs);
 
     tx.inputs.push_back(trx_input(prev_tx_ref));

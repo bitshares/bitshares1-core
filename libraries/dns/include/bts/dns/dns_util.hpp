@@ -14,12 +14,12 @@
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/outputs.hpp>
 
-//TODO obviously both temp; need to be able to keep these low when in test mode
 #define DNS_MAX_NAME_LEN            128
 #define DNS_MAX_VALUE_LEN           1024
 
-#define DNS_AUCTION_DURATION_BLOCKS 3
-#define DNS_EXPIRE_DURATION_BLOCKS  8
+// TODO: Switch these to real values when not in test mode
+#define DNS_AUCTION_DURATION_BLOCKS 3 /* Blocks from last bid */
+#define DNS_EXPIRE_DURATION_BLOCKS  5 /* Blocks from max(end of auction, last update) */
 
 #define DNS_ASSET_ZERO              (asset(uint64_t(0)))
 #define DNS_MIN_BID_FROM(bid)       ((11 * (bid)) / 10)
@@ -33,11 +33,9 @@ claim_domain_output to_dns_output(const trx_output &output);
 output_reference get_name_tx_ref(const std::string &name, dns_db &db);
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db);
 uint32_t get_tx_age(const output_reference &tx_ref, dns_db &db);
-uint32_t get_name_tx_age(const std::string &name, dns_db &db);
 
-bool is_auction_age(uint32_t age);
-bool is_expired_age(uint32_t age);
-bool is_useable_age(uint32_t age);
+bool auction_is_closed(const output_reference &tx_ref, dns_db &db);
+bool domain_is_expired(const output_reference &tx_ref, dns_db &db);
 
 std::vector<std::string> get_names_from_txs(const signed_transactions &txs);
 std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::output_index, trx_output>

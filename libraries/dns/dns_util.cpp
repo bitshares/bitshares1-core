@@ -40,26 +40,38 @@ uint32_t get_tx_age(const output_reference &tx_ref, dns_db &db)
     return db.head_block_num() - block_num;
 }
 
-uint32_t get_name_tx_age(const std::string &name, dns_db &db)
+bool auction_is_closed(const output_reference &tx_ref, dns_db &db)
 {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    auto output = get_tx_ref_output(tx_ref, db);
+    FC_ASSERT(is_dns_output(output));
 
-    return get_tx_age(get_name_tx_ref(name, db), db);
+    auto dns_output = to_dns_output(output);
+    auto age = get_tx_age(tx_ref, db);
+
+    if (dns_output.state == claim_domain_output::possibly_in_auction
+        && age < DNS_AUCTION_DURATION_BLOCKS)
+        return false;
+
+    return true;
 }
 
-bool is_auction_age(uint32_t age)
+bool domain_is_expired(const output_reference &tx_ref, dns_db &db)
 {
-    return age < DNS_AUCTION_DURATION_BLOCKS;
-}
+    auto output = get_tx_ref_output(tx_ref, db);
+    FC_ASSERT(is_dns_output(output));
 
-bool is_expired_age(uint32_t age)
-{
+    if (!auction_is_closed(tx_ref, db))
+        return false;
+
+    auto dns_output = to_dns_output(output);
+    auto age = get_tx_age(tx_ref, db);
+
+    if (dns_output.state == claim_domain_output::possibly_in_auction)
+        return age >= (DNS_AUCTION_DURATION_BLOCKS + DNS_EXPIRE_DURATION_BLOCKS);
+
+    FC_ASSERT(dns_output.state == claim_domain_output::not_in_auction);
+
     return age >= DNS_EXPIRE_DURATION_BLOCKS;
-}
-
-bool is_useable_age(uint32_t age)
-{
-    return !is_auction_age(age) && !is_expired_age(age);
 }
 
 std::vector<std::string> get_names_from_txs(const signed_transactions &txs)
@@ -114,12 +126,11 @@ bool name_is_available(const std::string &name, const std::vector<std::string> &
     }
 
     prev_tx_ref = get_name_tx_ref(name, db);
-    auto prev_tx_age = get_tx_age(prev_tx_ref, db);
 
-    if (is_expired_age(prev_tx_age))
+    if (domain_is_expired(prev_tx_ref, db))
         new_or_expired = true;
 
-    return is_auction_age(prev_tx_age) || new_or_expired;
+    return !auction_is_closed(prev_tx_ref, db) || new_or_expired;
 }
 
 bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
@@ -146,7 +157,10 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
 
     prev_tx_ref = get_name_tx_ref(name, db);
 
-    if (!is_useable_age(get_tx_age(prev_tx_ref, db)))
+    if (!auction_is_closed(prev_tx_ref, db))
+        return false;
+
+    if (domain_is_expired(prev_tx_ref, db))
         return false;
 
     /* Check if spendable */

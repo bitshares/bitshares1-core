@@ -33,8 +33,8 @@ void dns_transaction_validator::validate_input(const meta_trx_input &in, transac
     if (is_dns_output(in.output))
     {
         claim_domain_output dns_input = to_dns_output(in.output);
-        dns_tx_evaluation_state dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
-        dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
+        dns_tx_evaluation_state &dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
+        const dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
         FC_ASSERT(dns_block_state);
 
         validate_domain_input(dns_input, in.output.amount, dns_state, dns_block_state);
@@ -51,8 +51,8 @@ void dns_transaction_validator::validate_output(const trx_output &out, transacti
     if (is_dns_output(out))
     {
         claim_domain_output dns_output = to_dns_output(out);
-        dns_tx_evaluation_state dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
-        dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
+        dns_tx_evaluation_state &dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
+        const dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
         FC_ASSERT(dns_block_state);
 
         validate_domain_output(dns_output, out.amount, dns_state, dns_block_state);
@@ -113,8 +113,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     FC_ASSERT(output.name == state.input.name, "Bid tx refers to different input and output names");
 
     /* Bid in existing auction */
-    if (output.state == claim_domain_output::possibly_in_auction
-        && is_auction_age(get_name_tx_age(output.name, *_dns_db)))
+    if (!auction_is_closed(prev_tx_ref, *_dns_db))
     {
         ilog("Currently in an auction");
         FC_ASSERT(available, "Name not available");
@@ -147,7 +146,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
 
     /* Update or sale */
     ilog("Auction is over.");
-    FC_ASSERT(is_useable_age(get_name_tx_age(output.name, *_dns_db)), "Invalid input state");
+    FC_ASSERT(!domain_is_expired(prev_tx_ref, *_dns_db), "Domain is expired");
 
     /* If updating record */
     if (output.state == claim_domain_output::not_in_auction)
