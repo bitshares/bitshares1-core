@@ -74,9 +74,12 @@ namespace bts { namespace net {
           _sock.read(buffer, BUFFER_SIZE);
           memcpy((char*)&m, buffer, sizeof(message_header));
 
-          m.data.resize(m.size + 16); //give extra 16 bytes to allow for padding added in send call
-          memcpy((char*)m.data.data(), buffer + sizeof(message_header), LEFTOVER);
-          _sock.read(m.data.data() + LEFTOVER, 16 * ((m.size - LEFTOVER + 15) / 16));
+          size_t remaining_bytes_with_padding = 16 * ((m.size - LEFTOVER + 15) / 16);
+          m.data.resize(LEFTOVER + remaining_bytes_with_padding); //give extra 16 bytes to allow for padding added in send call
+          std::copy(buffer + sizeof(message_header), buffer + sizeof(buffer), m.data.begin());
+          if (remaining_bytes_with_padding)
+            _sock.read(&m.data[LEFTOVER], remaining_bytes_with_padding);
+          m.data.resize(m.size); // truncate off the padding bytes
 
           try 
           { 

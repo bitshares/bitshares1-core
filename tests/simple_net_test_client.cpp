@@ -151,6 +151,7 @@ class simple_net_test_miner : public bts::net::node_delegate
      void set_config_dir(const std::string& config_dir);
      void connect_to(fc::ip::endpoint remote_endpoint);
      void start();
+     void generate_signed_block();    
      void run();
 
      /* Implement node_delegate */
@@ -202,10 +203,37 @@ void simple_net_test_miner::connect_to(fc::ip::endpoint remote_endpoint)
   _node.connect_to(remote_endpoint);
 }
 
+void simple_net_test_miner::generate_signed_block()
+{
+  // generate a block
+  block_message new_block;
+  int last_block_number = _blockchain.get<0>().back().block.block_num;
+  ilog("mined block ${block_number}", ("block_number", last_block_number + 1));
+  new_block.block.block_num = last_block_number + 1;
+  new_block.block.prev = _blockchain.get<0>().back().block_id;
+  new_block.block_id = new_block.block.id();
+  new_block.signature.at(0) = last_block_number + 1;
+  push_valid_signed_block(new_block);
+  message new_block_message(new_block);
+  _message_cache.cache_message(new_block_message, new_block_message.id());
+  _node.broadcast(new_block_message);
+}
+
 void simple_net_test_miner::run()
 {
-  fc::usleep(fc::seconds(60 * 60 * 24 * 365));
-  // run some sort of event loop here
+  if (_listening_port == 6540)
+    for (int i = 0; i < 80; ++i)
+      generate_signed_block();
+
+  srand(time(NULL));
+  for (;;)
+  {
+    // sleep for 10-20 seconds
+    fc::usleep(fc::milliseconds(15000 + ((rand() % 10000) - 5000)));
+    ilog("looping");
+    if (_listening_port == 6540)
+      generate_signed_block();
+  }
 }
 
 
@@ -258,7 +286,7 @@ bool simple_net_test_miner::has_item(const item_id& id)
   if (id.item_type == trx_message_type)
     return _transactions.get<transaction_hash_index>().find(id.item_hash) != _transactions.end();
   if (id.item_type == block_message_type)
-      return _blockchain.get<block_hash_index>().find(id.item_hash) != _blockchain.get<block_hash_index>().end();
+    return _blockchain.get<block_hash_index>().find(id.item_hash) != _blockchain.get<block_hash_index>().end();
   return false;
 }
 
@@ -321,6 +349,9 @@ std::vector<item_hash_t> simple_net_test_miner::get_item_ids(const item_id& from
                                                              uint32_t& remaining_item_count,
                                                              uint32_t limit)
 {
+  // artificially limit to 50 ids per message during testing
+  limit = 50;
+
   ordered_blockchain_container::index<block_hash_index>::type::iterator block_hash_iter = _blockchain.get<block_hash_index>().find(from_id.item_hash);
   if (block_hash_iter == _blockchain.get<block_hash_index>().end())
   {
@@ -348,7 +379,10 @@ message simple_net_test_miner::get_item(const item_id& id)
 {
   try
   {
-    return _message_cache.get_message(id.item_hash);
+    message result = _message_cache.get_message(id.item_hash);
+    ilog("get_item() returning message from _message_cache (id: ${item_hash})", ("item_hash", result.id()));
+    ilog("item's real hash is ${hash}", ("hash", fc::ripemd160::hash(&result.data[0], result.data.size())));
+    return result;
   }
   catch (const fc::key_not_found_exception&)
   {
@@ -360,7 +394,10 @@ message simple_net_test_miner::get_item(const item_id& id)
   {
     ordered_blockchain_container::index<block_hash_index>::type::iterator iter = _blockchain.get<block_hash_index>().find(id.item_hash);
     if (iter != _blockchain.get<block_hash_index>().end())
+    {
+      ilog("get_item() treating id as block_id, should only happen during sync");
       return *iter;
+    }
   }
 
   FC_THROW_EXCEPTION(key_not_found_exception, "I don't have the item you're looking for");

@@ -14,8 +14,15 @@ namespace bts { namespace net {
       item_hash_t   item_hash;
 
       item_id() {}
-      item_id(uint32_t type, const item_hash_t& hash) 
-      :item_type(type), item_hash(hash){}
+      item_id(uint32_t type, const item_hash_t& hash) :
+        item_type(type), 
+        item_hash(hash)
+      {}
+      bool operator==(const item_id& other) const
+      {
+        return item_type == other.item_type &&
+               item_hash == other.item_hash;
+      }
   };
 
   enum core_message_type_enum
@@ -24,11 +31,12 @@ namespace bts { namespace net {
     blockchain_item_ids_inventory_message_type = 5002,
     fetch_blockchain_item_ids_message_type     = 5003,
     fetch_item_message_type                    = 5004,
-    hello_message_type                         = 5005,
-    hello_reply_message_type                   = 5006,
-    connection_rejected_message_type           = 5007,
-    address_request_message_type               = 5008,
-    address_message_type                       = 5009
+    item_not_available_message_type            = 5005,
+    hello_message_type                         = 5006,
+    hello_reply_message_type                   = 5007,
+    connection_rejected_message_type           = 5008,
+    address_request_message_type               = 5009,
+    address_message_type                       = 5010,
   };
 
   const uint32_t core_protocol_version = 1;
@@ -86,6 +94,18 @@ namespace bts { namespace net {
     fetch_item_message() {}
     fetch_item_message(const item_id& item_to_fetch) :
       item_to_fetch(item_to_fetch)
+    {}
+  };
+
+  struct item_not_available_message
+  {
+    static const core_message_type_enum type;
+
+    item_id requested_item;
+
+    item_not_available_message() {}
+    item_not_available_message(const item_id& requested_item) :
+      requested_item(requested_item)
     {}
   };
 
@@ -176,6 +196,7 @@ FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_availa
 FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)(item_type)(item_hashes_available) )
 FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (last_item_seen) )
 FC_REFLECT( bts::net::fetch_item_message, (item_to_fetch) )
+FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
 FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_endpoint)(node_id) )
 FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id) )
 FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint) )
