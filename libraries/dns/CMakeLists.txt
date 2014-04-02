@@ -2,12 +2,16 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/db/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/blockchain/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/cli/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
 
 add_library( bts_dns
              dns_db.cpp
              dns_transaction_validator.cpp
              dns_util.cpp
              dns_wallet.cpp
+             dns_cli.cpp
              outputs.cpp
            )
 

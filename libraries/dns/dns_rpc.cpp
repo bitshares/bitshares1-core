@@ -9,6 +9,21 @@ namespace bts { namespace dns {
   {
      fc::rpc::json_connection* capture_con = con.get(); 
 
+     con->add_method( "lookup_domain", [=]( const fc::variants& params ) -> fc::variant 
+     {
+         // TODO use last known state even if disconnected?
+         FC_ASSERT( get_client()->get_node()->is_connected() );
+         FC_ASSERT( params.size() == 1 );
+
+         auto name   = params[1].as_string();
+/*
+         auto value = fc::raw::unpack<fc::variant>( output.value );
+         fc::json::to_pretty_string( value );
+
+         */
+         return fc::variant( fc::json::to_pretty_string(name) ); 
+     });
+
 
      /**
       * @note: all references to the connection should be via capture_con and not the

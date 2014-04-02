@@ -1,8 +1,10 @@
 #include <sstream>
+#include <bts/dns/dns_cli.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/raw_variant.hpp>
 
+namespace bts { namespace dns {
 
 void dns_cli::process_command( const std::string& cmd, const std::string& args )
 {
@@ -25,9 +27,6 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
    }
    else if( cmd == "lookupdomain" )
    {
-      bool pretty = true;
-      auto value = fc::raw::unpack<fc::variant>( output.value );
-      fc::json::to_pretty_string( value );
    }
    else if( cmd == "updatedomain" )
    {
@@ -40,13 +39,12 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
       // properly.
       fc::variant val = fc::json::from_string( json_value );
 
-      claim_domain_output out;
-
-      // convert variant to binary serialized version.. should be smaller.
-      out.value = fc::raw::pack( val );
    }
    else
    {
       cli::process_command( cmd, args );
    }
 }
+
+
+}} //bts::dns

@@ -7,6 +7,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/cli/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin_import/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/dns/include" )
 
 add_executable( dns_client main.cpp )
 target_link_libraries( dns_client bitcoin_import bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${ZLIB_LIBRARY} )

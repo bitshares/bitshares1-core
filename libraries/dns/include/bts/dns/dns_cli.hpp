@@ -1,5 +1,5 @@
 #pragma once
-
+#include <bts/cli/cli.hpp>
 
 namespace bts { namespace dns { 
 
