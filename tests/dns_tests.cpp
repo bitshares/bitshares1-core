@@ -2,14 +2,12 @@
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>
+
 #include <fc/filesystem.hpp>
-
-#include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/pow_validator.hpp>
-#include <bts/wallet/wallet.hpp>
 
+#include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_wallet.hpp>
-#include <bts/dns/dns_util.hpp>
 
 #define DNS_TEST_NUM_WALLET_ADDRS   10
 #define DNS_TEST_BLOCK_SECS         (5 * 60)
@@ -17,8 +15,8 @@
 #define DNS_TEST_NAME               "DNS_TEST_NAME"
 #define DNS_TEST_VALUE              "DNS_TEST_VALUE"
 
-#define DNS_TEST_BID1               asset(uint64_t(1))
-#define DNS_TEST_BID2               asset(uint64_t(2))
+#define DNS_TEST_PRICE1             asset(uint64_t(1))
+#define DNS_TEST_PRICE2             asset(uint64_t(2))
 
 using namespace bts::blockchain;
 using namespace bts::dns;
@@ -100,18 +98,7 @@ class DNSTestState
             validator->skip_time(fc::seconds(DNS_TEST_BLOCK_SECS));
 
             if (txs.size() <= 0)
-            {
-                auto tx = wallet.transfer(DNS_TEST_BID1, random_addr(wallet));
-                txs.push_back(tx);
-                //for (auto i = 0; i < 3; i++ )
-                //{
-                    //auto transfer_tx = _botwallet.transfer( asset(uint64_t(1000000)), random_addr() );
-                    //txs.push_back( transfer_tx );
-                //}
-            }
-            
-            // need to have non-zero CDD output in block, DNS records don't add anything
-            // TODO should they?
+                txs.push_back(wallet.transfer(DNS_TEST_PRICE1, random_addr(wallet)));
 
             auto next_block = wallet.generate_next_block(db, txs);
             next_block.sign(auth);
@@ -126,27 +113,6 @@ class DNSTestState
         {
             next_block(wallet1, txs);
         }
-
-        /* Give this address funds from some genesis addresses */
-        /*
-        void top_up( bts::blockchain::address addr, uint64_t amount )
-        {
-            std::vector<signed_transaction> trxs;
-            auto transfer_tx = _botwallet.transfer(asset(amount), addr);
-            trxs.push_back( transfer_tx );
-            next_block( trxs );
-        }
-        */
-
-        /* Get a new address. The global test wallet will also have it. */
-        /*
-        bts::blockchain::address next_addr()
-        {
-            auto addr = _botwallet.new_recv_address();
-            _addrs.push_back( addr );
-            return addr;
-        }
-        */
 
         /* Get a random existing address. Good for avoiding dust in certain tests. */
         address random_addr(dns_wallet &wallet)
@@ -181,8 +147,46 @@ BOOST_AUTO_TEST_CASE (templ)
     }
 }
 
-/* You should be able to start a new auction for a name that the network has never seen before */
-BOOST_AUTO_TEST_CASE(new_auction_for_new_name)
+/*
+ * Current Tests:
+ *
+ * wallet_bid_on_new
+ * wallet_bid_on_auction
+ * wallet_bid_on_expired
+ *
+ * wallet_bid_on_auction_insufficient_bid_price_fail
+ * wallet_bid_on_owned_fail
+ *
+ * wallet_bid_invalid_name_fail
+ * wallet_bid_insufficient_funds_fail
+ * wallet_bid_tx_pool_conflict_fail
+ *
+ * wallet_update
+ *
+ * wallet_update_in_auction_fail
+ * wallet_update_not_owner_fail
+ * wallet_update_expired_fail
+ *
+ * wallet_update_invalid_name_fail
+ * wallet_update_invalid_value_fail
+ * wallet_update_tx_pool_conflict_fail
+ *
+ * wallet_auction
+ *
+ * wallet_auction_in_auction_fail
+ * wallet_auction_not_owner_fail
+ * wallet_auction_expired_fail
+ *
+ * wallet_auction_invalid_name_fail
+ * wallet_auction_tx_pool_conflict_fail
+ *
+ * validator_bid_without_prev_bid_input_fail
+ * validator_bid_without_sufficient_fee_fail
+ * validator_bid_without_sufficient_payback_fail
+ */
+
+/* Wallet can create a bid for a name that the network has never seen before */
+BOOST_AUTO_TEST_CASE(wallet_bid_on_new)
 {
     try
     {
@@ -190,7 +194,8 @@ BOOST_AUTO_TEST_CASE(new_auction_for_new_name)
         signed_transactions txs;
         signed_transaction tx;
 
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Bid on domain */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -203,8 +208,8 @@ BOOST_AUTO_TEST_CASE(new_auction_for_new_name)
     }
 }
 
-/* You should be able to start a new auction for an expired name */
-BOOST_AUTO_TEST_CASE(new_auction_for_expired_name)
+/* Wallet can create a bid for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE(wallet_bid_on_auction)
 {
     try
     {
@@ -212,8 +217,37 @@ BOOST_AUTO_TEST_CASE(new_auction_for_expired_name)
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Bid on same domain from second wallet */
+        tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE2, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(state.wallet2, txs);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet can create a bid for a name that is expired */
+BOOST_AUTO_TEST_CASE(wallet_bid_on_expired)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -227,7 +261,7 @@ BOOST_AUTO_TEST_CASE(new_auction_for_expired_name)
             state.next_block(txs); 
 
         /* Bid on same domain from second wallet */
-        tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(state.wallet2, txs);
@@ -239,10 +273,10 @@ BOOST_AUTO_TEST_CASE(new_auction_for_expired_name)
         throw;
     }
 }
-
-/* You should not be able to start a new auction on a domain that exists and is not expired */
-// TODO: need to test wallet and validator separately for all failure cases
-BOOST_AUTO_TEST_CASE(new_auction_for_unexpired_name_fail)
+ 
+/* Wallet shall not create a bid for a name that is being auctioned without exceeding the previous bid by a
+ * sufficient amount */
+BOOST_AUTO_TEST_CASE (wallet_bid_on_auction_insufficient_bid_price_fail)
 {
     try
     {
@@ -250,21 +284,17 @@ BOOST_AUTO_TEST_CASE(new_auction_for_unexpired_name_fail)
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE2, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
 
-        /* Let auction end */
-        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
-
-        /* Try to bid on same domain from second wallet */
+        /* Try to bid on name from second wallet with insufficient bid price */
         auto no_exception = false;
         try
         {
-            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1 , txs, state.db);
 
             no_exception = true;
             throw;
@@ -283,8 +313,50 @@ BOOST_AUTO_TEST_CASE(new_auction_for_unexpired_name_fail)
     }
 }
 
-/* You should not be able to start an auction for an invalid name (length) */
-BOOST_AUTO_TEST_CASE(new_auction_name_length_fail)
+/* Wallet shall not create a bid for a name that has already been auctioned and is not expired */
+BOOST_AUTO_TEST_CASE(wallet_bid_on_owned_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        /* Try to bid on same domain from second wallet */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create a bid for a name that has an invalid length */
+BOOST_AUTO_TEST_CASE(wallet_bid_invalid_name_fail)
 {
     try
     {
@@ -301,7 +373,7 @@ BOOST_AUTO_TEST_CASE(new_auction_name_length_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.bid_on_domain(name, DNS_TEST_BID1, txs, state.db);
+            tx = state.wallet1.bid_on_domain(name, DNS_TEST_PRICE1, txs, state.db);
 
             no_exception = true;
             throw;
@@ -320,11 +392,8 @@ BOOST_AUTO_TEST_CASE(new_auction_name_length_fail)
     }
 }
 
-/* You should be able to bid on a domain that is in an auction. The previous
- * owner should get the right amount of funds and the fee should be big enough
- */
-// TODO: this still passes when BID1 = BID2 = 1
-BOOST_AUTO_TEST_CASE( bid_on_auction )
+/* Wallet shall not create a bid for a name with a price exceeding available funds */
+BOOST_AUTO_TEST_CASE (wallet_bid_insufficient_funds_fail)
 {
     try
     {
@@ -332,17 +401,20 @@ BOOST_AUTO_TEST_CASE( bid_on_auction )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
-        wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(txs);
+        /* Try to bid on name with an excessive bid price */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, state.wallet1.get_balance(0), txs, state.db);
 
-        /* Bid on same domain from second wallet */
-        tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID2, txs, state.db);
-        wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(state.wallet2, txs);
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
     }
     catch (const fc::exception &e)
     {
@@ -352,32 +424,9 @@ BOOST_AUTO_TEST_CASE( bid_on_auction )
     }
 }
 
-/* Your bid should fail if the domain is not in an auction
- * TODO does this duplicate "new_auction_for_unexpired_name_fail"? Do the txs look
- * different?
- */
-// TODO: craft a transaction trying to bid on expired name but referencing it as input
-BOOST_AUTO_TEST_CASE( bid_fail_not_in_auction )
-{
-}
-
-// TODO: Manually craft transaction with a sufficient network fee and money back but too low auction fee
-/* Your bid should fail if the fee is not sufficient
- */
-BOOST_AUTO_TEST_CASE( bid_fail_insufficient_fee )
-{
-}
-
-/* Your bid should fail if you don't pay the previous owner enough
- */
-// TODO: Manually craft transaction with a sufficient network fee and auction fee but too low money back
-BOOST_AUTO_TEST_CASE( bid_fail_prev_owner_payment )
-{
-}
-
-/* You should be able to update a record if you still own the domain
- */
-BOOST_AUTO_TEST_CASE( update_domain_record )
+/* Wallet shall not create a bid for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (wallet_bid_tx_pool_conflict_fail)
 {
     try
     {
@@ -385,8 +434,45 @@ BOOST_AUTO_TEST_CASE( update_domain_record )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+
+        /* Try to bid on same domain from second wallet */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet can create an update for a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(wallet_update)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -409,8 +495,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record )
     }
 }
 
-/* You should not be able to update a record if you are not the confirmed owner (still in auction) */
-BOOST_AUTO_TEST_CASE( update_domain_record_in_auction_fail)
+/* Wallet shall not create an update for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE(wallet_update_in_auction_fail)
 {
     try
     {
@@ -418,13 +504,13 @@ BOOST_AUTO_TEST_CASE( update_domain_record_in_auction_fail)
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
 
-        /* Try to update record */
+        /* Try to update domain record */
         auto no_exception = false;
         try
         {
@@ -447,8 +533,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record_in_auction_fail)
     }
 }
 
-/* You should not be able to update a record if you don't own the domain (wrong sig) */
-BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
+/* Wallet shall not create an update for a name that has been acquired by another owner */
+BOOST_AUTO_TEST_CASE(wallet_update_not_owner_fail)
 {
     try
     {
@@ -456,8 +542,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -466,7 +552,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        /* Try to update record from second wallet */
+        /* Try to update domain record from second wallet */
         auto no_exception = false;
         try
         {
@@ -489,8 +575,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record_sig_fail )
     }
 }
 
-/* You should not be able to update a record if you don't own the domain (expired) */
-BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
+/* Wallet shall not create an update for a name that has expired */
+BOOST_AUTO_TEST_CASE(wallet_update_expired_fail)
 {
     try
     {
@@ -498,8 +584,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -512,7 +598,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
         for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        /* Try to update record */
+        /* Try to update domain record */
         auto no_exception = false;
         try
         {
@@ -535,8 +621,45 @@ BOOST_AUTO_TEST_CASE( update_domain_record_expire_fail )
     }
 }
 
-/* You should not be able to update a record with an invalid value (length) */
-BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
+/* Wallet shall not create an update for a name of invalid length */
+BOOST_AUTO_TEST_CASE (wallet_update_invalid_name_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid name */
+        std::string name = "";
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        /* Try to update domain record */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet1.update_domain_record(name, DNS_TEST_VALUE, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create an update for a name with a value of invalid length */
+BOOST_AUTO_TEST_CASE(wallet_update_invalid_value_fail)
 {
     try
     {
@@ -550,8 +673,8 @@ BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
             str.append("A");
         fc::variant value = str;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -560,7 +683,7 @@ BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
             state.next_block(txs); 
 
-        /* Try to update record with value */
+        /* Try to update domain record with value */
         auto no_exception = false;
         try
         {
@@ -583,8 +706,9 @@ BOOST_AUTO_TEST_CASE( update_domain_record_val_length_fail )
     }
 }
 
-/* You should be able to sell a domain if you own it */
-BOOST_AUTO_TEST_CASE( auction_domain )
+/* Wallet shall not create an update for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (wallet_update_tx_pool_conflict_fail)
 {
     try
     {
@@ -592,54 +716,26 @@ BOOST_AUTO_TEST_CASE( auction_domain )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Auction domain */
-        tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
-        state.next_block(txs);
-    }
-    catch (const fc::exception &e)
-    {
-        std::cerr << e.to_detail_string() << "\n";
-        elog("${e}", ("e", e.to_detail_string()));
-        throw;
-    }
-}
 
-/* You should not be able to sell a domain if you don't own it (sig) */
-BOOST_AUTO_TEST_CASE( auction_domain_sig_fail )
-{
-    try
-    {
-        DNSTestState state;
-        signed_transactions txs;
-        signed_transaction tx;
-
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
-        wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(txs);
-
-        /* Let auction end */
-        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
-
-        /* Try to auction domain from second wallet */
+        /* Try to update domain record */
         auto no_exception = false;
         try
         {
-            tx = state.wallet2.auction_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+            tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -658,8 +754,8 @@ BOOST_AUTO_TEST_CASE( auction_domain_sig_fail )
     }
 }
 
-/* You should not be able to sell a domain if you don't own it (expired) */
-BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
+/* Wallet can auction a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(wallet_auction)
 {
     try
     {
@@ -667,8 +763,121 @@ BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
         signed_transactions txs;
         signed_transaction tx;
 
-        /* Initial domain purchase */
-        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        /* Auction domain */
+        tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create an auction for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE (wallet_auction_in_auction_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Try to auction domain */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create an auction for a name that has been acquired by another owner */
+BOOST_AUTO_TEST_CASE(wallet_auction_not_owner_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs); 
+
+        /* Try to auction domain from second wallet */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet2.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create an auction for a name that has expired */
+BOOST_AUTO_TEST_CASE(wallet_auction_expired_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -685,7 +894,7 @@ BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_BID1, txs, state.db);
+            tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
 
             no_exception = true;
             throw;
@@ -702,4 +911,112 @@ BOOST_AUTO_TEST_CASE( auction_domain_expire_fail )
         elog("${e}", ("e", e.to_detail_string()));
         throw;
     }
+}
+
+/* Wallet shall not create an auction for a name of invalid length */
+BOOST_AUTO_TEST_CASE (wallet_auction_invalid_name_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid name */
+        std::string name = "";
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        /* Try to auction domain */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet1.auction_domain(name, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet shall not create an auction for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (wallet_auction_tx_pool_conflict_fail)
+{
+    try
+    {
+        DNSTestState state;
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Update domain record */
+        tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+
+        /* Try to auction domain */
+        auto no_exception = false;
+        try
+        {
+            tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Your bid should fail if the domain is not in an auction
+ * TODO does this duplicate "new_auction_for_unexpired_name_fail"? Do the txs look
+ * different?
+ */
+// TODO: craft a transaction trying to bid on expired name but referencing it as input
+BOOST_AUTO_TEST_CASE(validator_bid_without_prev_bid_input_fail)
+{
+}
+
+// TODO: Manually craft transaction with a sufficient network fee and money back but too low auction fee
+/* Your bid should fail if the fee is not sufficient
+ */
+BOOST_AUTO_TEST_CASE(validator_bid_without_sufficient_fee_fail)
+{
+}
+
+/* Your bid should fail if you don't pay the previous owner enough
+ */
+// TODO: Manually craft transaction with a sufficient network fee and auction fee but too low money back
+BOOST_AUTO_TEST_CASE(validator_bid_without_sufficient_payback_fail)
+{
 }
