@@ -17,7 +17,7 @@ namespace bts { namespace blockchain  {
       for( auto trx : trxs ) 
          trx_ids.push_back( trx.id() );
       for( auto trx : determinstic_trxs) 
-         determinsitic_ids.push_back( trx.id() );
+         deterministic_ids.push_back( trx.id() );
    }
 
 
