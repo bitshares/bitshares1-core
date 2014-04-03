@@ -126,7 +126,7 @@ namespace bts { namespace cli {
       std::cout<<"listtransactions [COUNT]\n";
       std::cout<<"rescan [BLOCK_NUM=0]\n";
       std::cout<<"import_bitcoin_wallet WALLET_DAT\n";
-      std::cout<<"import_private_key    WALLET_DAT\n";
+      std::cout<<"import_private_key    HEX_PRIV_KEY\n";
       std::cout<<"listunspent\n";
       std::cout<<"quit - exit cleanly\n";
       std::cout<<"-------------------------------------------------------------\n";
@@ -278,6 +278,19 @@ namespace bts { namespace cli {
              my->_client->get_wallet()->import_bitcoin_wallet( wallet_dat, password );
           }
        }
+       else if( cmd == "import_private_key" )
+       {
+          if( my->check_unlock() )
+          {
+             std::string key_str;
+             ss >> key_str;
+
+             fc::sha256 hash( key_str );
+             fc::ecc::private_key privkey = fc::ecc::private_key::regenerate( hash );
+
+             my->_client->get_wallet()->import_key( privkey );
+          }
+       }
        else if( cmd == "getbalance" )
        {
           uint32_t minconf = 0;
@@ -332,8 +345,14 @@ namespace bts { namespace cli {
        return my->_cin_thread.async( [=](){ return my->get_line( prompt ); } ).wait();
    }
 
+   client_ptr cli::client()
+   {
+       return my->_client;
+   }
 
-
-
+   bool cli::check_unlock()
+   {
+       return my->check_unlock();
+   }
 
 } } // bts::cli

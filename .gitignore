@@ -7,7 +7,6 @@
 *.sw*
 docs/html
 docs/latex
-tests/blockchain_test
 CMakeCache.txt
 Makefile
 CMakeFiles
@@ -17,3 +16,7 @@ tests/simple_net_test_client
 programs/bts_xt/bts_xt
 programs/bts_xt/bts_xt_client
 programs/bts_xt/bts_xt_server
+programs/dns/dns_server
+programs/dns/dns_client
+programs/kids/kids
+programs/utils/bts_create_key
