@@ -115,11 +115,11 @@ fc::path get_data_dir( int argc, char** argv )
    if( argc == 1 )
    {
 #ifdef WIN32
-        datadir =  fc::app_path() / "BitSharesX";
+        datadir =  fc::app_path() / "dotp2p";
 #elif defined( __APPLE__ )
-        datadir =  fc::app_path() / "BitSharesXT";
+        datadir =  fc::app_path() / "dotp2p";
 #else
-        datadir = fc::app_path() / ".bitsharesxt";
+        datadir = fc::app_path() / ".dotp2p";
 #endif
    }
    else if( argc == 2 )
