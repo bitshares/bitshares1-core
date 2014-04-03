@@ -23,6 +23,9 @@ namespace bts { namespace cli {
 
          void wait();
 
+      protected:
+         virtual client_ptr client();
+         virtual bool check_unlock();
 
       private:
          std::unique_ptr<detail::cli_impl> my;
