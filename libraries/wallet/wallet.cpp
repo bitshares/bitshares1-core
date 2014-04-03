@@ -425,14 +425,9 @@ namespace bts { namespace wallet {
    //   ilog( "keys: ${keys}", ("keys",priv_keys) );
       for( auto key : priv_keys )
       {
-         auto pts_key = pts_address( key.get_public_key(), false, 0 );
-         import_key( key, std::string( pts_key ) );
-         my->_data.recv_pts_addresses[ pts_address( key.get_public_key() ) ]           = address( key.get_public_key() );
-         my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = address( key.get_public_key() );
-         my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = address( key.get_public_key() );
-         my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = address( key.get_public_key() );
+         auto btc_addr = pts_address( key.get_public_key(), false, 0 );
+         import_key( key, std::string( btc_addr ) );
       }
-      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -487,6 +482,14 @@ namespace bts { namespace wallet {
       keys[addr] = key;
       my->_data.set_keys( keys, my->_wallet_key_password );
       my->_data.recv_addresses[addr] = label;
+
+      my->_data.recv_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr;
+      my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr;
+      my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr;
+      my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr;
+
+      save();
+
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
