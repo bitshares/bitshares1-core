@@ -703,7 +703,7 @@ namespace bts { namespace wallet {
                  my->_data.transactions[trx.id()] = state;
               found |= found_output;
           }
-          for( uint32_t trx_idx = 0; trx_idx < blk.determinsitic_ids.size(); ++trx_idx )
+          for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
           {
               transaction_state state;
               state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
