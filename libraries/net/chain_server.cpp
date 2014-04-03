@@ -59,11 +59,14 @@ bts::blockchain::trx_block create_test_genesis_block()
          ++output_idx;
       }
 
+      if (output_idx > 0)
+         b.trxs.emplace_back( std::move(coinbase) );
+
       b.version         = 0;
       b.prev            = bts::blockchain::block_id_type();
       b.block_num       = 0;
       b.total_shares    = int64_t(total_supply);
-      b.timestamp       = fc::time_point::from_iso_string("20131201T054434");
+      b.timestamp       = fc::time_point::now();
       b.next_fee        = bts::blockchain::block_header::min_fee();
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
