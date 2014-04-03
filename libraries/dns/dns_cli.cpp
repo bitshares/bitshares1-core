@@ -7,11 +7,11 @@ namespace bts { namespace dns {
 void dns_cli::process_command( const std::string& cmd, const std::string& args )
 {
    std::stringstream ss(args);
-   if( cmd == "buydomain" )
+   if( cmd == "buy_domain" )
    {
        const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(get_client()->get_wallet());
        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(get_client()->get_chain());
-
+       
        std::string name = "BITSHARES";
        asset bid = asset(uint64_t(1));
        signed_transactions tx_pool;
@@ -20,25 +20,26 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
        wall->unlock_wallet( "AAAAAAAAA" );
 
        printf("Bidding on name\n");
-       wall->bid_on_domain(name, bid, tx_pool, *db);
-      
+       auto tx = wall->bid_on_domain(name, bid, tx_pool, *db);
+
+      get_client()->broadcast_transaction( tx );      
    }
-   else if( cmd == "selldomain" )
+   else if( cmd == "sell_domain" )
    {
 
    }
-   else if( cmd == "transferdomain" )
+   else if( cmd == "transfer_domain" )
    {
 
    }
-   else if( cmd == "listdomain_auctions" )
+   else if( cmd == "list_active_actions" )
    {
 
    }
-   else if( cmd == "lookupdomain" )
+   else if( cmd == "lookup_value" )
    {
    }
-   else if( cmd == "updatedomain" )
+   else if( cmd == "update_value" )
    {
       std::string name;
       std::string json_value;
