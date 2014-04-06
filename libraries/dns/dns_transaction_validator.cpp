@@ -19,7 +19,7 @@ block_evaluation_state_ptr dns_transaction_validator::create_block_state() const
     return std::make_shared<dns_block_evaluation_state>();
 }
 
-transaction_summary dns_transaction_validator::evaluate(const signed_transaction &tx, 
+transaction_summary dns_transaction_validator::evaluate(const signed_transaction &tx,
                                                         const block_evaluation_state_ptr &block_state)
 {
     dns_tx_evaluation_state state(tx);
@@ -66,7 +66,7 @@ void dns_transaction_validator::validate_output(const trx_output &out, transacti
     }
 }
 
-void dns_transaction_validator::validate_domain_input(const claim_domain_output &input, const asset &amount, 
+void dns_transaction_validator::validate_domain_input(const claim_domain_output &input, const asset &amount,
                                                       dns_tx_evaluation_state &state,
                                                       const dns_block_evaluation_state_ptr &block_state)
 {
@@ -75,12 +75,14 @@ void dns_transaction_validator::validate_domain_input(const claim_domain_output 
 
     FC_ASSERT(_dns_db->has_dns_record(input.name), "Input references invalid name");
 
+    state.add_input_asset(amount);
+    // TODO: Rename to domain_input
     state.input = input;
     state.input_amount = amount;
     state.seen_domain_input = true;
 }
 
-void dns_transaction_validator::validate_domain_output(const claim_domain_output &output, const asset &amount, 
+void dns_transaction_validator::validate_domain_output(const claim_domain_output &output, const asset &amount,
                                                        dns_tx_evaluation_state &state,
                                                        const dns_block_evaluation_state_ptr &block_state)
 {
@@ -91,7 +93,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     FC_ASSERT(is_valid_name(output.name), "Invalid name");
     FC_ASSERT(is_valid_value(output.value), "Invalid value");
     FC_ASSERT(is_valid_state(output.state), "Invalid state");
-    FC_ASSERT(is_valid_amount(amount), "Invalid amount");
+
+    state.add_output_asset(amount);
 
     /* Check name status */
     bool new_or_expired;
@@ -102,7 +105,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     if (!state.seen_domain_input)
     {
         ilog("Have not seen a domain claim input on this tx");
-        FC_ASSERT(new_or_expired && available, "Name already exists (and is younger than 1 block-year)"); 
+        FC_ASSERT(new_or_expired && available, "Name already exists (and is younger than 1 block-year)");
         return;
     }
 
@@ -132,7 +135,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
             bool to_owner = right_claim
                 && other_out.as<claim_by_signature_output>().owner == state.input.owner;
 
-            if (right_claim && enough && to_owner) 
+            if (right_claim && enough && to_owner)
             {
                 found = true;
                 break;
@@ -156,7 +159,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     }
 
     /* If you're the owner, do whatever you like! */
-    FC_ASSERT(state.has_signature(output.owner), "Domain tx missing required signature: ${tx}", ("tx", state.trx));
+    auto prev_domain_output = to_dns_output(get_tx_ref_output(prev_tx_ref, *_dns_db));
+    FC_ASSERT(state.has_signature(prev_domain_output.owner), "Domain tx missing required signature: ${tx}", ("tx", state.trx));
     ilog("Tx signed by owner");
 }
 

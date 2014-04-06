@@ -14,7 +14,6 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
                                              const signed_transactions &tx_pool, dns_db &db)
 { try {
     FC_ASSERT(is_valid_name(name), "Invalid name");
-    FC_ASSERT(is_valid_amount(bid_price), "Invalid bid price");
 
     /* Name should be new, for auction, or expired */
     bool new_or_expired;
@@ -82,13 +81,11 @@ signed_transaction dns_wallet::auction_domain(const std::string &name, const ass
                                               const signed_transactions &tx_pool, dns_db &db)
 { try {
     FC_ASSERT(is_valid_name(name), "Invalid name");
-    FC_ASSERT(is_valid_amount(ask_price), "Invalid amount");
 
     /* Build domain output */
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = std::vector<char>();
-    domain_output.owner = new_recv_address("Domain sale address");
     domain_output.state = claim_domain_output::possibly_in_auction;
 
     return update_or_auction_domain(false, domain_output, ask_price, tx_pool, db);
@@ -99,24 +96,22 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
                                                         asset amount, const signed_transactions &tx_pool,
                                                         dns_db &db)
 { try {
-    FC_ASSERT(is_valid_amount(amount), "Invalid amount");
-
     /* Name should exist and be owned */
     output_reference prev_tx_ref;
     FC_ASSERT(name_is_useable(domain_output.name, tx_pool, db, get_unspent_outputs(), prev_tx_ref),
             "Name unavailable for update or auction");
+    auto prev_output = get_tx_ref_output(prev_tx_ref, db);
+
+    auto prev_domain_output = to_dns_output(prev_output);
+    domain_output.owner = prev_domain_output.owner;
 
     if (update)
-    {
-        auto prev_output = get_tx_ref_output(prev_tx_ref, db);
         amount = prev_output.amount;
-        domain_output.owner = to_dns_output(prev_output).owner;
-    }
 
     signed_transaction tx;
     auto total_in = asset();
     auto req_sigs = std::unordered_set<address>();
-    req_sigs.insert(domain_output.owner);
+    req_sigs.insert(prev_domain_output.owner);
     tx.inputs = collect_inputs(asset(), total_in, req_sigs);
 
     tx.inputs.push_back(trx_input(prev_tx_ref));
@@ -175,7 +170,7 @@ signed_transaction dns_wallet::add_fee_and_sign(signed_transaction &trx, asset r
             trx.outputs.pop_back();
         }
     }
-    else 
+    else
     {
         fee = fee + fee; //TODO should be recursive since you could grab extra from lots of inputs
         req_sigs.clear();

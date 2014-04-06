@@ -21,7 +21,6 @@
 #define DNS_AUCTION_DURATION_BLOCKS 3 /* Blocks from last bid */
 #define DNS_EXPIRE_DURATION_BLOCKS  5 /* Blocks from max(end of auction, last update) */
 
-#define DNS_ASSET_ZERO              (asset(uint64_t(0)))
 #define DNS_MIN_BID_FROM(bid)       ((11 * (bid)) / 10)
 #define DNS_BID_FEE_RATIO(bid)      ((bid) / 2)
 
@@ -52,7 +51,6 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
 
 std::vector<char> serialize_value(const fc::variant &value);
 
-bool is_valid_amount(const asset &amount);
 bool is_valid_name(const std::string &name);
 bool is_valid_value(const std::vector<char> &value);
 bool is_valid_value(const fc::variant &value);

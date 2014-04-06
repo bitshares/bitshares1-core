@@ -50,6 +50,7 @@ class DNSTestState
     public:
         std::shared_ptr<sim_pow_validator>  validator;
         fc::ecc::private_key                auth;
+        fc::path                            path;
         bts::dns::dns_db                    db;
 
         bts::dns::dns_wallet                wallet1;
@@ -60,17 +61,17 @@ class DNSTestState
 
         DNSTestState()
         {
-            fc::temp_directory dir;
-
             validator = std::make_shared<sim_pow_validator>(fc::time_point::now());
             auth = fc::ecc::private_key::generate();
+            fc::temp_directory dir;
+            path = dir.path();
 
             db.set_trustee(auth.get_public_key());
             db.set_pow_validator(validator);
-            db.open(dir.path() / "dns_test_db", true);
+            db.open(path / "dns_test_db", true);
 
-            wallet1.create(dir.path() / "dns_test_wallet1.dat", "password", "password", true);
-            wallet2.create(dir.path() / "dns_test_wallet2.dat", "password", "password", true);
+            wallet1.create(path / "dns_test_wallet1.dat", "password", "password", true);
+            wallet2.create(path / "dns_test_wallet2.dat", "password", "password", true);
 
             addrs1 = std::vector<address>();
             addrs2 = std::vector<address>();
@@ -90,6 +91,12 @@ class DNSTestState
 
             wallet1.scan_chain(db);
             wallet2.scan_chain(db);
+        }
+
+        ~DNSTestState()
+        {
+            db.close();
+            fc::remove_all(path);
         }
 
         /* Put these transactions into a block */
@@ -131,7 +138,7 @@ class DNSTestState
         }
 };
 
-/* 
+/*
  */
 BOOST_AUTO_TEST_CASE (templ)
 {
@@ -147,58 +154,248 @@ BOOST_AUTO_TEST_CASE (templ)
     }
 }
 
-/*
- * Current Tests:
+/* Current Tests:
  *
- * wallet_bid_on_new
- * wallet_bid_on_auction
- * wallet_bid_on_expired
+ * validator_bid_on_new
+ * validator_bid_on_auction
+ * validator_bid_on_expired
+ * wallet_and_validator_bid_on_new
+ * wallet_and_validator_bid_on_auction
+ * wallet_and_validator_bid_on_expired
  *
+ * validator_bid_on_auction_insufficient_bid_price_fail
+ * validator_bid_on_owned_fail
  * wallet_bid_on_auction_insufficient_bid_price_fail
  * wallet_bid_on_owned_fail
  *
+ * validator_bid_invalid_name_fail
+ * validator_bid_insufficient_funds_fail
+ * validator_bid_tx_pool_conflict_fail
  * wallet_bid_invalid_name_fail
  * wallet_bid_insufficient_funds_fail
  * wallet_bid_tx_pool_conflict_fail
  *
- * wallet_update
+ * validator_update
+ * wallet_and_validator_update
  *
+ * validator_update_in_auction_fail
+ * validator_update_not_owner_fail
+ * validator_update_expired_fail
  * wallet_update_in_auction_fail
  * wallet_update_not_owner_fail
  * wallet_update_expired_fail
  *
+ * validator_update_invalid_name_fail
+ * validator_update_invalid_value_fail
+ * validator_update_tx_pool_conflict_fail
  * wallet_update_invalid_name_fail
  * wallet_update_invalid_value_fail
  * wallet_update_tx_pool_conflict_fail
  *
- * wallet_auction
+ * validator_auction
+ * wallet_and_validator_auction
  *
+ * validator_auction_in_auction_fail
+ * validator_auction_not_owner_fail
+ * validator_auction_expired_fail
  * wallet_auction_in_auction_fail
  * wallet_auction_not_owner_fail
  * wallet_auction_expired_fail
  *
+ * validator_auction_invalid_name_fail
+ * validator_auction_tx_pool_conflict_fail
  * wallet_auction_invalid_name_fail
  * wallet_auction_tx_pool_conflict_fail
- *
- * validator_bid_without_prev_bid_input_fail
- * validator_bid_without_sufficient_fee_fail
- * validator_bid_without_sufficient_payback_fail
  */
 
-/* Wallet can create a bid for a name that the network has never seen before */
-BOOST_AUTO_TEST_CASE(wallet_bid_on_new)
+/* Validator shall accept a bid for a name that the network has never seen before */
+BOOST_AUTO_TEST_CASE(validator_bid_on_new)
 {
     try
     {
         DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transaction tx;
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr();
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        auto bid_price = DNS_TEST_PRICE1;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall accept a bid for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr(state.wallet2);
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto bid_price = DNS_TEST_PRICE2;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+
+        auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+        asset transfer_amount;
+        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+
+        auto prev_dns_output = to_dns_output(prev_output);
+        tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall accept a bid for a name that is expired */
+BOOST_AUTO_TEST_CASE(validator_bid_on_expired)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Let domain expire */
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr(state.wallet2);
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto bid_price = DNS_TEST_PRICE1;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet can create a bid for a name that the network has never seen before */
+BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_new)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
         signed_transactions txs;
         signed_transaction tx;
 
         /* Bid on domain */
         tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(txs);
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
     }
     catch (const fc::exception &e)
     {
@@ -209,11 +406,13 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_new)
 }
 
 /* Wallet can create a bid for a name that is being auctioned */
-BOOST_AUTO_TEST_CASE(wallet_bid_on_auction)
+BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_auction)
 {
     try
     {
         DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
         signed_transactions txs;
         signed_transaction tx;
 
@@ -226,8 +425,9 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_auction)
         /* Bid on same domain from second wallet */
         tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE2, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(state.wallet2, txs);
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
     }
     catch (const fc::exception &e)
     {
@@ -238,11 +438,13 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_auction)
 }
 
 /* Wallet can create a bid for a name that is expired */
-BOOST_AUTO_TEST_CASE(wallet_bid_on_expired)
+BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_expired)
 {
     try
     {
         DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
         signed_transactions txs;
         signed_transaction tx;
 
@@ -254,17 +456,18 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_expired)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Let domain expire */
         for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Bid on same domain from second wallet */
         tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
-        txs.push_back(tx);
-        state.next_block(state.wallet2, txs);
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
     }
     catch (const fc::exception &e)
     {
@@ -273,7 +476,162 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_expired)
         throw;
     }
 }
- 
+
+/* Validator shall not accept a bid for a name that is being auctioned without exceeding the previous bid by a
+ * sufficient amount */
+BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE2, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr(state.wallet2);
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto bid_price = DNS_TEST_PRICE1; /* Lower bid */
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+
+        auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+        asset transfer_amount;
+        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+
+        auto prev_dns_output = to_dns_output(prev_output);
+        tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept a bid for a name that has already been auctioned and is not expired */
+BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr(state.wallet2);
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto bid_price = DNS_TEST_PRICE2;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+
+        auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+        asset transfer_amount;
+        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+
+        auto prev_dns_output = to_dns_output(prev_output);
+        tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
 /* Wallet shall not create a bid for a name that is being auctioned without exceeding the previous bid by a
  * sufficient amount */
 BOOST_AUTO_TEST_CASE (wallet_bid_on_auction_insufficient_bid_price_fail)
@@ -330,13 +688,179 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_owned_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to bid on same domain from second wallet */
         auto no_exception = false;
         try
         {
-            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+            tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE2, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept a bid for a name that has an invalid length */
+BOOST_AUTO_TEST_CASE(validator_bid_invalid_name_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid name */
+        std::string name = "";
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = name; /* Invalid name */
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr();
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        auto bid_price = DNS_TEST_PRICE1;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+
+        tx.outputs.push_back(trx_output(domain_output, bid_price));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept a bid for a name with a price exceeding available inputs */
+BOOST_AUTO_TEST_CASE (validator_bid_insufficient_funds_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transaction tx;
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr();
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        auto bid_price = DNS_TEST_PRICE1;
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+
+        tx.outputs.push_back(trx_output(domain_output, state.wallet1.get_balance(0))); /* Invalid amount */
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in - bid_price;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept a bid for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (validator_bid_tx_pool_conflict_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        validator.evaluate(tx, block_state);
+
+        /* Different domain bid */
+        tx = state.wallet2.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
 
             no_exception = true;
             throw;
@@ -392,7 +916,7 @@ BOOST_AUTO_TEST_CASE(wallet_bid_invalid_name_fail)
     }
 }
 
-/* Wallet shall not create a bid for a name with a price exceeding available funds */
+/* Wallet shall not create a bid for a name with a price exceeding available inputs */
 BOOST_AUTO_TEST_CASE (wallet_bid_insufficient_funds_fail)
 {
     try
@@ -462,12 +986,14 @@ BOOST_AUTO_TEST_CASE (wallet_bid_tx_pool_conflict_fail)
     }
 }
 
-/* Wallet can create an update for a name that has been acquired and is not expired */
-BOOST_AUTO_TEST_CASE(wallet_update)
+/* Validator shall accept an update for a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(validator_update)
 {
     try
     {
         DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
         signed_transactions txs;
         signed_transaction tx;
 
@@ -479,13 +1005,302 @@ BOOST_AUTO_TEST_CASE(wallet_update)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet can create an update for a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(wallet_and_validator_update)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
 
         /* Update domain record */
         tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name that has been acquired by another owner */
+BOOST_AUTO_TEST_CASE(validator_update_not_owner_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet2.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name that has expired */
+BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Let domain expire */
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
     }
     catch (const fc::exception &e)
     {
@@ -550,7 +1365,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_not_owner_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to update domain record from second wallet */
         auto no_exception = false;
@@ -592,17 +1407,259 @@ BOOST_AUTO_TEST_CASE(wallet_update_expired_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Let domain expire */
         for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to update domain record */
         auto no_exception = false;
         try
         {
             tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name of invalid length */
+BOOST_AUTO_TEST_CASE (validator_update_invalid_name_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid name */
+        std::string name = "";
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = name;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name with a value of invalid length */
+BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid value */
+        std::string str = "";
+        for (auto i = 0; i < DNS_MAX_VALUE_LEN + 1; i++)
+            str.append("A");
+        fc::variant value = str;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(value);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an update for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (validator_update_tx_pool_conflict_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Auction domain */
+        tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        validator.evaluate(tx, block_state);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = serialize_value(DNS_TEST_VALUE);
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::not_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
 
             no_exception = true;
             throw;
@@ -681,7 +1738,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_invalid_value_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to update domain record with value */
         auto no_exception = false;
@@ -754,12 +1811,14 @@ BOOST_AUTO_TEST_CASE (wallet_update_tx_pool_conflict_fail)
     }
 }
 
-/* Wallet can auction a name that has been acquired and is not expired */
-BOOST_AUTO_TEST_CASE(wallet_auction)
+/* Validator shall accept an auction for a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(validator_auction)
 {
     try
     {
         DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
         signed_transactions txs;
         signed_transaction tx;
 
@@ -771,13 +1830,302 @@ BOOST_AUTO_TEST_CASE(wallet_auction)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Wallet can auction a name that has been acquired and is not expired */
+BOOST_AUTO_TEST_CASE(wallet_and_validator_auction)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
 
         /* Auction domain */
         tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Validate transaction */
+        validator.evaluate(tx, block_state);
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an auction for a name that is being auctioned */
+BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an auction for a name that has been acquired by another owner */
+BOOST_AUTO_TEST_CASE(validator_auction_not_owner_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet2.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr(state.wallet2);
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet2.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet2.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an auction for a name that has expired */
+BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Let domain expire */
+        for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
     }
     catch (const fc::exception &e)
     {
@@ -842,7 +2190,7 @@ BOOST_AUTO_TEST_CASE(wallet_auction_not_owner_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to auction domain from second wallet */
         auto no_exception = false;
@@ -884,17 +2232,178 @@ BOOST_AUTO_TEST_CASE(wallet_auction_expired_fail)
 
         /* Let auction end */
         for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Let domain expire */
         for (auto i = 0; i < DNS_EXPIRE_DURATION_BLOCKS; i++)
-            state.next_block(txs); 
+            state.next_block(txs);
 
         /* Try to auction domain */
         auto no_exception = false;
         try
         {
             tx = state.wallet1.auction_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an auction for a name of invalid length */
+BOOST_AUTO_TEST_CASE (validator_auction_invalid_name_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Build invalid name */
+        std::string name = "";
+        for (int i = 0; i < DNS_MAX_NAME_LEN + 1; i++)
+            name.append("A");
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = name;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
+
+            no_exception = true;
+            throw;
+        }
+        catch (const fc::exception &e)
+        {
+            if (no_exception)
+                throw;
+        }
+    }
+    catch (const fc::exception &e)
+    {
+        std::cerr << e.to_detail_string() << "\n";
+        elog("${e}", ("e", e.to_detail_string()));
+        throw;
+    }
+}
+
+/* Validator shall not accept an auction for a name when there already exists a transaction for the same name in the
+ * current transaction pool */
+BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
+{
+    try
+    {
+        DNSTestState state;
+        dns_transaction_validator validator(&state.db);
+        auto block_state = validator.create_block_state();
+        signed_transactions txs;
+        signed_transaction tx;
+
+        /* Initial domain bid */
+        tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        txs.push_back(tx);
+        state.next_block(txs);
+
+        /* Let auction end */
+        for (auto i = 0; i < DNS_AUCTION_DURATION_BLOCKS; i++)
+            state.next_block(txs);
+
+        /* Update domain record */
+        tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+        wlog("tx: ${tx} ", ("tx", tx));
+        validator.evaluate(tx, block_state);
+
+        /* Get previous output */
+        output_reference prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
+        auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
+
+        /* Build domain output */
+        auto domain_output = claim_domain_output();
+        domain_output.name = DNS_TEST_NAME;
+        domain_output.value = std::vector<char>();
+        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.state = claim_domain_output::possibly_in_auction;
+
+        /* Build full transaction */
+        tx = signed_transaction();
+        auto total_in = asset();
+        auto req_sigs = std::unordered_set<address>();
+        req_sigs.insert(domain_output.owner);
+        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
+
+        tx.inputs.push_back(trx_input(prev_tx_ref));
+        tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
+
+        auto change_addr = state.random_addr();
+        auto change_amt = total_in;
+        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        tx.sigs.clear();
+        state.wallet1.sign_transaction(tx, req_sigs, false);
+
+        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        wlog("tx: ${tx} ", ("tx", tx));
+
+        /* Try to validate transaction */
+        auto no_exception = false;
+        try
+        {
+            validator.evaluate(tx, block_state);
 
             no_exception = true;
             throw;
@@ -996,27 +2505,4 @@ BOOST_AUTO_TEST_CASE (wallet_auction_tx_pool_conflict_fail)
         elog("${e}", ("e", e.to_detail_string()));
         throw;
     }
-}
-
-/* Your bid should fail if the domain is not in an auction
- * TODO does this duplicate "new_auction_for_unexpired_name_fail"? Do the txs look
- * different?
- */
-// TODO: craft a transaction trying to bid on expired name but referencing it as input
-BOOST_AUTO_TEST_CASE(validator_bid_without_prev_bid_input_fail)
-{
-}
-
-// TODO: Manually craft transaction with a sufficient network fee and money back but too low auction fee
-/* Your bid should fail if the fee is not sufficient
- */
-BOOST_AUTO_TEST_CASE(validator_bid_without_sufficient_fee_fail)
-{
-}
-
-/* Your bid should fail if you don't pay the previous owner enough
- */
-// TODO: Manually craft transaction with a sufficient network fee and auction fee but too low money back
-BOOST_AUTO_TEST_CASE(validator_bid_without_sufficient_payback_fail)
-{
 }
