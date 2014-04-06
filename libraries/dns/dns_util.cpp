@@ -9,8 +9,6 @@ bool is_dns_output(const trx_output &output)
 
 claim_domain_output to_dns_output(const trx_output &output)
 {
-    FC_ASSERT(is_valid_amount(output.amount), "Invalid amount");
-
     auto dns_output = output.as<claim_domain_output>();
 
     FC_ASSERT(is_valid_name(dns_output.name), "Invalid name");
@@ -103,7 +101,7 @@ std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::outp
             continue;
 
         names.push_back(to_dns_output(pair.second).name);
-    } 
+    }
 
     return names;
 }
@@ -176,11 +174,6 @@ std::vector<char> serialize_value(const fc::variant &value)
     return fc::raw::pack(value);
 }
 
-bool is_valid_amount(const asset &amount)
-{
-    return amount >= DNS_ASSET_ZERO;
-}
-
 bool is_valid_name(const std::string &name)
 {
     return name.size() <= DNS_MAX_NAME_LEN;
@@ -203,9 +196,6 @@ bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> st
 
 bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount)
 {
-    FC_ASSERT(is_valid_amount(prev_bid_price));
-    FC_ASSERT(is_valid_amount(bid_price));
-
     if (bid_price < DNS_MIN_BID_FROM(prev_bid_price.get_rounded_amount()))
         return false;
 
