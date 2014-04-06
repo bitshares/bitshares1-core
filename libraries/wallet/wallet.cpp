@@ -648,8 +648,6 @@ namespace bts { namespace wallet {
          state.adjust_balance( itr->second.amount, -1 );
          return;
       }
-
-      mark_as_spent( r);
    }
 
    bool wallet::scan_transaction( transaction_state& state, uint32_t block_idx, uint32_t trx_idx )
@@ -657,12 +655,14 @@ namespace bts { namespace wallet {
        bool found = false;
        for( uint32_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
        {
-           auto ref_itr = my->_output_ref_to_index.find(state.trx.inputs[in_idx].output_ref);
-           if( ref_itr == my->_output_ref_to_index.end() ) 
+           auto output_ref = state.trx.inputs[in_idx].output_ref;
+           auto ref_itr = my->_output_ref_to_index.find(output_ref);
+           if( ref_itr == my->_output_ref_to_index.end() )
            {
               continue;
            }
-           scan_input( state,  state.trx.inputs[in_idx].output_ref, ref_itr->second);
+           scan_input( state, output_ref, ref_itr->second);
+           mark_as_spent( output_ref );
        }
 
        // for each output

@@ -139,7 +139,7 @@ namespace bts { namespace blockchain {
        sum.invalid_votes    = state.invalid_votes;
        sum.spent            = state.spent;
        sum.fees             = state.get_total_in(0) - state.get_total_out(0);
-       if( state.get_required_fees() > 0 )
+       if( state.get_required_fees() >= 0 )
        {
           FC_ASSERT( sum.fees >= state.get_required_fees(0), "",
                      ("fees",sum.fees)("required",state.get_required_fees()));
