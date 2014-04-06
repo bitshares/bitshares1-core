@@ -213,11 +213,11 @@ namespace std
     {
        size_t operator()(const bts::net::item_id& item_to_hash) const
        {
-#if defined(_M_X64) || defined(__x86_64__)
+//#if defined(_M_X64) || defined(__x86_64__)
           return fc::city_hash64((char*)&item_to_hash, sizeof(item_to_hash));
-#else
-          return fc::city_hash32((char*)&item_to_hash, sizeof(item_to_hash));
-#endif
+//#else
+//          return fc::city_hash32((char*)&item_to_hash, sizeof(item_to_hash));
+//#endif
        }
     };
 }
