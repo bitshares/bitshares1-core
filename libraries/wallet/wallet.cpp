@@ -823,7 +823,7 @@ namespace bts { namespace wallet {
       my->_stake   = db.get_stake();
 
       try {
-         auto deterministic_trxs = db.generate_determinsitic_transactions();
+         auto deterministic_trxs = db.generate_deterministic_transactions();
 
          trx_block result;
          std::vector<trx_stat>  stats;
