@@ -285,11 +285,11 @@ namespace bts { namespace blockchain {
        }
     }
 
-    signed_transactions chain_database::generate_determinsitic_transactions()
+    signed_transactions chain_database::generate_deterministic_transactions()
     {
        signed_transactions trxs;
        // TODO: move all unspent outputs over 1 year old to new outputs and charge a 5% fee
-       
+
        return trxs;
     }
 
@@ -335,20 +335,20 @@ namespace bts { namespace blockchain {
 
         for( auto strx : deterministic_trxs )
         {
-            summary += my->_trx_validator->evaluate( strx, block_state ); 
+            summary += my->_trx_validator->evaluate( strx, block_state );
         }
 
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
                    ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
 
     } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
-    
+
     /**
      *  Attempts to append block b to the block chain with the given trxs.
      */
     void chain_database::push_block( const trx_block& b )
     { try {
-        auto deterministic_trxs = generate_determinsitic_transactions();
+        auto deterministic_trxs = generate_deterministic_transactions();
         validate( b, deterministic_trxs );
         store( b, deterministic_trxs );
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );

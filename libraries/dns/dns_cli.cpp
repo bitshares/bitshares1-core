@@ -13,7 +13,7 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
        {
            const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
            const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
-           
+
            std::string name = "TEST_DOMAIN_NAME";
            asset bid = asset(uint64_t(1));
            signed_transactions tx_pool;
@@ -21,7 +21,7 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
            printf("Bidding on name\n");
            auto tx = wall->bid_on_domain(name, bid, tx_pool, *db);
 
-           //get_client()->broadcast_transaction( tx );      
+           //get_client()->broadcast_transaction( tx );
        }
    }
    else if( cmd == "auction_domain" )
@@ -67,4 +67,4 @@ void dns_cli::get_balance( uint32_t min_conf, uint16_t unit)
     cli::get_balance(min_conf, unit);
 }
 
-}} //bts::dns
+} } //bts::dns

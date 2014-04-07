@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <map>
 
-namespace bts { 
+namespace bts {
 
 namespace blockchain { class chain_database; }
 
@@ -101,7 +101,7 @@ namespace wallet {
 
           /** Given a set of user-provided transactions, this method will generate a block that
            * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
-           * are ignored and not included in the set.  
+           * are ignored and not included in the set.
            *
            * @note some transaction may be valid stand-alone, but may conflict with other transactions.
            */
@@ -148,6 +148,11 @@ namespace wallet {
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
            std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
+
+           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                      std::unordered_set<address> &req_sigs, const address &change_addr);
+           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                      std::unordered_set<address> &req_sigs);
 
         protected:
            virtual void dump_output( const trx_output& out );

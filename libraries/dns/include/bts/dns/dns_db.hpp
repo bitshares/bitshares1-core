@@ -3,8 +3,6 @@
 #include <fc/reflect/variant.hpp>
 
 #include <bts/db/level_map.hpp>
-#include <bts/blockchain/asset.hpp>
-#include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/chain_database.hpp>
 
 #include <bts/dns/dns_transaction_validator.hpp>
@@ -26,7 +24,7 @@ class dns_db : public bts::blockchain::chain_database
     public:
         dns_db();
         ~dns_db();
-    
+
         void             open( const fc::path& dir, bool create );
         void             close();
         dns_record       get_dns_record( const std::string& name );
@@ -40,6 +38,6 @@ class dns_db : public bts::blockchain::chain_database
 
 typedef std::shared_ptr<dns_db> dns_db_ptr;
 
-}} // bts::dns
+} } // bts::dns
 
 FC_REFLECT( bts::dns::dns_record, (owner)(value)(last_price)(last_update_ref) );

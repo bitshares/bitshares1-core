@@ -1,5 +1,5 @@
 #include <bts/dns/dns_transaction_validator.hpp>
-#include <bts/dns/dns_util.hpp>
+#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
 
@@ -76,9 +76,8 @@ void dns_transaction_validator::validate_domain_input(const claim_domain_output 
     FC_ASSERT(_dns_db->has_dns_record(input.name), "Input references invalid name");
 
     state.add_input_asset(amount);
-    // TODO: Rename to domain_input
-    state.input = input;
-    state.input_amount = amount;
+    state.domain_input = input;
+    state.domain_input_amount = amount;
     state.seen_domain_input = true;
 }
 
@@ -92,7 +91,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
 
     FC_ASSERT(is_valid_name(output.name), "Invalid name");
     FC_ASSERT(is_valid_value(output.value), "Invalid value");
-    FC_ASSERT(is_valid_state(output.state), "Invalid state");
+    FC_ASSERT(is_valid_owner(output.owner), "Invalid owner");
+    FC_ASSERT(is_valid_last_tx_type(output.last_tx_type), "Invalid last_tx_type");
 
     state.add_output_asset(amount);
 
@@ -113,17 +113,17 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
      * and it can't be expired */
     ilog("Seen a domain input");
     FC_ASSERT(!new_or_expired, "Name new or expired");
-    FC_ASSERT(output.name == state.input.name, "Bid tx refers to different input and output names");
+    FC_ASSERT(output.name == state.domain_input.name, "Bid tx refers to different input and output names");
 
     /* Bid in existing auction */
     if (!auction_is_closed(prev_tx_ref, *_dns_db))
     {
         ilog("Currently in an auction");
         FC_ASSERT(available, "Name not available");
-        FC_ASSERT(state.input.state == claim_domain_output::possibly_in_auction, "Input not for auction");
+        FC_ASSERT(state.domain_input.last_tx_type == claim_domain_output::bid_or_auction, "Input not for auction");
 
         asset amount_back;
-        FC_ASSERT(is_valid_bid_price(state.input_amount, amount, amount_back), "Invalid bid amount");
+        FC_ASSERT(is_valid_bid_price(state.domain_input_amount, amount, amount_back), "Invalid bid amount");
         state.add_required_fees(amount - amount_back);
 
         /* Check for output to past owner */
@@ -133,7 +133,7 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
             bool right_claim = other_out.claim_func == claim_by_signature;
             bool enough = other_out.amount >= amount_back;
             bool to_owner = right_claim
-                && other_out.as<claim_by_signature_output>().owner == state.input.owner;
+                && other_out.as<claim_by_signature_output>().owner == state.domain_input.owner;
 
             if (right_claim && enough && to_owner)
             {
@@ -152,10 +152,10 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     FC_ASSERT(!domain_is_expired(prev_tx_ref, *_dns_db), "Domain is expired");
 
     /* If updating record */
-    if (output.state == claim_domain_output::not_in_auction)
+    if (output.last_tx_type == claim_domain_output::update)
     {
         /* Keep output amount constant when updating domain record */
-        FC_ASSERT(amount == state.input_amount, "Output amount should not change when updating record");
+        FC_ASSERT(amount == state.domain_input_amount, "Output amount should not change when updating record");
     }
 
     /* If you're the owner, do whatever you like! */
@@ -164,4 +164,4 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     ilog("Tx signed by owner");
 }
 
-}} // bts::blockchain
+} } // bts::dns
