@@ -25,7 +25,7 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
     domain_output.name = name;
     domain_output.value = std::vector<char>();
     domain_output.owner = new_recv_address("Owner address for domain: " + name);
-    domain_output.state = claim_domain_output::possibly_in_auction;
+    domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
     signed_transaction tx;
     auto total_in = asset();
@@ -71,7 +71,7 @@ signed_transaction dns_wallet::update_domain_record(const std::string &name, con
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = serialize_value(value);
-    domain_output.state = claim_domain_output::not_in_auction;
+    domain_output.last_tx_type = claim_domain_output::update;
 
     return update_or_auction_domain(true, domain_output, asset(), tx_pool, db);
 
@@ -86,7 +86,7 @@ signed_transaction dns_wallet::auction_domain(const std::string &name, const ass
     auto domain_output = claim_domain_output();
     domain_output.name = name;
     domain_output.value = std::vector<char>();
-    domain_output.state = claim_domain_output::possibly_in_auction;
+    domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
     return update_or_auction_domain(false, domain_output, ask_price, tx_pool, db);
 
@@ -189,4 +189,4 @@ signed_transaction dns_wallet::add_fee_and_sign(signed_transaction &trx, asset r
     return trx;
 }
 
-}} // bts::dns
+} } // bts::dns

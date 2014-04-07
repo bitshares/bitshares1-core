@@ -1,12 +1,11 @@
 #pragma once
 
 #include <sstream>
-
 #include <fc/io/json.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <bts/cli/cli.hpp>
 
+#include <bts/cli/cli.hpp>
 #include <bts/dns/dns_wallet.hpp>
 
 namespace bts { namespace dns {
@@ -25,4 +24,4 @@ namespace bts { namespace dns {
             virtual void get_balance( uint32_t min_conf, uint16_t unit = 0 );
    };
 
-}} // bts::dns
+} } // bts::dns

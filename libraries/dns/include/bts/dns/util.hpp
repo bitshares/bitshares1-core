@@ -54,8 +54,9 @@ std::vector<char> serialize_value(const fc::variant &value);
 bool is_valid_name(const std::string &name);
 bool is_valid_value(const std::vector<char> &value);
 bool is_valid_value(const fc::variant &value);
-bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state);
+bool is_valid_owner(const bts::blockchain::address &owner);
+bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type);
 
 bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount);
 
-}} // bts::dns
+} } // bts::dns

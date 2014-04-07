@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_new)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_expired)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -579,7 +579,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_invalid_name_fail)
         domain_output.name = name; /* Invalid name */
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
@@ -792,7 +792,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_insufficient_funds_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
@@ -1016,7 +1016,7 @@ BOOST_AUTO_TEST_CASE(validator_update)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1111,7 +1111,7 @@ BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1186,7 +1186,7 @@ BOOST_AUTO_TEST_CASE(validator_update_not_owner_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1265,7 +1265,7 @@ BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1471,7 +1471,7 @@ BOOST_AUTO_TEST_CASE (validator_update_invalid_name_fail)
         domain_output.name = name;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1552,7 +1552,7 @@ BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(value);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1633,7 +1633,7 @@ BOOST_AUTO_TEST_CASE (validator_update_tx_pool_conflict_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::not_in_auction;
+        domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1841,7 +1841,7 @@ BOOST_AUTO_TEST_CASE(validator_auction)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -1936,7 +1936,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -2011,7 +2011,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_not_owner_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -2090,7 +2090,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -2296,7 +2296,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_invalid_name_fail)
         domain_output.name = name;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();
@@ -2377,7 +2377,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
-        domain_output.state = claim_domain_output::possibly_in_auction;
+        domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
         tx = signed_transaction();

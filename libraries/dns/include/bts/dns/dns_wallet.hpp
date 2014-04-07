@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bts/dns/dns_util.hpp>
+#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
 
@@ -36,4 +36,4 @@ class dns_wallet : public bts::wallet::wallet
 
 typedef std::shared_ptr<dns_wallet> dns_wallet_ptr;
 
-}} // bts::dns
+} } // bts::dns

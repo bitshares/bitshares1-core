@@ -1,12 +1,12 @@
 #pragma once
+
 #include <bts/blockchain/outputs.hpp>
 
 namespace bts { namespace dns {
 
 enum claim_type_enum
 {
-   /** basic claim by single address */
-   claim_domain         = 20,
+      claim_domain =    20, /* Basic claim by single address */
 };
 
 struct claim_domain_input
@@ -16,25 +16,25 @@ struct claim_domain_input
 
 struct claim_domain_output
 {
-    enum states
+    enum last_tx_type_enum
     {
-        possibly_in_auction,
-        not_in_auction
+        bid_or_auction,
+        update
     };
 
     static const claim_type_enum type;
-    
-    claim_domain_output():state(possibly_in_auction){}
 
-    std::string                    name;
-    std::vector<char>              value; 
-    bts::blockchain::address       owner;
-    fc::enum_type<uint8_t, states> state;
+    claim_domain_output():last_tx_type(bid_or_auction){}
+
+    std::string                                 name;
+    std::vector<char>                           value;
+    bts::blockchain::address                    owner;
+    fc::enum_type<uint8_t, last_tx_type_enum>   last_tx_type;
 };
 
-}} //bts::dns
+} } //bts::dns
 
 FC_REFLECT_ENUM(bts::dns::claim_type_enum, (claim_domain));
 FC_REFLECT(bts::dns::claim_domain_input, BOOST_PP_SEQ_NIL);
-FC_REFLECT(bts::dns::claim_domain_output, (name)(value)(owner)(state));
-FC_REFLECT_ENUM(bts::dns::claim_domain_output::states, (possibly_in_auction)(not_in_auction));
+FC_REFLECT(bts::dns::claim_domain_output, (name)(value)(owner)(last_tx_type));
+FC_REFLECT_ENUM(bts::dns::claim_domain_output::last_tx_type_enum, (bid_or_auction)(update));
