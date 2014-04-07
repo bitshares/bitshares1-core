@@ -52,9 +52,9 @@ namespace bts { namespace blockchain {
           /**
            *  There are many kinds of deterministic transactions that various blockchains may require
            *  such as automatic inactivity fees, lottery winners, and market making.   This method
-           *  can be overloaded to 
+           *  can be overloaded to
            */
-          virtual signed_transactions generate_determinsitic_transactions();
+          virtual signed_transactions generate_deterministic_transactions();
 
           void evaluate_transaction( const signed_transaction& trx );
 

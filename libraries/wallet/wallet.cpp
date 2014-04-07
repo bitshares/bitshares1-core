@@ -428,6 +428,7 @@ namespace bts { namespace wallet {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
          import_key( key, std::string( btc_addr ) );
       }
+      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -487,8 +488,6 @@ namespace bts { namespace wallet {
       my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr;
       my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr;
       my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr;
-
-      save();
 
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
@@ -823,7 +822,7 @@ namespace bts { namespace wallet {
       my->_stake   = db.get_stake();
 
       try {
-         auto deterministic_trxs = db.generate_determinsitic_transactions();
+         auto deterministic_trxs = db.generate_deterministic_transactions();
 
          trx_block result;
          std::vector<trx_stat>  stats;
