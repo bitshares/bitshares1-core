@@ -685,7 +685,7 @@ namespace bts { namespace wallet {
    { try {
        bool found = false;
        auto head_block_num = chain.head_block_num();
-       if( head_block_num == -1 ) return false;
+       if( head_block_num == uint32_t(-1) ) return false;
 
        // for each block
        for( uint32_t i = from_block_num; i <= head_block_num; ++i )
@@ -838,7 +838,7 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}", ("eval",s.eval) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
+                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
                         ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
@@ -894,5 +894,56 @@ namespace bts { namespace wallet {
 
    }
 
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs, const address &change_addr)
+{
+    /* Save transaction inputs and outputs */
+    std::vector<trx_input> original_inputs = trx.inputs;
+    std::vector<trx_output> original_outputs = trx.outputs;
+    std::unordered_set<address> original_req_sigs = req_sigs;
+
+    asset required_in = min_amnt;
+    asset total_in;
+
+    do
+    {
+        /* Restore original transaction */
+        trx.inputs = original_inputs;
+        trx.outputs = original_outputs;
+        req_sigs = original_req_sigs;
+        total_in = 0u;
+
+        auto new_inputs = collect_inputs(required_in, total_in, req_sigs); /* Throws if insufficient funds */
+        trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
+
+        auto change_amt = total_in - required_in;
+        trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        trx.sigs.clear();
+        sign_transaction(trx, req_sigs, false);
+
+        /* Calculate fee and subtract from change */
+        auto fee = get_fee_rate() * trx.size();
+        required_in += fee;
+        change_amt = total_in - required_in;
+
+        if (change_amt > 0u)
+            trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
+        else
+            trx.outputs.pop_back();
+    }
+    while (total_in < required_in); /* Try again if the fee ended up too high for the collected inputs */
+
+    trx.sigs.clear();
+    sign_transaction(trx, req_sigs, true);
+
+    return trx;
+}
+
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs)
+{
+    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change address"));
+}
 
 } } // namespace bts::wallet
