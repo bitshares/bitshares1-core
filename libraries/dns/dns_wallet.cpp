@@ -110,59 +110,6 @@ signed_transaction dns_wallet::update_or_auction_domain(bool update, claim_domai
 
 } FC_RETHROW_EXCEPTIONS(warn, "update_or_auction_domain ${name} with ${amt}", ("name", domain_output.name)("amt", amount)) }
 
-// TODO: Put this in the parent wallet class
-signed_transaction dns_wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                       std::unordered_set<address> &req_sigs, const address &change_addr)
-{
-    /* Save transaction inputs and outputs */
-    std::vector<trx_input> original_inputs = trx.inputs;
-    std::vector<trx_output> original_outputs = trx.outputs;
-    std::unordered_set<address> original_req_sigs = req_sigs;
-
-    asset required_in = min_amnt;
-    asset total_in;
-
-    do
-    {
-        /* Restore original transaction */
-        trx.inputs = original_inputs;
-        trx.outputs = original_outputs;
-        req_sigs = original_req_sigs;
-        total_in = 0u;
-
-        auto new_inputs = collect_inputs(required_in, total_in, req_sigs); /* Throws if insufficient funds */
-        trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
-
-        auto change_amt = total_in - required_in;
-        trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        trx.sigs.clear();
-        sign_transaction(trx, req_sigs, false);
-
-        /* Calculate fee and subtract from change */
-        auto fee = get_fee_rate() * trx.size();
-        required_in += fee;
-        change_amt = total_in - required_in;
-
-        if (change_amt > 0u)
-            trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
-        else
-            trx.outputs.pop_back();
-    }
-    while (total_in < required_in); /* Try again if the fee ended up too high for the collected inputs */
-
-    trx.sigs.clear();
-    sign_transaction(trx, req_sigs, true);
-
-    return trx;
-}
-
-signed_transaction dns_wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                       std::unordered_set<address> &req_sigs)
-{
-    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change address"));
-}
-
 bool dns_wallet::scan_output(transaction_state &state, const trx_output &out, const output_reference &ref,
                              const output_index &idx)
 {
