@@ -1,40 +1,75 @@
 #include <bts/dns/dns_cli.hpp>
 
 #include <iostream> // TODO: temporary
+#include <boost/algorithm/string.hpp>
 
 namespace bts { namespace dns {
 
 void dns_cli::process_command( const std::string& cmd, const std::string& args )
 {
-    std::stringstream ss(args);
-    if( cmd == "bid_on_domain" )
-    {
-        if (check_unlock())
-        {
-        const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
-        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+   std::stringstream ss(args);
+   if( cmd == "bid_on_domain" )
+   {
+       if (check_unlock())
+       {
+           const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
+           const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
 
-        std::string name = "TEST_DOMAIN_NAME";
-        asset bid = asset(uint64_t(1));
-        signed_transactions tx_pool;
+           std::vector<std::string> argv;
+           boost::split(argv, args, boost::is_any_of(" "), boost::token_compress_on);
 
-        printf("Bidding on name\n");
-        auto tx = wall->bid_on_domain(name, bid, tx_pool, *db);
+           FC_ASSERT(argv.size() == 3); // cmd name amount
+           std::string name = argv[1];
+           asset bid = asset(uint64_t(atoi(argv[2].c_str())));
+           signed_transactions tx_pool;
 
-        get_client()->broadcast_transaction( tx );      
-        }
-    }
+           auto tx = wall->bid_on_domain( name, bid, tx_pool, *db);
+
+           client()->broadcast_transaction( tx );
+       }
+   }
     else if( cmd == "auction_domain" )
     {
         if (check_unlock())
         {
-            const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
-            const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+           const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
+           const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+
+           std::vector<std::string> argv;
+           boost::split(argv, args, boost::is_any_of(" "), boost::token_compress_on);
+
+           FC_ASSERT(argv.size() == 3); // cmd name price
+           std::string name = argv[1];
+           asset price = asset(uint64_t(atoi(argv[2].c_str())));
+           signed_transactions tx_pool;
+
+           auto tx = wall->auction_domain( name, price, tx_pool, *db);
+
+           client()->broadcast_transaction( tx );
         }
     }
     else if( cmd == "transfer_domain" )
     {
+        /*
+        //TODO need to refactor update_record to allow this first
+        if (check_unlock())
+        {
+           const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
+           const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
 
+           std::vector<std::string> argv;
+           boost::split(argv, args, boost::is_any_of(" "), boost::token_compress_on);
+
+           FC_ASSERT(argv.size() == 3); // cmd name to
+           std::string name = argv[1];
+           auto to_owner = bts::blockchain::address(argv[2]);
+           signed_transactions tx_pool;
+
+           //auto tx = wall->update_record( name, to_owner, tx_pool, *db);
+
+           client()->broadcast_transaction( tx );
+        }
+        */
     }
     else if( cmd == "list_active_auctions" )
     {
@@ -44,17 +79,16 @@ void dns_cli::process_command( const std::string& cmd, const std::string& args )
     {
         const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
     }
-   else if( cmd == "update_domain_record" )
-   {
-      std::string name;
-      std::string json_value;
-      ss >>  name;
-      std::getline( ss, json_value );
+    else if( cmd == "update_domain_record" )
+    {
+       std::string name;
+       std::string json_value;
+       ss >>  name;
+       std::getline( ss, json_value );
 
-      // convert arbitrary json value to string..., this validates that it parses
-      // properly.
-      fc::variant val = fc::json::from_string( json_value );
-
+       // convert arbitrary json value to string..., this validates that it parses
+       // properly.
+       fc::variant val = fc::json::from_string( json_value );
    }
    else
    {
@@ -72,4 +106,4 @@ void dns_cli::get_balance( uint32_t min_conf, uint16_t unit)
     cli::get_balance(min_conf, unit);
 }
 
-}} //bts::dns
+} } //bts::dns

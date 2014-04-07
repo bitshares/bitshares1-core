@@ -1,4 +1,4 @@
-#include <bts/dns/dns_util.hpp>
+#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
 
@@ -13,7 +13,8 @@ claim_domain_output to_dns_output(const trx_output &output)
 
     FC_ASSERT(is_valid_name(dns_output.name), "Invalid name");
     FC_ASSERT(is_valid_value(dns_output.value), "Invalid value");
-    FC_ASSERT(is_valid_state(dns_output.state), "Invalid state");
+    FC_ASSERT(is_valid_owner(dns_output.owner), "Invalid owner");
+    FC_ASSERT(is_valid_last_tx_type(dns_output.last_tx_type), "Invalid last_tx_type");
 
     return dns_output;
 }
@@ -46,7 +47,7 @@ bool auction_is_closed(const output_reference &tx_ref, dns_db &db)
     auto dns_output = to_dns_output(output);
     auto age = get_tx_age(tx_ref, db);
 
-    if (dns_output.state == claim_domain_output::possibly_in_auction
+    if (dns_output.last_tx_type == claim_domain_output::bid_or_auction
         && age < DNS_AUCTION_DURATION_BLOCKS)
         return false;
 
@@ -64,10 +65,10 @@ bool domain_is_expired(const output_reference &tx_ref, dns_db &db)
     auto dns_output = to_dns_output(output);
     auto age = get_tx_age(tx_ref, db);
 
-    if (dns_output.state == claim_domain_output::possibly_in_auction)
+    if (dns_output.last_tx_type == claim_domain_output::bid_or_auction)
         return age >= (DNS_AUCTION_DURATION_BLOCKS + DNS_EXPIRE_DURATION_BLOCKS);
 
-    FC_ASSERT(dns_output.state == claim_domain_output::not_in_auction);
+    FC_ASSERT(dns_output.last_tx_type == claim_domain_output::update);
 
     return age >= DNS_EXPIRE_DURATION_BLOCKS;
 }
@@ -189,9 +190,14 @@ bool is_valid_value(const fc::variant &value)
     return is_valid_value(serialize_value(value));
 }
 
-bool is_valid_state(const fc::enum_type<uint8_t, claim_domain_output::states> state)
+bool is_valid_owner(const bts::blockchain::address &owner)
 {
-    return (state == claim_domain_output::possibly_in_auction) || (state == claim_domain_output::not_in_auction);
+    return owner.is_valid();
+}
+
+bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type)
+{
+    return (last_tx_type == claim_domain_output::bid_or_auction) || (last_tx_type == claim_domain_output::update);
 }
 
 bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount)
@@ -204,4 +210,4 @@ bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, ass
     return true;
 }
 
-}} // bts::dns
+} } // bts::dns
