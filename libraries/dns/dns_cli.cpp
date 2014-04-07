@@ -6,39 +6,44 @@ namespace bts { namespace dns {
 
 void dns_cli::process_command( const std::string& cmd, const std::string& args )
 {
-   std::stringstream ss(args);
-   if( cmd == "bid_on_domain" )
-   {
-       if (check_unlock())
-       {
-           const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
-           const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
-           
-           std::string name = "TEST_DOMAIN_NAME";
-           asset bid = asset(uint64_t(1));
-           signed_transactions tx_pool;
+    std::stringstream ss(args);
+    if( cmd == "bid_on_domain" )
+    {
+        if (check_unlock())
+        {
+        const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
+        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
 
-           printf("Bidding on name\n");
-           auto tx = wall->bid_on_domain(name, bid, tx_pool, *db);
+        std::string name = "TEST_DOMAIN_NAME";
+        asset bid = asset(uint64_t(1));
+        signed_transactions tx_pool;
 
-           //get_client()->broadcast_transaction( tx );      
-       }
-   }
-   else if( cmd == "auction_domain" )
-   {
+        printf("Bidding on name\n");
+        auto tx = wall->bid_on_domain(name, bid, tx_pool, *db);
 
-   }
-   else if( cmd == "transfer_domain" )
-   {
+        get_client()->broadcast_transaction( tx );      
+        }
+    }
+    else if( cmd == "auction_domain" )
+    {
+        if (check_unlock())
+        {
+            const dns_wallet_ptr wall = std::dynamic_pointer_cast<dns_wallet>(client()->get_wallet());
+            const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+        }
+    }
+    else if( cmd == "transfer_domain" )
+    {
 
-   }
-   else if( cmd == "list_active_auctions" )
-   {
+    }
+    else if( cmd == "list_active_auctions" )
+    {
 
-   }
-   else if( cmd == "lookup_domain_record" )
-   {
-   }
+    }
+    else if( cmd == "lookup_domain_record" )
+    {
+        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+    }
    else if( cmd == "update_domain_record" )
    {
       std::string name;
