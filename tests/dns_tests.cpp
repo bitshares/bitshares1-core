@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_new)
         signed_transaction tx;
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
@@ -263,7 +263,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         state.next_block(txs);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_expired)
             state.next_block(txs);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         state.next_block(txs);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
             state.next_block(txs);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2);
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_invalid_name_fail)
             name.append("A");
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = name; /* Invalid name */
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_insufficient_funds_fail)
         signed_transaction tx;
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr();
@@ -949,7 +949,7 @@ BOOST_AUTO_TEST_CASE(validator_update)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -999,7 +999,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_update)
             state.next_block(txs);
 
         /* Update domain record */
-        tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+        tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -1035,7 +1035,7 @@ BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1101,7 +1101,7 @@ BOOST_AUTO_TEST_CASE(validator_update_not_owner_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
@@ -1171,7 +1171,7 @@ BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1230,7 +1230,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_in_auction_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+            tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1272,7 +1272,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_not_owner_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+            tx = state.wallet2.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1318,7 +1318,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_expired_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+            tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1368,7 +1368,7 @@ BOOST_AUTO_TEST_CASE (validator_update_invalid_name_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = name;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1440,7 +1440,7 @@ BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(value);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1512,7 +1512,7 @@ BOOST_AUTO_TEST_CASE (validator_update_tx_pool_conflict_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1570,7 +1570,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_invalid_name_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.update_domain_record(name, DNS_TEST_VALUE, txs, state.db);
+            tx = state.wallet1.update_domain(name, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1618,7 +1618,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_invalid_value_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.update_domain_record(DNS_TEST_NAME, value, txs, state.db);
+            tx = state.wallet1.update_domain(DNS_TEST_NAME, value, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1666,7 +1666,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_tx_pool_conflict_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+            tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
 
             no_exception = true;
             throw;
@@ -1711,7 +1711,7 @@ BOOST_AUTO_TEST_CASE(validator_auction)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1797,7 +1797,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -1863,7 +1863,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_not_owner_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = state.random_addr(state.wallet2); /* Try to use own address */
@@ -1933,7 +1933,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -2130,7 +2130,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_invalid_name_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = name;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -2193,7 +2193,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
             state.next_block(txs);
 
         /* Update domain record */
-        tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+        tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         validator.evaluate(tx, block_state);
 
@@ -2202,7 +2202,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
 
         /* Build domain output */
-        auto domain_output = claim_domain_output();
+        claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
         domain_output.owner = to_dns_output(prev_output).owner;
@@ -2300,7 +2300,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_tx_pool_conflict_fail)
             state.next_block(txs);
 
         /* Update domain record */
-        tx = state.wallet1.update_domain_record(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
+        tx = state.wallet1.update_domain(DNS_TEST_NAME, DNS_TEST_VALUE, txs, state.db);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
 
