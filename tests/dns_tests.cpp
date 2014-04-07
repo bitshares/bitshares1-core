@@ -278,10 +278,9 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         tx.inputs.push_back(trx_input(prev_tx_ref));
 
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
-        asset transfer_amount;
-        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+        auto transfer_amount = get_bid_transfer_amount(bid_price, prev_output.amount);
 
-        auto prev_dns_output = to_dns_output(prev_output);
+        auto prev_dns_output = to_domain_output(prev_output);
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
@@ -484,10 +483,9 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         tx.inputs.push_back(trx_input(prev_tx_ref));
 
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
-        asset transfer_amount;
-        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+        auto transfer_amount = 0u;
 
-        auto prev_dns_output = to_dns_output(prev_output);
+        auto prev_dns_output = to_domain_output(prev_output);
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
@@ -555,9 +553,9 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
 
         auto prev_output = get_tx_ref_output(prev_tx_ref, state.db);
         asset transfer_amount;
-        is_valid_bid_price(prev_output.amount, bid_price, transfer_amount);
+        get_bid_transfer_amount(bid_price, prev_output.amount);
 
-        auto prev_dns_output = to_dns_output(prev_output);
+        auto prev_dns_output = to_domain_output(prev_output);
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
@@ -952,7 +950,7 @@ BOOST_AUTO_TEST_CASE(validator_update)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1038,7 +1036,7 @@ BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1174,7 +1172,7 @@ BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1371,7 +1369,7 @@ BOOST_AUTO_TEST_CASE (validator_update_invalid_name_fail)
         claim_domain_output domain_output;
         domain_output.name = name;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1443,7 +1441,7 @@ BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(value);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1515,7 +1513,7 @@ BOOST_AUTO_TEST_CASE (validator_update_tx_pool_conflict_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = serialize_value(DNS_TEST_VALUE);
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::update;
 
         /* Build full transaction */
@@ -1714,7 +1712,7 @@ BOOST_AUTO_TEST_CASE(validator_auction)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
@@ -1800,7 +1798,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
@@ -1936,7 +1934,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
@@ -2133,7 +2131,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_invalid_name_fail)
         claim_domain_output domain_output;
         domain_output.name = name;
         domain_output.value = std::vector<char>();
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
@@ -2205,7 +2203,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
         claim_domain_output domain_output;
         domain_output.name = DNS_TEST_NAME;
         domain_output.value = std::vector<char>();
-        domain_output.owner = to_dns_output(prev_output).owner;
+        domain_output.owner = to_domain_output(prev_output).owner;
         domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
         /* Build full transaction */
