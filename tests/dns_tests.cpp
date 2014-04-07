@@ -227,20 +227,11 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_new)
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -281,9 +272,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         /* Build full transaction */
         tx = signed_transaction();
         auto bid_price = DNS_TEST_PRICE2;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
         tx.inputs.push_back(trx_input(prev_tx_ref));
@@ -296,14 +285,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -352,20 +334,11 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_expired)
         /* Build full transaction */
         tx = signed_transaction();
         auto bid_price = DNS_TEST_PRICE1;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -505,9 +478,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         /* Build full transaction */
         tx = signed_transaction();
         auto bid_price = DNS_TEST_PRICE1; /* Lower bid */
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
         tx.inputs.push_back(trx_input(prev_tx_ref));
@@ -520,14 +491,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -584,9 +548,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
         /* Build full transaction */
         tx = signed_transaction();
         auto bid_price = DNS_TEST_PRICE2;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet2.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         auto prev_tx_ref = get_name_tx_ref(DNS_TEST_NAME, state.db);
         tx.inputs.push_back(trx_input(prev_tx_ref));
@@ -599,14 +561,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
         tx.outputs.push_back(trx_output(claim_by_signature_output(prev_dns_output.owner), transfer_amount));
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -738,20 +693,11 @@ BOOST_AUTO_TEST_CASE(validator_bid_invalid_name_fail)
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         tx.outputs.push_back(trx_output(domain_output, bid_price));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -796,20 +742,11 @@ BOOST_AUTO_TEST_CASE (validator_bid_insufficient_funds_fail)
 
         /* Build full transaction */
         auto bid_price = DNS_TEST_PRICE1;
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
-        tx.inputs = state.wallet1.collect_inputs(bid_price, total_in, req_sigs);
+        std::unordered_set<address> req_sigs;
 
         tx.outputs.push_back(trx_output(domain_output, state.wallet1.get_balance(0))); /* Invalid amount */
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in - bid_price;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, bid_price, total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, bid_price, req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1020,22 +957,13 @@ BOOST_AUTO_TEST_CASE(validator_update)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -1115,22 +1043,13 @@ BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1190,22 +1109,13 @@ BOOST_AUTO_TEST_CASE(validator_update_not_owner_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet2.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1269,22 +1179,13 @@ BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1475,22 +1376,13 @@ BOOST_AUTO_TEST_CASE (validator_update_invalid_name_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1556,22 +1448,13 @@ BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1637,22 +1520,13 @@ BOOST_AUTO_TEST_CASE (validator_update_tx_pool_conflict_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, prev_output.amount));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -1845,22 +1719,13 @@ BOOST_AUTO_TEST_CASE(validator_auction)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -1940,22 +1805,13 @@ BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -2015,22 +1871,13 @@ BOOST_AUTO_TEST_CASE(validator_auction_not_owner_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet2.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr(state.wallet2);
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet2.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet2.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet2.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -2094,22 +1941,13 @@ BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -2300,22 +2138,13 @@ BOOST_AUTO_TEST_CASE (validator_auction_invalid_name_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -2381,22 +2210,13 @@ BOOST_AUTO_TEST_CASE (validator_auction_tx_pool_conflict_fail)
 
         /* Build full transaction */
         tx = signed_transaction();
-        auto total_in = asset();
-        auto req_sigs = std::unordered_set<address>();
+        std::unordered_set<address> req_sigs;
         req_sigs.insert(domain_output.owner);
-        tx.inputs = state.wallet1.collect_inputs(asset(), total_in, req_sigs);
 
         tx.inputs.push_back(trx_input(prev_tx_ref));
         tx.outputs.push_back(trx_output(domain_output, DNS_TEST_PRICE1));
 
-        auto change_addr = state.random_addr();
-        auto change_amt = total_in;
-        tx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
-
-        tx.sigs.clear();
-        state.wallet1.sign_transaction(tx, req_sigs, false);
-
-        tx = state.wallet1.add_fee_and_sign(tx, asset(), total_in, req_sigs);
+        tx = state.wallet1.collect_inputs_and_sign(tx, asset(), req_sigs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */

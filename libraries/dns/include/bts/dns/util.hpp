@@ -26,6 +26,7 @@
 
 namespace bts { namespace dns {
 
+// TODO: Rename to is_domain_output and to_domain_output
 bool is_dns_output(const trx_output &output);
 claim_domain_output to_dns_output(const trx_output &output);
 
@@ -57,6 +58,7 @@ bool is_valid_value(const fc::variant &value);
 bool is_valid_owner(const bts::blockchain::address &owner);
 bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type);
 
+// TODO: Split into validation and calculation functions
 bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount);
 
 } } // bts::dns

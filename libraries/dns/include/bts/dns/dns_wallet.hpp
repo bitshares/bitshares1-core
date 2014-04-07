@@ -22,16 +22,19 @@ class dns_wallet : public bts::wallet::wallet
         signed_transaction auction_domain(const std::string &name, const asset &ask_price,
                                           const signed_transactions &tx_pool, dns_db &db);
 
-        // TODO put this in the parent wallet class?
-        signed_transaction add_fee_and_sign(signed_transaction &trx, asset required_in, asset& total_in,
-                                            std::unordered_set<address> req_sigs);
+        signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs, const address &change_addr);
+
+        signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs);
 
     protected:
+        virtual bool scan_output(transaction_state &state, const trx_output &out, const output_reference &ref,
+                                 const output_index &idx);
+
+    private:
         signed_transaction update_or_auction_domain(bool update, claim_domain_output &domain_output, asset amount,
                                                     const signed_transactions &tx_pool, dns_db &db);
-
-        virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
-                                 const output_index& idx);
 };
 
 typedef std::shared_ptr<dns_wallet> dns_wallet_ptr;
