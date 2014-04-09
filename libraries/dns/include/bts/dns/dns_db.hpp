@@ -25,12 +25,12 @@ class dns_db : public bts::blockchain::chain_database
         dns_db();
         ~dns_db();
 
-        void             open( const fc::path& dir, bool create );
-        void             close();
+        virtual void     open( const fc::path& dir, bool create = true );
+        virtual void     close();
         dns_record       get_dns_record( const std::string& name );
         bool             has_dns_record( const std::string& name );
         void             store_dns_record( const std::string& name, const dns_record& record);
-        void             store( const trx_block& blk, const signed_transactions& deterministic_txs );
+        virtual void     store( const trx_block& blk, const signed_transactions& deterministic_txs );
 
     private:
          std::unique_ptr<detail::dns_db_impl> my;

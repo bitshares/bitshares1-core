@@ -73,20 +73,17 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
 
        // convert arbitrary json value to string..., this validates that it parses
        // properly.
-       fc::variant val = fc::json::from_string(json_value);
+       //fc::variant val = fc::json::from_string(json_value);
     }
     else if (cmd == "list_active_auctions")
     {
-        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
     }
     else if (cmd == "lookup_domain_record")
     {
-        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
-
     }
     else
     {
-      cli::process_command(cmd, args);
+        cli::process_command(cmd, args);
     }
 }
 

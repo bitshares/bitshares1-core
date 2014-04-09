@@ -34,6 +34,7 @@ namespace bts { namespace dns {
 
     void dns_db::close()
     {
+        chain_database::close();
         my->name2record.close();
     }
 
