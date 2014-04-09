@@ -20,7 +20,6 @@ class dns_wallet : public bts::wallet::wallet
         signed_transaction update_domain(const std::string &name, const fc::variant &value,
                                          const signed_transactions &tx_pool, dns_db &db);
 
-        // TODO: Add domain transfer unit tests
         signed_transaction transfer_domain(const std::string &name, const address &recipient,
                                            const signed_transactions &tx_pool, dns_db &db);
 
