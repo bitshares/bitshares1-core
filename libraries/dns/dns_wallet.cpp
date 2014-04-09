@@ -9,6 +9,7 @@ dns_wallet::dns_wallet()
 dns_wallet::~dns_wallet()
 {
 }
+                           
 
 signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asset &bid_price,
                                              const signed_transactions &tx_pool, dns_db &db)

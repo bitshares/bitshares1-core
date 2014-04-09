@@ -59,10 +59,17 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     }
     else if (cmd == "update_domain_record")
     {
-       std::string name;
-       std::string json_value;
-       ss >>  name;
-       std::getline(ss, json_value);
+       if (check_unlock())
+       {
+           FC_ASSERT(argv.size() == 3); // cmd name path
+           std::string name = argv[1];
+           asset bid = asset(uint64_t(atoi(argv[2].c_str())));
+           signed_transactions tx_pool;
+
+           auto tx = wallet->bid_on_domain(name, bid, tx_pool, *db);
+
+           client()->broadcast_transaction(tx);
+       }
 
        // convert arbitrary json value to string..., this validates that it parses
        // properly.
@@ -70,11 +77,12 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     }
     else if (cmd == "list_active_auctions")
     {
-
+        const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
     }
     else if (cmd == "lookup_domain_record")
     {
         const dns_db_ptr db = std::dynamic_pointer_cast<dns_db>(client()->get_chain());
+
     }
     else
     {

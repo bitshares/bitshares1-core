@@ -1,4 +1,4 @@
-#include <bts/net/chain_server.hpp>
+#include <bts/dns/dns_server.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
@@ -9,8 +9,8 @@ int main( int argc, char** argv )
    try {
        fc::configure_logging( fc::logging_config::default_config() );
 
-       bts::net::chain_server cserv;
-       bts::net::chain_server::config cfg;
+       bts::dns::chain_server cserv;
+       bts::dns::chain_server::config cfg;
        cfg.port = 4567;
        cserv.configure(cfg);
        cserv.get_chain().set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );

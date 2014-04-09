@@ -11,6 +11,7 @@ add_library( bts_dns
              dns_db.cpp
              dns_transaction_validator.cpp
              dns_wallet.cpp
+             dns_server.cpp
              outputs.cpp
              util.cpp
            )

@@ -32,6 +32,7 @@ class dns_wallet : public bts::wallet::wallet
                                  const output_index &idx);
 
     private:
+
         signed_transaction update_or_auction_domain(const claim_domain_output &domain_output, const asset &amount,
                                                     const output_reference &prev_tx_ref, const address &prev_owner,
                                                     dns_db &db);
