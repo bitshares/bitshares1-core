@@ -25,9 +25,9 @@ namespace fc {
 
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
-    namespace detail  
-    { 
-      
+    namespace detail
+    {
+
       // TODO: .01 BTC update private members to use _member naming convention
       class chain_database_impl
       {
@@ -40,7 +40,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint160,trx_num>                 trx_id2num;
             bts::db::level_map<trx_num,meta_trx>                meta_trxs;
             bts::db::level_map<uint32_t,signed_block_header>    blocks;
-            bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
+            bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
@@ -70,21 +70,21 @@ namespace bts { namespace blockchain {
                FC_ASSERT( mtrx.outputs.size() > ref.output_idx.value );
                return mtrx.outputs[ref.output_idx.value];
             } FC_RETHROW_EXCEPTIONS( warn, "", ("ref",ref) ) }
-            
+
             /**
-             *   Stores a transaction and updates the spent status of all 
+             *   Stores a transaction and updates the spent status of all
              *   outputs doing one last check to make sure they are unspent.
              */
             void store( const signed_transaction& t, const trx_num& tn )
             {
                //ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
 
-               trx_id2num.store( t.id(), tn ); 
+               trx_id2num.store( t.id(), tn );
                meta_trxs.store( tn, meta_trx(t) );
 
                for( uint16_t i = 0; i < t.inputs.size(); ++i )
                {
-                  mark_spent( t.inputs[i].output_ref, tn, i ); 
+                  mark_spent( t.inputs[i].output_ref, tn, i );
                }
             }
 
@@ -132,7 +132,7 @@ namespace bts { namespace blockchain {
          {
               if( !create )
               {
-                 FC_THROW_EXCEPTION( file_not_found_exception, 
+                 FC_THROW_EXCEPTION( file_not_found_exception,
                      "Unable to open blockchain database ${dir}", ("dir",dir) );
               }
               fc::create_directories( dir );
@@ -143,7 +143,7 @@ namespace bts { namespace blockchain {
          my->blocks.open(     dir / "blocks",     create );
          my->block_trxs.open( dir / "block_trxs", create );
 
-         
+
          // read the last block from the DB
          my->blocks.last( my->head_block.block_num, my->head_block );
          if( my->head_block.block_num != uint32_t(-1) )
@@ -185,7 +185,7 @@ namespace bts { namespace blockchain {
 
     uint32_t    chain_database::fetch_block_num( const block_id_type& block_id )
     { try {
-       return my->blk_id2num.fetch( block_id ); 
+       return my->blk_id2num.fetch( block_id );
     } FC_RETHROW_EXCEPTIONS( warn, "block id: ${block_id}", ("block_id",block_id) ) }
 
     signed_block_header chain_database::fetch_block( uint32_t block_num )
@@ -218,7 +218,7 @@ namespace bts { namespace blockchain {
           return fetch_trx( trx_num );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
 
-    trx_output chain_database::fetch_output(const output_reference& ref) 
+    trx_output chain_database::fetch_output(const output_reference& ref)
     {
         auto trx = fetch_transaction(ref.trx_hash);
         return trx.outputs[ref.output_idx];
@@ -240,7 +240,7 @@ namespace bts { namespace blockchain {
             try {
              trx_num tn   = fetch_trx_num( inputs[i].output_ref.trx_hash );
              meta_trx trx = fetch_trx( tn );
-             
+
              if( inputs[i].output_ref.output_idx.value >= trx.meta_outputs.size() )
              {
                 FC_THROW_EXCEPTION( exception, "Input ${i} references invalid output from transaction ${trx}",
@@ -305,12 +305,12 @@ namespace bts { namespace blockchain {
         wlog( "fee rate: ${fee}", ("fee",b.next_fee) );
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
-                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
+                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size())
                    );
 
         FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
                    ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
-        
+
         FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(10) );
 
 
@@ -318,7 +318,7 @@ namespace bts { namespace blockchain {
 
         // TODO: factor in determinstic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
-        
+
         auto block_state = my->_trx_validator->create_block_state();
 
         transaction_summary summary;
@@ -327,9 +327,9 @@ namespace bts { namespace blockchain {
         uint64_t fee_rate = get_fee_rate().get_rounded_amount();
         for( int32_t i = 0; i <= last; ++i )
         {
-            trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state ); 
+            trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
             FC_ASSERT( b.trxs[i].version == 0 );
-            FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
+            FC_ASSERT( uint64_t(trx_summary.fees) >= b.trxs[i].size() * fee_rate );
             summary += trx_summary;
         }
 
@@ -356,14 +356,14 @@ namespace bts { namespace blockchain {
 
     void chain_database::store( const trx_block& blk, const signed_transactions& deterministic_trxs )
     {
-        my->store( blk, deterministic_trxs ); 
+        my->store( blk, deterministic_trxs );
     }
 
     /**
-     *  Removes the top block from the stack and marks all spent outputs as 
+     *  Removes the top block from the stack and marks all spent outputs as
      *  unspent.
      */
-    trx_block chain_database::pop_block() 
+    trx_block chain_database::pop_block()
     {
        FC_ASSERT( !"TODO: implement pop_block" );
     }
