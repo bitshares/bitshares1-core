@@ -1,11 +1,15 @@
-#include <bts/net/stcp_socket.hpp>
+#include <assert.h>
+
+#include <algorithm>
+
 #include <fc/crypto/hex.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/city.hpp>
-#include <assert.h>
 #include <fc/log/logger.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/exception/exception.hpp>
+
+#include <bts/net/stcp_socket.hpp>
 
 namespace bts { namespace net {
 
