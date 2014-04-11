@@ -41,14 +41,14 @@ namespace bts { namespace net {
     class peer_database_impl;
 
     class peer_database_iterator_impl;
-    class peer_database_iterator : public boost::iterator_facade<peer_database_iterator, 
-                                                                 const potential_peer_record, 
-                                                                 boost::forward_traversal_tag>
+    class peer_database_iterator : public boost::iterator_facade<peer_database_iterator, const potential_peer_record, boost::forward_traversal_tag>
     {
     public:
       peer_database_iterator();
       ~peer_database_iterator();
       explicit peer_database_iterator(peer_database_iterator_impl* impl);
+      peer_database_iterator( const peer_database_iterator& c );
+
     private:
       friend class boost::iterator_core_access;
       void increment();

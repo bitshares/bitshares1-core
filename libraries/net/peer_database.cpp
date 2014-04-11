@@ -69,6 +69,8 @@ namespace bts { namespace net {
         _iterator(iterator)
       {}
     };
+    peer_database_iterator::peer_database_iterator( const peer_database_iterator& c )
+    :boost::iterator_facade<peer_database_iterator, const potential_peer_record, boost::forward_traversal_tag>(c){}
 
     void peer_database_impl::open(const fc::path& databaseFilename)
     {

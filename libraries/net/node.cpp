@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <deque>
 #include <unordered_set>
+#include <list>
 //#include <deque>
 #include <boost/tuple/tuple.hpp>
 
@@ -76,8 +77,8 @@ namespace bts { namespace net {
       /// @}
     public:
       peer_connection(node_impl& n) : 
-        _message_connection(this),
         _node(n),
+        _message_connection(this),
         direction(unknown),
         state(disconnected),
         number_of_unfetched_item_ids(0),
@@ -409,7 +410,7 @@ namespace bts { namespace net {
           bool initiated_connection_this_pass = false;
           _potential_peer_database_updated = false;
 
-          for (auto iter = _potential_peer_db.begin();
+          for ( peer_database::iterator iter = _potential_peer_db.begin();
                iter != _potential_peer_db.end() && is_wanting_new_connections();
                ++iter)
           {
@@ -975,7 +976,7 @@ namespace bts { namespace net {
                                  _total_number_of_unfetched_items);
           _total_number_of_unfetched_items = new_number_of_unfetched_items;
         }
-        else if (new_number_of_unfetched_items = 0)
+        else if (new_number_of_unfetched_items == 0)
           _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type, 0);
         
         if (blockchain_item_ids_inventory_message_received.total_remaining_item_count != 0)
