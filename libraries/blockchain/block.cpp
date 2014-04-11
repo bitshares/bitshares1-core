@@ -1,10 +1,13 @@
+#include <algorithm>
+
+#include <fc/io/raw.hpp>
+#include <fc/reflect/variant.hpp>
+
 #include <bts/blockchain/block.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/small_hash.hpp>
 
 #include <bts/blockchain/difficulty.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/reflect/variant.hpp>
 namespace bts { namespace blockchain  {
 
 
