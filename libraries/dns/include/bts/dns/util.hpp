@@ -14,21 +14,26 @@
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/outputs.hpp>
 
+#define DNS_DEBUG
+
 #define DNS_MAX_NAME_LEN            128
 #define DNS_MAX_VALUE_LEN           1024
 
-// TODO: Switch these to real values when not in test mode
-#define DNS_AUCTION_DURATION_BLOCKS 3 /* Blocks from last bid */
-#define DNS_EXPIRE_DURATION_BLOCKS  5 /* Blocks from max(end of auction, last update) */
+#ifndef DNS_DEBUG
+#define DNS_AUCTION_DURATION_BLOCKS 864    /* Blocks from last bid */
+#define DNS_EXPIRE_DURATION_BLOCKS  105120 /* Blocks from max(end of auction, last update) */
+#else
+#define DNS_AUCTION_DURATION_BLOCKS 3      /* Blocks from last bid */
+#define DNS_EXPIRE_DURATION_BLOCKS  5      /* Blocks from max(end of auction, last update) */
+#endif
 
 #define DNS_MIN_BID_FROM(bid)       ((11 * (bid)) / 10)
 #define DNS_BID_FEE_RATIO(bid)      ((bid) / 2)
 
 namespace bts { namespace dns {
 
-// TODO: Rename to is_domain_output and to_domain_output
-bool is_dns_output(const trx_output &output);
-claim_domain_output to_dns_output(const trx_output &output);
+bool is_domain_output(const trx_output &output);
+claim_domain_output to_domain_output(const trx_output &output);
 
 output_reference get_name_tx_ref(const std::string &name, dns_db &db);
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db);
@@ -58,7 +63,9 @@ bool is_valid_value(const fc::variant &value);
 bool is_valid_owner(const bts::blockchain::address &owner);
 bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type);
 
-// TODO: Split into validation and calculation functions
-bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount);
+bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price);
+bool is_valid_ask_price(const asset &ask_price);
+
+asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_price);
 
 } } // bts::dns

@@ -13,7 +13,6 @@ dns_transaction_validator::~dns_transaction_validator()
 {
 }
 
-
 block_evaluation_state_ptr dns_transaction_validator::create_block_state() const
 {
     return std::make_shared<dns_block_evaluation_state>();
@@ -30,9 +29,9 @@ transaction_summary dns_transaction_validator::evaluate(const signed_transaction
 void dns_transaction_validator::validate_input(const meta_trx_input &in, transaction_evaluation_state &state,
                                                const block_evaluation_state_ptr &block_state)
 {
-    if (is_dns_output(in.output))
+    if (is_domain_output(in.output))
     {
-        claim_domain_output dns_input = to_dns_output(in.output);
+        claim_domain_output dns_input = to_domain_output(in.output);
         dns_tx_evaluation_state &dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
         const dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
         FC_ASSERT(dns_block_state);
@@ -48,9 +47,9 @@ void dns_transaction_validator::validate_input(const meta_trx_input &in, transac
 void dns_transaction_validator::validate_output(const trx_output &out, transaction_evaluation_state &state,
                                                 const block_evaluation_state_ptr &block_state)
 {
-    if (is_dns_output(out))
+    if (is_domain_output(out))
     {
-        claim_domain_output dns_output = to_dns_output(out);
+        claim_domain_output dns_output = to_domain_output(out);
         dns_tx_evaluation_state &dns_state = dynamic_cast<dns_tx_evaluation_state &>(state);
         const dns_block_evaluation_state_ptr dns_block_state = std::dynamic_pointer_cast<dns_block_evaluation_state>(block_state);
         FC_ASSERT(dns_block_state);
@@ -122,8 +121,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
         FC_ASSERT(available, "Name not available");
         FC_ASSERT(state.domain_input.last_tx_type == claim_domain_output::bid_or_auction, "Input not for auction");
 
-        asset amount_back;
-        FC_ASSERT(is_valid_bid_price(state.domain_input_amount, amount, amount_back), "Invalid bid amount");
+        FC_ASSERT(is_valid_bid_price(amount, state.domain_input_amount), "Invalid bid amount");
+        auto amount_back = get_bid_transfer_amount(amount, state.domain_input_amount);
         state.add_required_fees(amount - amount_back);
 
         /* Check for output to past owner */
@@ -151,15 +150,18 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     ilog("Auction is over.");
     FC_ASSERT(!domain_is_expired(prev_tx_ref, *_dns_db), "Domain is expired");
 
-    /* If updating record */
+    /* Keep output amount constant when updating domain record */
     if (output.last_tx_type == claim_domain_output::update)
     {
-        /* Keep output amount constant when updating domain record */
         FC_ASSERT(amount == state.domain_input_amount, "Output amount should not change when updating record");
+    }
+    else
+    {
+        FC_ASSERT(is_valid_ask_price(amount), "Invalid ask price");
     }
 
     /* If you're the owner, do whatever you like! */
-    auto prev_domain_output = to_dns_output(get_tx_ref_output(prev_tx_ref, *_dns_db));
+    auto prev_domain_output = to_domain_output(get_tx_ref_output(prev_tx_ref, *_dns_db));
     FC_ASSERT(state.has_signature(prev_domain_output.owner), "Domain tx missing required signature: ${tx}", ("tx", state.trx));
     ilog("Tx signed by owner");
 }

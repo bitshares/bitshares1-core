@@ -2,12 +2,12 @@
 
 namespace bts { namespace dns {
 
-bool is_dns_output(const trx_output &output)
+bool is_domain_output(const trx_output &output)
 {
     return output.claim_func == claim_domain;
 }
 
-claim_domain_output to_dns_output(const trx_output &output)
+claim_domain_output to_domain_output(const trx_output &output)
 {
     auto dns_output = output.as<claim_domain_output>();
 
@@ -42,9 +42,9 @@ uint32_t get_tx_age(const output_reference &tx_ref, dns_db &db)
 bool auction_is_closed(const output_reference &tx_ref, dns_db &db)
 {
     auto output = get_tx_ref_output(tx_ref, db);
-    FC_ASSERT(is_dns_output(output));
+    FC_ASSERT(is_domain_output(output));
 
-    auto dns_output = to_dns_output(output);
+    auto dns_output = to_domain_output(output);
     auto age = get_tx_age(tx_ref, db);
 
     if (dns_output.last_tx_type == claim_domain_output::bid_or_auction
@@ -57,12 +57,12 @@ bool auction_is_closed(const output_reference &tx_ref, dns_db &db)
 bool domain_is_expired(const output_reference &tx_ref, dns_db &db)
 {
     auto output = get_tx_ref_output(tx_ref, db);
-    FC_ASSERT(is_dns_output(output));
+    FC_ASSERT(is_domain_output(output));
 
     if (!auction_is_closed(tx_ref, db))
         return false;
 
-    auto dns_output = to_dns_output(output);
+    auto dns_output = to_domain_output(output);
     auto age = get_tx_age(tx_ref, db);
 
     if (dns_output.last_tx_type == claim_domain_output::bid_or_auction)
@@ -81,10 +81,10 @@ std::vector<std::string> get_names_from_txs(const signed_transactions &txs)
     {
         for (auto &output : tx.outputs)
         {
-            if (!is_dns_output(output))
+            if (!is_domain_output(output))
                 continue;
 
-            names.push_back(to_dns_output(output).name);
+            names.push_back(to_domain_output(output).name);
         }
     }
 
@@ -98,10 +98,10 @@ std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::outp
 
     for (auto pair : unspent_outputs)
     {
-        if (!is_dns_output(pair.second))
+        if (!is_domain_output(pair.second))
             continue;
 
-        names.push_back(to_dns_output(pair.second).name);
+        names.push_back(to_domain_output(pair.second).name);
     }
 
     return names;
@@ -200,14 +200,24 @@ bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::las
     return (last_tx_type == claim_domain_output::bid_or_auction) || (last_tx_type == claim_domain_output::update);
 }
 
-bool is_valid_bid_price(const asset &prev_bid_price, const asset &bid_price, asset &transfer_amount)
+bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price)
 {
     if (bid_price < DNS_MIN_BID_FROM(prev_bid_price.get_rounded_amount()))
         return false;
 
-    transfer_amount = bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
-
     return true;
+}
+
+bool is_valid_ask_price(const asset &ask_price)
+{
+    return true;
+}
+
+asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_price)
+{
+    FC_ASSERT(is_valid_bid_price(bid_price, prev_bid_price), "Invalid bid price");
+
+    return bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
 }
 
 } } // bts::dns
