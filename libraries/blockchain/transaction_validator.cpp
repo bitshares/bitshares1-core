@@ -55,6 +55,19 @@ namespace bts { namespace blockchain {
        if( itr == total.end() ) return 0;
        return itr->second.required_fees;
    }
+   void transaction_evaluation_state::add_name_input( const claim_name_output& o )
+   {
+       FC_ASSERT( name_inputs.find( o.name ) == name_inputs.end() );
+       name_inputs[o.name] = o;
+   }
+   void transaction_evaluation_state::add_input_delegate_votes( int16_t did, const asset& votes )
+   {
+      auto itr = input_votes.find(did);
+      if( itr == input_votes.end() )
+         input_votes[did] = votes.get_rounded_amount();
+      else
+         itr->second += votes.get_rounded_amount();
+   }
 
    void transaction_evaluation_state::add_input_asset( asset a )
    {
@@ -112,6 +125,8 @@ namespace bts { namespace blockchain {
        transaction_summary sum;
 
        state.inputs = _db->fetch_inputs( state.trx.inputs );
+       auto trx_delegate = _db->lookup_delegate( state.trx.vote );
+       FC_ASSERT( !!trx_delegate );
 
        /** make sure inputs are unique */
        std::unordered_set<output_reference> unique_inputs;
@@ -171,6 +186,9 @@ namespace bts { namespace blockchain {
           case claim_by_signature:
              validate_signature_input( in, state, block_state );            
              break;
+          case claim_name:
+             validate_name_input( in, state, block_state );            
+             break;
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
        }
@@ -187,6 +205,9 @@ namespace bts { namespace blockchain {
           case claim_by_signature:
              validate_signature_output( out, state, block_state );            
              break;
+          case claim_name:
+             validate_name_output( out, state, block_state );            
+             break;
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",out.claim_func) );
        }
@@ -198,16 +219,12 @@ namespace bts { namespace blockchain {
        uint32_t headnum = _db->head_block_num();
        uint32_t votes =  amnt * (headnum-source_block_num+1);
 
-       ilog( "votes: ${votes}", ("votes",votes) );
-       ilog( "db.stake: ${stake}  vs  trx.stake: ${trx.stake}", ("stake",_db->get_stake())("trx.stake",state.trx.stake) );
        if( _db->get_stake() == state.trx.stake )
        {
-          ilog( "valid++" );
           state.valid_votes += votes;
        }
        else
        {
-          ilog( "invalid++" );
           state.invalid_votes += votes;
        }
        state.spent += amnt;
@@ -222,7 +239,10 @@ namespace bts { namespace blockchain {
        state.add_input_asset( in.output.amount );
 
        if( in.output.amount.unit == 0 )
+       {
           accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          state.add_input_delegate_votes( in.delegate_id, in.output.amount );
+       }
    }
 
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
@@ -234,7 +254,27 @@ namespace bts { namespace blockchain {
        state.add_input_asset( in.output.amount );
 
        if( in.output.amount.unit == 0 )
+       {
           accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          state.add_input_delegate_votes( in.delegate_id, in.output.amount );
+       }
+   }
+
+   void transaction_validator::validate_name_input( const meta_trx_input& in, 
+                                                         transaction_evaluation_state& state,
+                                                         const block_evaluation_state_ptr& block_state )
+   {
+       auto claim = in.output.as<claim_name_output>(); 
+       FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner)("sigs",state.sigs) );
+       state.add_name_input( claim );
+       state.add_input_asset( in.output.amount );
+       state.add_input_delegate_votes( in.delegate_id, in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+       {
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          state.add_input_delegate_votes( in.delegate_id, in.output.amount );
+       }
    }
 
 
@@ -251,6 +291,22 @@ namespace bts { namespace blockchain {
    {
        state.add_output_asset( out.amount );
    }
+
+   void transaction_validator::validate_name_output( const trx_output& out, 
+                                                     transaction_evaluation_state& state,
+                                                     const block_evaluation_state_ptr& block_state )
+   {
+       auto claim = out.as<claim_name_output>(); 
+       block_state->add_name_output( claim );
+       if( !state.has_name_input( claim ) )
+       {
+          auto name_rec = _db->lookup_name( claim.name );
+          FC_ASSERT( !name_rec );
+       }
+       FC_ASSERT( out.amount.unit == 0 );
+       state.add_output_asset( out.amount );
+   }
+
 
 
 } } // namespace bts::blockchain

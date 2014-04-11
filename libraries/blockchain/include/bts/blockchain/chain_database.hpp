@@ -13,6 +13,19 @@ namespace bts { namespace blockchain {
 
     namespace detail  { class chain_database_impl; }
 
+    struct name_record
+    {
+       name_record()
+       :delegate_id(0),votes_for(0),votes_against(0){}
+
+       uint16_t     delegate_id; 
+       std::string  name;
+       std::string  data;
+       address      owner;
+       uint64_t     votes_for;
+       uint64_t     votes_against;
+    };
+
     /**
      *  @class chain_database 
      *  @ingroup blockchain
@@ -57,6 +70,9 @@ namespace bts { namespace blockchain {
           virtual signed_transactions generate_determinsitic_transactions();
 
           void evaluate_transaction( const signed_transaction& trx );
+
+          fc::optional<name_record> lookup_name( const std::string& name );
+          fc::optional<name_record> lookup_delegate( uint16_t del );
 
 
           //@{
@@ -130,4 +146,5 @@ namespace bts { namespace blockchain {
 }  } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::trx_num,  (block_num)(trx_idx) );
+FC_REFLECT( bts::blockchain::name_record, (delegate_id)(name)(data)(owner)(votes_for)(votes_against) )
 

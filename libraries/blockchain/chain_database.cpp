@@ -23,6 +23,7 @@ namespace fc {
 } // namespace fc
 
 
+
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
     namespace detail  
@@ -41,6 +42,9 @@ namespace bts { namespace blockchain {
             bts::db::level_map<trx_num,meta_trx>                meta_trxs;
             bts::db::level_map<uint32_t,signed_block_header>    blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
+
+            bts::db::level_map< uint16_t, name_record >         _delegate_records;
+            bts::db::level_map< std::string, name_record >      _name_records;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
@@ -124,6 +128,21 @@ namespace bts { namespace blockchain {
      chain_database::~chain_database()
      {
      }
+     fc::optional<name_record> chain_database::lookup_name( const std::string& name )
+     {
+        auto itr = my->_name_records.find( name );
+        if( itr.valid() )
+           return itr.value();
+        return fc::optional<name_record>();
+     }
+
+     fc::optional<name_record> chain_database::lookup_delegate( uint16_t del )
+     {
+        auto itr = my->_delegate_records.find( del );
+        if( itr.valid() )
+           return itr.value();
+        return fc::optional<name_record>();
+     }
 
      void chain_database::open( const fc::path& dir, bool create )
      {
@@ -142,6 +161,8 @@ namespace bts { namespace blockchain {
          my->meta_trxs.open(  dir / "meta_trxs",  create );
          my->blocks.open(     dir / "blocks",     create );
          my->block_trxs.open( dir / "block_trxs", create );
+         my->_delegate_records.open( dir / "delegate_records", create );
+         my->_name_records.open( dir / "name_records", create );
 
          
          // read the last block from the DB
@@ -254,6 +275,7 @@ namespace bts { namespace blockchain {
 
              meta_trx_input metin;
              metin.source       = tn;
+             metin.delegate_id  = trx.vote;
              metin.output_num   = inputs[i].output_ref.output_idx;
              metin.output       = trx.outputs[metin.output_num];
              metin.meta_output  = trx.meta_outputs[metin.output_num];
