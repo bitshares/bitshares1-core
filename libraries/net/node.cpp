@@ -953,15 +953,21 @@ namespace bts { namespace net {
                 !peer->ids_of_items_to_get.empty() &&
                 peer->ids_of_items_to_get.front() == blockchain_item_ids_inventory_message_received.item_hashes_available.front())
             {
+              ilog("The item ${newitem} is the first item for peer ${peer}",
+                ("newitem", blockchain_item_ids_inventory_message_received.item_hashes_available.front())
+                ("peer", peer->get_remote_endpoint()));
               is_first_item_for_other_peer = true; 
               break;
             }
           ilog("is_first_item_for_other_peer: ${is_first}.  item_hashes_received.size() = ${size}",("is_first", is_first_item_for_other_peer)("size", item_hashes_received.size()));
           if (!is_first_item_for_other_peer)
+          {
             while (!item_hashes_received.empty() && 
                    _delegate->has_item(item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front())))
               item_hashes_received.pop_front();
+            ilog("after removing all items we have already seen, item_hashes_received.size() = ${size}", ("size", item_hashes_received.size()));
+          }
         }
 
         // append the remaining items to the peer's list
@@ -1164,6 +1170,7 @@ namespace bts { namespace net {
               --_total_number_of_unfetched_items;
               block_processed_this_iteration = true;
               ilog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", ("count", _total_number_of_unfetched_items));
+              std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
               for (const peer_connection_ptr& peer : _active_connections)
               {
                 if (!peer->ids_of_items_to_get.empty() &&
@@ -1172,19 +1179,22 @@ namespace bts { namespace net {
                   peer->ids_of_items_to_get.pop_front();
                   ilog("Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_to_get.size()));
 
-                  // if we just received the last item in our list from this peer, send another request
-                  // to find out if we are in sync
+                  // if we just received the last item in our list from this peer, we will want to 
+                  // send another request to find out if we are in sync, but we can't do this yet
+                  // (we don't want to allow a fiber swap in the middle of popping items off the list)
                   if (peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
-                    fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
+                    peers_with_newly_empty_item_lists.insert(peer);
                 }
                 else
                 {
                   if (peer->ids_of_items_to_get.empty())
-                    ilog("Cannot pop first element off peer's list, its list is empty");
+                    ilog("Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint()));
                   else
-                    ilog("Cannot pop first element off peer's list, its first is ${hash}", ("hash", peer->ids_of_items_to_get.front()));
+                    ilog("Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint())("hash", peer->ids_of_items_to_get.front()));
                 }
               }
+              for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
+                fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
             }
             else
             {
