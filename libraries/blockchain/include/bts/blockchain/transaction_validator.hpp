@@ -44,7 +44,10 @@ namespace bts { namespace blockchain {
             FC_ASSERT( _name_outputs.find( o.name ) == _name_outputs.end() );
             _name_outputs[o.name] = o;
          }
+         void  add_input_delegate_votes( int16_t did, const asset& votes );
+
          std::unordered_map<std::string,claim_name_output> _name_outputs;
+         std::unordered_map<int16_t,uint64_t>              _input_votes;
    };
 
    typedef std::shared_ptr<block_evaluation_state> block_evaluation_state_ptr;
@@ -75,7 +78,6 @@ namespace bts { namespace blockchain {
           void     add_input_asset( asset a );
           void     add_output_asset( asset a );
           void     add_name_input( const claim_name_output& o );
-          void     add_input_delegate_votes( int16_t did, const asset& votes );
           bool     has_name_input( const claim_name_output& o )
           {
              return name_inputs.find(o.name) == name_inputs.end();
@@ -85,8 +87,8 @@ namespace bts { namespace blockchain {
           void     mark_output_as_used( uint8_t out );
 
           std::unordered_map<std::string,claim_name_output> name_inputs;
-          std::vector<meta_trx_input>               inputs;
-          signed_transaction                        trx;
+          std::vector<meta_trx_input>                       inputs;
+          signed_transaction                                trx;
 
           bool has_signature( const address& a )const;
           bool has_signature( const pts_address& a )const;
@@ -101,7 +103,6 @@ namespace bts { namespace blockchain {
           uint64_t                                  invalid_votes;
           uint64_t                                  spent;
 
-          std::unordered_map<int16_t,uint64_t>      input_votes;
 
           void balance_assets()const;
       private:
