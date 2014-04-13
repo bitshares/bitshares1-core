@@ -160,7 +160,7 @@ namespace bts { namespace net {
       fc::promise<void>::ptr _retrigger_fetch_item_loop_promise;
       bool                   _items_to_fetch_updated;
       fc::future<void>       _fetch_item_loop_done;
-      std::deque<item_id>    _items_to_fetch; /// list of items we know another peer has and we want
+      std::list<item_id>     _items_to_fetch; /// list of items we know another peer has and we want
       // @}
 
       /// used by the task that advertises inventory during normal operation
@@ -540,9 +540,10 @@ namespace bts { namespace net {
             {
               ilog("requesting item ${hash} from peer ${endpoint}", ("hash", iter->item_hash)("endpoint", peer->get_remote_endpoint()));
               peer->items_requested_from_peer.insert(peer_connection::item_to_time_map_type::value_type(*iter, fc::time_point::now()));
-              peer->send_message(fetch_item_message(*iter));
+              item_id item_id_to_fetch = *iter;
               iter = _items_to_fetch.erase(iter);
               item_fetched = true;
+              peer->send_message(fetch_item_message(item_id_to_fetch));
               break;
             }
           }
@@ -752,16 +753,16 @@ namespace bts { namespace net {
         if (!is_accepting_new_connections())
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
-          originating_peer->send_message(message(connection_rejected));
           originating_peer->state = peer_connection::connection_rejected_sent;
-          ilog("Received a hello_message from peer but I'm not accepting any more connections, rejection");
+          originating_peer->send_message(message(connection_rejected));
+          ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", ("peer", originating_peer->get_remote_endpoint()));
         }
         else if (already_connected_to_this_peer)
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
-          originating_peer->send_message(message(connection_rejected));
           originating_peer->state = peer_connection::connection_rejected_sent;
-          ilog("Received a hello_message from a peer I'm already connected to,  rejection");
+          originating_peer->send_message(message(connection_rejected));
+          ilog("Received a hello_message from peer ${peer} that I'm already connected to,  rejection", ("peer", originating_peer->get_remote_endpoint()));
         }
         else
         {
@@ -770,9 +771,9 @@ namespace bts { namespace net {
           _potential_peer_db.update_entry(updated_peer_record);
 
           hello_reply_message hello_reply(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint(), _node_id);
-          originating_peer->send_message(message(hello_reply));
           originating_peer->state = peer_connection::hello_reply_sent;
-          ilog("Received a hello_message from peer, sending reply to accept connection");
+          originating_peer->send_message(message(hello_reply));
+          ilog("Received a hello_message from peer ${peer}, sending reply to accept connection", ("peer", originating_peer->get_remote_endpoint()));
         }
       }
       else
@@ -793,12 +794,12 @@ namespace bts { namespace net {
       {
         if (already_connected_to_this_peer)
         {
-          ilog("Established a connection with peer, but I'm already connected to it.  Closing the connection");
+          ilog("Established a connection with peer ${peer}, but I'm already connected to it.  Closing the connection", ("peer", originating_peer->get_remote_endpoint()));
           disconnect_from_peer(originating_peer);
         }
         else
         {
-          ilog("Received a reply to my \"hello\", connection is accepted");
+          ilog("Received a reply to my \"hello\" from ${peer}, connection is accepted", ("peer", originating_peer->get_remote_endpoint()));
           ilog("Remote server sees my connection as ${endpoint}", ("endpoint", hello_reply_message_received.remote_endpoint));
           originating_peer->state = peer_connection::connected;
           originating_peer->send_message(address_request_message());
@@ -822,7 +823,6 @@ namespace bts { namespace net {
         _potential_peer_db.update_entry(updated_peer_record);
 
         originating_peer->state = peer_connection::connection_rejected;
-        // 
         originating_peer->send_message(address_request_message());
       }
       else
@@ -953,15 +953,21 @@ namespace bts { namespace net {
                 !peer->ids_of_items_to_get.empty() &&
                 peer->ids_of_items_to_get.front() == blockchain_item_ids_inventory_message_received.item_hashes_available.front())
             {
+              ilog("The item ${newitem} is the first item for peer ${peer}",
+                ("newitem", blockchain_item_ids_inventory_message_received.item_hashes_available.front())
+                ("peer", peer->get_remote_endpoint()));
               is_first_item_for_other_peer = true; 
               break;
             }
           ilog("is_first_item_for_other_peer: ${is_first}.  item_hashes_received.size() = ${size}",("is_first", is_first_item_for_other_peer)("size", item_hashes_received.size()));
           if (!is_first_item_for_other_peer)
+          {
             while (!item_hashes_received.empty() && 
                    _delegate->has_item(item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front())))
               item_hashes_received.pop_front();
+            ilog("after removing all items we have already seen, item_hashes_received.size() = ${size}", ("size", item_hashes_received.size()));
+          }
         }
 
         // append the remaining items to the peer's list
@@ -1164,6 +1170,7 @@ namespace bts { namespace net {
               --_total_number_of_unfetched_items;
               block_processed_this_iteration = true;
               ilog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", ("count", _total_number_of_unfetched_items));
+              std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
               for (const peer_connection_ptr& peer : _active_connections)
               {
                 if (!peer->ids_of_items_to_get.empty() &&
@@ -1172,19 +1179,22 @@ namespace bts { namespace net {
                   peer->ids_of_items_to_get.pop_front();
                   ilog("Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_to_get.size()));
 
-                  // if we just received the last item in our list from this peer, send another request
-                  // to find out if we are in sync
+                  // if we just received the last item in our list from this peer, we will want to 
+                  // send another request to find out if we are in sync, but we can't do this yet
+                  // (we don't want to allow a fiber swap in the middle of popping items off the list)
                   if (peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
-                    fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
+                    peers_with_newly_empty_item_lists.insert(peer);
                 }
                 else
                 {
                   if (peer->ids_of_items_to_get.empty())
-                    ilog("Cannot pop first element off peer's list, its list is empty");
+                    ilog("Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint()));
                   else
-                    ilog("Cannot pop first element off peer's list, its first is ${hash}", ("hash", peer->ids_of_items_to_get.front()));
+                    ilog("Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint())("hash", peer->ids_of_items_to_get.front()));
                 }
               }
+              for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
+                fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
             }
             else
             {
@@ -1396,9 +1406,9 @@ namespace bts { namespace net {
         throw except;
       }
       hello_message hello(_user_agent_string, core_protocol_version, _node_configuration.listen_endpoint, _node_id);
-      new_peer->send_message(message(hello));
       new_peer->state = peer_connection::hello_sent;
-      ilog("Sent \"hello\" to remote peer");
+      new_peer->send_message(message(hello));
+      ilog("Sent \"hello\" to remote peer ${peer}", ("peer", new_peer->get_remote_endpoint()));
     }
 
     // methods implementing node's public interface
