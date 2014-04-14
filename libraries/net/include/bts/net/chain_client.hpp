@@ -30,8 +30,6 @@ namespace bts { namespace net {
          bool is_connected()const;
 
 
-         signed_transactions get_pending_transactions()const;
-
       private:
          std::unique_ptr<detail::chain_client_impl> my;
    };

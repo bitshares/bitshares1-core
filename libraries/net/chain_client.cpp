@@ -23,27 +23,14 @@ namespace bts { namespace net {
             if( m.msg_type == chain_message_type::block_msg )
             {
                auto blkmsg = m.as<block_message>();
-                ilog( "received block num ${n}", ("n",blkmsg.block_data.block_num) );
-               _chain->push_block( blkmsg.block_data );
-               for( auto trx : blkmsg.block_data.trxs )
-                  _pending_trxs.erase( trx.id() );
-
+               ilog( "received block num ${n}", ("n",blkmsg.block_data.block_num) );
                _delegate->on_new_block( blkmsg.block_data );
             }
             else if( m.msg_type == trx_message::type )
             {
                auto trx_msg = m.as<trx_message>();
-                ilog( "received message ${m}", ("m",trx_msg) );
-               _chain->evaluate_transaction( trx_msg.signed_trx ); // throws exception if invalid trx.
-               if( _pending_trxs.insert( std::make_pair(trx_msg.signed_trx.id(),trx_msg.signed_trx) ).second )
-               {
-                  ilog( "new transaction" );
-                  _delegate->on_new_transaction( trx_msg.signed_trx );
-               }
-               else
-               {
-                  wlog( "duplicate transaction, ignoring" );
-               }
+               ilog( "received message ${m}", ("m",trx_msg) );
+               _delegate->on_new_transaction( trx_msg.signed_trx );
             }
             else if( m.msg_type == trx_err_message::type )
             {
@@ -112,7 +99,6 @@ namespace bts { namespace net {
 
         chain_client_delegate*                                     _chain_client;
         chain_database_ptr                                         _chain;
-        std::unordered_map<transaction_id_type,signed_transaction> _pending_trxs;
         fc::future<void>                                           _chain_connect_loop_complete;
    };
 
@@ -142,16 +128,6 @@ namespace bts { namespace net {
   {
      // my->_pending_trxs[trx.id()] = trx;
      my->_chain_con.send( trx_message( trx ) );
-  }
-  signed_transactions chain_client::get_pending_transactions()const
-  {
-     signed_transactions trxs;
-     trxs.reserve( my->_pending_trxs.size() );
-     for( auto trx : my->_pending_trxs )
-     {
-        trxs.push_back( trx.second );
-     }
-     return trxs;
   }
 
   void chain_client::broadcast_block( const trx_block& blk )
