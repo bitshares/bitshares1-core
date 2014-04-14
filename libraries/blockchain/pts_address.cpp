@@ -1,9 +1,12 @@
-#include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/small_hash.hpp>
+#include <algorithm>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/exception/exception.hpp>
+
+#include <bts/blockchain/pts_address.hpp>
+#include <bts/blockchain/small_hash.hpp>
 
 namespace bts { namespace blockchain {
    pts_address::pts_address()

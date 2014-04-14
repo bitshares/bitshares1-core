@@ -149,10 +149,11 @@ struct meta_trx_output
 struct meta_trx_input
 {
    meta_trx_input()
-   :output_num(-1){}
+   :output_num(-1),delegate_id(0){}
 
    trx_num           source;
    uint32_t          output_num;
+   int16_t           delegate_id;
    trx_output        output;
    meta_trx_output   meta_output;
 };
@@ -169,6 +170,7 @@ struct transaction
    fc::sha256                   digest()const;
 
    uint8_t                      version;
+   int16_t                      vote;           ///< delegate_id outputs of this transaction are voting for
    uint32_t                     stake;          ///< used for proof of stake, last 8 bytes of block.id()
    fc::time_point_sec           valid_until;    ///< trx is only valid until a given time
    std::vector<trx_input>       inputs;
@@ -219,9 +221,9 @@ namespace fc {
 
 FC_REFLECT( bts::blockchain::trx_input, (output_ref)(input_data) )
 FC_REFLECT( bts::blockchain::trx_output, (amount)(claim_func)(claim_data) )
-FC_REFLECT( bts::blockchain::transaction, (version)(stake)(valid_until)(inputs)(outputs) )
+FC_REFLECT( bts::blockchain::transaction, (version)(stake)(vote)(valid_until)(inputs)(outputs) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (sigs) );
 FC_REFLECT( bts::blockchain::meta_trx_output, (trx_id)(input_num) )
-FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(output)(meta_output) )
+FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(delegate_id)(output)(meta_output) )
 FC_REFLECT_DERIVED( bts::blockchain::meta_trx, (bts::blockchain::signed_transaction), (meta_outputs) );
 

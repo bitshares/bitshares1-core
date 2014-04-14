@@ -363,7 +363,7 @@ private:
     * calls the node_delegate->get_item() to get the item's data.
     * sends the response as a message of the appropriate type
     */
-  void on_fetch_item_message(const item_id&);
+  void on_fetch_item_message(const item_id& item_to_fetch);
 
   initiate_connection()
   {
