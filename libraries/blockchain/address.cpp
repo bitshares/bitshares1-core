@@ -1,11 +1,15 @@
-#include <bts/blockchain/address.hpp>
-#include <bts/blockchain/small_hash.hpp>
+#include <algorithm>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/exception/exception.hpp>
 
-namespace bts { namespace blockchain {
+#include <bts/blockchain/address.hpp>
+#include <bts/blockchain/small_hash.hpp>
+
+namespace bts {
+  namespace blockchain {
    address::address()
    {
     memset( addr.data, 0, sizeof(addr.data) );

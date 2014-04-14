@@ -6,7 +6,7 @@
 namespace bts { namespace net {
 
 /**
- *  Uses ECDH to negotiate a blowfish key for communicating
+ *  Uses ECDH to negotiate a aes key for communicating
  *  with other nodes on the network.
  */
 class stcp_socket : public virtual fc::iostream
@@ -17,7 +17,8 @@ class stcp_socket : public virtual fc::iostream
     fc::tcp_socket&  get_socket() { return _sock; }
     void             accept();
 
-    void             connect_to( const fc::ip::endpoint& ep );
+    void             connect_to( const fc::ip::endpoint& remote_endpoint );
+    void             connect_to( const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint );
 
     virtual size_t   readsome( char* buffer, size_t max );
     virtual bool     eof()const;
@@ -29,6 +30,8 @@ class stcp_socket : public virtual fc::iostream
     void             get( char& c ) { read( &c, 1 ); }
 
   private:
+    void do_key_exchange();
+
     fc::ecc::private_key _priv_key;
     fc::array<char,8>    _buf;
     uint32_t             _buf_len;
