@@ -34,8 +34,8 @@ namespace bts { namespace dns {
 
     void dns_db::close()
     {
-        chain_database::close();
         my->name2record.close();
+        chain_database::close();
     }
 
     dns_record dns_db::get_dns_record( const std::string& name )
