@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t,signed_block_header>    blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
 
-            bts::db::level_map< uint16_t, name_record >         _delegate_records;
+            bts::db::level_map< uint64_t, name_record >         _delegate_records;
             bts::db::level_map< std::string, name_record >      _name_records;
 
             pow_validator_ptr                                   _pow_validator;
@@ -197,6 +197,17 @@ namespace bts { namespace blockchain {
          if( my->head_block.block_num != uint32_t(-1) )
          {
             my->head_block_id = my->head_block.id();
+         }
+         else // initialize initial delegates
+         {
+            // TODO: remove this generation with hard coded public keys...
+            for( uint32_t i = 0; i < 100; ++i )
+            {
+                auto name = "delegate-"+fc::to_string( int64_t(i+1) );
+                auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+                auto key = fc::ecc::private_key::regenerate(key_hash);
+                my->_delegate_records.store( i+1,  name_record( i+1, name, key.get_public_key() ) );
+            }
          }
 
 

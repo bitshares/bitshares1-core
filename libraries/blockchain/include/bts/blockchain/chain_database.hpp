@@ -19,12 +19,15 @@ namespace bts { namespace blockchain {
        :delegate_id(0),votes_for(0),votes_against(0){}
        name_record( const claim_name_output& o );
 
-       uint16_t     delegate_id; 
-       std::string  name;
-       std::string  data;
-       address      owner;
-       int64_t      votes_for;
-       int64_t      votes_against;
+       name_record( uint32_t id, std::string n, const fc::ecc::public_key& k )
+       :delegate_id(id),name(n),owner(k),votes_for(0),votes_against(0){}
+
+       uint32_t             delegate_id; 
+       std::string          name;
+       std::string          data;
+       fc::ecc::public_key  owner;
+       int64_t              votes_for;
+       int64_t              votes_against;
     };
 
     /**
