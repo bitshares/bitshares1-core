@@ -42,6 +42,7 @@ namespace bts { namespace client {
          void listen_on_port(uint16_t port_to_listen);
          void load_p2p_configuration(const fc::path& configuration_directory);
          void connect_to_peer(const std::string& remote_endpoint);
+         void connect_to_p2p_network();
        private:
          std::unique_ptr<detail::client_impl> my;
     };

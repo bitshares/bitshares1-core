@@ -311,5 +311,14 @@ namespace bts { namespace client {
       if (my->_p2p_node)
         my->_p2p_node->connect_to(fc::ip::endpoint::from_string(remote_endpoint.c_str()));
     }
+    void client::connect_to_p2p_network()
+    {
+      if (my->_p2p_node)
+        return;
+      uint32_t last_block_num = my->_chain_db->head_block_num();
+      signed_block_header header = my->_chain_db->fetch_block(last_block_num);
+      my->_p2p_node->sync_from(bts::net::item_id(bts::client::block_message_type, header.id()));
+      my->_p2p_node->connect_to_p2p_network();
+    }
 
 } } // bts::client

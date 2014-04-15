@@ -25,7 +25,7 @@ FC_REFLECT( config, (rpc)(ignore_console) )
 
 
 void print_banner();
-void configure_logging();
+void configure_logging(const fc::path&);
 fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 
@@ -65,9 +65,9 @@ int main( int argc, char** argv )
 
    try {
       print_banner();
-      configure_logging();
+      fc::path datadir = get_data_dir(option_variables);
+      ::configure_logging(datadir);
 
-      auto datadir = get_data_dir(option_variables);
       auto cfg     = load_config(datadir);
 
       auto chain   = std::make_shared<bts::blockchain::chain_database>();
@@ -97,6 +97,7 @@ int main( int argc, char** argv )
           c->listen_on_port(option_variables["port"].as<uint16_t>());
         if (option_variables.count("connect-to"))
           c->connect_to_peer(option_variables["connect-to"].as<std::string>());
+        c->connect_to_p2p_network();
       }
       else
         c->add_node( "127.0.0.1:4567" );
@@ -127,10 +128,10 @@ void print_banner()
     std::cout<<"================================================================\n";
 }
 
-void configure_logging()
+void configure_logging(const fc::path& data_dir)
 {
    fc::file_appender::config ac;
-   ac.filename = "log.txt";
+   ac.filename = data_dir / "log.txt";
    ac.truncate = false;
    ac.flush    = true;
    fc::logging_config cfg;
