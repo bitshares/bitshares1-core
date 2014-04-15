@@ -34,11 +34,11 @@ namespace bts { namespace wallet {
 
 
 
-   /** 
+   /**
     * this is the data that is stored on disk in an encrypted form protected by
     * the wallet password.
     */
-   struct wallet_data 
+   struct wallet_data
    {
        uint32_t                                                 version;
        uint32_t                                                 last_used_key;
@@ -62,7 +62,7 @@ namespace bts { namespace wallet {
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
        std::vector<char>                                        encrypted_keys;
        std::vector<char>                                        encrypted_base_key;
-       // 
+       //
        std::unordered_map<transaction_id_type, transaction_state> transactions;
        std::map<output_index, trx_output>                         unspent_outputs;
        std::map<output_index, trx_output>                         spent_outputs;
@@ -119,7 +119,7 @@ namespace bts { namespace wallet {
 } } // bts::wallet
 
 
-FC_REFLECT( bts::wallet::wallet_data, 
+FC_REFLECT( bts::wallet::wallet_data,
             (version)
             (last_used_key)
             (last_scanned_block_num)
@@ -128,7 +128,7 @@ FC_REFLECT( bts::wallet::wallet_data,
             (send_addresses)
             (encrypted_base_key)
             (encrypted_keys)
-            (transactions) 
+            (transactions)
             (unspent_outputs)
             (spent_outputs)
             (output_index_to_ref)
@@ -138,7 +138,7 @@ FC_REFLECT( bts::wallet::wallet_data,
           )
 
 namespace bts { namespace wallet {
-  
+
    output_index::operator std::string()const
    {
       std::stringstream ss;
@@ -146,7 +146,7 @@ namespace bts { namespace wallet {
       return ss.str();
    }
 
-   namespace detail 
+   namespace detail
    {
       class wallet_impl
       {
@@ -188,11 +188,11 @@ namespace bts { namespace wallet {
                       //ilog( "unspent outputs ${o}", ("o",*itr) );
                        if( out.second.claim_func == claim_by_signature && out.second.amount.unit == balance_type )
                        {
-                           total_bal += out.second.amount; // TODO: apply interest earned 
+                           total_bal += out.second.amount; // TODO: apply interest earned
                        }
                        if( out.second.claim_func == claim_by_pts && out.second.amount.unit == balance_type )
                        {
-                           total_bal += out.second.amount; // TODO: apply interest earned 
+                           total_bal += out.second.amount; // TODO: apply interest earned
                        }
                    }
                    return total_bal;
@@ -381,14 +381,14 @@ namespace bts { namespace wallet {
        } catch( const std::exception& e ) {
            my->_exception_on_open = true;
            throw  fc::std_exception(
-               FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat) ), 
-               std::current_exception(), 
-               e.what() ) ; 
-       } catch( ... ) {  
+               FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat) ),
+               std::current_exception(),
+               e.what() ) ;
+       } catch( ... ) {
            my->_exception_on_open = true;
-           throw fc::unhandled_exception( 
-               FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat)), 
-               std::current_exception() ); 
+           throw fc::unhandled_exception(
+               FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat)),
+               std::current_exception() );
        }
    }
 
@@ -442,7 +442,7 @@ namespace bts { namespace wallet {
       try {
         save();
         my->_wallet_dat = tmp;
-      } 
+      }
       catch ( ... )
       {
         my->_wallet_dat = tmp;
@@ -463,6 +463,7 @@ namespace bts { namespace wallet {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
          import_key( key, std::string( btc_addr ) );
       }
+      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -523,8 +524,6 @@ namespace bts { namespace wallet {
       my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr;
       my->_data.recv_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr;
 
-      save();
-
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
@@ -535,7 +534,7 @@ namespace bts { namespace wallet {
       auto base_key = my->_data.get_base_key( my->_wallet_key_password );
       auto new_key = base_key.child( my->_data.last_used_key );
       return import_key(new_key, label);
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) } 
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
 
    void wallet::add_send_address( const address& addr, const std::string& label )
    { try {
@@ -572,10 +571,10 @@ namespace bts { namespace wallet {
    { try {
        auto   change_address = new_recv_address( "change: " + memo );
 
-       std::unordered_set<address> req_sigs; 
+       std::unordered_set<address> req_sigs;
        asset  total_in(static_cast<uint64_t>(0ull),amnt.unit);
 
-       signed_transaction trx; 
+       signed_transaction trx;
        trx.inputs    = my->collect_inputs( amnt, total_in, req_sigs );
 
        asset change = total_in - amnt;
@@ -626,7 +625,7 @@ namespace bts { namespace wallet {
 
        trx.sigs.clear();
        my->sign_transaction(trx, req_sigs);
-       
+
        return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "${amnt} to ${to}", ("amnt",amnt)("to",to) ) }
 
@@ -634,7 +633,7 @@ namespace bts { namespace wallet {
    {
      // wlog( "MARK SPENT ${s}", ("s",r) );
       auto ref_itr = my->_output_ref_to_index.find(r);
-      if( ref_itr == my->_output_ref_to_index.end() ) 
+      if( ref_itr == my->_output_ref_to_index.end() )
       {
          return;
       }
@@ -645,7 +644,7 @@ namespace bts { namespace wallet {
           return;
       }
       my->_data.spent_outputs[ref_itr->second] = itr->second;
-      my->_data.unspent_outputs.erase(ref_itr->second);      
+      my->_data.unspent_outputs.erase(ref_itr->second);
    }
 
    void wallet::sign_transaction( signed_transaction& trx, const address& addr )
@@ -721,7 +720,7 @@ namespace bts { namespace wallet {
    { try {
        bool found = false;
        auto head_block_num = chain.head_block_num();
-       if( head_block_num == -1 ) return false;
+       if( head_block_num == uint32_t(-1) ) return false;
 
        // for each block
        for( uint32_t i = from_block_num; i <= head_block_num; ++i )
@@ -730,9 +729,9 @@ namespace bts { namespace wallet {
           // for each transaction
           for( uint32_t trx_idx = 0; trx_idx < blk.trx_ids.size(); ++trx_idx )
           {
-              if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() ); 
+              if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() );
 
-              auto trx = chain.fetch_trx( trx_num( i, trx_idx ) ); 
+              auto trx = chain.fetch_trx( trx_num( i, trx_idx ) );
 
               transaction_state state;
               state.trx = trx;
@@ -744,7 +743,7 @@ namespace bts { namespace wallet {
           for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
           {
               transaction_state state;
-              state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) ); 
+              state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) );
               bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
                  my->_data.transactions[state.trx.id()] = state;
@@ -815,7 +814,7 @@ namespace bts { namespace wallet {
          case claim_by_signature:
          {
             auto owner = out.as<claim_by_signature_output>().owner;
-            if( is_my_address( owner ) ) 
+            if( is_my_address( owner ) )
             {
                cache_output( out, out_ref, oidx );
                state.to.push_back( owner );
@@ -831,7 +830,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
-   output_reference wallet::get_ref_from_output_idx( output_index idx) 
+   output_reference wallet::get_ref_from_output_idx( output_index idx)
    {
        return my->get_output_ref(idx); //_output_index_to_ref[idx];
    }
@@ -840,7 +839,7 @@ namespace bts { namespace wallet {
    {
        my->_data.output_index_to_ref[oidx]  = out_ref;
        my->_output_ref_to_index[out_ref]    = oidx;
-       my->_data.unspent_outputs[oidx]      = out; 
+       my->_data.unspent_outputs[oidx]      = out;
    }
    const std::map<output_index,trx_output>&  wallet::get_unspent_outputs()const
    {
@@ -858,7 +857,7 @@ namespace bts { namespace wallet {
       my->_stake   = db.get_stake();
 
       try {
-         auto deterministic_trxs = db.generate_determinsitic_transactions();
+         auto deterministic_trxs = db.generate_deterministic_transactions();
 
          trx_block result;
          std::vector<trx_stat>  stats;
@@ -882,13 +881,13 @@ namespace bts { namespace wallet {
                 }
                 s.trx_idx = i;
                 stats.push_back( s );
-            } 
+            }
             catch ( const fc::exception& e )
             {
                wlog( "unable to use trx ${t}\n ${e}", ("t", in_trxs[i] )("e",e.to_detail_string()) );
             }
          }
-         std::sort( stats.begin(), stats.end() ); 
+         std::sort( stats.begin(), stats.end() );
          std::unordered_set<output_reference> consumed_outputs;
 
 
@@ -898,19 +897,19 @@ namespace bts { namespace wallet {
          transaction_summary summary;
          for( size_t i = 0; i < stats.size(); ++i )
          {
-            const signed_transaction& trx = in_trxs[stats[i].trx_idx]; 
+            const signed_transaction& trx = in_trxs[stats[i].trx_idx];
             for( size_t in = 0; in < trx.inputs.size(); ++in )
             {
                if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
                {
                     stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
-                    break; 
+                    break;
                }
             }
             try {
-               summary += db.get_transaction_validator()->evaluate( trx, block_state ); 
+               summary += db.get_transaction_validator()->evaluate( trx, block_state );
                result.trxs.push_back(trx);
-            } 
+            }
             catch ( const fc::exception& e )
             {
                wlog( "caught exception that failed to pass validation: ${e}", ("e",e.to_detail_string() ) );
@@ -949,5 +948,56 @@ namespace bts { namespace wallet {
       my->_data.delegate_keys[did] = k;
    }
 
-    
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs, const address &change_addr)
+{
+    /* Save transaction inputs and outputs */
+    std::vector<trx_input> original_inputs = trx.inputs;
+    std::vector<trx_output> original_outputs = trx.outputs;
+    std::unordered_set<address> original_req_sigs = req_sigs;
+
+    asset required_in = min_amnt;
+    asset total_in;
+
+    do
+    {
+        /* Restore original transaction */
+        trx.inputs = original_inputs;
+        trx.outputs = original_outputs;
+        req_sigs = original_req_sigs;
+        total_in = 0u;
+
+        auto new_inputs = collect_inputs(required_in, total_in, req_sigs); /* Throws if insufficient funds */
+        trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
+
+        auto change_amt = total_in - required_in;
+        trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+
+        trx.sigs.clear();
+        sign_transaction(trx, req_sigs, false);
+
+        /* Calculate fee and subtract from change */
+        auto fee = get_fee_rate() * trx.size();
+        required_in += fee;
+        change_amt = total_in - required_in;
+
+        if (change_amt > 0u)
+            trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
+        else
+            trx.outputs.pop_back();
+    }
+    while (total_in < required_in); /* Try again if the fee ended up too high for the collected inputs */
+
+    trx.sigs.clear();
+    sign_transaction(trx, req_sigs, true);
+
+    return trx;
+}
+
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                   std::unordered_set<address> &req_sigs)
+{
+    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change address"));
+}
+
 } } // namespace bts::wallet
