@@ -153,7 +153,7 @@ struct meta_trx_input
 
    trx_num           source;
    uint32_t          output_num;
-   signed_int        delegate_id;
+   fc::signed_int    delegate_id;
    trx_output        output;
    meta_trx_output   meta_output;
 };
@@ -170,7 +170,7 @@ struct transaction
    fc::sha256                   digest()const;
 
    uint8_t                      version;
-   signed_int                   vote;           ///< delegate_id outputs of this transaction are voting for
+   fc::signed_int               vote;           ///< delegate_id outputs of this transaction are voting for
    uint32_t                     stake;          ///< used for proof of stake, last 8 bytes of block.id()
    fc::time_point_sec           valid_until;    ///< trx is only valid until a given time
    std::vector<trx_input>       inputs;

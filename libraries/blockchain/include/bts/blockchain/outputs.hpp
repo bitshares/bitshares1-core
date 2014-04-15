@@ -6,6 +6,7 @@
 #include <fc/crypto/elliptic.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/io/varint.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -108,7 +109,7 @@ struct claim_name_output
      *  If delegate_id is not 0 then a registration fee is required equal to the
      *  average revenue from 100 blocks.
      */
-    unsigned_int         delegate_id; 
+    fc::unsigned_int     delegate_id; 
 
     /**
      *  Owner of the name / delegate_id 
