@@ -3,6 +3,7 @@
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/elliptic.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/enum_type.hpp>
 

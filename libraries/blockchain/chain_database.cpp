@@ -35,6 +35,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl()
             { }
+            chain_database*                                     _self;
 
             //std::unique_ptr<ldb::DB> blk_id2num;  // maps blocks to unique IDs
             bts::db::level_map<block_id_type,uint32_t>          blk_id2num;
@@ -92,7 +93,7 @@ namespace bts { namespace blockchain {
                }
             }
 
-            void store( const trx_block& b, const signed_transactions& deterministic_trxs )
+            void store( const trx_block& b, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state  )
             {
                 std::vector<uint160> trxs_ids;
                 uint16_t t = 0;
@@ -114,6 +115,31 @@ namespace bts { namespace blockchain {
                 block_trxs.store( b.block_num, trxs_ids );
 
                 blk_id2num.store( b.id(), b.block_num );
+
+                for( auto item : state->_name_outputs )
+                {
+                   update_name_record( item.first, item.second );
+                }
+            }
+            void update_name_record( const std::string& name, const claim_name_output& out )
+            {
+                auto current_record = _self->lookup_name( name );
+                if( current_record )
+                {
+                   current_record->delegate_id = out.delegate_id;
+                   current_record->data        = out.data;
+                   current_record->owner       = out.owner;
+                   _name_records.store( name, *current_record );
+                }
+                else
+                {
+                   name_record rec;
+                   rec.delegate_id = out.delegate_id;
+                   rec.data        = out.data;
+                   rec.owner       = out.owner;
+                   rec.name        = name;
+                   _name_records.store( name, rec );
+                }
             }
       };
     }
@@ -121,6 +147,7 @@ namespace bts { namespace blockchain {
      chain_database::chain_database()
      :my( new detail::chain_database_impl() )
      {
+         my->_self = this;
          my->_trx_validator = std::make_shared<transaction_validator>(this);
          my->_pow_validator = std::make_shared<pow_validator>(this);
      }
@@ -315,9 +342,10 @@ namespace bts { namespace blockchain {
        return trxs;
     }
 
-    void chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs )
+    block_evaluation_state_ptr chain_database::validate( const trx_block& b, const signed_transactions& deterministic_trxs )
     { try {
-        if( b.block_num == 0 ) { return; } // don't check anything for the genesis block;
+        auto block_state = my->_trx_validator->create_block_state();
+        if( b.block_num == 0 ) { return block_state; } // don't check anything for the genesis block;
         FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
         FC_ASSERT( b.trxs.size()  > 0                                                          );
@@ -341,7 +369,6 @@ namespace bts { namespace blockchain {
         // TODO: factor in determinstic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
         
-        auto block_state = my->_trx_validator->create_block_state();
 
         transaction_summary summary;
         transaction_summary trx_summary;
@@ -363,6 +390,8 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
                    ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
 
+        return block_state;
+
     } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
     
     /**
@@ -371,14 +400,14 @@ namespace bts { namespace blockchain {
     void chain_database::push_block( const trx_block& b )
     { try {
         auto deterministic_trxs = generate_determinsitic_transactions();
-        validate( b, deterministic_trxs );
-        store( b, deterministic_trxs );
+        auto state = validate( b, deterministic_trxs );
+        store( b, deterministic_trxs, state );
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
     } // chain_database::push_block
 
-    void chain_database::store( const trx_block& blk, const signed_transactions& deterministic_trxs )
+    void chain_database::store( const trx_block& blk, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state )
     {
-        my->store( blk, deterministic_trxs ); 
+        my->store( blk, deterministic_trxs, state ); 
     }
 
     /**

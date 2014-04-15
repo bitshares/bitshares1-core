@@ -5,6 +5,7 @@
 #include <list>
 //#include <deque>
 #include <boost/tuple/tuple.hpp>
+#include <boost/circular_buffer.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -160,7 +161,7 @@ namespace bts { namespace net {
       fc::promise<void>::ptr _retrigger_fetch_item_loop_promise;
       bool                   _items_to_fetch_updated;
       fc::future<void>       _fetch_item_loop_done;
-      std::deque<item_id>    _items_to_fetch; /// list of items we know another peer has and we want
+      std::list<item_id>     _items_to_fetch; /// list of items we know another peer has and we want
       // @}
 
       /// used by the task that advertises inventory during normal operation
@@ -190,9 +191,8 @@ namespace bts { namespace net {
       /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
 
-
       
-      item_id _last_item_id_seen; /// The item_id we're syncing from (updated as we receive new blocks both during sync and during normal operation)
+      boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
       uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
 
       node_impl();
@@ -365,6 +365,7 @@ namespace bts { namespace net {
       _user_agent_string("bts::net::node"),
       _desired_number_of_connections(3),
       _maximum_number_of_connections(5),
+      _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0)
     {
       fc::rand_pseudo_bytes(_node_id.data(), 20);
@@ -540,9 +541,10 @@ namespace bts { namespace net {
             {
               ilog("requesting item ${hash} from peer ${endpoint}", ("hash", iter->item_hash)("endpoint", peer->get_remote_endpoint()));
               peer->items_requested_from_peer.insert(peer_connection::item_to_time_map_type::value_type(*iter, fc::time_point::now()));
-              peer->send_message(fetch_item_message(*iter));
+              item_id item_id_to_fetch = *iter;
               iter = _items_to_fetch.erase(iter);
               item_fetched = true;
+              peer->send_message(fetch_item_message(item_id_to_fetch));
               break;
             }
           }
@@ -752,16 +754,16 @@ namespace bts { namespace net {
         if (!is_accepting_new_connections())
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
-          originating_peer->send_message(message(connection_rejected));
           originating_peer->state = peer_connection::connection_rejected_sent;
-          ilog("Received a hello_message from peer but I'm not accepting any more connections, rejection");
+          originating_peer->send_message(message(connection_rejected));
+          ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", ("peer", originating_peer->get_remote_endpoint()));
         }
         else if (already_connected_to_this_peer)
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
-          originating_peer->send_message(message(connection_rejected));
           originating_peer->state = peer_connection::connection_rejected_sent;
-          ilog("Received a hello_message from a peer I'm already connected to,  rejection");
+          originating_peer->send_message(message(connection_rejected));
+          ilog("Received a hello_message from peer ${peer} that I'm already connected to,  rejection", ("peer", originating_peer->get_remote_endpoint()));
         }
         else
         {
@@ -770,9 +772,9 @@ namespace bts { namespace net {
           _potential_peer_db.update_entry(updated_peer_record);
 
           hello_reply_message hello_reply(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint(), _node_id);
-          originating_peer->send_message(message(hello_reply));
           originating_peer->state = peer_connection::hello_reply_sent;
-          ilog("Received a hello_message from peer, sending reply to accept connection");
+          originating_peer->send_message(message(hello_reply));
+          ilog("Received a hello_message from peer ${peer}, sending reply to accept connection", ("peer", originating_peer->get_remote_endpoint()));
         }
       }
       else
@@ -793,12 +795,12 @@ namespace bts { namespace net {
       {
         if (already_connected_to_this_peer)
         {
-          ilog("Established a connection with peer, but I'm already connected to it.  Closing the connection");
+          ilog("Established a connection with peer ${peer}, but I'm already connected to it.  Closing the connection", ("peer", originating_peer->get_remote_endpoint()));
           disconnect_from_peer(originating_peer);
         }
         else
         {
-          ilog("Received a reply to my \"hello\", connection is accepted");
+          ilog("Received a reply to my \"hello\" from ${peer}, connection is accepted", ("peer", originating_peer->get_remote_endpoint()));
           ilog("Remote server sees my connection as ${endpoint}", ("endpoint", hello_reply_message_received.remote_endpoint));
           originating_peer->state = peer_connection::connected;
           originating_peer->send_message(address_request_message());
@@ -822,7 +824,6 @@ namespace bts { namespace net {
         _potential_peer_db.update_entry(updated_peer_record);
 
         originating_peer->state = peer_connection::connection_rejected;
-        // 
         originating_peer->send_message(address_request_message());
       }
       else
@@ -876,10 +877,17 @@ namespace bts { namespace net {
       {
         ilog("sync: peer is already in sync with us");
         originating_peer->peer_needs_sync_items_from_us = false;
+
+        // if we thought we had all the items this peer had, but it now appears 
+        // that we don't, we need to kick off another round of synchronization
+        if (!originating_peer->we_need_sync_items_from_peer &&
+            !_delegate->has_item(fetch_blockchain_item_ids_message_received.last_item_seen))
+          start_synchronizing_with_peer(originating_peer->shared_from_this());
       }
       else
       {
         ilog("sync: peer is out of sync, sending peer ${count} items ids", ("count", reply_message.item_hashes_available.size()));
+        originating_peer->peer_needs_sync_items_from_us = true;
       }
       originating_peer->send_message(reply_message);
 
@@ -908,7 +916,7 @@ namespace bts { namespace net {
 
     void node_impl::fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, const item_id& last_item_id_seen)
     {
-      ilog("sync: sending a request for the next items after ${last_item_seen}", ("last_item_seen", last_item_id_seen.item_hash));
+      ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}", ("last_item_seen", last_item_id_seen.item_hash)("peer", peer->get_remote_endpoint()));
       peer->item_ids_requested_from_peer = boost::make_tuple(last_item_id_seen, fc::time_point::now());
       peer->send_message(fetch_blockchain_item_ids_message(last_item_id_seen));
     }
@@ -953,15 +961,21 @@ namespace bts { namespace net {
                 !peer->ids_of_items_to_get.empty() &&
                 peer->ids_of_items_to_get.front() == blockchain_item_ids_inventory_message_received.item_hashes_available.front())
             {
+              ilog("The item ${newitem} is the first item for peer ${peer}",
+                ("newitem", blockchain_item_ids_inventory_message_received.item_hashes_available.front())
+                ("peer", peer->get_remote_endpoint()));
               is_first_item_for_other_peer = true; 
               break;
             }
           ilog("is_first_item_for_other_peer: ${is_first}.  item_hashes_received.size() = ${size}",("is_first", is_first_item_for_other_peer)("size", item_hashes_received.size()));
           if (!is_first_item_for_other_peer)
+          {
             while (!item_hashes_received.empty() && 
                    _delegate->has_item(item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front())))
               item_hashes_received.pop_front();
+            ilog("after removing all items we have already seen, item_hashes_received.size() = ${size}", ("size", item_hashes_received.size()));
+          }
         }
 
         // append the remaining items to the peer's list
@@ -993,7 +1007,8 @@ namespace bts { namespace net {
             // If we get here, we the peer has sent us a non-empty list of items, but we have all of them
             // already.  There's no need to continue the list in sequence, just start the sync again 
             // from the last item we've processed
-            fetch_next_batch_of_item_ids_from_peer(originating_peer, _last_item_id_seen);
+            fetch_next_batch_of_item_ids_from_peer(originating_peer, item_id(blockchain_item_ids_inventory_message_received.item_type, 
+                                                                             _most_recent_blocks_accepted.back()));
           }
         }
         else
@@ -1009,7 +1024,8 @@ namespace bts { namespace net {
             // If we get here, the peer has sent us a non-empty list of items, but we have already
             // received all of the items from other peers.  Send a new request to the peer to 
             // see if we're really in sync
-            fetch_next_batch_of_item_ids_from_peer(originating_peer, _last_item_id_seen);
+            fetch_next_batch_of_item_ids_from_peer(originating_peer, item_id(blockchain_item_ids_inventory_message_received.item_type,
+                                                                             _most_recent_blocks_accepted.back()));
           }
         }
       }
@@ -1148,7 +1164,23 @@ namespace bts { namespace net {
             try
             {
               ilog("sync: this block is a potential first block, passing it to the client");
-              _delegate->handle_message(block_message_to_process);
+
+              // we can get into an intersting situation near the end of synchronization.  We can be in
+              // sync with one peer who is sending us the last block on the chain via a regular inventory
+              // message, while at the same time still be synchronizing with a peer who is sending us the
+              // block through the sync mechanism.  Further, we must request both blocks because 
+              // we don't know they're the same (for the peer in normal operation, it has only told us the
+              // message id, for the peer in the sync case we only known the block_id).
+              if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
+                            block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
+              {
+                _delegate->handle_message(block_message_to_process);
+                // TODO: only record as accepted if it has a valid signature.
+                _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
+              }
+              else
+                ilog("Already received and accepted this block (presumably through normal inventory mechanism), treating it as accepted");
+
               client_accepted_block = true;
             }
             catch (fc::exception&)
@@ -1158,33 +1190,66 @@ namespace bts { namespace net {
 
             if (client_accepted_block)
             {
-              // TODO: only set _last_item_id_seen if it has a valid signature.
-              _last_item_id_seen = item_id(bts::client::block_message::type, block_message_to_process.block_id);
-
               --_total_number_of_unfetched_items;
               block_processed_this_iteration = true;
               ilog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", ("count", _total_number_of_unfetched_items));
+              std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
+              std::set<peer_connection_ptr> peers_we_need_to_sync_to;
               for (const peer_connection_ptr& peer : _active_connections)
               {
-                if (!peer->ids_of_items_to_get.empty() &&
-                    peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
+                if (peer->ids_of_items_to_get.empty())
                 {
-                  peer->ids_of_items_to_get.pop_front();
-                  ilog("Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_to_get.size()));
-
-                  // if we just received the last item in our list from this peer, send another request
-                  // to find out if we are in sync
-                  if (peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
-                    fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
+                  ilog("Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint()));
+                  // we don't know for sure that this peer has the item we just received.
+                  // If peer is still syncing to us, we know they will ask us for
+                  // sync item ids at least one more time and we'll notify them about
+                  // the item then, so there's no need to do anything.  If we still need items
+                  // from them, we'll be asking them for more items at some point, and
+                  // that will clue them in that they are out of sync.  If we're fully in sync 
+                  // we need to kick off another round of synchronization with them so they can 
+                  // find out about the new item.
+                  if (!peer->peer_needs_sync_items_from_us && !peer->we_need_sync_items_from_peer)
+                  {
+                    ilog("We will be restarting synchronization with peer ${peer}", ("peer", peer->get_remote_endpoint()));
+                    peers_we_need_to_sync_to.insert(peer);
+                  }
                 }
                 else
                 {
-                  if (peer->ids_of_items_to_get.empty())
-                    ilog("Cannot pop first element off peer's list, its list is empty");
+                  if (peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
+                  {
+                    peer->ids_of_items_to_get.pop_front();
+                    ilog("Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_to_get.size()));
+
+                    // if we just received the last item in our list from this peer, we will want to 
+                    // send another request to find out if we are in sync, but we can't do this yet
+                    // (we don't want to allow a fiber swap in the middle of popping items off the list)
+                    if (peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0)
+                      peers_with_newly_empty_item_lists.insert(peer);
+
+                    // in this case, we know the peer was offering us this exact item, no need to 
+                    // try to inform them of its existence
+                  }
                   else
-                    ilog("Cannot pop first element off peer's list, its first is ${hash}", ("hash", peer->ids_of_items_to_get.front()));
+                  {
+                    // the peer's of sync items is nonempty, and its first item doesn't match
+                    // the one we just accepted.
+                    // 
+                    // This probably means that this peer is offering us garbage (its blockchain
+                    // should match everyone else's blockchain).  We could see this during a fork,
+                    // though.  I'm not certain if we've settled on what a fork looks like at this
+                    // level, so I'm just leaving the peer connected here.  If it turns out
+                    // that forks are impossible or won't effect sync behavior, we should disconnect 
+                    // the offending peer here.
+                    ilog("Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint())("hash", peer->ids_of_items_to_get.front()));
+                  }
                 }
               }
+              for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
+                fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
+
+              for (const peer_connection_ptr& peer : peers_we_need_to_sync_to)
+                start_synchronizing_with_peer(peer);
             }
             else
             {
@@ -1266,10 +1331,22 @@ namespace bts { namespace net {
         originating_peer->items_requested_from_peer.erase(iter);
         try
         {
-          _delegate->handle_message(block_message_to_process);
+          // we can get into an intersting situation near the end of synchronization.  We can be in
+          // sync with one peer who is sending us the last block on the chain via a regular inventory
+          // message, while at the same time still be synchronizing with a peer who is sending us the
+          // block through the sync mechanism.  Further, we must request both blocks because 
+          // we don't know they're the same (for the peer in normal operation, it has only told us the
+          // message id, for the peer in the sync case we only known the block_id).
+          if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
+                        block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
+          {
+            _delegate->handle_message(block_message_to_process);
 
-          // TODO: only set _last_item_id_seen if it has a valid signature.
-          _last_item_id_seen = item_id(bts::client::block_message::type, block_message_to_process.block_id);
+            // TODO: only record it as accepted if it has a valid signature.
+            _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
+          }
+          else
+            ilog("Already received and accepted this block (presumably through sync mechanism), treating it as accepted");
 
           ilog("client validated the block, advertising it to other peers");
 
@@ -1309,7 +1386,8 @@ namespace bts { namespace net {
     void node_impl::start_synchronizing_with_peer(const peer_connection_ptr& peer)
     {
       peer->we_need_sync_items_from_peer = true;
-      fetch_next_batch_of_item_ids_from_peer(peer.get(), _last_item_id_seen);
+      fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type,
+                                                                 _most_recent_blocks_accepted.back()));
     }
 
     void node_impl::start_synchronizing()
@@ -1396,9 +1474,9 @@ namespace bts { namespace net {
         throw except;
       }
       hello_message hello(_user_agent_string, core_protocol_version, _node_configuration.listen_endpoint, _node_id);
-      new_peer->send_message(message(hello));
       new_peer->state = peer_connection::hello_sent;
-      ilog("Sent \"hello\" to remote peer");
+      new_peer->send_message(message(hello));
+      ilog("Sent \"hello\" to remote peer ${peer}", ("peer", new_peer->get_remote_endpoint()));
     }
 
     // methods implementing node's public interface
@@ -1548,7 +1626,7 @@ namespace bts { namespace net {
       if (item_to_broadcast.msg_type == bts::client::block_message_type)
       {
         bts::client::block_message messageToBroadcast = item_to_broadcast.as<bts::client::block_message>();
-        _last_item_id_seen = item_id(bts::client::block_message_type, messageToBroadcast.block_id);
+        _most_recent_blocks_accepted.push_back(messageToBroadcast.block_id);
       }
       _new_inventory.insert(item_id(item_to_broadcast.msg_type, item_to_broadcast.id()));
       trigger_advertise_inventory_loop();
@@ -1557,7 +1635,8 @@ namespace bts { namespace net {
 
     void node_impl::sync_from(const item_id& last_item_id_seen)
     {
-      _last_item_id_seen = last_item_id_seen;
+      _most_recent_blocks_accepted.clear();
+      _most_recent_blocks_accepted.push_back(last_item_id_seen.item_hash);
     }
 
     bool node_impl::is_connected() const

@@ -17,13 +17,14 @@ namespace bts { namespace blockchain {
     {
        name_record()
        :delegate_id(0),votes_for(0),votes_against(0){}
+       name_record( const claim_name_output& o );
 
        uint16_t     delegate_id; 
        std::string  name;
        std::string  data;
        address      owner;
-       uint64_t     votes_for;
-       uint64_t     votes_against;
+       int64_t      votes_for;
+       int64_t      votes_against;
     };
 
     /**
@@ -49,13 +50,13 @@ namespace bts { namespace blockchain {
            *  all associated  determinsitc transactions can be applied.  It should throw an
            *  exception of the validation fails.
            */
-          virtual void validate( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+          virtual block_evaluation_state_ptr validate( const trx_block& blk, const signed_transactions& determinsitc_trxs );
 
           /** 
            *  Called after a block has been validated and appends
            *  it to the block chain storing all relevant transactions.
            */
-          virtual void store( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+          virtual void store( const trx_block& blk, const signed_transactions& determinsitc_trxs, const block_evaluation_state_ptr& state );
 
 
        public:
