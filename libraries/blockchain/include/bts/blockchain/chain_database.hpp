@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
        protected:
           /**
            *  This method should perform the validation step of making sure that the block and
-           *  all associated  deterministic transactions can be applied.  It should throw an
+           *  all associated deterministic transactions can be applied. It should throw an
            *  exception of the validation fails.
            */
           virtual block_evaluation_state_ptr validate( const trx_block& blk, const signed_transactions& deterministic_trxs );
@@ -102,8 +102,8 @@ namespace bts { namespace blockchain {
           void set_transaction_validator( const transaction_validator_ptr& v );
           transaction_validator_ptr get_transaction_validator()const;
 
-          void open( const fc::path& dir, bool create = true );
-          void close();
+          virtual void open( const fc::path& dir, bool create = true );
+          virtual void close();
 
           const signed_block_header&  get_head_block()const;
           uint64_t                    total_shares()const;
