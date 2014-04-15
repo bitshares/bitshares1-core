@@ -53,14 +53,17 @@ bts::blockchain::trx_block create_test_genesis_block()
          coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( itr->second ) ) );
          if( output_idx == 0xff )
          {
+            coinbase.vote = 1; // TODO: temporary
             b.trxs.emplace_back( std::move(coinbase) );
             coinbase.outputs.clear();
          }
          ++output_idx;
       }
 
-      if (output_idx > 0)
+      if (output_idx > 0) {
+         coinbase.vote = 1; // TODO: temporary
          b.trxs.emplace_back( std::move(coinbase) );
+      }
 
       b.version         = 0;
       b.prev            = bts::blockchain::block_id_type();
