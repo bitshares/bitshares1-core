@@ -23,14 +23,18 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     genesis.next_fee          = block_header::min_fee();
     genesis.total_shares      = 0;
 
-    signed_transaction trx;
-    for( uint32_t i = 0; i < addr.size(); ++i )
+    // generate an initial genesis block that evenly allocates votes among all 
+    // delegates.
+    for( uint32_t i = 0; i < 100; ++i )
     {
-        uint64_t amnt = rand()%1000 * BTS_BLOCKCHAIN_SHARE;
-        trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
-        genesis.total_shares += amnt;
+       signed_transaction trx;
+       trx.vote = i + 1;
+       uint64_t amnt = 1000 * BTS_BLOCKCHAIN_SHARE;
+       trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
+       genesis.total_shares += amnt;
+       genesis.trxs.push_back( trx );
     }
-    genesis.trxs.push_back( trx );
+
     genesis.trx_mroot = genesis.calculate_merkle_root(signed_transactions());
 
     return genesis;

@@ -126,7 +126,7 @@ namespace bts { namespace blockchain {
 
        state.inputs = _db->fetch_inputs( state.trx.inputs );
        auto trx_delegate = _db->lookup_delegate( state.trx.vote );
-       FC_ASSERT( !!trx_delegate );
+       FC_ASSERT( !!trx_delegate, "unable to find delegate id ${id}", ("id",state.trx.vote) );
 
        /** make sure inputs are unique */
        std::unordered_set<output_reference> unique_inputs;

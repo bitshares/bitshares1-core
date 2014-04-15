@@ -6,6 +6,7 @@
 #include <fc/crypto/elliptic.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/io/varint.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -95,10 +96,25 @@ struct claim_name_output
 {
     static const claim_type_enum type;
 
-    std::string           name;
-    std::string           data;
-    uint16_t              delegate_id; 
-    fc::ecc::public_key   owner;
+    std::string          name; ///< a valid name, must follow DNS naming conventions
+    std::string          data; ///< a JSON String, must parse to be included.
+
+    /**
+     *  A value of 0 means that this registration is to reserve the name only, and
+     *  not for the purpose of being voted on to be a potential delegate.  
+     *
+     *  A delegate by resign by updating their delegate_id to be 0 in which case
+     *  all clients who voted for this delegate must reallocate their votes 
+     *
+     *  If delegate_id is not 0 then a registration fee is required equal to the
+     *  average revenue from 100 blocks.
+     */
+    fc::unsigned_int     delegate_id; 
+
+    /**
+     *  Owner of the name / delegate_id 
+     */
+    fc::ecc::public_key  owner;
 };
 
 

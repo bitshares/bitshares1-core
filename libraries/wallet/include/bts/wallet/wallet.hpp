@@ -92,6 +92,9 @@ namespace wallet {
            void set_data_directory( const fc::path& dir );
            fc::path get_wallet_file()const;
 
+           void import_delegate( uint32_t did, const fc::ecc::private_key& k );
+           void set_delegate_trust( uint32_t did,  bool is_trusted );
+
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            void save();
