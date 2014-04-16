@@ -161,7 +161,7 @@ namespace wallet {
            virtual void dump_output( const trx_output& out );
            virtual bool scan_output( transaction_state& state, const trx_output& out, const output_reference& ref, const output_index& idx );
            virtual void scan_input( transaction_state& state, const output_reference& ref, const output_index& idx );
-           virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual void cache_output( int32_t vote, const trx_output& out, const output_reference& ref, const output_index& idx );
 
         private:
            bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );

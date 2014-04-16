@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 namespace fc {
   template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
@@ -44,8 +45,14 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t,signed_block_header>    blocks;
             bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs;
 
-            bts::db::level_map< uint64_t, name_record >         _delegate_records;
+            bts::db::level_map< uint32_t, name_record >         _delegate_records;
             bts::db::level_map< std::string, name_record >      _name_records;
+
+            /**
+             *  track the delegate votes by rank
+             */
+            std::map<int64_t, uint32_t>                         _votes_to_delegate;
+            std::map<uint32_t, int64_t>                         _delegate_to_votes;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
@@ -55,6 +62,21 @@ namespace bts { namespace blockchain {
             /** cache this information because it is required in many calculations  */
             trx_block                                           head_block;
             block_id_type                                       head_block_id;
+
+            void update_delegate( const name_record& rec  )
+            {
+                auto new_votes = rec.votes_for - rec.votes_against;
+                auto itr = _delegate_to_votes.find( rec.delegate_id );
+                if( itr != _delegate_to_votes.end() )
+                {
+                    auto old_votes = itr->second;
+                    _votes_to_delegate.erase(old_votes);
+                }
+                new_votes <<= 16;
+                new_votes |= int64_t(uint16_t( rec.delegate_id ));
+                _votes_to_delegate[ new_votes ]       = rec.delegate_id;
+                _delegate_to_votes[ rec.delegate_id ] = new_votes;
+            }
 
             void mark_spent( const output_reference& o, const trx_num& intrx, uint16_t in )
             {
@@ -120,6 +142,25 @@ namespace bts { namespace blockchain {
                 {
                    update_name_record( item.first, item.second );
                 }
+                for( auto item : state->_input_votes )
+                {
+                   auto rec = _delegate_records.fetch( abs(item.first) );
+                   if( item.first < 0 )
+                      rec.votes_against -= item.second;
+                   else
+                      rec.votes_for     -= item.second;
+                   update_delegate( rec );
+                }
+                for( auto item : state->_output_votes )
+                {
+                   auto rec = _delegate_records.fetch( abs(item.first) );
+                   if( item.first < 0 )
+                      rec.votes_against += item.second;
+                   else
+                      rec.votes_for     += item.second;
+                   update_delegate( rec );
+                }
+
             }
             void update_name_record( const std::string& name, const claim_name_output& out )
             {
@@ -130,6 +171,7 @@ namespace bts { namespace blockchain {
                    current_record->data        = out.data;
                    current_record->owner       = out.owner;
                    _name_records.store( name, *current_record );
+                   update_delegate( *current_record );
                 }
                 else
                 {
@@ -139,6 +181,7 @@ namespace bts { namespace blockchain {
                    rec.owner       = out.owner;
                    rec.name        = name;
                    _name_records.store( name, rec );
+                   update_delegate( rec );
                 }
             }
       };
@@ -169,6 +212,19 @@ namespace bts { namespace blockchain {
         if( itr.valid() )
            return itr.value();
         return fc::optional<name_record>();
+     }
+
+     void chain_database::dump_delegates()const
+     {
+        std::cerr<<"Delegate Ranking\n==========================================\n";
+        std::cerr<<"Rank |  ID   |  VOTES\n";
+
+        uint32_t i = 0;
+        for( auto del : my->_votes_to_delegate )
+        {
+           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n"; 
+           ++i;
+        }
      }
 
      void chain_database::open( const fc::path& dir, bool create )
@@ -207,6 +263,7 @@ namespace bts { namespace blockchain {
                 auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
                 auto key = fc::ecc::private_key::regenerate(key_hash);
                 my->_delegate_records.store( i+1,  name_record( i+1, name, key.get_public_key() ) );
+                my->update_delegate( name_record( i+1, name, key.get_public_key() ) );
             }
          }
 

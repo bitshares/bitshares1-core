@@ -67,6 +67,7 @@ namespace bts { namespace wallet {
        std::map<output_index, trx_output>                         unspent_outputs;
        std::map<output_index, trx_output>                         spent_outputs;
        std::map<output_index, output_reference>                   output_index_to_ref;
+       std::map<output_index, int32_t>                            votes;
 
        std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
        { try {
@@ -764,7 +765,7 @@ namespace bts { namespace wallet {
        {
           std::cerr<<std::setw(13)<<std::string(out.first)<<"]  ";
           dump_output( out.second );
-          std::cerr<<"\n";
+          std::cerr << " delegate vote: " << my->_data.votes[out.first] <<" \n";
        }
        std::cerr<<"===========================================================\n";
    }
@@ -805,7 +806,7 @@ namespace bts { namespace wallet {
          {
             if( is_my_address( out.as<claim_by_pts_output>().owner ) )
             {
-                cache_output( out, out_ref, oidx );
+                cache_output( state.trx.vote, out, out_ref, oidx );
                 state.adjust_balance( out.amount, 1 );
                 return true;
             }
@@ -816,7 +817,7 @@ namespace bts { namespace wallet {
             auto owner = out.as<claim_by_signature_output>().owner;
             if( is_my_address( owner ) )
             {
-               cache_output( out, out_ref, oidx );
+               cache_output( state.trx.vote, out, out_ref, oidx );
                state.to.push_back( owner );
                state.adjust_balance( out.amount, 1 );
                return true;
@@ -835,11 +836,12 @@ namespace bts { namespace wallet {
        return my->get_output_ref(idx); //_output_index_to_ref[idx];
    }
 
-   void wallet::cache_output( const trx_output& out, const output_reference& out_ref, const output_index& oidx )
+   void wallet::cache_output( int32_t vote, const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    {
        my->_data.output_index_to_ref[oidx]  = out_ref;
        my->_output_ref_to_index[out_ref]    = oidx;
-       my->_data.unspent_outputs[oidx]      = out;
+       my->_data.unspent_outputs[oidx]      = out; 
+       my->_data.votes[oidx]                = vote;
    }
    const std::map<output_index,trx_output>&  wallet::get_unspent_outputs()const
    {
