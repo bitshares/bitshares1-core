@@ -44,10 +44,12 @@ namespace bts { namespace blockchain {
             FC_ASSERT( _name_outputs.find( o.name ) == _name_outputs.end() );
             _name_outputs[o.name] = o;
          }
-         void  add_input_delegate_votes( int16_t did, const asset& votes );
+         void  add_input_delegate_votes( int32_t did, const asset& votes );
+         void  add_output_delegate_votes( int32_t did, const asset& votes );
 
          std::unordered_map<std::string,claim_name_output> _name_outputs;
-         std::unordered_map<int16_t,uint64_t>              _input_votes;
+         std::unordered_map<int32_t,uint64_t>              _input_votes;
+         std::unordered_map<int32_t,uint64_t>              _output_votes;
    };
 
    typedef std::shared_ptr<block_evaluation_state> block_evaluation_state_ptr;

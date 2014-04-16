@@ -74,8 +74,8 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        fc::ecc::private_key auth = fc::ecc::private_key::generate();
 
        std::vector<address> addrs;
-       addrs.reserve(50);
-       for( uint32_t i = 0; i < 50; ++i )
+       addrs.reserve(80);
+       for( uint32_t i = 0; i < 80; ++i )
        {
           addrs.push_back( wall.new_recv_address() );
        }
@@ -91,8 +91,9 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
        wall.scan_chain( db );
        wall.dump();
+       db.dump_delegates();
 
-       for( uint32_t i = 0; i < 10; ++i )
+       for( uint32_t i = 0; i < 50; ++i )
        {
           auto trx = wall.transfer( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
 
@@ -108,6 +109,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
           wall.scan_chain( db );
           wall.dump();
+          db.dump_delegates();
        }
    } 
    catch ( const fc::exception& e )

@@ -78,6 +78,9 @@ namespace bts { namespace blockchain {
           fc::optional<name_record> lookup_name( const std::string& name );
           fc::optional<name_record> lookup_delegate( uint16_t del );
 
+          /** for debug purposes, print delegates and their rank */
+          void dump_delegates()const;
+
 
           //@{
           /**
