@@ -152,10 +152,15 @@ namespace wallet {
 
            std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
 
-           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                      std::unordered_set<address> &req_sigs, const address &change_addr);
-           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                      std::unordered_set<address> &req_sigs);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs, const address& change_addr);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs, const std::string& memo);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      const std::string& memo);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
 
         protected:
            virtual void dump_output( const trx_output& out );
