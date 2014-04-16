@@ -4,7 +4,7 @@
 #include <fc/network/ip.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/crypto/ripemd160.hpp>
-
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace net {
 
@@ -87,7 +87,7 @@ namespace bts { namespace net {
      }
   };
 
-} } // bts::network
+} } // bts::net
 
 
 FC_REFLECT( bts::net::message_header, (size)(msg_type) )

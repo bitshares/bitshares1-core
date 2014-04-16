@@ -13,6 +13,23 @@ namespace bts { namespace blockchain {
 
     namespace detail  { class chain_database_impl; }
 
+    struct name_record
+    {
+       name_record()
+       :delegate_id(0),votes_for(0),votes_against(0){}
+       name_record( const claim_name_output& o );
+
+       name_record( uint32_t id, std::string n, const fc::ecc::public_key& k )
+       :delegate_id(id),name(n),owner(k),votes_for(0),votes_against(0){}
+
+       uint32_t             delegate_id;
+       std::string          name;
+       std::string          data;
+       fc::ecc::public_key  owner;
+       int64_t              votes_for;
+       int64_t              votes_against;
+    };
+
     /**
      *  @class chain_database
      *  @ingroup blockchain
@@ -36,13 +53,13 @@ namespace bts { namespace blockchain {
            *  all associated deterministic transactions can be applied. It should throw an
            *  exception of the validation fails.
            */
-          virtual void validate( const trx_block& blk, const signed_transactions& deterministic_trxs );
+          virtual block_evaluation_state_ptr validate( const trx_block& blk, const signed_transactions& deterministic_trxs );
 
           /**
            *  Called after a block has been validated and appends
            *  it to the block chain storing all relevant transactions.
            */
-          virtual void store( const trx_block& blk, const signed_transactions& deterministic_trxs );
+          virtual void store( const trx_block& blk, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state );
 
 
        public:
@@ -51,12 +68,15 @@ namespace bts { namespace blockchain {
 
           /**
            *  There are many kinds of deterministic transactions that various blockchains may require
-           *  such as automatic inactivity fees, lottery winners, and market making. This method
+           *  such as automatic inactivity fees, lottery winners, and market making.   This method
            *  can be overloaded to
            */
           virtual signed_transactions generate_deterministic_transactions();
 
           void evaluate_transaction( const signed_transaction& trx );
+
+          fc::optional<name_record> lookup_name( const std::string& name );
+          fc::optional<name_record> lookup_delegate( uint16_t del );
 
 
           //@{
@@ -130,4 +150,5 @@ namespace bts { namespace blockchain {
 }  } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::trx_num,  (block_num)(trx_idx) );
+FC_REFLECT( bts::blockchain::name_record, (delegate_id)(name)(data)(owner)(votes_for)(votes_against) )
 

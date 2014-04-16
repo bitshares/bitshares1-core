@@ -3,8 +3,10 @@
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/elliptic.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/io/varint.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -16,6 +18,7 @@ enum claim_type_enum
    claim_by_signature   = 2, ///< someone signs with an address
    claim_by_multi_sig   = 3, ///< N of M signatures required
    claim_by_password    = 4, ///< used for cross-chain trading
+   claim_name           = 5, ///< used to register a name that is unique
    // 10->19 reserved for BitShares X
    // 20->29 reserved for BitShares DNS
 };
@@ -89,6 +92,31 @@ struct claim_by_multi_sig_input
     static const claim_type_enum type;
 };
 
+struct claim_name_output
+{
+    static const claim_type_enum type;
+
+    std::string          name; ///< a valid name, must follow DNS naming conventions
+    std::string          data; ///< a JSON String, must parse to be included.
+
+    /**
+     *  A value of 0 means that this registration is to reserve the name only, and
+     *  not for the purpose of being voted on to be a potential delegate.  
+     *
+     *  A delegate by resign by updating their delegate_id to be 0 in which case
+     *  all clients who voted for this delegate must reallocate their votes 
+     *
+     *  If delegate_id is not 0 then a registration fee is required equal to the
+     *  average revenue from 100 blocks.
+     */
+    fc::unsigned_int     delegate_id; 
+
+    /**
+     *  Owner of the name / delegate_id 
+     */
+    fc::ecc::public_key  owner;
+};
+
 
 } } // bts::blockchain
 
@@ -104,6 +132,7 @@ FC_REFLECT( bts::blockchain::claim_by_signature_output, (owner) )
 FC_REFLECT( bts::blockchain::claim_by_pts_output, (owner) )
 FC_REFLECT( bts::blockchain::claim_by_multi_sig_output, (required)(addresses) )
 FC_REFLECT( bts::blockchain::claim_by_password_output, (payer)(payee)(hashed_password) )
+FC_REFLECT( bts::blockchain::claim_name_output, (name)(data)(delegate_id)(owner) )
 
 FC_REFLECT( bts::blockchain::claim_by_signature_input,    BOOST_PP_SEQ_NIL )
 FC_REFLECT( bts::blockchain::claim_by_password_input,     (password)       )

@@ -34,8 +34,8 @@ namespace bts { namespace dns {
 
     void dns_db::close()
     {
-        chain_database::close();
         my->name2record.close();
+        chain_database::close();
     }
 
     dns_record dns_db::get_dns_record( const std::string& name )
@@ -43,7 +43,7 @@ namespace bts { namespace dns {
             return my->name2record.fetch(name);
     } FC_RETHROW_EXCEPTIONS( warn, "name: ${name}", ("name", name) ) }
 
-    void dns_db::store( const trx_block& blk, const bts::blockchain::signed_transactions& deterministic_txs )
+    void dns_db::store( const trx_block& blk, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state )
     {
         for (auto i = 0u; i < blk.trxs.size(); i++)
         {
@@ -62,7 +62,7 @@ namespace bts { namespace dns {
                 }
             }
         }
-        chain_database::store( blk, deterministic_txs );
+        chain_database::store( blk, deterministic_trxs, state );
     }
 
     bool dns_db::has_dns_record( const std::string& name )

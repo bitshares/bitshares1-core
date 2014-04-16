@@ -47,6 +47,17 @@ namespace bts { namespace wallet {
        std::unordered_map<pts_address,address>                  recv_pts_addresses;
        std::unordered_map<address,std::string>                  send_addresses;
 
+       /**
+        *  If this wallet is a delegate wallet, these are the keys that it controls
+        *  for producing blocks.
+        */
+       std::unordered_map<uint32_t,fc::ecc::private_key>        delegate_keys;
+       std::unordered_set<uint32_t>                             trusted_delegates;
+       std::unordered_set<uint32_t>                             distrusted_delegates;
+
+
+
+
        //std::vector<fc::ecc::private_key>                 keys;
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
        std::vector<char>                                        encrypted_keys;
@@ -121,6 +132,9 @@ FC_REFLECT( bts::wallet::wallet_data,
             (unspent_outputs)
             (spent_outputs)
             (output_index_to_ref)
+            (delegate_keys)
+            (trusted_delegates)
+            (distrusted_delegates)
           )
 
 namespace bts { namespace wallet {
@@ -275,13 +289,29 @@ namespace bts { namespace wallet {
                    FC_ASSERT( !"Unable to collect sufficient unspent inputs", "", ("min_amnt",min_amnt)("total_collected",total_in) );
               }
 
+              /**
+               *  This method should select the trusted delegate with the least votes or vote against
+               *  any untrusted delegates that are in the top 200
+               *
+               *  @sa dpos_voting_algorithm
+               */
+              int32_t select_delegate_vote()
+              { try {
+                   FC_ASSERT( _data.trusted_delegates.size() > 0  );
+                   // for now we will randomly select a trusted delegate to vote for... this 
+                   std::vector<uint32_t> trusted_del( _data.trusted_delegates.begin(), _data.trusted_delegates.end() );
+                   return int32_t(trusted_del[rand()%trusted_del.size()]);
+              } FC_RETHROW_EXCEPTIONS(warn, "") }
+
 
               /** completes a transaction signing it and logging it, this is different than wallet::sign_transaction which
                *  merely signs the transaction without checking anything else or storing the transaction.
                **/
               void sign_transaction( signed_transaction& trx, const std::unordered_set<address>& addresses, bool mark_output_as_used = true)
-              {
+              { try {
                    trx.stake = _stake;
+                   trx.vote  = select_delegate_vote();
+
                    for( auto itr = addresses.begin(); itr != addresses.end(); ++itr )
                    {
                       self->sign_transaction( trx, *itr );
@@ -295,7 +325,7 @@ namespace bts { namespace wallet {
                       }
                       _data.transactions[trx.id()].trx = trx;
                    }
-              }
+              } FC_RETHROW_EXCEPTIONS( warn, "" ) }
               wallet* self;
       };
    } // namespace detail
@@ -384,6 +414,11 @@ namespace bts { namespace wallet {
       my->_wallet_key_password  = key_password;
       my->_exception_on_open = false;
 
+      for( uint32_t i = 1; i < 101; ++i )
+      {
+        my->_data.trusted_delegates.insert(i);
+      }
+      
       if( is_brain )
       {
          FC_ASSERT( base_password.size() >= 8 );
@@ -551,8 +586,8 @@ namespace bts { namespace wallet {
        my->sign_transaction( trx, req_sigs, false );
 
        uint64_t trx_bytes = fc::raw::pack( trx ).size();
-       asset    fee( my->_current_fee_rate * trx_bytes );
-       ilog( "required fee ${f}", ( "f",fee ) );
+       asset    fee( my->_current_fee_rate.get_rounded_amount() * trx_bytes );
+       ilog( "required fee ${f} for bytes ${b} at rate ${r}", ( "f",fee.get_rounded_amount() )("b",trx_bytes)("r",my->_current_fee_rate.get_rounded_amount()) );
 
        if( amnt.unit == 0 )
        {
@@ -835,13 +870,13 @@ namespace bts { namespace wallet {
                 auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
                 s.eval = db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}", ("eval",s.eval) );
+                ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate().get_rounded_amount()) );
 
                // TODO: enforce fees
-                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size()).get_rounded_amount() )
+                if( s.eval.fees < (get_fee_rate().get_rounded_amount() * in_trxs[i].size()) )
                 {
-                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
-                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate()*in_trxs[i].size()) );
+                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
+                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate().get_rounded_amount()*in_trxs[i].size()) );
                   continue;
                 }
                 s.trx_idx = i;
@@ -892,6 +927,25 @@ namespace bts { namespace wallet {
          return result;
       } FC_RETHROW_EXCEPTIONS( warn, "error generating new block" );
 
+   }
+
+   void wallet::set_delegate_trust( uint32_t did, bool is_trusted )
+   {
+      if( is_trusted )
+      {
+         my->_data.trusted_delegates.insert(did);
+         my->_data.distrusted_delegates.erase(did);
+      }
+      else
+      {
+         my->_data.distrusted_delegates.insert(did);
+         my->_data.trusted_delegates.erase(did);
+      }
+   }
+
+   void wallet::import_delegate( uint32_t did, const fc::ecc::private_key& k )
+   {
+      my->_data.delegate_keys[did] = k;
    }
 
 signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
