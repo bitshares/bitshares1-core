@@ -28,7 +28,6 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
     domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
     signed_transaction tx;
-    std::unordered_set<address> req_sigs;
 
     if (new_or_expired)
     {
@@ -48,7 +47,7 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
         tx.outputs.push_back(trx_output(domain_output, bid_price));
     }
 
-    return collect_inputs_and_sign(tx, bid_price, req_sigs);
+    return collect_inputs_and_sign(tx, bid_price);
 
 } FC_RETHROW_EXCEPTIONS(warn, "bid_on_domain ${name} with ${amt}", ("name", name)("amt", bid_price)) }
 
@@ -151,7 +150,7 @@ bool dns_wallet::scan_output(transaction_state &state, const trx_output &out, co
 
     if (is_my_address(domain_output.owner))
     {
-        cache_output(out, ref, idx);
+        cache_output(state.trx.vote, out, ref, idx);
         return true;
     }
 
