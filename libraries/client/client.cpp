@@ -313,7 +313,7 @@ namespace bts { namespace client {
     }
     void client::connect_to_p2p_network()
     {
-      if (my->_p2p_node)
+      if (!my->_p2p_node)
         return;
       uint32_t last_block_num = my->_chain_db->head_block_num();
       signed_block_header header = my->_chain_db->fetch_block(last_block_num);

@@ -95,9 +95,9 @@ int main( int argc, char** argv )
         c->load_p2p_configuration(datadir);
         if (option_variables.count("port"))
           c->listen_on_port(option_variables["port"].as<uint16_t>());
+        c->connect_to_p2p_network();
         if (option_variables.count("connect-to"))
           c->connect_to_peer(option_variables["connect-to"].as<std::string>());
-        c->connect_to_p2p_network();
       }
       else
         c->add_node( "127.0.0.1:4567" );
