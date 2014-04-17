@@ -52,11 +52,35 @@ void dns_db::set_dns_ref(const std::string& key, const bts::blockchain::output_r
 bts::blockchain::output_reference dns_db::get_dns_ref(const std::string& key)
 { try {
     return _dns2ref.fetch(key);
-} FC_RETHROW_EXCEPTIONS(warn, "Could not fetch dns key=${key}", ("key", key)) }
+} FC_RETHROW_EXCEPTIONS(warn, "Could not fetch DNS key=${key}", ("key", key)) }
 
 bool dns_db::has_dns_ref(const std::string& key)
 {
     return _dns2ref.find(key).valid();
+}
+
+std::map<std::string, bts::blockchain::output_reference>
+    dns_db::filter(bool (*f)(const std::string&, const bts::blockchain::output_reference&, dns_db& db))
+{
+    FC_ASSERT(f != nullptr, "Null filter function");
+    std::map<std::string, bts::blockchain::output_reference> map;
+
+    bts::db::level_map<std::string, bts::blockchain::output_reference>::iterator iter = _dns2ref.begin();
+    if (!iter.valid()) return map;
+
+    std::string last;
+    _dns2ref.last(last);
+
+    while (true)
+    {
+        if (f(iter.key(), iter.value(), *this))
+            map[iter.key()] = iter.value();
+
+        if (iter.key() == last) break;
+        iter++;
+    }
+
+    return map;
 }
 
 } } // bts::dns
