@@ -72,7 +72,8 @@ void dns_transaction_validator::validate_domain_input(const claim_domain_output 
     ilog("Validating domain claim input");
     FC_ASSERT(!state.seen_domain_input, "More than one domain claim input in tx: ${tx}", ("tx", state.trx));
 
-    FC_ASSERT(_dns_db->has_dns_record(input.name), "Input references invalid name");
+    FC_ASSERT(_dns_db->has_dns_ref(input.name), "Input references invalid name");
+    // TODO: make sure input is not expired and has signature
 
     state.add_input_asset(amount);
     state.domain_input = input;

@@ -23,7 +23,7 @@ output_reference get_name_tx_ref(const std::string &name, dns_db &db)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
-    return db.get_dns_record(name).last_update_ref;
+    return db.get_dns_ref(name);
 }
 
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db)
@@ -118,7 +118,7 @@ bool name_is_available(const std::string &name, const std::vector<std::string> &
     if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
-    if (!db.has_dns_record(name))
+    if (!db.has_dns_ref(name))
     {
         new_or_expired = true;
         return true;
@@ -151,7 +151,7 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
     if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
-    if (!db.has_dns_record(name))
+    if (!db.has_dns_ref(name))
         return false;
 
     prev_tx_ref = get_name_tx_ref(name, db);

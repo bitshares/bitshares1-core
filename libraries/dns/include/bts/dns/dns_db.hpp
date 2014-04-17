@@ -1,23 +1,12 @@
 #pragma once
 
 #include <fc/reflect/variant.hpp>
-
-#include <bts/db/level_map.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/db/level_map.hpp>
 
 #include <bts/dns/dns_transaction_validator.hpp>
 
 namespace bts { namespace dns {
-
-namespace detail  { class dns_db_impl; }
-
-struct dns_record
-{
-    bts::blockchain::address           owner;
-    std::vector<char>                  value;
-    bts::blockchain::asset             last_price; // TODO delete? this isn't used since it's on the tx out
-    bts::blockchain::output_reference  last_update_ref;
-};
 
 class dns_db : public bts::blockchain::chain_database
 {
@@ -25,20 +14,19 @@ class dns_db : public bts::blockchain::chain_database
         dns_db();
         ~dns_db();
 
-        virtual void     open( const fc::path& dir, bool create = true );
-        virtual void     close();
-        virtual void store( const trx_block& blk, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state );
+        virtual void open(const fc::path& dir, bool create = true);
+        virtual void close();
+        virtual void store(const trx_block& blk, const signed_transactions& deterministic_trxs,
+                           const block_evaluation_state_ptr& state);
 
-        void             store_dns_record( const std::string& name, const dns_record& record);
-        dns_record       get_dns_record( const std::string& name );
-        bool             has_dns_record( const std::string& name );
+        void                              set_dns_ref(const std::string& key, const bts::blockchain::output_reference& ref);
+        bts::blockchain::output_reference get_dns_ref(const std::string& key);
+        bool                              has_dns_ref(const std::string& key);
 
     private:
-         std::unique_ptr<detail::dns_db_impl> my;
+        bts::db::level_map<std::string, bts::blockchain::output_reference> _dns2ref;
 };
 
 typedef std::shared_ptr<dns_db> dns_db_ptr;
 
 } } // bts::dns
-
-FC_REFLECT( bts::dns::dns_record, (owner)(value)(last_price)(last_update_ref) );
