@@ -56,6 +56,7 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
                      output_reference &prev_tx_ref);
 
 std::vector<char> serialize_value(const fc::variant &value);
+fc::variant unserialize_value(const std::vector<char> &value);
 
 bool is_valid_name(const std::string &name);
 bool is_valid_value(const std::vector<char> &value);
@@ -67,5 +68,11 @@ bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price);
 bool is_valid_ask_price(const asset &ask_price);
 
 asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_price);
+
+// TODO: Also include current tx_pool?
+fc::variant lookup_value(const std::string& key, dns_db& db);
+
+// TODO: Also include current tx_pool?
+std::vector<trx_output> get_active_auctions(dns_db& db);
 
 } } // bts::dns

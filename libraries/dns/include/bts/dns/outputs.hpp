@@ -6,7 +6,8 @@ namespace bts { namespace dns {
 
 enum claim_type_enum
 {
-      claim_domain =    20, /* Basic claim by single address */
+    // 20->29 reserved for BitShares DNS
+    claim_domain = 20, /* Basic claim by single address */
 };
 
 struct claim_domain_input

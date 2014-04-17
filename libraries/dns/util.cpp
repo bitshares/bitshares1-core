@@ -23,7 +23,7 @@ output_reference get_name_tx_ref(const std::string &name, dns_db &db)
 {
     FC_ASSERT(is_valid_name(name), "Invalid name");
 
-    return db.get_dns_record(name).last_update_ref;
+    return db.get_dns_ref(name);
 }
 
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db)
@@ -118,7 +118,7 @@ bool name_is_available(const std::string &name, const std::vector<std::string> &
     if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
-    if (!db.has_dns_record(name))
+    if (!db.has_dns_ref(name))
     {
         new_or_expired = true;
         return true;
@@ -151,7 +151,7 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
     if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
         return false;
 
-    if (!db.has_dns_record(name))
+    if (!db.has_dns_ref(name))
         return false;
 
     prev_tx_ref = get_name_tx_ref(name, db);
@@ -173,6 +173,11 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
 std::vector<char> serialize_value(const fc::variant &value)
 {
     return fc::raw::pack(value);
+}
+
+fc::variant unserialize_value(const std::vector<char> &value)
+{
+    return fc::raw::unpack<fc::variant>(value);
 }
 
 bool is_valid_name(const std::string &name)
@@ -218,6 +223,29 @@ asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_pric
     FC_ASSERT(is_valid_bid_price(bid_price, prev_bid_price), "Invalid bid price");
 
     return bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
+}
+
+fc::variant lookup_value(const std::string& key, dns_db& db)
+{
+    FC_ASSERT(is_valid_name(key));
+    FC_ASSERT(db.has_dns_ref(key), "Key does not exist");
+
+    auto output = get_tx_ref_output(db.get_dns_ref(key), db);
+
+    return unserialize_value(to_domain_output(output).value);
+}
+
+std::vector<trx_output> get_active_auctions(dns_db& db)
+{
+    std::vector<trx_output> list;
+
+    auto f = [](const std::string& k, const output_reference& v, dns_db& db)->bool { return !auction_is_closed(v, db); };
+    auto map = db.filter(f);
+
+    for (auto iter = map.begin(); iter != map.end(); iter++)
+        list.push_back(get_tx_ref_output(iter->second, db));
+
+    return list;
 }
 
 } } // bts::dns

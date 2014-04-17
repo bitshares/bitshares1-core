@@ -152,16 +152,21 @@ namespace wallet {
 
            std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
 
-           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                      std::unordered_set<address> &req_sigs, const address &change_addr);
-           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                      std::unordered_set<address> &req_sigs);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs, const address& change_addr);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs, const std::string& memo);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      std::unordered_set<address>& req_sigs);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                      const std::string& memo);
+           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
 
         protected:
            virtual void dump_output( const trx_output& out );
            virtual bool scan_output( transaction_state& state, const trx_output& out, const output_reference& ref, const output_index& idx );
            virtual void scan_input( transaction_state& state, const output_reference& ref, const output_index& idx );
-           virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual void cache_output( int32_t vote, const trx_output& out, const output_reference& ref, const output_index& idx );
 
         private:
            bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );
