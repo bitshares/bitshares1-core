@@ -60,11 +60,19 @@ namespace bts { namespace blockchain {
        FC_ASSERT( name_inputs.find( o.name ) == name_inputs.end() );
        name_inputs[o.name] = o;
    }
-   void block_evaluation_state::add_input_delegate_votes( int16_t did, const asset& votes )
+   void block_evaluation_state::add_input_delegate_votes( int32_t did, const asset& votes )
    {
       auto itr = _input_votes.find(did);
       if( itr == _input_votes.end() )
          _input_votes[did] = votes.get_rounded_amount();
+      else
+         itr->second += votes.get_rounded_amount();
+   }
+   void block_evaluation_state::add_output_delegate_votes( int32_t did, const asset& votes )
+   {
+      auto itr = _output_votes.find(did);
+      if( itr == _output_votes.end() )
+         _output_votes[did] = votes.get_rounded_amount();
       else
          itr->second += votes.get_rounded_amount();
    }
@@ -121,12 +129,12 @@ namespace bts { namespace blockchain {
 
    transaction_summary transaction_validator::on_evaluate( transaction_evaluation_state& state, 
                                                            const block_evaluation_state_ptr& block_state )
-   {
+   { try {
        transaction_summary sum;
 
        state.inputs = _db->fetch_inputs( state.trx.inputs );
        auto trx_delegate = _db->lookup_delegate( state.trx.vote );
-       FC_ASSERT( !!trx_delegate );
+       FC_ASSERT( !!trx_delegate, "unable to find delegate id ${id}", ("id",state.trx.vote) );
 
        /** make sure inputs are unique */
        std::unordered_set<output_reference> unique_inputs;
@@ -160,7 +168,7 @@ namespace bts { namespace blockchain {
                      ("fees",sum.fees)("required",state.get_required_fees()));
        }
        return sum;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "") }
 
    void transaction_evaluation_state::balance_assets()const
    {
@@ -177,7 +185,7 @@ namespace bts { namespace blockchain {
                                                transaction_evaluation_state& state,
                                                const block_evaluation_state_ptr& block_state
                                                )
-   {
+   { try {
        switch( in.output.claim_func )
        {
           case claim_by_pts:
@@ -192,7 +200,7 @@ namespace bts { namespace blockchain {
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
        }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("in",in)("state",state) ) }
 
    void transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state,
                                                const block_evaluation_state_ptr& block_state )
@@ -242,6 +250,7 @@ namespace bts { namespace blockchain {
        {
           accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
           block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
+          block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
        }
    }
 
@@ -257,6 +266,7 @@ namespace bts { namespace blockchain {
        {
           accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
           block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
+          block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
        }
    }
 
@@ -273,6 +283,7 @@ namespace bts { namespace blockchain {
        {
           accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
           block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
+          block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
        }
    }
 

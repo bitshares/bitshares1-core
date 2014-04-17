@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <map>
 
-namespace bts { 
+namespace bts {
 
 namespace blockchain { class chain_database; }
 
@@ -92,6 +92,9 @@ namespace wallet {
            void set_data_directory( const fc::path& dir );
            fc::path get_wallet_file()const;
 
+           void import_delegate( uint32_t did, const fc::ecc::private_key& k );
+           void set_delegate_trust( uint32_t did,  bool is_trusted );
+
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            void save();
@@ -101,7 +104,7 @@ namespace wallet {
 
           /** Given a set of user-provided transactions, this method will generate a block that
            * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
-           * are ignored and not included in the set.  
+           * are ignored and not included in the set.
            *
            * @note some transaction may be valid stand-alone, but may conflict with other transactions.
            */
@@ -149,11 +152,16 @@ namespace wallet {
 
            std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
 
+           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                      std::unordered_set<address> &req_sigs, const address &change_addr);
+           signed_transaction collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
+                                                      std::unordered_set<address> &req_sigs);
+
         protected:
            virtual void dump_output( const trx_output& out );
            virtual bool scan_output( transaction_state& state, const trx_output& out, const output_reference& ref, const output_index& idx );
            virtual void scan_input( transaction_state& state, const output_reference& ref, const output_index& idx );
-           virtual void cache_output( const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual void cache_output( int32_t vote, const trx_output& out, const output_reference& ref, const output_index& idx );
 
         private:
            bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );

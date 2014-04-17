@@ -13,7 +13,7 @@ namespace bts { namespace net {
 
   class connection;
   typedef std::shared_ptr<chain_connection> connection_ptr;
-  
+
   /**
    * @brief defines the set of callbacks that a server provides.
    *
@@ -29,14 +29,14 @@ namespace bts { namespace net {
 
 
   /**
-   *   Abstracts the process of sending and receiving messages 
+   *   Abstracts the process of sending and receiving messages
    *   on the network.  All messages are broadcast or received
    *   on a particular channel and each channel defines a protocol
    *   of message types supported on that channel.
    *
    *   The server will organize connections into a KAD tree for
    *   each subscribed channel.  The ID of a node will be the
-   *   64 bit truncated SHA256(IP:PORT) which should distribute 
+   *   64 bit truncated SHA256(IP:PORT) which should distribute
    *   peers well and facilitate certain types of protocols which
    *   do not want to broadcast everywhere, but instead to perform
    *   targeted lookup of data in a hash table.
@@ -52,8 +52,9 @@ namespace bts { namespace net {
             std::vector<std::string> blacklist;  // host's that are blocked from connecting
             std::vector<fc::ip::endpoint> mirrors;  // host's that are blocked from connecting
         };
-        
+
         chain_server();
+        chain_server( bts::blockchain::chain_database_ptr& chain );
         ~chain_server();
 
         void close();
@@ -66,7 +67,7 @@ namespace bts { namespace net {
 
         /**
          *  Sets up the ports and performs other one-time
-         *  initialization.   
+         *  initialization.
          */
         void configure( const config& c );
 

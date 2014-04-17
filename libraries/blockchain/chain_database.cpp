@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 namespace fc {
   template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
@@ -26,9 +27,9 @@ namespace fc {
 
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
-    namespace detail  
-    { 
-      
+    namespace detail
+    {
+
       // TODO: .01 BTC update private members to use _member naming convention
       class chain_database_impl
       {
@@ -42,10 +43,16 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint160,trx_num>                 trx_id2num;
             bts::db::level_map<trx_num,meta_trx>                meta_trxs;
             bts::db::level_map<uint32_t,signed_block_header>    blocks;
-            bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs; 
+            bts::db::level_map<uint32_t,std::vector<uint160> >  block_trxs;
 
-            bts::db::level_map< uint16_t, name_record >         _delegate_records;
+            bts::db::level_map< uint32_t, name_record >         _delegate_records;
             bts::db::level_map< std::string, name_record >      _name_records;
+
+            /**
+             *  track the delegate votes by rank
+             */
+            std::map<int64_t, uint32_t>                         _votes_to_delegate;
+            std::map<uint32_t, int64_t>                         _delegate_to_votes;
 
             pow_validator_ptr                                   _pow_validator;
             transaction_validator_ptr                           _trx_validator;
@@ -55,6 +62,24 @@ namespace bts { namespace blockchain {
             /** cache this information because it is required in many calculations  */
             trx_block                                           head_block;
             block_id_type                                       head_block_id;
+
+            void update_delegate( const name_record& rec  )
+            {
+                auto new_votes = rec.votes_for - rec.votes_against;
+                auto itr = _delegate_to_votes.find( rec.delegate_id );
+                if( itr != _delegate_to_votes.end() )
+                {
+                    auto old_votes = itr->second;
+                    _votes_to_delegate.erase(old_votes);
+                }
+                new_votes <<= 16;
+                new_votes |= int64_t(uint16_t( rec.delegate_id ));
+                _votes_to_delegate[ new_votes ]       = rec.delegate_id;
+                _delegate_to_votes[ rec.delegate_id ] = new_votes;
+
+                wlog( "store delegate ${d}", ("d",rec) );
+                _delegate_records.store( rec.delegate_id, rec );
+            }
 
             void mark_spent( const output_reference& o, const trx_num& intrx, uint16_t in )
             {
@@ -75,32 +100,60 @@ namespace bts { namespace blockchain {
                FC_ASSERT( mtrx.outputs.size() > ref.output_idx.value );
                return mtrx.outputs[ref.output_idx.value];
             } FC_RETHROW_EXCEPTIONS( warn, "", ("ref",ref) ) }
-            
+
             /**
-             *   Stores a transaction and updates the spent status of all 
+             *   Stores a transaction and updates the spent status of all
              *   outputs doing one last check to make sure they are unspent.
              */
             void store( const signed_transaction& t, const trx_num& tn )
             {
                //ilog( "trxid: ${id}   ${tn}\n\n  ${trx}\n\n", ("id",t.id())("tn",tn)("trx",t) );
 
-               trx_id2num.store( t.id(), tn ); 
+               trx_id2num.store( t.id(), tn );
                meta_trxs.store( tn, meta_trx(t) );
 
                for( uint16_t i = 0; i < t.inputs.size(); ++i )
                {
-                  mark_spent( t.inputs[i].output_ref, tn, i ); 
+                  mark_spent( t.inputs[i].output_ref, tn, i );
                }
             }
 
             void store( const trx_block& b, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state  )
-            {
+            { try {
                 std::vector<uint160> trxs_ids;
                 uint16_t t = 0;
                 for( ; t < b.trxs.size(); ++t )
                 {
                    store( b.trxs[t], trx_num( b.block_num, t) );
                    trxs_ids.push_back( b.trxs[t].id() );
+
+                   /*** on the genesis block we need to store initial delegates and vote counts */
+                   if( b.block_num == 0 )
+                   {
+                      if( t == 0 )
+                      {
+                         for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
+                         {
+                            if( b.trxs[t].outputs[o].claim_func == claim_name )
+                            {
+                               auto claim = b.trxs[t].outputs[o].as<claim_name_output>();
+                               update_name_record( claim.name, claim );
+                         //      if( claim.delegate_id != 0 )
+                                  update_delegate( name_record( claim ) );
+                            }
+                         }
+                      }
+                      else // t != 0
+                      {
+                         auto rec = _delegate_records.fetch( b.trxs[t].vote );
+                         // first transaction registers names... the rest are initial balance
+                         for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
+                         {
+                            rec.votes_for += b.trxs[t].outputs[o].amount.get_rounded_amount();
+                         }
+                         update_delegate( rec );
+                      }
+                   } // block == 0
                 }
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
@@ -120,7 +173,27 @@ namespace bts { namespace blockchain {
                 {
                    update_name_record( item.first, item.second );
                 }
-            }
+                for( auto item : state->_input_votes )
+                {
+                   auto rec = _delegate_records.fetch( abs(item.first) );
+                   if( item.first < 0 )
+                      rec.votes_against -= item.second;
+                   else
+                      rec.votes_for     -= item.second;
+                   update_delegate( rec );
+                }
+                for( auto item : state->_output_votes )
+                {
+                   auto rec = _delegate_records.fetch( abs(item.first) );
+                   if( item.first < 0 )
+                      rec.votes_against += item.second;
+                   else
+                      rec.votes_for     += item.second;
+                   update_delegate( rec );
+                }
+
+            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
             void update_name_record( const std::string& name, const claim_name_output& out )
             {
                 auto current_record = _self->lookup_name( name );
@@ -130,6 +203,7 @@ namespace bts { namespace blockchain {
                    current_record->data        = out.data;
                    current_record->owner       = out.owner;
                    _name_records.store( name, *current_record );
+                   update_delegate( *current_record );
                 }
                 else
                 {
@@ -139,6 +213,7 @@ namespace bts { namespace blockchain {
                    rec.owner       = out.owner;
                    rec.name        = name;
                    _name_records.store( name, rec );
+                   update_delegate( rec );
                 }
             }
       };
@@ -164,11 +239,24 @@ namespace bts { namespace blockchain {
      }
 
      fc::optional<name_record> chain_database::lookup_delegate( uint16_t del )
-     {
+     { try {
         auto itr = my->_delegate_records.find( del );
         if( itr.valid() )
            return itr.value();
         return fc::optional<name_record>();
+     } FC_RETHROW_EXCEPTIONS( warn, "delegate id: ${id}", ("id",del) ) }
+
+     void chain_database::dump_delegates()const
+     {
+        std::cerr<<"Delegate Ranking\n==========================================\n";
+        std::cerr<<"Rank |  ID   |  VOTES\n";
+
+        uint32_t i = 0;
+        for( auto del : my->_votes_to_delegate )
+        {
+           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n"; 
+           ++i;
+        }
      }
 
      void chain_database::open( const fc::path& dir, bool create )
@@ -178,7 +266,7 @@ namespace bts { namespace blockchain {
          {
               if( !create )
               {
-                 FC_THROW_EXCEPTION( file_not_found_exception, 
+                 FC_THROW_EXCEPTION( file_not_found_exception,
                      "Unable to open blockchain database ${dir}", ("dir",dir) );
               }
               fc::create_directories( dir );
@@ -191,12 +279,26 @@ namespace bts { namespace blockchain {
          my->_delegate_records.open( dir / "delegate_records", create );
          my->_name_records.open( dir / "name_records", create );
 
-         
+
          // read the last block from the DB
          my->blocks.last( my->head_block.block_num, my->head_block );
          if( my->head_block.block_num != uint32_t(-1) )
          {
             my->head_block_id = my->head_block.id();
+         }
+         else // initialize initial delegates
+         {
+            // TODO: remove this generation with hard coded public keys...
+            /*
+            for( uint32_t i = 0; i < 100; ++i )
+            {
+                auto name = "delegate-"+fc::to_string( int64_t(i+1) );
+                auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+                auto key = fc::ecc::private_key::regenerate(key_hash);
+                my->_delegate_records.store( i+1,  name_record( i+1, name, key.get_public_key() ) );
+                my->update_delegate( name_record( i+1, name, key.get_public_key() ) );
+            }
+            */
          }
 
 
@@ -233,7 +335,7 @@ namespace bts { namespace blockchain {
 
     uint32_t    chain_database::fetch_block_num( const block_id_type& block_id )
     { try {
-       return my->blk_id2num.fetch( block_id ); 
+       return my->blk_id2num.fetch( block_id );
     } FC_RETHROW_EXCEPTIONS( warn, "block id: ${block_id}", ("block_id",block_id) ) }
 
     signed_block_header chain_database::fetch_block( uint32_t block_num )
@@ -266,7 +368,7 @@ namespace bts { namespace blockchain {
           return fetch_trx( trx_num );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
 
-    trx_output chain_database::fetch_output(const output_reference& ref) 
+    trx_output chain_database::fetch_output(const output_reference& ref)
     {
         auto trx = fetch_transaction(ref.trx_hash);
         return trx.outputs[ref.output_idx];
@@ -288,7 +390,7 @@ namespace bts { namespace blockchain {
             try {
              trx_num tn   = fetch_trx_num( inputs[i].output_ref.trx_hash );
              meta_trx trx = fetch_trx( tn );
-             
+
              if( inputs[i].output_ref.output_idx.value >= trx.meta_outputs.size() )
              {
                 FC_THROW_EXCEPTION( exception, "Input ${i} references invalid output from transaction ${trx}",
@@ -334,11 +436,11 @@ namespace bts { namespace blockchain {
        }
     }
 
-    signed_transactions chain_database::generate_determinsitic_transactions()
+    signed_transactions chain_database::generate_deterministic_transactions()
     {
        signed_transactions trxs;
        // TODO: move all unspent outputs over 1 year old to new outputs and charge a 5% fee
-       
+
        return trxs;
     }
 
@@ -355,20 +457,20 @@ namespace bts { namespace blockchain {
         wlog( "fee rate: ${fee}", ("fee",b.next_fee) );
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
-                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size()) 
+                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size())
                    );
 
         FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
                    ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
-        
+
         FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(10) );
 
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
 
-        // TODO: factor in determinstic trxs to merkle root calculation
+        // TODO: factor in deterministic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
-        
+
 
         transaction_summary summary;
         transaction_summary trx_summary;
@@ -376,7 +478,7 @@ namespace bts { namespace blockchain {
         uint64_t fee_rate = get_fee_rate().get_rounded_amount();
         for( int32_t i = 0; i <= last; ++i )
         {
-            trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state ); 
+            trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
             FC_ASSERT( b.trxs[i].version == 0 );
             FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
             summary += trx_summary;
@@ -384,7 +486,7 @@ namespace bts { namespace blockchain {
 
         for( auto strx : deterministic_trxs )
         {
-            summary += my->_trx_validator->evaluate( strx, block_state ); 
+            summary += my->_trx_validator->evaluate( strx, block_state );
         }
 
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
@@ -393,13 +495,13 @@ namespace bts { namespace blockchain {
         return block_state;
 
     } FC_RETHROW_EXCEPTIONS( warn, "error validating block" ) }
-    
+
     /**
      *  Attempts to append block b to the block chain with the given trxs.
      */
     void chain_database::push_block( const trx_block& b )
     { try {
-        auto deterministic_trxs = generate_determinsitic_transactions();
+        auto deterministic_trxs = generate_deterministic_transactions();
         auto state = validate( b, deterministic_trxs );
         store( b, deterministic_trxs, state );
       } FC_RETHROW_EXCEPTIONS( warn, "unable to push block", ("b", b) );
@@ -407,14 +509,14 @@ namespace bts { namespace blockchain {
 
     void chain_database::store( const trx_block& blk, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state )
     {
-        my->store( blk, deterministic_trxs, state ); 
+        my->store( blk, deterministic_trxs, state );
     }
 
     /**
-     *  Removes the top block from the stack and marks all spent outputs as 
+     *  Removes the top block from the stack and marks all spent outputs as
      *  unspent.
      */
-    trx_block chain_database::pop_block() 
+    trx_block chain_database::pop_block()
     {
        FC_ASSERT( !"TODO: implement pop_block" );
     }
