@@ -39,9 +39,9 @@ namespace bts { namespace db {
            auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
            if( !ntrxstat.ok() )
            {
-               FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}", 
+               FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}",
                     ("db",dir)
-                    ("msg",ntrxstat.ToString()) 
+                    ("msg",ntrxstat.ToString())
                     );
            }
            _db.reset(ndb);
@@ -79,9 +79,9 @@ namespace bts { namespace db {
         {
            public:
              iterator(){}
-             bool valid()const 
+             bool valid()const
              {
-                return _it && _it->Valid(); 
+                return _it && _it->Valid();
              }
 
              Key key()const
@@ -100,9 +100,12 @@ namespace bts { namespace db {
                return tmp_val;
              }
 
-             iterator& operator++() { _it->Next(); return *this; }
-             iterator& operator--() { _it->Prev(); return *this; }
-           
+             iterator& operator++()    { _it->Next(); return *this; }
+             iterator  operator++(int) { _it->Next(); return *this; }
+
+             iterator& operator--()    { _it->Prev(); return *this; }
+             iterator  operator--(int) { _it->Prev(); return *this; }
+
            protected:
              friend class level_map;
              iterator( ldb::Iterator* it )
@@ -110,7 +113,8 @@ namespace bts { namespace db {
 
              std::shared_ptr<ldb::Iterator> _it;
         };
-        iterator begin() 
+
+        iterator begin()
         { try {
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToFirst();
@@ -137,7 +141,7 @@ namespace bts { namespace db {
            ldb::Slice key_slice( kslice.data(), kslice.size() );
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->Seek( key_slice );
-           if( itr.valid() && itr.key() == key ) 
+           if( itr.valid() && itr.key() == key )
            {
               return itr;
            }
@@ -149,13 +153,12 @@ namespace bts { namespace db {
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->Seek( key_slice );
-           if( itr.valid()  ) 
+           if( itr.valid()  )
            {
               return itr;
            }
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
-
 
         bool last( Key& k )
         {
@@ -203,7 +206,7 @@ namespace bts { namespace db {
 
              auto vec = fc::raw::pack(v);
              ldb::Slice vs( vec.data(), vec.size() );
-             
+
              auto status = _db->Put( ldb::WriteOptions(), ks, vs );
              if( !status.ok() )
              {
@@ -231,7 +234,6 @@ namespace bts { namespace db {
              }
           } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) );
         }
-        
 
      private:
         class key_compare : public leveldb::Comparator
@@ -256,10 +258,9 @@ namespace bts { namespace db {
         };
 
         key_compare                  _comparer;
+
 public: //DLNFIX temporary, remove this
         std::unique_ptr<leveldb::DB> _db;
-        
   };
-
 
 } } // bts::db

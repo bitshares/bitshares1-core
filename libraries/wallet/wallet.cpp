@@ -464,7 +464,6 @@ namespace bts { namespace wallet {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
          import_key( key, std::string( btc_addr ) );
       }
-      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
