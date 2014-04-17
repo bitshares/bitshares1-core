@@ -48,6 +48,7 @@ int main( int argc, char** argv )
       //auto wall    = std::make_shared<bts::wallet::wallet>();
       auto wall    = std::make_shared<bts::dns::dns_wallet>();
       wall->set_data_directory( datadir );
+      //TODO rescan here?
 
       auto c = std::make_shared<bts::client::client>();
       c->set_chain( chain );

@@ -132,6 +132,80 @@ namespace bts { namespace cli {
       std::cout<<"-------------------------------------------------------------\n";
    } // print_help
 
+   std::string cli::get_output_info_string(trx_output& out)
+   {
+       std::stringstream ret;
+       switch (out.claim_func)
+       {
+           case claim_by_pts: {
+               auto _out = out.as<claim_by_pts_output>();
+               std::string owner_string = _out.owner;
+               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
+               break;
+           }
+           case claim_by_signature: {
+               auto _out = out.as<claim_by_signature_output>();
+               std::string owner_string = _out.owner;
+               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
+               break;
+           }
+           case claim_name: {
+               auto _out = out.as<claim_name_output>();
+               std::string owner_string = address(_out.owner);
+               ret << "Name '" << _out.name << "' registered to " << owner_string <<
+                   " for " << out.amount.get_rounded_amount() << "\n";
+               break;
+           }
+           default:
+               ret << "unknown output type skipped: " << out.claim_func << "\n";
+       }
+       return ret.str();
+   }
+
+   std::string cli::get_input_info_string(trx_input& in)
+   {
+        return "Test input info string\n";
+   }
+
+   void cli::confirm_and_broadcast(signed_transaction& tx, const std::string& extra)
+   {
+       std::cout<<"About to broadcast transaction:\n\n";
+
+       std::cout<<"Inputs:\n";
+       asset sum_in;
+       for (auto in : tx.inputs)
+       {
+          //sum_in += in.amount;
+          std::cout << "  " << get_input_info_string(in);
+       }
+       
+       std::cout<<"Outputs:\n";
+       asset sum_out;
+       for (auto out : tx.outputs)
+       {
+          sum_out += out.amount;
+          std::cout << "  " << get_output_info_string(out);
+       }
+
+       std::cout<<"\n"
+       //<<"Total in: " << sum_in.to_uint64() << "\n"
+       //<<"Total out: " << sum_out.to_uint64() << "\n" 
+       <<"Fee: " << (sum_in - sum_out).to_uint64() << "\n";
+
+
+       char response;
+       std::cout<<"Send this transaction? (Y/n)\n";
+       std::cin >> response;
+       if (response == 'Y')
+       {
+           client()->broadcast_transaction( tx );
+       }
+       else
+       {
+           std::cout<<"Transaction canceled.\n";
+       }
+   }
+
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
        const bts::blockchain::chain_database_ptr db = client()->get_chain();
@@ -238,7 +312,7 @@ namespace bts { namespace cli {
              std::getline( ss, memo );
 
              auto trx = wallet->transfer( asset( amount ), address(addr), memo );
-             client()->broadcast_transaction( trx );
+             confirm_and_broadcast( trx , "");
           }
        }
        else if( cmd == "listrecvaddresses" )
