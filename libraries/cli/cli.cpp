@@ -131,6 +131,28 @@ namespace bts { namespace cli {
       std::cout<<"quit - exit cleanly\n";
       std::cout<<"-------------------------------------------------------------\n";
    } // print_help
+   
+   void cli::confirm_and_broadcast(signed_transaction& tx)
+   {
+       auto wallet = client()->get_wallet();
+       auto db = client()->get_chain();
+       char response;
+
+       std::cout << "About to broadcast transaction:\n\n";
+       std::cout << wallet->get_tx_info_string( *db, tx ) << "\n";
+       std::cout << "Send this transaction? (Y/n)\n";
+       std::cin >> response;
+
+       if (response == 'Y')
+       {
+           client()->broadcast_transaction( tx );
+           std::cout << "Transaction sent.\n";
+       }
+       else
+       {
+           std::cout << "Transaction canceled.\n";
+       }
+   }
 
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
@@ -224,7 +246,7 @@ namespace bts { namespace cli {
        }
        else if( cmd == "listunspent" )
        {
-          wallet->dump();
+          wallet->dump_utxo_set();
        }
        else if( cmd == "sendtoaddress" )
        {
@@ -234,11 +256,11 @@ namespace bts { namespace cli {
              double      amount;
              std::string memo;
              ss >> addr >> amount;
-             std::cout << "address: "<<addr<< " amount: "<<amount<< "  asset: "<< std::string(asset(amount)) <<"\n";
+             std::cout << "memo: ";
              std::getline( ss, memo );
 
              auto trx = wallet->transfer( asset( amount ), address(addr), memo );
-             client()->broadcast_transaction( trx );
+             confirm_and_broadcast( trx );
           }
        }
        else if( cmd == "listrecvaddresses" )
@@ -315,27 +337,10 @@ namespace bts { namespace cli {
           print_help();
        }
    }
-
    void cli::list_transactions( uint32_t count )
    {
-       auto trxs = client()->get_wallet()->get_transaction_history();
-       for( auto state : trxs )
-       {
-          std::cout << state.second.block_num << "   " << fc::json::to_string( state.second.to ) << " ";
-          for( auto delta : state.second.delta_balance )
-          {
-             if( delta.second > 0 )
-             {
-                std::cout << std::string( asset(uint64_t(delta.second),delta.first)) <<" ";
-             }
-             else if( delta.second < 0 )
-             {
-                std::cout << "-"<<std::string( asset(uint64_t(-delta.second),delta.first)) <<" ";
-             }
-          }
-          std::cout <<"\n";
-       }
-
+       /* dump the transactions from the wallet, which needs the chain db */
+       client()->get_wallet()->dump_txs(*(client()->get_chain()), count);
    }
    void cli::get_balance( uint32_t min_conf, uint16_t unit )
    {

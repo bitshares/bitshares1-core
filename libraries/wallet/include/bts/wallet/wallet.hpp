@@ -146,7 +146,9 @@ namespace wallet {
 
            bool scan_chain( bts::blockchain::chain_database& chain, uint32_t from_block_num = 0,  scan_progress_callback cb = scan_progress_callback() );
            void mark_as_spent( const output_reference& r );
-           void dump();
+
+           void dump_txs(bts::blockchain::chain_database& db, uint32_t count);
+           void dump_utxo_set();
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
@@ -161,6 +163,11 @@ namespace wallet {
            signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
                                                       const std::string& memo);
            signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
+
+           std::string                         get_tx_info_string(bts::blockchain::chain_database& db, const transaction& tx);
+           virtual std::string                 get_output_info_string(const trx_output& out);
+           virtual std::string                 get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
+
 
         protected:
            virtual void dump_output( const trx_output& out );
