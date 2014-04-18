@@ -129,7 +129,7 @@ namespace bts { namespace blockchain {
 
    transaction_summary transaction_validator::on_evaluate( transaction_evaluation_state& state, 
                                                            const block_evaluation_state_ptr& block_state )
-   {
+   { try {
        transaction_summary sum;
 
        state.inputs = _db->fetch_inputs( state.trx.inputs );
@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
                      ("fees",sum.fees)("required",state.get_required_fees()));
        }
        return sum;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "") }
 
    void transaction_evaluation_state::balance_assets()const
    {
@@ -185,7 +185,7 @@ namespace bts { namespace blockchain {
                                                transaction_evaluation_state& state,
                                                const block_evaluation_state_ptr& block_state
                                                )
-   {
+   { try {
        switch( in.output.claim_func )
        {
           case claim_by_pts:
@@ -200,7 +200,7 @@ namespace bts { namespace blockchain {
           default:
              FC_ASSERT( !"Unsupported claim type", "type: ${type}", ("type",in.output.claim_func) );
        }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("in",in)("state",state) ) }
 
    void transaction_validator::validate_output( const trx_output& out, transaction_evaluation_state& state,
                                                const block_evaluation_state_ptr& block_state )
