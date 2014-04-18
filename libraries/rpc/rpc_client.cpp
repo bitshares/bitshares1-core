@@ -22,12 +22,17 @@ namespace bts { namespace rpc {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
       bool login(const std::string& username, const std::string& password);
+      bool walletpassphrase(const std::string& passphrase);
+      bts::blockchain::address getnewaddress(const std::string& account);
       bts::blockchain::transaction_id_type transfer(const bts::blockchain::asset& amount, const bts::blockchain::address& address);
+      std::unordered_map<bts::blockchain::address,std::string> listrecvaddresses();
       bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
       bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
       bts::blockchain::signed_block_header getblock(uint32_t block_num);
       bool validateaddress(bts::blockchain::address address);
+      bool rescan(uint32_t block_num);
       bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
+      bool import_private_key(const fc::sha256& hash);
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -56,9 +61,24 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("login", username, password);
     }
 
+    bool rpc_client_impl::walletpassphrase(const std::string& passphrase)
+    {
+      return _json_connection->call<bool>("walletpassphrase", passphrase);
+    }
+
+    bts::blockchain::address rpc_client_impl::getnewaddress(const std::string& account)
+    {
+      return _json_connection->call<bts::blockchain::address>("getnewaddress", account);
+    }
+
     bts::blockchain::transaction_id_type rpc_client_impl::transfer(const bts::blockchain::asset& amount, const bts::blockchain::address& address)
     {
       return _json_connection->call<bts::blockchain::transaction_id_type>("transfer", fc::variant(amount), (std::string)address);
+    }
+
+    std::unordered_map<bts::blockchain::address,std::string> rpc_client_impl::listrecvaddresses()
+    {
+      return _json_connection->call<std::unordered_map<bts::blockchain::address,std::string> >("listrecvaddresses");
     }
 
     bts::blockchain::asset rpc_client_impl::getbalance(bts::blockchain::asset_type asset_type)
@@ -81,9 +101,19 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("getblock", fc::variant(address));
     }
 
+    bool rpc_client_impl::rescan(uint32_t block_num)
+    {
+      return _json_connection->call<bool>("rescan");
+    }
+
     bool rpc_client_impl::import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password)
     {
       return _json_connection->call<bool>("import_bitcoin_wallet", wallet_filename.string(), password);
+    }
+
+    bool rpc_client_impl::import_private_key(const fc::sha256& hash)
+    {
+      return _json_connection->call<bool>("import_private_key", (std::string)hash);
     }
 
   } // end namespace detail
@@ -108,9 +138,24 @@ namespace bts { namespace rpc {
     return my->login(username, password);
   }
   
+  bool rpc_client::walletpassphrase(const std::string& passphrase)
+  {
+    return my->walletpassphrase(passphrase);
+  }
+
+  bts::blockchain::address rpc_client::getnewaddress(const std::string& account)
+  {
+    return my->getnewaddress(account);
+  }
+
   bts::blockchain::transaction_id_type rpc_client::transfer(const bts::blockchain::asset& amount, const bts::blockchain::address& address)
   {
     return my->transfer(amount, address);
+  }
+
+  std::unordered_map<bts::blockchain::address,std::string> rpc_client::listrecvaddresses()
+  {
+    return my->listrecvaddresses();
   }
 
   bts::blockchain::asset rpc_client::getbalance(bts::blockchain::asset_type asset_type)
@@ -133,10 +178,19 @@ namespace bts { namespace rpc {
     return my->validateaddress(address);
   }
 
+  bool rpc_client::rescan(uint32_t block_num /* = 0 */)
+  {
+    return my->rescan(block_num);
+  }
+
   bool rpc_client::import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password)
   {
     return my->import_bitcoin_wallet(wallet_filename, password);
   }
 
+  bool rpc_client::import_private_key(const fc::sha256& hash)
+  {
+    return my->import_private_key(hash);
+  }
 
 } } // bts::rpc
