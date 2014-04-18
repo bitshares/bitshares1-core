@@ -180,7 +180,7 @@ namespace bts { namespace wallet {
                   return _current_fee_rate;
               }
 
-              asset get_balance( asset::type balance_type )
+              asset get_balance( asset_type balance_type )
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
                    std::vector<trx_input> inputs;
@@ -263,13 +263,13 @@ namespace bts { namespace wallet {
                    std::vector<trx_input> inputs;
                    for( auto out : _data.unspent_outputs )
                    {
-                      ilog( "unspent outputs ${o}", ("o",out) );
+                      //ilog( "unspent outputs ${o}", ("o",out) );
                        if( out.second.claim_func == claim_by_signature && out.second.amount.unit == min_amnt.unit )
                        {
                            inputs.push_back( trx_input( get_output_ref(out.first) ) );
                            total_in += out.second.amount;
                            req_sigs.insert( out.second.as<claim_by_signature_output>().owner );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                       //    ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -280,7 +280,7 @@ namespace bts { namespace wallet {
                            inputs.push_back( trx_input( get_output_ref(out.first) ) );
                            total_in += out.second.amount;
                            req_sigs.insert( _data.recv_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                        //   ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -505,7 +505,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to save wallet ${wallet}", ("wallet",my->_wallet_dat) ) }
 
-   asset wallet::get_balance( asset::type t )
+   asset wallet::get_balance( asset_type t )
    {
       return my->get_balance(t);
    }
@@ -710,7 +710,7 @@ namespace bts { namespace wallet {
        uint32_t i = 0;
        for (auto tx : txs)
        {
-            if (i == count) break; 
+            if (i == count) break;
             i++;
             std::cerr << get_tx_info_string(db, tx.second.trx) << "\n";
        }
@@ -747,7 +747,7 @@ namespace bts { namespace wallet {
           sum_in += out.amount;
           ss << "  " << get_input_info_string(db, in);
        }
-       
+
        ss << "Outputs:\n";
        for (auto out : tx.outputs)
        {
@@ -756,10 +756,10 @@ namespace bts { namespace wallet {
        }
 
        ss <<"\n"
-       <<"Total in: " << sum_in.to_uint64() << "\n"
-       <<"Total out: " << sum_out.to_uint64() << "\n"
-       <<"Fee: " << (sum_in - sum_out).to_uint64() << "\n";
-       
+       <<"Total in: " << sum_in.get_rounded_amount() << "\n"
+       <<"Total out: " << sum_out.get_rounded_amount() << "\n"
+       <<"Fee: " << (sum_in - sum_out).get_rounded_amount() << "\n";
+
        return ss.str();
    }
 
@@ -768,27 +768,32 @@ namespace bts { namespace wallet {
        std::stringstream ret;
        switch (out.claim_func)
        {
-           case claim_by_pts: {
-               auto _out = out.as<claim_by_pts_output>();
-               std::string owner_string = _out.owner;
-               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
-               break;
-           }
-           case claim_by_signature: {
-               auto _out = out.as<claim_by_signature_output>();
-               std::string owner_string = _out.owner;
-               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
-               break;
-           }
-           case claim_name: {
-               auto _out = out.as<claim_name_output>();
-               std::string owner_string = address(_out.owner);
-               ret << "Name '" << _out.name << "' registered to " << owner_string <<
-                   " for " << out.amount.get_rounded_amount() << "\n";
-               break;
-           }
-           default:
-               ret << "unknown output type skipped: " << out.claim_func << "\n";
+          case claim_by_pts:
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_by_pts ";
+             ret<< std::string(out.as<claim_by_pts_output>().owner);
+             ret<<"\n";
+             break;
+          case claim_by_signature:
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_by_signature ";
+             ret<< std::string(out.as<claim_by_signature_output>().owner);
+             ret<<"\n";
+             break;
+          case claim_name:
+          {
+             auto claim = out.as<claim_name_output>();
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_name ";
+             ret<< claim.name;
+             ret<<"\tdelegate_id: ";
+             ret<< claim.delegate_id;
+             ret<<"\tkey: "<<std::string(address(claim.owner));
+             ret<<"\n";
+             break;
+          }
+          default:
+             ret << "unknown output type skipped: " << out.claim_func << "\n";
        }
        return ret.str();
    }
@@ -834,6 +839,19 @@ namespace bts { namespace wallet {
                cache_output( state.trx.vote, out, out_ref, oidx );
                state.to.push_back( owner );
                state.adjust_balance( out.amount, 1 );
+               return true;
+            }
+            return false;
+         }
+         case claim_name:
+         {
+            auto claim = out.as<claim_name_output>();
+            auto itr = my->_data.delegate_keys.find( claim.delegate_id );
+            if( itr != my->_data.delegate_keys.end() )
+            {
+               FC_ASSERT( itr->second.get_public_key() == claim.owner );
+               cache_output( state.trx.vote, out, out_ref, oidx );
+               state.to.push_back( claim.owner );
                return true;
             }
             return false;

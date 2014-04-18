@@ -17,7 +17,8 @@ namespace bts { namespace blockchain {
     {
        name_record()
        :delegate_id(0),votes_for(0),votes_against(0){}
-       name_record( const claim_name_output& o );
+       name_record( const claim_name_output& o )
+          :delegate_id(o.delegate_id),name(o.name),data(o.data),owner(o.owner),votes_for(0),votes_against(0){}
 
        name_record( uint32_t id, std::string n, const fc::ecc::public_key& k )
        :delegate_id(id),name(n),owner(k),votes_for(0),votes_against(0){}

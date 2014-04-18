@@ -15,46 +15,32 @@ namespace bts { namespace blockchain {
    */
   struct asset
   {
-      typedef uint16_t type;
+      typedef uint16_t unit_type;
 
-      static const fc::uint128& one();
-      static const fc::uint128& zero();
-
-      asset( const std::string& str );
-      asset( asset::type t = 0):unit(t){}
-      asset( uint32_t ul, asset::type t = 0);
-      asset( uint64_t ull , asset::type t = 0);
-      explicit asset( double  int_part, asset::type t = 0);
-      explicit asset( float   int_part, asset::type t = 0);
-      asset( fc::uint128 amnt, asset::type t )
-      :amount(amnt),unit(t){}
+      asset( uint64_t a = 0, unit_type u = 0)
+      :amount(a),unit(u){}
 
       asset& operator += ( const asset& o );
       asset& operator -= ( const asset& o );
       asset  operator *  ( const fc::uint128_t& fix6464 )const;
-      asset  operator *  ( uint64_t mult )const
+      asset  operator *  ( uint64_t constant )const
       {
-         return *this * fc::uint128_t(mult,0);
+         return asset( amount * constant );
       }
-      asset  operator /  ( uint64_t div )const
+      asset  operator /  ( uint64_t constant )const
       {
          asset tmp(*this);
-         tmp.amount /= fc::uint128_t(div);
+         tmp.amount /= constant;
          return tmp;
       }
 
-
       operator std::string()const;
       uint64_t get_rounded_amount()const;
-      //operator double()const;
-      //operator uint64_t()const;
-      uint64_t to_uint64()const { return amount.high_bits(); }
-      double to_double()const;
        
-      fc::uint128_t                 amount;
-      uint16_t                      unit;
+      uint64_t   amount;
+      unit_type  unit;
   };
-  typedef asset::type asset_type;
+  typedef asset::unit_type asset_type;
   
   /**
    *  A price is the result of dividing 2 asset classes and has
@@ -70,7 +56,7 @@ namespace bts { namespace blockchain {
       :ratio(r),base_unit(base),quote_unit(quote){}
 
       price( const std::string& s );
-      price( double a, asset::type base, asset::type quote );
+      price( double a, asset::unit_type base, asset::unit_type quote );
       operator std::string()const;
       operator double()const;
 

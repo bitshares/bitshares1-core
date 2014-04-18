@@ -18,17 +18,15 @@ std::string dns_wallet::get_input_info_string(bts::blockchain::chain_database& d
 
 std::string dns_wallet::get_output_info_string(const trx_output& out)
 {
+    if (!is_domain_output(out))
+        return wallet::get_output_info_string(out);
+
     std::stringstream ret;
-    switch (out.claim_func)
-    {
-        case claim_domain: {
-            auto _out = out.as<claim_domain_output>();
-            std::string owner_str = _out.owner;
-            ret << "Domain Claim\n  Name: \"" << _out.name << "\"\n  Owner: " <<
-               owner_str << "\n  Amount: " << out.amount.get_rounded_amount(); 
-            return ret.str();
-        }
-    }
+    auto dns_out = to_domain_output(out);
+    std::string owner_str = dns_out.owner;
+    ret << "Domain Claim\n  Name: \"" << dns_out.name << "\"\n  Owner: " <<
+       owner_str << "\n  Amount: " << out.amount.get_rounded_amount();
+    return ret.str();
 }
 
 signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asset &bid_price,
