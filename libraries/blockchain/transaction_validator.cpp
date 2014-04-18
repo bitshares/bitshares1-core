@@ -35,21 +35,21 @@ namespace bts { namespace blockchain {
         return pts_sigs.find( a ) != pts_sigs.end();
    }
 
-   int64_t transaction_evaluation_state::get_total_in( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_in( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
        return itr->second.in;
    }
 
-   int64_t transaction_evaluation_state::get_total_out( asset::type t )const
+   int64_t transaction_evaluation_state::get_total_out( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
        return itr->second.out;
    }
 
-   int64_t transaction_evaluation_state::get_required_fees( asset::type t )const
+   int64_t transaction_evaluation_state::get_required_fees( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;

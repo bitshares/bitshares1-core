@@ -27,6 +27,17 @@ namespace fc {
 
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
+
+    uint64_t to_bips( uint64_t shares, uint64_t total_shares )
+    {
+        fc::uint128   big_shares(shares);
+
+        big_shares *= fc::uint128( int64_t(BTS_BLOCKCHAIN_BIP) );
+        big_shares /= fc::uint128( total_shares );
+        FC_ASSERT( big_shares.high_bits() == 0, "bips integer overflow" );
+        return big_shares.low_bits(); //(BTS_BLOCKCHAIN_BIP * shares) / total_shares;
+    }
+
     namespace detail
     {
 
@@ -149,7 +160,7 @@ namespace bts { namespace blockchain {
                          // first transaction registers names... the rest are initial balance
                          for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
                          {
-                            rec.votes_for += b.trxs[t].outputs[o].amount.get_rounded_amount();
+                            rec.votes_for += to_bips( b.trxs[t].outputs[o].amount.get_rounded_amount(), b.total_shares );
                          }
                          update_delegate( rec );
                       }
@@ -177,18 +188,18 @@ namespace bts { namespace blockchain {
                 {
                    auto rec = _delegate_records.fetch( abs(item.first) );
                    if( item.first < 0 )
-                      rec.votes_against -= item.second;
+                      rec.votes_against -= to_bips(item.second,b.total_shares);
                    else
-                      rec.votes_for     -= item.second;
+                      rec.votes_for     -= to_bips(item.second,b.total_shares);
                    update_delegate( rec );
                 }
                 for( auto item : state->_output_votes )
                 {
                    auto rec = _delegate_records.fetch( abs(item.first) );
                    if( item.first < 0 )
-                      rec.votes_against += item.second;
+                      rec.votes_against += to_bips( item.second, b.total_shares );
                    else
-                      rec.votes_for     += item.second;
+                      rec.votes_for     += to_bips( item.second, b.total_shares );
                    update_delegate( rec );
                 }
 
@@ -254,7 +265,7 @@ namespace bts { namespace blockchain {
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n"; 
+           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n";
            ++i;
         }
      }
