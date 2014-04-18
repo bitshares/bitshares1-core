@@ -15,8 +15,8 @@
 #endif //!WIN32
 
 namespace bts { namespace cli {
-   
-   namespace detail 
+
+   namespace detail
    {
       class cli_impl
       {
@@ -35,11 +35,11 @@ namespace bts { namespace cli {
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
                          add_history(line_read);
-                     if( line_read == nullptr ) 
+                     if( line_read == nullptr )
                         FC_THROW_EXCEPTION( eof_exception, "" );
                      line = line_read;
                      free(line_read);
-                  #else                
+                  #else
                      std::cout<<prompt;
                      std::getline( std::cin, line );
                   #endif ///WIN32
@@ -52,8 +52,8 @@ namespace bts { namespace cli {
                   auto password = _self->get_line( "key password: " );
                   try {
                      _client->get_wallet()->unlock_wallet( password );
-                  } 
-                  catch ( ... ) 
+                  }
+                  catch ( ... )
                   {
                      std::cout << "Invalid Password\n";
                      return false;
@@ -75,8 +75,8 @@ namespace bts { namespace cli {
                      std::getline( ss, args );
 
                      try {
-                       _self->process_command( command, args ); 
-                     } 
+                       _self->process_command( command, args );
+                     }
                      catch ( const fc::canceled_exception& c )
                      {
                         return;
@@ -106,7 +106,7 @@ namespace bts { namespace cli {
    {
       try {
         wait();
-      } 
+      }
       catch ( const fc::exception& e )
       {
          wlog( "${e}", ("e",e.to_detail_string()) );
@@ -131,20 +131,45 @@ namespace bts { namespace cli {
       std::cout<<"quit - exit cleanly\n";
       std::cout<<"-------------------------------------------------------------\n";
    } // print_help
+   
+   void cli::confirm_and_broadcast(signed_transaction& tx)
+   {
+       auto wallet = client()->get_wallet();
+       auto db = client()->get_chain();
+       char response;
+
+       std::cout << "About to broadcast transaction:\n\n";
+       std::cout << wallet->get_tx_info_string( *db, tx ) << "\n";
+       std::cout << "Send this transaction? (Y/n)\n";
+       std::cin >> response;
+
+       if (response == 'Y')
+       {
+           client()->broadcast_transaction( tx );
+           std::cout << "Transaction sent.\n";
+       }
+       else
+       {
+           std::cout << "Transaction canceled.\n";
+       }
+   }
 
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
+       const bts::blockchain::chain_database_ptr db = client()->get_chain();
+       const bts::wallet::wallet_ptr wallet = client()->get_wallet();
+
        std::stringstream ss(args);
 
        if( cmd == "help" ) print_help();
        else if( cmd == "login" )
        {
-          auto wallet_dat = my->_client->get_wallet()->get_wallet_file();
+          auto wallet_dat = wallet->get_wallet_file();
           if( fc::exists( wallet_dat ) )
           {
              std::cout << "Login\n";
              auto pass = get_line("password: ");
-             my->_client->get_wallet()->open( wallet_dat, pass );
+             wallet->open( wallet_dat, pass );
              std::cout << "Login Successful.\n";
              return;
           }
@@ -203,8 +228,8 @@ namespace bts { namespace cli {
              {
                 std::cout << "No password provided, your wallet will be stored unencrypted.\n";
              }
-            
-             my->_client->get_wallet()->create( wallet_dat, pass1, keypass1 );
+
+             wallet->create( wallet_dat, pass1, keypass1 );
              std::cout << "Wallet created.\n";
           }
        }
@@ -215,13 +240,13 @@ namespace bts { namespace cli {
              std::string account;
              ss >> account;
 
-             auto addr = my->_client->get_wallet()->new_recv_address( account );
+             auto addr = wallet->new_recv_address( account );
              std::cout << std::string( addr ) << "\n";
           }
        }
        else if( cmd == "listunspent" )
        {
-          my->_client->get_wallet()->dump();
+          wallet->dump_utxo_set();
        }
        else if( cmd == "sendtoaddress" )
        {
@@ -231,16 +256,16 @@ namespace bts { namespace cli {
              double      amount;
              std::string memo;
              ss >> addr >> amount;
-             std::cout << "address: "<<addr<< " amount: "<<amount<< "  asset: "<< std::string(asset(amount)) <<"\n";
+             std::cout << "memo: ";
              std::getline( ss, memo );
 
-             auto trx = my->_client->get_wallet()->transfer( asset( amount ), address(addr), memo );
-             my->_client->broadcast_transaction( trx );
+             auto trx = wallet->transfer( asset( amount ), address(addr), memo );
+             confirm_and_broadcast( trx );
           }
        }
        else if( cmd == "listrecvaddresses" )
        {
-           auto addrs = my->_client->get_wallet()->get_recv_addresses();
+           auto addrs = wallet->get_recv_addresses();
            for( auto addr : addrs )
               std::cout << std::setw( 30 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
        }
@@ -258,7 +283,7 @@ namespace bts { namespace cli {
        {
           uint32_t block_num = 0;
           ss >> block_num;
-          my->_client->get_wallet()->scan_chain( *my->_client->get_chain(), block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
+          wallet->scan_chain( *db, block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
                                                  {
                                                      std::cout << "scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
                                                  });
@@ -272,23 +297,28 @@ namespace bts { namespace cli {
        {
           if( my->check_unlock() )
           {
+             // TODO: Enforce # of arguments
              std::string wallet_dat;
              ss >> wallet_dat;
+
              auto password  = get_line("bitcoin wallet password: ");
-             my->_client->get_wallet()->import_bitcoin_wallet( wallet_dat, password );
+             wallet->import_bitcoin_wallet( wallet_dat, password );
+             wallet->save();
           }
        }
        else if( cmd == "import_private_key" )
        {
           if( my->check_unlock() )
           {
+             // TODO: Enforce # of arguments
              std::string key_str;
              ss >> key_str;
 
              fc::sha256 hash( key_str );
              fc::ecc::private_key privkey = fc::ecc::private_key::regenerate( hash );
 
-             my->_client->get_wallet()->import_key( privkey );
+             wallet->import_key( privkey );
+             wallet->save();
           }
        }
        else if( cmd == "getbalance" )
@@ -307,34 +337,17 @@ namespace bts { namespace cli {
           print_help();
        }
    }
-
    void cli::list_transactions( uint32_t count )
    {
-       auto trxs = my->_client->get_wallet()->get_transaction_history();
-       for( auto state : trxs )
-       {
-          std::cout << state.second.block_num << "   " << fc::json::to_string( state.second.to ) << " ";
-          for( auto delta : state.second.delta_balance )
-          {
-             if( delta.second > 0 )
-             {
-                std::cout << std::string( asset(uint64_t(delta.second),delta.first)) <<" ";
-             }
-             else if( delta.second < 0 ) 
-             {
-                std::cout << "-"<<std::string( asset(uint64_t(-delta.second),delta.first)) <<" ";
-             }
-          }
-          std::cout <<"\n";
-       }
-
+       /* dump the transactions from the wallet, which needs the chain db */
+       client()->get_wallet()->dump_txs(*(client()->get_chain()), count);
    }
    void cli::get_balance( uint32_t min_conf, uint16_t unit )
    {
-       asset bal =  my->_client->get_wallet()->get_balance(unit);
+       asset bal = client()->get_wallet()->get_balance(unit);
        std::cout << std::string( bal ) << "\n";
    }
-   
+
    void cli::wait()
    {
        my->_cin_complete.wait();

@@ -175,8 +175,8 @@ struct transaction
    fc::time_point_sec           valid_until;    ///< trx is only valid until a given time
    std::vector<trx_input>       inputs;
    std::vector<trx_output>      outputs;
-};
 
+};
 /**
  *  @class signed_transaction
  *  @brief a transaction with signatures required by the inputs

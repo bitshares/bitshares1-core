@@ -32,7 +32,7 @@ namespace bts { namespace blockchain {
     {
         fc::uint128   big_shares(shares);
 
-        big_shares *= fc::uint128( BTS_BLOCKCHAIN_BIP );
+        big_shares *= fc::uint128( int64_t(BTS_BLOCKCHAIN_BIP) );
         big_shares /= fc::uint128( total_shares );
         FC_ASSERT( big_shares.high_bits() == 0, "bips integer overflow" );
         return big_shares.low_bits(); //(BTS_BLOCKCHAIN_BIP * shares) / total_shares;

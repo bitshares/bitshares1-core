@@ -63,6 +63,7 @@ bts::blockchain::trx_block create_test_genesis_block()
       bts::blockchain::signed_transaction coinbase;
       coinbase.version = 0;
 
+      // TODO: simplify to one output per tx and evenly allocate votes among delegates
       uint8_t output_idx = 0;
       int32_t  current_delegate = 0;
       uint64_t total_votes = 0;
@@ -131,14 +132,13 @@ bts::blockchain::trx_block create_test_genesis_block()
       }
 
       b.version         = 0;
-      b.prev            = bts::blockchain::block_id_type();
       b.block_num       = 0;
-      b.total_shares    = int64_t(total_supply);
+      b.prev            = bts::blockchain::block_id_type();
       b.timestamp       = fc::time_point::now();
       b.next_fee        = bts::blockchain::block_header::min_fee();
+      b.total_shares    = int64_t(total_supply);
 
       b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
-      fc::variant var(b);
 
       //auto str = fc::json::to_pretty_string(var); //b);
       //ilog( "block: \n${b}", ("b", str ) );

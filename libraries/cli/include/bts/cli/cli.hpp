@@ -21,12 +21,13 @@ namespace bts { namespace cli {
          
          std::string get_line( const std::string& prompt = ">>> " );
 
+         void confirm_and_broadcast(signed_transaction& tx);
          void wait();
+
 
       protected:
          virtual client_ptr client();
          virtual bool check_unlock();
-
       private:
          std::unique_ptr<detail::cli_impl> my;
    };
