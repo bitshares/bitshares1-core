@@ -119,7 +119,7 @@ namespace wallet {
            void                                    add_send_address( const address&, const std::string& label = "" );
            std::unordered_map<address,std::string> get_send_addresses()const;
 
-           asset                                   get_balance( asset::type t );
+           asset                                   get_balance( asset_type t );
            void                                    set_fee_rate( const asset& pts_per_byte );
            asset                                   get_fee_rate();
            uint64_t                                last_scanned()const;

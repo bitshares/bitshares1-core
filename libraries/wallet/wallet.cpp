@@ -180,7 +180,7 @@ namespace bts { namespace wallet {
                   return _current_fee_rate;
               }
 
-              asset get_balance( asset::type balance_type )
+              asset get_balance( asset_type balance_type )
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
                    std::vector<trx_input> inputs;
@@ -506,7 +506,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to save wallet ${wallet}", ("wallet",my->_wallet_dat) ) }
 
-   asset wallet::get_balance( asset::type t )
+   asset wallet::get_balance( asset_type t )
    {
       return my->get_balance(t);
    }
@@ -613,7 +613,7 @@ namespace bts { namespace wallet {
        }
        else /// fee is in bts, but we are transferring something else
        {
-           if( change.amount == fc::uint128_t(0) ) trx.outputs.pop_back(); // no change required
+           if( change.amount == 0 ) trx.outputs.pop_back(); // no change required
 
            // TODO: this function should be recursive here, but having 2x the fee should be good enough, some
            // transactions may overpay in this case, but this can be optimized later to reduce fees.. for now
