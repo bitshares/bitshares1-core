@@ -40,11 +40,25 @@ bts::blockchain::trx_block create_test_genesis_block()
    try {
       FC_ASSERT( fc::exists( "genesis.json" ) );
       auto config = fc::json::from_file( "genesis.json" ).as<genesis_block_config>();
+      bts::blockchain::trx_block genesis;
+
+      signed_transaction dtrx;
+      dtrx.vote = 0;
+      // create initial delegates
+      for( uint32_t i = 0; i < 100; ++i )
+      {
+         auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
+         auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+         auto key      = fc::ecc::private_key::regenerate(key_hash);
+         dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key() ), asset() ) );
+      }
+      genesis.trxs.push_back( dtrx );
+
       int64_t total_supply = 0;
-      bts::blockchain::trx_block b;
       bts::blockchain::signed_transaction coinbase;
       coinbase.version = 0;
 
+      // TODO: simplify to one output per tx and evenly allocate votes among delegates
       uint8_t output_idx = 0;
       for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
       {
@@ -53,31 +67,31 @@ bts::blockchain::trx_block create_test_genesis_block()
          coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( itr->second ) ) );
          if( output_idx == 0xff )
          {
-            coinbase.vote = 1; // TODO: temporary
-            b.trxs.emplace_back( std::move(coinbase) );
+            coinbase.vote = (output_idx % 100) + 1; // TODO: temporary
+            genesis.trxs.emplace_back( std::move(coinbase) );
             coinbase.outputs.clear();
          }
          ++output_idx;
       }
 
       if (output_idx > 0) {
-         coinbase.vote = 1; // TODO: temporary
-         b.trxs.emplace_back( std::move(coinbase) );
+         coinbase.vote = (output_idx % 100) + 1; // TODO: temporary
+         genesis.trxs.emplace_back( std::move(coinbase) );
       }
 
-      b.version         = 0;
-      b.prev            = bts::blockchain::block_id_type();
-      b.block_num       = 0;
-      b.total_shares    = int64_t(total_supply);
-      b.timestamp       = fc::time_point::now();
-      b.next_fee        = bts::blockchain::block_header::min_fee();
+      genesis.version         = 0;
+      genesis.block_num       = 0;
+      genesis.prev            = bts::blockchain::block_id_type();
+      genesis.timestamp       = fc::time_point::now();
+      genesis.next_fee        = bts::blockchain::block_header::min_fee();
+      genesis.total_shares    = int64_t(total_supply);
 
-      b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
-      fc::variant var(b);
+      genesis.trx_mroot   = genesis.calculate_merkle_root(signed_transactions());
 
+      fc::variant var(genesis);
       auto str = fc::json::to_pretty_string(var); //b);
-      ilog( "block: \n${b}", ("b", str ) );
-      return b;
+      ilog( "block: \n${g}", ("g", str ) );
+      return genesis;
    }
    catch ( const fc::exception& e )
    {
