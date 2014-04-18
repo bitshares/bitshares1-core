@@ -275,6 +275,7 @@ namespace bts { namespace client {
 
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
     bts::blockchain::chain_database_ptr client::get_chain()const { return my->_chain_db; }
+    bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
 
     void client::broadcast_transaction( const signed_transaction& trx )
     {

@@ -90,7 +90,7 @@ namespace bts { namespace rpc {
             con->add_method( "getblock", [=]( const fc::variants& params ) -> fc::variant 
             {
                 FC_ASSERT( params.size() == 1 );
-                return fc::variant( _client->get_chain()->fetch_block( params[0].as_int64() )  ); 
+                return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
             });
 
             con->add_method( "validateaddress", [=]( const fc::variants& params ) -> fc::variant 
@@ -130,6 +130,18 @@ namespace bts { namespace rpc {
     };
   } // detail
 
+  bool rpc_server::config::is_valid() const
+  {
+    if (rpc_user.empty())
+      return false;
+    if (rpc_password.empty())
+      return false;
+    if (!rpc_endpoint.port())
+      return false;
+    return true;
+  }
+
+
   rpc_server::rpc_server()
   :my( new detail::rpc_server_impl() )
   {
@@ -146,7 +158,7 @@ namespace bts { namespace rpc {
             my->_accept_loop_complete.wait();
          }
      } 
-     catch ( const fc::canceled_exception& e ){}
+     catch ( const fc::canceled_exception& ){}
      catch ( const fc::exception& e )
      {
         wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );

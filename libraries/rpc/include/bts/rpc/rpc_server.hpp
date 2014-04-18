@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <bts/client/client.hpp>
 
 namespace fc { namespace rpc { 
@@ -24,6 +25,8 @@ namespace bts { namespace rpc {
               std::string      rpc_user;
               std::string      rpc_password;
               fc::ip::endpoint rpc_endpoint;
+
+              bool is_valid() const;
            };
            rpc_server();
            ~rpc_server();
@@ -44,7 +47,7 @@ namespace bts { namespace rpc {
         private:
            std::unique_ptr<detail::rpc_server_impl> my;
    };
-
+   typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } } // bts::rpc
 
 #include <fc/reflect/reflect.hpp>

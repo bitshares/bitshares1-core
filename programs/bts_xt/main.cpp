@@ -37,7 +37,12 @@ int main( int argc, char** argv )
                               ("help", "display this help message")
                               ("p2p", "enable p2p mode")
                               ("port", boost::program_options::value<uint16_t>(), "set port to listen on")
-                              ("connect-to", boost::program_options::value<std::string>(), "set remote host to connect to");
+                              ("connect-to", boost::program_options::value<std::string>(), "set remote host to connect to")
+                              ("server", "enable JSON-RPC server")
+                              ("rpcuser", boost::program_options::value<std::string>(), "username for JSON-RPC")
+                              ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
+                              ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections");
+
    boost::program_options::positional_options_description positional_config;
    positional_config.add("data-dir", 1);
 
@@ -74,7 +79,6 @@ int main( int argc, char** argv )
       chain->open( datadir / "chain", true );
       chain->set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
 
-
       auto wall    = std::make_shared<bts::wallet::wallet>();
       wall->set_data_directory( datadir );
 
@@ -90,6 +94,28 @@ int main( int argc, char** argv )
 
       auto cli = std::make_shared<bts::cli::cli>( c );
 
+      bts::rpc::rpc_server_ptr rpc_server;
+
+      if (option_variables.count("server"))
+      {
+        // the user wants us to launch the RPC server.
+        // First, override any config parameters they 
+        bts::rpc::rpc_server::config rpc_config(cfg.rpc);
+        if (option_variables.count("rpcuser"))
+          rpc_config.rpc_user = option_variables["rpcuser"].as<std::string>();
+        if (option_variables.count("rpcpassword"))
+          rpc_config.rpc_password = option_variables["rpcpassword"].as<std::string>();
+        // for now, force binding to localhost only
+        if (option_variables.count("rpcport"))
+          rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
+        if (rpc_config.is_valid())
+        {
+          rpc_server = std::make_shared<bts::rpc::rpc_server>();
+          rpc_server->set_client(c);
+          rpc_server->configure(rpc_config);
+        }
+      }
+      
       if (p2p_mode)
       {
         c->load_p2p_configuration(datadir);
