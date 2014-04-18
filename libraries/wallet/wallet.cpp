@@ -299,7 +299,7 @@ namespace bts { namespace wallet {
               int32_t select_delegate_vote()
               { try {
                    FC_ASSERT( _data.trusted_delegates.size() > 0  );
-                   // for now we will randomly select a trusted delegate to vote for... this 
+                   // for now we will randomly select a trusted delegate to vote for... this
                    std::vector<uint32_t> trusted_del( _data.trusted_delegates.begin(), _data.trusted_delegates.end() );
                    return int32_t(trusted_del[rand()%trusted_del.size()]);
               } FC_RETHROW_EXCEPTIONS(warn, "") }
@@ -419,7 +419,7 @@ namespace bts { namespace wallet {
       {
         my->_data.trusted_delegates.insert(i);
       }
-      
+
       if( is_brain )
       {
          FC_ASSERT( base_password.size() >= 8 );
@@ -464,7 +464,6 @@ namespace bts { namespace wallet {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
          import_key( key, std::string( btc_addr ) );
       }
-      save();
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
 
@@ -568,66 +567,12 @@ namespace bts { namespace wallet {
    bool   wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
 
 
-   signed_transaction    wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
+   signed_transaction wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
    { try {
-       auto   change_address = new_recv_address( "change: " + memo );
-
-       std::unordered_set<address> req_sigs;
-       asset  total_in(static_cast<uint64_t>(0ull),amnt.unit);
-
        signed_transaction trx;
-       trx.inputs    = my->collect_inputs( amnt, total_in, req_sigs );
+       trx.outputs.push_back(trx_output(claim_by_signature_output(to), amnt));
 
-       asset change = total_in - amnt;
-
-       trx.outputs.push_back( trx_output( claim_by_signature_output( to ), amnt) );
-       trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), change) );
-
-       trx.sigs.clear();
-       my->sign_transaction( trx, req_sigs, false );
-
-       uint64_t trx_bytes = fc::raw::pack( trx ).size();
-       asset    fee( my->_current_fee_rate.get_rounded_amount() * trx_bytes );
-       ilog( "required fee ${f} for bytes ${b} at rate ${r}", ( "f",fee.get_rounded_amount() )("b",trx_bytes)("r",my->_current_fee_rate.get_rounded_amount()) );
-
-       if( amnt.unit == 0 )
-       {
-          if( total_in >= amnt + fee )
-          {
-              change = change - fee;
-              trx.outputs.back() = trx_output( claim_by_signature_output( change_address ), change );
-              if( change == asset() ) trx.outputs.pop_back(); // no change required
-          }
-          else
-          {
-              elog( "NOT ENOUGH TO COVER AMOUNT + FEE... GRAB MORE.." );
-              // TODO: this function should be recursive here, but having 2x the fee should be good enough
-              fee = fee + fee; // double the fee in this case to cover the growth
-              req_sigs.clear();
-              total_in = asset();
-              trx.inputs = my->collect_inputs( amnt+fee, total_in, req_sigs );
-              change =  total_in - amnt - fee;
-              trx.outputs.back() = trx_output( claim_by_signature_output( change_address ), change );
-              if( change == asset() ) trx.outputs.pop_back(); // no change required
-          }
-       }
-       else /// fee is in bts, but we are transferring something else
-       {
-           if( change.amount == 0 ) trx.outputs.pop_back(); // no change required
-
-           // TODO: this function should be recursive here, but having 2x the fee should be good enough, some
-           // transactions may overpay in this case, but this can be optimized later to reduce fees.. for now
-           fee = fee + fee; // double the fee in this case to cover the growth
-           asset total_fee_in;
-           auto extra_in = my->collect_inputs( fee, total_fee_in, req_sigs );
-           trx.inputs.insert( trx.inputs.end(), extra_in.begin(), extra_in.end() );
-           trx.outputs.push_back( trx_output( claim_by_signature_output( change_address ), total_fee_in - fee ) );
-       }
-
-       trx.sigs.clear();
-       my->sign_transaction(trx, req_sigs);
-
-       return trx;
+       return collect_inputs_and_sign(trx, amnt, memo);
    } FC_RETHROW_EXCEPTIONS( warn, "${amnt} to ${to}", ("amnt",amnt)("to",to) ) }
 
    void wallet::mark_as_spent( const output_reference& r )
@@ -757,45 +702,108 @@ namespace bts { namespace wallet {
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::dump()
+   /* @brief Dumps info strings for this wallet's last N transactions
+    */
+   void wallet::dump_txs(chain_database& db, uint32_t count)
+   {
+       auto txs = get_transaction_history();
+       uint32_t i = 0;
+       for (auto tx : txs)
+       {
+            if (i == count) break;
+            i++;
+            std::cerr << get_tx_info_string(db, tx.second.trx) << "\n";
+       }
+   }
+   /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
+    */
+   void wallet::dump_utxo_set()
    {
        std::cerr<<"===========================================================\n";
        std::cerr<<"Unspent Outputs: \n";
        for( auto out : my->_data.unspent_outputs )
        {
           std::cerr<<std::setw(13)<<std::string(out.first)<<"]  ";
-          dump_output( out.second );
+          dump_output(out.second);
           std::cerr << " delegate vote: " << my->_data.votes[out.first] <<" \n";
        }
        std::cerr<<"===========================================================\n";
    }
+
    void wallet::dump_output( const trx_output& out )
    {
-       switch( out.claim_func )
+       std::cerr << get_output_info_string(out);
+   }
+
+   std::string wallet::get_tx_info_string(chain_database& db, const transaction& tx)
+   {
+       std::stringstream ss;
+       asset sum_in, sum_out;
+
+       ss << "Inputs:\n";
+       for (auto in : tx.inputs)
        {
-          case claim_by_signature:
-             std::cerr<<std::string(out.amount)<<" ";
-             std::cerr<<"claim_by_signature ";
-             std::cerr<< std::string(out.as<claim_by_signature_output>().owner);
-             break;
+          auto out = db.fetch_output(in.output_ref);
+          sum_in += out.amount;
+          ss << "  " << get_input_info_string(db, in);
+       }
+
+       ss << "Outputs:\n";
+       for (auto out : tx.outputs)
+       {
+          sum_out += out.amount;
+          ss << "  " << get_output_info_string(out);
+       }
+
+       ss <<"\n"
+       <<"Total in: " << sum_in.get_rounded_amount() << "\n"
+       <<"Total out: " << sum_out.get_rounded_amount() << "\n"
+       <<"Fee: " << (sum_in - sum_out).get_rounded_amount() << "\n";
+
+       return ss.str();
+   }
+
+   std::string wallet::get_output_info_string(const trx_output& out)
+   {
+       std::stringstream ret;
+       switch (out.claim_func)
+       {
           case claim_by_pts:
-             std::cerr<<std::string(out.amount)<<" ";
-             std::cerr<<"claim_by_pts ";
-             std::cerr<< std::string(out.as<claim_by_pts_output>().owner);
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_by_pts ";
+             ret<< std::string(out.as<claim_by_pts_output>().owner);
+             ret<<"\n";
+             break;
+          case claim_by_signature:
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_by_signature ";
+             ret<< std::string(out.as<claim_by_signature_output>().owner);
+             ret<<"\n";
              break;
           case claim_name:
           {
              auto claim = out.as<claim_name_output>();
-             std::cerr<<std::string(out.amount)<<" ";
-             std::cerr<<"claim_name ";
-             std::cerr<< claim.name;
-             std::cerr<<"\tdelegate_id: ";
-             std::cerr<< claim.delegate_id;
-             std::cerr<<"\tkey: "<<std::string(address(claim.owner));
+             ret<<std::string(out.amount)<<" ";
+             ret<<"claim_name ";
+             ret<< claim.name;
+             ret<<"\tdelegate_id: ";
+             ret<< claim.delegate_id;
+             ret<<"\tkey: "<<std::string(address(claim.owner));
+             ret<<"\n";
              break;
           }
+          default:
+             ret << "unknown output type skipped: " << out.claim_func << "\n";
        }
+       return ret.str();
    }
+
+   std::string wallet::get_input_info_string(chain_database& db, const trx_input& in)
+   {
+       auto out = db.fetch_output(in.output_ref);
+       return get_output_info_string(out);
+   }
+
 
    bool wallet::is_my_address( const address& a )const
    {
@@ -864,7 +872,7 @@ namespace bts { namespace wallet {
    {
        my->_data.output_index_to_ref[oidx]  = out_ref;
        my->_output_ref_to_index[out_ref]    = oidx;
-       my->_data.unspent_outputs[oidx]      = out; 
+       my->_data.unspent_outputs[oidx]      = out;
        my->_data.votes[oidx]                = vote;
    }
    const std::map<output_index,trx_output>&  wallet::get_unspent_outputs()const
@@ -901,7 +909,7 @@ namespace bts { namespace wallet {
                // TODO: enforce fees
                 if( s.eval.fees < (get_fee_rate().get_rounded_amount() * in_trxs[i].size()) )
                 {
-                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}", 
+                  wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
                         ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate().get_rounded_amount()*in_trxs[i].size()) );
                   continue;
                 }
@@ -974,45 +982,59 @@ namespace bts { namespace wallet {
       my->_data.delegate_keys[did] = k;
    }
 
-signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                   std::unordered_set<address> &req_sigs, const address &change_addr)
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                   std::unordered_set<address>& req_sigs, const address& change_addr)
 {
-    /* Save transaction inputs and outputs */
-    std::vector<trx_input> original_inputs = trx.inputs;
-    std::vector<trx_output> original_outputs = trx.outputs;
-    std::unordered_set<address> original_req_sigs = req_sigs;
+    /* Save original transaction inputs and outputs */
+    auto original_inputs = trx.inputs;
+    auto original_outputs = trx.outputs;
+    auto original_req_sigs = req_sigs;
 
-    asset required_in = min_amnt;
+    auto required_in = min_amnt;
     asset total_in;
 
     do
     {
-        /* Restore original transaction */
+        /* Start with original transaction */
         trx.inputs = original_inputs;
         trx.outputs = original_outputs;
         req_sigs = original_req_sigs;
-        total_in = 0u;
 
+        /* Collect necessary inputs */
+        total_in = asset(required_in.unit);
         auto new_inputs = collect_inputs(required_in, total_in, req_sigs); /* Throws if insufficient funds */
         trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
 
+        /* Return change */
         auto change_amt = total_in - required_in;
         trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
 
+        /* Ensure fee is paid in base units */
+        if (change_amt.unit != asset().unit)
+            return collect_inputs_and_sign(trx, asset(), req_sigs, change_addr);
+
+        /* Calculate fee required for signed transaction */
         trx.sigs.clear();
         sign_transaction(trx, req_sigs, false);
-
-        /* Calculate fee and subtract from change */
         auto fee = get_fee_rate() * trx.size();
-        required_in += fee;
-        change_amt = total_in - required_in;
+        ilog("required fee ${f} for bytes ${b} at rate ${r}", ("f", fee.get_rounded_amount()) ("b", trx.size()) ("r", get_fee_rate().get_rounded_amount()));
 
-        if (change_amt > 0u)
+        /* Calculate new minimum input amount */
+        required_in += fee;
+        if (total_in < required_in)
+        {
+            wlog("not enough to cover amount + fee... grabbing more..");
+            continue;
+        }
+
+        /* Recalculate leftover change */
+        change_amt = total_in - required_in;
+        if (change_amt > asset())
             trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
         else
             trx.outputs.pop_back();
     }
-    while (total_in < required_in); /* Try again if the fee ended up too high for the collected inputs */
+    while (total_in < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
 
     trx.sigs.clear();
     sign_transaction(trx, req_sigs, true);
@@ -1020,9 +1042,28 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, cons
     return trx;
 }
 
-signed_transaction wallet::collect_inputs_and_sign(signed_transaction &trx, const asset &min_amnt,
-                                                   std::unordered_set<address> &req_sigs)
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                   std::unordered_set<address>& req_sigs, const std::string& memo)
 {
+    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change: " + memo));
+}
+
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                   std::unordered_set<address>& req_sigs)
+{
+    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change address"));
+}
+
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
+                                                   const std::string& memo)
+{
+    std::unordered_set<address> req_sigs;
+    return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change: " + memo));
+}
+
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt)
+{
+    std::unordered_set<address> req_sigs;
     return collect_inputs_and_sign(trx, min_amnt, req_sigs, new_recv_address("Change address"));
 }
 
