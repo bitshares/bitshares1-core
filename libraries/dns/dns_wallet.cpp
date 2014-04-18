@@ -10,6 +10,27 @@ dns_wallet::~dns_wallet()
 {
 }
 
+std::string dns_wallet::get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in)
+{
+    //TODO this should print info about what we're claiming the output as (expired/auction etc)
+    return get_output_info_string(db.fetch_output(in.output_ref));
+}
+
+std::string dns_wallet::get_output_info_string(const trx_output& out)
+{
+    std::stringstream ret;
+    switch (out.claim_func)
+    {
+        case claim_domain: {
+            auto _out = out.as<claim_domain_output>();
+            std::string owner_str = _out.owner;
+            ret << "Domain Claim\n  Name: \"" << _out.name << "\"\n  Owner: " <<
+               owner_str << "\n  Amount: " << out.amount.get_rounded_amount(); 
+            return ret.str();
+        }
+    }
+}
+
 signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asset &bid_price,
                                              const signed_transactions &tx_pool, dns_db &db)
 { try {

@@ -25,7 +25,9 @@ class dns_wallet : public bts::wallet::wallet
 
         signed_transaction auction_domain(const std::string &name, const asset &ask_price,
                                           const signed_transactions &tx_pool, dns_db &db);
-
+        
+        virtual std::string get_output_info_string(const trx_output& out);
+        virtual std::string get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
     protected:
         virtual bool scan_output(transaction_state &state, const trx_output &out, const output_reference &ref,
                                  const output_index &idx);

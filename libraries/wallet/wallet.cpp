@@ -756,9 +756,9 @@ namespace bts { namespace wallet {
        }
 
        ss <<"\n"
-       //<<"Total in: " << sum_in.to_uint64() << "\n"
-       <<"Total out: " << sum_out.to_uint64() << "\n" ;
-       //<<"Fee: " << (sum_in - sum_out).to_uint64() << "\n";
+       <<"Total in: " << sum_in.to_uint64() << "\n"
+       <<"Total out: " << sum_out.to_uint64() << "\n"
+       <<"Fee: " << (sum_in - sum_out).to_uint64() << "\n";
        
        return ss.str();
    }
