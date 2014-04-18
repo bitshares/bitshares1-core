@@ -180,7 +180,7 @@ namespace bts { namespace wallet {
                   return _current_fee_rate;
               }
 
-              asset get_balance( asset::type balance_type )
+              asset get_balance( asset_type balance_type )
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
                    std::vector<trx_input> inputs;
@@ -263,13 +263,13 @@ namespace bts { namespace wallet {
                    std::vector<trx_input> inputs;
                    for( auto out : _data.unspent_outputs )
                    {
-                      ilog( "unspent outputs ${o}", ("o",out) );
+                      //ilog( "unspent outputs ${o}", ("o",out) );
                        if( out.second.claim_func == claim_by_signature && out.second.amount.unit == min_amnt.unit )
                        {
                            inputs.push_back( trx_input( get_output_ref(out.first) ) );
                            total_in += out.second.amount;
                            req_sigs.insert( out.second.as<claim_by_signature_output>().owner );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                       //    ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -280,7 +280,7 @@ namespace bts { namespace wallet {
                            inputs.push_back( trx_input( get_output_ref(out.first) ) );
                            total_in += out.second.amount;
                            req_sigs.insert( _data.recv_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
-                           ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
+                        //   ilog( "total in ${in}  min ${min}", ( "in",total_in)("min",min_amnt) );
                            if( total_in.get_rounded_amount() >= min_amnt.get_rounded_amount() )
                            {
                               return inputs;
@@ -505,7 +505,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to save wallet ${wallet}", ("wallet",my->_wallet_dat) ) }
 
-   asset wallet::get_balance( asset::type t )
+   asset wallet::get_balance( asset_type t )
    {
       return my->get_balance(t);
    }
@@ -834,6 +834,19 @@ namespace bts { namespace wallet {
                cache_output( state.trx.vote, out, out_ref, oidx );
                state.to.push_back( owner );
                state.adjust_balance( out.amount, 1 );
+               return true;
+            }
+            return false;
+         }
+         case claim_name:
+         {
+            auto claim = out.as<claim_name_output>();
+            auto itr = my->_data.delegate_keys.find( claim.delegate_id );
+            if( itr != my->_data.delegate_keys.end() )
+            {
+               FC_ASSERT( itr->second.get_public_key() == claim.owner );
+               cache_output( state.trx.vote, out, out_ref, oidx );
+               state.to.push_back( claim.owner );
                return true;
             }
             return false;

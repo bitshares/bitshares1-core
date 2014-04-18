@@ -16,79 +16,15 @@
 
 namespace bts { namespace blockchain {
 
-  asset::asset( const std::string& s )
-  { 
-     std::stringstream ss(s);
-     double a;
-     ss >> a;
-     std::string u;
-     ss >> u;
-     amount = fc::uint128( a * BTS_BLOCKCHAIN_SHARE, 0 );
-     unit = fc::variant(u).as<asset::type>();
-     try {
-        std::string tmp(*this);
-        tmp.size();
-     } FC_RETHROW_EXCEPTIONS( warn, "unable to covert *this back to string", ("str",s) )
-  }
-
-  asset::asset( uint32_t amnt, asset::type t )
-  :unit(t)
-  {
-     amount = fc::uint128( amnt, 0 );
-  }
-  asset::asset( double d, asset::type t )
-  :unit(t)
-  {
-     amount = fc::uint128(d * BTS_BLOCKCHAIN_SHARE,0);
-  }
-
-  asset::asset( float d, asset::type t )
-  :unit(t)
-  {
-     amount = fc::uint128(double(d) * BTS_BLOCKCHAIN_SHARE,0);
-  }
-
-  asset::asset( uint64_t ull, asset::type t )
-  :unit(t)
-  {
-     amount = fc::uint128(ull,0);
-  }
-
-  double asset::to_double()const
-  {
-     //return double(get_rounded_amount())/BTS_BLOCKCHAIN_SHARE;
-     auto div = (amount / fc::uint128(BTS_BLOCKCHAIN_SHARE,0));
-     div += fc::uint128( 0, 100 ); // round up 
-     return  double(div.high_bits()) + double(div.low_bits())/uint64_t(-1); 
-  }
-
-  asset::operator std::string()const
-  { try {
-
-     auto rounded_amnt = get_rounded_amount();
-     std::string int_part = fc::to_string(uint64_t(rounded_amnt/BTS_BLOCKCHAIN_SHARE) );
-     uint64_t fract = uint64_t(rounded_amnt % BTS_BLOCKCHAIN_SHARE + BTS_BLOCKCHAIN_SHARE);
-     return  int_part  + "." + fc::to_string(fract).substr(1) + " " + fc::to_string(unit); 
-
-  } FC_RETHROW_EXCEPTIONS( warn, "unable to convert asset to string" ) }
 
   uint64_t asset::get_rounded_amount()const
   {
-     auto tmp = amount;
-     tmp += (fc::uint128(1,0)>>1);
-     return tmp.high_bits();
+     return amount;
   }
 
-
-  const fc::uint128& asset::one()
+  asset::operator std::string()const
   {
-     static fc::uint128_t o = fc::uint128(1,0);
-     return o;
-  }
-  const fc::uint128& asset::zero()
-  {
-     static fc::uint128_t o = fc::uint128(0,0);
-     return o;
+     return fc::to_string(amount);
   }
 
   asset& asset::operator += ( const asset& o )
@@ -111,8 +47,9 @@ namespace bts { namespace blockchain {
       fc::bigint bi(amount);
       bi *= fix6464;
       bi >>= 64;
-      return asset( fc::uint128(bi), unit );
+      return asset( fc::uint128(bi).high_bits(), unit );
   }
+
   asset& asset::operator -= ( const asset& o )
   {
      FC_ASSERT( unit == o.unit );
@@ -120,11 +57,6 @@ namespace bts { namespace blockchain {
      amount -= o.amount;
      if( amount > old.amount ) 
      {
-        if( get_rounded_amount() == 0 )
-        {
-            amount = 0;
-            return *this;
-        }
         FC_THROW_EXCEPTION( exception, "asset addition underflow  ${a} - ${b} = ${c}", 
                             ("a", old)("b",o)("c",*this) );
      }
@@ -151,11 +83,11 @@ namespace bts { namespace blockchain {
      quote = units.substr(0,3);
      base = units.substr(4,3);
      ratio      = fc::uint128( uint64_t(a), uint64_t(-1) * (a - uint64_t(a)) ); 
-     quote_unit = fc::variant(quote).as<asset::type>();
-     base_unit  = fc::variant(base).as<asset::type>();
+     quote_unit = fc::variant(quote).as<asset::unit_type>();
+     base_unit  = fc::variant(base).as<asset::unit_type>();
   }
 
-  price::price( double a, asset::type q, asset::type b )
+  price::price( double a, asset::unit_type q, asset::unit_type b )
   {
      FC_ASSERT( q > b, "${quote} > ${base}", ("quote",q)("base",b) );
 

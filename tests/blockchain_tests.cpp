@@ -23,15 +23,30 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     genesis.next_fee          = block_header::min_fee();
     genesis.total_shares      = 0;
 
+    signed_transaction dtrx;
+    dtrx.vote = 0;
+    // create initial delegates
+    for( uint32_t i = 0; i < 100; ++i )
+    {
+       auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
+       auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+       auto key      = fc::ecc::private_key::regenerate(key_hash);
+       dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key() ), asset() ) );
+    }
+    genesis.trxs.push_back( dtrx );
+
     // generate an initial genesis block that evenly allocates votes among all 
     // delegates.
     for( uint32_t i = 0; i < 100; ++i )
     {
        signed_transaction trx;
        trx.vote = i + 1;
-       uint64_t amnt = 1000 * BTS_BLOCKCHAIN_SHARE;
-       trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
-       genesis.total_shares += amnt;
+       for( uint32_t o = 0; o < 5; ++o )
+       {
+          uint64_t amnt = 200000;
+          trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
+          genesis.total_shares += amnt;
+       }
        genesis.trxs.push_back( trx );
     }
 
@@ -71,6 +86,14 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        wallet             wall;
        wall.create( dir.path() / "wallet.dat", "password", "password", true );
 
+       for( uint32_t i = 0; i < 100; ++i )
+       {
+          auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
+          auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+          auto key      = fc::ecc::private_key::regenerate(key_hash);
+          wall.import_delegate( i+1, key );
+       }
+
        fc::ecc::private_key auth = fc::ecc::private_key::generate();
 
        std::vector<address> addrs;
@@ -93,12 +116,14 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        wall.dump_utxo_set();
        db.dump_delegates();
 
-       for( uint32_t i = 0; i < 50; ++i )
+       for( uint32_t i = 0; i < 1000; ++i )
        {
-          auto trx = wall.transfer( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
-
           std::vector<signed_transaction> trxs;
-          trxs.push_back( trx );
+          for( uint32_t i = 0; i < 5; ++i )
+          {
+             auto trx = wall.transfer( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
+             trxs.push_back( trx );
+          }
           sim_validator->skip_time( fc::seconds(60*5) );
           auto next_block = wall.generate_next_block( db, trxs );
           ilog( "block: ${b}", ("b", next_block ) );
@@ -107,8 +132,11 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           db.push_block( next_block );
           auto head_id = db.head_block_id();
 
-          wall.scan_chain( db );
-          wall.dump_utxo_set();
+          if( i % 10 == 0 )
+          {
+             wall.scan_chain( db );
+             wall.dump_utxo_set();
+          }
           db.dump_delegates();
        }
    } 
