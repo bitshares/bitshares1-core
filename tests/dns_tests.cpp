@@ -144,9 +144,9 @@ class DNSTestState
         address random_addr(dns_wallet &wallet)
         {
             if (&wallet == &wallet1)
-                return addrs1[random() % (addrs1.size())];
+                return addrs1[rand() % (addrs1.size())];
             else if (&wallet == &wallet2)
-                return addrs2[random() % (addrs2.size())];
+                return addrs2[rand() % (addrs2.size())];
 
             throw;
         }
