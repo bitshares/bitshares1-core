@@ -256,7 +256,7 @@ namespace bts { namespace cli {
              double      amount;
              std::string memo;
              ss >> addr >> amount;
-             std::cout << "address: "<<addr<< " amount: "<<amount<< "  asset: "<< std::string(asset(amount)) <<"\n";
+             std::cout << "memo: ";
              std::getline( ss, memo );
 
              auto trx = wallet->transfer( asset( amount ), address(addr), memo );
@@ -337,30 +337,10 @@ namespace bts { namespace cli {
           print_help();
        }
    }
-
    void cli::list_transactions( uint32_t count )
    {
-       auto wallet = client()->get_wallet();
-       wallet->dump_txs(*(client()->get_chain()), count);
-       /*
-       auto trxs = client()->get_wallet()->get_transaction_history();
-       for( auto state : trxs )
-       {
-          std::cout << state.second.block_num << "   " << fc::json::to_string( state.second.to ) << " ";
-          for( auto delta : state.second.delta_balance )
-          {
-             if( delta.second > 0 )
-             {
-                std::cout << std::string( asset(uint64_t(delta.second),delta.first)) <<" ";
-             }
-             else if( delta.second < 0 )
-             {
-                std::cout << "-"<<std::string( asset(uint64_t(-delta.second),delta.first)) <<" ";
-             }
-          }
-          std::cout <<"\n";
-       }
-        */
+       /* dump the transactions from the wallet, which needs the chain db */
+       client()->get_wallet()->dump_txs(*(client()->get_chain()), count);
    }
    void cli::get_balance( uint32_t min_conf, uint16_t unit )
    {

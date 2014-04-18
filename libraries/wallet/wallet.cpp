@@ -702,6 +702,8 @@ namespace bts { namespace wallet {
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   /* @brief Dumps info strings for this wallet's last N transactions
+    */
    void wallet::dump_txs(chain_database& db, uint32_t count)
    {
        auto txs = get_transaction_history();
@@ -713,6 +715,8 @@ namespace bts { namespace wallet {
             std::cerr << get_tx_info_string(db, tx.second.trx) << "\n";
        }
    }
+   /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
+    */
    void wallet::dump_utxo_set()
    {
        std::cerr<<"===========================================================\n";
@@ -789,9 +793,10 @@ namespace bts { namespace wallet {
        return ret.str();
    }
 
-   std::string wallet::get_input_info_string(chain_database&, const trx_input& in)
+   std::string wallet::get_input_info_string(chain_database& db, const trx_input& in)
    {
-        return "Test input info string\n";
+       auto out = db.fetch_output(in.output_ref);
+       return get_output_info_string(out);
    }
 
 

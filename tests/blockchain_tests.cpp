@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        db.push_block( genblk );
 
        wall.scan_chain( db );
-       wall.dump();
+       wall.dump_utxo_set();
        db.dump_delegates();
 
        for( uint32_t i = 0; i < 50; ++i )
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           auto head_id = db.head_block_id();
 
           wall.scan_chain( db );
-          wall.dump();
+          wall.dump_utxo_set();
           db.dump_delegates();
        }
    } 
