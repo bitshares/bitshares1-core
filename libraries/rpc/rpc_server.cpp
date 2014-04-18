@@ -77,7 +77,7 @@ namespace bts { namespace rpc {
             {
                 check_login( capture_con );
                 FC_ASSERT( params.size() == 1 );
-                auto unit = params[0].as<bts::blockchain::asset::type>();
+                auto unit = params[0].as<bts::blockchain::asset_type>();
                 return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
             });
 

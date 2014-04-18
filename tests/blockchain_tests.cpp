@@ -43,7 +43,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
        trx.vote = i + 1;
        for( uint32_t o = 0; o < 5; ++o )
        {
-          uint64_t amnt = 200 * BTS_BLOCKCHAIN_SHARE;
+          uint64_t amnt = 200000;
           trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
           genesis.total_shares += amnt;
        }

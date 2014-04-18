@@ -180,7 +180,7 @@ namespace bts { namespace wallet {
                   return _current_fee_rate;
               }
 
-              asset get_balance( asset::type balance_type )
+              asset get_balance( asset_type balance_type )
               {
                    asset total_bal( static_cast<uint64_t>(0ull), balance_type);
                    std::vector<trx_input> inputs;
@@ -505,7 +505,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to save wallet ${wallet}", ("wallet",my->_wallet_dat) ) }
 
-   asset wallet::get_balance( asset::type t )
+   asset wallet::get_balance( asset_type t )
    {
       return my->get_balance(t);
    }
