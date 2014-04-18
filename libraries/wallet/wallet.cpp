@@ -702,34 +702,98 @@ namespace bts { namespace wallet {
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::dump()
+   void wallet::dump_txs(chain_database& db, uint32_t count)
+   {
+       auto txs = get_transaction_history();
+       uint32_t i = 0;
+       for (auto tx : txs)
+       {
+            if (i == count) break; 
+            i++;
+            std::cerr << get_tx_info_string(db, tx.second.trx) << "\n";
+       }
+   }
+   void wallet::dump_utxo_set()
    {
        std::cerr<<"===========================================================\n";
        std::cerr<<"Unspent Outputs: \n";
        for( auto out : my->_data.unspent_outputs )
        {
           std::cerr<<std::setw(13)<<std::string(out.first)<<"]  ";
-          dump_output( out.second );
+          dump_output(out.second);
           std::cerr << " delegate vote: " << my->_data.votes[out.first] <<" \n";
        }
        std::cerr<<"===========================================================\n";
    }
+
    void wallet::dump_output( const trx_output& out )
    {
-       switch( out.claim_func )
-       {
-          case claim_by_signature:
-             std::cerr<<std::string(out.amount)<<" ";
-             std::cerr<<"claim_by_signature ";
-             std::cerr<< std::string(out.as<claim_by_signature_output>().owner);
-             break;
-          case claim_by_pts:
-             std::cerr<<std::string(out.amount)<<" ";
-             std::cerr<<"claim_by_pts ";
-             std::cerr<< std::string(out.as<claim_by_pts_output>().owner);
-             break;
-       }
+       std::cerr << get_output_info_string(out);
    }
+
+   std::string wallet::get_tx_info_string(chain_database& db, const transaction& tx)
+   {
+       std::stringstream ss;
+       asset sum_in, sum_out;
+
+       ss << "Inputs:\n";
+       for (auto in : tx.inputs)
+       {
+          auto out = db.fetch_output(in.output_ref);
+          sum_in += out.amount;
+          ss << "  " << get_input_info_string(db, in);
+       }
+       
+       ss << "Outputs:\n";
+       for (auto out : tx.outputs)
+       {
+          sum_out += out.amount;
+          ss << "  " << get_output_info_string(out);
+       }
+
+       ss <<"\n"
+       //<<"Total in: " << sum_in.to_uint64() << "\n"
+       <<"Total out: " << sum_out.to_uint64() << "\n" ;
+       //<<"Fee: " << (sum_in - sum_out).to_uint64() << "\n";
+       
+       return ss.str();
+   }
+
+   std::string wallet::get_output_info_string(const trx_output& out)
+   {
+       std::stringstream ret;
+       switch (out.claim_func)
+       {
+           case claim_by_pts: {
+               auto _out = out.as<claim_by_pts_output>();
+               std::string owner_string = _out.owner;
+               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
+               break;
+           }
+           case claim_by_signature: {
+               auto _out = out.as<claim_by_signature_output>();
+               std::string owner_string = _out.owner;
+               ret << out.amount.get_rounded_amount() << " to " << owner_string << "\n";
+               break;
+           }
+           case claim_name: {
+               auto _out = out.as<claim_name_output>();
+               std::string owner_string = address(_out.owner);
+               ret << "Name '" << _out.name << "' registered to " << owner_string <<
+                   " for " << out.amount.get_rounded_amount() << "\n";
+               break;
+           }
+           default:
+               ret << "unknown output type skipped: " << out.claim_func << "\n";
+       }
+       return ret.str();
+   }
+
+   std::string wallet::get_input_info_string(chain_database&, const trx_input& in)
+   {
+        return "Test input info string\n";
+   }
+
 
    bool wallet::is_my_address( const address& a )const
    {
