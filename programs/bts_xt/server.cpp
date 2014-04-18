@@ -11,7 +11,7 @@ int main( int argc, char** argv )
 
        bts::net::chain_server cserv;
        bts::net::chain_server::config cfg;
-       cfg.port = 4567;
+       cfg.port = 4569;
        cserv.configure(cfg);
        cserv.get_chain().set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
        ilog( "sleep..." );
