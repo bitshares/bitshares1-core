@@ -27,8 +27,34 @@ namespace fc {
 
 namespace bts { namespace blockchain {
     namespace ldb = leveldb;
+
+    uint64_t to_bips( uint64_t shares, uint64_t total_shares )
+    {
+        fc::uint128   big_shares(shares);
+
+        big_shares *= fc::uint128( int64_t(BTS_BLOCKCHAIN_BIP) );
+        big_shares /= fc::uint128( total_shares );
+        FC_ASSERT( big_shares.high_bits() == 0, "bips integer overflow" );
+        return big_shares.low_bits(); //(BTS_BLOCKCHAIN_BIP * shares) / total_shares;
+    }
+
     namespace detail
     {
+       struct vote_del
+       {
+          vote_del( int64_t v = 0, uint32_t del = 0 )
+          :votes(v),delegate_id(del){}
+          int64_t votes;
+          uint32_t delegate_id;
+          friend bool operator == ( const vote_del& a, const vote_del& b )
+          {
+             return a.votes == b.votes && a.delegate_id == b.delegate_id;
+          }
+          friend bool operator < ( const vote_del& a, const vote_del& b )
+          {
+             return a.votes > b.votes ? true : (a.votes == b.votes ? a.delegate_id > b.delegate_id : false);
+          }
+       };
 
       // TODO: .01 BTC update private members to use _member naming convention
       class chain_database_impl
@@ -51,7 +77,7 @@ namespace bts { namespace blockchain {
             /**
              *  track the delegate votes by rank
              */
-            std::map<int64_t, uint32_t>                         _votes_to_delegate;
+            std::set<vote_del>                         _votes_to_delegate;
             std::map<uint32_t, int64_t>                         _delegate_to_votes;
 
             pow_validator_ptr                                   _pow_validator;
@@ -69,12 +95,10 @@ namespace bts { namespace blockchain {
                 auto itr = _delegate_to_votes.find( rec.delegate_id );
                 if( itr != _delegate_to_votes.end() )
                 {
-                    auto old_votes = itr->second;
-                    _votes_to_delegate.erase(old_votes);
+                    ilog( "old votes: ${v}  new votes ${nv}", ("v",itr->second)("nv",new_votes) );
+                    _votes_to_delegate.erase( vote_del( itr->second, itr->first ));
                 }
-                new_votes <<= 16;
-                new_votes |= int64_t(uint16_t( rec.delegate_id ));
-                _votes_to_delegate[ new_votes ]       = rec.delegate_id;
+                _votes_to_delegate.insert( vote_del(new_votes, rec.delegate_id) );
                 _delegate_to_votes[ rec.delegate_id ] = new_votes;
 
                 wlog( "store delegate ${d}", ("d",rec) );
@@ -122,10 +146,16 @@ namespace bts { namespace blockchain {
             { try {
                 std::vector<uint160> trxs_ids;
                 uint16_t t = 0;
+                std::map<int32_t,uint64_t> delegate_votes;
+                for( uint32_t i = 1; i <= 100; ++i )
+                {
+                   delegate_votes[i] = 0;
+                }
                 for( ; t < b.trxs.size(); ++t )
                 {
                    store( b.trxs[t], trx_num( b.block_num, t) );
                    trxs_ids.push_back( b.trxs[t].id() );
+                   
 
                    /*** on the genesis block we need to store initial delegates and vote counts */
                    if( b.block_num == 0 )
@@ -138,23 +168,32 @@ namespace bts { namespace blockchain {
                             {
                                auto claim = b.trxs[t].outputs[o].as<claim_name_output>();
                                update_name_record( claim.name, claim );
-                         //      if( claim.delegate_id != 0 )
-                                  update_delegate( name_record( claim ) );
+                         //    if( claim.delegate_id != 0 )
+                               update_delegate( name_record( claim ) );
                             }
                          }
                       }
                       else // t != 0
                       {
-                         auto rec = _delegate_records.fetch( b.trxs[t].vote );
+                         name_record rec = _delegate_records.fetch( b.trxs[t].vote );
                          // first transaction registers names... the rest are initial balance
                          for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
                          {
-                            rec.votes_for += b.trxs[t].outputs[o].amount.get_rounded_amount();
+                            delegate_votes[b.trxs[t].vote] += b.trxs[t].outputs[o].amount.get_rounded_amount();
+                            rec.votes_for += to_bips( b.trxs[t].outputs[o].amount.get_rounded_amount(), b.total_shares );
                          }
                          update_delegate( rec );
                       }
                    } // block == 0
                 }
+                elog( "total votes:\n ${e}", ("e",fc::json::to_pretty_string( delegate_votes) ) );
+                uint64_t sum = 0;
+                for( auto i : delegate_votes )
+                {
+                   sum += i.second;
+                }
+                elog( "grand total: ${g}", ("g",sum) );
+
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
                    store( trx, trx_num( b.block_num, t) );
@@ -177,18 +216,18 @@ namespace bts { namespace blockchain {
                 {
                    auto rec = _delegate_records.fetch( abs(item.first) );
                    if( item.first < 0 )
-                      rec.votes_against -= item.second;
+                      rec.votes_against -= to_bips(item.second,b.total_shares);
                    else
-                      rec.votes_for     -= item.second;
+                      rec.votes_for     -= to_bips(item.second,b.total_shares);
                    update_delegate( rec );
                 }
                 for( auto item : state->_output_votes )
                 {
                    auto rec = _delegate_records.fetch( abs(item.first) );
                    if( item.first < 0 )
-                      rec.votes_against += item.second;
+                      rec.votes_against += to_bips( item.second, b.total_shares );
                    else
-                      rec.votes_for     += item.second;
+                      rec.votes_for     += to_bips( item.second, b.total_shares );
                    update_delegate( rec );
                 }
 
@@ -254,7 +293,7 @@ namespace bts { namespace blockchain {
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n"; 
+           std::cerr << i << "      ] " << del.delegate_id << " " << ((del.votes)) <<"\n"; 
            ++i;
         }
      }

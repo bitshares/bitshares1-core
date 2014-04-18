@@ -1,38 +1,43 @@
 #pragma once
-#include <bts/blockchain/address.hpp>
-#include <bts/blockchain/transaction.hpp>
-#include <bts/wallet/wallet.hpp>
-#include <bts/dns/dns_db.hpp>
+
+#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
-    //namespace detail  { class dns_wallet_impl; }
-    using namespace bts::blockchain;
-    class dns_wallet : public bts::wallet::wallet
-    {
-        public:
-            dns_wallet();
-            ~dns_wallet();
-            bts::blockchain::signed_transaction buy_domain(const std::string& name,
-                                                        asset amount, dns_db& db);
-            bts::blockchain::signed_transaction update_record(const std::string& name,
-                                                    bts::blockchain::address domain_addr,
-                                                    fc::variant value);
-            bts::blockchain::signed_transaction sell_domain(const std::string&, 
-                                            bts::blockchain::asset amount);
-            // TODO put this in the parent wallet class?
-            bts::blockchain::signed_transaction add_fee_and_sign(
-                                                signed_transaction& trx,
-                                                asset required_in,
-                                                asset& total_in,
-                                                std::unordered_set<address> req_sigs);
 
-        protected:
-            virtual bool scan_output( const bts::blockchain::trx_output& out,
-                                      const bts::blockchain::output_reference& ref,
-                                      const bts::wallet::output_index& oidx );
+using namespace bts::blockchain;
+using namespace bts::wallet;
 
-        private:
-             //std::unique_ptr<detail::dns_wallet_impl> my;
-     };
+class dns_wallet : public bts::wallet::wallet
+{
+    public:
+        dns_wallet();
+        ~dns_wallet();
 
-} } // bts::dns 
+        // TODO: Do we need tx_pool for every function like this?
+        signed_transaction bid_on_domain(const std::string &name, const asset &bid_price,
+                                         const signed_transactions &tx_pool, dns_db &db);
+
+        signed_transaction update_domain(const std::string &name, const fc::variant &value,
+                                         const signed_transactions &tx_pool, dns_db &db);
+
+        signed_transaction transfer_domain(const std::string &name, const address &recipient,
+                                           const signed_transactions &tx_pool, dns_db &db);
+
+        signed_transaction auction_domain(const std::string &name, const asset &ask_price,
+                                          const signed_transactions &tx_pool, dns_db &db);
+        
+        virtual std::string get_output_info_string(const trx_output& out);
+        virtual std::string get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
+    protected:
+        virtual bool scan_output(transaction_state &state, const trx_output &out, const output_reference &ref,
+                                 const output_index &idx);
+
+    private:
+        signed_transaction update_or_auction_domain(const claim_domain_output &domain_output, const asset &amount,
+                                                    const output_reference &prev_tx_ref, const address &prev_owner,
+                                                    dns_db &db);
+};
+
+typedef std::shared_ptr<dns_wallet> dns_wallet_ptr;
+
+} } // bts::dns

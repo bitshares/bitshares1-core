@@ -1,4 +1,4 @@
-include_directories( ${CMAKE_SOURCE_DIR}/libraries/wallet/include ) 
+include_directories( ${CMAKE_SOURCE_DIR}/libraries/wallet/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/blockchain/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/dns/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/db/include )
@@ -6,8 +6,8 @@ include_directories( ${CMAKE_SOURCE_DIR}/libraries/db/include )
 add_executable( blockchain_tests blockchain_tests.cpp )
 target_link_libraries( blockchain_tests bts_wallet bts_blockchain bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
 
-#add_executable( dns_tests dns_tests.cpp )
-#target_link_libraries( dns_tests bts_wallet bts_dns bts_blockchain fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${CRYPTO_LIB} bts_wallet)
+add_executable( dns_tests dns_tests.cpp )
+target_link_libraries( dns_tests bts_dns bts_wallet bts_blockchain bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
@@ -23,16 +23,16 @@ if( WIN32 )
     set(Boost_USE_MULTITHREADED ON)
     set(Boost_USE_STATIC_LIBS OFF)
     set(BOOST_ALL_DYN_LINK ON) # force dynamic linking for all libraries
-    find_package( Boost 1.54 REQUIRED COMPONENTS 
-                  thread 
-                  date_time 
-                  system 
-                  filesystem 
-                  program_options 
-                  serialization 
-                  chrono 
-                  unit_test_framework 
-                  context 
+    find_package( Boost 1.54 REQUIRED COMPONENTS
+                  thread
+                  date_time
+                  system
+                  filesystem
+                  program_options
+                  serialization
+                  chrono
+                  unit_test_framework
+                  context
                   coroutine
                   locale )
 

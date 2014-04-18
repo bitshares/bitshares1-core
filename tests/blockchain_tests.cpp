@@ -35,7 +35,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     }
     genesis.trxs.push_back( dtrx );
 
-    // generate an initial genesis block that evenly allocates votes among all 
+    // generate an initial genesis block that evenly allocates votes among all
     // delegates.
     for( uint32_t i = 0; i < 100; ++i )
     {
@@ -43,7 +43,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
        trx.vote = i + 1;
        for( uint32_t o = 0; o < 5; ++o )
        {
-          uint64_t amnt = 200 * BTS_BLOCKCHAIN_SHARE;
+          uint64_t amnt = 200000;
           trx.outputs.push_back( trx_output( claim_by_signature_output( addr[i] ), asset( amnt ) ) );
           genesis.total_shares += amnt;
        }
@@ -58,26 +58,26 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
 /**
  *  The purpose of this test is to make sure that the network will
  *  not stall even with random transactions executing as quickly
- *  as possible.  
+ *  as possible.
  *
  *  This test will generate 1000 wallets, each starting with a random
  *  balance.   Then it will randomly make 10 transactions from 10
  *  wallets to 10 other wallets.  Generate a block and push it
- *  on to the blockchain.   
+ *  on to the blockchain.
  *
- *  It will do this for one years worth of blocks. 
+ *  It will do this for one years worth of blocks.
  *
  */
 BOOST_AUTO_TEST_CASE( blockchain_endurence )
 {
-    
+
 }
 
 /**
  *  This test creates a single wallet and a genesis block
  *  initialized with 1000 starting addresses.  It will then
  *  generate one random transaction per block and grow
- *  the blockchain as quickly as possible.  
+ *  the blockchain as quickly as possible.
  */
 BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 {
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        db.push_block( genblk );
 
        wall.scan_chain( db );
-       wall.dump();
+       wall.dump_utxo_set();
        db.dump_delegates();
 
        for( uint32_t i = 0; i < 1000; ++i )
@@ -134,12 +134,12 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
           if( i % 10 == 0 )
           {
-             wall.scan_chain( db );
-             wall.dump();
+              wall.scan_chain( db );
+              wall.dump_utxo_set();
           }
           db.dump_delegates();
        }
-   } 
+   }
    catch ( const fc::exception& e )
    {
       std::cerr<<e.to_detail_string()<<"\n";
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
 /**
  *  This test case will generate two wallets, generate
- *  a years worth of transactions from one wallet and 
+ *  a years worth of transactions from one wallet and
  *  then verify that the inactive outputs are brought
  *  forward and pay a 5% fee.
  */

@@ -1,57 +1,86 @@
-#include <bts/db/level_map.hpp>
 #include <bts/dns/dns_db.hpp>
-#include <fc/reflect/variant.hpp>
+#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
 
-    namespace ldb = leveldb;
-    namespace detail
+dns_db::dns_db()
+{
+    set_transaction_validator(std::make_shared<dns_transaction_validator>(this));
+}
+
+dns_db::~dns_db()
+{
+    close();
+}
+
+void dns_db::open(const fc::path& dir, bool create)
+{ try {
+    chain_database::open(dir, create);
+    _dns2ref.open(dir / "dns2ref", create);
+} FC_RETHROW_EXCEPTIONS(warn, "Error opening DNS database in dir=${dir} with create=${create}", ("dir", dir) ("create", create)) }
+
+void dns_db::close()
+{
+    _dns2ref.close();
+    chain_database::close();
+}
+
+void dns_db::store(const trx_block& blk, const signed_transactions& deterministic_trxs,
+                   const block_evaluation_state_ptr& state)
+{
+    chain_database::store(blk, deterministic_trxs, state);
+
+    for (auto i = 0u; i < blk.trxs.size(); i++)
     {
-        class dns_db_impl
+        auto tx = blk.trxs[i];
+
+        for (auto output : tx.outputs)
         {
-            public:
-                dns_db_impl(){}
-                bts::db::level_map<std::string, dns_record>  name2record;
-            
-        };
-        
+            if (!is_domain_output(output))
+                continue;
+
+            set_dns_ref(to_domain_output(output).name, output_reference(tx.id(), i));
+        }
     }
-    dns_db::dns_db()
-    :my( new detail::dns_db_impl() )
+}
+
+void dns_db::set_dns_ref(const std::string& key, const bts::blockchain::output_reference& ref)
+{
+    _dns2ref.store(key, ref);
+}
+
+bts::blockchain::output_reference dns_db::get_dns_ref(const std::string& key)
+{ try {
+    return _dns2ref.fetch(key);
+} FC_RETHROW_EXCEPTIONS(warn, "Could not fetch DNS key=${key}", ("key", key)) }
+
+bool dns_db::has_dns_ref(const std::string& key)
+{
+    return _dns2ref.find(key).valid();
+}
+
+std::map<std::string, bts::blockchain::output_reference>
+    dns_db::filter(bool (*f)(const std::string&, const bts::blockchain::output_reference&, dns_db& db))
+{
+    FC_ASSERT(f != nullptr, "Null filter function");
+    std::map<std::string, bts::blockchain::output_reference> map;
+
+    bts::db::level_map<std::string, bts::blockchain::output_reference>::iterator iter = _dns2ref.begin();
+    if (!iter.valid()) return map;
+
+    std::string last;
+    _dns2ref.last(last);
+
+    while (true)
     {
-        set_transaction_validator( std::make_shared<dns_transaction_validator>(this) );
+        if (f(iter.key(), iter.value(), *this))
+            map[iter.key()] = iter.value();
+
+        if (iter.key() == last) break;
+        iter++;
     }
 
-    dns_db::~dns_db()
-    {
-    }
+    return map;
+}
 
-    void dns_db::open( const fc::path& dir, bool create )
-    {
-        try {
-            chain_database::open( dir, create );
-            my->name2record.open( dir / "name2record", create );
-        } FC_RETHROW_EXCEPTIONS( warn, "Error loading domain database ${dir}", ("dir", dir)("create", create) );
-    }
-
-    void dns_db::close() 
-    {
-        my->name2record.close();
-    }
-
-    dns_record dns_db::get_dns_record( const std::string& name )
-    { try {
-            return my->name2record.fetch(name);
-    } FC_RETHROW_EXCEPTIONS( warn, "name: ${name}", ("name", name) ) }
-
-    bool dns_db::has_dns_record( const std::string& name ) 
-    {
-        return my->name2record.find(name).valid();
-    }
-
-    void dns_db::store_dns_record( const std::string& name, const dns_record& record)
-    {
-        my->name2record.store(name, record); 
-    }
-
-}} // bts::dns
+} } // bts::dns
