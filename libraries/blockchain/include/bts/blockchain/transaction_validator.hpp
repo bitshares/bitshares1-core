@@ -107,7 +107,8 @@ namespace bts { namespace blockchain {
 
 
           void balance_assets()const;
-      private:
+
+      //private:
           std::unordered_map<asset::type,asset_io>  total;
           std::unordered_set<uint8_t>               used_outputs;
    };  // transaction_evaluation_state
@@ -176,3 +177,7 @@ namespace bts { namespace blockchain {
 } } // namespace bts::blockchain
 
 FC_REFLECT( bts::blockchain::transaction_summary, (valid_votes)(invalid_votes)(fees) )
+
+FC_REFLECT( bts::blockchain::transaction_evaluation_state::asset_io, (in)(out)(required_fees) )
+FC_REFLECT( bts::blockchain::transaction_evaluation_state, (name_inputs)(inputs)(trx)(sigs)
+                                                          (pts_sigs)(valid_votes)(invalid_votes)(spent)(used_outputs)(total) )
