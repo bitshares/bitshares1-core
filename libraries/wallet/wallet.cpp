@@ -159,7 +159,8 @@ namespace bts { namespace wallet {
               fc::path                                                   _wallet_dat;
               fc::path                                                   _data_dir;
               wallet_data                                                _data;
-              asset                                                      _current_fee_rate;
+              /** millishares per byte */
+              uint64_t                                                   _current_fee_rate;
               uint64_t                                                   _stake;
               bool                                                       _exception_on_open;
 
@@ -177,7 +178,7 @@ namespace bts { namespace wallet {
 
               chain_database*                                              _blockchain;
 
-              asset get_fee_rate()
+              uint64_t get_fee_rate()
               {
                   return _current_fee_rate;
               }
@@ -333,7 +334,7 @@ namespace bts { namespace wallet {
       };
    } // namespace detail
 
-   asset wallet::get_fee_rate()
+   uint64_t wallet::get_fee_rate()
    {
       return my->get_fee_rate();
    }
@@ -558,9 +559,9 @@ namespace bts { namespace wallet {
       return my->_data.send_addresses;
    }
 
-   void                  wallet::set_fee_rate( const asset& pts_per_byte )
+   void                  wallet::set_fee_rate( uint64_t milli_shares_per_byte )
    {
-      my->_current_fee_rate = pts_per_byte;
+      my->_current_fee_rate = milli_shares_per_byte;
    }
 
    void                  wallet::unlock_wallet( const std::string& key_password )
@@ -921,13 +922,13 @@ namespace bts { namespace wallet {
                 auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
                 s.eval = db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate().get_rounded_amount()) );
+                ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate().get_rounded_amount() * in_trxs[i].size()) )
+                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size())/1000 )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
-                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate().get_rounded_amount()*in_trxs[i].size()) );
+                        ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
                   continue;
                 }
                 s.trx_idx = i;
@@ -971,7 +972,7 @@ namespace bts { namespace wallet {
          result.block_num       = db.head_block_num() + 1;
          result.prev            = db.head_block_id();
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
-         result.next_fee        = result.calculate_next_fee( db.get_fee_rate().get_rounded_amount(), result.block_size() );
+         result.next_fee        = result.calculate_next_fee( db.get_fee_rate(), result.block_size() );
          result.total_shares    = head_block.total_shares - summary.fees;
          result.timestamp       = db.get_pow_validator()->get_time();
 
@@ -1032,8 +1033,8 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         /* Calculate fee required for signed transaction */
         trx.sigs.clear();
         sign_transaction(trx, req_sigs, false);
-        auto fee = get_fee_rate() * trx.size();
-        ilog("required fee ${f} for bytes ${b} at rate ${r}", ("f", fee.get_rounded_amount()) ("b", trx.size()) ("r", get_fee_rate().get_rounded_amount()));
+        auto fee = (get_fee_rate() * trx.size())/1000;
+        ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte", ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 
         /* Calculate new minimum input amount */
         required_in += fee;

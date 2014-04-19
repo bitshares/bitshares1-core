@@ -85,8 +85,8 @@ namespace bts { namespace blockchain {
              return name_inputs.find(o.name) == name_inputs.end();
           }
           
-          bool     is_output_used( uint8_t out )const;
-          void     mark_output_as_used( uint8_t out );
+          bool     is_output_used( uint32_t out )const;
+          void     mark_output_as_used( uint32_t out );
 
           std::unordered_map<std::string,claim_name_output> name_inputs;
           std::vector<meta_trx_input>                       inputs;
@@ -110,7 +110,7 @@ namespace bts { namespace blockchain {
 
       //private:
           std::unordered_map<asset::unit_type,asset_io>  total;
-          std::unordered_set<uint8_t>               used_outputs;
+          std::unordered_set<uint32_t>                   used_outputs;
    };  // transaction_evaluation_state
 
    /**

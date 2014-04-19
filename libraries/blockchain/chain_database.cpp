@@ -493,12 +493,12 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         /// time stamps from the future are not allowed
-        wlog( "fee rate: ${fee}", ("fee",b.next_fee) );
-        FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
-                   ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
-                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size())
+        FC_ASSERT( b.next_fee     == b.calculate_next_fee( my->head_block.next_fee,  b.block_size() ), "",
+                   ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( my->head_block.next_fee, b.block_size()))
+                   ("get_fee_rate",get_fee_rate())("b.size",b.block_size())
                    );
 
+        // TODO: timestamp should be multiple of BTS_BLOCKCHAIN_INTERVAL_SEC from genesis 
         FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
                    ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
 
@@ -507,19 +507,17 @@ namespace bts { namespace blockchain {
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
 
-        // TODO: factor in deterministic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
-
 
         transaction_summary summary;
         transaction_summary trx_summary;
         int32_t last = b.trxs.size()-1;
-        uint64_t fee_rate = get_fee_rate().get_rounded_amount();
+        uint64_t fee_rate = get_fee_rate();
         for( int32_t i = 0; i <= last; ++i )
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
             FC_ASSERT( b.trxs[i].version == 0 );
-            FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
+            FC_ASSERT( trx_summary.fees >= (b.trxs[i].size() * fee_rate)/1000 );
             summary += trx_summary;
         }
 
@@ -576,9 +574,9 @@ namespace bts { namespace blockchain {
 
     const signed_block_header& chain_database::get_head_block()const { return my->head_block; }
 
-    asset chain_database::get_fee_rate()const
+    uint64_t chain_database::get_fee_rate()const
     {
-       return asset( uint64_t(my->head_block.next_fee) );
+       return my->head_block.next_fee;
     }
 
     void chain_database::set_pow_validator( const pow_validator_ptr& v )

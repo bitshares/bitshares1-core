@@ -123,8 +123,10 @@ namespace wallet {
            std::unordered_map<address,std::string> get_send_addresses()const;
 
            asset                                   get_balance( asset_type t );
-           void                                    set_fee_rate( const asset& pts_per_byte );
-           asset                                   get_fee_rate();
+           void                                    set_fee_rate( uint64_t milli_shares_per_byte );
+
+           /** @return milli-shares per byte */
+           uint64_t                                get_fee_rate();
            uint64_t                                last_scanned()const;
 
            output_reference                        get_ref_from_output_idx(output_index idx);
