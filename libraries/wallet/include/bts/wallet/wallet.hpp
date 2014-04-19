@@ -95,6 +95,8 @@ namespace wallet {
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
            void set_delegate_trust( uint32_t did,  bool is_trusted );
 
+           signed_transaction register_delegate( const std::string& n, const fc::variant& v );
+
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            void save();
@@ -112,6 +114,7 @@ namespace wallet {
 
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
            address                                 new_recv_address( const std::string& label = "" );
+           fc::ecc::public_key                     new_public_key( const std::string& label = "" );
            std::unordered_map<address,std::string> get_recv_addresses()const;
            bool                                    is_my_address( const address& a )const;
            bool                                    is_my_address( const pts_address& a )const;

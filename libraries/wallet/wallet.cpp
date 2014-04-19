@@ -152,7 +152,7 @@ namespace bts { namespace wallet {
       class wallet_impl
       {
           public:
-              wallet_impl():_stake(0),_exception_on_open(false){}
+              wallet_impl():_stake(0),_exception_on_open(false),_blockchain(nullptr){}
               std::string _wallet_base_password; // used for saving/loading the wallet
               std::string _wallet_key_password;  // used to access private keys
 
@@ -174,6 +174,8 @@ namespace bts { namespace wallet {
               // maps address to private key index
               std::unordered_map<address,fc::ecc::private_key>             _my_keys;
               std::unordered_map<transaction_id_type,signed_transaction>   _id_to_signed_transaction;
+
+              chain_database*                                              _blockchain;
 
               asset get_fee_rate()
               {
@@ -527,13 +529,19 @@ namespace bts { namespace wallet {
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
-   address   wallet::new_recv_address( const std::string& label )
+   fc::ecc::public_key   wallet::new_public_key( const std::string& label )
    { try {
       FC_ASSERT( !is_locked() );
       my->_data.last_used_key++;
       auto base_key = my->_data.get_base_key( my->_wallet_key_password );
       auto new_key = base_key.child( my->_data.last_used_key );
-      return import_key(new_key, label);
+      import_key(new_key, label);
+      return new_key.get_public_key();
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
+
+   address   wallet::new_recv_address( const std::string& label )
+   { try {
+      return address( new_public_key( label ) );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
 
    void wallet::add_send_address( const address& addr, const std::string& label )
@@ -574,6 +582,14 @@ namespace bts { namespace wallet {
 
        return collect_inputs_and_sign(trx, amnt, memo);
    } FC_RETHROW_EXCEPTIONS( warn, "${amnt} to ${to}", ("amnt",amnt)("to",to) ) }
+
+   signed_transaction wallet::register_delegate( const std::string& name, const fc::variant& data )
+   {
+      FC_ASSERT( claim_name_output::is_valid_name(name), "", ("name",name)  );
+      signed_transaction trx;
+      trx.outputs.push_back( trx_output( claim_name_output( name, data, my->_blockchain->get_new_delegate_id(), new_public_key("delegate: "+name) ), asset() ) );
+      return collect_inputs_and_sign( trx, asset(), std::string() );
+   }
 
    void wallet::mark_as_spent( const output_reference& r )
    {
@@ -664,6 +680,7 @@ namespace bts { namespace wallet {
     */
    bool wallet::scan_chain( chain_database& chain, uint32_t from_block_num, scan_progress_callback cb )
    { try {
+       my->_blockchain = &chain;
        bool found = false;
        auto head_block_num = chain.head_block_num();
        if( head_block_num == uint32_t(-1) ) return false;
@@ -986,16 +1003,15 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    std::unordered_set<address>& req_sigs, const address& change_addr)
 {
     /* Save original transaction inputs and outputs */
-    auto original_inputs = trx.inputs;
-    auto original_outputs = trx.outputs;
+    auto original_inputs   = trx.inputs;
+    auto original_outputs  = trx.outputs;
     auto original_req_sigs = req_sigs;
 
     auto required_in = min_amnt;
     asset total_in;
 
     do
-    {
-        /* Start with original transaction */
+    { /* Start with original transaction */
         trx.inputs = original_inputs;
         trx.outputs = original_outputs;
         req_sigs = original_req_sigs;
@@ -1033,8 +1049,8 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
             trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
         else
             trx.outputs.pop_back();
-    }
-    while (total_in < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
+
+    } while (total_in < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
 
     trx.sigs.clear();
     sign_transaction(trx, req_sigs, true);

@@ -77,7 +77,7 @@ namespace bts { namespace blockchain {
             /**
              *  track the delegate votes by rank
              */
-            std::set<vote_del>                         _votes_to_delegate;
+            std::set<vote_del>                                  _votes_to_delegate;
             std::map<uint32_t, int64_t>                         _delegate_to_votes;
 
             pow_validator_ptr                                   _pow_validator;
@@ -604,6 +604,13 @@ namespace bts { namespace blockchain {
     void chain_database::evaluate_transaction( const signed_transaction& trx )
     {
        get_transaction_validator()->evaluate( trx, get_transaction_validator()->create_block_state() );
+    }
+    uint32_t  chain_database::get_new_delegate_id()const
+    {
+       uint32_t new_id = rand();
+       while( my->_delegate_to_votes.find(new_id) != my->_delegate_to_votes.end() )
+            new_id = fc::time_point::now().time_since_epoch().count() ^ rand();
+       return new_id;
     }
 
 }  } // bts::blockchain

@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
    }
    void transaction_evaluation_state::add_name_input( const claim_name_output& o )
    {
+       FC_ASSERT( claim_name_output::is_valid_name( o.name ) );
        FC_ASSERT( name_inputs.find( o.name ) == name_inputs.end() );
        name_inputs[o.name] = o;
    }
