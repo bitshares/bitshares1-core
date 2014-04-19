@@ -646,10 +646,11 @@ namespace bts { namespace wallet {
        }
 
        // for each output
+       transaction_id_type trx_id = state.trx.id();
        for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
            const trx_output& out   = state.trx.outputs[out_idx];
-           const output_reference  out_ref( state.trx.id(),out_idx );
+           const output_reference  out_ref( trx_id,out_idx );
            const output_index      oidx( block_idx, trx_idx, out_idx );
            found |= scan_output( state, out, out_ref, oidx );
        }
