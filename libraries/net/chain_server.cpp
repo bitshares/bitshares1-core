@@ -116,7 +116,7 @@ bts::blockchain::trx_block create_test_genesis_block()
                cur_trx_total = change;
             }
          }
-         if( false && coinbase.outputs.size() == 0xff )
+         if( coinbase.outputs.size() == 0xff )
          {
             coinbase.vote = ((total_supply / one_percent)%100)+1;
             b.trxs.emplace_back( coinbase );
