@@ -132,8 +132,7 @@ namespace bts { namespace rpc {
                 check_login( capture_con );
                 FC_ASSERT( params.size() == 1 );
                 try {
-                   auto test = bts::blockchain::address( params[0].as_string() );
-                   return fc::variant(test.is_valid());
+                   return fc::variant(bts::blockchain::address::is_valid(params[0].as_string()));
                 } 
                 catch ( const fc::exception& )
                 {

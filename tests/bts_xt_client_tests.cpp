@@ -302,7 +302,6 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     BOOST_CHECK(initial_addresses.empty());
     std::string accountName("address_test_account");
     bts::blockchain::address new_address = client_processes[i].rpc_client->getnewaddress(accountName);
-    BOOST_CHECK(new_address.is_valid());
     BOOST_CHECK(initial_addresses.find(new_address) == initial_addresses.end());
     std::unordered_map<bts::blockchain::address, std::string> final_addresses = client_processes[i].rpc_client->listrecvaddresses();
     BOOST_CHECK(final_addresses.size() == initial_addresses.size() + 1);
