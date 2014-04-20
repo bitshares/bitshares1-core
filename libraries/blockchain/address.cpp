@@ -30,7 +30,7 @@ namespace bts {
    { try {
       std::vector<char> v = fc::from_base58( fc::string(base58str) );
       FC_ASSERT( v.size() > 4, "all addresses must have a 4 byte checksum" );
-      FC_ASSERT( v.size() <= sizeof(addr) + 4, "all addresses are less than 24 bytes" );
+      FC_ASSERT(v.size() <= sizeof(fc::ripemd160) + 4, "all addresses are less than 24 bytes");
       auto checksum = fc::ripemd160::hash( v.data(), v.size() );
       FC_ASSERT( memcmp( v.data()+20, (char*)checksum._hash, 4 ) == 0, "address checksum mismatch" );
       return true;
