@@ -24,12 +24,23 @@ namespace bts { namespace blockchain {
        fc::sha256          digest()const;
        static uint64_t     calculate_next_fee( uint64_t prev_fee, uint64_t block_size );
        static uint64_t     min_fee();
+
+       /** block_header#next_fee is specified in units of .001 shares, so the
+        * fee per byte is next_fee / 1000
+        */
+       int64_t             get_next_fee()const { return next_fee / 1000; }
       
        uint8_t             version;
        uint32_t            block_num;
        block_id_type       prev;
        fc::time_point_sec  timestamp;       ///< seconds from 1970
-       uint64_t            next_fee;        ///< adjusted based upon average block size.
+       /**
+        * adjusted based upon average block size, this fee should be divided by 1000 to get shares per byte
+        *
+        * This field is represented as 1000 the actual fee so that rounding with the weighted
+        * average can actually grow the fee.
+        */
+       uint64_t            next_fee;        
        uint64_t            total_shares; 
        uint160             trx_mroot;       ///< merkle root of trx included in block, required for light client validation
    };

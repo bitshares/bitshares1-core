@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
    }
    void transaction_evaluation_state::add_name_input( const claim_name_output& o )
    {
+       FC_ASSERT( claim_name_output::is_valid_name( o.name ) );
        FC_ASSERT( name_inputs.find( o.name ) == name_inputs.end() );
        name_inputs[o.name] = o;
    }
@@ -97,12 +98,12 @@ namespace bts { namespace blockchain {
        else itr->second.required_fees += a.get_rounded_amount();
    }
 
-   bool transaction_evaluation_state::is_output_used( uint8_t out )const
+   bool transaction_evaluation_state::is_output_used( uint32_t out )const
    {
        return used_outputs.find(out) != used_outputs.end();
    }
 
-   void transaction_evaluation_state::mark_output_as_used( uint8_t out )
+   void transaction_evaluation_state::mark_output_as_used( uint32_t out )
    {
        used_outputs.insert(out);
    }
@@ -315,6 +316,12 @@ namespace bts { namespace blockchain {
        }
        FC_ASSERT( out.amount.unit == 0 );
        state.add_output_asset( out.amount );
+
+       if( claim.delegate_id != 0 )
+       {
+          state.add_required_fees( asset( BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE ) );
+       }
+
    }
 
 
