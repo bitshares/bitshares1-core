@@ -35,6 +35,7 @@ struct bts_xt_client_test_config
     // parse command-line options
     boost::program_options::options_description option_config("Allowed options");
     option_config.add_options()("bts-client-exe", boost::program_options::value<std::string>(), "full path to the executable to test")
+                               ("bts-server-exe", boost::program_options::value<std::string>(), "full path to the server executable for testing client-server mode")
                                ("extra-help", "display this help message");
 
 
