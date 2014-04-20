@@ -103,7 +103,7 @@ namespace bts { namespace rpc {
 
     bool rpc_client_impl::rescan(uint32_t block_num)
     {
-      return _json_connection->call<bool>("rescan");
+      return _json_connection->call<bool>("rescan", fc::variant(block_num));
     }
 
     bool rpc_client_impl::import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password)

@@ -41,7 +41,9 @@ int main( int argc, char** argv )
                               ("server", "enable JSON-RPC server")
                               ("rpcuser", boost::program_options::value<std::string>(), "username for JSON-RPC")
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
-                              ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections");
+                              ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
+                              ("trustee-private-key", boost::program_options::value<std::string>(), "act as a trustee using the given private key")
+                              ("trustee-address", boost::program_options::value<std::string>(), "trust the given BTS address to generate blocks");
 
    boost::program_options::positional_options_description positional_config;
    positional_config.add("data-dir", 1);
@@ -77,7 +79,11 @@ int main( int argc, char** argv )
 
       auto chain   = std::make_shared<bts::blockchain::chain_database>();
       chain->open( datadir / "chain", true );
-      chain->set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
+      if (option_variables.count("trustee-address"))
+        chain->set_trustee( bts::blockchain::address(option_variables["trustee-address"].as<std::string>()) );
+      else
+        chain->set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
+
 
       auto wall    = std::make_shared<bts::wallet::wallet>();
       wall->set_data_directory( datadir );
@@ -86,7 +92,12 @@ int main( int argc, char** argv )
       c->set_chain( chain );
       c->set_wallet( wall );
 
-      if( fc::exists( "trustee.key" ) )
+      if (option_variables.count("trustee-private-key"))
+      {
+         auto key = fc::variant(option_variables["trustee-private-key"].as<std::string>()).as<fc::ecc::private_key>();
+         c->run_trustee(key);
+      }
+      else if( fc::exists( "trustee.key" ) )
       {
          auto key = fc::json::from_file( "trustee.key" ).as<fc::ecc::private_key>();
          c->run_trustee(key);
@@ -126,7 +137,7 @@ int main( int argc, char** argv )
           c->connect_to_peer(option_variables["connect-to"].as<std::string>());
       }
       else
-        c->add_node( "127.0.0.1:4567" );
+        c->add_node( "127.0.0.1:4569" );
 
       cli->wait();
 

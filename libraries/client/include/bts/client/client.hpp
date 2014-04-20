@@ -38,6 +38,9 @@ namespace bts { namespace client {
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
 
+         // returns true if the client is connected to the network (either server or p2p)
+         bool is_connected() const;
+
          // functions for taking command-line parameters and passing them on to the p2p node
          void listen_on_port(uint16_t port_to_listen);
          void load_p2p_configuration(const fc::path& configuration_directory);

@@ -89,7 +89,7 @@ namespace bts { namespace rpc {
 
             con->add_method( "transfer", [=]( const fc::variants& params ) -> fc::variant 
             {
-                FC_ASSERT( _client->get_node()->is_connected() );
+                FC_ASSERT( _client->is_connected() );
                 check_login( capture_con );
                 FC_ASSERT( params.size() == 2 );
                 auto amount = params[0].as<bts::blockchain::asset>();

@@ -295,6 +295,14 @@ namespace bts { namespace client {
        my->_trustee_loop_complete = fc::async( [=](){ my->trustee_loop(); } );
     }
 
+    bool client::is_connected() const
+    {
+      if (my->_chain_client)
+        return my->_chain_client->is_connected();
+      else
+        return my->_p2p_node->is_connected();
+    }
+
     void client::listen_on_port(uint16_t port_to_listen)
     {
       if (my->_p2p_node)
