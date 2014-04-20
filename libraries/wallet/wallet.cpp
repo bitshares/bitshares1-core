@@ -623,7 +623,7 @@ namespace bts { namespace wallet {
          return;
       }
       itr = my->_data.spent_outputs.find(idx);
-      if( itr != my->_data.unspent_outputs.end() )
+      if( itr != my->_data.spent_outputs.end() )
       {
          state.adjust_balance( itr->second.amount, -1 );
          return;
