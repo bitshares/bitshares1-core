@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>

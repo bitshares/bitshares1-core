@@ -5,6 +5,7 @@
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
 #include <fc/crypto/elliptic.hpp>
+#include <iostream>
 
 int main( int argc, char** argv )
 {
