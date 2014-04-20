@@ -114,7 +114,10 @@ namespace bts { namespace blockchain {
           uint32_t                    head_block_num()const;
           block_id_type               head_block_id()const;
           uint64_t                    get_stake(); // head - 1
-          asset                       get_fee_rate()const;
+
+          /** return the fee rate in shares */
+          uint64_t                    get_fee_rate()const;
+          uint32_t                    get_new_delegate_id()const;
 
 
 

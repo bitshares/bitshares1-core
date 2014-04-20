@@ -54,16 +54,20 @@ namespace bts { namespace blockchain  {
      return layer_one.front();
   }
 
+  /**
+   *  The min fee is specified in shares, but for the purposes of the block header there is
+   *  higher percision.
+   */
   uint64_t block_header::min_fee()
   {
-     return BTS_BLOCKCHAIN_MIN_FEE;
+     return BTS_BLOCKCHAIN_MIN_FEE * 1000;
   }
 
   uint64_t block_header::calculate_next_fee( uint64_t prev_fee, uint64_t block_size )
   {
      // 0.5% of 4 Million coins divided among 144 blocks per day for 365 blocks per year at 512KB per block
      // yields the min fee per byte.  
-     uint64_t next_fee_base = block_size * prev_fee / (512*1024);
+     uint64_t next_fee_base = block_size * prev_fee / BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
      uint64_t next_fee = (99*prev_fee + next_fee_base) / 100;
      return std::max<uint64_t>(next_fee,min_fee());
   }

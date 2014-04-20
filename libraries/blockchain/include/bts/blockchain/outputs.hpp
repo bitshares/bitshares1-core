@@ -95,11 +95,15 @@ struct claim_by_multi_sig_input
 struct claim_name_output
 {
     static const claim_type_enum type;
+    
+    /**
+     * Valid names start with a-z, are all lower case, and may have -
+     */
+    static bool is_valid_name( const std::string& name );
 
     claim_name_output():delegate_id(0){}
 
-    claim_name_output( std::string n, std::string d, uint32_t did, fc::ecc::public_key own )
-    :name( std::move(n) ), data( std::move(d) ), delegate_id(did), owner( std::move(own) ){}
+    claim_name_output( std::string n, const fc::variant&, uint32_t did, fc::ecc::public_key own );
 
     std::string          name; ///< a valid name, must follow DNS naming conventions
     std::string          data; ///< a JSON String, must parse to be included.
