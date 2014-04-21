@@ -33,7 +33,7 @@ std::string dns_wallet::get_output_info_string(const trx_output& out)
 signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asset &bid_price,
                                              const signed_transactions &tx_pool, dns_db &db)
 { try {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     /* Name should be new, for auction, or expired */
     bool new_or_expired;
@@ -74,7 +74,7 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
 signed_transaction dns_wallet::update_domain(const std::string &name, const fc::variant &value,
                                              const signed_transactions &tx_pool, dns_db &db)
 { try {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
     FC_ASSERT(is_valid_value(value), "Invalid value");
 
     /* Name should exist and be owned */
@@ -98,8 +98,7 @@ signed_transaction dns_wallet::update_domain(const std::string &name, const fc::
 signed_transaction dns_wallet::transfer_domain(const std::string &name, const address &recipient,
                                                const signed_transactions &tx_pool, dns_db &db)
 { try {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
-    FC_ASSERT(is_valid_owner(recipient), "Invalid recipient");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     /* Name should exist and be owned */
     output_reference prev_tx_ref;
@@ -122,7 +121,7 @@ signed_transaction dns_wallet::transfer_domain(const std::string &name, const ad
 signed_transaction dns_wallet::auction_domain(const std::string &name, const asset &ask_price,
                                               const signed_transactions &tx_pool, dns_db &db)
 { try {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
     FC_ASSERT(is_valid_ask_price(ask_price), "Invalid ask_price");
 
     /* Name should exist and be owned */
@@ -147,8 +146,6 @@ signed_transaction dns_wallet::update_or_auction_domain(const claim_domain_outpu
                                                         const output_reference &prev_tx_ref, const address &prev_owner,
                                                         dns_db &db)
 { try {
-    FC_ASSERT(is_valid_owner(prev_owner), "Invalid prev_owner");
-
     signed_transaction tx;
     std::unordered_set<address> req_sigs;
 

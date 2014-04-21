@@ -11,8 +11,8 @@ claim_domain_output to_domain_output(const trx_output &output)
 {
     auto dns_output = output.as<claim_domain_output>();
 
+    FC_ASSERT(is_valid_key(dns_output.name), "Invalid name");
     FC_ASSERT(is_valid_value(dns_output.value), "Invalid value");
-    FC_ASSERT(is_valid_owner(dns_output.owner), "Invalid owner");
     FC_ASSERT(is_valid_last_tx_type(dns_output.last_tx_type), "Invalid last_tx_type");
 
     return dns_output;
@@ -20,7 +20,7 @@ claim_domain_output to_domain_output(const trx_output &output)
 
 output_reference get_name_tx_ref(const std::string &name, dns_db &db)
 {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     return db.get_dns_ref(name);
 }
@@ -110,7 +110,7 @@ std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::outp
 bool name_is_available(const std::string &name, const std::vector<std::string> &name_pool, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     new_or_expired = false;
 
@@ -134,7 +134,7 @@ bool name_is_available(const std::string &name, const std::vector<std::string> &
 bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     return name_is_available(name, get_names_from_txs(tx_pool), db, new_or_expired, prev_tx_ref);
 }
@@ -144,7 +144,7 @@ bool name_is_useable(const std::string &name, const signed_transactions &tx_pool
                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
                      output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_name(name), "Invalid name");
+    FC_ASSERT(is_valid_key(name), "Invalid name");
 
     std::vector<std::string> name_pool = get_names_from_txs(tx_pool);
     if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
@@ -179,7 +179,7 @@ fc::variant unserialize_value(const std::vector<char> &value)
     return fc::raw::unpack<fc::variant>(value);
 }
 
-bool is_valid_name(const std::string &name)
+bool is_valid_key(const std::string &name)
 {
     return name.size() <= DNS_MAX_NAME_LEN;
 }
@@ -192,11 +192,6 @@ bool is_valid_value(const std::vector<char> &value)
 bool is_valid_value(const fc::variant &value)
 {
     return is_valid_value(serialize_value(value));
-}
-
-bool is_valid_owner(const bts::blockchain::address &owner)
-{
-    return owner.addr != bts::blockchain::address().addr;
 }
 
 bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type)
@@ -226,7 +221,7 @@ asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_pric
 
 fc::variant lookup_value(const std::string& key, dns_db& db)
 {
-    FC_ASSERT(is_valid_name(key));
+    FC_ASSERT(is_valid_key(key));
     FC_ASSERT(db.has_dns_ref(key), "Key does not exist");
 
     auto output = get_tx_ref_output(db.get_dns_ref(key), db);

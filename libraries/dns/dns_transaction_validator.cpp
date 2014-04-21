@@ -89,9 +89,8 @@ void dns_transaction_validator::validate_domain_output(const claim_domain_output
     FC_ASSERT(!state.seen_domain_output, "More than one domain claim output in tx: ${tx}", ("tx", state.trx));
     state.seen_domain_output = true;
 
-    FC_ASSERT(is_valid_name(output.name), "Invalid name");
+    FC_ASSERT(is_valid_key(output.name), "Invalid name");
     FC_ASSERT(is_valid_value(output.value), "Invalid value");
-    FC_ASSERT(is_valid_owner(output.owner), "Invalid owner");
     FC_ASSERT(is_valid_last_tx_type(output.last_tx_type), "Invalid last_tx_type");
 
     state.add_output_asset(amount);
