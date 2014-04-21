@@ -478,6 +478,12 @@ namespace bts { namespace cli {
           ss >> count;
           list_transactions( count );
        }
+       else if( cmd == "listdelegates" )
+       {
+          uint32_t count = 0;
+          ss >> count;
+          list_delegates( count );
+       }
        else if( cmd == "rescan" )
        {
           uint32_t block_num = 0;
@@ -520,6 +526,12 @@ namespace bts { namespace cli {
        /* dump the transactions from the wallet, which needs the chain db */
        client()->get_wallet()->dump_txs(*(client()->get_chain()), count);
    }
+
+   void cli::list_delegates( uint32_t count )
+   {
+       client()->get_chain()->dump_delegates( count );
+   }
+
    void cli::wait()
    {
        my->_cin_complete.wait();
