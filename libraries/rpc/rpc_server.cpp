@@ -166,8 +166,8 @@ namespace bts { namespace rpc {
           bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
           std::string comment;
           if (params.size() >= 3)
-            comment = params[3].as_string();
-          // TODO: we're currently ignoring optional 4, [to-comment]
+            comment = params[2].as_string();
+          // TODO: we're currently ignoring optional parameter 4, [to-comment]
           return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
         }
         fc::variant sendtransaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
@@ -190,7 +190,7 @@ namespace bts { namespace rpc {
           bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
           std::string comment;
           if (params.size() >= 3)
-            comment = params[3].as_string();
+            comment = params[2].as_string();
           // TODO: we're currently ignoring optional 4, [to-comment]
           bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address, comment);
           _client->broadcast_transaction(trx);

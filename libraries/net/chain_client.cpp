@@ -77,7 +77,7 @@ namespace bts { namespace net {
                     } 
                     catch ( const fc::exception& e )
                     {
-                       std::cout<< "\runable to connect to bitshares network at this time.\n";
+                       std::cout<< "\nunable to connect to bitshares network at this time.\n";
                        wlog( "${e}", ("e",e.to_detail_string()));
                     }
                }

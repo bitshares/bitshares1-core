@@ -228,6 +228,14 @@ namespace bts { namespace cli {
               {
                 // sendtoaddress does its own output formatting
               }
+              else if( command == "listrecvaddresses" )
+              {
+                std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
+                std::cout << "--------------------------------------------------------------------------------\n";
+                auto addrs = _client->get_wallet()->get_recv_addresses();
+                for( auto addr : addrs )
+                  std::cout << std::setw( 33 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
+              }
               else
                 std::cout << fc::json::to_pretty_string(result) << "\n";
             }
@@ -309,44 +317,44 @@ namespace bts { namespace cli {
       if( !fc::exists( wallet_dat ) )
       {
         std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
-        std::cout << "You will be asked to provide two passwords, the first password \n";
+        std::cout << "You will be asked to provide two passphrase, the first passphrase \n";
         std::cout << "encrypts the entire contents of your wallet on disk.  The second\n ";
-        std::cout << "passowrd will only encrypt your private keys.\n\n";
+        std::cout << "passphrase will only encrypt your private keys.\n\n";
 
-        std::cout << "Please set a password for encrypting your wallet: \n";
+        std::cout << "Please set a passphrase for encrypting your wallet: \n";
         std::string pass1, pass2;
-        pass1  = get_line("wallet password: ");
+        pass1  = get_line("wallet passphrase: ");
         while( pass1 != pass2 )
         {
           pass2 = get_line("walletpassword (again): ");
           if( pass2 != pass1 )
           {
-            std::cout << "Your passwords did not match, please try again.\n";
+            std::cout << "Your passphrases did not match, please try again.\n";
             pass2 = std::string();
-            pass1 = get_line("wallet password: ");
+            pass1 = get_line("wallet passphrase: ");
           }
         }
         if( pass1 == std::string() )
         {
-          std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+          std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
         }
 
-        std::cout << "Please set a password for encrypting your private keys: \n";
+        std::cout << "Please set a passphrase for encrypting your private keys: \n";
         std::string keypass1, keypass2;
         bool retry = false;
-        keypass1  = get_line("spending password: ");
+        keypass1  = get_line("spending passphrase: ");
         while( keypass1 != keypass2 )
         {
           if( keypass1.size() > 8 )
-              keypass2 = get_line("spending password (again): ");
+              keypass2 = get_line("spending passphrase (again): ");
           else
           {
-              std::cout << "Your key password must be more than 8 characters.\n";
+              std::cout << "Your key passphrase must be more than 8 characters.\n";
               retry = true;
           }
           if( keypass2 != keypass1 )
           {
-              std::cout << "Your passwords did not match.\n";
+              std::cout << "Your passphrase did not match.\n";
               retry = true;
           }
           if( retry )
@@ -354,12 +362,12 @@ namespace bts { namespace cli {
             retry = false;
             std::cout << "Please try again.\n";
             keypass2 = std::string();
-            keypass1 = get_line("spending password: ");
+            keypass1 = get_line("spending passphrase: ");
           }
         }
         if( keypass1 == std::string() )
         {
-          std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+          std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
         }
 
         _client->get_wallet()->create( wallet_dat, pass1, keypass1 );
