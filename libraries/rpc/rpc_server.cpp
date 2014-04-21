@@ -18,14 +18,12 @@ namespace bts { namespace rpc {
          fc::future<void>    _accept_loop_complete;
          rpc_server*         _self;
 
-         typedef fc::variant (rpc_server_impl::*json_api_method_type)(fc::rpc::json_connection* json_connection, const fc::variants& params);
+         typedef std::function<fc::variant(fc::rpc::json_connection* json_connection, const fc::variants& params)> json_api_method_type;
          typedef std::unordered_map<std::string, json_api_method_type> method_map_type;
          method_map_type _method_map;
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
-
-         rpc_server_impl();
 
          void accept_loop()
          {
@@ -63,10 +61,8 @@ namespace bts { namespace rpc {
 
             for (const method_map_type::value_type& method : _method_map)
             {
-              con->add_method(method.first, boost::bind(method.second, this, capture_con, _1));
+              con->add_method(method.first, boost::bind(method.second, capture_con, _1));
             }
-
-            _self->register_methods( con );
          } // register methods
 
         // This method invokes the function directly, called by the CLI intepreter.
@@ -75,7 +71,7 @@ namespace bts { namespace rpc {
           auto iter = _method_map.find(method_name);
           if (iter == _method_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
-          return (this->*iter->second)(nullptr, arguments);
+          return iter->second(nullptr, arguments);
         }
 
         void check_connected_to_network()
@@ -104,186 +100,183 @@ namespace bts { namespace rpc {
             throw rpc_wallet_open_needed_exception(FC_LOG_MESSAGE(error, "The wallet must be open before executing this command"));
         }
 
-        fc::variant login(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          FC_ASSERT( params.size() == 2 );
-          FC_ASSERT( params[0].as_string() == _config.rpc_user )
-          FC_ASSERT( params[1].as_string() == _config.rpc_password )
-          _authenticated_connection_set.insert( json_connection );
-          return fc::variant( true );
-        }
-        fc::variant openwallet(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT(params.size() == 0 || params.size() == 1);
-          std::string passphrase;
-          if (params.size() == 1)
-            passphrase = params[0].as_string();
-          try
-          {
-            _client->get_wallet()->open(_client->get_wallet()->get_wallet_file(), passphrase);
-            return fc::variant(true);
-          }
-          catch (...)
-          {
-            throw rpc_wallet_passphrase_incorrect_exception();
-          }          
-        }
-        fc::variant walletpassphrase(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT(params.size() == 1);
-          std::string passphrase = params[0].as_string();
-          try
-          {
-            _client->get_wallet()->unlock_wallet(passphrase);
-            return fc::variant(true);
-          }
-          catch (...)
-          {
-            throw rpc_wallet_passphrase_incorrect_exception();
-          }          
-        }
-        fc::variant getnewaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          check_wallet_is_open();
-          check_wallet_unlocked();  // TODO: bitcoin doesn't require unlocked wallet, should we?
-          FC_ASSERT(params.size() == 0 || params.size() == 1);
-          std::string account;
-          if (params.size() == 1)
-            account = params[0].as_string();
-          bts::blockchain::address new_address = _client->get_wallet()->new_recv_address(account);
-          return fc::variant(new_address);
-        }
-        fc::variant create_sendtoaddress_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          check_wallet_is_open();
-          check_wallet_unlocked();
-          FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
-          bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-          bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
-          std::string comment;
-          if (params.size() >= 3)
-            comment = params[2].as_string();
-          // TODO: we're currently ignoring optional parameter 4, [to-comment]
-          return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
-        }
-        fc::variant sendtransaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          check_connected_to_network();
-          FC_ASSERT(params.size() == 1);
-          bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
-          _client->broadcast_transaction(transaction);
-          return fc::variant(transaction.id());
-        }
-        fc::variant sendtoaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          check_wallet_is_open();
-          check_wallet_unlocked();
-          check_connected_to_network();
-          FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
-          bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-          bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
-          std::string comment;
-          if (params.size() >= 3)
-            comment = params[2].as_string();
-          // TODO: we're currently ignoring optional 4, [to-comment]
-          bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address, comment);
-          _client->broadcast_transaction(trx);
-          return fc::variant( trx.id() ); 
-        }
-        fc::variant listrecvaddresses(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          check_wallet_is_open();
-          FC_ASSERT( params.size() == 0 );
-          std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_recv_addresses();
-          return fc::variant( addresses ); 
-        }
-        fc::variant getbalance(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 0 || params.size() == 1 );
-          bts::blockchain::asset_type unit = 0;
-          if (params.size() == 1)
-            unit = params[0].as<bts::blockchain::asset_type>();
-          return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
-        }
-        fc::variant get_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 1 );
-          return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
-        }
-        fc::variant getblock(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 1 );
-          return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
-        }
-        fc::variant validateaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 1 );
-          try {
-              return fc::variant(params[0].as_string());
-          } 
-          catch ( const fc::exception& )
-          {
-            return fc::variant(false);
-          }
-        }
-        fc::variant rescan(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 1 );
-          uint32_t block_num = (uint32_t)params[0].as_int64();
-          _client->get_wallet()->scan_chain(*_client->get_chain(), block_num);
-          return fc::variant(true); 
-        }
-        fc::variant import_bitcoin_wallet(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 2 );
-          auto wallet_dat      = params[0].as<fc::path>();
-          auto wallet_password = params[1].as_string();
-          _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
-          return fc::variant(true);
-        }
-        fc::variant import_private_key(fc::rpc::json_connection* json_connection, const fc::variants& params)
-        {
-          check_json_connection_authenticated(json_connection);
-          FC_ASSERT( params.size() == 1 );
-          fc::sha256 hash(params[0].as_string());
-          fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
-          _client->get_wallet()->import_key(privkey);
-          _client->get_wallet()->save();
-          return fc::variant(true);
-        }
+        fc::variant login(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant openwallet(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant walletpassphrase(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant getnewaddress(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant _create_sendtoaddress_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant sendtransaction(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant sendtoaddress(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant listrecvaddresses(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant getbalance(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant get_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant getblock(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant validateaddress(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant rescan(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant import_bitcoin_wallet(fc::rpc::json_connection* json_connection, const fc::variants& params);
+        fc::variant import_private_key(fc::rpc::json_connection* json_connection, const fc::variants& params);
     };
-    rpc_server_impl::rpc_server_impl()
+
+
+    fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
-      _method_map = method_map_type{ 
-        {"login",                 &rpc_server_impl::login},
-        {"openwallet",            &rpc_server_impl::openwallet},
-        {"walletpassphrase",      &rpc_server_impl::walletpassphrase},
-        {"getnewaddress",         &rpc_server_impl::getnewaddress},
-        {"sendtoaddress",         &rpc_server_impl::sendtoaddress},
-        {"listrecvaddresses",     &rpc_server_impl::listrecvaddresses},
-        {"getbalance",            &rpc_server_impl::getbalance},
-        {"get_transaction",       &rpc_server_impl::get_transaction},
-        {"getblock",              &rpc_server_impl::getblock},
-        {"validateaddress",       &rpc_server_impl::validateaddress},
-        {"rescan",                &rpc_server_impl::rescan},
-        {"import_bitcoin_wallet", &rpc_server_impl::import_bitcoin_wallet},
-        {"import_private_key",    &rpc_server_impl::import_private_key},
-        {"create_sendtoaddress_transaction", &rpc_server_impl::create_sendtoaddress_transaction},
-        {"sendtransaction", &rpc_server_impl::sendtoaddress}
-      };
+      FC_ASSERT( params.size() == 2 );
+      FC_ASSERT( params[0].as_string() == _config.rpc_user )
+      FC_ASSERT( params[1].as_string() == _config.rpc_password )
+      _authenticated_connection_set.insert( json_connection );
+      return fc::variant( true );
+    }
+    fc::variant rpc_server_impl::openwallet(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT(params.size() == 0 || params.size() == 1);
+      std::string passphrase;
+      if (params.size() == 1)
+        passphrase = params[0].as_string();
+      try
+      {
+        _client->get_wallet()->open(_client->get_wallet()->get_wallet_file(), passphrase);
+        return fc::variant(true);
+      }
+      catch (...)
+      {
+        throw rpc_wallet_passphrase_incorrect_exception();
+      }          
+    }
+    fc::variant rpc_server_impl::walletpassphrase(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT(params.size() == 1);
+      std::string passphrase = params[0].as_string();
+      try
+      {
+        _client->get_wallet()->unlock_wallet(passphrase);
+        return fc::variant(true);
+      }
+      catch (...)
+      {
+        throw rpc_wallet_passphrase_incorrect_exception();
+      }          
+    }
+    fc::variant rpc_server_impl::getnewaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      check_wallet_unlocked();  // TODO: bitcoin doesn't require unlocked wallet, should we?
+      FC_ASSERT(params.size() == 0 || params.size() == 1);
+      std::string account;
+      if (params.size() == 1)
+        account = params[0].as_string();
+      bts::blockchain::address new_address = _client->get_wallet()->new_recv_address(account);
+      return fc::variant(new_address);
+    }
+    fc::variant rpc_server_impl::_create_sendtoaddress_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      check_wallet_unlocked();
+      FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
+      bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
+      bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+      std::string comment;
+      if (params.size() >= 3)
+        comment = params[2].as_string();
+      // TODO: we're currently ignoring optional parameter 4, [to-comment]
+      return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
+    }
+    fc::variant rpc_server_impl::sendtransaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      check_connected_to_network();
+      FC_ASSERT(params.size() == 1);
+      bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
+      _client->broadcast_transaction(transaction);
+      return fc::variant(transaction.id());
+    }
+    fc::variant rpc_server_impl::sendtoaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      check_wallet_unlocked();
+      check_connected_to_network();
+      FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
+      bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
+      bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+      std::string comment;
+      if (params.size() >= 3)
+        comment = params[2].as_string();
+      // TODO: we're currently ignoring optional 4, [to-comment]
+      bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address, comment);
+      _client->broadcast_transaction(trx);
+      return fc::variant( trx.id() ); 
+    }
+    fc::variant rpc_server_impl::listrecvaddresses(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      FC_ASSERT( params.size() == 0 );
+      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_recv_addresses();
+      return fc::variant( addresses ); 
+    }
+    fc::variant rpc_server_impl::getbalance(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 0 || params.size() == 1 );
+      bts::blockchain::asset_type unit = 0;
+      if (params.size() == 1)
+        unit = params[0].as<bts::blockchain::asset_type>();
+      return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
+    }
+    fc::variant rpc_server_impl::get_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 1 );
+      return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
+    }
+    fc::variant rpc_server_impl::getblock(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 1 );
+      return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
+    }
+    fc::variant rpc_server_impl::validateaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 1 );
+      try {
+          return fc::variant(params[0].as_string());
+      } 
+      catch ( const fc::exception& )
+      {
+        return fc::variant(false);
+      }
+    }
+    fc::variant rpc_server_impl::rescan(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 1 );
+      uint32_t block_num = (uint32_t)params[0].as_int64();
+      _client->get_wallet()->scan_chain(*_client->get_chain(), block_num);
+      return fc::variant(true); 
+    }
+    fc::variant rpc_server_impl::import_bitcoin_wallet(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 2 );
+      auto wallet_dat      = params[0].as<fc::path>();
+      auto wallet_password = params[1].as_string();
+      _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
+      return fc::variant(true);
+    }
+    fc::variant rpc_server_impl::import_private_key(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      check_json_connection_authenticated(json_connection);
+      FC_ASSERT( params.size() == 1 );
+      fc::sha256 hash(params[0].as_string());
+      fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
+      _client->get_wallet()->import_key(privkey);
+      _client->get_wallet()->save();
+      return fc::variant(true);
     }
 
   } // detail
@@ -300,10 +293,32 @@ namespace bts { namespace rpc {
   }
 
 
-  rpc_server::rpc_server()
-  :my( new detail::rpc_server_impl() )
+  rpc_server::rpc_server() :
+    my(new detail::rpc_server_impl)
   {
-     my->_self = this;
+    my->_self = this;
+
+#define REGISTER_METHOD(METHODNAME, PARAMETER_DESCRIPTION, METHOD_DESCRIPTION) \
+      register_method(#METHODNAME, boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1, _2), PARAMETER_DESCRIPTION, METHOD_DESCRIPTION)
+
+    //REGISTER_METHOD(help, "", "list the available commands");
+    REGISTER_METHOD(login, "<rpc_username> <rpc_password>", "authenticate rpc connection");
+    REGISTER_METHOD(openwallet, "[wallet_passphrase]", "unlock the wallet with the given passphrase");
+    REGISTER_METHOD(walletpassphrase, "[spending_passphrase]", "unlock the private keys in the wallet with the given passphrase");
+    REGISTER_METHOD(getnewaddress, "[account]", "create a new address for receiving payments");
+    REGISTER_METHOD(sendtoaddress,"","");
+    REGISTER_METHOD(listrecvaddresses,"","");
+    REGISTER_METHOD(getbalance,"","");
+    REGISTER_METHOD(get_transaction,"","");
+    REGISTER_METHOD(getblock,"","");
+    REGISTER_METHOD(validateaddress,"","");
+    REGISTER_METHOD(rescan,"","");
+    REGISTER_METHOD(import_bitcoin_wallet,"","");
+    REGISTER_METHOD(import_private_key,"","");
+    REGISTER_METHOD(_create_sendtoaddress_transaction,"","");
+    REGISTER_METHOD(sendtransaction,"","");
+
+#undef REGISTER_METHOD
   }
 
   rpc_server::~rpc_server()
@@ -337,31 +352,46 @@ namespace bts { namespace rpc {
   {
     if (!cfg.is_valid())
       return;
-     try {
-       my->_config = cfg;
-       my->_tcp_serv.listen( cfg.rpc_endpoint );
-       ilog( "listening for rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
+    try 
+    {
+      my->_config = cfg;
+      my->_tcp_serv.listen( cfg.rpc_endpoint );
+      ilog( "listening for rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
      
-       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
+      my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
      
-     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
+    } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
   }
 
   fc::variant rpc_server::direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
   {
     return my->direct_invoke_method(method_name, arguments);
   }
-  /**
-   *  Adds the JSON-RPC methods to the connection.  This method should be overridden to add 
-   *  additional methods for customized DACs.
-   */
-  void rpc_server::register_methods( const fc::rpc::json_connection_ptr& con )
+
+  void rpc_server::register_method(const std::string& method_name, json_api_method_type method, 
+                                   const std::string& parameter_description, const std::string& method_description)
   {
+    my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(method_name, method));
   }
 
   void rpc_server::check_json_connection_authenticated( fc::rpc::json_connection* con )
   {
-     my->check_json_connection_authenticated( con );
+    my->check_json_connection_authenticated( con );
+  }
+
+  void rpc_server::check_connected_to_network()
+  {
+    my->check_connected_to_network();
+  }
+
+  void rpc_server::check_wallet_unlocked()
+  {
+    my->check_wallet_unlocked();
+  }
+
+  void rpc_server::check_wallet_is_open()
+  {
+    my->check_wallet_is_open();
   }
 
 #define RPC_EXCEPTION_IMPL(TYPE, ERROR_CODE, DESCRIPTION) \

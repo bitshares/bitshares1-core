@@ -58,22 +58,6 @@ namespace bts { namespace cli {
                   #endif ///WIN32
                   return line;
             }
-            bool check_unlock()
-            {
-               if( _client->get_wallet()->is_locked() )
-               {
-                  auto password = _self->get_line( "key password: " );
-                  try {
-                     _client->get_wallet()->unlock_wallet( password );
-                  }
-                  catch ( ... )
-                  {
-                     std::cout << "Invalid Password\n";
-                     return false;
-                  }
-               }
-               return true;
-            }
 
             void interactive_open_wallet()
             {
@@ -182,8 +166,8 @@ namespace bts { namespace cli {
               if (arguments.size() >= 4)
                 comment_to = arguments[3].as_string();
               
-              // create_sendtoaddress_transaction takes the same arguments as sendtoaddress
-              fc::variant result = execute_command_and_prompt_for_passwords("create_sendtoaddress_transaction", arguments);
+              // _create_sendtoaddress_transaction takes the same arguments as sendtoaddress
+              fc::variant result = execute_command_and_prompt_for_passwords("_create_sendtoaddress_transaction", arguments);
               bts::blockchain::signed_transaction transaction = result.as<bts::blockchain::signed_transaction>();
               
               std::string response;
@@ -398,7 +382,8 @@ namespace bts { namespace cli {
 
    cli::~cli()
    {
-      try {
+      try 
+      {
         wait();
       }
       catch ( const fc::exception& e )
@@ -560,11 +545,6 @@ namespace bts { namespace cli {
    client_ptr cli::client()
    {
        return my->_client;
-   }
-
-   bool cli::check_unlock()
-   {
-       return my->check_unlock();
    }
 
   void cli::parse_interactive_command(const std::string& line_to_parse, std::string& command, fc::variants& arguments)

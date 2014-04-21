@@ -36,7 +36,6 @@ namespace bts { namespace cli {
         virtual void format_and_print_result(const std::string& command, const fc::variant& result);
       protected:
          virtual client_ptr client();
-         virtual bool check_unlock();
       private:
          std::unique_ptr<detail::cli_impl> my;
    };
