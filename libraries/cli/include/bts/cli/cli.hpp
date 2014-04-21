@@ -19,7 +19,7 @@ namespace bts { namespace cli {
          virtual ~cli();
 
          virtual void print_help();
-         virtual void process_command( const std::string& cmd, const std::string& args );
+         //virtual void process_command( const std::string& cmd, const std::string& args );
 
          virtual void list_transactions( uint32_t count = 0 );
          virtual void list_delegates( uint32_t count = 0 );
