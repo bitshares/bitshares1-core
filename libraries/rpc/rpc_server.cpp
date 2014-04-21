@@ -61,10 +61,35 @@ namespace bts { namespace rpc {
                 _login_set.insert( capture_con );
                 return fc::variant( true );
             });
+            con->add_method( "walletpassphrase", [=]( const fc::variants& params ) -> fc::variant 
+            {
+                check_login( capture_con );
+                FC_ASSERT( params.size() == 1 );
+                std::string passphrase = params[0].as_string();
+                try
+                {
+                  _client->get_wallet()->unlock_wallet(passphrase);
+                  return fc::variant(true);
+                }
+                catch (...)
+                {
+                  return fc::variant(false);
+                }
+            });
+            con->add_method( "getnewaddress", [=]( const fc::variants& params ) -> fc::variant 
+            {
+                check_login( capture_con );
+                FC_ASSERT( params.size() == 0 || params.size() == 1 );
+                std::string account;
+                if (params.size() == 1)
+                  account = params[0].as_string();
+                bts::blockchain::address new_address = _client->get_wallet()->new_recv_address(account);
+                return fc::variant(new_address);
+            });
 
             con->add_method( "transfer", [=]( const fc::variants& params ) -> fc::variant 
             {
-                FC_ASSERT( _client->get_node()->is_connected() );
+                FC_ASSERT( _client->is_connected() );
                 check_login( capture_con );
                 FC_ASSERT( params.size() == 2 );
                 auto amount = params[0].as<bts::blockchain::asset>();
@@ -72,6 +97,13 @@ namespace bts { namespace rpc {
                 auto trx    = _client->get_wallet()->transfer( amount, addr );
                 _client->broadcast_transaction(trx);
                 return fc::variant( trx.id() ); 
+            });
+            con->add_method( "listrecvaddresses", [=]( const fc::variants& params ) -> fc::variant 
+            {
+                check_login( capture_con );
+                FC_ASSERT( params.size() == 0 );
+                std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_recv_addresses();
+                return fc::variant( addresses ); 
             });
             con->add_method( "getbalance", [=]( const fc::variants& params ) -> fc::variant 
             {
@@ -83,27 +115,38 @@ namespace bts { namespace rpc {
 
             con->add_method( "get_transaction", [=]( const fc::variants& params ) -> fc::variant 
             {
+                check_login( capture_con );
                 FC_ASSERT( params.size() == 1 );
                 return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
             });
 
             con->add_method( "getblock", [=]( const fc::variants& params ) -> fc::variant 
             {
+                check_login( capture_con );
                 FC_ASSERT( params.size() == 1 );
-                return fc::variant( _client->get_chain()->fetch_block( params[0].as_int64() )  ); 
+                return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
             });
 
             con->add_method( "validateaddress", [=]( const fc::variants& params ) -> fc::variant 
             {
+                check_login( capture_con );
                 FC_ASSERT( params.size() == 1 );
                 try {
-                   auto test = bts::blockchain::address( params[0].as_string() );
-                   return fc::variant(test.is_valid());
+                   return fc::variant(bts::blockchain::address::is_valid(params[0].as_string()));
                 } 
                 catch ( const fc::exception& )
                 {
                   return fc::variant(false);
                 }
+            });
+
+            con->add_method( "rescan", [=]( const fc::variants& params ) -> fc::variant 
+            {
+                check_login( capture_con );
+                FC_ASSERT( params.size() == 1 );
+                uint32_t block_num = (uint32_t)params[0].as_int64();
+                _client->get_wallet()->scan_chain(*_client->get_chain(), block_num);
+                return fc::variant(true); 
             });
 
             con->add_method( "import_bitcoin_wallet", [=]( const fc::variants& params ) -> fc::variant 
@@ -113,6 +156,17 @@ namespace bts { namespace rpc {
                 auto wallet_dat      = params[0].as<fc::path>();
                 auto wallet_password = params[1].as_string();
                 _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
+                return fc::variant(true);
+            });
+
+            con->add_method( "import_private_key", [=]( const fc::variants& params ) -> fc::variant 
+            {
+                check_login( capture_con );
+                FC_ASSERT( params.size() == 1 );
+                fc::sha256 hash(params[0].as_string());
+                fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
+                _client->get_wallet()->import_key(privkey);
+                _client->get_wallet()->save();
                 return fc::variant(true);
             });
 
@@ -130,6 +184,18 @@ namespace bts { namespace rpc {
     };
   } // detail
 
+  bool rpc_server::config::is_valid() const
+  {
+    if (rpc_user.empty())
+      return false;
+    if (rpc_password.empty())
+      return false;
+    if (!rpc_endpoint.port())
+      return false;
+    return true;
+  }
+
+
   rpc_server::rpc_server()
   :my( new detail::rpc_server_impl() )
   {
@@ -146,7 +212,7 @@ namespace bts { namespace rpc {
             my->_accept_loop_complete.wait();
          }
      } 
-     catch ( const fc::canceled_exception& e ){}
+     catch ( const fc::canceled_exception& ){}
      catch ( const fc::exception& e )
      {
         wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );

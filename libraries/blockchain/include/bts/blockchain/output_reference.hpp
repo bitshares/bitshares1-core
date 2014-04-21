@@ -11,7 +11,7 @@ namespace bts { namespace blockchain {
    struct output_reference
    {
        output_reference():output_idx(0){}
-       output_reference( const fc::uint160& trx, uint8_t idx )
+       output_reference( const fc::uint160& trx, uint32_t idx )
        :trx_hash(trx),output_idx(idx){}
        
        fc::uint160       trx_hash;   // the hash of a transaction, TODO: switch to trx_id_type typedef rather than uint160 directly

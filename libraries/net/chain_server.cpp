@@ -35,12 +35,17 @@ FC_REFLECT( genesis_block_config, (supply)(balances) )
 using namespace bts::blockchain;
 
 namespace bts { namespace net {
+
+/**
+ *  When creating the genesis block it must initialize the genesis block to vote
+ *  evenly for the top 100 delegates and register the top 100 delegates.
+ */
 bts::blockchain::trx_block create_test_genesis_block()
 {
    try {
       FC_ASSERT( fc::exists( "genesis.json" ) );
       auto config = fc::json::from_file( "genesis.json" ).as<genesis_block_config>();
-      bts::blockchain::trx_block genesis;
+      bts::blockchain::trx_block b;
 
       signed_transaction dtrx;
       dtrx.vote = 0;
@@ -52,46 +57,92 @@ bts::blockchain::trx_block create_test_genesis_block()
          auto key      = fc::ecc::private_key::regenerate(key_hash);
          dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key() ), asset() ) );
       }
-      genesis.trxs.push_back( dtrx );
+      b.trxs.push_back( dtrx );
 
-      int64_t total_supply = 0;
+
       bts::blockchain::signed_transaction coinbase;
       coinbase.version = 0;
 
       // TODO: simplify to one output per tx and evenly allocate votes among delegates
       uint8_t output_idx = 0;
+      int32_t  current_delegate = 0;
+      uint64_t total_votes = 0;
+      uint64_t total = 0;
       for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
       {
-         total_supply += itr->second;
-         ilog( "${i}", ("i",*itr) );
-         coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( itr->second ) ) );
-         if( output_idx == 0xff )
+          total += itr->second;
+      }
+      int64_t one_percent = total / 100;
+      elog( "one percent: ${one}", ("one",one_percent) );
+
+
+      int64_t cur_trx_total = 0;
+      int64_t total_supply = 0;
+      for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
+      {
+         auto delta = one_percent - cur_trx_total;
+         if( delta > itr->second )
          {
-            coinbase.vote = (output_idx % 100) + 1; // TODO: temporary
-            genesis.trxs.emplace_back( std::move(coinbase) );
+            coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( itr->second ) ) );
+            cur_trx_total += itr->second;
+         }
+         else
+         {
+            coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( delta ) ) );
+            cur_trx_total += delta;
+            total_supply += cur_trx_total;
+            coinbase.vote = ((total_supply / one_percent)%100)+1;
+            ilog( "vote: ${v}", ("v",coinbase.vote) );
+
+            b.trxs.emplace_back( std::move(coinbase) );
+            coinbase.outputs.clear();
+            cur_trx_total = 0;
+
+            int64_t change = itr->second - delta;
+            while( change >= one_percent )
+            {
+               coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( one_percent ) ) );
+               total_supply += one_percent;
+               coinbase.vote = ((total_supply / one_percent)%100)+1;
+               ilog( "vote: ${v}", ("v",coinbase.vote) );
+               b.trxs.emplace_back( coinbase );
+               coinbase.outputs.clear();
+               change -= one_percent;
+               cur_trx_total = 0;
+            }
+            if( change != 0 )
+            {
+               coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( change ) ) );
+               cur_trx_total = change;
+            }
+         }
+         if( coinbase.outputs.size() == 0xff )
+         {
+            coinbase.vote = ((total_supply / one_percent)%100)+1;
+            b.trxs.emplace_back( coinbase );
             coinbase.outputs.clear();
          }
-         ++output_idx;
+      }
+      if( coinbase.outputs.size() )
+      {
+         coinbase.vote = ((total_supply / one_percent)%100)+1;
+         ilog( "vote: ${v}", ("v",coinbase.vote) );
+         b.trxs.emplace_back( coinbase );
+         coinbase.outputs.clear();
       }
 
-      if (output_idx > 0) {
-         coinbase.vote = (output_idx % 100) + 1; // TODO: temporary
-         genesis.trxs.emplace_back( std::move(coinbase) );
-      }
+      b.version         = 0;
+      b.block_num       = 0;
+      b.prev            = bts::blockchain::block_id_type();
+      b.timestamp       = fc::time_point::now();
+      b.next_fee        = bts::blockchain::block_header::min_fee();
+      b.total_shares    = int64_t(total_supply);
 
-      genesis.version         = 0;
-      genesis.block_num       = 0;
-      genesis.prev            = bts::blockchain::block_id_type();
-      genesis.timestamp       = fc::time_point::now();
-      genesis.next_fee        = bts::blockchain::block_header::min_fee();
-      genesis.total_shares    = int64_t(total_supply);
+      b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
 
-      genesis.trx_mroot   = genesis.calculate_merkle_root(signed_transactions());
-
-      fc::variant var(genesis);
-      auto str = fc::json::to_pretty_string(var); //b);
-      ilog( "block: \n${g}", ("g", str ) );
-      return genesis;
+      //auto str = fc::json::to_pretty_string(var); //b);
+      //ilog( "block: \n${b}", ("b", str ) );
+      return b;
    }
    catch ( const fc::exception& e )
    {
@@ -402,6 +453,7 @@ void chain_server::configure( const chain_server::config& c )
          try {
             //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
             my->_chain->push_block( genesis );
+            my->_chain->dump_delegates();
          }
          catch ( const fc::exception& e )
          {

@@ -167,6 +167,15 @@ namespace bts { namespace cli {
           auto wallet_dat = wallet->get_wallet_file();
           if( fc::exists( wallet_dat ) )
           {
+             try
+             {
+                // try to open without a password first
+                wallet->open( wallet_dat, "" );
+                return;
+             }
+             catch (fc::exception&)
+             {}
+             // else ask for a password
              std::cout << "Login\n";
              auto pass = get_line("password: ");
              wallet->open( wallet_dat, pass );

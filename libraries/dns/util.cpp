@@ -11,7 +11,6 @@ claim_domain_output to_domain_output(const trx_output &output)
 {
     auto dns_output = output.as<claim_domain_output>();
 
-    FC_ASSERT(is_valid_name(dns_output.name), "Invalid name");
     FC_ASSERT(is_valid_value(dns_output.value), "Invalid value");
     FC_ASSERT(is_valid_owner(dns_output.owner), "Invalid owner");
     FC_ASSERT(is_valid_last_tx_type(dns_output.last_tx_type), "Invalid last_tx_type");
@@ -197,7 +196,7 @@ bool is_valid_value(const fc::variant &value)
 
 bool is_valid_owner(const bts::blockchain::address &owner)
 {
-    return owner.is_valid();
+    return owner.addr != bts::blockchain::address().addr;
 }
 
 bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type)

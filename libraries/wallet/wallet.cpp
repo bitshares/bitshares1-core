@@ -152,14 +152,15 @@ namespace bts { namespace wallet {
       class wallet_impl
       {
           public:
-              wallet_impl():_stake(0),_exception_on_open(false){}
+              wallet_impl():_stake(0),_exception_on_open(false),_blockchain(nullptr){}
               std::string _wallet_base_password; // used for saving/loading the wallet
               std::string _wallet_key_password;  // used to access private keys
 
               fc::path                                                   _wallet_dat;
               fc::path                                                   _data_dir;
               wallet_data                                                _data;
-              asset                                                      _current_fee_rate;
+              /** millishares per byte */
+              uint64_t                                                   _current_fee_rate;
               uint64_t                                                   _stake;
               bool                                                       _exception_on_open;
 
@@ -175,7 +176,9 @@ namespace bts { namespace wallet {
               std::unordered_map<address,fc::ecc::private_key>             _my_keys;
               std::unordered_map<transaction_id_type,signed_transaction>   _id_to_signed_transaction;
 
-              asset get_fee_rate()
+              chain_database*                                              _blockchain;
+
+              uint64_t get_fee_rate()
               {
                   return _current_fee_rate;
               }
@@ -331,7 +334,7 @@ namespace bts { namespace wallet {
       };
    } // namespace detail
 
-   asset wallet::get_fee_rate()
+   uint64_t wallet::get_fee_rate()
    {
       return my->get_fee_rate();
    }
@@ -527,13 +530,19 @@ namespace bts { namespace wallet {
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
-   address   wallet::new_recv_address( const std::string& label )
+   fc::ecc::public_key   wallet::new_public_key( const std::string& label )
    { try {
       FC_ASSERT( !is_locked() );
       my->_data.last_used_key++;
       auto base_key = my->_data.get_base_key( my->_wallet_key_password );
       auto new_key = base_key.child( my->_data.last_used_key );
-      return import_key(new_key, label);
+      import_key(new_key, label);
+      return new_key.get_public_key();
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
+
+   address   wallet::new_recv_address( const std::string& label )
+   { try {
+      return address( new_public_key( label ) );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
 
    void wallet::add_send_address( const address& addr, const std::string& label )
@@ -550,9 +559,9 @@ namespace bts { namespace wallet {
       return my->_data.send_addresses;
    }
 
-   void                  wallet::set_fee_rate( const asset& pts_per_byte )
+   void                  wallet::set_fee_rate( uint64_t milli_shares_per_byte )
    {
-      my->_current_fee_rate = pts_per_byte;
+      my->_current_fee_rate = milli_shares_per_byte;
    }
 
    void                  wallet::unlock_wallet( const std::string& key_password )
@@ -574,6 +583,14 @@ namespace bts { namespace wallet {
 
        return collect_inputs_and_sign(trx, amnt, memo);
    } FC_RETHROW_EXCEPTIONS( warn, "${amnt} to ${to}", ("amnt",amnt)("to",to) ) }
+
+   signed_transaction wallet::register_delegate( const std::string& name, const fc::variant& data )
+   {
+      FC_ASSERT( claim_name_output::is_valid_name(name), "", ("name",name)  );
+      signed_transaction trx;
+      trx.outputs.push_back( trx_output( claim_name_output( name, data, my->_blockchain->get_new_delegate_id(), new_public_key("delegate: "+name) ), asset() ) );
+      return collect_inputs_and_sign( trx, asset(), std::string() );
+   }
 
    void wallet::mark_as_spent( const output_reference& r )
    {
@@ -623,7 +640,7 @@ namespace bts { namespace wallet {
          return;
       }
       itr = my->_data.spent_outputs.find(idx);
-      if( itr != my->_data.unspent_outputs.end() )
+      if( itr != my->_data.spent_outputs.end() )
       {
          state.adjust_balance( itr->second.amount, -1 );
          return;
@@ -646,10 +663,11 @@ namespace bts { namespace wallet {
        }
 
        // for each output
+       transaction_id_type trx_id = state.trx.id();
        for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
            const trx_output& out   = state.trx.outputs[out_idx];
-           const output_reference  out_ref( state.trx.id(),out_idx );
+           const output_reference  out_ref( trx_id,out_idx );
            const output_index      oidx( block_idx, trx_idx, out_idx );
            found |= scan_output( state, out, out_ref, oidx );
        }
@@ -664,6 +682,7 @@ namespace bts { namespace wallet {
     */
    bool wallet::scan_chain( chain_database& chain, uint32_t from_block_num, scan_progress_callback cb )
    { try {
+       my->_blockchain = &chain;
        bool found = false;
        auto head_block_num = chain.head_block_num();
        if( head_block_num == uint32_t(-1) ) return false;
@@ -904,13 +923,13 @@ namespace bts { namespace wallet {
                 auto block_state = db.get_transaction_validator()->create_block_state();
                 trx_stat s;
                 s.eval = db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
-                ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate().get_rounded_amount()) );
+                ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate().get_rounded_amount() * in_trxs[i].size()) )
+                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size())/1000 )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
-                        ("trx",in_trxs[i])("s",s.eval)("f", get_fee_rate().get_rounded_amount()*in_trxs[i].size()) );
+                        ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
                   continue;
                 }
                 s.trx_idx = i;
@@ -954,7 +973,7 @@ namespace bts { namespace wallet {
          result.block_num       = db.head_block_num() + 1;
          result.prev            = db.head_block_id();
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
-         result.next_fee        = result.calculate_next_fee( db.get_fee_rate().get_rounded_amount(), result.block_size() );
+         result.next_fee        = result.calculate_next_fee( db.get_fee_rate(), result.block_size() );
          result.total_shares    = head_block.total_shares - summary.fees;
          result.timestamp       = db.get_pow_validator()->get_time();
 
@@ -986,16 +1005,15 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    std::unordered_set<address>& req_sigs, const address& change_addr)
 {
     /* Save original transaction inputs and outputs */
-    auto original_inputs = trx.inputs;
-    auto original_outputs = trx.outputs;
+    auto original_inputs   = trx.inputs;
+    auto original_outputs  = trx.outputs;
     auto original_req_sigs = req_sigs;
 
     auto required_in = min_amnt;
     asset total_in;
 
     do
-    {
-        /* Start with original transaction */
+    { /* Start with original transaction */
         trx.inputs = original_inputs;
         trx.outputs = original_outputs;
         req_sigs = original_req_sigs;
@@ -1016,8 +1034,8 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         /* Calculate fee required for signed transaction */
         trx.sigs.clear();
         sign_transaction(trx, req_sigs, false);
-        auto fee = get_fee_rate() * trx.size();
-        ilog("required fee ${f} for bytes ${b} at rate ${r}", ("f", fee.get_rounded_amount()) ("b", trx.size()) ("r", get_fee_rate().get_rounded_amount()));
+        auto fee = (get_fee_rate() * trx.size())/1000;
+        ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte", ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 
         /* Calculate new minimum input amount */
         required_in += fee;
@@ -1033,8 +1051,8 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
             trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
         else
             trx.outputs.pop_back();
-    }
-    while (total_in < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
+
+    } while (total_in < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
 
     trx.sigs.clear();
     sign_transaction(trx, req_sigs, true);

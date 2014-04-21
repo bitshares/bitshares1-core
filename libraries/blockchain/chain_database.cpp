@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 namespace fc {
   template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
@@ -40,6 +41,21 @@ namespace bts { namespace blockchain {
 
     namespace detail
     {
+       struct vote_del
+       {
+          vote_del( int64_t v = 0, uint32_t del = 0 )
+          :votes(v),delegate_id(del){}
+          int64_t votes;
+          uint32_t delegate_id;
+          friend bool operator == ( const vote_del& a, const vote_del& b )
+          {
+             return a.votes == b.votes && a.delegate_id == b.delegate_id;
+          }
+          friend bool operator < ( const vote_del& a, const vote_del& b )
+          {
+             return a.votes > b.votes ? true : (a.votes == b.votes ? a.delegate_id > b.delegate_id : false);
+          }
+       };
 
       // TODO: .01 BTC update private members to use _member naming convention
       class chain_database_impl
@@ -62,7 +78,7 @@ namespace bts { namespace blockchain {
             /**
              *  track the delegate votes by rank
              */
-            std::map<int64_t, uint32_t>                         _votes_to_delegate;
+            std::set<vote_del>                                  _votes_to_delegate;
             std::map<uint32_t, int64_t>                         _delegate_to_votes;
 
             pow_validator_ptr                                   _pow_validator;
@@ -80,12 +96,10 @@ namespace bts { namespace blockchain {
                 auto itr = _delegate_to_votes.find( rec.delegate_id );
                 if( itr != _delegate_to_votes.end() )
                 {
-                    auto old_votes = itr->second;
-                    _votes_to_delegate.erase(old_votes);
+                    ilog( "old votes: ${v}  new votes ${nv}", ("v",itr->second)("nv",new_votes) );
+                    _votes_to_delegate.erase( vote_del( itr->second, itr->first ));
                 }
-                new_votes <<= 16;
-                new_votes |= int64_t(uint16_t( rec.delegate_id ));
-                _votes_to_delegate[ new_votes ]       = rec.delegate_id;
+                _votes_to_delegate.insert( vote_del(new_votes, rec.delegate_id) );
                 _delegate_to_votes[ rec.delegate_id ] = new_votes;
 
                 wlog( "store delegate ${d}", ("d",rec) );
@@ -133,10 +147,16 @@ namespace bts { namespace blockchain {
             { try {
                 std::vector<uint160> trxs_ids;
                 uint16_t t = 0;
+                std::map<int32_t,uint64_t> delegate_votes;
+                for( uint32_t i = 1; i <= 100; ++i )
+                {
+                   delegate_votes[i] = 0;
+                }
                 for( ; t < b.trxs.size(); ++t )
                 {
                    store( b.trxs[t], trx_num( b.block_num, t) );
                    trxs_ids.push_back( b.trxs[t].id() );
+                   
 
                    /*** on the genesis block we need to store initial delegates and vote counts */
                    if( b.block_num == 0 )
@@ -149,23 +169,32 @@ namespace bts { namespace blockchain {
                             {
                                auto claim = b.trxs[t].outputs[o].as<claim_name_output>();
                                update_name_record( claim.name, claim );
-                         //      if( claim.delegate_id != 0 )
-                                  update_delegate( name_record( claim ) );
+                         //    if( claim.delegate_id != 0 )
+                               update_delegate( name_record( claim ) );
                             }
                          }
                       }
                       else // t != 0
                       {
-                         auto rec = _delegate_records.fetch( b.trxs[t].vote );
+                         name_record rec = _delegate_records.fetch( b.trxs[t].vote );
                          // first transaction registers names... the rest are initial balance
                          for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
                          {
+                            delegate_votes[b.trxs[t].vote] += b.trxs[t].outputs[o].amount.get_rounded_amount();
                             rec.votes_for += to_bips( b.trxs[t].outputs[o].amount.get_rounded_amount(), b.total_shares );
                          }
                          update_delegate( rec );
                       }
                    } // block == 0
                 }
+                elog( "total votes:\n ${e}", ("e",fc::json::to_pretty_string( delegate_votes) ) );
+                uint64_t sum = 0;
+                for( auto i : delegate_votes )
+                {
+                   sum += i.second;
+                }
+                elog( "grand total: ${g}", ("g",sum) );
+
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
                    store( trx, trx_num( b.block_num, t) );
@@ -260,12 +289,15 @@ namespace bts { namespace blockchain {
      void chain_database::dump_delegates()const
      {
         std::cerr<<"Delegate Ranking\n==========================================\n";
-        std::cerr<<"Rank |  ID   |  VOTES\n";
+        std::cerr<<std::setw(8)<<"Rank "<<"   |"<<std::setw(8)<<"ID"<<"   |"<<std::setw(18)<<"VOTES"<<"   | PERCENT\n";
 
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           std::cerr << i << "      ] " << del.second << " " << ((del.first)>>16) <<"\n";
+           std::cerr << std::setw(8)  << i               << "   |"
+                     << std::setw(8)  << del.delegate_id << "   |"
+                     << std::setw(18) << del.votes       << "   |"
+                     << std::setw(18) << double((del.votes*10000)/BTS_BLOCKCHAIN_BIP)/100  << "%   |\n";
            ++i;
         }
      }
@@ -465,12 +497,12 @@ namespace bts { namespace blockchain {
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         /// time stamps from the future are not allowed
-        wlog( "fee rate: ${fee}", ("fee",b.next_fee) );
-        FC_ASSERT( b.next_fee     == b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size() ), "",
-                   ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( get_fee_rate().get_rounded_amount(), b.block_size()))
-                   ("get_fee_rate",get_fee_rate().get_rounded_amount())("b.size",b.block_size())
+        FC_ASSERT( b.next_fee     == b.calculate_next_fee( my->head_block.next_fee,  b.block_size() ), "",
+                   ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( my->head_block.next_fee, b.block_size()))
+                   ("get_fee_rate",get_fee_rate())("b.size",b.block_size())
                    );
 
+        // TODO: timestamp should be multiple of BTS_BLOCKCHAIN_INTERVAL_SEC from genesis 
         FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
                    ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
 
@@ -479,19 +511,17 @@ namespace bts { namespace blockchain {
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
 
-        // TODO: factor in deterministic trxs to merkle root calculation
         FC_ASSERT( b.trx_mroot == b.calculate_merkle_root(deterministic_trxs) );
-
 
         transaction_summary summary;
         transaction_summary trx_summary;
         int32_t last = b.trxs.size()-1;
-        uint64_t fee_rate = get_fee_rate().get_rounded_amount();
+        uint64_t fee_rate = get_fee_rate();
         for( int32_t i = 0; i <= last; ++i )
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
             FC_ASSERT( b.trxs[i].version == 0 );
-            FC_ASSERT( trx_summary.fees >= b.trxs[i].size() * fee_rate );
+            FC_ASSERT( trx_summary.fees >= (b.trxs[i].size() * fee_rate)/1000 );
             summary += trx_summary;
         }
 
@@ -548,9 +578,9 @@ namespace bts { namespace blockchain {
 
     const signed_block_header& chain_database::get_head_block()const { return my->head_block; }
 
-    asset chain_database::get_fee_rate()const
+    uint64_t chain_database::get_fee_rate()const
     {
-       return asset( uint64_t(my->head_block.next_fee) );
+       return my->head_block.next_fee;
     }
 
     void chain_database::set_pow_validator( const pow_validator_ptr& v )
@@ -576,6 +606,13 @@ namespace bts { namespace blockchain {
     void chain_database::evaluate_transaction( const signed_transaction& trx )
     {
        get_transaction_validator()->evaluate( trx, get_transaction_validator()->create_block_state() );
+    }
+    uint32_t  chain_database::get_new_delegate_id()const
+    {
+       uint32_t new_id = rand();
+       while( my->_delegate_to_votes.find(new_id) != my->_delegate_to_votes.end() )
+            new_id = fc::time_point::now().time_since_epoch().count() ^ rand();
+       return new_id;
     }
 
 }  } // bts::blockchain
