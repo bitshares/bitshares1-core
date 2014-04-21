@@ -361,20 +361,17 @@ namespace bts { namespace blockchain {
          if( my->head_block.block_num != uint32_t(-1) )
          {
             my->head_block_id = my->head_block.id();
-         }
-         else // initialize initial delegates
-         {
-            // TODO: remove this generation with hard coded public keys...
-            /*
-            for( uint32_t i = 0; i < 100; ++i )
+
+
+            auto itr = my->_delegate_records.begin();
+            while( itr.valid() )
             {
-                auto name = "delegate-"+fc::to_string( int64_t(i+1) );
-                auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
-                auto key = fc::ecc::private_key::regenerate(key_hash);
-                my->_delegate_records.store( i+1,  name_record( i+1, name, key.get_public_key() ) );
-                my->update_delegate( name_record( i+1, name, key.get_public_key() ) );
+               auto rec = itr.value();
+               auto votes = rec.votes_for - rec.votes_against;
+               my->_votes_to_delegate.insert( detail::vote_del( votes, rec.delegate_id ) );
+               my->_delegate_to_votes[rec.delegate_id] = votes;
+               ++itr;
             }
-            */
          }
 
 

@@ -219,8 +219,17 @@ namespace bts { namespace cli {
                 // generate the transaction, have the user confirm it, then broadcast it
                 interactive_sendtoaddress(command, arguments);
               }
+              else if( command == "listdelegates" )
+              {
+                 if( arguments.size() == 2 )
+                    _self->list_delegates( arguments[1].as<int64_t>() );
+                 else
+                    _self->list_delegates( );
+              }
               else
+              {
                 return execute_command_and_prompt_for_passwords(command, arguments);
+              }
             }
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
