@@ -1,4 +1,5 @@
 #include <bts/blockchain/address.hpp>
+#include <bts/blockchain/pts_address.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
@@ -16,6 +17,9 @@ int main( int argc, char** argv )
 
       std::cout << "bts address: " 
                 << std::string( bts::blockchain::address( key.get_public_key() ) ) <<"\n";
+
+      std::cout << "pts address: " 
+                << std::string( bts::blockchain::pts_address( key.get_public_key() ) ) <<"\n";
       return 0;
    }
    else if (argc == 2)

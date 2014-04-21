@@ -1,0 +1,128 @@
+/**
+@defgroup manual_testing Manual Testing
+@brief How to test bts_xt_client and bts_xt_server by hand
+
+@section client-server-testing Testing bts_xt_client in client-server mode 
+
+Generate a genesis block
+------------------------
+To test transferring BTS back and forth between several clients, you'll need
+to give one of your clients some BTS in the genesis block.
+
+First, create a keypair by running using `bts_create_key`.  Its output will
+look like:
+
+    private key: b74cf7e6d94c7648eed991568d1fb1a34a32b130a99bafe23b329aed66e3c8f3
+    bts address: 3tFpF53MS8VYDwX4PXTET87FaPyn
+    pts address: PYpLUyJaA4SE1Piox25sVUGB1sMUec6yzL
+
+This gives you a private key you can import into one of the test clients, and
+the public key formatted two different ways.
+
+Create a text file named `genesis.json` that looks like this:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.json}
+{
+    "balances": [
+        [
+          "PYpLUyJaA4SE1Piox25sVUGB1sMUec6yzL",
+          100000000.
+        ]
+    ]
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Which will give you 100 million BTS to play with.
+
+Generate a Trustee
+------------------
+One of your clients will need to be configured as the trustee who is able to
+generate blocks.  You'll need to generate another keypair for this, so
+run `bts_create_key` again.  I'll use:
+
+    private key: e63c9c2f21aea4d401c8ce0358252fab32bbee88885afa4022e1825d13adf4f3
+    bts address: kYJQSygVP25dTp51HNDeH9tPSUU
+    pts address: PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk
+
+Launch the Server
+-----------------
+The server currently puts its data files in the current working directory, so
+you probably want to create a clean directory with the `genesis.json` you 
+generated earlier to run it from:
+
+    mkdir C:\TEMP\BitsharesX_Server
+    copy genesis.json C:\TEMP\BitsharesX_Server
+
+Or for Linux:
+
+    mkdir /tmp/btsx_server
+    cp genesis.json /tmp/btsx_server
+
+Now run the server from that directory, passing the BTS address of your trustee
+on the command line
+ 
+    cd C:\TEMP\BitsharesX_Server
+    E:\Invictus\build\programs\bts_xt\Debug\bts_xt_server.exe --trustee-address kYJQSygVP25dTp51HNDeH9tPSUU
+
+The first time the server runs, it will create its initial chain database
+from `genesis.json`.  If you want to alter the gensis block for subsequent
+runs, you will need to delete the `chain` and restart the server to force
+it to regenerate the chain database.
+
+Launch the Clients
+------------------
+To launch multiple clients, you'll need to start each with a different 
+configuration directory.  By default, they'll all write to the system-
+dependent application data directory.
+
+We'll make the first client act as trustee.  Launch it like this:
+    bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_1 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk --trustee-private-key e63c9c2f21aea4d401c8ce0358252fab32bbee88885afa4022e1825d13adf4f3
+
+The rest of the clients aren't trustee, so they don't get the private key.
+
+Launch two more like this:
+
+    bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_2 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk
+    bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_3 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk
+
+
+After setting your wallet passwords, the clients will download the genesis block
+from the server and be ready to go.  You can check your balance with the
+`getbalance` command.  All will start out with a zero balance.
+
+    >>> getbalance
+    0
+
+Get access to the BTS you put in the genesis block
+--------------------------------------------------
+Now, import the private key you used in the genesis block into one of the 
+clients to get access to the BTS from the corresponding address in the genesis 
+block.  After importing it, rescan the block chain so the client will see
+your new balance.  Let's do this in client 1.
+
+    >>> import_private_key b74cf7e6d94c7648eed991568d1fb1a34a32b130a99bafe23b329aed66e3c8f3
+    >>> rescan
+    done scanning block chain
+    >>> getbalance
+    100000000
+
+Do a transfer
+-------------
+Now you have some BTS in one of the clients.  Let's send to client 2.  In
+client 2, generate an address to receive the BTS.
+
+    >>> getnewaddress
+    Te2sQZsqYNFdXvsFT1ieu8kMHsk
+
+Back in client 1, send to this address:
+
+    >>> sendtoaddress Te2sQZsqYNFdXvsFT1ieu8kMHsk 20000000
+
+Client 1 will show you the transaction, ask you to confirm it, and then
+broadcast the transaction to the server.
+
+Client 2 should receive the transaction within 30 seconds.  Run getbalance
+to verify that the BTS have arrived:
+
+    >>> getbalance
+    20000000
+
+*/

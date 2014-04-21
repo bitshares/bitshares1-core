@@ -2229,8 +2229,10 @@ BOOST_AUTO_TEST_CASE(validator_transfer_invalid_recipient_fail)
 
         /* Build invalid address */
         address recipient;
-        for (auto i = 0u; i < recipient.addr.size(); i++)
-            recipient.addr.data[i] = 'A';
+
+//      there is no such thing as an invalid address unless all 0's is invalid.
+//        for (auto i = 0u; i < recipient.addr.size(); i++)
+//            recipient.addr.data[i] = 'A';
 
         /* Initial domain bid */
         tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);
@@ -2409,8 +2411,9 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_invalid_recipient_fail)
 
         /* Build invalid address */
         address recipient;
-        for (auto i = 0u; i < recipient.addr.size(); i++)
-            recipient.addr.data[i] = 'A';
+//      there is no such thing as an invalid address unless 0 is invalid. 
+//        for (auto i = 0u; i < recipient.addr.size(); i++)
+//            recipient.addr.data[i] = 'A';
 
         /* Initial domain bid */
         tx = state.wallet1.bid_on_domain(DNS_TEST_NAME, DNS_TEST_PRICE1, txs, state.db);

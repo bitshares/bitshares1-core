@@ -47,3 +47,12 @@ if( WIN32 )
 endif (WIN32)
 target_link_libraries( simple_net_test_client bts_client bts_net bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${crypto_library})
 
+
+include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
+
+add_executable( bts_xt_client_tests bts_xt_client_tests.cpp )
+if( WIN32 )
+    target_compile_definitions(bts_xt_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
+    set( RPCRT4 Rpcrt4 )
+endif (WIN32)
+target_link_libraries( bts_xt_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library})

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 namespace fc {
   template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
@@ -288,12 +289,15 @@ namespace bts { namespace blockchain {
      void chain_database::dump_delegates()const
      {
         std::cerr<<"Delegate Ranking\n==========================================\n";
-        std::cerr<<"Rank |  ID   |  VOTES\n";
+        std::cerr<<std::setw(8)<<"Rank "<<"   |"<<std::setw(8)<<"ID"<<"   |"<<std::setw(18)<<"VOTES"<<"   | PERCENT\n";
 
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           std::cerr << i << "      ] " << del.delegate_id << " " << ((del.votes)) <<"\n"; 
+           std::cerr << std::setw(8)  << i               << "   |"
+                     << std::setw(8)  << del.delegate_id << "   |"
+                     << std::setw(18) << del.votes       << "   |"
+                     << std::setw(18) << double((del.votes*10000)/BTS_BLOCKCHAIN_BIP)/100  << "%   |\n";
            ++i;
         }
      }

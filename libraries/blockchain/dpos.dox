@@ -10,7 +10,7 @@
    The network establishes a set of rules and and procedures that aim to keep power decentralized and rapidly handle any
    abuse.  
 
-   @section dpos_assumptions  Assumpitions & Invariants 
+   @section dpos_assumptions  Assumptions & Invariants 
 
    -# For the purpose of this algorithm design we are making the assumption that the client is synchronized via NTP to within
    a couple of seconds of UTC time.

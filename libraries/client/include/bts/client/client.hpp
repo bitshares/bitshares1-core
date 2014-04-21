@@ -17,7 +17,7 @@ namespace bts { namespace client {
     class client 
     {
        public:
-         client();
+         client(bool enable_p2p = false);
          ~client();
 
          void set_chain( const bts::blockchain::chain_database_ptr& chain );
@@ -38,7 +38,14 @@ namespace bts { namespace client {
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
 
-    
+         // returns true if the client is connected to the network (either server or p2p)
+         bool is_connected() const;
+
+         // functions for taking command-line parameters and passing them on to the p2p node
+         void listen_on_port(uint16_t port_to_listen);
+         void load_p2p_configuration(const fc::path& configuration_directory);
+         void connect_to_peer(const std::string& remote_endpoint);
+         void connect_to_p2p_network();
        private:
          std::unique_ptr<detail::client_impl> my;
     };

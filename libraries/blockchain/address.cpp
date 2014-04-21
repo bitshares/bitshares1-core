@@ -2,6 +2,7 @@
 
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/sha512.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/exception/exception.hpp>
 
@@ -10,44 +11,44 @@
 
 namespace bts {
   namespace blockchain {
-   address::address()
-   {
-    memset( addr.data, 0, sizeof(addr.data) );
-   }
-   address::address( const std::string& base58str )
-   {
-      std::vector<char> v = fc::from_base58( fc::string(base58str) );
-      if( v.size() )
-         memcpy( addr.data, v.data(), std::min<size_t>( v.size(), sizeof(addr) ) );
+   address::address(){}
 
-      if( !is_valid() )
-      {
-         FC_THROW_EXCEPTION( exception, "invalid address ${a}", ("a", base58str) );  
-      }
+   address::address( const std::string& base58str )
+   { 
+      std::vector<char> v = fc::from_base58( fc::string(base58str) );
+      FC_ASSERT( is_valid( base58str ) );
+      memcpy( (char*)addr._hash, v.data(), std::min<size_t>( v.size()-4, sizeof(addr) ) );
    }
+
+
+   /**
+    *  Validates checksum and length of base58 address
+    *
+    *  @return true if successful, throws an exception with reason if invalid.
+    */
+   bool address::is_valid(const std::string& base58str )
+   { try {
+      std::vector<char> v = fc::from_base58( fc::string(base58str) );
+      FC_ASSERT( v.size() > 4, "all addresses must have a 4 byte checksum" );
+      FC_ASSERT(v.size() <= sizeof(fc::ripemd160) + 4, "all addresses are less than 24 bytes");
+      auto checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
+      FC_ASSERT( memcmp( v.data()+20, (char*)checksum._hash, 4 ) == 0, "address checksum mismatch" );
+      return true;
+   } FC_RETHROW_EXCEPTIONS( warn, "invalid address '${a}'", ("a", base58str) ) }
 
    address::address( const fc::ecc::public_key& pub )
    {
        auto dat      = pub.serialize();
-       auto dat_hash = small_hash(dat.data, sizeof(dat) );
-       auto check = fc::ripemd160::hash( (char*)&dat_hash, 16 );
-       memcpy( addr.data, (char*)&dat_hash, sizeof(addr) );
-       memcpy( &addr.data[16], (char*)&check, 4 );
-   }
-
-   /**
-    *  Checks the address to verify it has a 
-    *  valid checksum and prefix.
-    */
-   bool address::is_valid()const
-   {
-       auto check = fc::ripemd160::hash( addr.data, 16 );
-       return memcmp(&addr.data[16], &check, 4 ) == 0;
+       addr = fc::ripemd160::hash( fc::sha512::hash( dat.data, sizeof(dat) ) );
    }
 
    address::operator std::string()const
    {
-        return fc::to_base58( addr.data, sizeof(addr) );
+        fc::array<char,24> bin_addr;
+        memcpy( (char*)&bin_addr, (char*)&addr, sizeof(addr) );
+        auto checksum = fc::ripemd160::hash( (char*)&addr, sizeof(addr) );
+        memcpy( ((char*)&bin_addr)+20, (char*)&checksum._hash[0], 4 );
+        return fc::to_base58( bin_addr.data, sizeof(bin_addr) );
    }
 
 } } // namespace bts::blockchain
