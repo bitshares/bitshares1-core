@@ -103,9 +103,10 @@ int main( int argc, char** argv )
          c->run_trustee(key);
       }
 
-      auto cli = std::make_shared<bts::cli::cli>( c );
+      bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
+      rpc_server->set_client(c);
 
-      bts::rpc::rpc_server_ptr rpc_server;
+      auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
 
       if (option_variables.count("server"))
       {
@@ -119,12 +120,7 @@ int main( int argc, char** argv )
         // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
           rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
-        if (rpc_config.is_valid())
-        {
-          rpc_server = std::make_shared<bts::rpc::rpc_server>();
-          rpc_server->set_client(c);
-          rpc_server->configure(rpc_config);
-        }
+        rpc_server->configure(rpc_config);
       }
       
       if (p2p_mode)

@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     bts::blockchain::asset destination_initial_balance = client_processes[next_client_index].rpc_client->getbalance(0);
     bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->getbalance(0);
     const uint32_t amount_to_transfer = 1000000;
-    client_processes[i].rpc_client->transfer(amount_to_transfer, destination_address);
+    client_processes[i].rpc_client->sendtoaddress(destination_address, amount_to_transfer);
     fc::time_point transfer_time = fc::time_point::now();
     for (;;)
     {
