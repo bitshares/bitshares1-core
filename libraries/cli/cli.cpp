@@ -157,14 +157,6 @@ namespace bts { namespace cli {
             {
               // validate arguments
               FC_ASSERT(arguments.size() >= 2 && arguments.size() <= 4);
-              bts::blockchain::address destination_address = arguments[0].as<bts::blockchain::address>();
-              bts::blockchain::asset amount = arguments[1].as<bts::blockchain::asset>();
-              std::string comment;
-              std::string comment_to;
-              if (arguments.size() >= 3)
-                comment = arguments[2].as_string();
-              if (arguments.size() >= 4)
-                comment_to = arguments[3].as_string();
               
               // _create_sendtoaddress_transaction takes the same arguments as sendtoaddress
               fc::variant result = execute_command_and_prompt_for_passwords("_create_sendtoaddress_transaction", arguments);
@@ -180,7 +172,7 @@ namespace bts { namespace cli {
               {
                 result = execute_command_and_prompt_for_passwords("sendtransaction", fc::variants{fc::variant(transaction)});
                 bts::blockchain::transaction_id_type transaction_id = result.as<bts::blockchain::transaction_id_type>();
-                std::cout << "Transaction sent (id is " << transaction_id << ")\n";
+                std::cout << "Transaction sent (id is " << (std::string)transaction_id << ")\n";
                 return result;
               }
               else
@@ -188,6 +180,18 @@ namespace bts { namespace cli {
                 std::cout << "Transaction canceled.\n";
                 return fc::variant(false);
               }
+            }
+            fc::variant interactive_rescan(const std::string& command, const fc::variants& arguments)
+            {
+              FC_ASSERT(arguments.size() == 0 || arguments.size() == 1);
+              uint32_t block_num = 0;
+              if (arguments.size() == 1)
+                block_num = (uint32_t)arguments[0].as_uint64();
+                
+              _client->get_wallet()->scan_chain( *_client->get_chain(), block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
+                {
+                    std::cout << "scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
+                });              
             }
 
             void parse_interactive_command(const std::string& line_to_parse, std::string& command, fc::variants& arguments)
@@ -210,6 +214,8 @@ namespace bts { namespace cli {
                 else
                   _self->list_delegates( );
               }
+              else if (command == "rescan")
+                return interactive_rescan(command, arguments);
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -242,6 +248,8 @@ namespace bts { namespace cli {
                             (command_info[0] + " " + command_info[1]) << "   " << command_info[2] << "\n";
                 }
               }
+              else if (command == "rescan")
+                std::cout << "\ndone scanning block chain\n";
               else
                 std::cout << fc::json::to_pretty_string(result) << "\n";
             }
@@ -323,8 +331,8 @@ namespace bts { namespace cli {
       if( !fc::exists( wallet_dat ) )
       {
         std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
-        std::cout << "You will be asked to provide two passphrase, the first passphrase \n";
-        std::cout << "encrypts the entire contents of your wallet on disk.  The second\n ";
+        std::cout << "You will be asked to provide two passphrase, the first passphrase\n";
+        std::cout << "encrypts the entire contents of your wallet on disk.  The second\n";
         std::cout << "passphrase will only encrypt your private keys.\n\n";
 
         std::cout << "Please set a passphrase for encrypting your wallet: \n";
@@ -345,7 +353,7 @@ namespace bts { namespace cli {
           std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
         }
 
-        std::cout << "Please set a passphrase for encrypting your private keys: \n";
+        std::cout << "\nPlease set a passphrase for encrypting your private keys: \n";
         std::string keypass1, keypass2;
         bool retry = false;
         keypass1  = get_line("spending passphrase: ");
@@ -404,63 +412,12 @@ namespace bts { namespace cli {
          wlog( "${e}", ("e",e.to_detail_string()) );
       }
    }
-
-   void cli::print_help()
-   {
-      std::cout<<"Commands\n";
-      std::cout<<"-------------------------------------------------------------\n";
-      std::cout<<"help - print available commands\n";
-      std::cout<<"unlock - asks for password to decrypt private keys \n";
-      std::cout<<"listrecvaddresses\n";
-      std::cout<<"getnewaddress [ACCOUNT] \n";
-      std::cout<<"sendtoaddress ADDRESS AMOUNT [MEMO] \n";
-      std::cout<<"getbalance [ACCOUNT] [MIN_CONF] \n";
-      std::cout<<"listtransactions [COUNT]\n";
-      std::cout<<"rescan [BLOCK_NUM=0]\n";
-      std::cout<<"import_bitcoin_wallet WALLET_DAT\n";
-      std::cout<<"import_private_key    HEX_PRIV_KEY\n";
-      std::cout<<"listunspent\n";
-      std::cout<<"quit - exit cleanly\n";
-      std::cout<<"-------------------------------------------------------------\n";
-   } // print_help
-   
 #if 0
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
-       const bts::blockchain::chain_database_ptr db = client()->get_chain();
-       const bts::wallet::wallet_ptr wallet = client()->get_wallet();
-
-       std::stringstream ss(args);
-
-       if( cmd == "help" ) print_help();
-       else if( cmd == "login" )
-       {
-
-       }
-       else if( cmd == "getnewaddress" )
-       {
-          if( my->check_unlock() )
-          {
-             std::string account;
-             ss >> account;
-
-             auto addr = wallet->new_recv_address( account );
-             std::cout << std::string( addr ) << "\n";
-          }
-       }
        else if( cmd == "listunspent" )
        {
           wallet->dump_utxo_set();
-       }
-       else if( cmd == "listrecvaddresses" )
-       {
-           auto addrs = wallet->get_recv_addresses();
-           for( auto addr : addrs )
-              std::cout << std::setw( 30 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
-       }
-       else if( cmd == "import" )
-       {
-
        }
        else if( cmd == "listtransactions" )
        {
@@ -468,56 +425,13 @@ namespace bts { namespace cli {
           ss >> count;
           list_transactions( count );
        }
-       else if( cmd == "listdelegates" )
-       {
-          uint32_t count = 0;
-          ss >> count;
-          list_delegates( count );
-       }
-       else if( cmd == "rescan" )
-       {
-          uint32_t block_num = 0;
-          ss >> block_num;
-          wallet->scan_chain( *db, block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
-                                                 {
-                                                     std::cout << "scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
-                                                 });
-          std::cout << "\ndone scanning block chain\n";
-       }
-       else if( cmd == "expoet" )
-       {
-
-       }
-       else if( cmd == "import_bitcoin_wallet" )
-       {
-          if( my->check_unlock() )
-          {
-             // TODO: Enforce # of arguments
-             std::string wallet_dat;
-             ss >> wallet_dat;
-
-             auto password  = get_line("bitcoin wallet password: ");
-             wallet->import_bitcoin_wallet( wallet_dat, password );
-             wallet->save();
-          }
-       }
-       else if( cmd == "quit" )
-       {
-          FC_THROW_EXCEPTION( canceled_exception, "quit command issued" );
-       }
-       else
-       {
-          std::cout<<"Unknown command '"<<cmd<<"'\n\n";
-          print_help();
-       }
    }
-#endif
    void cli::list_transactions( uint32_t count )
    {
        /* dump the transactions from the wallet, which needs the chain db */
        client()->get_wallet()->dump_txs(*(client()->get_chain()), count);
    }
-
+#endif
    void cli::list_delegates( uint32_t count )
    {
         auto delegates = client()->get_chain()->get_delegates( count );

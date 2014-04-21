@@ -239,6 +239,7 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::getbalance(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
       FC_ASSERT( params.size() == 0 || params.size() == 1 );
       bts::blockchain::asset_type unit = 0;
       if (params.size() == 1)
@@ -272,14 +273,19 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::rescan(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       check_json_connection_authenticated(json_connection);
-      FC_ASSERT( params.size() == 1 );
-      uint32_t block_num = (uint32_t)params[0].as_int64();
+      check_wallet_is_open();
+      FC_ASSERT( params.size() == 0 || params.size() == 1 );
+      uint32_t block_num = 0;
+      if (params.size() == 1)
+        block_num = (uint32_t)params[0].as_int64();
       _client->get_wallet()->scan_chain(*_client->get_chain(), block_num);
       return fc::variant(true); 
     }
     fc::variant rpc_server_impl::import_bitcoin_wallet(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      check_wallet_unlocked();
       FC_ASSERT( params.size() == 2 );
       auto wallet_dat      = params[0].as<fc::path>();
       auto wallet_password = params[1].as_string();
@@ -289,6 +295,8 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::import_private_key(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       check_json_connection_authenticated(json_connection);
+      check_wallet_is_open();
+      check_wallet_unlocked();
       FC_ASSERT( params.size() == 1 );
       fc::sha256 hash(params[0].as_string());
       fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
@@ -324,17 +332,17 @@ namespace bts { namespace rpc {
     REGISTER_METHOD(openwallet, "[wallet_passphrase]", "unlock the wallet with the given passphrase");
     REGISTER_METHOD(walletpassphrase, "[spending_passphrase]", "unlock the private keys in the wallet with the given passphrase");
     REGISTER_METHOD(getnewaddress, "[account]", "create a new address for receiving payments");
-    REGISTER_METHOD(sendtoaddress,"","");
-    REGISTER_METHOD(listrecvaddresses,"","");
-    REGISTER_METHOD(getbalance,"","");
-    REGISTER_METHOD(get_transaction,"","");
-    REGISTER_METHOD(getblock,"","");
-    REGISTER_METHOD(validateaddress,"","");
-    REGISTER_METHOD(rescan,"","");
-    REGISTER_METHOD(import_bitcoin_wallet,"","");
-    REGISTER_METHOD(import_private_key,"","");
+    REGISTER_METHOD(sendtoaddress,"<to_address> <amount> [comment] [to_comment]","Sends the given amount to the given address");
+    REGISTER_METHOD(listrecvaddresses,"","Lists all receive addresses associated with this wallet");
+    REGISTER_METHOD(getbalance,"[unit]","Returns the wallet's current balance");
+    REGISTER_METHOD(get_transaction,"<transaction_id>","Retrieves the signed transaction matching the given transaction id");
+    REGISTER_METHOD(getblock,"<block_number>","Retrieves the block header for the given block");
+    REGISTER_METHOD(validateaddress,"<address>","Checks that the given address is valid");
+    REGISTER_METHOD(rescan,"[starting_block]","Rescan the block chain from the given block");
+    REGISTER_METHOD(import_bitcoin_wallet,"<wallet_filename> <wallet_password>","Import a bitcoin wallet");
+    REGISTER_METHOD(import_private_key,"<private_key>","Import a raw private key into wallet");
     REGISTER_METHOD(_create_sendtoaddress_transaction,"","");
-    REGISTER_METHOD(sendtransaction,"","");
+    REGISTER_METHOD(sendtransaction,"<signed_transaction>","");
 
 #undef REGISTER_METHOD
   }
