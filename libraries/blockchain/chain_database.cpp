@@ -318,6 +318,22 @@ namespace bts { namespace blockchain {
         return fc::optional<name_record>();
      } FC_RETHROW_EXCEPTIONS( warn, "delegate id: ${id}", ("id",del) ) }
 
+     std::vector<name_record> chain_database::get_delegates( uint32_t count )
+     {
+        std::vector<name_record> results;
+        results.reserve( 100 );
+
+        uint32_t i = 0;
+        for( auto del : my->_votes_to_delegate )
+        {
+           results.push_back( *lookup_delegate( del.delegate_id ) );   
+           ++i;
+           if( i == count ) return results;
+        }
+        return results;
+     }
+
+     /*
      void chain_database::dump_delegates( uint32_t count )const
      {
         std::cerr<<"Delegate Ranking\n==========================================\n";
@@ -334,6 +350,7 @@ namespace bts { namespace blockchain {
            if( i == count ) break;
         }
      }
+     */
 
      void chain_database::open( const fc::path& dir, bool create )
      {

@@ -522,7 +522,29 @@ namespace bts { namespace cli {
 
    void cli::list_delegates( uint32_t count )
    {
-       client()->get_chain()->dump_delegates( count );
+        auto delegates = client()->get_chain()->get_delegates( count );
+
+        std::cerr<<"Delegate Ranking\n";
+        std::cerr<<std::setw(6)<<"Rank "<<"  "
+                 <<std::setw(6)<<"ID"<<"  "
+                 <<std::setw(18)<<"NAME"<<"  "
+                 <<std::setw(18)<<"VOTES FOR"<<"  "
+                 <<std::setw(18)<<"VOTES AGAINST"<<"  "
+                 <<"    PERCENT\n";
+        std::cerr<<"==========================================================================================\n";
+        for( uint32_t i = 0; i < delegates.size(); ++i )
+        {
+           std::cerr << std::setw(6)  << i               << "  "
+                     << std::setw(6)  << delegates[i].delegate_id   << "  "
+                     << std::setw(18) << delegates[i].name          << "  "
+                     << std::setw(18) << delegates[i].votes_for     << "  "
+                     << std::setw(18) << delegates[i].votes_against << "  "
+                     << std::setw(18) << double((delegates[i].total_votes()*10000)/BTS_BLOCKCHAIN_BIP)/100  << "%   |\n";
+           ++i;
+           if( i == count ) break;
+        }
+
+      // client()->get_chain()->dump_delegates( count );
    }
 
    void cli::wait()
