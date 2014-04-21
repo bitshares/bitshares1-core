@@ -22,7 +22,6 @@ the public key formatted two different ways.
 Create a text file named `genesis.json` that looks like this:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.json}
 {
-    "moneysupply": "0",
     "balances": [
         [
           "PYpLUyJaA4SE1Piox25sVUGB1sMUec6yzL",
@@ -52,6 +51,11 @@ generated earlier to run it from:
     mkdir C:\TEMP\BitsharesX_Server
     copy genesis.json C:\TEMP\BitsharesX_Server
 
+Or for Linux:
+
+    mkdir /tmp/btsx_server
+    cp genesis.json /tmp/btsx_server
+
 Now run the server from that directory, passing the BTS address of your trustee
 on the command line
  
@@ -73,9 +77,12 @@ We'll make the first client act as trustee.  Launch it like this:
     bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_1 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk --trustee-private-key e63c9c2f21aea4d401c8ce0358252fab32bbee88885afa4022e1825d13adf4f3
 
 The rest of the clients aren't trustee, so they don't get the private key.
+
 Launch two more like this:
+
     bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_2 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk
     bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_3 --trustee-address PdS6ghwvsXVZdyYSMNKrQyaC7Uc879y3Qk
+
 
 After setting your wallet passwords, the clients will download the genesis block
 from the server and be ready to go.  You can check your balance with the
