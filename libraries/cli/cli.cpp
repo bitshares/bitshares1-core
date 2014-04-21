@@ -21,8 +21,8 @@
 
 namespace bts { namespace cli {
 
-   namespace detail
-   {
+  namespace detail
+  {
       class cli_impl
       {
          public:
@@ -37,6 +37,8 @@ namespace bts { namespace cli {
               _client(client),
               _rpc_server(rpc_server)
             {}
+
+            void create_wallet_if_missing();
 
             std::string get_line( const std::string& prompt = ">>> " )
             {
@@ -179,9 +181,29 @@ namespace bts { namespace cli {
                 comment = arguments[2].as_string();
               if (arguments.size() >= 4)
                 comment_to = arguments[3].as_string();
+              
+              // create_sendtoaddress_transaction takes the same arguments as sendtoaddress
+              fc::variant result = execute_command_and_prompt_for_passwords("create_sendtoaddress_transaction", arguments);
+              bts::blockchain::signed_transaction transaction = result.as<bts::blockchain::signed_transaction>();
+              
+              std::string response;
+              std::cout << "About to broadcast transaction:\n\n";
+              std::cout << _client->get_wallet()->get_tx_info_string(*_client->get_chain(), transaction) << "\n";
+              std::cout << "Send this transaction? (Y/n)\n";
+              std::cin >> response;
 
-              //bts::blockchain::signed_transaction trx = wallet->transfer( asset( amount ), address(addr), memo );
-              //confirm_and_broadcast( trx );
+              if (response == "Y")
+              {
+                result = execute_command_and_prompt_for_passwords("sendtransaction", fc::variants{fc::variant(transaction)});
+                bts::blockchain::transaction_id_type transaction_id = result.as<bts::blockchain::transaction_id_type>();
+                std::cout << "Transaction sent (id is " << transaction_id << ")\n";
+                return result;
+              }
+              else
+              {
+                std::cout << "Transaction canceled.\n";
+                return fc::variant(false);
+              }
             }
 
             void parse_interactive_command(const std::string& line_to_parse, std::string& command, fc::variants& arguments)
@@ -191,29 +213,29 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
             {
-#if 0
               if (command == "sendtoaddress")
               {
                 // the raw json version sends immediately, in the interactive version we want to 
                 // generate the transaction, have the user confirm it, then broadcast it
-
-
-
-
+                interactive_sendtoaddress(command, arguments);
               }
-#endif
-              return execute_command_and_prompt_for_passwords(command, arguments);
+              else
+                return execute_command_and_prompt_for_passwords(command, arguments);
             }
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
-              std::cout << fc::json::to_pretty_string(result) << "\n";
+              if (command == "sendtoaddress")
+              {
+                // sendtoaddress does its own output formatting
+              }
+              else
+                std::cout << fc::json::to_pretty_string(result) << "\n";
             }
 
             void process_commands()
             {
-              _self->process_command( "login", "" );
-              auto line = _self->get_line();
-              while( std::cin.good() )
+              std::string line = _self->get_line();
+              while (std::cin.good())
               {
                 std::string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
                 if (!trimmed_line_to_parse.empty())
@@ -280,7 +302,71 @@ namespace bts { namespace cli {
               }
             }
       };
-   }
+
+    void cli_impl::create_wallet_if_missing()
+    {
+      auto wallet_dat = _client->get_wallet()->get_wallet_file();
+      if( !fc::exists( wallet_dat ) )
+      {
+        std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
+        std::cout << "You will be asked to provide two passwords, the first password \n";
+        std::cout << "encrypts the entire contents of your wallet on disk.  The second\n ";
+        std::cout << "passowrd will only encrypt your private keys.\n\n";
+
+        std::cout << "Please set a password for encrypting your wallet: \n";
+        std::string pass1, pass2;
+        pass1  = get_line("wallet password: ");
+        while( pass1 != pass2 )
+        {
+          pass2 = get_line("walletpassword (again): ");
+          if( pass2 != pass1 )
+          {
+            std::cout << "Your passwords did not match, please try again.\n";
+            pass2 = std::string();
+            pass1 = get_line("wallet password: ");
+          }
+        }
+        if( pass1 == std::string() )
+        {
+          std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+        }
+
+        std::cout << "Please set a password for encrypting your private keys: \n";
+        std::string keypass1, keypass2;
+        bool retry = false;
+        keypass1  = get_line("spending password: ");
+        while( keypass1 != keypass2 )
+        {
+          if( keypass1.size() > 8 )
+              keypass2 = get_line("spending password (again): ");
+          else
+          {
+              std::cout << "Your key password must be more than 8 characters.\n";
+              retry = true;
+          }
+          if( keypass2 != keypass1 )
+          {
+              std::cout << "Your passwords did not match.\n";
+              retry = true;
+          }
+          if( retry )
+          {
+            retry = false;
+            std::cout << "Please try again.\n";
+            keypass2 = std::string();
+            keypass1 = get_line("spending password: ");
+          }
+        }
+        if( keypass1 == std::string() )
+        {
+          std::cout << "No password provided, your wallet will be stored unencrypted.\n";
+        }
+
+        _client->get_wallet()->create( wallet_dat, pass1, keypass1 );
+        std::cout << "Wallet created.\n";
+      }
+    }
+  } // end namespace detail
 
   cli::cli( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
     my( new detail::cli_impl(client, rpc_server) )
@@ -288,6 +374,7 @@ namespace bts { namespace cli {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
+    my->create_wallet_if_missing();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
@@ -322,28 +409,7 @@ namespace bts { namespace cli {
       std::cout<<"-------------------------------------------------------------\n";
    } // print_help
    
-   void cli::confirm_and_broadcast(signed_transaction& tx)
-   {
-       auto wallet = client()->get_wallet();
-       auto db = client()->get_chain();
-       char response;
-
-       std::cout << "About to broadcast transaction:\n\n";
-       std::cout << wallet->get_tx_info_string( *db, tx ) << "\n";
-       std::cout << "Send this transaction? (Y/n)\n";
-       std::cin >> response;
-
-       if (response == 'Y')
-       {
-           client()->broadcast_transaction( tx );
-           std::cout << "Transaction sent.\n";
-       }
-       else
-       {
-           std::cout << "Transaction canceled.\n";
-       }
-   }
-
+#if 0
    void cli::process_command( const std::string& cmd, const std::string& args )
    {
        const bts::blockchain::chain_database_ptr db = client()->get_chain();
@@ -354,83 +420,7 @@ namespace bts { namespace cli {
        if( cmd == "help" ) print_help();
        else if( cmd == "login" )
        {
-          auto wallet_dat = wallet->get_wallet_file();
-          if( fc::exists( wallet_dat ) )
-          {
-             try
-             {
-                // try to open without a password first
-                wallet->open( wallet_dat, "" );
-                return;
-             }
-             catch (fc::exception&)
-             {}
-             // else ask for a password
-             std::cout << "Login\n";
-             auto pass = get_line("password: ");
-             wallet->open( wallet_dat, pass );
-             std::cout << "Login Successful.\n";
-             return;
-          }
-          else
-          {
-             std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
-             std::cout << "You will be asked to provide two passwords, the first password \n";
-             std::cout << "encrypts the entire contents of your wallet on disk.  The second\n ";
-             std::cout << "passowrd will only encrypt your private keys.\n\n";
 
-             std::cout << "Please set a password for encrypting your wallet: \n";
-             std::string pass1, pass2;
-             pass1  = get_line("password: ");
-             while( pass1 != pass2 )
-             {
-                pass2 = get_line("password (again): ");
-                if( pass2 != pass1 )
-                {
-                  std::cout << "Your passwords did not match, please try again.\n";
-                  pass2 = std::string();
-                  pass1 = get_line("password: ");
-                }
-             }
-             if( pass1 == std::string() )
-             {
-                std::cout << "No password provided, your wallet will be stored unencrypted.\n";
-             }
-
-             std::cout << "Please set a password for encrypting your private keys: \n";
-             std::string keypass1, keypass2;
-             bool retry = false;
-             keypass1  = get_line("key password: ");
-             while( keypass1 != keypass2 )
-             {
-                if( keypass1.size() > 8 )
-                   keypass2 = get_line("key password (again): ");
-                else
-                {
-                   std::cout << "Your key password must be more than 8 characters.\n";
-                   retry = true;
-                }
-                if( keypass2 != keypass1 )
-                {
-                   std::cout << "Your passwords did not match.\n";
-                   retry = true;
-                }
-                if( retry )
-                {
-                  retry = false;
-                  std::cout << "Please try again.\n";
-                  keypass2 = std::string();
-                  keypass1 = get_line("password: ");
-                }
-             }
-             if( keypass1 == std::string() )
-             {
-                std::cout << "No password provided, your wallet will be stored unencrypted.\n";
-             }
-
-             wallet->create( wallet_dat, pass1, keypass1 );
-             std::cout << "Wallet created.\n";
-          }
        }
        else if( cmd == "getnewaddress" )
        {
@@ -446,21 +436,6 @@ namespace bts { namespace cli {
        else if( cmd == "listunspent" )
        {
           wallet->dump_utxo_set();
-       }
-       else if( cmd == "sendtoaddress" )
-       {
-          if( my->check_unlock() )
-          {
-             std::string addr;
-             uint64_t    amount;
-             std::string memo;
-             ss >> addr >> amount;
-             std::cout << "memo: ";
-             std::getline( ss, memo );
-
-             auto trx = wallet->transfer( asset( amount ), address(addr), memo );
-             confirm_and_broadcast( trx );
-          }
        }
        else if( cmd == "listrecvaddresses" )
        {
@@ -515,6 +490,7 @@ namespace bts { namespace cli {
           print_help();
        }
    }
+#endif
    void cli::list_transactions( uint32_t count )
    {
        /* dump the transactions from the wallet, which needs the chain db */

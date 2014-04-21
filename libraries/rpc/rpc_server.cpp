@@ -147,6 +147,8 @@ namespace bts { namespace rpc {
         fc::variant getnewaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
         {
           check_json_connection_authenticated(json_connection);
+          check_wallet_is_open();
+          check_wallet_unlocked();  // TODO: bitcoin doesn't require unlocked wallet, should we?
           FC_ASSERT(params.size() == 0 || params.size() == 1);
           std::string account;
           if (params.size() == 1)
@@ -154,22 +156,50 @@ namespace bts { namespace rpc {
           bts::blockchain::address new_address = _client->get_wallet()->new_recv_address(account);
           return fc::variant(new_address);
         }
-        fc::variant sendtoaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
+        fc::variant create_sendtoaddress_transaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
         {
           check_json_connection_authenticated(json_connection);
-          check_connected_to_network();
+          check_wallet_is_open();
           check_wallet_unlocked();
           FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
           bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
           bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
-          // TODO: we're currently ignoring optional parameters 3 and 4,  [comment]a and [to-comment]
-          bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address);
+          std::string comment;
+          if (params.size() >= 3)
+            comment = params[3].as_string();
+          // TODO: we're currently ignoring optional 4, [to-comment]
+          return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
+        }
+        fc::variant sendtransaction(fc::rpc::json_connection* json_connection, const fc::variants& params)
+        {
+          check_json_connection_authenticated(json_connection);
+          check_connected_to_network();
+          FC_ASSERT(params.size() == 1);
+          bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
+          _client->broadcast_transaction(transaction);
+          return fc::variant(transaction.id());
+        }
+        fc::variant sendtoaddress(fc::rpc::json_connection* json_connection, const fc::variants& params)
+        {
+          check_json_connection_authenticated(json_connection);
+          check_wallet_is_open();
+          check_wallet_unlocked();
+          check_connected_to_network();
+          FC_ASSERT( params.size() >= 2 || params.size() <= 4 );
+          bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
+          bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+          std::string comment;
+          if (params.size() >= 3)
+            comment = params[3].as_string();
+          // TODO: we're currently ignoring optional 4, [to-comment]
+          bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address, comment);
           _client->broadcast_transaction(trx);
           return fc::variant( trx.id() ); 
         }
         fc::variant listrecvaddresses(fc::rpc::json_connection* json_connection, const fc::variants& params)
         {
           check_json_connection_authenticated(json_connection);
+          check_wallet_is_open();
           FC_ASSERT( params.size() == 0 );
           std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_recv_addresses();
           return fc::variant( addresses ); 
@@ -250,7 +280,9 @@ namespace bts { namespace rpc {
         {"validateaddress",       &rpc_server_impl::validateaddress},
         {"rescan",                &rpc_server_impl::rescan},
         {"import_bitcoin_wallet", &rpc_server_impl::import_bitcoin_wallet},
-        {"import_private_key",    &rpc_server_impl::import_private_key}
+        {"import_private_key",    &rpc_server_impl::import_private_key},
+        {"create_sendtoaddress_transaction", &rpc_server_impl::create_sendtoaddress_transaction},
+        {"sendtransaction", &rpc_server_impl::sendtoaddress}
       };
     }
 
