@@ -205,10 +205,14 @@ namespace bts { namespace cli {
               }
               else if( command == "listdelegates" )
               {
-                 if( arguments.size() == 2 )
-                    _self->list_delegates( arguments[1].as<int64_t>() );
-                 else
-                    _self->list_delegates( );
+                if( arguments.size() == 2 )
+                  _self->list_delegates( arguments[1].as<int64_t>() );
+                else
+                  _self->list_delegates( );
+              }
+              else if(command == "quit")
+              {
+                FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
               }
               else
               {
@@ -221,13 +225,22 @@ namespace bts { namespace cli {
               {
                 // sendtoaddress does its own output formatting
               }
-              else if( command == "listrecvaddresses" )
+              else if(command == "listrecvaddresses")
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
                 auto addrs = _client->get_wallet()->get_recv_addresses();
                 for( auto addr : addrs )
                   std::cout << std::setw( 33 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
+              }
+              else if (command == "help")
+              {
+                std::vector<std::vector<std::string> > help_strings = result.as<std::vector<std::vector<std::string> > >();
+                for (const std::vector<std::string>& command_info : help_strings)
+                {
+                  std::cout << std::setw(35) << std::left << 
+                            (command_info[0] + " " + command_info[1]) << "   " << command_info[2] << "\n";
+                }
               }
               else
                 std::cout << fc::json::to_pretty_string(result) << "\n";

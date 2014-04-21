@@ -18,8 +18,14 @@ namespace bts { namespace rpc {
          fc::future<void>    _accept_loop_complete;
          rpc_server*         _self;
 
-         typedef std::function<fc::variant(fc::rpc::json_connection* json_connection, const fc::variants& params)> json_api_method_type;
-         typedef std::unordered_map<std::string, json_api_method_type> method_map_type;
+         struct method_details
+         {
+          std::string method_name;
+          rpc_server::json_api_method_type method;
+          std::string parameter_description;
+          std::string method_description;
+         };
+         typedef std::map<std::string, method_details> method_map_type;
          method_map_type _method_map;
 
          /** the set of connections that have successfully logged in */
@@ -61,7 +67,7 @@ namespace bts { namespace rpc {
 
             for (const method_map_type::value_type& method : _method_map)
             {
-              con->add_method(method.first, boost::bind(method.second, capture_con, _1));
+              con->add_method(method.first, boost::bind(method.second.method, capture_con, _1));
             }
          } // register methods
 
@@ -71,7 +77,7 @@ namespace bts { namespace rpc {
           auto iter = _method_map.find(method_name);
           if (iter == _method_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
-          return iter->second(nullptr, arguments);
+          return iter->second.method(nullptr, arguments);
         }
 
         void check_connected_to_network()
@@ -100,6 +106,7 @@ namespace bts { namespace rpc {
             throw rpc_wallet_open_needed_exception(FC_LOG_MESSAGE(error, "The wallet must be open before executing this command"));
         }
 
+        fc::variant help(fc::rpc::json_connection* json_connection, const fc::variants& params);
         fc::variant login(fc::rpc::json_connection* json_connection, const fc::variants& params);
         fc::variant openwallet(fc::rpc::json_connection* json_connection, const fc::variants& params);
         fc::variant walletpassphrase(fc::rpc::json_connection* json_connection, const fc::variants& params);
@@ -118,6 +125,17 @@ namespace bts { namespace rpc {
     };
 
 
+    fc::variant rpc_server_impl::help(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    {
+      FC_ASSERT( params.size() == 0 );
+      std::vector<std::vector<std::string> > help_strings;
+      for (const method_map_type::value_type& value : _method_map)
+      {
+        if (value.second.method_name[0] != '_') // hide undocumented commands
+          help_strings.emplace_back(std::vector<std::string>{value.second.method_name, value.second.parameter_description, value.second.method_description});
+      }
+      return fc::variant( help_strings );
+    }
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       FC_ASSERT( params.size() == 2 );
@@ -301,7 +319,7 @@ namespace bts { namespace rpc {
 #define REGISTER_METHOD(METHODNAME, PARAMETER_DESCRIPTION, METHOD_DESCRIPTION) \
       register_method(#METHODNAME, boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1, _2), PARAMETER_DESCRIPTION, METHOD_DESCRIPTION)
 
-    //REGISTER_METHOD(help, "", "list the available commands");
+    REGISTER_METHOD(help, "", "list the available commands");
     REGISTER_METHOD(login, "<rpc_username> <rpc_password>", "authenticate rpc connection");
     REGISTER_METHOD(openwallet, "[wallet_passphrase]", "unlock the wallet with the given passphrase");
     REGISTER_METHOD(walletpassphrase, "[spending_passphrase]", "unlock the private keys in the wallet with the given passphrase");
@@ -371,7 +389,12 @@ namespace bts { namespace rpc {
   void rpc_server::register_method(const std::string& method_name, json_api_method_type method, 
                                    const std::string& parameter_description, const std::string& method_description)
   {
-    my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(method_name, method));
+    detail::rpc_server_impl::method_details details;
+    details.method_name = method_name;
+    details.method = method;
+    details.parameter_description = parameter_description;
+    details.method_description = method_description;
+    my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(method_name, details));
   }
 
   void rpc_server::check_json_connection_authenticated( fc::rpc::json_connection* con )
