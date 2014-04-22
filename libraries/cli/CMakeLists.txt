@@ -3,6 +3,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/db/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/blockchain/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
 
 add_library( bts_cli 

@@ -143,49 +143,45 @@ namespace bts { namespace blockchain {
                }
             }
 
-            void store( const trx_block& b, const signed_transactions& deterministic_trxs, const block_evaluation_state_ptr& state  )
-            { try {
+            /** the genesis block requires some special treatment and initialization */
+            void store_genesis( const trx_block& b, 
+                                const signed_transactions& deterministic_trxs, 
+                                const block_evaluation_state_ptr& state  )
+            {
                 std::vector<uint160> trxs_ids;
-                uint16_t t = 0;
                 std::map<int32_t,uint64_t> delegate_votes;
                 for( uint32_t i = 1; i <= 100; ++i )
                 {
                    delegate_votes[i] = 0;
                 }
-                for( ; t < b.trxs.size(); ++t )
+                for( uint32_t cur_trx = 0 ; cur_trx < b.trxs.size(); ++cur_trx )
                 {
-                   store( b.trxs[t], trx_num( b.block_num, t) );
-                   trxs_ids.push_back( b.trxs[t].id() );
-                   
-
-                   /*** on the genesis block we need to store initial delegates and vote counts */
-                   if( b.block_num == 0 )
-                   {
-                      if( t == 0 )
-                      {
-                         for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
-                         {
-                            if( b.trxs[t].outputs[o].claim_func == claim_name )
-                            {
-                               auto claim = b.trxs[t].outputs[o].as<claim_name_output>();
-                               update_name_record( claim.name, claim );
-                         //    if( claim.delegate_id != 0 )
-                               update_delegate( name_record( claim ) );
-                            }
-                         }
-                      }
-                      else // t != 0
-                      {
-                         name_record rec = _delegate_records.fetch( b.trxs[t].vote );
-                         // first transaction registers names... the rest are initial balance
-                         for( uint32_t o = 0; o < b.trxs[t].outputs.size(); ++o )
-                         {
-                            delegate_votes[b.trxs[t].vote] += b.trxs[t].outputs[o].amount.get_rounded_amount();
-                            rec.votes_for += to_bips( b.trxs[t].outputs[o].amount.get_rounded_amount(), b.total_shares );
-                         }
-                         update_delegate( rec );
-                      }
-                   } // block == 0
+                    store( b.trxs[cur_trx], trx_num( b.block_num, cur_trx) );
+                    trxs_ids.push_back( b.trxs[cur_trx].id() );
+                    if( cur_trx == 0 )
+                    {
+                       for( uint32_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
+                       {
+                          if( b.trxs[cur_trx].outputs[o].claim_func == claim_name )
+                          {
+                             auto claim = b.trxs[cur_trx].outputs[o].as<claim_name_output>();
+                             update_name_record( claim.name, claim );
+                       //    if( claim.delegate_id != 0 )
+                             update_delegate( name_record( claim ) );
+                          }
+                       }
+                    }
+                    else // t != 0
+                    {
+                       name_record rec = _delegate_records.fetch( b.trxs[cur_trx].vote );
+                       // first transaction registers names... the rest are initial balance
+                       for( uint32_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
+                       {
+                          delegate_votes[b.trxs[cur_trx].vote] += b.trxs[cur_trx].outputs[o].amount.get_rounded_amount();
+                          rec.votes_for += to_bips( b.trxs[cur_trx].outputs[o].amount.get_rounded_amount(), b.total_shares );
+                       }
+                       update_delegate( rec );
+                    }
                 }
                 elog( "total votes:\n ${e}", ("e",fc::json::to_pretty_string( delegate_votes) ) );
                 uint64_t sum = 0;
@@ -195,10 +191,42 @@ namespace bts { namespace blockchain {
                 }
                 elog( "grand total: ${g}", ("g",sum) );
 
+                head_block    = b;
+                head_block_id = b.id();
+
+                blocks.store( b.block_num, b );
+                block_trxs.store( b.block_num, trxs_ids );
+
+                blk_id2num.store( b.id(), b.block_num );
+            } // store_genesis
+
+
+            void store( const trx_block& b, 
+                        const signed_transactions& deterministic_trxs, 
+                        const block_evaluation_state_ptr& state  )
+            { try {
+
+                if( b.block_num == 0 )
+                {
+                   store_genesis( b, deterministic_trxs, state );
+                   return;
+                }
+                std::vector<uint160> trxs_ids;
+
+                // store individual transactions
+                for( uint32_t cur_trx = 0; cur_trx < b.trxs.size(); ++cur_trx )
+                {
+                   store( b.trxs[cur_trx], trx_num( b.block_num, cur_trx) );
+                   trxs_ids.push_back( b.trxs[cur_trx].id() );
+                }
+
+                // store deterministic transactions
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
-                   store( trx, trx_num( b.block_num, t) );
-                   ++t;
+                   store( trx, trx_num( b.block_num, trxs_ids.size() ) );
+                   // TODO: why don't we include this here... do determinsitic trxs not
+                   // get included in the merkel root... does this hinder light weight
+                   // clients.
                   // trxs_ids.push_back( trx.id() );
                 }
                 head_block    = b;
@@ -208,11 +236,15 @@ namespace bts { namespace blockchain {
                 block_trxs.store( b.block_num, trxs_ids );
 
                 blk_id2num.store( b.id(), b.block_num );
+                
 
+                // update name name records...
                 for( auto item : state->_name_outputs )
                 {
                    update_name_record( item.first, item.second );
                 }
+
+                // update votes
                 for( auto item : state->_input_votes )
                 {
                    auto rec = _delegate_records.fetch( abs(item.first) );
@@ -286,21 +318,21 @@ namespace bts { namespace blockchain {
         return fc::optional<name_record>();
      } FC_RETHROW_EXCEPTIONS( warn, "delegate id: ${id}", ("id",del) ) }
 
-     void chain_database::dump_delegates()const
+     std::vector<name_record> chain_database::get_delegates( uint32_t count )
      {
-        std::cerr<<"Delegate Ranking\n==========================================\n";
-        std::cerr<<std::setw(8)<<"Rank "<<"   |"<<std::setw(8)<<"ID"<<"   |"<<std::setw(18)<<"VOTES"<<"   | PERCENT\n";
+        std::vector<name_record> results;
+        results.reserve( 100 );
 
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           std::cerr << std::setw(8)  << i               << "   |"
-                     << std::setw(8)  << del.delegate_id << "   |"
-                     << std::setw(18) << del.votes       << "   |"
-                     << std::setw(18) << double((del.votes*10000)/BTS_BLOCKCHAIN_BIP)/100  << "%   |\n";
+           results.push_back( *lookup_delegate( del.delegate_id ) );   
            ++i;
+           if( i == count ) return results;
         }
+        return results;
      }
+
 
      void chain_database::open( const fc::path& dir, bool create )
      {
@@ -328,20 +360,17 @@ namespace bts { namespace blockchain {
          if( my->head_block.block_num != uint32_t(-1) )
          {
             my->head_block_id = my->head_block.id();
-         }
-         else // initialize initial delegates
-         {
-            // TODO: remove this generation with hard coded public keys...
-            /*
-            for( uint32_t i = 0; i < 100; ++i )
+
+
+            auto itr = my->_delegate_records.begin();
+            while( itr.valid() )
             {
-                auto name = "delegate-"+fc::to_string( int64_t(i+1) );
-                auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
-                auto key = fc::ecc::private_key::regenerate(key_hash);
-                my->_delegate_records.store( i+1,  name_record( i+1, name, key.get_public_key() ) );
-                my->update_delegate( name_record( i+1, name, key.get_public_key() ) );
+               auto rec = itr.value();
+               auto votes = rec.votes_for - rec.votes_against;
+               my->_votes_to_delegate.insert( detail::vote_del( votes, rec.delegate_id ) );
+               my->_delegate_to_votes[rec.delegate_id] = votes;
+               ++itr;
             }
-            */
          }
 
 

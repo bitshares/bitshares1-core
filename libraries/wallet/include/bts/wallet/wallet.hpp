@@ -99,6 +99,8 @@ namespace wallet {
 
            void open( const fc::path& wallet_file, const std::string& password );
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
+           bool is_open() const;
+
            void save();
            void backup_wallet( const fc::path& backup_path );
 

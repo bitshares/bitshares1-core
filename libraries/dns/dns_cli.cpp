@@ -1,3 +1,4 @@
+#if 0
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 
@@ -115,3 +116,4 @@ void dns_cli::get_balance(uint32_t min_conf, uint16_t unit)
 }
 
 } } //bts::dns
+#endif

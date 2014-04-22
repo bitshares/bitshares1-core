@@ -453,7 +453,7 @@ void chain_server::configure( const chain_server::config& c )
          try {
             //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
             my->_chain->push_block( genesis );
-            my->_chain->dump_delegates();
+            //my->_chain->dump_delegates();
          }
          catch ( const fc::exception& e )
          {
