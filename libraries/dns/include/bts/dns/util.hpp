@@ -16,7 +16,7 @@
 
 #define DNS_DEBUG
 
-#define DNS_MAX_NAME_LEN            128
+#define DNS_MAX_KEY_LEN             128
 #define DNS_MAX_VALUE_LEN           1024
 
 #ifndef DNS_DEBUG
@@ -32,46 +32,36 @@
 
 namespace bts { namespace dns {
 
-bool is_domain_output(const trx_output &output);
-claim_domain_output to_domain_output(const trx_output &output);
+bool is_dns_output(const trx_output &output);
+claim_dns_output to_dns_output(const trx_output &output);
 
-output_reference get_name_tx_ref(const std::string &name, dns_db &db);
+output_reference get_key_tx_ref(const std::string &key, dns_db &db);
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db);
 uint32_t get_tx_age(const output_reference &tx_ref, dns_db &db);
 
 bool auction_is_closed(const output_reference &tx_ref, dns_db &db);
-bool domain_is_expired(const output_reference &tx_ref, dns_db &db);
+bool key_is_expired(const output_reference &tx_ref, dns_db &db);
 
-std::vector<std::string> get_names_from_txs(const signed_transactions &txs);
-std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::output_index, trx_output>
+std::vector<std::string> get_keys_from_txs(const signed_transactions &txs);
+std::vector<std::string> get_keys_from_unspent(const std::map<bts::wallet::output_index, trx_output>
                                                 &unspent_outputs);
 
-bool name_is_available(const std::string &name, const std::vector<std::string> &name_pool, dns_db &db,
+bool key_is_available(const std::string &key, const std::vector<std::string> &key_pool, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref);
-bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+bool key_is_available(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref);
 
-bool name_is_useable(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+bool key_is_useable(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
                      output_reference &prev_tx_ref);
 
 std::vector<char> serialize_value(const fc::variant &value);
 fc::variant unserialize_value(const std::vector<char> &value);
 
-bool is_valid_key(const std::string &name);
-bool is_valid_value(const std::vector<char> &value);
-bool is_valid_value(const fc::variant &value);
-bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type);
-
 bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price);
-bool is_valid_ask_price(const asset &ask_price);
-
 asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_price);
 
-// TODO: Also include current tx_pool?
-fc::variant lookup_value(const std::string& key, dns_db& db);
-
-// TODO: Also include current tx_pool?
+// TODO: Also include current pending_txs?
 std::vector<trx_output> get_active_auctions(dns_db& db);
 
 } } // bts::dns

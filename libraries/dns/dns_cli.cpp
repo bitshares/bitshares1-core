@@ -18,12 +18,12 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     {
         if (check_unlock())
         {
-            FC_ASSERT(argv.size() == 3); // cmd name amount
-            std::string name = argv[1];
+            FC_ASSERT(argv.size() == 3); // cmd key amount
+            std::string key = argv[1];
             asset bid = asset(uint64_t(atoi(argv[2].c_str())));
             signed_transactions tx_pool;
 
-            auto tx = wallet->bid_on_domain(name, bid, tx_pool, *db);
+            auto tx = wallet->bid(key, bid, tx_pool, *db);
 
             client()->broadcast_transaction(tx);
         }
@@ -32,12 +32,12 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     {
         if (check_unlock())
         {
-            FC_ASSERT(argv.size() == 3); // cmd name price
-            std::string name = argv[1];
+            FC_ASSERT(argv.size() == 3); // cmd key price
+            std::string key = argv[1];
             asset price = asset(uint64_t(atoi(argv[2].c_str())));
             signed_transactions tx_pool;
 
-            auto tx = wallet->auction_domain(name, price, tx_pool, *db);
+            auto tx = wallet->ask(key, price, tx_pool, *db);
 
             client()->broadcast_transaction(tx);
         }
@@ -46,12 +46,12 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     {
         if (check_unlock())
         {
-            FC_ASSERT(argv.size() == 3); // cmd name to
-            std::string name = argv[1];
+            FC_ASSERT(argv.size() == 3); // cmd key to
+            std::string key = argv[1];
             auto to_owner = bts::blockchain::address(argv[2]);
             signed_transactions tx_pool;
 
-            auto tx = wallet->transfer_domain(name, to_owner, tx_pool, *db);
+            auto tx = wallet->transfer(key, to_owner, tx_pool, *db);
 
             client()->broadcast_transaction(tx);
         }
@@ -60,14 +60,15 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
     {
         if (check_unlock())
         {
-            FC_ASSERT(argv.size() == 3); // cmd name path
-            std::string name = argv[1];
+            FC_ASSERT(argv.size() == 3); // cmd key path
+            std::string key = argv[1];
             asset bid = asset(uint64_t(atoi(argv[2].c_str())));
             signed_transactions tx_pool;
 
-            auto tx = wallet->bid_on_domain(name, bid, tx_pool, *db);
+            // TODO: wallet->set
+            //auto tx = wallet->bid_on_domain(key, bid, tx_pool, *db);
 
-            client()->broadcast_transaction(tx);
+            //client()->broadcast_transaction(tx);
         }
 
         // convert arbitrary json value to string..., this validates that it parses
@@ -82,19 +83,20 @@ void dns_cli::process_command(const std::string& cmd, const std::string& args)
 
         for (auto output : active_auctions)
         {
-            auto dns_output = to_domain_output(output);
+            auto dns_output = to_dns_output(output);
 
-            std::cout << "[" << output.amount.get_rounded_amount() << "] " << dns_output.name << "\n";
+            std::cout << "[" << std::string(output.amount) << "] " << dns_output.key << "\n";
         }
     }
     else if (cmd == "lookup_domain_record")
     {
         FC_ASSERT(argv.size() == 2);
-        std::string name = argv[1];
+        std::string key = argv[1];
 
-        auto value = lookup_value(name, *db);
+        // TODO: wallet->lookup
+        //auto value = lookup_value(key, *db);
         std::string record;
-        from_variant(value, record);
+        //from_variant(value, record);
 
         std::cout << record << "\n";
     }

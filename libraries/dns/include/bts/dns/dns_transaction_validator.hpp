@@ -14,22 +14,22 @@ class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_s
     public:
         dns_tx_evaluation_state(const signed_transaction &tx) : transaction_evaluation_state(tx)
         {
-            seen_domain_input = false;
-            seen_domain_output = false;
+            seen_dns_input = false;
+            seen_dns_output = false;
         }
 
-        claim_domain_output domain_input;
-        asset domain_input_amount;
+        claim_dns_output dns_input;
+        asset dns_input_amount;
 
-        /* Only one domain input/output per tx */
-        bool seen_domain_input;
-        bool seen_domain_output;
+        /* Only one dns input/output per tx */
+        bool seen_dns_input;
+        bool seen_dns_output;
 };
 
 class dns_block_evaluation_state : public bts::blockchain::block_evaluation_state
 {
     public:
-        std::vector<std::string> name_pool;
+        std::vector<std::string> key_pool;
 };
 
 typedef std::shared_ptr<dns_block_evaluation_state> dns_block_evaluation_state_ptr;
@@ -51,11 +51,11 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         virtual void validate_output(const trx_output &out, transaction_evaluation_state &state,
                                      const block_evaluation_state_ptr &block_state);
 
-        void validate_domain_input(const claim_domain_output &input, const asset &amount,
+        void validate_dns_input(const claim_dns_output &input, const asset &amount,
                                    dns_tx_evaluation_state &state,
                                    const dns_block_evaluation_state_ptr &block_state);
 
-        void validate_domain_output(const claim_domain_output &output, const asset &amount,
+        void validate_dns_output(const claim_dns_output &output, const asset &amount,
                                     dns_tx_evaluation_state &state,
                                     const dns_block_evaluation_state_ptr &block_state);
 
@@ -65,4 +65,4 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
 
 } } // bts::dns
 
-FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_domain_input)(seen_domain_output)(domain_input)(domain_input_amount));
+FC_REFLECT(bts::dns::dns_tx_evaluation_state, (seen_dns_input)(seen_dns_output)(dns_input)(dns_input_amount));

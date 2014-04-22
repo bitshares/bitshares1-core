@@ -4,38 +4,48 @@
 
 namespace bts { namespace dns {
 
+using namespace bts::blockchain;
+
 enum claim_type_enum
 {
     // 20->29 reserved for BitShares DNS
-    claim_domain = 20, /* Basic claim by single address */
+    claim_dns = 20, /* Basic claim by single address */
 };
 
-struct claim_domain_input
+struct claim_dns_input
 {
     static const claim_type_enum type;
 };
 
-struct claim_domain_output
+struct claim_dns_output
 {
-    enum last_tx_type_enum
+    static const claim_type_enum type;
+
+    enum class last_tx_type_enum : uint8_t
     {
-        bid_or_auction,
-        update
+        auction,
+        update,
+        release
     };
 
-    static const claim_type_enum type;
+    std::string         key;
+    last_tx_type_enum   last_tx_type;
+    address             owner;
+    std::vector<char>   value;
 
-    claim_domain_output():last_tx_type(bid_or_auction){}
+    claim_dns_output() {}
+    claim_dns_output(const std::string& k, const last_tx_type_enum& l,
+                        const address& o, const std::vector<char>& v = std::vector<char>());
 
-    std::string                                 name;
-    std::vector<char>                           value;
-    bts::blockchain::address                    owner;
-    fc::enum_type<uint8_t, last_tx_type_enum>   last_tx_type;
+    bool is_valid() const;
+
+    virtual bool has_valid_key() const;
+    virtual bool has_valid_value() const;
 };
 
 } } //bts::dns
 
-FC_REFLECT_ENUM(bts::dns::claim_type_enum, (claim_domain));
-FC_REFLECT(bts::dns::claim_domain_input, BOOST_PP_SEQ_NIL);
-FC_REFLECT(bts::dns::claim_domain_output, (name)(value)(owner)(last_tx_type));
-FC_REFLECT_ENUM(bts::dns::claim_domain_output::last_tx_type_enum, (bid_or_auction)(update));
+FC_REFLECT_ENUM(bts::dns::claim_type_enum, (claim_dns));
+FC_REFLECT(bts::dns::claim_dns_input, BOOST_PP_SEQ_NIL);
+FC_REFLECT(bts::dns::claim_dns_output, (key)(last_tx_type)(owner)(value));
+FC_REFLECT_ENUM(bts::dns::claim_dns_output::last_tx_type_enum, (auction)(update)(release));

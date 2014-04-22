@@ -36,10 +36,10 @@ void dns_db::store(const trx_block& blk, const signed_transactions& deterministi
 
         for (auto output : tx.outputs)
         {
-            if (!is_domain_output(output))
+            if (!is_dns_output(output))
                 continue;
 
-            set_dns_ref(to_domain_output(output).name, output_reference(tx.id(), i));
+            set_dns_ref(to_dns_output(output).key, output_reference(tx.id(), i));
         }
     }
 }

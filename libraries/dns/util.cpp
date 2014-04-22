@@ -2,27 +2,22 @@
 
 namespace bts { namespace dns {
 
-bool is_domain_output(const trx_output &output)
+bool is_dns_output(const trx_output &output)
 {
-    return output.claim_func == claim_domain;
+    return output.claim_func == claim_dns;
 }
 
-claim_domain_output to_domain_output(const trx_output &output)
+claim_dns_output to_dns_output(const trx_output &output)
 {
-    auto dns_output = output.as<claim_domain_output>();
-
-    FC_ASSERT(is_valid_key(dns_output.name), "Invalid name");
-    FC_ASSERT(is_valid_value(dns_output.value), "Invalid value");
-    FC_ASSERT(is_valid_last_tx_type(dns_output.last_tx_type), "Invalid last_tx_type");
+    auto dns_output = output.as<claim_dns_output>();
+    FC_ASSERT(dns_output.is_valid(), "Invalid DNS output");
 
     return dns_output;
 }
 
-output_reference get_name_tx_ref(const std::string &name, dns_db &db)
+output_reference get_key_tx_ref(const std::string &key, dns_db &db)
 {
-    FC_ASSERT(is_valid_key(name), "Invalid name");
-
-    return db.get_dns_ref(name);
+    return db.get_dns_ref(key);
 }
 
 trx_output get_tx_ref_output(const output_reference &tx_ref, dns_db &db)
@@ -41,129 +36,123 @@ uint32_t get_tx_age(const output_reference &tx_ref, dns_db &db)
 bool auction_is_closed(const output_reference &tx_ref, dns_db &db)
 {
     auto output = get_tx_ref_output(tx_ref, db);
-    FC_ASSERT(is_domain_output(output));
+    FC_ASSERT(is_dns_output(output));
 
-    auto dns_output = to_domain_output(output);
+    auto dns_output = to_dns_output(output);
     auto age = get_tx_age(tx_ref, db);
 
-    if (dns_output.last_tx_type == claim_domain_output::bid_or_auction
+    if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction
         && age < DNS_AUCTION_DURATION_BLOCKS)
         return false;
 
     return true;
 }
 
-bool domain_is_expired(const output_reference &tx_ref, dns_db &db)
+bool key_is_expired(const output_reference &tx_ref, dns_db &db)
 {
     auto output = get_tx_ref_output(tx_ref, db);
-    FC_ASSERT(is_domain_output(output));
+    FC_ASSERT(is_dns_output(output));
 
     if (!auction_is_closed(tx_ref, db))
         return false;
 
-    auto dns_output = to_domain_output(output);
+    auto dns_output = to_dns_output(output);
     auto age = get_tx_age(tx_ref, db);
 
-    if (dns_output.last_tx_type == claim_domain_output::bid_or_auction)
+    if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction)
         return age >= (DNS_AUCTION_DURATION_BLOCKS + DNS_EXPIRE_DURATION_BLOCKS);
 
-    FC_ASSERT(dns_output.last_tx_type == claim_domain_output::update);
+    FC_ASSERT(dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::update);
 
     return age >= DNS_EXPIRE_DURATION_BLOCKS;
 }
 
-std::vector<std::string> get_names_from_txs(const signed_transactions &txs)
+std::vector<std::string> get_keys_from_txs(const signed_transactions &txs)
 {
-    std::vector<std::string> names = std::vector<std::string>();
+    std::vector<std::string> keys = std::vector<std::string>();
 
     for (auto &tx : txs)
     {
         for (auto &output : tx.outputs)
         {
-            if (!is_domain_output(output))
+            if (!is_dns_output(output))
                 continue;
 
-            names.push_back(to_domain_output(output).name);
+            keys.push_back(to_dns_output(output).key);
         }
     }
 
-    return names;
+    return keys;
 }
 
-std::vector<std::string> get_names_from_unspent(const std::map<bts::wallet::output_index, trx_output>
+std::vector<std::string> get_keys_from_unspent(const std::map<bts::wallet::output_index, trx_output>
                                                 &unspent_outputs)
 {
-    std::vector<std::string> names = std::vector<std::string>();
+    std::vector<std::string> keys = std::vector<std::string>();
 
     for (auto pair : unspent_outputs)
     {
-        if (!is_domain_output(pair.second))
+        if (!is_dns_output(pair.second))
             continue;
 
-        names.push_back(to_domain_output(pair.second).name);
+        keys.push_back(to_dns_output(pair.second).key);
     }
 
-    return names;
+    return keys;
 }
 
-/* Check if name is available for bid: new, in auction, or expired */
-bool name_is_available(const std::string &name, const std::vector<std::string> &name_pool, dns_db &db,
+/* Check if key is available for bid: new, in auction, or expired */
+bool key_is_available(const std::string &key, const std::vector<std::string> &key_pool, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_key(name), "Invalid name");
-
     new_or_expired = false;
 
-    if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
+    if (std::find(key_pool.begin(), key_pool.end(), key) != key_pool.end())
         return false;
 
-    if (!db.has_dns_ref(name))
+    if (!db.has_dns_ref(key))
     {
         new_or_expired = true;
         return true;
     }
 
-    prev_tx_ref = get_name_tx_ref(name, db);
+    prev_tx_ref = get_key_tx_ref(key, db);
 
-    if (domain_is_expired(prev_tx_ref, db))
+    if (key_is_expired(prev_tx_ref, db))
         new_or_expired = true;
 
     return !auction_is_closed(prev_tx_ref, db) || new_or_expired;
 }
 
-bool name_is_available(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+bool key_is_available(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
                        bool &new_or_expired, output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_key(name), "Invalid name");
-
-    return name_is_available(name, get_names_from_txs(tx_pool), db, new_or_expired, prev_tx_ref);
+    return key_is_available(key, get_keys_from_txs(pending_txs), db, new_or_expired, prev_tx_ref);
 }
 
-/* Check if name is available for value update or auction */
-bool name_is_useable(const std::string &name, const signed_transactions &tx_pool, dns_db &db,
+/* Check if key is available for value update or auction */
+bool key_is_useable(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
                      const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
                      output_reference &prev_tx_ref)
 {
-    FC_ASSERT(is_valid_key(name), "Invalid name");
-
-    std::vector<std::string> name_pool = get_names_from_txs(tx_pool);
-    if (std::find(name_pool.begin(), name_pool.end(), name) != name_pool.end())
+    std::vector<std::string> key_pool = get_keys_from_txs(pending_txs);
+    if (std::find(key_pool.begin(), key_pool.end(), key) != key_pool.end())
         return false;
 
-    if (!db.has_dns_ref(name))
+    if (!db.has_dns_ref(key))
         return false;
 
-    prev_tx_ref = get_name_tx_ref(name, db);
+    prev_tx_ref = get_key_tx_ref(key, db);
 
     if (!auction_is_closed(prev_tx_ref, db))
         return false;
 
-    if (domain_is_expired(prev_tx_ref, db))
+    if (key_is_expired(prev_tx_ref, db))
         return false;
 
     /* Check if spendable */
-    std::vector<std::string> unspent_names = get_names_from_unspent(unspent_outputs);
-    if (std::find(unspent_names.begin(), unspent_names.end(), name) == unspent_names.end())
+    std::vector<std::string> unspent_keys = get_keys_from_unspent(unspent_outputs);
+    if (std::find(unspent_keys.begin(), unspent_keys.end(), key) == unspent_keys.end())
         return false;
 
     return true;
@@ -179,36 +168,11 @@ fc::variant unserialize_value(const std::vector<char> &value)
     return fc::raw::unpack<fc::variant>(value);
 }
 
-bool is_valid_key(const std::string &name)
-{
-    return name.size() <= DNS_MAX_NAME_LEN;
-}
-
-bool is_valid_value(const std::vector<char> &value)
-{
-    return value.size() <= DNS_MAX_VALUE_LEN;
-}
-
-bool is_valid_value(const fc::variant &value)
-{
-    return is_valid_value(serialize_value(value));
-}
-
-bool is_valid_last_tx_type(const fc::enum_type<uint8_t, claim_domain_output::last_tx_type_enum> &last_tx_type)
-{
-    return (last_tx_type == claim_domain_output::bid_or_auction) || (last_tx_type == claim_domain_output::update);
-}
-
 bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price)
 {
-    if (bid_price < DNS_MIN_BID_FROM(prev_bid_price.get_rounded_amount()))
+    if (bid_price < asset(DNS_MIN_BID_FROM(prev_bid_price.amount), prev_bid_price.unit))
         return false;
 
-    return true;
-}
-
-bool is_valid_ask_price(const asset &ask_price)
-{
     return true;
 }
 
@@ -217,16 +181,6 @@ asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_pric
     FC_ASSERT(is_valid_bid_price(bid_price, prev_bid_price), "Invalid bid price");
 
     return bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
-}
-
-fc::variant lookup_value(const std::string& key, dns_db& db)
-{
-    FC_ASSERT(is_valid_key(key));
-    FC_ASSERT(db.has_dns_ref(key), "Key does not exist");
-
-    auto output = get_tx_ref_output(db.get_dns_ref(key), db);
-
-    return unserialize_value(to_domain_output(output).value);
 }
 
 std::vector<trx_output> get_active_auctions(dns_db& db)
