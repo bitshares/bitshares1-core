@@ -38,7 +38,7 @@ namespace bts { namespace dns {
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->bid_on_domain(name, bid, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->bid(name, bid, tx_pool, *get_dns_db());
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -53,7 +53,7 @@ namespace bts { namespace dns {
       asset price = params[1].as<asset>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->auction_domain(name, price, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->ask(name, price, tx_pool, *get_dns_db());
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -68,7 +68,7 @@ namespace bts { namespace dns {
       auto to_owner = params[1].as<bts::blockchain::address>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->transfer_domain(name, to_owner, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->transfer(name, to_owner, tx_pool, *get_dns_db());
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -83,7 +83,7 @@ namespace bts { namespace dns {
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->bid_on_domain(name, bid, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->bid(name, bid, tx_pool, *get_dns_db());
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -91,26 +91,27 @@ namespace bts { namespace dns {
     fc::variant dns_rpc_server_impl::list_active_auctions(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       _self->check_json_connection_authenticated(json_connection);
-      FC_ASSERT(params.size() == 0); 
+      FC_ASSERT(params.size() == 0);
       std::vector<trx_output> active_auctions = get_active_auctions(*get_dns_db());
 
-      std::vector<claim_domain_output> claim_domain_outputs;
-      claim_domain_outputs.reserve(active_auctions.size());
+      std::vector<claim_dns_output> claim_dns_outputs;
+      claim_dns_outputs.reserve(active_auctions.size());
       for (const trx_output& output : active_auctions)
       {
-        claim_domain_outputs.push_back(to_domain_output(output));
+        claim_dns_outputs.push_back(to_dns_output(output));
 
         //std::cout << "[" << output.amount.get_rounded_amount() << "] " << dns_output.name << "\n";
       }
-      return fc::variant(claim_domain_outputs);
+      return fc::variant(claim_dns_outputs);
     }
     fc::variant dns_rpc_server_impl::lookup_domain_record(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       _self->check_json_connection_authenticated(json_connection);
-      FC_ASSERT(params.size() == 1); 
+      FC_ASSERT(params.size() == 1);
       std::string name = params[0].as_string();
+      signed_transactions tx_pool;
 
-      return lookup_value(name, *get_dns_db());
+      return get_dns_wallet()->lookup(name, tx_pool, *get_dns_db());
     }
 
   } // end namespace detail
