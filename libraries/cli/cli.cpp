@@ -380,7 +380,7 @@ namespace bts { namespace cli {
                 }
                 if (result_type == "asset")
                   std::cout << (std::string)result.as<bts::blockchain::asset>() << "\n";
-                if (result_type == "address")
+                else if (result_type == "address")
                   std::cout << (std::string)result.as<bts::blockchain::address>() << "\n";
                 else
                   std::cout << fc::json::to_pretty_string(result) << "\n";

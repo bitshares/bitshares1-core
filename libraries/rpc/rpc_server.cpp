@@ -9,6 +9,7 @@
 #include <boost/bind.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>
+#include <limits>
 
 
 namespace bts { namespace rpc { 
@@ -68,8 +69,9 @@ namespace bts { namespace rpc {
                 if( fc::exists( filename ) )
                 {
                     FC_ASSERT( !fc::is_directory( filename ) );
-                    auto file_size = fc::file_size( filename );
+                    uint64_t file_size = fc::file_size( filename );
                     FC_ASSERT( file_size != 0 );
+                    FC_ASSERT(file_size <= std::numeric_limits<size_t>::max());
 
                     fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
                     fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
@@ -185,7 +187,7 @@ namespace bts { namespace rpc {
                       fc::mutable_variant_object  result;
                       result["id"]     =  rpc_call["id"];
                       try {
-                         result["result"] =  call_itr->second.method( nullptr, params );
+                         result["result"] =  dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
                          s.set_status( fc::http::reply::OK );
                       } 
