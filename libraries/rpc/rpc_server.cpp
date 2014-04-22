@@ -4,9 +4,11 @@
 #include <fc/rpc/json_connection.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
-#include <boost/bind.hpp>
-
 #include <fc/network/http/server.hpp>
+#include <fc/interprocess/file_mapping.hpp>
+#include <boost/bind.hpp>
+#include <sstream>
+
 
 namespace bts { namespace rpc { 
 
@@ -37,52 +39,201 @@ namespace bts { namespace rpc {
 
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
-             auto auth_base64 = r.get_header( "Authorization" );
-             auto auth_str    = fc::base64_decode( auth_base64 );
-             auto split       = auth_str.find( ':' );
-             auto username    = auth_str.substr( 0, split );
-             auto password    = auth_str.substr( split + 1 );
-
-             //ilog( "handle request ${r}", ("r",r.path) );
              s.add_header( "Connection", "close" );
+             ilog( "handle request ${r}", ("r",r.path) );
 
-             if( _config.rpc_user     == username && 
-                 _config.rpc_password == password )
-             {
-                 std::string str(r.body.data(),r.body.size());
-                 auto rpc_call = fc::json::from_string( str ).get_object();
-                 auto method_name = rpc_call["method"].as_string();
-                 auto params = rpc_call["params"].get_array();
-                 
-                 auto call_itr = _method_map.find( method_name );
-                 if( call_itr != _method_map.end() )
-                 {
-                    fc::mutable_variant_object  result;
-                    result["id"]     =  rpc_call["id"];
-                    try {
-                       result["result"] =  call_itr->second.method( nullptr, params );
-                       auto reply = fc::json::to_string( result );
+             try {
+                auto auth_value = r.get_header( "Authorization" );
+                std::string username, password;
+                if( auth_value.size() )
+                {
+                   auto auth_b64    = auth_value.substr( 6 );
+                   auto userpass    = fc::base64_decode( auth_b64 );
+                   auto split       = userpass.find( ':' );
+                   username    = userpass.substr( 0, split );
+                   password    = userpass.substr( split + 1 );
+                }
+                ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
+                if( _config.rpc_user     != username ||
+                    _config.rpc_password != password )
+                {
+                   s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
+                   std::string message = "Unauthorized";
+                   s.set_length( message.size() );
+                   s.set_status( fc::http::reply::NotAuthorized );
+                   s.write( message.c_str(), message.size() );
+                }
 
-                       s.set_status( fc::http::reply::OK );
-                       s.set_length( reply.size() );
-                       s.write( reply.c_str(), reply.size() );
-                    } 
-                    catch ( const fc::exception& e )
-                    {
-                       s.set_status( fc::http::reply::InternalServerError );
-                       result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
-                    }
-                    auto reply = fc::json::to_string( result );
-                    s.set_length( reply.size() );
-                    s.write( reply.c_str(), reply.size() );
-                 }
-             }
-             else
+                auto dotpos = r.path.find( ".." );
+                FC_ASSERT( dotpos == std::string::npos );
+                auto filename = _config.htdocs / r.path.substr(1,std::string::npos);
+                if( r.path == "/" )
+                {
+                    filename = _config.htdocs / "index.html";
+                }
+                if( fc::exists( filename ) )
+                {
+                    FC_ASSERT( !fc::is_directory( filename ) );
+                    auto file_size = fc::file_size( filename );
+                    FC_ASSERT( file_size != 0 );
+
+                    fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
+                    fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
+
+                    s.set_status( fc::http::reply::OK );
+                    s.set_length( file_size );
+                    s.write( (const char*)mr.get_address(), mr.get_size() );
+                    return;
+                }
+                if( r.path == fc::path("/rpc") )
+                {
+                   handle_http_rpc( r, s );
+                   return;
+                }
+                filename = _config.htdocs / "404.html";
+                FC_ASSERT( !fc::is_directory( filename ) );
+                auto file_size = fc::file_size( filename );
+                FC_ASSERT( file_size != 0 );
+
+                fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
+                fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
+
+                s.set_status( fc::http::reply::OK );
+                s.set_length( file_size );
+                s.write( (const char*)mr.get_address(), mr.get_size() );
+             } 
+             catch ( const fc::exception& e )
              {
-                s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
-                s.set_length( 0 );
-                s.set_status( fc::http::reply::NotAuthorized );
+                    std::string message = "Internal Server Error\n";
+                    message += e.to_detail_string();
+                    s.set_length( message.size() );
+                    s.set_status( fc::http::reply::InternalServerError );
+                    s.write( message.c_str(), message.size() );
+             } 
+             catch ( ... )
+             {
+                    std::string message = "Invalid RPC Request\n";
+                    s.set_length( message.size() );
+                    s.set_status( fc::http::reply::BadRequest );
+                    s.write( message.c_str(), message.size() );
              }
+        
+         }
+
+         void handle_http_wallet(const fc::http::request& r, const fc::http::server::response& s )
+         {
+              std::stringstream ss;
+              ss << "<html><head><title>BitShares XT Wallet</title>";
+              ss << "</head>";
+              ss << "<script type=\"text/javascript\" charset=\"utf-8\" src=\"http://code.jquery.com/jquery-1.7.2.min.js\"></script>"
+                << "<script type=\"text/javascript\" src=\"/jquery.jsonrpc.js\"></script>\n" 
+                << "<script type=\"text/javascript\">"
+                << " $(document).ready(function() {"
+                << "      $.jsonRPC.setup({"
+                << "          endPoint : 'http://localhost:9989/rpc',"
+                << "          namespace : ''"
+                << "     });"
+                << "      $(\"input#transfer\").click(function() {"
+                << "          $.jsonRPC.request('sendtoaddress', {"
+                << "              params : [$(\"text#amount\").val(), $(\"text#payto\").val(), $(\"text#memo\").val()],"
+                << "              success : function(data) {"
+                << "                 $(\"<p />\").text(data.result).appendTo($(\"p#result\"));"
+                << "              },"
+                << "              error : function(data) {"
+                << "                  $(\"<p />\").text(data.error.message).appendTo($(\"p#result\"));"
+                << "              }"
+                << "         });"
+                << "     });"
+                << "  });"
+               << " </script> ";
+
+              ss << "<body>\n";
+              ss << "  <h1>BitShares XT Wallet</h1>\n";
+              ss << "  <hr/>\n";
+              ss << "  <h3>Balance: " << _client->get_wallet()->get_balance(0).get_rounded_amount() << "</h3>";
+              ss << "  <hr/>\n";
+
+              ss << "  <div id=\"transfer\"><form>\n";
+              ss << "     <h2>Transfer</h2> \n";
+              ss << "     Pay to: <input type=\"text\" placeholder=\"Address\" id=\"payto\"/>\n";
+              ss << "     Amount: <input type=\"text\" placeholder=\"0.0\" id=\"amount\"/>\n";
+              ss << "     Memo: <input type=\"text\" placeholder=\"Memo\" id=\"memo\" />\n";
+              ss << "     <input type=\"button\" id=\"transfer\" value=\"Transfer\"/>\n";
+              ss << "     </form>\n";
+              ss << "     <p id=\"result\"> </p>\n";
+              ss << "  </div>\n";
+
+              ss << "  <hr/>";
+              ss << "  <h3>Transaction History</h3>\n";
+              ss << "  <table width=\"100%\">\n";
+              ss << "  <tr><th>Date</th><th>Type</th><th>Address</th><th>Amount</th></tr>\n";
+              ss << "  </table>\n";
+              ss << "</body></html>";
+
+              auto result = ss.str();
+
+              s.set_status( fc::http::reply::OK );
+              s.set_length( result.size() );
+              s.write( result.c_str(), result.size() );
+         }
+
+         void handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
+         {
+                std::string str(r.body.data(),r.body.size());
+                try {
+                   auto rpc_call = fc::json::from_string( str ).get_object();
+                   auto method_name = rpc_call["method"].as_string();
+                   auto params = rpc_call["params"].get_array();
+                   
+                   auto call_itr = _method_map.find( method_name );
+                   if( call_itr != _method_map.end() )
+                   {
+                      fc::mutable_variant_object  result;
+                      result["id"]     =  rpc_call["id"];
+                      try {
+                         result["result"] =  call_itr->second.method( nullptr, params );
+                         auto reply = fc::json::to_string( result );
+                         s.set_status( fc::http::reply::OK );
+                      } 
+                      catch ( const fc::exception& e )
+                      {
+                         s.set_status( fc::http::reply::InternalServerError );
+                         result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
+                      }
+                      auto reply = fc::json::to_string( result );
+                      s.set_length( reply.size() );
+                      s.write( reply.c_str(), reply.size() );
+                   }
+                   else
+                   {
+                       s.set_status( fc::http::reply::NotFound );
+                       s.set_length( 9 );
+                       s.write( "Invalid Method", 9 );
+                   }
+                } 
+                catch ( const fc::exception& e )
+                {
+                    std::string message = "Invalid RPC Request\n";
+                    message += e.to_detail_string();
+                    s.set_length( message.size() );
+                    s.set_status( fc::http::reply::BadRequest );
+                    s.write( message.c_str(), message.size() );
+                }
+                catch ( const std::exception& e )
+                {
+                    std::string message = "Invalid RPC Request\n";
+                    message += e.what();
+                    s.set_length( message.size() );
+                    s.set_status( fc::http::reply::BadRequest );
+                    s.write( message.c_str(), message.size() );
+                }
+                catch (...)
+                {
+                    std::string message = "Invalid RPC Request\n";
+                    s.set_length( message.size() );
+                    s.set_status( fc::http::reply::BadRequest );
+                    s.write( message.c_str(), message.size() );
+                }
          }
 
 
