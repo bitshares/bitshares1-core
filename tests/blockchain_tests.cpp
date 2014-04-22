@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
 
        wall.scan_chain( db );
        wall.dump_utxo_set();
-       db.dump_delegates();
+       //db.dump_delegates();
 
        for( uint32_t i = 0; i < 1000; ++i )
        {
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
               wall.scan_chain( db );
               wall.dump_utxo_set();
           }
-          db.dump_delegates();
+          //db.dump_delegates();
        }
    }
    catch ( const fc::exception& e )

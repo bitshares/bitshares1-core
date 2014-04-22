@@ -23,6 +23,8 @@ namespace bts { namespace blockchain {
        name_record( uint32_t id, std::string n, const fc::ecc::public_key& k )
        :delegate_id(id),name(n),owner(k),votes_for(0),votes_against(0){}
 
+       int64_t total_votes()const { return votes_for - votes_against; }
+
        uint32_t             delegate_id;
        std::string          name;
        std::string          data;
@@ -79,8 +81,12 @@ namespace bts { namespace blockchain {
           fc::optional<name_record> lookup_name( const std::string& name );
           fc::optional<name_record> lookup_delegate( uint16_t del );
 
-          /** for debug purposes, print delegates and their rank */
-          void dump_delegates()const;
+          /**
+           *  @param count - the number of delegates to return
+           *
+           *  @return the top *count* delegates by vote.
+           */
+          std::vector<name_record>  get_delegates( uint32_t count = 100 );
 
 
           //@{
