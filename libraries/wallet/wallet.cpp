@@ -152,7 +152,7 @@ namespace bts { namespace wallet {
       class wallet_impl
       {
           public:
-              wallet_impl():_stake(0),_exception_on_open(false),_blockchain(nullptr){}
+              wallet_impl():_stake(0),_is_open(false),_blockchain(nullptr){}
               std::string _wallet_base_password; // used for saving/loading the wallet
               std::string _wallet_key_password;  // used to access private keys
 
@@ -162,7 +162,7 @@ namespace bts { namespace wallet {
               /** millishares per byte */
               uint64_t                                                   _current_fee_rate;
               uint64_t                                                   _stake;
-              bool                                                       _exception_on_open;
+              bool                                                       _is_open;
 
               //std::map<output_index, output_reference>                 _output_index_to_ref;
               // cached data for rapid lookup
@@ -360,7 +360,6 @@ namespace bts { namespace wallet {
        try {
            my->_wallet_dat           = wallet_dat;
            my->_wallet_base_password = password;
-           my->_exception_on_open = false;
 
            FC_ASSERT( fc::exists( wallet_dat ), "", ("wallet_dat",wallet_dat) )
 
@@ -378,18 +377,18 @@ namespace bts { namespace wallet {
 
            for( auto item : my->_data.output_index_to_ref )
                my->_output_ref_to_index[item.second] = item.first;
-
+           my->_is_open = true;
        }catch( fc::exception& er ) {
-           my->_exception_on_open = true;
+           my->_is_open = false;
            FC_RETHROW_EXCEPTION( er, warn, "unable to load ${wal}", ("wal",wallet_dat) );
        } catch( const std::exception& e ) {
-           my->_exception_on_open = true;
+           my->_is_open = false;
            throw  fc::std_exception(
                FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat) ),
                std::current_exception(),
                e.what() ) ;
        } catch( ... ) {
-           my->_exception_on_open = true;
+           my->_is_open = false;
            throw fc::unhandled_exception(
                FC_LOG_MESSAGE( warn, "unable to load ${wal}", ("wal",wallet_dat)),
                std::current_exception() );
@@ -416,7 +415,7 @@ namespace bts { namespace wallet {
       my->_wallet_dat = wallet_dat;
       my->_wallet_base_password = base_password;
       my->_wallet_key_password  = key_password;
-      my->_exception_on_open = false;
+      my->_is_open = false;
 
       for( uint32_t i = 1; i < 101; ++i )
       {
@@ -436,7 +435,13 @@ namespace bts { namespace wallet {
       }
       my->_data.set_keys( std::unordered_map<address,fc::ecc::private_key>(), key_password );
       save();
+      my->_is_open = true;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet ${wal}", ("wal",wallet_dat) ) }
+
+  bool wallet::is_open() const
+  {
+    return my->_is_open;
+  }
 
    void wallet::backup_wallet( const fc::path& backup_path )
    { try {
@@ -473,7 +478,7 @@ namespace bts { namespace wallet {
    void wallet::save()
    { try {
       ilog( "saving wallet\n" );
-      if(my->_exception_on_open)
+      if(!my->_is_open)
           return;
 
       auto wallet_json = fc::json::to_pretty_string( my->_data );
