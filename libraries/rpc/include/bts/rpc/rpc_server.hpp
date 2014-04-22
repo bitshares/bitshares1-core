@@ -28,6 +28,7 @@ namespace bts { namespace rpc {
       std::string      rpc_user;
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
+      fc::ip::endpoint httpd_endpoint;
 
       bool is_valid() const;
     };
@@ -85,4 +86,4 @@ RPC_DECLARE_EXCEPTION(rpc_wallet_open_needed_exception)
 } } // bts::rpc
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT( bts::rpc::rpc_server::config, (rpc_user)(rpc_password)(rpc_endpoint) )
+FC_REFLECT( bts::rpc::rpc_server::config, (rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint) )

@@ -2,8 +2,11 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/rpc/json_connection.hpp>
+#include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
 #include <boost/bind.hpp>
+
+#include <fc/network/http/server.hpp>
 
 namespace bts { namespace rpc { 
 
@@ -14,22 +17,74 @@ namespace bts { namespace rpc {
        public:
          rpc_server::config  _config;
          client_ptr          _client;
+         fc::http::server    _httpd;
          fc::tcp_server      _tcp_serv;
          fc::future<void>    _accept_loop_complete;
          rpc_server*         _self;
 
          struct method_details
          {
-          std::string method_name;
-          rpc_server::json_api_method_type method;
-          std::string parameter_description;
-          std::string method_description;
+             std::string method_name;
+             rpc_server::json_api_method_type method;
+             std::string parameter_description;
+             std::string method_description;
          };
          typedef std::map<std::string, method_details> method_map_type;
          method_map_type _method_map;
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
+
+         void handle_request( const fc::http::request& r, const fc::http::server::response& s )
+         {
+             auto auth_base64 = r.get_header( "Authorization" );
+             auto auth_str    = fc::base64_decode( auth_base64 );
+             auto split       = auth_str.find( ':' );
+             auto username    = auth_str.substr( 0, split );
+             auto password    = auth_str.substr( split + 1 );
+
+             //ilog( "handle request ${r}", ("r",r.path) );
+             s.add_header( "Connection", "close" );
+
+             if( _config.rpc_user     == username && 
+                 _config.rpc_password == password )
+             {
+                 std::string str(r.body.data(),r.body.size());
+                 auto rpc_call = fc::json::from_string( str ).get_object();
+                 auto method_name = rpc_call["method"].as_string();
+                 auto params = rpc_call["params"].get_array();
+                 
+                 auto call_itr = _method_map.find( method_name );
+                 if( call_itr != _method_map.end() )
+                 {
+                    fc::mutable_variant_object  result;
+                    result["id"]     =  rpc_call["id"];
+                    try {
+                       result["result"] =  call_itr->second.method( nullptr, params );
+                       auto reply = fc::json::to_string( result );
+
+                       s.set_status( fc::http::reply::OK );
+                       s.set_length( reply.size() );
+                       s.write( reply.c_str(), reply.size() );
+                    } 
+                    catch ( const fc::exception& e )
+                    {
+                       s.set_status( fc::http::reply::InternalServerError );
+                       result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
+                    }
+                    auto reply = fc::json::to_string( result );
+                    s.set_length( reply.size() );
+                    s.write( reply.c_str(), reply.size() );
+                 }
+             }
+             else
+             {
+                s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
+                s.set_length( 0 );
+                s.set_status( fc::http::reply::NotAuthorized );
+             }
+         }
+
 
          void accept_loop()
          {
@@ -382,9 +437,14 @@ namespace bts { namespace rpc {
     {
       my->_config = cfg;
       my->_tcp_serv.listen( cfg.rpc_endpoint );
-      ilog( "listening for rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
+      ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
      
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
+
+
+      auto m = my.get();
+      my->_httpd.listen(cfg.httpd_endpoint);
+      my->_httpd.on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
      
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
   }

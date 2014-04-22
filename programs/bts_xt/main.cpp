@@ -42,6 +42,7 @@ int main( int argc, char** argv )
                               ("rpcuser", boost::program_options::value<std::string>(), "username for JSON-RPC")
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
                               ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
+                              ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("trustee-private-key", boost::program_options::value<std::string>(), "act as a trustee using the given private key")
                               ("trustee-address", boost::program_options::value<std::string>(), "trust the given BTS address to generate blocks");
 
@@ -120,6 +121,8 @@ int main( int argc, char** argv )
         // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
           rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
+        if (option_variables.count("httpport"))
+          rpc_config.httpd_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["httpport"].as<uint16_t>());
         rpc_server->configure(rpc_config);
       }
       
