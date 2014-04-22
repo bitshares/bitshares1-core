@@ -2,7 +2,7 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
-#include <bts/cli/cli.hpp>
+#include <bts/dns/dns_cli.hpp>
 #include <bts/dns/dns_rpc_server.hpp>
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_wallet.hpp>
@@ -62,7 +62,7 @@ int main( int argc, char** argv )
 
       bts::dns::dns_rpc_server_ptr rpc_server = std::make_shared<bts::dns::dns_rpc_server>();
       rpc_server->set_client(c);
-      auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
+      auto cli = std::make_shared<bts::dns::dns_cli>( c, rpc_server );
 
       c->add_node( "127.0.0.1:4567" );
 

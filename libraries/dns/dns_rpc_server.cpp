@@ -76,13 +76,11 @@ namespace bts { namespace dns {
     {
       std::vector<trx_output> active_auctions = get_active_auctions(*get_dns_db());
 
-      std::vector<claim_domain_output> claim_domain_outputs;
+      std::vector<std::pair<bts::blockchain::asset, claim_domain_output> > claim_domain_outputs;
       claim_domain_outputs.reserve(active_auctions.size());
       for (const trx_output& output : active_auctions)
       {
-        claim_domain_outputs.push_back(to_domain_output(output));
-
-        //std::cout << "[" << output.amount.get_rounded_amount() << "] " << dns_output.name << "\n";
+        claim_domain_outputs.push_back(std::make_pair(output.amount, to_domain_output(output)));
       }
       return fc::variant(claim_domain_outputs);
     }
@@ -140,7 +138,7 @@ namespace bts { namespace dns {
 
     method_data list_active_auctions_metadata{"list_active_auctions", JSON_METHOD_IMPL(list_active_auctions),
                             /* description */ "TODO: describe me",
-                            /* returns: */    "bool",
+                            /* returns: */    "vector<pair<asset,claim_domain_output>>",
                             /* params:     */ {},
                           /* prerequisites */ json_authenticated};
     register_method(list_active_auctions_metadata);
