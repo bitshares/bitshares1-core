@@ -109,7 +109,7 @@ int main( int argc, char** argv )
 
       auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
 
-      if (option_variables.count("server"))
+      if( option_variables.count("server") )
       {
         // the user wants us to launch the RPC server.
         // First, override any config parameters they 
@@ -123,6 +123,8 @@ int main( int argc, char** argv )
           rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
         if (option_variables.count("httpport"))
           rpc_config.httpd_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["httpport"].as<uint16_t>());
+        std::cerr<<"starting json rpc server on "<< std::string( rpc_config.rpc_endpoint ) <<"\n";
+        std::cerr<<"starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
         rpc_server->configure(rpc_config);
       }
       

@@ -8,7 +8,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
 
 add_library( bts_dns
-             #dns_cli.cpp
+             dns_cli.cpp
              dns_rpc_server.cpp
              dns_db.cpp
              dns_transaction_validator.cpp
