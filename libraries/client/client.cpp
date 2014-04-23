@@ -76,11 +76,19 @@ namespace bts { namespace client {
            if (pending_trxs.size() && (fc::time_point::now() - _last_block) > fc::seconds(30))
            {
              try {
-               auto blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
+               bts::blockchain::trx_block blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
                blk.sign(_trustee_key);
                // _chain_db->push_block( blk );
                if (_chain_client)
                  _chain_client->broadcast_block(blk);
+               else
+               {
+                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
+                 // with the p2p code, if you broadcast something to the network, it will not
+                 // immediately send it back to you 
+                 on_new_block(blk);
+               }
+
                _last_block = fc::time_point::now();
              }
              catch (const fc::exception& e)
@@ -108,7 +116,15 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        void client_impl::on_new_block(const trx_block& block)
        {
-         _chain_db->push_block(block);
+         try
+         {
+           _chain_db->push_block(block);
+         }
+         catch (fc::exception& e)
+         {
+           wlog("Error pushing block ${block}: ${error}", ("block", block)("error", e.to_string()));
+           throw;
+         }
 
          for (auto trx : block.trxs)
            _pending_trxs.erase(trx.id());
@@ -211,7 +227,7 @@ namespace bts { namespace client {
          {
            uint32_t block_number = _chain_db->fetch_block_num(id.item_hash);
            bts::client::block_message block_message_to_send;
-           block_message_to_send.block = _chain_db->fetch_block(block_number);
+           block_message_to_send.block = _chain_db->fetch_trx_block(block_number);
            block_message_to_send.block_id = block_message_to_send.block.id();
            FC_ASSERT(id.item_hash == block_message_to_send.block_id);
            block_message_to_send.signature = block_message_to_send.block.trustee_signature;
@@ -281,6 +297,12 @@ namespace bts { namespace client {
     {
       if (my->_chain_client)
         my->_chain_client->broadcast_transaction( trx );
+      else
+      {
+        my->_p2p_node->broadcast(trx_message(trx));
+        // p2p doesn't send messages back to the originator
+        my->on_new_transaction(trx);
+      }
     }
 
     void client::add_node( const std::string& ep )
@@ -324,9 +346,10 @@ namespace bts { namespace client {
     {
       if (!my->_p2p_node)
         return;
-      uint32_t last_block_num = my->_chain_db->head_block_num();
-      signed_block_header header = my->_chain_db->fetch_block(last_block_num);
-      my->_p2p_node->sync_from(bts::net::item_id(bts::client::block_message_type, header.id()));
+      //uint32_t last_block_num = my->_chain_db->head_block_num();
+      //signed_block_header header = my->_chain_db->fetch_block(last_block_num);
+      block_id_type head_block_id = my->_chain_db->head_block_id();
+      my->_p2p_node->sync_from(bts::net::item_id(bts::client::block_message_type, head_block_id));
       my->_p2p_node->connect_to_p2p_network();
     }
 
