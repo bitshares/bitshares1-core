@@ -44,7 +44,7 @@ signed_transaction dns_wallet::bid_on_domain(const std::string &name, const asse
     claim_domain_output domain_output;
     domain_output.name = name;
     domain_output.value = std::vector<char>();
-    domain_output.owner = new_recv_address("Owner address for domain: " + name);
+    domain_output.owner = new_receive_address("Owner address for domain: " + name);
     domain_output.last_tx_type = claim_domain_output::bid_or_auction;
 
     signed_transaction tx;

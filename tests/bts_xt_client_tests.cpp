@@ -73,8 +73,8 @@ struct bts_xt_client_test_config
     boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_messages);
   }
 };
-fc::path bts_xt_client_test_config::bts_client_exe = "e:/Invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
-fc::path bts_xt_client_test_config::bts_server_exe = "e:/Invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
+fc::path bts_xt_client_test_config::bts_client_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
+fc::path bts_xt_client_test_config::bts_server_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port = 20100;
 
@@ -292,7 +292,13 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
   for (int i = 0; i < test_process_count; ++i)
   {
-    BOOST_CHECK(!client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase"));
+    try {
+      client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase");
+      BOOST_FAIL("incorrect passphrased accepted!");
+    }
+    catch (fc::exception& e)
+    {
+    }
     BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE));
   }
 

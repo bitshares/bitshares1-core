@@ -350,7 +350,7 @@ namespace bts { namespace cli {
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
-                auto addrs = _client->get_wallet()->get_recv_addresses();
+                auto addrs = _client->get_wallet()->get_receive_addresses();
                 for( auto addr : addrs )
                   std::cout << std::setw( 33 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
               }

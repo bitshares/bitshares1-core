@@ -115,9 +115,9 @@ namespace wallet {
            trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs);
 
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
-           address                                 new_recv_address( const std::string& label = "" );
+           address                                 new_receive_address( const std::string& label = "" );
            fc::ecc::public_key                     new_public_key( const std::string& label = "" );
-           std::unordered_map<address,std::string> get_recv_addresses()const;
+           std::unordered_map<address,std::string> get_receive_addresses()const;
            bool                                    is_my_address( const address& a )const;
            bool                                    is_my_address( const pts_address& a )const;
 

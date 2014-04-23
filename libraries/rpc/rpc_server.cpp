@@ -430,7 +430,7 @@ namespace bts { namespace rpc {
       std::string account;
       if (params.size() == 1)
         account = params[0].as_string();
-      bts::blockchain::address new_address = _client->get_wallet()->new_recv_address(account);
+      bts::blockchain::address new_address = _client->get_wallet()->new_receive_address(account);
       return fc::variant(new_address);
     }
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
@@ -463,7 +463,7 @@ namespace bts { namespace rpc {
     }
     fc::variant rpc_server_impl::listrecvaddresses(const fc::variants& params)
     {
-      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_recv_addresses();
+      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses ); 
     }
     fc::variant rpc_server_impl::getbalance(const fc::variants& params)

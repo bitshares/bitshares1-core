@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        addrs.reserve(80);
        for( uint32_t i = 0; i < 80; ++i )
        {
-          addrs.push_back( wall.new_recv_address() );
+          addrs.push_back( wall.new_receive_address() );
        }
 
        chain_database     db;

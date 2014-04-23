@@ -98,8 +98,8 @@ class DNSTestState
             /* Start the blockchain with random balances in new addresses */
             for (auto i = 0; i < DNS_TEST_NUM_WALLET_ADDRS; ++i)
             {
-                addrs1.push_back(wallet1.new_recv_address());
-                addrs2.push_back(wallet2.new_recv_address());
+                addrs1.push_back(wallet1.new_receive_address());
+                addrs2.push_back(wallet2.new_receive_address());
             }
 
             std::vector<address> addrs = addrs1;
