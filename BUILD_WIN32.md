@@ -1,14 +1,14 @@
-Windows - Visual Studio 2012
+Windows - Visual Studio 2013
 ============================
 #### Prerequisites ####
-* Microsoft Visual C++ 2012 Update 3 (the free Express edition will work)
+* Microsoft Visual C++ 2013 Update 1 (the free Express edition will work)
 * If you have multiple MSVS installation use MSVS Developer console from target version.
 * This file builds only x86 version.
 
 #### Set up the directory structure####
 * Create a base directory for all projects.  I'm putting everything in 
   `D:\BitShares`, you can use whatever you like.  In several of the batch files 
-  and makefiles, this directory will be referred to as `INVICTUS_ROOT`:
+  and makefiles, this directory will be referred to as `BITSHARES_ROOT`:
   ```
 mkdir D:\BitShares
 ```
@@ -37,13 +37,16 @@ git clone https://github.com/InvictusInnovations/leveldb-win.git
   directory's `CMake` subdirectory, so those scripts would need tweaking.
 
 * Download library dependencies:
+   You can get prebuilt package containing all of the libraries described below built
+   by using currently used compiler. This package can be downloaded from:
+   http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013.7z
+   and should be unpacked into Bitshare-root directory (ie: D:\Bitshares).
+   Now the package contains: BerkeleyDB, boost 1.55, OpenSSL 1.0.1g.
+
  * BerkeleyDB
 
    BitShares depends on BerkeleyDB 12c Release 1 (12.1.6.0.20).  You can build 
-   this from source or download our pre-built binaries to speed things up.  To 
-   download the pre-built versions:
-   * download http://get.syncad.com/invictus/BerkeleyDB.zip
-   * unzip it to the base directory `D:\BitShares`
+   this from source or download our pre-built binaries to speed things up.
 
  * Boost
  
@@ -52,24 +55,23 @@ git clone https://github.com/InvictusInnovations/leveldb-win.git
    source.
    * download the latest boost source from http://www.boost.org/users/download/
    * unzip it to the base directory `D:\BitShares`. 
-   * This will create a directory like `D:\BitShares\boost_1_55_0`. Rename this 
-   directory to `D:\BitShares\boost`
+   * This will create a directory like `D:\BitShares\boost_1_55_0`.
    
  * OpenSSL
 
    BitShares depends on OpenSSL, and you must build this from source.
     * download the latest OpenSSL source from http://www.openssl.org/source/
     * Untar it to the base directory `D:\BitShares`
-    * this will create a directory like `D:\BitShares\openssl-1.0.1f`.
+    * this will create a directory like `D:\BitShares\openssl-1.0.1g`.
 
 At the end of this, your base directory should look like this:
 ```
 D:\BitShares
 +- BerkeleyDB
 +- bitshares_toolkit
-+- boost
++- boost_1.55
 +- CMake
-+- openssl-1.0.1f
++- OpenSSL
 ```
 
 #### Build the library dependencies ####
@@ -105,7 +107,7 @@ set(Boost_USE_DEBUG_PYTHON ON)
 
 * Build OpenSSL DLLs
   ```
-cd D:\BitShares\openssl-1.0.1f
+cd D:\BitShares\openssl-1.0.1g
 perl Configure --openssldir=D:\BitShares\OpenSSL VC-WIN32
 ms\do_ms.bat
 nmake -f ms\ntdll.mak
@@ -127,7 +129,7 @@ run_cmake.bat
  * Where to build the binaries: `D:\BitShares\bin`
  
  Then hit **Configure**.  It may ask you to specify a generator for this 
- project; if it does, choose **Visual Studio 11** and select **Use default 
+ project; if it does, choose **Visual Studio 12** and select **Use default 
  native compilers**.  Look through the output and fix any errors.  Then 
  hit **Generate**.
 
