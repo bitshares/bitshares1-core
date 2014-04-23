@@ -1024,9 +1024,9 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
     auto original_outputs  = trx.outputs;
     auto original_required_signatures = required_signatures;
 
-    auto required_in = requested_amount;
+    auto required_input_amount = requested_amount;
     asset total_input;
-
+    asset change_amount;
     do
     { /* Start with original transaction */
         trx.inputs = original_inputs;
@@ -1034,16 +1034,16 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         required_signatures = original_required_signatures;
 
         /* Collect necessary inputs */
-        total_input = asset(required_in.unit);
-        auto new_inputs = collect_inputs(required_in, total_input, required_signatures); /* Throws if insufficient funds */
+        total_input = asset(required_input_amount.unit);
+        auto new_inputs = collect_inputs(required_input_amount, total_input, required_signatures); /* Throws if insufficient funds */
         trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
 
-        /* Return change */
-        auto change_amt = total_input - required_in;
-        trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amt));
+        /* Return change: we always initially assume there will be change, and delete the output if not needed further down in this function */
+        change_amount = total_input - required_input_amount; //note: this will assert if we didn't collect enough inputs (i.e. a bug in collect_inputs)
+        trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amount));
 
         /* Ensure fee is paid in base units */
-        if (change_amt.unit != asset().unit)
+        if (change_amount.unit != asset().unit)
             return collect_inputs_and_sign(trx, asset(), required_signatures, change_addr);
 
         /* Calculate fee required for signed transaction */
@@ -1053,21 +1053,19 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte", ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 
         /* Calculate new minimum input amount */
-        required_in += fee;
-        if (total_input < required_in)
+        required_input_amount += fee;
+        if (total_input < required_input_amount)
         {
             wlog("not enough to cover amount + fee... grabbing more..");
-            continue;
         }
+    } while (total_input < required_input_amount); /* Try again with the new minimum input amount if the fee ended up too high */
 
-        /* Recalculate leftover change */
-        change_amt = total_input - required_in;
-        if (change_amt > asset())
-            trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amt);
-        else
-            trx.outputs.pop_back();
-
-    } while (total_input < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
+    /* Recalculate leftover change amount */
+    change_amount = total_input - required_input_amount;
+    if (change_amount > asset()) //if the new change amount is non-zero, update the change amount of the change output
+      trx.outputs.back() = trx_output(claim_by_signature_output(change_addr), change_amount);
+    else //there's no change now (this is an exact transaction), so discard the change output
+      trx.outputs.pop_back();
 
     //TODO: randomize output order here
     trx.sigs.clear();
