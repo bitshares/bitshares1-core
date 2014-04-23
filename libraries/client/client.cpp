@@ -69,6 +69,7 @@ namespace bts { namespace client {
 
        void client_impl::trustee_loop()
        {
+         _last_block = _chain_db->get_head_block().timestamp;
          while (!_trustee_loop_complete.canceled())
          {
            signed_transactions pending_trxs;
@@ -181,8 +182,13 @@ namespace bts { namespace client {
          }
          catch (fc::key_not_found_exception&)
          {
-           remaining_item_count = 0;
-           return std::vector<bts::net::item_hash_t>();
+           if (from_id.item_hash == bts::net::item_hash_t())
+             last_seen_block_num = (uint32_t)-1;
+           else
+           {
+             remaining_item_count = 0;
+             return std::vector<bts::net::item_hash_t>();
+           }
          }
          remaining_item_count = _chain_db->head_block_num() - last_seen_block_num;
          uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
@@ -346,10 +352,14 @@ namespace bts { namespace client {
     {
       if (!my->_p2p_node)
         return;
-      //uint32_t last_block_num = my->_chain_db->head_block_num();
-      //signed_block_header header = my->_chain_db->fetch_block(last_block_num);
-      block_id_type head_block_id = my->_chain_db->head_block_id();
-      my->_p2p_node->sync_from(bts::net::item_id(bts::client::block_message_type, head_block_id));
+      bts::net::item_id head_item_id;
+      head_item_id.item_type = bts::client::block_message_type;
+      uint32_t last_block_num = my->_chain_db->head_block_num();
+      if (last_block_num == (uint32_t)-1)
+        head_item_id.item_hash = bts::net::item_hash_t();
+      else
+        head_item_id.item_hash = my->_chain_db->head_block_id();
+      my->_p2p_node->sync_from(head_item_id);
       my->_p2p_node->connect_to_p2p_network();
     }
 

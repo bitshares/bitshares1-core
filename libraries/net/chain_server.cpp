@@ -22,16 +22,6 @@
 #include <unordered_map>
 #include <map>
 
-
-struct genesis_block_config
-{
-   genesis_block_config():supply(0),blockheight(0){}
-   double                                            supply;
-   uint64_t                                          blockheight;
-   std::vector< std::pair<bts::blockchain::pts_address,uint64_t> > balances;
-};
-FC_REFLECT( genesis_block_config, (supply)(balances) )
-
 using namespace bts::blockchain;
 
 namespace bts { namespace net {
@@ -40,11 +30,11 @@ namespace bts { namespace net {
  *  When creating the genesis block it must initialize the genesis block to vote
  *  evenly for the top 100 delegates and register the top 100 delegates.
  */
-bts::blockchain::trx_block create_test_genesis_block()
+bts::blockchain::trx_block create_test_genesis_block(fc::path genesis_json_file)
 {
    try {
-      FC_ASSERT( fc::exists( "genesis.json" ) );
-      auto config = fc::json::from_file( "genesis.json" ).as<genesis_block_config>();
+      FC_ASSERT( fc::exists(genesis_json_file) );
+      auto config = fc::json::from_file(genesis_json_file).as<genesis_block_config>();
       bts::blockchain::trx_block b;
 
       signed_transaction dtrx;
@@ -182,7 +172,7 @@ namespace detail
                     _accept_loop_complete.wait();
                 }
             }
-            catch ( const fc::canceled_exception& e )
+            catch ( const fc::canceled_exception& )
             {
                 ilog( "expected exception on closing tcp server\n" );
             }
@@ -360,7 +350,7 @@ namespace detail
               con->set_database( _chain.get() );
               if( _ser_del ) _ser_del->on_connected( con );
            }
-           catch ( const fc::canceled_exception& e )
+           catch ( const fc::canceled_exception& )
            {
               ilog( "canceled accept operation" );
            }
@@ -394,11 +384,11 @@ namespace detail
                  fc::usleep( fc::microseconds( 1000*1 ) );
               }
            }
-           catch ( fc::eof_exception& e )
+           catch ( fc::eof_exception& )
            {
               ilog( "accept loop eof" );
            }
-           catch ( fc::canceled_exception& e )
+           catch ( fc::canceled_exception& )
            {
               ilog( "accept loop canceled" );
            }
@@ -448,7 +438,7 @@ void chain_server::configure( const chain_server::config& c )
      my->_chain->open( "chain" );
      if( my->_chain->head_block_num() == uint32_t(-1) )
      {
-         auto genesis = create_test_genesis_block();
+         auto genesis = create_test_genesis_block("genesis.json");
          ilog( "about to push" );
          try {
             //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );
