@@ -189,7 +189,6 @@ namespace bts { namespace wallet {
               asset get_balance( asset_type balance_type )
               {
                    asset total_balance( static_cast<uint64_t>(0ull), balance_type);
-                   std::vector<trx_input> inputs;
                    for( auto out : _data.unspent_outputs )
                    {
                       //ilog( "unspent outputs ${o}", ("o",*itr) );
@@ -666,7 +665,6 @@ namespace bts { namespace wallet {
        bool found = false;
        //for each input in transaction, get source output of the input as a reference (trx_id.output#)
        //  convert the reference to an output index (block#.trx#.output#) if it is a known output we control, otherwise skip it
-       // 
        for( uint32_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
        {  
            auto output_ref = state.trx.inputs[in_idx].output_ref;
@@ -681,7 +679,6 @@ namespace bts { namespace wallet {
        }
 
        // for each output in transaction
-       //   
        transaction_id_type trx_id = state.trx.id();
        for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
@@ -715,13 +712,11 @@ namespace bts { namespace wallet {
           {
               if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() );
 
-              auto trx = chain.fetch_trx( trx_num( i, trx_idx ) );
-
               transaction_state state;
-              state.trx = trx;
+              state.trx = chain.fetch_trx(trx_num(i, trx_idx));
               bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
-                 my->_data.transactions[trx.id()] = state;
+                 my->_data.transactions[state.trx.id()] = state;
               found |= found_output;
           }
           for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
@@ -750,12 +745,12 @@ namespace bts { namespace wallet {
        {
             if (i == count) break;
             i++;
-            std::cerr << get_tx_info_string(chain_db, tx.second.trx) << "\n";
+            std::cerr << get_transaction_info_string(chain_db, tx.second.trx) << "\n";
        }
    }
    /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
     */
-   void wallet::dump_utxo_set()
+   void wallet::dump_unspent_outputs()
    {
        std::cerr<<"===========================================================\n";
        std::cerr<<"Unspent Outputs: \n";
@@ -773,13 +768,13 @@ namespace bts { namespace wallet {
        std::cerr << get_output_info_string(out);
    }
 
-   std::string wallet::get_tx_info_string(chain_database& chain_db, const transaction& tx)
+   std::string wallet::get_transaction_info_string(chain_database& chain_db, const transaction& trx)
    {
        std::stringstream ss;
        asset sum_in, sum_out;
 
        ss << "Inputs:\n";
-       for (auto in : tx.inputs)
+       for (auto in : trx.inputs)
        {
           auto out = chain_db.fetch_output(in.output_ref);
           sum_in += out.amount;
@@ -787,7 +782,7 @@ namespace bts { namespace wallet {
        }
 
        ss << "Outputs:\n";
-       for (auto out : tx.outputs)
+       for (auto out : trx.outputs)
        {
           sum_out += out.amount;
           ss << "  " << get_output_info_string(out);
@@ -1074,6 +1069,7 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
 
     } while (total_input < required_in); /* Try again with the new minimum input amount if the fee ended up too high */
 
+    //TODO: randomize output order here
     trx.sigs.clear();
     sign_transaction(trx, required_signatures, true);
 

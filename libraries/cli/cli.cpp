@@ -164,7 +164,7 @@ namespace bts { namespace cli {
               
               std::string response;
               std::cout << "About to broadcast transaction:\n\n";
-              std::cout << _client->get_wallet()->get_tx_info_string(*_client->get_chain(), transaction) << "\n";
+              std::cout << _client->get_wallet()->get_transaction_info_string(*_client->get_chain(), transaction) << "\n";
               std::cout << "Send this transaction? (Y/n)\n";
               std::cin >> response;
 
@@ -583,7 +583,7 @@ namespace bts { namespace cli {
    {
        else if( cmd == "listunspent" )
        {
-          wallet->dump_utxo_set();
+          wallet->dump_unspent_outputs();
        }
        else if( cmd == "listtransactions" )
        {
