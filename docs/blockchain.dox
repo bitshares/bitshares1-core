@@ -12,15 +12,15 @@
   The basic premise behind the design is that there are three types of transactions in
   every block:
 
-  1) Determinstic Transactions - these are transactions that occur automatically every block based 
+  -# Determinstic Transactions - these are transactions that occur automatically every block based 
      upon the state of the blockchain after the prior block.  Examples of deterministic transactions
      include:
 
-      a) Inactivity Fees charged to move outputs forward in the chain.
-      b) Market Matching of Bids & Asks
-      c) Margin Calls
+      -# Inactivity Fees charged to move outputs forward in the chain.
+      -# Market Matching of Bids & Asks
+      -# Margin Calls
 
-  2) User Transactions - these are transactions initiated by users and involve signing.
+  -# User Transactions - these are transactions initiated by users and involve signing.
 
 
   A blockchain has two modes of operation, one for testing and the other for live

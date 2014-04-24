@@ -119,63 +119,6 @@ namespace bts { namespace rpc {
         
          }
 
-         void handle_http_wallet(const fc::http::request& r, const fc::http::server::response& s )
-         {
-              std::stringstream ss;
-              ss << "<html><head><title>BitShares XT Wallet</title>";
-              ss << "</head>";
-              ss << "<script type=\"text/javascript\" charset=\"utf-8\" src=\"http://code.jquery.com/jquery-1.7.2.min.js\"></script>"
-                << "<script type=\"text/javascript\" src=\"/jquery.jsonrpc.js\"></script>\n" 
-                << "<script type=\"text/javascript\">"
-                << " $(document).ready(function() {"
-                << "      $.jsonRPC.setup({"
-                << "          endPoint : 'http://localhost:9989/rpc',"
-                << "          namespace : ''"
-                << "     });"
-                << "      $(\"input#transfer\").click(function() {"
-                << "          $.jsonRPC.request('sendtoaddress', {"
-                << "              params : [$(\"text#amount\").val(), $(\"text#payto\").val(), $(\"text#memo\").val()],"
-                << "              success : function(data) {"
-                << "                 $(\"<p />\").text(data.result).appendTo($(\"p#result\"));"
-                << "              },"
-                << "              error : function(data) {"
-                << "                  $(\"<p />\").text(data.error.message).appendTo($(\"p#result\"));"
-                << "              }"
-                << "         });"
-                << "     });"
-                << "  });"
-               << " </script> ";
-
-              ss << "<body>\n";
-              ss << "  <h1>BitShares XT Wallet</h1>\n";
-              ss << "  <hr/>\n";
-              ss << "  <h3>Balance: " << _client->get_wallet()->get_balance(0).get_rounded_amount() << "</h3>";
-              ss << "  <hr/>\n";
-
-              ss << "  <div id=\"transfer\"><form>\n";
-              ss << "     <h2>Transfer</h2> \n";
-              ss << "     Pay to: <input type=\"text\" placeholder=\"Address\" id=\"payto\"/>\n";
-              ss << "     Amount: <input type=\"text\" placeholder=\"0.0\" id=\"amount\"/>\n";
-              ss << "     Memo: <input type=\"text\" placeholder=\"Memo\" id=\"memo\" />\n";
-              ss << "     <input type=\"button\" id=\"transfer\" value=\"Transfer\"/>\n";
-              ss << "     </form>\n";
-              ss << "     <p id=\"result\"> </p>\n";
-              ss << "  </div>\n";
-
-              ss << "  <hr/>";
-              ss << "  <h3>Transaction History</h3>\n";
-              ss << "  <table width=\"100%\">\n";
-              ss << "  <tr><th>Date</th><th>Type</th><th>Address</th><th>Amount</th></tr>\n";
-              ss << "  </table>\n";
-              ss << "</body></html>";
-
-              auto result = ss.str();
-
-              s.set_status( fc::http::reply::OK );
-              s.set_length( result.size() );
-              s.write( result.c_str(), result.size() );
-         }
-
          void handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
          {
                 std::string str(r.body.data(),r.body.size());
@@ -206,12 +149,21 @@ namespace bts { namespace rpc {
                       auto reply = fc::json::to_string( result );
                       s.set_length( reply.size() );
                       s.write( reply.c_str(), reply.size() );
+                      return;
                    }
                    else
                    {
+                       std::string message = "Invalid Method: " + method_name;
+                       fc::mutable_variant_object  result;
+                       result["id"]     =  rpc_call["id"];
                        s.set_status( fc::http::reply::NotFound );
-                       s.set_length( 9 );
-                       s.write( "Invalid Method", 9 );
+                       result["error"] = fc::mutable_variant_object( "message", message );
+
+                       ilog( "${e}", ("e",result) );
+                       auto reply = fc::json::to_string( result );
+                       s.set_length( reply.size() );
+                       s.write( reply.c_str(), reply.size() );
+                       return;
                    }
                 } 
                 catch ( const fc::exception& e )
@@ -230,7 +182,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
-                    ilog( "${e}", ("e",message) );
+                    elog( "${e}", ("e",message) );
                 }
                 catch (...)
                 {
@@ -238,7 +190,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
-                    ilog( "${e}", ("e",message) );
+                    elog( "${e}", ("e",message) );
                 }
          }
 
@@ -365,12 +317,16 @@ namespace bts { namespace rpc {
         fc::variant closewallet( const fc::variants& params );
         fc::variant walletpassphrase( const fc::variants& params );
         fc::variant getnewaddress( const fc::variants& params );
+        fc::variant add_send_address( const fc::variants& params );
         fc::variant _create_sendtoaddress_transaction( const fc::variants& params );
         fc::variant sendtransaction( const fc::variants& params );
         fc::variant sendtoaddress( const fc::variants& params );
         fc::variant listrecvaddresses( const fc::variants& params );
+        fc::variant list_send_addresses( const fc::variants& params );
+        fc::variant get_send_address_label( const fc::variants& params );
         fc::variant getbalance( const fc::variants& params );
         fc::variant get_transaction( const fc::variants& params );
+        fc::variant get_transaction_history( const fc::variants& params );
         fc::variant getblock( const fc::variants& params );
         fc::variant validateaddress( const fc::variants& params );
         fc::variant rescan( const fc::variants& params );
@@ -490,34 +446,45 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::walletpassphrase(const fc::variants& params)
     {
-      std::string passphrase = params[0].as_string();
-      try
-      {
-        _client->get_wallet()->unlock_wallet(passphrase);
-        return fc::variant(true);
-      }
-      catch (...)
-      {
-        throw rpc_wallet_passphrase_incorrect_exception();
-      }          
+       std::string passphrase = params[0].as_string();
+       try
+       {
+         _client->get_wallet()->unlock_wallet(passphrase);
+         return fc::variant(true);
+       }
+       catch (...)
+       {
+         throw rpc_wallet_passphrase_incorrect_exception();
+       }          
     }
+
+    fc::variant rpc_server_impl::add_send_address( const fc::variants& params )
+    {
+       FC_ASSERT( params.size() == 2 );
+       auto foreign_address = params[0].as<address>();
+       auto label = params[1].as_string();
+       
+       _client->get_wallet()->add_send_address( foreign_address, label );
+       return fc::variant(true);
+    }
+
     fc::variant rpc_server_impl::getnewaddress(const fc::variants& params)
     {
-      std::string account;
-      if (params.size() == 1)
-        account = params[0].as_string();
-      bts::blockchain::address new_address = _client->get_wallet()->new_receive_address(account);
-      return fc::variant(new_address);
+       std::string account;
+       if (params.size() == 1)
+         account = params[0].as_string();
+       bts::blockchain::address new_address = _client->get_wallet()->new_receive_address(account);
+       return fc::variant(new_address);
     }
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
     {
-      bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-      bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
-      std::string comment;
-      if (params.size() >= 3)
-        comment = params[2].as_string();
-      // TODO: we're currently ignoring optional parameter 4, [to-comment]
-      return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
+       bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
+       bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+       std::string comment;
+       if (params.size() >= 3)
+         comment = params[2].as_string();
+       // TODO: we're currently ignoring optional parameter 4, [to-comment]
+       return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
     }
     fc::variant rpc_server_impl::sendtransaction(const fc::variants& params)
     {
@@ -537,11 +504,27 @@ namespace bts { namespace rpc {
       _client->broadcast_transaction(trx);
       return fc::variant( trx.id() ); 
     }
+
     fc::variant rpc_server_impl::listrecvaddresses(const fc::variants& params)
     {
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses ); 
     }
+
+    fc::variant rpc_server_impl::get_send_address_label( const fc::variants& params )
+    {
+       FC_ASSERT( params.size() == 1 );
+      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_send_addresses();
+      auto itr = addresses.find( params[0].as<address>() );
+      if( itr == addresses.end() ) return fc::variant();
+      return fc::variant(itr->second);
+    }
+    fc::variant rpc_server_impl::list_send_addresses(const fc::variants& params)
+    {
+      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_send_addresses();
+      return fc::variant( addresses ); 
+    }
+
     fc::variant rpc_server_impl::getbalance(const fc::variants& params)
     {
       bts::blockchain::asset_type unit = 0;
@@ -549,14 +532,22 @@ namespace bts { namespace rpc {
         unit = params[0].as<bts::blockchain::asset_type>();
       return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
     }
+
+    fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
+    {
+      return fc::variant( _client->get_wallet()->get_transaction_history() );
+    }
+
     fc::variant rpc_server_impl::get_transaction(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
     }
+
     fc::variant rpc_server_impl::getblock(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
     }
+
     fc::variant rpc_server_impl::validateaddress(const fc::variants& params)
     {
       try {
@@ -567,6 +558,7 @@ namespace bts { namespace rpc {
         return fc::variant(false);
       }
     }
+
     fc::variant rpc_server_impl::rescan(const fc::variants& params)
     {
       uint32_t block_num = 0;
@@ -575,6 +567,7 @@ namespace bts { namespace rpc {
       _client->get_wallet()->scan_chain(*_client->get_chain(), block_num);
       return fc::variant(true); 
     }
+
     fc::variant rpc_server_impl::import_bitcoin_wallet(const fc::variants& params)
     {
       auto wallet_dat      = params[0].as<fc::path>();
@@ -582,6 +575,7 @@ namespace bts { namespace rpc {
       _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
       return fc::variant(true);
     }
+
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
       fc::sha256 hash(params[0].as_string());
@@ -686,6 +680,15 @@ namespace bts { namespace rpc {
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(getnewaddress_metadata);
 
+    method_data add_send_address_metadata{"add_send_address", JSON_METHOD_IMPL(add_send_address),
+                     /* description */ "add new address for sending payments",
+                     /* returns: */    "bool",
+                     /* params:          name       type      required */ 
+                                       {{"address", "address", false},
+                                        {"label", "string", false}  },
+                   /* prerequisites */ json_authenticated | wallet_open };
+    register_method(add_send_address_metadata);
+
 
     method_data sendtoaddress_metadata{"sendtoaddress", JSON_METHOD_IMPL(sendtoaddress),
                      /* description */ "Sends the given amount to the given address",
@@ -699,11 +702,26 @@ namespace bts { namespace rpc {
     register_method(sendtoaddress_metadata);
 
     method_data listrecvaddresses_metadata{"listrecvaddresses", JSON_METHOD_IMPL(listrecvaddresses),
-                         /* description */ "Lists all receive addresses associated with this wallet",
-                         /* returns: */    "vector<address>",
+                         /* description */ "Lists all receive addresses and their labels associated with this wallet",
+                         /* returns: */    "map<address,string>",
                          /* params:     */ {},
                        /* prerequisites */ json_authenticated | wallet_open};
     register_method(listrecvaddresses_metadata);
+
+    method_data listsendaddresses_metadata{"list_send_addresses", JSON_METHOD_IMPL(list_send_addresses),
+                         /* description */ "Lists all foregin addresses and their labels associated with this wallet",
+                         /* returns: */    "map<address,string>",
+                         /* params:     */ {},
+                       /* prerequisites */ json_authenticated | wallet_open};
+    register_method(listsendaddresses_metadata);
+
+    method_data get_send_address_label_metadata{"get_send_address_label", JSON_METHOD_IMPL(get_send_address_label),
+                         /* description */ "Looks up the label for a single send address, returns null if not found",
+                         /* returns: */    "string",
+                         /* params:     */ { {"address","address",true} },
+                       /* prerequisites */ json_authenticated | wallet_open};
+    register_method(get_send_address_label_metadata);
+
 
     method_data getbalance_metadata{"getbalance", JSON_METHOD_IMPL(getbalance),
                   /* description */ "Returns the wallet's current balance",
@@ -712,6 +730,15 @@ namespace bts { namespace rpc {
                                     {{"asset", "unit",  false}},
                 /* prerequisites */ json_authenticated | wallet_open};
     register_method(getbalance_metadata);
+
+
+    method_data get_transaction_history_metadata{"get_transaction_history", JSON_METHOD_IMPL(get_transaction_history),
+                       /* description */ "Retrieves all transactions into or out of this wallet.",
+                       /* returns: */    "map<transaction_id,transaction_state>",
+                       /* params:          name              type               required */ 
+                                         {},
+                     /* prerequisites */ json_authenticated};
+    register_method(get_transaction_history_metadata);
 
     method_data get_transaction_metadata{"get_transaction", JSON_METHOD_IMPL(get_transaction),
                        /* description */ "Retrieves the signed transaction matching the given transaction id",
