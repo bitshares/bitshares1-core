@@ -126,7 +126,7 @@ int main( int argc, char** argv )
       
       if (p2p_mode)
       {
-        c->load_p2p_configuration(datadir);
+        c->configure( datadir );
         if (option_variables.count("port"))
           c->listen_on_port(option_variables["port"].as<uint16_t>());
         c->connect_to_p2p_network();

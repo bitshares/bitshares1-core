@@ -98,6 +98,7 @@ namespace wallet {
            signed_transaction register_delegate( const std::string& n, const fc::variant& v );
 
            void open( const fc::path& wallet_file, const std::string& password );
+           bool close();
            void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            bool is_open() const;
 

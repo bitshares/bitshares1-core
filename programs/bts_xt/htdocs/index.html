@@ -3,12 +3,65 @@
       <title> BitShares XT Wallet </title>
       <script type="text/javascript" charset="utf-8" src="js/jquery-1.10.1.min.js" ></script>
       <script type="text/javascript" charset="utf-8" src="js/jquery.jsonrpc.js" ></script>
+
+
+       <script type="text/javascript">
+           $(document).ready(function() {
+               $.jsonRPC.setup({
+                   endPoint : 'http://localhost:9989/rpc',
+                   namespace : ''
+               });
+               $.jsonRPC.request('currentwallet', {
+                   params : [],
+                   success : function(data) {
+                       console.log( data.result );
+                       if( data.result == null )
+                         window.location.replace('/login.html');
+                       $("span#username").text( data.result ); //(data.result).appendTo($("p#result"));
+                   },
+                   error : function(data) {
+                       console.log(  'getbalance error' );
+                       console.log(  data.error );
+                       $("span#username").text( data.error.message ); 
+                   }
+               });
+               $.jsonRPC.request('getbalance', {
+                   params : [],
+                   success : function(data) {
+                       console.log( data.result );
+                       $("span#balance").text( data.result.amount ); //(data.result).appendTo($("p#result"));
+                   },
+                   error : function(data) {
+                       console.log(  'getbalance error' );
+                       console.log(  data.error );
+                       $("span#balance").text( data.error.message ); 
+                   }
+               });
+
+              $("input#transfer").click(function() {
+                  // todo validate passwords match and have all required lengths/etc.
+                  $.jsonRPC.request('sendtoaddress', {
+                      params : [$("input#payto").val(), $("input#amount").val(), $("input#memo").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          $("span#transfer_message").text( data.result ); 
+                      },
+                      error : function(data) {
+                          console.log( data.error );
+                          $("span#transfer_message").text( data.error.message ); 
+                      }
+                  });
+              });
+           });
+       </script>
+
    </head>
 <body>
 
 <h1> BitShares XT Wallet </h1>
 
-<h3> Balance: <span id="balance">0.0</span> </h3>
+<h3> Username: <span id="username">unknown</span> </h3>
+<h3> Balance: <span id="balance">unknown</span> </h3>
 <hr/>
 
 <div id="nav">
@@ -22,10 +75,13 @@
 
 <div id="transfer">
   <h2>Transfer</h2>
+  <form>
   Pay to: <input type="text" placeholder="Address" id ="payto" />
   Amount: <input type="text" placeholder="0.0" id ="amount" />
   Memo: <input type="text" placeholder="Memo" id ="memo" />
-  <input type="button" id="transfer" value="Send" />
+        <input type="button" id="transfer" value="Send" />
+  </form>
+  <p><span id="transfer_message"></span></p>
 </div>
 
 <hr/>
