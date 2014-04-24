@@ -1,0 +1,63 @@
+<html>
+   <head>
+      <title> BitShares XT Wallet </title>
+      <script type="text/javascript" charset="utf-8" src="js/jquery-1.10.1.min.js" ></script>
+      <script type="text/javascript" src="js/jquery.jsonrpc.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $.jsonRPC.setup({
+                    endPoint : 'http://localhost:9989/rpc',
+                    namespace : ''
+                });
+                $("input#create_account").click(function() {
+                    // todo validate passwords match and have all required lengths/etc.
+                    $.jsonRPC.request('createwallet', {
+                        params : [$("input#username").val(), $("input#password").val(), $("input#spend_password").val()],
+                        success : function(data) {
+                            $("<p />").text(data.result).appendTo($("p#result"));
+                            window.location.replace('/');
+                        },
+                        error : function(data) {
+                            $("<p />").text(data.error.message).appendTo($("p#result"));
+                        }
+                    });
+                });
+            });
+        </script>
+   </head>
+<body>
+<h1> BitShares XT Login </h1>
+<hr/>
+  <form>
+     <div id="username_div">
+     Username: <input type="text" placeholder="default" id ="username" name="username"  />
+     </div>
+     <hr/>
+     <p>
+     Your wallet password is optional and secures your transaction history.  This password is
+     separate from your spending password which secures your private keys.   If you forget this
+     password you will be unable to view or transfer your shares.
+     </p>
+     <div id="password_div">
+     Password: <input type="text" placeholder="optional" id="password" /> 
+     </div>
+     <div id="password_again">
+     Password (again): <input type="text" placeholder="optional" id="password2" />
+     </div>
+     <hr/>
+     <p>
+     Your spending password is manditory and controls when and how your funds may be spent. If you
+     forget this password you will be unable to transfer your shares.
+     </p>
+     <div id="spend_password_div">
+     Spending Password: <input type="text" placeholder="optional" name="spend_password" id="spend_password" /> 
+     </div>
+     <div id="spend_password_again_div">
+     Spending Password (again): <input type="text" placeholder="optional" id="spend_password2" />
+     </div>
+     <input type="button" id="create_account" value="Create Account" /> <a href="login.html">Login</a>
+  </form>
+
+</body>
+</html>

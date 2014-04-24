@@ -56,15 +56,15 @@ namespace bts { namespace client {
 
             fc::ecc::private_key                                        _trustee_key;
             fc::time_point                                              _last_block;
-
-            bts::blockchain::trx_block           _next_block;
-            bts::net::chain_client_ptr           _chain_client;
-            bts::net::node_ptr                   _p2p_node;
-            bts::blockchain::chain_database_ptr  _chain_db;
+            fc::path                                                    _data_dir;
+                                                                        
+            bts::blockchain::trx_block                                  _next_block;
+            bts::net::chain_client_ptr                                  _chain_client;
+            bts::net::node_ptr                                          _p2p_node;
+            bts::blockchain::chain_database_ptr                         _chain_db;
             std::unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
-            bts::wallet::wallet_ptr              _wallet;
-            float                                _effort;
-            fc::future<void>                     _trustee_loop_complete;
+            bts::wallet::wallet_ptr                                     _wallet;
+            fc::future<void>                                            _trustee_loop_complete;
        };
 
        void client_impl::trustee_loop()
@@ -309,10 +309,16 @@ namespace bts { namespace client {
         my->_p2p_node->listen_on_port(port_to_listen);
     }
 
-    void client::load_p2p_configuration(const fc::path& configuration_directory)
+    void client::configure(const fc::path& configuration_directory)
     {
+      my->_data_dir = configuration_directory;
       if (my->_p2p_node)
-        my->_p2p_node->load_configuration(configuration_directory);
+        my->_p2p_node->load_configuration( my->_data_dir );
+    }
+
+    fc::path client::get_data_dir()const
+    {
+       return my->_data_dir;
     }
     void client::connect_to_peer(const std::string& remote_endpoint)
 

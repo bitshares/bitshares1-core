@@ -355,6 +355,15 @@ namespace bts { namespace wallet {
       }
    }
 
+   bool wallet::close()
+   {
+      if( !is_open() ) return false;
+      save();
+      my->_wallet_dat           = fc::path();
+      my->_data                 = wallet_data();
+      my->_wallet_base_password = std::string();
+      return true;
+   }
    void wallet::open( const fc::path& wallet_dat, const fc::string& password )
    {
        try {
@@ -434,8 +443,8 @@ namespace bts { namespace wallet {
                                                        fc::ecc::private_key::generate().get_secret() ), key_password );
       }
       my->_data.set_keys( std::unordered_map<address,fc::ecc::private_key>(), key_password );
-      save();
       my->_is_open = true;
+      save();
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet ${wal}", ("wal",wallet_dat) ) }
 
   bool wallet::is_open() const
@@ -478,8 +487,7 @@ namespace bts { namespace wallet {
    void wallet::save()
    { try {
       ilog( "saving wallet\n" );
-      if(!my->_is_open)
-          return;
+      FC_ASSERT(is_open());
 
       auto wallet_json = fc::json::to_pretty_string( my->_data );
       std::vector<char> data( wallet_json.begin(), wallet_json.end() );
@@ -508,6 +516,7 @@ namespace bts { namespace wallet {
          }
          else
          {
+            ilog( "my->_wallet_dat: ${d}", ("d",my->_wallet_dat) );
             fc::json::save_to_file( my->_data, my->_wallet_dat, true );
          }
       }

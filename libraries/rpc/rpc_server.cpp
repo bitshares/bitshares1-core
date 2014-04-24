@@ -25,6 +25,7 @@ namespace bts { namespace rpc {
          fc::tcp_server      _tcp_serv;
          fc::future<void>    _accept_loop_complete;
          rpc_server*         _self;
+         std::string         _username;
 
          typedef std::map<std::string, rpc_server::method_data> method_map_type;
          method_map_type _method_map;
@@ -105,6 +106,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::InternalServerError );
                     s.write( message.c_str(), message.size() );
+                    elog( "${e}", ("e",e.to_detail_string() ) );
              } 
              catch ( ... )
              {
@@ -112,6 +114,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
+                    ilog( "${e}", ("e",message) );
              }
         
          }
@@ -180,6 +183,9 @@ namespace bts { namespace rpc {
                    auto rpc_call = fc::json::from_string( str ).get_object();
                    auto method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
+
+                   ilog( "method: ${m}  params: ${p}", ("m", method_name)("p",params) );
+                   ilog( "call: ${c}", ("c", str) );
                    
                    auto call_itr = _method_map.find( method_name );
                    if( call_itr != _method_map.end() )
@@ -196,6 +202,7 @@ namespace bts { namespace rpc {
                          s.set_status( fc::http::reply::InternalServerError );
                          result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
                       }
+                      ilog( "${e}", ("e",result) );
                       auto reply = fc::json::to_string( result );
                       s.set_length( reply.size() );
                       s.write( reply.c_str(), reply.size() );
@@ -214,6 +221,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
+                    elog( "${e}", ("e",e.to_detail_string() ) );
                 }
                 catch ( const std::exception& e )
                 {
@@ -222,6 +230,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
+                    ilog( "${e}", ("e",message) );
                 }
                 catch (...)
                 {
@@ -229,6 +238,7 @@ namespace bts { namespace rpc {
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
+                    ilog( "${e}", ("e",message) );
                 }
          }
 
@@ -347,22 +357,25 @@ namespace bts { namespace rpc {
             throw rpc_wallet_open_needed_exception(FC_LOG_MESSAGE(error, "The wallet must be open before executing this command"));
         }
 
-        fc::variant login(fc::rpc::json_connection* json_connection, const fc::variants& params);
-        fc::variant help(const fc::variants& params);
-        fc::variant openwallet(const fc::variants& params);
-        fc::variant walletpassphrase(const fc::variants& params);
-        fc::variant getnewaddress(const fc::variants& params);
-        fc::variant _create_sendtoaddress_transaction(const fc::variants& params);
-        fc::variant sendtransaction(const fc::variants& params);
-        fc::variant sendtoaddress(const fc::variants& params);
-        fc::variant listrecvaddresses(const fc::variants& params);
-        fc::variant getbalance(const fc::variants& params);
-        fc::variant get_transaction(const fc::variants& params);
-        fc::variant getblock(const fc::variants& params);
-        fc::variant validateaddress(const fc::variants& params);
-        fc::variant rescan(const fc::variants& params);
-        fc::variant import_bitcoin_wallet(const fc::variants& params);
-        fc::variant import_private_key(const fc::variants& params);
+        fc::variant login( fc::rpc::json_connection* json_connection, const fc::variants& params );
+        fc::variant help( const fc::variants& params );
+        fc::variant openwallet( const fc::variants& params );
+        fc::variant createwallet( const fc::variants& params );
+        fc::variant currentwallet( const fc::variants& params );
+        fc::variant closewallet( const fc::variants& params );
+        fc::variant walletpassphrase( const fc::variants& params );
+        fc::variant getnewaddress( const fc::variants& params );
+        fc::variant _create_sendtoaddress_transaction( const fc::variants& params );
+        fc::variant sendtransaction( const fc::variants& params );
+        fc::variant sendtoaddress( const fc::variants& params );
+        fc::variant listrecvaddresses( const fc::variants& params );
+        fc::variant getbalance( const fc::variants& params );
+        fc::variant get_transaction( const fc::variants& params );
+        fc::variant getblock( const fc::variants& params );
+        fc::variant validateaddress( const fc::variants& params );
+        fc::variant rescan( const fc::variants& params );
+        fc::variant import_bitcoin_wallet( const fc::variants& params );
+        fc::variant import_private_key( const fc::variants& params );
     };
 
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
@@ -397,21 +410,84 @@ namespace bts { namespace rpc {
       }
       return fc::variant( help_strings );
     }
+
     fc::variant rpc_server_impl::openwallet(const fc::variants& params)
     {
-      std::string passphrase;
-      if (params.size() == 1)
-        passphrase = params[0].as_string();
+       std::string username, passphrase;
+      if( params.size() == 0 )
+      {
+         username = "default";
+      }
+      else if( params.size() == 2 )
+      {
+         username   = params[0].as_string();
+         if( !params[1].is_null() )
+            passphrase = params[1].as_string();
+      }
+      else
+      {
+         FC_ASSERT( params.size() == 0 || params.size() == 2, "[username,password]" );
+      }
+       
       try
       {
-        _client->get_wallet()->open(_client->get_wallet()->get_wallet_file(), passphrase);
+        _username = username;
+        _client->get_wallet()->open( _client->get_data_dir() / (username + "_wallet.dat"), passphrase );
         return fc::variant(true);
       }
-      catch (...)
+      catch( const fc::exception& e )
       {
+         wlog( "${e}", ("e",e.to_detail_string() ) );
+         throw;
+      }
+      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
+      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
+                  //       or some other filesystem error then it should be properly reported.
         throw rpc_wallet_passphrase_incorrect_exception();
       }          
     }
+
+    fc::variant rpc_server_impl::createwallet(const fc::variants& params)
+    {
+       std::string username = "default";
+       std::string passphrase = "", keypassword;
+
+       FC_ASSERT( params.size() == 3, "username, password, keypassphrase" );
+
+       keypassword = params[0].as_string();
+       if( !params[0].is_null() ) username      = params[0].as_string();
+       if( !params[1].is_null() ) passphrase    = params[1].as_string();
+       if( !params[2].is_null() ) keypassword   = params[2].as_string();
+       
+      try
+      {
+        _username = username;
+        _client->get_wallet()->create( _client->get_data_dir() / (username + "_wallet.dat"), 
+                                       passphrase, 
+                                       keypassword );
+        return fc::variant(true);
+      }
+      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
+      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
+                  //       or some other filesystem error then it should be properly reported.
+        throw rpc_wallet_passphrase_incorrect_exception();
+      }          
+    }
+
+    fc::variant rpc_server_impl::currentwallet(const fc::variants& params)
+    {
+       FC_ASSERT( params.size() == 0, "expected parameters: []" )
+       if( !_client->get_wallet()->is_open() )
+          return fc::variant(nullptr);
+       return fc::variant(_username);
+    }
+
+    fc::variant rpc_server_impl::closewallet(const fc::variants& params)
+    {
+       FC_ASSERT( params.size() == 0, "expected parameters: []" )
+       return fc::variant( _client->get_wallet()->close() );
+    }
+
     fc::variant rpc_server_impl::walletpassphrase(const fc::variants& params)
     {
       std::string passphrase = params[0].as_string();
@@ -547,25 +623,60 @@ namespace bts { namespace rpc {
     //          /* description */ "authenticate JSON-RPC connection",
     //          /* returns: */    "bool",
     //          /* params:          name            type       required */ 
-    //                            {{"rpc_username", "string",  true},
-    //                             {"rpc_password", "string",  true}},
+    //                            {{"username", "string",  true},
+    //                             {"password", "string",  true}},
     //        /* prerequisites */ 0});
+    //
+    //
 
     method_data openwallet_metadata{"openwallet", JSON_METHOD_IMPL(openwallet),
-                  /* description */ "unlock the wallet with the given passphrase",
+                  /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
                   /* returns: */    "bool",
                   /* params:          name                 type      required */ 
-                                    {{"wallet_passphrase", "string", false}},
+                                    {{"user", "string", false} ,
+                                     {"wallet_passphrase", "string", false}},
                 /* prerequisites */ json_authenticated};
     register_method(openwallet_metadata);
-  
+
+
+    method_data createwallet_metadata{"createwallet", JSON_METHOD_IMPL(createwallet),
+                  /* description */ "create a wallet with the given passphrases",
+                  /* returns: */    "bool",
+                  /* params:          name                 type      required */ 
+                                    {
+                                     {"wallet_username", "string", true},
+                                     {"wallet_passphrase", "string", true},
+                                     {"spending_passphrase", "string", true}
+                                    },
+                /* prerequisites */ json_authenticated};
+    register_method(createwallet_metadata);
+
+
+    method_data currentwallet_metadata{"currentwallet", JSON_METHOD_IMPL(currentwallet),
+                  /* description */ "returns the username passed to openwallet",
+                  /* returns: */    "string",
+                  /* params:          name                 type      required */ 
+                                    {},
+                /* prerequisites */ };
+    register_method(currentwallet_metadata);
+
+    method_data closewallet_metadata{"closewallet", JSON_METHOD_IMPL(closewallet),
+                  /* description */ "closes the curent wallet, if one is open.",
+                  /* returns: */    "bool",
+                  /* params:          name                 type      required */ 
+                                    {},
+                /* prerequisites */ };
+    register_method(closewallet_metadata);
+
     method_data walletpassphrase_metadata{"walletpassphrase", JSON_METHOD_IMPL(walletpassphrase),
                         /* description */ "unlock the private keys in the wallet with the given passphrase",
                         /* returns: */    "bool",
                         /* params:          name                   type      required */ 
-                                          {{"spending_passphrase", "string", true}},
+                                          {{"spending_passphrase", "string", true}, 
+                                           {"timeout", "int", false} },
                       /* prerequisites */ json_authenticated | wallet_open};
     register_method(walletpassphrase_metadata);
+
 
     method_data getnewaddress_metadata{"getnewaddress", JSON_METHOD_IMPL(getnewaddress),
                      /* description */ "create a new address for receiving payments",
@@ -574,6 +685,7 @@ namespace bts { namespace rpc {
                                        {{"account", "string", false}},
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(getnewaddress_metadata);
+
 
     method_data sendtoaddress_metadata{"sendtoaddress", JSON_METHOD_IMPL(sendtoaddress),
                      /* description */ "Sends the given amount to the given address",
