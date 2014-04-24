@@ -2,16 +2,13 @@
 @defgroup wallet_specification BitShares Wallet High-Level Specification
 @brief Desired functionality and algorithms used for bitshares wallet
 
-Wallet Functionality
---------------------
-
+# Wallet Functionality
 Create a transaction cache for transactions that affect user's wallet (e.g. wallet balance)
 Compute Confirmed Balance (Confirmed if 51% of the delegates have confirmed the block by issuing a block that incorporates it)
 Compute Unconfirmed Balance
 Compute total number of transactions that affect wallet (size of transaction cache)
 
-Create transactions from user accounts
-======================================
+## Create transactions from user accounts
 - Pick appropriate set of unspent outputs to act as inputs to the transaction
 - Transfer any overage to a “change” account. Create a new change account for each transaction.
 - Compute any fees required for the transaction and add additional unspent outputs as inputs if required.
@@ -19,20 +16,16 @@ Create transactions from user accounts
 - Report if insufficient funds to perform the transaction
 - Submit transaction to the p2p network
 
-Process blocks of transactions
-==============================
+##Process blocks of transactions
 - Process each transaction in block
 
-Process user-created pending transactions
-=========================================
+## Process user-created pending transactions
 - Process each transaction as locally confirmed (shows in confirmed balance, but transaction itself shows as unconfirmed)
 
-Process peer-received pending transactions
-==========================================
+## Process peer-received pending transactions
 - Process each transaction as  unconfirmed (shows in unconfirmed balance and transaction shown as unconfirmed)
 
-Steps in processing a basic currency transaction
-================================================
+## Steps in processing a basic currency transaction
 - If any of the inputs to the transaction are from accounts we control, decrease the wallet balance by the amount in those accounts (accounts are fully spent by a transaction and any overage is sent to a “change” account as an output of the transaction)
 - If any of the outputs to the transaction are to accounts we control, increase the wallet balance by the amounts transferred to those accounts)
 
@@ -53,25 +46,23 @@ Verify Message
 Set/Verify Wallet Passphrase (none by default)
 Set/Verify Spending Passphrase
 
-Transaction output claim types
-==============================
+## Transaction output claim types
 - claim_by_signature_output: claim by owning a bitshares private key that matches public key referenced in the output
 - claim_by_pts_output: claim by owning a PTS private key that matches public key referenced in the output (these are only used for initial genesis block allocations)
 - claim_name_output: find the registered delegate public key that matches public key referenced in the output.
 
-Transaction Fee
-===============
-The transaction fee is calculated in the blockchain code. "Next fee" is put in previous block. Fee is validated by all full clients, so the generating delegate can't place an arbitrarily high fee to lock up the network. This means the fee doesn't
+## Transaction Fee
+The transaction fee rate is calculated in the blockchain code and stored into the previous block as "next fee". Fee is validated by all full clients, so the generating delegate can't place an arbitrarily high fee to lock up the network. This means the fee doesn't
 actually have to be included in the blockchain, but it's included for now for potential use of some sort by a lightweight
 client or if old blocks have been discarded from the blockchain.
 
-Wallet GUI additional features
-==============================
+## Wallet GUI additional features
+
 - Display table of all transactions sortable by different column fields
 
 
-Detailed BitShares Wallet pseudocode
-------------------------------------
+# Detailed BitShares Wallet pseudocode
+
 
 transaction_state: contains effects of a single transaction on the wallet(trx field is the "input" with the broadcast transaction data). We make a transaction_state for each transaction that impacts the wallet balances and we record the changes here to each of our wallet balances (we have balances for each asset type, and we have confirmed and unconfirmed balances for each asset type).
 
@@ -227,12 +218,10 @@ result generate_next_block(chain_database,input_transactions)
 
 @endcode
      
-General Notes
-==============
+## General Notes
 - Generation of transactions (transfer) could be speeded up a lot (there's a lot of potential for re-doing old work when the fees require more inputs to the transaction), but probably we don't care right now.
 
-Things to do (lots to be added here)
-====================================
+## Things to do (lots to be added here)
 - Function to generate unconfirmed balances from pending transactions for each asset type
 -
 
