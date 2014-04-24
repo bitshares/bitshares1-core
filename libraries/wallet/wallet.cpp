@@ -864,11 +864,13 @@ namespace bts { namespace wallet {
    { try {
       switch( out.claim_func )
       {
-         case claim_by_pts:
+         case claim_by_pts: //for genesis block
          {
-            if( is_my_address( out.as<claim_by_pts_output>().owner ) )
+           auto claim = out.as<claim_by_pts_output>();           
+           if (is_my_address(claim.owner))
             {
                 cache_output( state.trx.vote, out, out_ref, oidx );
+                state.to.push_back( my->pts_to_bts_address(claim.owner) );
                 state.adjust_balance( out.amount, 1 );
                 return true;
             }
