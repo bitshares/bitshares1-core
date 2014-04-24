@@ -90,7 +90,7 @@ namespace wallet {
            ~wallet();
 
            void set_data_directory( const fc::path& dir );
-           fc::path get_wallet_file()const;
+           fc::path get_wallet_filename_for_user(const std::string& username) const;
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
            void set_delegate_trust( uint32_t did,  bool is_trusted );
@@ -140,7 +140,7 @@ namespace wallet {
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
             */
-           void                  unlock_wallet( const std::string& key_password );
+           void                  unlock_wallet( const std::string& key_password, const fc::microseconds& duration = fc::microseconds::maximum());
            /**
             *  removes private keys from memory
             */
