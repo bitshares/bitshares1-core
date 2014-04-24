@@ -15,6 +15,8 @@
                    params : [],
                    success : function(data) {
                        console.log( data.result );
+                       if( data.result == null )
+                         window.location.replace('/login.html');
                        $("span#username").text( data.result ); //(data.result).appendTo($("p#result"));
                    },
                    error : function(data) {
