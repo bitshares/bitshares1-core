@@ -140,7 +140,7 @@ namespace wallet {
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
             */
-           void                  unlock_wallet( const std::string& key_password );
+           void                  unlock_wallet( const std::string& key_password, const fc::microseconds& duration = fc::microseconds::maximum());
            /**
             *  removes private keys from memory
             */
