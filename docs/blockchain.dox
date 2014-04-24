@@ -62,7 +62,7 @@
   next_block.next_fee  = (next_fee * (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1) + delta_fee) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY
   @endcode
 
-  block_header#next_fee is stored in units of millishares so that there is enough precision for the fee adjustment
+  bts::blockchain::block_header#next_fee is stored in units of millishares so that there is enough precision for the fee adjustment
   algorithm to operate when the @ref BTS_BLOCKCHAIN_MIN_FEE is 1 share per byte.  (A share is like a satoshi)
 
 
@@ -76,12 +76,7 @@ a margin of a couple percent above the minimum required fee.
 
   Delegates are charged an additional fee upon registering equal to 1 blocks worth of transaction fees or what ever value is specified by 
   @ref BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE.  The goal of this fee is to require a delegate to produce 10 blocks successfuly to
-  break even.    @see dpos_delegate_registration for more details.
-
-
-
-  
-    
+  break even.    @see @ref dpos_delegate_registration 
 
 
 
