@@ -3,7 +3,8 @@
 #include <boost/program_options.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scope_exit.hpp>
- 
+#include <boost/algorithm/string/join.hpp>
+
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -22,6 +23,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
+#include <bts/net/chain_server.hpp>
 
 struct bts_xt_client_test_config 
 {
@@ -29,6 +31,7 @@ struct bts_xt_client_test_config
   static fc::path bts_server_exe;
   static fc::path config_directory;
   static uint16_t base_rpc_port;
+  static uint16_t base_p2p_port;
 
   bts_xt_client_test_config() 
   {
@@ -73,10 +76,11 @@ struct bts_xt_client_test_config
     boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_messages);
   }
 };
-fc::path bts_xt_client_test_config::bts_client_exe = "e:/Invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
-fc::path bts_xt_client_test_config::bts_server_exe = "e:/Invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
+fc::path bts_xt_client_test_config::bts_client_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
+fc::path bts_xt_client_test_config::bts_server_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port = 20100;
+uint16_t bts_xt_client_test_config::base_p2p_port = 21100;
 
 #define RPC_USERNAME "test"
 #define RPC_PASSWORD "test"
@@ -86,16 +90,6 @@ uint16_t bts_xt_client_test_config::base_rpc_port = 20100;
 
 BOOST_GLOBAL_FIXTURE(bts_xt_client_test_config);
 
-
-struct genesis_block_config
-{
-   genesis_block_config():supply(0),blockheight(0){}
-   double                                            supply;
-   uint64_t                                          blockheight;
-   std::vector< std::pair<bts::blockchain::pts_address,uint64_t> > balances;
-};
-FC_REFLECT( genesis_block_config, (supply)(balances) )
-
 struct bts_server_process_info
 {
   fc::process_ptr server_process;
@@ -103,16 +97,33 @@ struct bts_server_process_info
   fc::future<void> stderr_reader_done;
   ~bts_server_process_info()
   {
-    server_process->kill();
-    if (stdout_reader_done.valid() && !stdout_reader_done.ready())
-      stdout_reader_done.wait();
-    if (stderr_reader_done.valid() && !stderr_reader_done.ready())
-      stderr_reader_done.wait();
+    if (server_process)
+    {
+      server_process->kill();
+      if (stdout_reader_done.valid() && !stdout_reader_done.ready())
+      {
+        try
+        {
+          stdout_reader_done.wait();
+        }
+        catch (fc::exception&)
+        {}
+      }
+      if (stderr_reader_done.valid() && !stderr_reader_done.ready())
+      {
+        try
+        {
+          stderr_reader_done.wait();
+        }
+        catch (fc::exception&)
+        {}
+      }
+    }
   }
 };
 typedef std::shared_ptr<bts_server_process_info> bts_server_process_info_ptr;
 
-bts_server_process_info_ptr launch_bts_server_process(const genesis_block_config& genesis_block,
+bts_server_process_info_ptr launch_bts_server_process(const bts::net::genesis_block_config& genesis_block,
                                                       const fc::ecc::private_key& trustee_key)
 {
   bts_server_process_info_ptr server_process_info = std::make_shared<bts_server_process_info>();
@@ -142,6 +153,7 @@ bts_server_process_info_ptr launch_bts_server_process(const genesis_block_config
         if (!bytes_read)
           break;
         stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
       }
     });
   server_process_info->stderr_reader_done = fc::async([err_stream,stdouterrfile]()
@@ -153,16 +165,54 @@ bts_server_process_info_ptr launch_bts_server_process(const genesis_block_config
         if (!bytes_read)
           break;
         stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
       }
     });
   return server_process_info;
 }
 
-fc::process_ptr launch_bts_client_process(uint32_t process_number, uint16_t rpc_port, 
-                                          const fc::ecc::private_key& trustee_key, 
-                                          bool act_as_trustee)
+struct test_client_info
 {
-  fc::process_ptr bts_client_process(std::make_shared<fc::process>());
+  fc::ecc::private_key private_key;
+  fc::process_ptr process;
+  uint16_t rpc_port;
+  uint16_t p2p_port;
+  bts::rpc::rpc_client_ptr rpc_client;
+  fc::future<void> stdout_reader_done;
+  fc::future<void> stderr_reader_done;
+
+  ~test_client_info()
+  {
+    process->kill();
+    if (stdout_reader_done.valid() && !stdout_reader_done.ready())
+    {
+      try
+      {
+        stdout_reader_done.wait();
+      }
+      catch (fc::exception&)
+      {}
+    }
+    if (stderr_reader_done.valid() && !stderr_reader_done.ready())
+    {
+      try
+      {
+        stderr_reader_done.wait();
+      }
+      catch (fc::exception&)
+      {}
+    }
+  }
+};
+
+void launch_bts_client_process(test_client_info& test_client,
+                               uint32_t process_number, 
+                               const fc::ecc::private_key& trustee_key, 
+                               bool act_as_trustee,
+                               fc::optional<bts::net::genesis_block_config> genesis_block,
+                               bool test_client_server_mode)
+{
+  test_client.process = std::make_shared<fc::process>();
   std::vector<std::string> options;
 
   std::ostringstream numbered_config_dir_name;
@@ -190,7 +240,7 @@ fc::process_ptr launch_bts_client_process(uint32_t process_number, uint16_t rpc_
   options.push_back("--rpcuser=" RPC_USERNAME);
   options.push_back("--rpcpassword=" RPC_PASSWORD);
   options.push_back("--rpcport");
-  options.push_back(boost::lexical_cast<std::string>(rpc_port));
+  options.push_back(boost::lexical_cast<std::string>(test_client.rpc_port));
   options.push_back("--trustee-address");
   options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
   if (act_as_trustee)
@@ -198,14 +248,37 @@ fc::process_ptr launch_bts_client_process(uint32_t process_number, uint16_t rpc_
     options.push_back("--trustee-private-key");
     options.push_back(trustee_key.get_secret());
   }
+  if (!test_client_server_mode)
+  {
+    options.push_back("--p2p");
+    options.push_back("--port");
+    options.push_back(boost::lexical_cast<std::string>(test_client.p2p_port));
+    options.push_back("--connect-to");
+    options.push_back(std::string("127.0.0.1:") + boost::lexical_cast<std::string>(bts_xt_client_test_config::base_p2p_port));
+  }
+  if (genesis_block)
+  {
+    fc::path genesis_json(numbered_config_dir / "genesis.json");
+    fc::json::save_to_file(*genesis_block, genesis_json, true);
+    options.push_back("--genesis-json");
+    options.push_back(genesis_json.string());
+  }
 
-  bts_client_process->exec(bts_xt_client_test_config::bts_client_exe, options, numbered_config_dir);
+  {
+#ifdef _MSC_VER
+    std::ofstream launch_script((numbered_config_dir / "launch.bat").string());
+#else
+    std::ofstream launch_script((numbered_config_dir / "launch.sh").string());;
+#endif
+    launch_script << bts_xt_client_test_config::bts_client_exe.string() << " " << boost::algorithm::join(options, " ") << "\n";
+  }
 
-#if 0
+  test_client.process->exec(bts_xt_client_test_config::bts_client_exe, options, numbered_config_dir);
+
   std::shared_ptr<std::ofstream> stdouterrfile = std::make_shared<std::ofstream>((numbered_config_dir / "stdouterr.txt").string().c_str());
-  fc::buffered_istream_ptr out_stream = bts_client_process->out_stream();
-  fc::buffered_istream_ptr err_stream = bts_client_process->err_stream();
-  server_process_info->stdout_reader_done = fc::async([out_stream,stdouterrfile]()
+  fc::buffered_istream_ptr out_stream = test_client.process->out_stream();
+  fc::buffered_istream_ptr err_stream = test_client.process->err_stream();
+  test_client.stdout_reader_done = fc::async([out_stream,stdouterrfile]()
     {
       char buf[1024];
       for (;;)
@@ -214,9 +287,10 @@ fc::process_ptr launch_bts_client_process(uint32_t process_number, uint16_t rpc_
         if (!bytes_read)
           break;
         stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
       }
     });
-  server_process_info->stderr_reader_done = fc::async([err_stream,stdouterrfile]()
+  test_client.stderr_reader_done = fc::async([err_stream,stdouterrfile]()
     {
       char buf[1024];
       for (;;)
@@ -225,23 +299,16 @@ fc::process_ptr launch_bts_client_process(uint32_t process_number, uint16_t rpc_
         if (!bytes_read)
           break;
         stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
       }
     });
-#endif
-  return bts_client_process;
 }
 
-struct test_client
-{
-  fc::ecc::private_key private_key;
-  fc::process_ptr process;
-  uint16_t rpc_port;
-  bts::rpc::rpc_client_ptr rpc_client;
-};
+bool test_client_server = false;
 
 BOOST_AUTO_TEST_CASE(transfer_test)
 {
-  std::vector<test_client> client_processes;
+  std::vector<test_client_info> client_processes;
 
   const uint32_t test_process_count = 10;
 
@@ -249,7 +316,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
 
   // generate a genesis block giving 100bts to each account
   BOOST_TEST_MESSAGE("Generating keys for " << test_process_count << " clients");
-  genesis_block_config genesis_block;
+  bts::net::genesis_block_config genesis_block;
   for (int i = 0; i < test_process_count; ++i)
   {
     client_processes[i].private_key = fc::ecc::private_key::generate();
@@ -260,15 +327,25 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Generating trustee keypair");
   fc::ecc::private_key trustee_key = fc::ecc::private_key::generate();
 
-  BOOST_TEST_MESSAGE("Launching bts_xt_server processe");
-  bts_server_process_info_ptr bts_server_process = launch_bts_server_process(genesis_block, trustee_key);
+  bts_server_process_info_ptr bts_server_process;
+  if (test_client_server)
+  {
+    BOOST_TEST_MESSAGE("Launching bts_xt_server processe");
+    bts_server_process = launch_bts_server_process(genesis_block, trustee_key);
+  }
 
   BOOST_TEST_MESSAGE("Launching " << test_process_count << " bts_xt_client processes");
   for (int i = 0; i < test_process_count; ++i)
   {
     client_processes[i].rpc_port = bts_xt_client_test_config::base_rpc_port + i;
-    client_processes[i].process = launch_bts_client_process(i, client_processes[i].rpc_port,
-                                                            trustee_key, i == 0);
+    client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
+    fc::optional<bts::net::genesis_block_config> optional_genesis_block;
+    if (i == 0 && !test_client_server)
+      optional_genesis_block = genesis_block;
+    launch_bts_client_process(client_processes[i], i, trustee_key,
+                              i == 0, 
+                              optional_genesis_block,
+                              test_client_server);
   }
 
   BOOST_TEST_MESSAGE("Establishing JSON-RPC connections to all processes");
@@ -282,7 +359,27 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (int i = 0; i < test_process_count; ++i)
     client_processes[i].rpc_client->login(RPC_USERNAME, RPC_PASSWORD);
 
-  BOOST_TEST_MESSAGE("Verifying all clients have zero balance");
+  BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
+  for (int i = 0; i < test_process_count; ++i)
+  {
+    try
+    {
+      bts::blockchain::asset balance = client_processes[i].rpc_client->getbalance(0);
+      BOOST_FAIL("I should not be allowed to check the balance before opening a wallet");
+    }
+    catch (fc::exception&)
+    {
+      BOOST_TEST_PASSPOINT();
+    }
+  }
+
+  BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
+  for (int i = 0; i < test_process_count; ++i)
+  {
+    client_processes[i].rpc_client->openwallet();
+  }
+
+  BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
   for (int i = 0; i < test_process_count; ++i)
   {
     bts::blockchain::asset balance = client_processes[i].rpc_client->getbalance(0);
@@ -292,7 +389,15 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
   for (int i = 0; i < test_process_count; ++i)
   {
-    BOOST_CHECK(!client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase"));
+    try
+    {
+      client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase");
+      BOOST_FAIL("Unlocking my spending key with the wrong passphrase should throw");
+    }
+    catch (fc::exception&)
+    {
+      BOOST_TEST_PASSPOINT();
+    }
     BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE));
   }
 
@@ -343,14 +448,5 @@ BOOST_AUTO_TEST_CASE(transfer_test)
       if (fc::time_point::now() > transfer_time + fc::seconds(35))
         BOOST_FAIL("Client did not report receiving the transfer within 35 seconds");
     }
-  }
-
-  try{
-    BOOST_TEST_MESSAGE("sleeping");
-    fc::usleep( fc::seconds(10) );
-  } catch ( const fc::exception& e )
-  {
-    wlog( "${e}", ("e",e.to_detail_string() ) );
-    throw;
   }
 }

@@ -116,9 +116,9 @@ namespace wallet {
            trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs);
 
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
-           address                                 new_recv_address( const std::string& label = "" );
+           address                                 new_receive_address( const std::string& label = "" );
            fc::ecc::public_key                     new_public_key( const std::string& label = "" );
-           std::unordered_map<address,std::string> get_recv_addresses()const;
+           std::unordered_map<address,std::string> get_receive_addresses()const;
            bool                                    is_my_address( const address& a )const;
            bool                                    is_my_address( const pts_address& a )const;
 
@@ -156,7 +156,7 @@ namespace wallet {
            void mark_as_spent( const output_reference& r );
 
            void dump_txs(bts::blockchain::chain_database& db, uint32_t count);
-           void dump_utxo_set();
+           void dump_unspent_outputs();
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
@@ -172,7 +172,7 @@ namespace wallet {
                                                       const std::string& memo);
            signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
 
-           std::string                         get_tx_info_string(bts::blockchain::chain_database& db, const transaction& tx);
+           std::string                         get_transaction_info_string(bts::blockchain::chain_database& db, const transaction& tx);
            virtual std::string                 get_output_info_string(const trx_output& out);
            virtual std::string                 get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
 
