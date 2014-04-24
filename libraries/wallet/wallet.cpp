@@ -410,11 +410,11 @@ namespace bts { namespace wallet {
    void wallet::set_data_directory( const fc::path& dir )
    {
       my->_data_dir = dir;
-      my->_wallet_dat = dir / "wallet.bts";
    }
-   fc::path wallet::get_wallet_file()const
+
+   fc::path wallet::get_wallet_filename_for_user(const std::string& username) const
    {
-      return my->_wallet_dat;
+      return my->_data_dir / (username + "_wallet.dat");
    }
 
    void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )

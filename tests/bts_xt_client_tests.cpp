@@ -25,6 +25,9 @@
 #include <bts/blockchain/asset.hpp>
 #include <bts/net/chain_server.hpp>
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Parse the command line for configuration options here ///////////////////////
 struct bts_xt_client_test_config 
 {
   static fc::path bts_client_exe;
@@ -76,8 +79,8 @@ struct bts_xt_client_test_config
     boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_messages);
   }
 };
-fc::path bts_xt_client_test_config::bts_client_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
-fc::path bts_xt_client_test_config::bts_server_exe = "c:/gh/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
+fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
+fc::path bts_xt_client_test_config::bts_server_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port = 20100;
 uint16_t bts_xt_client_test_config::base_p2p_port = 21100;
@@ -87,101 +90,26 @@ uint16_t bts_xt_client_test_config::base_p2p_port = 21100;
 #define WALLET_PASPHRASE "testtest"
 #define INITIAL_BALANCE 100000000
 
-
 BOOST_GLOBAL_FIXTURE(bts_xt_client_test_config);
 
-struct bts_server_process_info
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+// class to log stdio and shut down the controlled process when destructed
+struct managed_process
 {
-  fc::process_ptr server_process;
-  fc::future<void> stdout_reader_done;
-  fc::future<void> stderr_reader_done;
-  ~bts_server_process_info()
-  {
-    if (server_process)
-    {
-      server_process->kill();
-      if (stdout_reader_done.valid() && !stdout_reader_done.ready())
-      {
-        try
-        {
-          stdout_reader_done.wait();
-        }
-        catch (fc::exception&)
-        {}
-      }
-      if (stderr_reader_done.valid() && !stderr_reader_done.ready())
-      {
-        try
-        {
-          stderr_reader_done.wait();
-        }
-        catch (fc::exception&)
-        {}
-      }
-    }
-  }
-};
-typedef std::shared_ptr<bts_server_process_info> bts_server_process_info_ptr;
-
-bts_server_process_info_ptr launch_bts_server_process(const bts::net::genesis_block_config& genesis_block,
-                                                      const fc::ecc::private_key& trustee_key)
-{
-  bts_server_process_info_ptr server_process_info = std::make_shared<bts_server_process_info>();
-  server_process_info->server_process = std::make_shared<fc::process>();
-  
-  std::vector<std::string> options;
-  options.push_back("--trustee-address");
-  options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
-
-  fc::path server_config_dir = bts_xt_client_test_config::config_directory / "BitSharesX_Server";
-  fc::remove_all(server_config_dir);
-  fc::create_directories(server_config_dir);
-
-  fc::json::save_to_file(genesis_block, server_config_dir / "genesis.json", true);
-
-  server_process_info->server_process->exec(bts_xt_client_test_config::bts_server_exe, options, server_config_dir);
-
-  std::shared_ptr<std::ofstream> stdouterrfile = std::make_shared<std::ofstream>((server_config_dir / "stdouterr.txt").string().c_str());
-  fc::buffered_istream_ptr out_stream = server_process_info->server_process->out_stream();
-  fc::buffered_istream_ptr err_stream = server_process_info->server_process->err_stream();
-  server_process_info->stdout_reader_done = fc::async([out_stream,stdouterrfile]()
-    {
-      char buf[1024];
-      for (;;)
-      {
-        size_t bytes_read = out_stream->readsome(buf, sizeof(buf));
-        if (!bytes_read)
-          break;
-        stdouterrfile->write(buf, bytes_read);
-        stdouterrfile->flush();
-      }
-    });
-  server_process_info->stderr_reader_done = fc::async([err_stream,stdouterrfile]()
-    {
-      char buf[1024];
-      for (;;)
-      {
-        size_t bytes_read = err_stream->readsome(buf, sizeof(buf));
-        if (!bytes_read)
-          break;
-        stdouterrfile->write(buf, bytes_read);
-        stdouterrfile->flush();
-      }
-    });
-  return server_process_info;
-}
-
-struct test_client_info
-{
-  fc::ecc::private_key private_key;
   fc::process_ptr process;
-  uint16_t rpc_port;
-  uint16_t p2p_port;
-  bts::rpc::rpc_client_ptr rpc_client;
   fc::future<void> stdout_reader_done;
   fc::future<void> stderr_reader_done;
 
-  ~test_client_info()
+  ~managed_process();
+  void log_stdout_stderr_to_file(const fc::path& logfile);
+};
+
+managed_process::~managed_process()
+{
+  if (process)
   {
     process->kill();
     if (stdout_reader_done.valid() && !stdout_reader_done.ready())
@@ -203,16 +131,89 @@ struct test_client_info
       {}
     }
   }
-};
+}
 
-void launch_bts_client_process(test_client_info& test_client,
-                               uint32_t process_number, 
-                               const fc::ecc::private_key& trustee_key, 
-                               bool act_as_trustee,
-                               fc::optional<bts::net::genesis_block_config> genesis_block,
-                               bool test_client_server_mode)
+void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
 {
-  test_client.process = std::make_shared<fc::process>();
+  std::shared_ptr<std::ofstream> stdouterrfile = std::make_shared<std::ofstream>(logfile.string().c_str());
+  fc::buffered_istream_ptr out_stream = process->out_stream();
+  fc::buffered_istream_ptr err_stream = process->err_stream();
+  stdout_reader_done = fc::async([out_stream,stdouterrfile]()
+    {
+      char buf[1024];
+      for (;;)
+      {
+        size_t bytes_read = out_stream->readsome(buf, sizeof(buf));
+        if (!bytes_read)
+          break;
+        stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
+      }
+    });
+  stderr_reader_done = fc::async([err_stream,stdouterrfile]()
+    {
+      char buf[1024];
+      for (;;)
+      {
+        size_t bytes_read = err_stream->readsome(buf, sizeof(buf));
+        if (!bytes_read)
+          break;
+        stdouterrfile->write(buf, bytes_read);
+        stdouterrfile->flush();
+      }
+    });  
+}
+
+struct bts_server_process : managed_process
+{
+  void launch(const bts::net::genesis_block_config& genesis_block, const fc::ecc::private_key& trustee_key);
+};
+typedef std::shared_ptr<bts_server_process> bts_server_process_ptr;
+
+void bts_server_process::launch(const bts::net::genesis_block_config& genesis_block,
+                                const fc::ecc::private_key& trustee_key)
+{
+  process = std::make_shared<fc::process>();
+  
+  std::vector<std::string> options;
+  options.push_back("--trustee-address");
+  options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
+
+  fc::path server_config_dir = bts_xt_client_test_config::config_directory / "BitSharesX_Server";
+  fc::remove_all(server_config_dir);
+  fc::create_directories(server_config_dir);
+
+  fc::json::save_to_file(genesis_block, server_config_dir / "genesis.json", true);
+
+  process->exec(bts_xt_client_test_config::bts_server_exe, options, server_config_dir);
+
+  log_stdout_stderr_to_file(server_config_dir / "stdouterr.txt");
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+struct bts_client_process : managed_process
+{
+  fc::ecc::private_key private_key;
+  uint16_t rpc_port;
+  uint16_t p2p_port;
+  bts::rpc::rpc_client_ptr rpc_client;
+
+  void launch(uint32_t process_number, 
+              const fc::ecc::private_key& trustee_key, 
+              bool act_as_trustee,
+              fc::optional<bts::net::genesis_block_config> genesis_block,
+              bool test_client_server_mode);
+};
+typedef std::shared_ptr<bts_client_process> bts_client_process_ptr;
+
+void bts_client_process::launch(uint32_t process_number, 
+                                const fc::ecc::private_key& trustee_key, 
+                                bool act_as_trustee,
+                                fc::optional<bts::net::genesis_block_config> genesis_block,
+                                bool test_client_server_mode)
+{
+  process = std::make_shared<fc::process>();
   std::vector<std::string> options;
 
   std::ostringstream numbered_config_dir_name;
@@ -229,7 +230,7 @@ void launch_bts_client_process(test_client_info& test_client,
   {
     bts::wallet::wallet_ptr wallet = std::make_shared<bts::wallet::wallet>();
     wallet->set_data_directory(numbered_config_dir);
-    fc::path wallet_data_filename = wallet->get_wallet_file();
+    fc::path wallet_data_filename = wallet->get_wallet_filename_for_user("default");
     wallet->create(wallet_data_filename, "", WALLET_PASPHRASE);
   }
 
@@ -240,7 +241,7 @@ void launch_bts_client_process(test_client_info& test_client,
   options.push_back("--rpcuser=" RPC_USERNAME);
   options.push_back("--rpcpassword=" RPC_PASSWORD);
   options.push_back("--rpcport");
-  options.push_back(boost::lexical_cast<std::string>(test_client.rpc_port));
+  options.push_back(boost::lexical_cast<std::string>(rpc_port));
   options.push_back("--trustee-address");
   options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
   if (act_as_trustee)
@@ -252,7 +253,7 @@ void launch_bts_client_process(test_client_info& test_client,
   {
     options.push_back("--p2p");
     options.push_back("--port");
-    options.push_back(boost::lexical_cast<std::string>(test_client.p2p_port));
+    options.push_back(boost::lexical_cast<std::string>(p2p_port));
     options.push_back("--connect-to");
     options.push_back(std::string("127.0.0.1:") + boost::lexical_cast<std::string>(bts_xt_client_test_config::base_p2p_port));
   }
@@ -273,44 +274,24 @@ void launch_bts_client_process(test_client_info& test_client,
     launch_script << bts_xt_client_test_config::bts_client_exe.string() << " " << boost::algorithm::join(options, " ") << "\n";
   }
 
-  test_client.process->exec(bts_xt_client_test_config::bts_client_exe, options, numbered_config_dir);
+  process->exec(bts_xt_client_test_config::bts_client_exe, options, numbered_config_dir);
 
-  std::shared_ptr<std::ofstream> stdouterrfile = std::make_shared<std::ofstream>((numbered_config_dir / "stdouterr.txt").string().c_str());
-  fc::buffered_istream_ptr out_stream = test_client.process->out_stream();
-  fc::buffered_istream_ptr err_stream = test_client.process->err_stream();
-  test_client.stdout_reader_done = fc::async([out_stream,stdouterrfile]()
-    {
-      char buf[1024];
-      for (;;)
-      {
-        size_t bytes_read = out_stream->readsome(buf, sizeof(buf));
-        if (!bytes_read)
-          break;
-        stdouterrfile->write(buf, bytes_read);
-        stdouterrfile->flush();
-      }
-    });
-  test_client.stderr_reader_done = fc::async([err_stream,stdouterrfile]()
-    {
-      char buf[1024];
-      for (;;)
-      {
-        size_t bytes_read = err_stream->readsome(buf, sizeof(buf));
-        if (!bytes_read)
-          break;
-        stdouterrfile->write(buf, bytes_read);
-        stdouterrfile->flush();
-      }
-    });
+  log_stdout_stderr_to_file(numbered_config_dir / "stdouterr.txt");
 }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct bts_client_launcher_fixture
+{
+  
+};
 
 bool test_client_server = false;
 
 BOOST_AUTO_TEST_CASE(transfer_test)
 {
-  std::vector<test_client_info> client_processes;
+  std::vector<bts_client_process> client_processes;
 
-  const uint32_t test_process_count = 10;
+  const uint32_t test_process_count = 2;
 
   client_processes.resize(test_process_count);
 
@@ -327,11 +308,12 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Generating trustee keypair");
   fc::ecc::private_key trustee_key = fc::ecc::private_key::generate();
 
-  bts_server_process_info_ptr bts_server_process;
+  bts_server_process_ptr server_process;
   if (test_client_server)
   {
     BOOST_TEST_MESSAGE("Launching bts_xt_server processe");
-    bts_server_process = launch_bts_server_process(genesis_block, trustee_key);
+    server_process = std::make_shared<bts_server_process>();
+    server_process->launch(genesis_block, trustee_key);
   }
 
   BOOST_TEST_MESSAGE("Launching " << test_process_count << " bts_xt_client processes");
@@ -342,10 +324,8 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     fc::optional<bts::net::genesis_block_config> optional_genesis_block;
     if (i == 0 && !test_client_server)
       optional_genesis_block = genesis_block;
-    launch_bts_client_process(client_processes[i], i, trustee_key,
-                              i == 0, 
-                              optional_genesis_block,
-                              test_client_server);
+    client_processes[i].launch(i, trustee_key, i == 0, 
+                               optional_genesis_block, test_client_server);
   }
 
   BOOST_TEST_MESSAGE("Establishing JSON-RPC connections to all processes");

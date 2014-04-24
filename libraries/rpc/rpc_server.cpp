@@ -269,7 +269,7 @@ namespace bts { namespace rpc {
               break;
           }
           if (arguments.size() < required_argument_count)
-            FC_THROW_EXCEPTION(exception, "too many arguments (expected at leasst ${count})", ("count", required_argument_count));
+            FC_THROW_EXCEPTION(exception, "too few arguments (expected at leasst ${count})", ("count", required_argument_count));
 
           return method_data.method(arguments);
         }
@@ -345,7 +345,6 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
-      FC_ASSERT( params.size() == 0 );
       std::vector<std::vector<std::string> > help_strings;
       for (const method_map_type::value_type& value : _method_map)
       {
@@ -369,26 +368,18 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::openwallet(const fc::variants& params)
     {
-       std::string username, passphrase;
-      if( params.size() == 0 )
-      {
-         username = "default";
-      }
-      else if( params.size() == 2 )
-      {
-         username   = params[0].as_string();
-         if( !params[1].is_null() )
-            passphrase = params[1].as_string();
-      }
-      else
-      {
-         FC_ASSERT( params.size() == 0 || params.size() == 2, "[username,password]" );
-      }
+      std::string username = "default";
+      if (params.size() >= 1 && !params[0].is_null() && !params[0].as_string().empty())
+        username = params[0].as_string();
+
+      std::string passphrase;
+      if( params.size() >= 2 && !params[1].is_null() )
+        passphrase = params[1].as_string();
        
       try
       {
         _username = username;
-        _client->get_wallet()->open( _client->get_data_dir() / (username + "_wallet.dat"), passphrase );
+        _client->get_wallet()->open( _client->get_wallet()->get_wallet_filename_for_user(username), passphrase );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -405,20 +396,21 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::createwallet(const fc::variants& params)
     {
-       std::string username = "default";
-       std::string passphrase = "", keypassword;
+      std::string username = "default";
+      std::string passphrase;
+      std::string keypassword;
 
-       FC_ASSERT( params.size() == 3, "username, password, keypassphrase" );
-
-       keypassword = params[0].as_string();
-       if( !params[0].is_null() ) username      = params[0].as_string();
-       if( !params[1].is_null() ) passphrase    = params[1].as_string();
-       if( !params[2].is_null() ) keypassword   = params[2].as_string();
+      if( !params[0].is_null() && !params[0].as_string().empty() ) 
+        username = params[0].as_string();
+      if( !params[1].is_null() ) 
+        passphrase = params[1].as_string();
+      if( !params[2].is_null() ) 
+        keypassword = params[2].as_string();
        
       try
       {
         _username = username;
-        _client->get_wallet()->create( _client->get_data_dir() / (username + "_wallet.dat"), 
+        _client->get_wallet()->create( _client->get_wallet()->get_wallet_filename_for_user(username),
                                        passphrase, 
                                        keypassword );
         return fc::variant(true);
@@ -432,7 +424,6 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::currentwallet(const fc::variants& params)
     {
-       FC_ASSERT( params.size() == 0, "expected parameters: []" )
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
        return fc::variant(_username);
@@ -440,7 +431,6 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::closewallet(const fc::variants& params)
     {
-       FC_ASSERT( params.size() == 0, "expected parameters: []" )
        return fc::variant( _client->get_wallet()->close() );
     }
 
@@ -627,39 +617,37 @@ namespace bts { namespace rpc {
                   /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
                   /* returns: */    "bool",
                   /* params:          name                 type      required */ 
-                                    {{"user", "string", false} ,
+                                    {{"wallet_username",   "string", false} ,
                                      {"wallet_passphrase", "string", false}},
                 /* prerequisites */ json_authenticated};
     register_method(openwallet_metadata);
 
 
     method_data createwallet_metadata{"createwallet", JSON_METHOD_IMPL(createwallet),
-                  /* description */ "create a wallet with the given passphrases",
-                  /* returns: */    "bool",
-                  /* params:          name                 type      required */ 
-                                    {
-                                     {"wallet_username", "string", true},
-                                     {"wallet_passphrase", "string", true},
-                                     {"spending_passphrase", "string", true}
-                                    },
-                /* prerequisites */ json_authenticated};
+                    /* description */ "create a wallet with the given passphrases",
+                    /* returns: */    "bool",
+                    /* params:          name                   type      required */ 
+                                      {
+                                       {"wallet_username",     "string", true},
+                                       {"wallet_passphrase",   "string", true},
+                                       {"spending_passphrase", "string", true}
+                                      },
+                  /* prerequisites */ json_authenticated};
     register_method(createwallet_metadata);
 
 
     method_data currentwallet_metadata{"currentwallet", JSON_METHOD_IMPL(currentwallet),
-                  /* description */ "returns the username passed to openwallet",
-                  /* returns: */    "string",
-                  /* params:          name                 type      required */ 
-                                    {},
-                /* prerequisites */ };
+                     /* description */ "returns the username passed to openwallet",
+                     /* returns: */    "string",
+                     /* params:     */ {},
+                   /* prerequisites */ };
     register_method(currentwallet_metadata);
 
     method_data closewallet_metadata{"closewallet", JSON_METHOD_IMPL(closewallet),
-                  /* description */ "closes the curent wallet, if one is open.",
-                  /* returns: */    "bool",
-                  /* params:          name                 type      required */ 
-                                    {},
-                /* prerequisites */ };
+                   /* description */ "closes the curent wallet, if one is open.",
+                   /* returns: */    "bool",
+                   /* params:     */ {},
+                 /* prerequisites */ };
     register_method(closewallet_metadata);
 
     method_data walletpassphrase_metadata{"walletpassphrase", JSON_METHOD_IMPL(walletpassphrase),
