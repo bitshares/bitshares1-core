@@ -34,6 +34,7 @@ namespace bts { namespace rpc {
       bool rescan(uint32_t block_num);
       bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
       bool import_private_key(const fc::sha256& hash);
+      bool openwallet(const std::string& walletpassphrase);
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -117,6 +118,10 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bool>("import_private_key", (std::string)hash);
     }
+    bool rpc_client_impl::openwallet(const std::string& walletpassphrase)
+    {
+      return _json_connection->call<bool>("openwallet", walletpassphrase);
+    }
 
   } // end namespace detail
 
@@ -196,4 +201,8 @@ namespace bts { namespace rpc {
     return my->import_private_key(hash);
   }
 
+  bool rpc_client::openwallet(const std::string& walletpassphrase)
+  {
+    return my->openwallet(walletpassphrase);
+  }
 } } // bts::rpc

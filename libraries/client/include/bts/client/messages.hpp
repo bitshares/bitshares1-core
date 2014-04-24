@@ -15,6 +15,10 @@ namespace bts { namespace client {
       static const message_type_enum type;
 
       bts::blockchain::signed_transaction trx;
+      trx_message() {}
+      trx_message(bts::blockchain::signed_transaction transaction) :
+        trx(std::move(transaction))
+      {}
    };
 
    struct block_message

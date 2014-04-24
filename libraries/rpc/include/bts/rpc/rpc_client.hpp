@@ -37,6 +37,7 @@ namespace bts { namespace rpc {
     bool rescan(uint32_t block_num = 0);
     bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
     bool import_private_key(const fc::sha256& hash);
+    bool openwallet(const std::string& walletpassphrase = "");
   private:
     std::unique_ptr<detail::rpc_client_impl> my;
   };

@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        addrs.reserve(80);
        for( uint32_t i = 0; i < 80; ++i )
        {
-          addrs.push_back( wall.new_recv_address() );
+          addrs.push_back( wall.new_receive_address() );
        }
 
        chain_database     db;
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
        db.push_block( genblk );
 
        wall.scan_chain( db );
-       wall.dump_utxo_set();
+       wall.dump_unspent_outputs();
        //db.dump_delegates();
 
        for( uint32_t i = 0; i < 1000; ++i )
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           if( i % 10 == 0 )
           {
               wall.scan_chain( db );
-              wall.dump_utxo_set();
+              wall.dump_unspent_outputs();
           }
           //db.dump_delegates();
        }

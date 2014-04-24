@@ -79,7 +79,9 @@ namespace bts { namespace blockchain {
 
 
       std::vector<uint160>  trx_ids; 
-      std::vector<uint160>  deterministic_ids;
+      /** Special transactions that any client can "know" from existing blockchain data. For example, market transactions, etc.
+          These transactions are just computed locally by each client, they are not actually broadcast over the network. */
+      std::vector<uint160>  deterministic_ids; 
    };
 
    /**
