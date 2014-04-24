@@ -332,6 +332,7 @@ namespace bts { namespace rpc {
         fc::variant rescan( const fc::variants& params );
         fc::variant import_bitcoin_wallet( const fc::variants& params );
         fc::variant import_private_key( const fc::variants& params );
+        fc::variant importprivkey( const fc::variants& params );
     };
 
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
@@ -578,9 +579,22 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
+      FC_ASSERT( params.size() == 2 );
       fc::sha256 hash(params[0].as_string());
+      auto label =  params[1].as_string();
       fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
-      _client->get_wallet()->import_key(privkey);
+      _client->get_wallet()->import_key(privkey, label);
+      _client->get_wallet()->save();
+      return fc::variant(true);
+    }
+    fc::variant rpc_server_impl::importprivkey(const fc::variants& params)
+    {
+      FC_ASSERT( params.size() == 2 );
+      auto wif   =  params[0].as_string();
+      auto label =  params[1].as_string();
+      FC_ASSERT( !"Importing from WIF format not yet implemented" );
+      // TODO: convert bitcoin wallet import format wif to privakey
+      //_client->get_wallet()->import_key(privkey, label);
       _client->get_wallet()->save();
       return fc::variant(true);
     }
@@ -781,11 +795,22 @@ namespace bts { namespace rpc {
                            /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(import_bitcoin_wallet_metadata);
 
-    method_data import_private_key_metadata{"import_private_key", JSON_METHOD_IMPL(import_private_key),
-                          /* description */ "authenticate JSON-RPC connection",
+    method_data importprivkey_metadata{"importprivkey", JSON_METHOD_IMPL(importprivkey),
+                          /* description */ "imports a bitcoin private key from wallet import format WIF",
                           /* returns: */    "bool",
                           /* params:          name           type            required */ 
-                                            {{"private_key", "private_key",  true}},
+                                            {{"key", "private_key",  true},
+                                             {"label", "string",  true},
+                                             {"rescan", "bool",  false}},
+                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+    register_method(importprivkey_metadata);
+
+    method_data import_private_key_metadata{"import_private_key", JSON_METHOD_IMPL(import_private_key),
+                          /* description */ "imports a bitshares private key from hex format",
+                          /* returns: */    "bool",
+                          /* params:          name           type            required */ 
+                                            {{"key", "private_key",  true},
+                                             {"label", "string",  true}},
                         /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(import_private_key_metadata);
 
