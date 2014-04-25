@@ -27,7 +27,7 @@ namespace bts { namespace rpc {
     bool login(const std::string& username, const std::string& password);
     bool walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout);
     bts::blockchain::address getnewaddress(const std::string& account = "");
-    bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, const bts::blockchain::asset& amount,
+    bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
     std::unordered_map<bts::blockchain::address,std::string> listrecvaddresses();
     bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);

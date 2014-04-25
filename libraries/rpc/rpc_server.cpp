@@ -489,7 +489,7 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::sendtoaddress(const fc::variants& params)
     {
       bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-      auto amount = params[1].as_int64();
+      auto amount = params[1].as_uint64();
       std::string comment;
       if (params.size() >= 3)
         comment = params[2].as_string();
@@ -703,7 +703,7 @@ namespace bts { namespace rpc {
                      /* returns: */    "transaction_id",
                      /* params:          name          type       required */ 
                                        {{"to_address", "address", true},
-                                        {"amount",     "int64",   true},
+                                        {"amount",     "uint64",   true},
                                         {"comment",    "string",  false},
                                         {"to_comment", "string",  false}},
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};

@@ -24,7 +24,7 @@ namespace bts { namespace rpc {
       bool login(const std::string& username, const std::string& password);
       bool walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout);
       bts::blockchain::address getnewaddress(const std::string& account);
-      bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, const bts::blockchain::asset& amount,
+      bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                          const std::string& comment, const std::string& comment_to);
       std::unordered_map<bts::blockchain::address,std::string> listrecvaddresses();
       bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
@@ -77,7 +77,7 @@ namespace bts { namespace rpc {
       return _json_connection->call<bts::blockchain::address>("getnewaddress", account);
     }
 
-    bts::blockchain::transaction_id_type rpc_client_impl::sendtoaddress(const bts::blockchain::address& address, const bts::blockchain::asset& amount,
+    bts::blockchain::transaction_id_type rpc_client_impl::sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                                         const std::string& comment, const std::string& comment_to)
     {
       return _json_connection->call<bts::blockchain::transaction_id_type>("sendtoaddress", fc::variant((std::string)address), fc::variant(amount), fc::variant(comment), fc::variant(comment_to));
@@ -171,7 +171,7 @@ namespace bts { namespace rpc {
     return my->getnewaddress(account);
   }
 
-  bts::blockchain::transaction_id_type rpc_client::sendtoaddress(const bts::blockchain::address& address, const bts::blockchain::asset& amount,
+  bts::blockchain::transaction_id_type rpc_client::sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                                  const std::string& comment, const std::string& comment_to)
   {
     return my->sendtoaddress(address, amount, comment, comment_to);
