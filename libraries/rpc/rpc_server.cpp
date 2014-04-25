@@ -572,7 +572,6 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
       ilog( "${params}", ("params",params) );
-      FC_ASSERT( params.size() == 2 );
       auto label = params[1].as_string();
       _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
       _client->get_wallet()->save();
