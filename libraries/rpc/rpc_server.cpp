@@ -243,6 +243,7 @@ namespace bts { namespace rpc {
                                                          const rpc_server::method_data& method_data, 
                                                          const fc::variants& arguments)
         {
+          ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & rpc_server::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
             FC_THROW_EXCEPTION(exception, "not logged in"); 
@@ -252,6 +253,7 @@ namespace bts { namespace rpc {
         fc::variant dispatch_authenticated_method(const rpc_server::method_data& method_data, 
                                                   const fc::variants& arguments)
         {
+          ilog( "arguments: ${params}", ("params",arguments) );
           if (method_data.prerequisites & rpc_server::wallet_open)
             check_wallet_is_open();
           if (method_data.prerequisites & rpc_server::wallet_unlocked)
@@ -277,6 +279,7 @@ namespace bts { namespace rpc {
         // This method invokes the function directly, called by the CLI intepreter.
         fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
         {
+          ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
           auto iter = _method_map.find(method_name);
           if (iter == _method_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
@@ -569,11 +572,10 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
+      ilog( "${params}", ("params",params) );
       FC_ASSERT( params.size() == 2 );
-      fc::sha256 hash(params[0].as_string());
       auto label =  params[1].as_string();
-      fc::ecc::private_key privkey = fc::ecc::private_key::regenerate(hash);
-      _client->get_wallet()->import_key(privkey, label);
+      _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
       _client->get_wallet()->save();
       return fc::variant(true);
     }

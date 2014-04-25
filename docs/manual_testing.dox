@@ -101,11 +101,13 @@ clients to get access to the BTS from the corresponding address in the genesis
 block.  After importing it, rescan the block chain so the client will see
 your new balance.  Let's do this in client 1.
 
-    >>> import_private_key 5b5ca05c294f6778f84f0f5ea01f017a0c7e10fcf7a3cba6e67ae0e6318b389d
+    >>> import_private_key "5b5ca05c294f6778f84f0f5ea01f017a0c7e10fcf7a3cba6e67ae0e6318b389d"
     >>> rescan
     done scanning block chain
     >>> getbalance
     100000000
+
+@note the quotes around the private key are required because the arguments are interpreted as JSON values. 
 
 Do a transfer
 -------------
@@ -117,7 +119,7 @@ client 2, generate an address to receive the BTS.
 
 Back in client 1, send to this address:
 
-    >>> sendtoaddress Te2sQZsqYNFdXvsFT1ieu8kMHsk 20000000
+    >>> sendtoaddress "Te2sQZsqYNFdXvsFT1ieu8kMHsk" 20000000
 
 Client 1 will show you the transaction, ask you to confirm it, and then
 broadcast the transaction to the server.
