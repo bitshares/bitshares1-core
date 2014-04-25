@@ -13,6 +13,7 @@
 #include <fc/io/json.hpp>
 
 #include <fc/log/logger.hpp>
+#include <fc/io/console.hpp>
 
 #ifndef WIN32
 #include <readline/readline.h>
@@ -40,9 +41,20 @@ namespace bts { namespace cli {
 
             void create_wallet_if_missing();
 
-            std::string get_line( const std::string& prompt = ">>> " )
+            std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false )
             {
                   std::string line;
+                  if ( no_echo )
+                  {
+                      // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
+                      std::cout<<prompt;
+                      fc::set_console_echo(false);
+                      std::getline( std::cin, line );
+                      fc::set_console_echo(true);
+                      std::cout << std::endl;
+                  } 
+                  else 
+                  {
                   #ifndef WIN32
                      char* line_read = nullptr;
                      line_read = readline(prompt.c_str());
@@ -56,6 +68,7 @@ namespace bts { namespace cli {
                      std::cout<<prompt;
                      std::getline( std::cin, line );
                   #endif ///WIN32
+                  }
                   return line;
             }
 
@@ -75,7 +88,7 @@ namespace bts { namespace cli {
 
                 while (1)
                 {
-                  std::string password = _self->get_line("wallet passphrase: ");
+                  std::string password = _self->get_line("wallet passphrase: ", true);
                   if (password.empty())
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
@@ -98,7 +111,7 @@ namespace bts { namespace cli {
               {
                 while (1)
                 {
-                  std::string password = _self->get_line("spending passphrase: ");
+                  std::string password = _self->get_line("spending passphrase: ", true);
                   if (password.empty())
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
@@ -493,7 +506,7 @@ namespace bts { namespace cli {
 
     void cli_impl::create_wallet_if_missing()
     {
-      auto wallet_dat = _client->get_wallet()->get_wallet_file();
+      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user("default");
       if( !fc::exists( wallet_dat ) )
       {
         std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
@@ -503,15 +516,15 @@ namespace bts { namespace cli {
 
         std::cout << "Please set a passphrase for encrypting your wallet: \n";
         std::string pass1, pass2;
-        pass1  = get_line("wallet passphrase: ");
+        pass1  = get_line("wallet passphrase: ", true);
         while( pass1 != pass2 )
         {
-          pass2 = get_line("walletpassword (again): ");
+          pass2 = get_line("walletpassword (again): ", true);
           if( pass2 != pass1 )
           {
             std::cout << "Your passphrases did not match, please try again.\n";
             pass2 = std::string();
-            pass1 = get_line("wallet passphrase: ");
+            pass1 = get_line("wallet passphrase: ", true);
           }
         }
         if( pass1 == std::string() )
@@ -522,11 +535,11 @@ namespace bts { namespace cli {
         std::cout << "\nPlease set a passphrase for encrypting your private keys: \n";
         std::string keypass1, keypass2;
         bool retry = false;
-        keypass1  = get_line("spending passphrase: ");
+        keypass1  = get_line("spending passphrase: ", true);
         while( keypass1 != keypass2 )
         {
           if( keypass1.size() > 8 )
-              keypass2 = get_line("spending passphrase (again): ");
+              keypass2 = get_line("spending passphrase (again): ", true);
           else
           {
               std::cout << "Your key passphrase must be more than 8 characters.\n";
@@ -542,7 +555,7 @@ namespace bts { namespace cli {
             retry = false;
             std::cout << "Please try again.\n";
             keypass2 = std::string();
-            keypass1 = get_line("spending passphrase: ");
+            keypass1 = get_line("spending passphrase: ", true);
           }
         }
         if( keypass1 == std::string() )
@@ -630,9 +643,9 @@ namespace bts { namespace cli {
        my->_cin_complete.wait();
    }
 
-   std::string cli::get_line( const std::string& prompt )
+   std::string cli::get_line( const std::string& prompt, bool no_echo )
    {
-       return my->_cin_thread.async( [=](){ return my->get_line( prompt ); } ).wait();
+       return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
    }
 
    client_ptr cli::client()

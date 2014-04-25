@@ -23,7 +23,7 @@ namespace bts { namespace cli {
 
          virtual void list_delegates( uint32_t count = 0 );
          
-         std::string get_line( const std::string& prompt = ">>> " );
+         std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false );
 
          void confirm_and_broadcast(signed_transaction& tx);
          void wait();

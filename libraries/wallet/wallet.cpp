@@ -72,7 +72,7 @@ namespace bts { namespace wallet {
        std::map<output_index, output_reference>                   output_index_to_ref; 
        std::map<output_index, int32_t>                            votes;
 
-       std::unordered_map<address,fc::ecc::private_key>    get_keys( const std::string& password )
+       std::unordered_map<address,fc::ecc::private_key>    decrypt_keys( const std::string& password )
        { try {
           //ilog( "get_keys with password '${pass}'", ("pass",password) );
           std::unordered_map<address, fc::ecc::private_key> keys;
@@ -101,12 +101,12 @@ namespace bts { namespace wallet {
           auto plain_txt = fc::raw::pack( k );
           //ilog( "new_password '${p}'  plaint_txt '${pt}' size ${s}", ("p",password)("pt",plain_txt)("s",plain_txt.size()) );
           encrypted_keys = fc::aes_encrypt( fc::sha512::hash( password.c_str(), password.size() ), plain_txt );
-          FC_ASSERT( k == get_keys(password) );
+          // this is too expensive to leave in all the time: FC_ASSERT( k == decrypt_keys(password) );
        }
 
        void change_password( const std::string& old_password, const std::string& new_password )
        {
-          set_keys( get_keys( old_password ), new_password );
+          set_keys( decrypt_keys( old_password ), new_password );
           set_base_key( get_base_key( old_password ), new_password );
        }
 
@@ -410,11 +410,11 @@ namespace bts { namespace wallet {
    void wallet::set_data_directory( const fc::path& dir )
    {
       my->_data_dir = dir;
-      my->_wallet_dat = dir / "wallet.bts";
    }
-   fc::path wallet::get_wallet_file()const
+
+   fc::path wallet::get_wallet_filename_for_user(const std::string& username) const
    {
-      return my->_wallet_dat;
+      return my->_data_dir / (username + "_wallet.dat");
    }
 
    void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
@@ -533,10 +533,9 @@ namespace bts { namespace wallet {
    address   wallet::import_key( const fc::ecc::private_key& key, const std::string& label )
    { try {
       FC_ASSERT( !is_locked() );
-      auto keys = my->_data.get_keys( my->_wallet_key_password );
       auto addr = address(key.get_public_key());
-      keys[addr] = key;
-      my->_data.set_keys( keys, my->_wallet_key_password );
+      my->_my_keys[addr] = key;
+      my->_data.set_keys( my->_my_keys, my->_wallet_key_password );
       my->_data.receive_addresses[addr] = label;
 
       my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr;
@@ -576,21 +575,26 @@ namespace bts { namespace wallet {
       return my->_data.send_addresses;
    }
 
-   void                  wallet::set_fee_rate( uint64_t milli_shares_per_byte )
+   void wallet::set_fee_rate( uint64_t milli_shares_per_byte )
    {
       my->_current_fee_rate = milli_shares_per_byte;
    }
 
-   void                  wallet::unlock_wallet( const std::string& key_password )
+   void wallet::unlock_wallet( const std::string& key_password, const fc::microseconds& duration )
    { try {
       my->_data.get_base_key( key_password );
       my->_wallet_key_password = key_password;
+      my->_my_keys = my->_data.decrypt_keys(key_password);
    } FC_RETHROW_EXCEPTIONS( warn, "unable to unlock wallet" ) }
-   void                  wallet::lock_wallet()
+
+   void wallet::lock_wallet()
    {
-      my->_wallet_base_password = std::string();
+      // TODO: overwrite memory
+      my->_wallet_key_password = std::string();
+      my->_my_keys.clear();
    }
-   bool   wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
+
+   bool wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
 
 
    signed_transaction wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
@@ -630,10 +634,9 @@ namespace bts { namespace wallet {
    void wallet::sign_transaction( signed_transaction& trx, const address& addr )
    { try {
       ilog( "Sign ${trx}  ${addr}", ("trx",trx.id())("addr",addr));
-      FC_ASSERT( my->_wallet_key_password.size() );
-      auto keys = my->_data.get_keys( my->_wallet_key_password );
-      auto priv_key_itr = keys.find(addr);
-      FC_ASSERT( priv_key_itr != keys.end() );
+      FC_ASSERT( !is_locked() );
+      auto priv_key_itr = my->_my_keys.find(addr);
+      FC_ASSERT( priv_key_itr != my->_my_keys.end() );
       trx.sign( priv_key_itr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to sign transaction ${trx} for ${addr}", ("trx",trx)("addr",addr) ) }
 
@@ -864,11 +867,13 @@ namespace bts { namespace wallet {
    { try {
       switch( out.claim_func )
       {
-         case claim_by_pts:
+         case claim_by_pts: //for genesis block
          {
-            if( is_my_address( out.as<claim_by_pts_output>().owner ) )
+           auto claim = out.as<claim_by_pts_output>();           
+           if (is_my_address(claim.owner))
             {
                 cache_output( state.trx.vote, out, out_ref, oidx );
+                state.to.push_back( my->pts_to_bts_address(claim.owner) );
                 state.adjust_balance( out.amount, 1 );
                 return true;
             }
