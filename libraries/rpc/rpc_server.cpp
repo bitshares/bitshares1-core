@@ -274,7 +274,7 @@ namespace bts { namespace rpc {
               break;
           }
           if (arguments.size() < required_argument_count)
-            FC_THROW_EXCEPTION(exception, "too few arguments (expected at leasst ${count})", ("count", required_argument_count));
+            FC_THROW_EXCEPTION(exception, "too few arguments (expected at least ${count})", ("count", required_argument_count));
 
           return method_data.method(arguments);
         }
@@ -444,9 +444,10 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::walletpassphrase(const fc::variants& params)
     {
        std::string passphrase = params[0].as_string();
+       uint32_t timeout_sec = (uint32_t)params[1].as_uint64();
        try
        {
-         _client->get_wallet()->unlock_wallet(passphrase);
+         _client->get_wallet()->unlock_wallet(passphrase, fc::seconds(timeout_sec));
          return fc::variant(true);
        }
        catch (...)
@@ -457,7 +458,6 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::add_send_address( const fc::variants& params )
     {
-       FC_ASSERT( params.size() == 2 );
        auto foreign_address = params[0].as<address>();
        auto label = params[1].as_string();
        
@@ -492,7 +492,7 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::sendtoaddress(const fc::variants& params)
     {
       bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-      auto amount = params[1].as_int64();
+      auto amount = params[1].as_uint64();
       std::string comment;
       if (params.size() >= 3)
         comment = params[2].as_string();
@@ -510,7 +510,6 @@ namespace bts { namespace rpc {
 
     fc::variant rpc_server_impl::get_send_address_label( const fc::variants& params )
     {
-       FC_ASSERT( params.size() == 1 );
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_send_addresses();
       auto itr = addresses.find( params[0].as<address>() );
       if( itr == addresses.end() ) return fc::variant();
@@ -576,21 +575,26 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
       ilog( "${params}", ("params",params) );
-      FC_ASSERT( params.size() == 2 );
-      auto label =  params[1].as_string();
+      auto label = params[1].as_string();
       _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
       _client->get_wallet()->save();
       return fc::variant(true);
     }
     fc::variant rpc_server_impl::importprivkey(const fc::variants& params)
     {
-      FC_ASSERT( params.size() == 2 );
       auto wif   =  params[0].as_string();
       auto label =  params[1].as_string();
+      bool rescan = false;
+      if (params.size() == 3 && params[2].as_bool())
+        rescan = true;
       FC_ASSERT( !"Importing from WIF format not yet implemented" );
       // TODO: convert bitcoin wallet import format wif to privakey
       //_client->get_wallet()->import_key(privkey, label);
       _client->get_wallet()->save();
+
+      if (rescan)
+        _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
+        
       return fc::variant(true);
     }
 
@@ -674,7 +678,7 @@ namespace bts { namespace rpc {
                         /* returns: */    "bool",
                         /* params:          name                   type      required */ 
                                           {{"spending_passphrase", "string", true}, 
-                                           {"timeout", "int", false} },
+                                           {"timeout",             "int",    true} },
                       /* prerequisites */ json_authenticated | wallet_open};
     register_method(walletpassphrase_metadata);
 
@@ -688,12 +692,12 @@ namespace bts { namespace rpc {
     register_method(getnewaddress_metadata);
 
     method_data add_send_address_metadata{"add_send_address", JSON_METHOD_IMPL(add_send_address),
-                     /* description */ "add new address for sending payments",
-                     /* returns: */    "bool",
-                     /* params:          name       type      required */ 
-                                       {{"address", "address", false},
-                                        {"label", "string", false}  },
-                   /* prerequisites */ json_authenticated | wallet_open };
+                        /* description */ "add new address for sending payments",
+                        /* returns: */    "bool",
+                        /* params:          name       type       required */ 
+                                          {{"address", "address", true},
+                                           {"label",   "string",  true}  },
+                      /* prerequisites */ json_authenticated | wallet_open };
     register_method(add_send_address_metadata);
 
 
@@ -702,7 +706,7 @@ namespace bts { namespace rpc {
                      /* returns: */    "transaction_id",
                      /* params:          name          type       required */ 
                                        {{"to_address", "address", true},
-                                        {"amount",     "int64",   true},
+                                        {"amount",     "uint64",   true},
                                         {"comment",    "string",  false},
                                         {"to_comment", "string",  false}},
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};
@@ -723,10 +727,11 @@ namespace bts { namespace rpc {
     register_method(listsendaddresses_metadata);
 
     method_data get_send_address_label_metadata{"get_send_address_label", JSON_METHOD_IMPL(get_send_address_label),
-                         /* description */ "Looks up the label for a single send address, returns null if not found",
-                         /* returns: */    "string",
-                         /* params:     */ { {"address","address",true} },
-                       /* prerequisites */ json_authenticated | wallet_open};
+                              /* description */ "Looks up the label for a single send address, returns null if not found",
+                              /* returns: */    "string",
+                             /* params:            name          type       required */ 
+                                                { {"address",    "address", true} },
+                            /* prerequisites */ json_authenticated | wallet_open};
     register_method(get_send_address_label_metadata);
 
 
@@ -740,11 +745,10 @@ namespace bts { namespace rpc {
 
 
     method_data get_transaction_history_metadata{"get_transaction_history", JSON_METHOD_IMPL(get_transaction_history),
-                       /* description */ "Retrieves all transactions into or out of this wallet.",
-                       /* returns: */    "map<transaction_id,transaction_state>",
-                       /* params:          name              type               required */ 
-                                         {},
-                     /* prerequisites */ json_authenticated};
+                               /* description */ "Retrieves all transactions into or out of this wallet.",
+                               /* returns: */    "map<transaction_id,transaction_state>",
+                               /* params:     */ {},
+                             /* prerequisites */ json_authenticated};
     register_method(get_transaction_history_metadata);
 
     method_data get_transaction_metadata{"get_transaction", JSON_METHOD_IMPL(get_transaction),
@@ -784,26 +788,26 @@ namespace bts { namespace rpc {
                              /* returns: */    "bool",
                              /* params:          name               type       required */ 
                                                {{"wallet_filename", "string",  true},
-                                                 {"wallet_password", "string",  true}},
+                                                {"wallet_password", "string",  true}},
                            /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(import_bitcoin_wallet_metadata);
 
     method_data importprivkey_metadata{"importprivkey", JSON_METHOD_IMPL(importprivkey),
-                          /* description */ "imports a bitcoin private key from wallet import format WIF",
-                          /* returns: */    "bool",
-                          /* params:          name           type            required */ 
-                                            {{"key", "private_key",  true},
-                                             {"label", "string",  true},
-                                             {"rescan", "bool",  false}},
-                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+                     /* description */ "imports a bitcoin private key from wallet import format WIF",
+                     /* returns: */    "bool",
+                     /* params:          name           type            required */ 
+                                       {{"key",         "private_key",  true},
+                                        {"label",       "string",       true},
+                                        {"rescan",      "bool",         false}},
+                   /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(importprivkey_metadata);
 
     method_data import_private_key_metadata{"import_private_key", JSON_METHOD_IMPL(import_private_key),
                           /* description */ "imports a bitshares private key from hex format",
                           /* returns: */    "bool",
                           /* params:          name           type            required */ 
-                                            {{"key", "private_key",  true},
-                                             {"label", "string",  true}},
+                                            {{"key",         "private_key",  true},
+                                             {"label",       "string",       true}},
                         /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(import_private_key_metadata);
 

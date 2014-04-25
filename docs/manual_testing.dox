@@ -119,7 +119,7 @@ client 2, generate an address to receive the BTS.
 
 Back in client 1, send to this address:
 
-    >>> sendtoaddress "Te2sQZsqYNFdXvsFT1ieu8kMHsk" 20000000
+    >>> sendtoaddress Te2sQZsqYNFdXvsFT1ieu8kMHsk 20000000
 
 Client 1 will show you the transaction, ask you to confirm it, and then
 broadcast the transaction to the server.
