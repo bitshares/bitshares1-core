@@ -68,6 +68,20 @@
                   });
               });
 
+              $("input#unlock_wallet").click(function() {
+                  $.jsonRPC.request('walletpassphrase', {
+                      params : [$("input#spending_password").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          $("span#unlock_message").text( data.result ); 
+                      },
+                      error : function(data) {
+                          console.log( data.error );
+                          $("span#unlock_message").text( data.error.message ); 
+                      }
+                  });
+              });
+
 
               $("input#rescan_wallet").click(function() {
                   $.jsonRPC.request('rescan', {
@@ -104,6 +118,12 @@
     <li> Block Explorer </li>
     <li> Address Book </li>
   </ul>
+</div>
+<div id="unock_wallet">
+  <h2>Unlock Wallet</h2>
+  Spending Password: <input type="password" placeholder="" id="spending_password" />
+        <input type="button" id="unlock_wallet" value="Unlock" />
+  <p><span id="unlock_message"></span></p>
 </div>
 
 <div id="transfer">
