@@ -20,7 +20,11 @@ namespace bts { namespace rpc {
   public:
     struct config
     {
-      config():htdocs("./htdocs"){}
+      config():rpc_user("user"),
+               rpc_password("password"),
+               rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9988")),
+               httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9989")),
+               htdocs("./htdocs"){}
       std::string      rpc_user;
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;

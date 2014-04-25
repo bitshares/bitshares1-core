@@ -473,7 +473,7 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
     {
        bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-       bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+       auto amount = params[1].as<asset>();
        std::string comment;
        if (params.size() >= 3)
          comment = params[2].as_string();
@@ -489,12 +489,12 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::sendtoaddress(const fc::variants& params)
     {
       bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-      bts::blockchain::asset amount = params[1].as<bts::blockchain::asset>();
+      auto amount = params[1].as_int64();
       std::string comment;
       if (params.size() >= 3)
         comment = params[2].as_string();
       // TODO: we're currently ignoring optional 4, [to-comment]
-      bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer(amount, destination_address, comment);
+      bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer( asset(amount,0), destination_address, comment);
       _client->broadcast_transaction(trx);
       return fc::variant( trx.id() ); 
     }
@@ -695,11 +695,11 @@ namespace bts { namespace rpc {
 
 
     method_data sendtoaddress_metadata{"sendtoaddress", JSON_METHOD_IMPL(sendtoaddress),
-                     /* description */ "Sends the given amount to the given address",
+                     /* description */ "Sends the given amount to the given address, assumes shares in DAC",
                      /* returns: */    "transaction_id",
                      /* params:          name          type       required */ 
                                        {{"to_address", "address", true},
-                                        {"amount",     "asset",   true},
+                                        {"amount",     "int64",   true},
                                         {"comment",    "string",  false},
                                         {"to_comment", "string",  false}},
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};
