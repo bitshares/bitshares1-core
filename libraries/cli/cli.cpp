@@ -116,7 +116,7 @@ namespace bts { namespace cli {
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
                   {
-                    fc::variants arguments{password};
+                    fc::variants arguments{password, 60 * 5}; // default to five minute timeout
                     _rpc_server->direct_invoke_method("walletpassphrase", arguments);
                     return;
                   }

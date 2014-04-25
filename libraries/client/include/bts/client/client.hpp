@@ -42,6 +42,7 @@ namespace bts { namespace client {
 
          // returns true if the client is connected to the network (either server or p2p)
          bool is_connected() const;
+         uint32_t get_connection_count() const;
 
          void configure( const fc::path& configuration_directory );
 

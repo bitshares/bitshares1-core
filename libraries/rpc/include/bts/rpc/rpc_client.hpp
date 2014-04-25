@@ -41,6 +41,7 @@ namespace bts { namespace rpc {
     bool createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase);
     fc::optional<std::string> currentwallet();
     bool closewallet();
+    uint32_t getconnectioncount();
   private:
     std::unique_ptr<detail::rpc_client_impl> my;
   };

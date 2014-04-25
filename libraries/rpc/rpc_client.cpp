@@ -38,6 +38,7 @@ namespace bts { namespace rpc {
       bool createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase);
       fc::optional<std::string> currentwallet();
       bool closewallet();
+      uint32_t getconnectioncount();
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -139,6 +140,10 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bool>("closewallet");
     }
+    uint32_t rpc_client_impl::getconnectioncount()
+    {
+      return _json_connection->call<uint32_t>("getconnectioncount");
+    }
   } // end namespace detail
 
 
@@ -232,6 +237,10 @@ namespace bts { namespace rpc {
   bool rpc_client::closewallet()
   {
     return my->closewallet();
+  }
+  uint32_t rpc_client::getconnectioncount()
+  {
+    return my->getconnectioncount();
   }
 
 } } // bts::rpc

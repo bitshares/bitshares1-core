@@ -339,6 +339,7 @@ namespace bts { namespace rpc {
         fc::variant import_bitcoin_wallet( const fc::variants& params );
         fc::variant import_private_key( const fc::variants& params );
         fc::variant importprivkey( const fc::variants& params );
+        fc::variant getconnectioncount(const fc::variants& params);
     };
 
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
@@ -597,6 +598,11 @@ namespace bts { namespace rpc {
         
       return fc::variant(true);
     }
+    fc::variant rpc_server_impl::getconnectioncount(const fc::variants& params)
+    {
+      return fc::variant(_client->get_connection_count());
+    }
+
 
   } // detail
 
@@ -829,6 +835,13 @@ namespace bts { namespace rpc {
                                                             {"to_comment", "string",  false}},
                                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
     register_method(_create_sendtoaddress_transaction_metadata);
+
+    method_data getconnectioncount_metadata{"getconnectioncount", JSON_METHOD_IMPL(getconnectioncount),
+                          /* description */ "returns the current number of active peer connections",
+                          /* returns: */    "bool",
+                          /* params:     */ {},
+                        /* prerequisites */ json_authenticated};
+    register_method(getconnectioncount_metadata);
 #undef JSON_METHOD_IMPL
   }
 
