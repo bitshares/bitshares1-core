@@ -39,25 +39,28 @@ namespace bts { namespace rpc {
              ilog( "handle request ${r}", ("r",r.path) );
 
              try {
-                auto auth_value = r.get_header( "Authorization" );
-                std::string username, password;
-                if( auth_value.size() )
+                if( _config.rpc_user.size() )
                 {
-                   auto auth_b64    = auth_value.substr( 6 );
-                   auto userpass    = fc::base64_decode( auth_b64 );
-                   auto split       = userpass.find( ':' );
-                   username    = userpass.substr( 0, split );
-                   password    = userpass.substr( split + 1 );
-                }
-                ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
-                if( _config.rpc_user     != username ||
-                    _config.rpc_password != password )
-                {
-                   s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
-                   std::string message = "Unauthorized";
-                   s.set_length( message.size() );
-                   s.set_status( fc::http::reply::NotAuthorized );
-                   s.write( message.c_str(), message.size() );
+                   auto auth_value = r.get_header( "Authorization" );
+                   std::string username, password;
+                   if( auth_value.size() )
+                   {
+                      auto auth_b64    = auth_value.substr( 6 );
+                      auto userpass    = fc::base64_decode( auth_b64 );
+                      auto split       = userpass.find( ':' );
+                      username    = userpass.substr( 0, split );
+                      password    = userpass.substr( split + 1 );
+                   }
+                   ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
+                   if( _config.rpc_user     != username ||
+                       _config.rpc_password != password )
+                   {
+                      s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
+                      std::string message = "Unauthorized";
+                      s.set_length( message.size() );
+                      s.set_status( fc::http::reply::NotAuthorized );
+                      s.write( message.c_str(), message.size() );
+                   }
                 }
 
                 auto dotpos = r.path.find( ".." );
