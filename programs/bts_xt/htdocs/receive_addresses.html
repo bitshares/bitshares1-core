@@ -38,21 +38,6 @@
                    }
                });
 
-               var update_transaction_history = function() { $.jsonRPC.request('get_transaction_history', {
-                   params : [],
-                   success : function(data) {
-                       console.log( data.result );
-                       $("span#trx_history").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
-                   },
-                   error : function(data) {
-                       console.log(  'getbalance error' );
-                       console.log(  data.error );
-                       $("span#trx_history").text( data.error.message ); 
-                   }
-               }); };
-               update_transaction_history();
-
-
               $("input#transfer").click(function() {
                   // todo validate passwords match and have all required lengths/etc.
                   $.jsonRPC.request('sendtoaddress', {
@@ -64,22 +49,6 @@
                       error : function(data) {
                           console.log( data.error );
                           $("span#transfer_message").text( data.error.message ); 
-                      }
-                  });
-              });
-
-
-              $("input#rescan_wallet").click(function() {
-                  $.jsonRPC.request('rescan', {
-                      params : [0],
-                      success : function(data) {
-                          console.log( data.result );
-                          $("span#unlock_message").text( data.result ); 
-                          update_transaction_history();
-                      },
-                      error : function(data) {
-                          console.log( data.error );
-                          $("span#unlock_message").text( data.error.message ); 
                       }
                   });
               });
@@ -97,9 +66,7 @@
 
 <div id="nav">
   <ul>
-    <li> <a href="receive.html">Receive Addresses</a> </li>
-    <li> <a href="addressbook.html">Contacts</a> </li>
-    <li> <a href="index.html">Transfer </a></li>
+    <li> Transfer </li>
     <li> Transaction History </li>
     <li> Block Explorer </li>
     <li> Address Book </li>
@@ -120,8 +87,6 @@
 <hr/>
 <div id="transaction_history">
 <h2> Transaction History </h2>
-<input type="button" id="rescan_wallet" value="Rescan" />
-<span id="trx_history"></span>
 <table width="100%">
   <tbody>
     <tr><th>Date</th><th>Type</th><th>Address</th><th>Amount</th></tr>

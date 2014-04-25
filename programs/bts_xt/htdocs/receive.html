@@ -25,57 +25,55 @@
                        $("span#username").text( data.error.message ); 
                    }
                });
-               $.jsonRPC.request('getbalance', {
+               var update_recv_addresses = function() { $.jsonRPC.request('listrecvaddresses', {
                    params : [],
                    success : function(data) {
                        console.log( data.result );
-                       $("span#balance").text( data.result.amount ); //(data.result).appendTo($("p#result"));
+                       $("span#recvaddresses").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
                    },
                    error : function(data) {
                        console.log(  'getbalance error' );
                        console.log(  data.error );
-                       $("span#balance").text( data.error.message ); 
-                   }
-               });
-
-               var update_transaction_history = function() { $.jsonRPC.request('get_transaction_history', {
-                   params : [],
-                   success : function(data) {
-                       console.log( data.result );
-                       $("span#trx_history").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
-                   },
-                   error : function(data) {
-                       console.log(  'getbalance error' );
-                       console.log(  data.error );
-                       $("span#trx_history").text( data.error.message ); 
+                       $("span#username").text( data.error.message ); 
                    }
                }); };
-               update_transaction_history();
-
-
-              $("input#transfer").click(function() {
+               update_recv_addresses();
+              $("input#create_address").click(function() {
                   // todo validate passwords match and have all required lengths/etc.
-                  $.jsonRPC.request('sendtoaddress', {
-                      params : [$("input#payto").val(), $("input#amount").val(), $("input#memo").val()],
+                  $.jsonRPC.request('getnewaddress', {
+                      params : [$("input#recvlabel").val()],
                       success : function(data) {
                           console.log( data.result );
-                          $("span#transfer_message").text( data.result ); 
+                          $("span#create_message").text( data.result ); 
+                          update_recv_addresses();
                       },
                       error : function(data) {
                           console.log( data.error );
-                          $("span#transfer_message").text( data.error.message ); 
+                          $("span#create_message").text( data.error.message ); 
                       }
                   });
               });
-
-
-              $("input#rescan_wallet").click(function() {
-                  $.jsonRPC.request('rescan', {
-                      params : [0],
+              $("input#import_priv_key").click(function() {
+                  // todo validate passwords match and have all required lengths/etc.
+                  $.jsonRPC.request('import_private_key', {
+                      params : [$("input#privatekey").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          $("span#import_key_message").text( data.result ); 
+                          update_recv_addresses();
+                      },
+                      error : function(data) {
+                          console.log( data.error );
+                          $("span#import_key_message").text( data.error.message ); 
+                      }
+                  });
+              });
+              $("input#unlock_wallet").click(function() {
+                  $.jsonRPC.request('walletpassphrase', {
+                      params : [$("input#spending_password").val()],
                       success : function(data) {
                           console.log( data.result );
                           $("span#unlock_message").text( data.result ); 
-                          update_transaction_history();
                       },
                       error : function(data) {
                           console.log( data.error );
@@ -83,6 +81,7 @@
                       }
                   });
               });
+
            });
        </script>
 
@@ -90,9 +89,7 @@
 <body>
 
 <h1> BitShares XT Wallet </h1>
-
 <h3> Username: <span id="username">unknown</span> </h3>
-<h3> Balance: <span id="balance">unknown</span> </h3>
 <hr/>
 
 <div id="nav">
@@ -105,26 +102,41 @@
     <li> Address Book </li>
   </ul>
 </div>
-
-<div id="transfer">
-  <h2>Transfer</h2>
+<div id="unock_wallet">
+  <h2>Unlock Wallet</h2>
   <form>
-  Pay to: <input type="text" placeholder="Address" id ="payto" />
-  Amount: <input type="text" placeholder="0.0" id ="amount" />
-  Memo: <input type="text" placeholder="Memo" id ="memo" />
-        <input type="button" id="transfer" value="Send" />
+  Spending Password: <input type="password" placeholder="" id="spending_password" />
+        <input type="button" id="unlock_wallet" value="Unlock" />
   </form>
-  <p><span id="transfer_message"></span></p>
+  <p><span id="unlock_message"></span></p>
+</div>
+
+<div id="create_address">
+  <h2>Create Address</h2>
+  <form>
+  Label: <input type="text" placeholder="Address" id ="recvlabel" />
+        <input type="button" id="create_address" value="Create" />
+  </form>
+  <p><span id="create_message"></span></p>
+</div>
+
+<div id="create_address">
+  <h2>Import Key</h2>
+  <form>
+  Label: <input type="text" placeholder="Label" id ="privatekeylabel" />
+  Private Key: <input type="text" placeholder="Private Key" id ="privatekey" />
+        <input type="button" id="import_priv_key" value="Import" />
+  </form>
+  <p><span id="create_message"></span></p>
 </div>
 
 <hr/>
-<div id="transaction_history">
-<h2> Transaction History </h2>
-<input type="button" id="rescan_wallet" value="Rescan" />
-<span id="trx_history"></span>
+<div id="receive_addresses">
+<h2> Address Book - Receive Addresses</h2>
+<span id="recvaddresses"></span>
 <table width="100%">
   <tbody>
-    <tr><th>Date</th><th>Type</th><th>Address</th><th>Amount</th></tr>
+    <tr><th>Address</th><th>Label</th></tr>
   </tbody>
 </table>
 </div>
