@@ -506,7 +506,7 @@ namespace bts { namespace cli {
 
     void cli_impl::create_wallet_if_missing()
     {
-      auto wallet_dat = _client->get_wallet()->get_wallet_file();
+      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user("default");
       if( !fc::exists( wallet_dat ) )
       {
         std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
