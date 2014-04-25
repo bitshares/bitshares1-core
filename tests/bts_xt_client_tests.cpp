@@ -366,7 +366,7 @@ void bts_client_launcher_fixture::import_initial_balances()
   BOOST_TEST_MESSAGE("Importing initial keys and verifying initial balances");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->import_private_key(client_processes[i].private_key.get_secret());
+    client_processes[i].rpc_client->import_private_key(client_processes[i].private_key.get_secret(), "blah");
     client_processes[i].rpc_client->rescan(0);
     BOOST_CHECK(client_processes[i].rpc_client->getbalance(0) == client_processes[i].initial_balance);
   }
@@ -374,6 +374,20 @@ void bts_client_launcher_fixture::import_initial_balances()
 
 
 BOOST_FIXTURE_TEST_SUITE(bts_xt_client_test_suite, bts_client_launcher_fixture)
+
+#if 0
+// test whether we can cancel a fc task that's sleeping (hint: we can't)
+BOOST_AUTO_TEST_CASE(sleep_test)
+{
+  fc::future<void> ten = fc::async([](){ fc::usleep(fc::seconds(300)); std::cout << "300 second sleep completed\n"; });
+  fc::usleep(fc::milliseconds(100));
+  ten.cancel();
+  ten.wait();
+  fc::future<void> five = fc::async([](){ fc::usleep(fc::seconds(5)); std::cout << "5 second sleep completed\n"; });
+  five.wait();
+}
+#endif
+
 
 BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
@@ -412,8 +426,8 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase"), fc::exception)
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE));
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
+    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   BOOST_TEST_MESSAGE("Testing receive address generation");
@@ -433,6 +447,46 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
     BOOST_CHECK(final_addresses.find(new_address) != final_addresses.end());
     BOOST_CHECK(final_addresses[new_address] == accountName);
   }
+}
+
+BOOST_AUTO_TEST_CASE(unlocking_test)
+{
+  client_processes.resize(1);
+
+  client_processes[0].initial_balance = 1000000; // not important, we just need a nonzero balance to avoid crashing
+
+  create_trustee_and_genesis_block();
+
+  if (bts_xt_client_test_config::test_client_server)
+    launch_server();
+
+  launch_clients();
+
+  establish_rpc_connections();
+
+  client_processes[0].rpc_client->openwallet();
+
+  BOOST_TEST_MESSAGE("Testing getnewaddress() while wallet is locked");
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
+  BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(1));
+  BOOST_TEST_MESSAGE("Testing getnewaddress() with wallet unlocked locked");
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
+  fc::usleep(fc::seconds(2));
+  BOOST_TEST_MESSAGE("Testing getnewaddress() after wallet should have relocked");
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
+
+  BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(4));
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(2));
+  BOOST_TEST_MESSAGE("Testing getnewaddress immediately after both unlocks");
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
+  fc::usleep(fc::seconds(3));
+  BOOST_TEST_MESSAGE("Testing getnewaddress after the second unlock expired, but first should still be in effect");
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
+  fc::usleep(fc::seconds(2));
+  BOOST_TEST_MESSAGE("Testing that we correctly relock after both unlocks should have expired");
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
 }
 
 BOOST_AUTO_TEST_CASE(transfer_test)
@@ -455,7 +509,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->openwallet();
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE));
+    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -508,7 +562,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->openwallet();
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE));
+    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
