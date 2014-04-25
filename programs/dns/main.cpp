@@ -87,7 +87,6 @@ int main( int argc, char** argv )
       ::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
-//TODO change to dns
       auto chain = load_and_configure_chain_database(datadir, option_variables);
       auto wall    = std::make_shared<bts::dns::dns_wallet>();
       wall->set_data_directory( datadir );
@@ -142,7 +141,7 @@ int main( int argc, char** argv )
       }
       else
 	{
-        c->add_node( "127.0.0.1:4569" );
+        c->add_node( "127.0.0.1:4567" );
 }
 
 
@@ -221,7 +220,7 @@ std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::pa
   if (option_variables.count("trustee-address"))
     db->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
   else
-    db->set_trustee(bts::blockchain::address("43cgLS17F2uWJKKFbPoJnnoMSacj"));
+    db->set_trustee(bts::blockchain::address("9ofZhqtxo13buPiy5xzTcZ9E9qqFZJCYE"));
   if (option_variables.count("genesis-json"))
   {
     if (db->head_block_num() == uint32_t(-1))

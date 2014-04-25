@@ -5,9 +5,6 @@
 #include <fc/thread/thread.hpp>
 #include <fc/reflect/variant.hpp>
 
-#include <iostream>
-
-
 using namespace bts::blockchain;
 
 
@@ -78,6 +75,7 @@ namespace bts { namespace net {
                     catch ( const fc::exception& e )
                     {
                        std::cout<< "\nunable to connect to bitshares network at this time.\n";
+	               std::cout<< e.to_detail_string();
                        wlog( "${e}", ("e",e.to_detail_string()));
                     }
                }
