@@ -575,7 +575,7 @@ namespace bts { namespace cli {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
-    my->create_wallet_if_missing();
+    //my->create_wallet_if_missing();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }

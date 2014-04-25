@@ -12,6 +12,8 @@
 #include <fc/log/logger.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/crypto/aes.hpp>
+#include <fc/thread/future.hpp>
+#include <fc/thread/thread.hpp>
 #include <sstream>
 
 #include <iostream>
@@ -158,6 +160,8 @@ namespace bts { namespace wallet {
               wallet_impl():_stake(0),_is_open(false),_blockchain(nullptr){}
               std::string _wallet_base_password; // used for saving/loading the wallet
               std::string _wallet_key_password;  // used to access private keys
+              fc::time_point _wallet_relock_time;
+              fc::future<void> _wallet_relocker_done;
 
               fc::path                                                   _wallet_dat;
               fc::path                                                   _data_dir;
@@ -585,6 +589,51 @@ namespace bts { namespace wallet {
       my->_data.get_base_key( key_password );
       my->_wallet_key_password = key_password;
       my->_my_keys = my->_data.decrypt_keys(key_password);
+
+      fc::time_point requested_relocking_time = fc::time_point::now() + duration;
+      my->_wallet_relock_time = std::max(my->_wallet_relock_time, requested_relocking_time);
+      if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
+      {
+        my->_wallet_relocker_done = fc::async([this](){
+          for (;;)
+          {
+            if (fc::time_point::now() > my->_wallet_relock_time)
+            {
+              lock_wallet();
+              return;
+            }
+            fc::usleep(fc::seconds(1));
+          }
+        });
+      }
+#if 0
+      // change the above code to this version once task cancellation is fixed in fc
+      // if we're currently unlocked and have a timer counting down, 
+      // kill it and starrt a new one
+      if (my->_wallet_relocker_done.valid() && !my->_wallet_relocker_done.ready())
+      {
+        my->_wallet_relocker_done.cancel();
+        try
+        {
+          my->_wallet_relocker_done.wait();
+        }
+        catch (fc::canceled_exception&)
+        {
+        }
+      }
+
+      // now schedule a function call to relock the wallet when the specified interval
+      // elapses (unless we were already unlocked for a longer interval)
+      fc::time_point desired_relocking_time = fc::time_point::now() + duration;
+      if (desired_relocking_time > my->_wallet_relock_time)
+        my->_wallet_relock_time = desired_relocking_time;
+      my->_wallet_relocker_done = fc::async([this](){
+        fc::time_point sleep_start_time = fc::time_point::now();
+        if (my->_wallet_relock_time > sleep_start_time)
+          fc::usleep(my->_wallet_relock_time - sleep_start_time);
+        lock_wallet();
+      });
+#endif
    } FC_RETHROW_EXCEPTIONS( warn, "unable to unlock wallet" ) }
 
    void wallet::lock_wallet()
