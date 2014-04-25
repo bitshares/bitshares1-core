@@ -23,7 +23,7 @@ namespace bts { namespace net {
      genesis_block_config():supply(0),blockheight(0){}
      double                                            supply;
      uint64_t                                          blockheight;
-     std::vector< std::pair<bts::blockchain::pts_address,uint64_t> > balances;
+     std::vector< std::pair<bts::blockchain::pts_address,double> > balances;
   };
 } } // bts::net
 FC_REFLECT( bts::net::genesis_block_config, (supply)(balances) )
