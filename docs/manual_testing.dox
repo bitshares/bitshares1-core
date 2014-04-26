@@ -77,6 +77,7 @@ configuration directory.  By default, they'll all write to the system-
 dependent application data directory.
 
 We'll make the first client act as trustee.  Launch it like this:
+
     bts_xt_client.exe --data-dir C:\TEMP\BitsharesX_1 --trustee-address Meg1Bg3jCeaimZwwePDSok43VCHze3dwE --trustee-private-key 115c2654c13b5dd62ea1142a0b001f76cc429d5542e6fa35f7d85747a39828ca
 
 The rest of the clients aren't trustee, so they don't get the private key.
