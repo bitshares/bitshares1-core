@@ -345,6 +345,13 @@ namespace bts { namespace rpc {
         fc::variant getconnectioncount(const fc::variants& params);
     };
 
+    //register_method(method_data{"login", JSON_METHOD_IMPL(login),
+    //          /* description */ "authenticate JSON-RPC connection",
+    //          /* returns: */    "bool",
+    //          /* params:          name            type       required */ 
+    //                            {{"username", "string",  true},
+    //                             {"password", "string",  true}},
+    //        /* prerequisites */ 0});
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       FC_ASSERT( params.size() == 2 );
@@ -354,6 +361,11 @@ namespace bts { namespace rpc {
       return fc::variant( true );
     }
 
+    static rpc_server::method_data help_metadata{"help", nullptr,
+                               /* description */ "list the available commands",
+                               /* returns: */    "bool",
+                               /* params:     */ {},
+                              /* prerequisites */ 0};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
       std::vector<std::vector<std::string> > help_strings;
@@ -377,6 +389,13 @@ namespace bts { namespace rpc {
       return fc::variant( help_strings );
     }
 
+    static rpc_server::method_data openwallet_metadata{"openwallet", nullptr,
+                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* returns: */    "bool",
+                                     /* params:          name                 type      required */ 
+                                                       {{"wallet_username",   "string", false} ,
+                                                        {"wallet_passphrase", "string", false}},
+                                   /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::openwallet(const fc::variants& params)
     {
       std::string username = "default";
@@ -405,6 +424,16 @@ namespace bts { namespace rpc {
       }          
     }
 
+    static rpc_server::method_data createwallet_metadata{"createwallet", nullptr,
+                                       /* description */ "create a wallet with the given passphrases",
+                                       /* returns: */    "bool",
+                                       /* params:          name                   type      required */ 
+                                                         {
+                                                          {"wallet_username",     "string", true},
+                                                          {"wallet_passphrase",   "string", true},
+                                                          {"spending_passphrase", "string", true}
+                                                         },
+                                     /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::createwallet(const fc::variants& params)
     {
       std::string username = "default";
@@ -433,6 +462,11 @@ namespace bts { namespace rpc {
       }          
     }
 
+    static rpc_server::method_data currentwallet_metadata{"currentwallet", nullptr,
+                                        /* description */ "returns the username passed to openwallet",
+                                        /* returns: */    "string",
+                                        /* params:     */ {},
+                                      /* prerequisites */ };
     fc::variant rpc_server_impl::currentwallet(const fc::variants& params)
     {
        if( !_client->get_wallet()->is_open() )
@@ -440,11 +474,21 @@ namespace bts { namespace rpc {
        return fc::variant(_username);
     }
 
+    static rpc_server::method_data closewallet_metadata{"closewallet", nullptr,
+                                      /* description */ "closes the curent wallet, if one is open.",
+                                      /* returns: */    "bool",
+                                      /* params:     */ {},
+                                    /* prerequisites */ };
     fc::variant rpc_server_impl::closewallet(const fc::variants& params)
     {
        return fc::variant( _client->get_wallet()->close() );
     }
 
+    static rpc_server::method_data walletlock_metadata{"walletlock", nullptr,
+                                     /* description */ "lock the private keys in the wallet with the given passphrase",
+                                     /* returns: */    "void",
+                                     /* params:     */ {},
+                                   /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::walletlock(const fc::variants& params)
     {
        try
@@ -458,6 +502,13 @@ namespace bts { namespace rpc {
        }          
     }
 
+    static rpc_server::method_data walletpassphrase_metadata{"walletpassphrase", nullptr,
+                                           /* description */ "unlock the private keys in the wallet with the given passphrase",
+                                           /* returns: */    "void",
+                                           /* params:          name                   type      required */ 
+                                                             {{"spending_passphrase", "string", true}, 
+                                                              {"timeout",             "int",    true} },
+                                         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::walletpassphrase(const fc::variants& params)
     {
        std::string passphrase = params[0].as_string();
@@ -473,6 +524,13 @@ namespace bts { namespace rpc {
        }          
     }
 
+    static rpc_server::method_data add_send_address_metadata{"add_send_address", nullptr,
+                                           /* description */ "add new address for sending payments",
+                                           /* returns: */    "bool",
+                                           /* params:          name       type       required */ 
+                                                             {{"address", "address", true},
+                                                              {"label",   "string",  true}  },
+                                         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open };
     fc::variant rpc_server_impl::add_send_address( const fc::variants& params )
     {
        auto foreign_address = params[0].as<address>();
@@ -482,6 +540,12 @@ namespace bts { namespace rpc {
        return fc::variant(true);
     }
 
+    static rpc_server::method_data getnewaddress_metadata{"getnewaddress", nullptr,
+                                        /* description */ "create a new address for receiving payments",
+                                        /* returns: */    "address",
+                                        /* params:          name       type      required */ 
+                                                          {{"account", "string", false}},
+                                      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked};
     fc::variant rpc_server_impl::getnewaddress(const fc::variants& params)
     {
        std::string account;
@@ -490,6 +554,16 @@ namespace bts { namespace rpc {
        bts::blockchain::address new_address = _client->get_wallet()->new_receive_address(account);
        return fc::variant(new_address);
     }
+
+    static rpc_server::method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", nullptr,
+                                                            /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
+                                                            /* returns: */    "signed_transaction",
+                                                            /* params:          name          type       required */ 
+                                                                              {{"to_address", "address", true},
+                                                                               {"amount",     "int64",   true},
+                                                                               {"comment",    "string",  false},
+                                                                               {"to_comment", "string",  false}},
+                                                          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked};
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
     {
        bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
@@ -500,12 +574,29 @@ namespace bts { namespace rpc {
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
        return fc::variant(_client->get_wallet()->transfer(asset(amount), destination_address, comment));
     }
+
+    static rpc_server::method_data sendtransaction_metadata{"sendtransaction", nullptr,
+                                          /* description */ "Broadcast a previously-created signed transaction to the network",
+                                          /* returns: */    "transaction_id",
+                                          /* params:          name                  type                   required */ 
+                                                            {{"signed_transaction", "signed_transaction",  true}},
+                                        /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network};
     fc::variant rpc_server_impl::sendtransaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
       return fc::variant(transaction.id());
     }
+
+    static rpc_server::method_data sendtoaddress_metadata{"sendtoaddress", nullptr,
+                                        /* description */ "Sends the given amount to the given address, assumes shares in DAC",
+                                        /* returns: */    "transaction_id",
+                                        /* params:          name          type       required */ 
+                                                          {{"to_address", "address", true},
+                                                           {"amount",     "int64",   true},
+                                                           {"comment",    "string",  false},
+                                                           {"to_comment", "string",  false}},
+                                      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network};
     fc::variant rpc_server_impl::sendtoaddress(const fc::variants& params)
     {
       bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
@@ -519,12 +610,23 @@ namespace bts { namespace rpc {
       return fc::variant( trx.id() ); 
     }
 
+    static rpc_server::method_data listrecvaddresses_metadata{"listrecvaddresses", nullptr,
+                                            /* description */ "Lists all receive addresses and their labels associated with this wallet",
+                                            /* returns: */    "map<address,string>",
+                                            /* params:     */ {},
+                                          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::listrecvaddresses(const fc::variants& params)
     {
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses ); 
     }
 
+    static rpc_server::method_data get_send_address_label_metadata{"get_send_address_label", nullptr,
+                                                 /* description */ "Looks up the label for a single send address, returns null if not found",
+                                                 /* returns: */    "string",
+                                                /* params:            name          type       required */ 
+                                                                   { {"address",    "address", true} },
+                                               /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::get_send_address_label( const fc::variants& params )
     {
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_send_addresses();
@@ -532,12 +634,24 @@ namespace bts { namespace rpc {
       if( itr == addresses.end() ) return fc::variant();
       return fc::variant(itr->second);
     }
+
+    static rpc_server::method_data list_send_addresses_metadata{"list_send_addresses", nullptr,
+                                              /* description */ "Lists all foregin addresses and their labels associated with this wallet",
+                                              /* returns: */    "map<address,string>",
+                                              /* params:     */ {},
+                                            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::list_send_addresses(const fc::variants& params)
     {
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_send_addresses();
       return fc::variant( addresses ); 
     }
 
+    static rpc_server::method_data getbalance_metadata{"getbalance", nullptr,
+                                     /* description */ "Returns the wallet's current balance",
+                                     /* returns: */    "asset",
+                                     /* params:          name     type     required */ 
+                                                       {{"asset", "unit",  false}},
+                                   /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::getbalance(const fc::variants& params)
     {
       bts::blockchain::asset_type unit = 0;
@@ -546,21 +660,44 @@ namespace bts { namespace rpc {
       return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
     }
 
+    static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
+                                                  /* description */ "Retrieves all transactions into or out of this wallet.",
+                                                  /* returns: */    "map<transaction_id,transaction_state>",
+                                                  /* params:     */ {},
+                                                /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
     {
       return fc::variant( _client->get_wallet()->get_transaction_history() );
     }
 
+    static rpc_server::method_data get_transaction_metadata{"get_transaction", nullptr,
+                                          /* description */ "Retrieves the signed transaction matching the given transaction id",
+                                          /* returns: */    "signed_transaction",
+                                          /* params:          name              type               required */ 
+                                                            {{"transaction_id", "transaction_id",  true}},
+                                        /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::get_transaction(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
     }
 
+    static rpc_server::method_data getblock_metadata{"getblock", nullptr,
+                                   /* description */ "Retrieves the block header for the given block",
+                                   /* returns: */    "block_header",
+                                   /* params:          name              type        required */ 
+                                                     {{"block_number",   "uint32_t", true}},
+                                 /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::getblock(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
     }
 
+    static rpc_server::method_data validateaddress_metadata{"validateaddress", nullptr,
+                                          /* description */ "Checks that the given address is valid",
+                                          /* returns: */    "bool",
+                                          /* params:          name              type       required */ 
+                                                            {{"address",        "address", true}},
+                                        /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::validateaddress(const fc::variants& params)
     {
       try {
@@ -572,6 +709,12 @@ namespace bts { namespace rpc {
       }
     }
 
+    static rpc_server::method_data rescan_metadata{"rescan", nullptr,
+                                 /* description */ "Rescan the block chain from the given block",
+                                 /* returns: */    "bool",
+                                 /* params:          name              type    required */ 
+                                                   {{"starting_block", "bool", false}},
+                               /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::rescan(const fc::variants& params)
     {
       uint32_t block_num = 0;
@@ -581,6 +724,13 @@ namespace bts { namespace rpc {
       return fc::variant(true); 
     }
 
+    static rpc_server::method_data import_bitcoin_wallet_metadata{"import_bitcoin_wallet", nullptr,
+                                                /* description */ "Import a bitcoin wallet",
+                                                /* returns: */    "bool",
+                                                /* params:          name               type       required */ 
+                                                                  {{"wallet_filename", "string",  true},
+                                                                   {"wallet_password", "string",  true}},
+                                              /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked};
     fc::variant rpc_server_impl::import_bitcoin_wallet(const fc::variants& params)
     {
       auto wallet_dat      = params[0].as<fc::path>();
@@ -589,14 +739,29 @@ namespace bts { namespace rpc {
       return fc::variant(true);
     }
 
+    static rpc_server::method_data import_private_key_metadata{"import_private_key", nullptr,
+                                             /* description */ "imports a bitshares private key from hex format",
+                                             /* returns: */    "bool",
+                                             /* params:          name           type            required */ 
+                                                               {{"key",         "private_key",  true},
+                                                                {"label",       "string",       true}},
+                                           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked};
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
-      ilog( "${params}", ("params",params) );
       auto label = params[1].as_string();
       _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
       _client->get_wallet()->save();
       return fc::variant(true);
     }
+
+    static rpc_server::method_data importprivkey_metadata{"importprivkey", nullptr,
+                                        /* description */ "imports a bitcoin private key from wallet import format WIF",
+                                        /* returns: */    "bool",
+                                        /* params:          name           type            required */ 
+                                                          {{"key",         "private_key",  true},
+                                                           {"label",       "string",       true},
+                                                           {"rescan",      "bool",         false}},
+                                      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked};
     fc::variant rpc_server_impl::importprivkey(const fc::variants& params)
     {
       auto wif   =  params[0].as_string();
@@ -614,6 +779,12 @@ namespace bts { namespace rpc {
         
       return fc::variant(true);
     }
+
+    static rpc_server::method_data getconnectioncount_metadata{"getconnectioncount", nullptr,
+                                             /* description */ "returns the current number of active peer connections",
+                                             /* returns: */    "bool",
+                                             /* params:     */ {},
+                                           /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::getconnectioncount(const fc::variants& params)
     {
       return fc::variant(_client->get_connection_count());
@@ -638,234 +809,39 @@ namespace bts { namespace rpc {
   {
     my->_self = this;
 
-#define JSON_METHOD_IMPL(METHODNAME) \
-    boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1)
+#define REGISTER_JSON_METHOD(METHODNAME) \
+    do { \
+      method_data data_with_functor(detail::METHODNAME##_metadata); \
+      data_with_functor.method = boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1); \
+      register_method(data_with_functor); \
+    } while (0)
 
-    method_data help_metadata{"help", JSON_METHOD_IMPL(help),
-            /* description */ "list the available commands",
-            /* returns: */    "bool",
-            /* params:     */ {},
-          /* prerequisites */ 0};
-    register_method(help_metadata);
-
-    //register_method(method_data{"login", JSON_METHOD_IMPL(login),
-    //          /* description */ "authenticate JSON-RPC connection",
-    //          /* returns: */    "bool",
-    //          /* params:          name            type       required */ 
-    //                            {{"username", "string",  true},
-    //                             {"password", "string",  true}},
-    //        /* prerequisites */ 0});
-    //
-    //
-
-    method_data openwallet_metadata{"openwallet", JSON_METHOD_IMPL(openwallet),
-                  /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
-                  /* returns: */    "bool",
-                  /* params:          name                 type      required */ 
-                                    {{"wallet_username",   "string", false} ,
-                                     {"wallet_passphrase", "string", false}},
-                /* prerequisites */ json_authenticated};
-    register_method(openwallet_metadata);
-
-
-    method_data createwallet_metadata{"createwallet", JSON_METHOD_IMPL(createwallet),
-                    /* description */ "create a wallet with the given passphrases",
-                    /* returns: */    "bool",
-                    /* params:          name                   type      required */ 
-                                      {
-                                       {"wallet_username",     "string", true},
-                                       {"wallet_passphrase",   "string", true},
-                                       {"spending_passphrase", "string", true}
-                                      },
-                  /* prerequisites */ json_authenticated};
-    register_method(createwallet_metadata);
-
-
-    method_data currentwallet_metadata{"currentwallet", JSON_METHOD_IMPL(currentwallet),
-                     /* description */ "returns the username passed to openwallet",
-                     /* returns: */    "string",
-                     /* params:     */ {},
-                   /* prerequisites */ };
-    register_method(currentwallet_metadata);
-
-    method_data closewallet_metadata{"closewallet", JSON_METHOD_IMPL(closewallet),
-                   /* description */ "closes the curent wallet, if one is open.",
-                   /* returns: */    "bool",
-                   /* params:     */ {},
-                 /* prerequisites */ };
-    register_method(closewallet_metadata);
-
-    method_data walletlock_metadata{"walletlock", JSON_METHOD_IMPL(walletlock),
-                  /* description */ "lock the private keys in the wallet with the given passphrase",
-                  /* returns: */    "void",
-                  /* params:     */ {},
-                  /* prerequisites */ json_authenticated | wallet_open};
-    register_method(walletlock_metadata);
-
-    method_data walletpassphrase_metadata{"walletpassphrase", JSON_METHOD_IMPL(walletpassphrase),
-                        /* description */ "unlock the private keys in the wallet with the given passphrase",
-                        /* returns: */    "void",
-                        /* params:          name                   type      required */ 
-                                          {{"spending_passphrase", "string", true}, 
-                                           {"timeout",             "int",    true} },
-                      /* prerequisites */ json_authenticated | wallet_open};
-    register_method(walletpassphrase_metadata);
-
-
-    method_data getnewaddress_metadata{"getnewaddress", JSON_METHOD_IMPL(getnewaddress),
-                     /* description */ "create a new address for receiving payments",
-                     /* returns: */    "address",
-                     /* params:          name       type      required */ 
-                                       {{"account", "string", false}},
-                   /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
-    register_method(getnewaddress_metadata);
-
-    method_data add_send_address_metadata{"add_send_address", JSON_METHOD_IMPL(add_send_address),
-                        /* description */ "add new address for sending payments",
-                        /* returns: */    "bool",
-                        /* params:          name       type       required */ 
-                                          {{"address", "address", true},
-                                           {"label",   "string",  true}  },
-                      /* prerequisites */ json_authenticated | wallet_open };
-    register_method(add_send_address_metadata);
-
-
-    method_data sendtoaddress_metadata{"sendtoaddress", JSON_METHOD_IMPL(sendtoaddress),
-                     /* description */ "Sends the given amount to the given address, assumes shares in DAC",
-                     /* returns: */    "transaction_id",
-                     /* params:          name          type       required */ 
-                                       {{"to_address", "address", true},
-                                        {"amount",     "int64",   true},
-                                        {"comment",    "string",  false},
-                                        {"to_comment", "string",  false}},
-                   /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};
-    register_method(sendtoaddress_metadata);
-
-    method_data listrecvaddresses_metadata{"listrecvaddresses", JSON_METHOD_IMPL(listrecvaddresses),
-                         /* description */ "Lists all receive addresses and their labels associated with this wallet",
-                         /* returns: */    "map<address,string>",
-                         /* params:     */ {},
-                       /* prerequisites */ json_authenticated | wallet_open};
-    register_method(listrecvaddresses_metadata);
-
-    method_data listsendaddresses_metadata{"list_send_addresses", JSON_METHOD_IMPL(list_send_addresses),
-                         /* description */ "Lists all foregin addresses and their labels associated with this wallet",
-                         /* returns: */    "map<address,string>",
-                         /* params:     */ {},
-                       /* prerequisites */ json_authenticated | wallet_open};
-    register_method(listsendaddresses_metadata);
-
-    method_data get_send_address_label_metadata{"get_send_address_label", JSON_METHOD_IMPL(get_send_address_label),
-                              /* description */ "Looks up the label for a single send address, returns null if not found",
-                              /* returns: */    "string",
-                             /* params:            name          type       required */ 
-                                                { {"address",    "address", true} },
-                            /* prerequisites */ json_authenticated | wallet_open};
-    register_method(get_send_address_label_metadata);
-
-
-    method_data getbalance_metadata{"getbalance", JSON_METHOD_IMPL(getbalance),
-                  /* description */ "Returns the wallet's current balance",
-                  /* returns: */    "asset",
-                  /* params:          name     type     required */ 
-                                    {{"asset", "unit",  false}},
-                /* prerequisites */ json_authenticated | wallet_open};
-    register_method(getbalance_metadata);
-
-
-    method_data get_transaction_history_metadata{"get_transaction_history", JSON_METHOD_IMPL(get_transaction_history),
-                               /* description */ "Retrieves all transactions into or out of this wallet.",
-                               /* returns: */    "map<transaction_id,transaction_state>",
-                               /* params:     */ {},
-                             /* prerequisites */ json_authenticated};
-    register_method(get_transaction_history_metadata);
-
-    method_data get_transaction_metadata{"get_transaction", JSON_METHOD_IMPL(get_transaction),
-                       /* description */ "Retrieves the signed transaction matching the given transaction id",
-                       /* returns: */    "signed_transaction",
-                       /* params:          name              type               required */ 
-                                         {{"transaction_id", "transaction_id",  true}},
-                     /* prerequisites */ json_authenticated};
-    register_method(get_transaction_metadata);
-
-    method_data getblock_metadata{"getblock", JSON_METHOD_IMPL(getblock),
-                /* description */ "Retrieves the block header for the given block",
-                /* returns: */    "block_header",
-                /* params:          name              type        required */ 
-                                  {{"block_number",   "uint32_t", true}},
-              /* prerequisites */ json_authenticated};
-    register_method(getblock_metadata);
-
-    method_data validateaddress_metadata{"validateaddress", JSON_METHOD_IMPL(validateaddress),
-                       /* description */ "Checks that the given address is valid",
-                       /* returns: */    "bool",
-                       /* params:          name              type       required */ 
-                                         {{"address",        "address", true}},
-                     /* prerequisites */ json_authenticated};
-    register_method(validateaddress_metadata);
-
-    method_data rescan_metadata{"rescan", JSON_METHOD_IMPL(rescan),
-              /* description */ "Rescan the block chain from the given block",
-              /* returns: */    "bool",
-              /* params:          name              type    required */ 
-                                {{"starting_block", "bool", false}},
-            /* prerequisites */ json_authenticated | wallet_open};
-    register_method(rescan_metadata);
-
-    method_data import_bitcoin_wallet_metadata{"import_bitcoin_wallet", JSON_METHOD_IMPL(import_bitcoin_wallet),
-                             /* description */ "Import a bitcoin wallet",
-                             /* returns: */    "bool",
-                             /* params:          name               type       required */ 
-                                               {{"wallet_filename", "string",  true},
-                                                {"wallet_password", "string",  true}},
-                           /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
-    register_method(import_bitcoin_wallet_metadata);
-
-    method_data importprivkey_metadata{"importprivkey", JSON_METHOD_IMPL(importprivkey),
-                     /* description */ "imports a bitcoin private key from wallet import format WIF",
-                     /* returns: */    "bool",
-                     /* params:          name           type            required */ 
-                                       {{"key",         "private_key",  true},
-                                        {"label",       "string",       true},
-                                        {"rescan",      "bool",         false}},
-                   /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
-    register_method(importprivkey_metadata);
-
-    method_data import_private_key_metadata{"import_private_key", JSON_METHOD_IMPL(import_private_key),
-                          /* description */ "imports a bitshares private key from hex format",
-                          /* returns: */    "bool",
-                          /* params:          name           type            required */ 
-                                            {{"key",         "private_key",  true},
-                                             {"label",       "string",       true}},
-                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
-    register_method(import_private_key_metadata);
-
-    method_data sendtransaction_metadata{"sendtransaction", JSON_METHOD_IMPL(sendtransaction),
-                       /* description */ "Broadcast a previously-created signed transaction to the network",
-                       /* returns: */    "transaction_id",
-                       /* params:          name                  type                   required */ 
-                                         {{"signed_transaction", "signed_transaction",  true}},
-                     /* prerequisites */ json_authenticated | connected_to_network};
-    register_method(sendtransaction_metadata);
-
-    method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", JSON_METHOD_IMPL(_create_sendtoaddress_transaction),
-                                         /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
-                                         /* returns: */    "signed_transaction",
-                                         /* params:          name          type       required */ 
-                                                           {{"to_address", "address", true},
-                                                            {"amount",     "int64",   true},
-                                                            {"comment",    "string",  false},
-                                                            {"to_comment", "string",  false}},
-                                       /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
-    register_method(_create_sendtoaddress_transaction_metadata);
-
-    method_data getconnectioncount_metadata{"getconnectioncount", JSON_METHOD_IMPL(getconnectioncount),
-                          /* description */ "returns the current number of active peer connections",
-                          /* returns: */    "bool",
-                          /* params:     */ {},
-                        /* prerequisites */ json_authenticated};
-    register_method(getconnectioncount_metadata);
-#undef JSON_METHOD_IMPL
+    REGISTER_JSON_METHOD(help);
+    REGISTER_JSON_METHOD(openwallet);
+    REGISTER_JSON_METHOD(createwallet);
+    REGISTER_JSON_METHOD(currentwallet);
+    REGISTER_JSON_METHOD(closewallet);
+    REGISTER_JSON_METHOD(walletlock);
+    REGISTER_JSON_METHOD(walletpassphrase);
+    REGISTER_JSON_METHOD(getnewaddress);
+    REGISTER_JSON_METHOD(add_send_address);
+    REGISTER_JSON_METHOD(sendtoaddress);
+    REGISTER_JSON_METHOD(listrecvaddresses);
+    REGISTER_JSON_METHOD(list_send_addresses);
+    REGISTER_JSON_METHOD(get_send_address_label);
+    REGISTER_JSON_METHOD(getbalance);
+    REGISTER_JSON_METHOD(get_transaction_history);
+    REGISTER_JSON_METHOD(get_transaction);
+    REGISTER_JSON_METHOD(getblock);
+    REGISTER_JSON_METHOD(validateaddress);
+    REGISTER_JSON_METHOD(rescan);
+    REGISTER_JSON_METHOD(import_bitcoin_wallet);
+    REGISTER_JSON_METHOD(importprivkey);
+    REGISTER_JSON_METHOD(import_private_key);
+    REGISTER_JSON_METHOD(sendtransaction);
+    REGISTER_JSON_METHOD(_create_sendtoaddress_transaction);
+    REGISTER_JSON_METHOD(getconnectioncount);
+#undef REGISTER_JSON_METHOD
   }
 
   rpc_server::~rpc_server()
