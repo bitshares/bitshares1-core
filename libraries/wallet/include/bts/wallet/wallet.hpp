@@ -53,13 +53,23 @@ namespace wallet {
    struct transaction_state
    {
       transaction_state():delta_balance(0),block_num(-1),valid(false){}
-      signed_transaction   trx;
-      std::vector<address> to;
-      std::vector<address> from;
-      std::string          memo;
+      signed_transaction                   trx;
+      /** outputs of the transaction that are not controlled by this wallet
+       *  
+       *  These would be addresses belonging to 3rd parties.
+       **/
+      std::map<address,std::string>        to;
+
+      /** outputs of the transaction that are controlled by this wallet, identifies who sent the
+       * transaction based upon who the user gave the address to.  This is not the
+       * address of the sender, but our local account*/
+      std::map<address,std::string>        from;
+
+      std::string                          memo;
       std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
-      uint32_t             block_num; // block that included it, -1 if not included
-      bool                 valid;     // is this transaction currently valid if it is not confirmed...
+      std::unordered_map<uint16_t,int64_t> fees; /// unit vs amount
+      uint32_t                             block_num; // block that included it, -1 if not included
+      bool                                 valid;     // is this transaction currently valid if it is not confirmed...
 
       void adjust_balance( asset amnt, int64_t direction = 1 )
       {
@@ -128,6 +138,11 @@ namespace wallet {
            void                                    add_send_address( const address&, const std::string& label = "" );
            std::unordered_map<address,std::string> get_send_addresses()const;
 
+           /**
+            *  Gets the label for the address if set, or returns the addr in string representation
+            */
+           std::string                             get_receive_address_label( const address& addr ) const;
+
            asset                                   get_balance( asset_type t );
            void                                    set_fee_rate( uint64_t milli_shares_per_byte );
 
@@ -194,6 +209,6 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid)(fees) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
 
