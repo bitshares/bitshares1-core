@@ -12,7 +12,7 @@ signed_transaction dns_wallet::bid(const std::string& key, const asset& bid_pric
     FC_ASSERT(key_is_available(key, pending_txs, db, new_or_expired, prev_tx_ref), "Key not available");
 
     signed_transaction tx;
-    claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::auction, new_recv_address("Key: " + key));
+    claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::auction, new_receive_address("Key: " + key));
 
     if (new_or_expired)
     {

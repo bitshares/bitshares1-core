@@ -10,10 +10,10 @@ void dns_cli::format_and_print_result(const std::string& command, const fc::vari
 {
   if (command == "list_active_auctions")
   {
-    std::vector<std::pair<bts::blockchain::asset, claim_domain_output> > active_auctions = result.as<std::vector<std::pair<bts::blockchain::asset, claim_domain_output> > >();
-    for (const std::pair<bts::blockchain::asset, claim_domain_output>& active_auction : active_auctions)
+    std::vector<std::pair<bts::blockchain::asset, claim_dns_output> > active_auctions = result.as<std::vector<std::pair<bts::blockchain::asset, claim_dns_output> > >();
+    for (const std::pair<bts::blockchain::asset, claim_dns_output>& active_auction : active_auctions)
     {
-      std::cout << "[" << active_auction.first.get_rounded_amount() << "] " << active_auction.second.name << "\n";
+      std::cout << "[" << active_auction.first.get_rounded_amount() << "] " << active_auction.second.key << "\n";
     }
   }
   else
