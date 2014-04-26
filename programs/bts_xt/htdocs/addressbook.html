@@ -1,0 +1,102 @@
+<html>
+   <head>
+      <title> BitShares XT Wallet </title>
+      <script type="text/javascript" charset="utf-8" src="js/jquery-1.10.1.min.js" ></script>
+      <script type="text/javascript" charset="utf-8" src="js/jquery.jsonrpc.js" ></script>
+
+
+       <script type="text/javascript">
+           $(document).ready(function() {
+               $.jsonRPC.setup({
+                   endPoint : 'http://localhost:9989/rpc',
+                   namespace : ''
+               });
+               $.jsonRPC.request('currentwallet', {
+                   params : [],
+                   success : function(data) {
+                       console.log( data.result );
+                       if( data.result == null )
+                         window.location.replace('/login.html');
+                       $("span#username").text( data.result ); //(data.result).appendTo($("p#result"));
+                   },
+                   error : function(data) {
+                       console.log(  'getbalance error' );
+                       console.log(  data.error );
+                       $("span#username").text( data.error.message ); 
+                   }
+               });
+               var update_send_addresses = function() { $.jsonRPC.request('list_send_addresses', {
+                   params : [],
+                   success : function(data) {
+                       console.log( data.result );
+                       $("span#send_addresses").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
+                   },
+                   error : function(data) {
+                       console.log(  'getbalance error' );
+                       console.log(  data.error );
+                       $("span#username").text( data.error.message ); 
+                   }
+               }); };
+               update_send_addresses();
+              $("input#add_send_address").click(function() {
+                  // todo validate passwords match and have all required lengths/etc.
+                  $.jsonRPC.request('add_send_address', {
+                      params : [$("input#sendaddress").val(),$("input#sendlabel").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          $("span#add_message").text( data.result ); 
+                          update_send_addresses();
+                      },
+                      error : function(data) {
+                          console.log( data.error );
+                          $("span#add_message").text( data.error.message ); 
+                      }
+                  });
+              });
+           });
+       </script>
+
+   </head>
+<body>
+
+<h1> BitShares XT Wallet </h1>
+<h3> Username: <span id="username">unknown</span> </h3>
+<hr/>
+
+<div id="nav">
+  <ul>
+    <li> <a href="receive.html">Receive Addresses</a> </li>
+    <li> <a href="addressbook.html">Contacts</a> </li>
+    <li> <a href="index.html">Transfer </a></li>
+    <li> Transaction History </li>
+    <li> Block Explorer </li>
+    <li> Address Book </li>
+  </ul>
+</div>
+
+<div id="create_address">
+  <h2>Add Sending Address</h2>
+  <p>
+  Sending addresses belong to other people.  This is used to identify whom you have sent money to.
+  </p>
+  <form>
+  Address: <input type="text" placeholder="Address" id ="sendaddress" />
+  Label: <input type="text" placeholder="Label" id ="sendlabel" />
+        <input type="button" id="add_send_address" value="Add" />
+  </form>
+  <p><span id="add_message"></span></p>
+</div>
+
+<hr/>
+<div id="sendaddresses">
+<h2> Address Book - Sending Addresses</h2>
+<span id="send_addresses"></span>
+<table width="100%">
+  <tbody>
+    <tr><th>Address</th><th>Label</th></tr>
+  </tbody>
+</table>
+</div>
+
+</body>
+</html>

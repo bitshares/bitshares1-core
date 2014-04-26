@@ -56,19 +56,20 @@ namespace bts { namespace client {
 
             fc::ecc::private_key                                        _trustee_key;
             fc::time_point                                              _last_block;
-
-            bts::blockchain::trx_block           _next_block;
-            bts::net::chain_client_ptr           _chain_client;
-            bts::net::node_ptr                   _p2p_node;
-            bts::blockchain::chain_database_ptr  _chain_db;
+            fc::path                                                    _data_dir;
+                                                                        
+            bts::blockchain::trx_block                                  _next_block;
+            bts::net::chain_client_ptr                                  _chain_client;
+            bts::net::node_ptr                                          _p2p_node;
+            bts::blockchain::chain_database_ptr                         _chain_db;
             std::unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
-            bts::wallet::wallet_ptr              _wallet;
-            float                                _effort;
-            fc::future<void>                     _trustee_loop_complete;
+            bts::wallet::wallet_ptr                                     _wallet;
+            fc::future<void>                                            _trustee_loop_complete;
        };
 
        void client_impl::trustee_loop()
        {
+         _last_block = _chain_db->get_head_block().timestamp;
          while (!_trustee_loop_complete.canceled())
          {
            signed_transactions pending_trxs;
@@ -76,11 +77,19 @@ namespace bts { namespace client {
            if (pending_trxs.size() && (fc::time_point::now() - _last_block) > fc::seconds(30))
            {
              try {
-               auto blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
+               bts::blockchain::trx_block blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
                blk.sign(_trustee_key);
                // _chain_db->push_block( blk );
                if (_chain_client)
                  _chain_client->broadcast_block(blk);
+               else
+               {
+                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
+                 // with the p2p code, if you broadcast something to the network, it will not
+                 // immediately send it back to you 
+                 on_new_block(blk);
+               }
+
                _last_block = fc::time_point::now();
              }
              catch (const fc::exception& e)
@@ -108,7 +117,15 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        void client_impl::on_new_block(const trx_block& block)
        {
-         _chain_db->push_block(block);
+         try
+         {
+           _chain_db->push_block(block);
+         }
+         catch (fc::exception& e)
+         {
+           wlog("Error pushing block ${block}: ${error}", ("block", block)("error", e.to_string()));
+           throw;
+         }
 
          for (auto trx : block.trxs)
            _pending_trxs.erase(trx.id());
@@ -165,8 +182,13 @@ namespace bts { namespace client {
          }
          catch (fc::key_not_found_exception&)
          {
-           remaining_item_count = 0;
-           return std::vector<bts::net::item_hash_t>();
+           if (from_id.item_hash == bts::net::item_hash_t())
+             last_seen_block_num = (uint32_t)-1;
+           else
+           {
+             remaining_item_count = 0;
+             return std::vector<bts::net::item_hash_t>();
+           }
          }
          remaining_item_count = _chain_db->head_block_num() - last_seen_block_num;
          uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
@@ -211,7 +233,7 @@ namespace bts { namespace client {
          {
            uint32_t block_number = _chain_db->fetch_block_num(id.item_hash);
            bts::client::block_message block_message_to_send;
-           block_message_to_send.block = _chain_db->fetch_block(block_number);
+           block_message_to_send.block = _chain_db->fetch_trx_block(block_number);
            block_message_to_send.block_id = block_message_to_send.block.id();
            FC_ASSERT(id.item_hash == block_message_to_send.block_id);
            block_message_to_send.signature = block_message_to_send.block.trustee_signature;
@@ -281,6 +303,12 @@ namespace bts { namespace client {
     {
       if (my->_chain_client)
         my->_chain_client->broadcast_transaction( trx );
+      else
+      {
+        my->_p2p_node->broadcast(trx_message(trx));
+        // p2p doesn't send messages back to the originator
+        my->on_new_transaction(trx);
+      }
     }
 
     void client::add_node( const std::string& ep )
@@ -303,16 +331,30 @@ namespace bts { namespace client {
         return my->_p2p_node->is_connected();
     }
 
+    uint32_t client::get_connection_count() const
+    {
+      if (my->_chain_client)
+        return my->_chain_client->is_connected() ? 1 : 0;
+      else
+        return my->_p2p_node->get_connected_peers().size();
+    }
+
     void client::listen_on_port(uint16_t port_to_listen)
     {
       if (my->_p2p_node)
         my->_p2p_node->listen_on_port(port_to_listen);
     }
 
-    void client::load_p2p_configuration(const fc::path& configuration_directory)
+    void client::configure(const fc::path& configuration_directory)
     {
+      my->_data_dir = configuration_directory;
       if (my->_p2p_node)
-        my->_p2p_node->load_configuration(configuration_directory);
+        my->_p2p_node->load_configuration( my->_data_dir );
+    }
+
+    fc::path client::get_data_dir()const
+    {
+       return my->_data_dir;
     }
     void client::connect_to_peer(const std::string& remote_endpoint)
 
@@ -324,9 +366,14 @@ namespace bts { namespace client {
     {
       if (!my->_p2p_node)
         return;
+      bts::net::item_id head_item_id;
+      head_item_id.item_type = bts::client::block_message_type;
       uint32_t last_block_num = my->_chain_db->head_block_num();
-      signed_block_header header = my->_chain_db->fetch_block(last_block_num);
-      my->_p2p_node->sync_from(bts::net::item_id(bts::client::block_message_type, header.id()));
+      if (last_block_num == (uint32_t)-1)
+        head_item_id.item_hash = bts::net::item_hash_t();
+      else
+        head_item_id.item_hash = my->_chain_db->head_block_id();
+      my->_p2p_node->sync_from(head_item_id);
       my->_p2p_node->connect_to_p2p_network();
     }
 

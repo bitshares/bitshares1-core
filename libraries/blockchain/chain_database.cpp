@@ -30,14 +30,14 @@ namespace bts { namespace blockchain {
     namespace ldb = leveldb;
 
     uint64_t to_bips( uint64_t shares, uint64_t total_shares )
-    {
+    { try {
         fc::uint128   big_shares(shares);
 
         big_shares *= fc::uint128( int64_t(BTS_BLOCKCHAIN_BIP) );
         big_shares /= fc::uint128( total_shares );
         FC_ASSERT( big_shares.high_bits() == 0, "bips integer overflow" );
         return big_shares.low_bits(); //(BTS_BLOCKCHAIN_BIP * shares) / total_shares;
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("shares",shares)("total_shares",total_shares) ) }
 
     namespace detail
     {
@@ -147,7 +147,7 @@ namespace bts { namespace blockchain {
             void store_genesis( const trx_block& b, 
                                 const signed_transactions& deterministic_trxs, 
                                 const block_evaluation_state_ptr& state  )
-            {
+            { try {
                 std::vector<uint160> trxs_ids;
                 std::map<int32_t,uint64_t> delegate_votes;
                 for( uint32_t i = 1; i <= 100; ++i )
@@ -171,15 +171,22 @@ namespace bts { namespace blockchain {
                           }
                        }
                     }
-                    else // t != 0
+                    else // cur_trx != 0
                     {
+                       ilog( " processing transaction ${o}", ("o",cur_trx) );
                        name_record rec = _delegate_records.fetch( b.trxs[cur_trx].vote );
                        // first transaction registers names... the rest are initial balance
                        for( uint32_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
                        {
+                          ilog( "   processing output  ${o}  ${data}", ("o",o)("data",b.trxs[cur_trx].outputs[o]) );
+                          FC_ASSERT( delegate_votes.find( b.trxs[cur_trx].vote ) != delegate_votes.end() );
                           delegate_votes[b.trxs[cur_trx].vote] += b.trxs[cur_trx].outputs[o].amount.get_rounded_amount();
+                          ilog( "total_shares: ${total}", ("total",b.total_shares) );
                           rec.votes_for += to_bips( b.trxs[cur_trx].outputs[o].amount.get_rounded_amount(), b.total_shares );
+                          ilog( "votes for: ${v}", ("v",rec.votes_for) );
+                          ilog( "rec: ${rc}", ("rc",rec) );
                        }
+                       ilog( "updating delegate..." );
                        update_delegate( rec );
                     }
                 }
@@ -198,7 +205,7 @@ namespace bts { namespace blockchain {
                 block_trxs.store( b.block_num, trxs_ids );
 
                 blk_id2num.store( b.id(), b.block_num );
-            } // store_genesis
+            }  FC_RETHROW_EXCEPTIONS( warn, "error storing genesis block " ) } // store_genesis
 
 
             void store( const trx_block& b, 

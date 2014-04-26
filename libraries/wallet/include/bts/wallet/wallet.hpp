@@ -53,13 +53,23 @@ namespace wallet {
    struct transaction_state
    {
       transaction_state():delta_balance(0),block_num(-1),valid(false){}
-      signed_transaction   trx;
-      std::vector<address> to;
-      std::vector<address> from;
-      std::string          memo;
+      signed_transaction                   trx;
+      /** outputs of the transaction that are not controlled by this wallet
+       *  
+       *  These would be addresses belonging to 3rd parties.
+       **/
+      std::map<address,std::string>        to;
+
+      /** outputs of the transaction that are controlled by this wallet, identifies who sent the
+       * transaction based upon who the user gave the address to.  This is not the
+       * address of the sender, but our local account*/
+      std::map<address,std::string>        from;
+
+      std::string                          memo;
       std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
-      uint32_t             block_num; // block that included it, -1 if not included
-      bool                 valid;     // is this transaction currently valid if it is not confirmed...
+      std::unordered_map<uint16_t,int64_t> fees; /// unit vs amount
+      uint32_t                             block_num; // block that included it, -1 if not included
+      bool                                 valid;     // is this transaction currently valid if it is not confirmed...
 
       void adjust_balance( asset amnt, int64_t direction = 1 )
       {
@@ -90,16 +100,21 @@ namespace wallet {
            ~wallet();
 
            void set_data_directory( const fc::path& dir );
-           fc::path get_wallet_file()const;
+           fc::path get_wallet_filename_for_user(const std::string& username) const;
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
            void set_delegate_trust( uint32_t did,  bool is_trusted );
 
            signed_transaction register_delegate( const std::string& n, const fc::variant& v );
 
-           void open( const fc::path& wallet_file, const std::string& password );
-           void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
+           void open( const std::string& user, const std::string& password );
+           bool close();
+           void create( const std::string& user, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
+           /// create_internal is only used to support old tests that were designed to create wallets with a given filename, 
+           /// it can probably be removed soon
+           void create_internal( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            bool is_open() const;
+           std::string get_current_user();
 
            void save();
            void backup_wallet( const fc::path& backup_path );
@@ -115,14 +130,22 @@ namespace wallet {
            trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs);
 
            address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
-           address                                 new_recv_address( const std::string& label = "" );
+           address                                 new_receive_address( const std::string& label = "" );
            fc::ecc::public_key                     new_public_key( const std::string& label = "" );
-           std::unordered_map<address,std::string> get_recv_addresses()const;
+
+           std::unordered_map<address,std::string> get_receive_addresses()const;
+           std::string                             get_send_address_label( const address& addr )const;
+
            bool                                    is_my_address( const address& a )const;
            bool                                    is_my_address( const pts_address& a )const;
 
            void                                    add_send_address( const address&, const std::string& label = "" );
            std::unordered_map<address,std::string> get_send_addresses()const;
+
+           /**
+            *  Gets the label for the address if set, or returns the addr in string representation
+            */
+           std::string                             get_receive_address_label( const address& addr ) const;
 
            asset                                   get_balance( asset_type t );
            void                                    set_fee_rate( uint64_t milli_shares_per_byte );
@@ -136,7 +159,7 @@ namespace wallet {
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
             */
-           void                  unlock_wallet( const std::string& key_password );
+           void                  unlock_wallet( const std::string& key_password, const fc::microseconds& duration = fc::microseconds::maximum());
            /**
             *  removes private keys from memory
             */
@@ -155,7 +178,7 @@ namespace wallet {
            void mark_as_spent( const output_reference& r );
 
            void dump_txs(bts::blockchain::chain_database& db, uint32_t count);
-           void dump_utxo_set();
+           void dump_unspent_outputs();
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
@@ -171,7 +194,7 @@ namespace wallet {
                                                       const std::string& memo);
            signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
 
-           std::string                         get_tx_info_string(bts::blockchain::chain_database& db, const transaction& tx);
+           std::string                         get_transaction_info_string(bts::blockchain::chain_database& db, const transaction& tx);
            virtual std::string                 get_output_info_string(const trx_output& out);
            virtual std::string                 get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
 
@@ -190,6 +213,6 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid)(fees) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
 

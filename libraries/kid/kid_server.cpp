@@ -238,9 +238,10 @@ namespace bts { namespace kid {
                        s.set_length( 9 );
                        s.write( "Not Found", 9 );
                     }
-                 } catch ( const fc::exception& e )
+                 } 
+                 catch ( const fc::exception& e )
                  {
-                    s.set_status( fc::http::reply::InternalServerError );
+                    s.set_status( fc::http::reply::BadRequest );
                     auto msg = e.to_detail_string();
                     s.set_length( msg.size() );
                     if( msg.size() )

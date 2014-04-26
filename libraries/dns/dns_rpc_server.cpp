@@ -20,20 +20,16 @@ namespace bts { namespace dns {
         return std::dynamic_pointer_cast<dns_db>(_self->get_client()->get_chain());
       }
 
-      fc::variant bid_on_domain(fc::rpc::json_connection* json_connection, const fc::variants& params);
-      fc::variant auction_domain(fc::rpc::json_connection* json_connection, const fc::variants& params);
-      fc::variant transfer_domain(fc::rpc::json_connection* json_connection, const fc::variants& params);
-      fc::variant update_domain_record(fc::rpc::json_connection* json_connection, const fc::variants& params);
-      fc::variant list_active_auctions(fc::rpc::json_connection* json_connection, const fc::variants& params);
-      fc::variant lookup_domain_record(fc::rpc::json_connection* json_connection, const fc::variants& params);
+      fc::variant bid_on_domain(const fc::variants& params);
+      fc::variant auction_domain(const fc::variants& params);
+      fc::variant transfer_domain(const fc::variants& params);
+      fc::variant update_domain_record(const fc::variants& params);
+      fc::variant list_active_auctions(const fc::variants& params);
+      fc::variant lookup_domain_record(const fc::variants& params);
     };
 
-    fc::variant dns_rpc_server_impl::bid_on_domain(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::bid_on_domain(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      _self->check_wallet_is_open();
-      _self->check_wallet_unlocked();
-      FC_ASSERT(params.size() == 2); // cmd name amount
       std::string name = params[0].as_string();
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
@@ -43,12 +39,8 @@ namespace bts { namespace dns {
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
     }
-    fc::variant dns_rpc_server_impl::auction_domain(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::auction_domain(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      _self->check_wallet_is_open();
-      _self->check_wallet_unlocked();
-      FC_ASSERT(params.size() == 2); // cmd name price
       std::string name = params[0].as_string();
       asset price = params[1].as<asset>();
       signed_transactions tx_pool;
@@ -58,12 +50,8 @@ namespace bts { namespace dns {
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
     }
-    fc::variant dns_rpc_server_impl::transfer_domain(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::transfer_domain(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      _self->check_wallet_is_open();
-      _self->check_wallet_unlocked();
-      FC_ASSERT(params.size() == 2); // cmd name to
       std::string name = params[0].as_string();
       auto to_owner = params[1].as<bts::blockchain::address>();
       signed_transactions tx_pool;
@@ -73,12 +61,8 @@ namespace bts { namespace dns {
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
     }
-    fc::variant dns_rpc_server_impl::update_domain_record(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::update_domain_record(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      _self->check_wallet_is_open();
-      _self->check_wallet_unlocked();
-      FC_ASSERT(params.size() == 2); // cmd name path
       std::string name = params[0].as_string();
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
@@ -88,28 +72,21 @@ namespace bts { namespace dns {
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
     }
-    fc::variant dns_rpc_server_impl::list_active_auctions(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::list_active_auctions(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      FC_ASSERT(params.size() == 0); 
       std::vector<trx_output> active_auctions = get_active_auctions(*get_dns_db());
 
-      std::vector<claim_domain_output> claim_domain_outputs;
+      std::vector<std::pair<bts::blockchain::asset, claim_domain_output> > claim_domain_outputs;
       claim_domain_outputs.reserve(active_auctions.size());
       for (const trx_output& output : active_auctions)
       {
-        claim_domain_outputs.push_back(to_domain_output(output));
-
-        //std::cout << "[" << output.amount.get_rounded_amount() << "] " << dns_output.name << "\n";
+        claim_domain_outputs.push_back(std::make_pair(output.amount, to_domain_output(output)));
       }
       return fc::variant(claim_domain_outputs);
     }
-    fc::variant dns_rpc_server_impl::lookup_domain_record(fc::rpc::json_connection* json_connection, const fc::variants& params)
+    fc::variant dns_rpc_server_impl::lookup_domain_record(const fc::variants& params)
     {
-      _self->check_json_connection_authenticated(json_connection);
-      FC_ASSERT(params.size() == 1); 
       std::string name = params[0].as_string();
-
       return lookup_value(name, *get_dns_db());
     }
 
@@ -120,17 +97,60 @@ namespace bts { namespace dns {
   {
     my->_self = this;
 
-#define REGISTER_METHOD(METHODNAME, PARAMETER_DESCRIPTION, METHOD_DESCRIPTION) \
-      register_method(#METHODNAME, boost::bind(&detail::dns_rpc_server_impl::METHODNAME, my.get(), _1, _2), PARAMETER_DESCRIPTION, METHOD_DESCRIPTION)
+#define JSON_METHOD_IMPL(METHODNAME) \
+    boost::bind(&detail::dns_rpc_server_impl::METHODNAME, my.get(), _1)
 
-    REGISTER_METHOD(bid_on_domain, "<domain_name> <amount>", "");
-    REGISTER_METHOD(auction_domain, "<domain_name> <price>", "");
-    REGISTER_METHOD(transfer_domain, "<domain_name> <to_address>", "");
-    REGISTER_METHOD(update_domain_record, "<domain_name> <path>", "");
-    REGISTER_METHOD(list_active_auctions,"","");
-    REGISTER_METHOD(lookup_domain_record,"<domain_name>","");
+    method_data bid_on_domain_metadata{"bid_on_domain", JSON_METHOD_IMPL(bid_on_domain),
+                     /* description */ "TODO: describe me",
+                     /* returns: */    "bool",
+                     /* params:          name            type       required */ 
+                                       {{"domain_name",  "string",  true},
+                                        {"amount",       "asset",   true}},
+                   /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+    register_method(bid_on_domain_metadata);
 
-#undef REGISTER_METHOD
+    method_data auction_domain_metadata{"auction_domain", JSON_METHOD_IMPL(auction_domain),
+                      /* description */ "TODO: describe me",
+                      /* returns: */    "bool",
+                      /* params:          name            type       required */ 
+                                        {{"domain_name",  "string",  true},
+                                         {"price",        "asset",   true}},
+                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+    register_method(auction_domain_metadata);
+
+    method_data transfer_domain_metadata{"transfer_domain", JSON_METHOD_IMPL(transfer_domain),
+                       /* description */ "TODO: describe me",
+                       /* returns: */    "bool",
+                       /* params:          name            type       required */ 
+                                         {{"domain_name",  "string",  true},
+                                          {"to_address",   "address", true}},
+                     /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+    register_method(transfer_domain_metadata);
+
+    method_data update_domain_record_metadata{"update_domain_record", JSON_METHOD_IMPL(update_domain_record),
+                            /* description */ "TODO: describe me",
+                            /* returns: */    "bool",
+                            /* params:          name            type       required */ 
+                                              {{"domain_name",  "string",  true},
+                                               {"path",         "string",  true}},
+                          /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
+    register_method(update_domain_record_metadata);
+
+    method_data list_active_auctions_metadata{"list_active_auctions", JSON_METHOD_IMPL(list_active_auctions),
+                            /* description */ "TODO: describe me",
+                            /* returns: */    "vector<pair<asset,claim_domain_output>>",
+                            /* params:     */ {},
+                          /* prerequisites */ json_authenticated};
+    register_method(list_active_auctions_metadata);
+
+    method_data lookup_domain_record_metadata{"lookup_domain_record", JSON_METHOD_IMPL(lookup_domain_record),
+                            /* description */ "TODO: describe me",
+                            /* returns: */    "string",
+                            /* params:          name            type       required */ 
+                                              {{"domain_name",  "string",  true}},
+                          /* prerequisites */ json_authenticated};
+    register_method(lookup_domain_record_metadata);
+#undef JSON_METHOD_IMPL
   }
 
   dns_rpc_server::~dns_rpc_server()

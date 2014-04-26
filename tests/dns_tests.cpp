@@ -89,8 +89,8 @@ class DNSTestState
             db.set_pow_validator(validator);
             db.open(path / "dns_test_db", true);
 
-            wallet1.create(path / "dns_test_wallet1.dat", "password", "password", true);
-            wallet2.create(path / "dns_test_wallet2.dat", "password", "password", true);
+            wallet1.create_internal(path / "dns_test_wallet1.dat", "password", "password", true);
+            wallet2.create_internal(path / "dns_test_wallet2.dat", "password", "password", true);
 
             addrs1 = std::vector<address>();
             addrs2 = std::vector<address>();
@@ -98,8 +98,8 @@ class DNSTestState
             /* Start the blockchain with random balances in new addresses */
             for (auto i = 0; i < DNS_TEST_NUM_WALLET_ADDRS; ++i)
             {
-                addrs1.push_back(wallet1.new_recv_address());
-                addrs2.push_back(wallet2.new_recv_address());
+                addrs1.push_back(wallet1.new_receive_address());
+                addrs2.push_back(wallet2.new_receive_address());
             }
 
             std::vector<address> addrs = addrs1;

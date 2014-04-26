@@ -7,6 +7,13 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/tag.hpp>
+
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/log/logger.hpp>
@@ -128,6 +135,69 @@ FC_REFLECT_ENUM(bts::net::detail::peer_connection::connection_state, (disconnect
 namespace bts { namespace net { 
   namespace detail 
   {
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+    class blockchain_tied_message_cache 
+    {
+       private:
+         static const uint32_t cache_duration_in_blocks = 2;
+
+         struct message_hash_index{};
+         struct block_clock_index{};
+         struct message_info
+         {
+           message_hash_type message_hash;
+           message           message_body;
+           uint32_t          block_clock_when_received;
+           message_info(const message_hash_type& message_hash,
+                        const message&           message_body,
+                        uint32_t                 block_clock_when_received) :
+             message_hash(message_hash),
+             message_body(message_body),
+             block_clock_when_received (block_clock_when_received)
+           {}
+         };
+         typedef boost::multi_index_container<message_info, 
+                                              boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::tag<message_hash_index>, 
+                                                                                                                boost::multi_index::member<message_info, message_hash_type, &message_info::message_hash> >,
+                                                                             boost::multi_index::ordered_non_unique<boost::multi_index::tag<block_clock_index>, 
+                                                                                                                    boost::multi_index::member<message_info, uint32_t, &message_info::block_clock_when_received> > > > message_cache_container;
+         message_cache_container _message_cache;
+
+         uint32_t block_clock;
+       public:
+         blockchain_tied_message_cache() :
+           block_clock(0)
+         {}
+         void block_accepted();
+         void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache);
+         message get_message(const message_hash_type& hash_of_message_to_lookup);
+    };
+
+    void blockchain_tied_message_cache::block_accepted()
+    {
+      ++block_clock;
+      if (block_clock > cache_duration_in_blocks)
+        _message_cache.get<block_clock_index>().erase(_message_cache.get<block_clock_index>().begin(), 
+                                                     _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
+    }
+
+    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache)
+    {
+      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock));
+    }
+
+    message blockchain_tied_message_cache::get_message(const message_hash_type& hash_of_message_to_lookup)
+    {
+      message_cache_container::index<message_hash_index>::type::const_iterator iter = _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup);
+      if (iter != _message_cache.get<message_hash_index>().end())
+        return iter->message_body;
+      FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
+    }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     class node_impl
     {
     public:
@@ -190,10 +260,11 @@ namespace bts { namespace net {
       std::unordered_set<peer_connection_ptr>                     _active_connections;
       /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
-
       
       boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
       uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
+
+      blockchain_tied_message_cache _message_cache; /// cache message we have received and might be required to provide to other peers via inventory requests
 
       node_impl();
       ~node_impl();
@@ -240,6 +311,8 @@ namespace bts { namespace net {
       void process_backlog_of_sync_blocks();
       void process_block_during_sync(peer_connection* originating_peer, const message& block_message, const message_hash_type& message_hash);
       void process_block_during_normal_operation(peer_connection* originating_peer, const message& block_message, const message_hash_type& message_hash);
+  
+      void process_unrecognized_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash);
 
       void start_synchronizing();
       void start_synchronizing_with_peer(const peer_connection_ptr& peer);
@@ -530,6 +603,7 @@ namespace bts { namespace net {
       for (;;)
       {
         _items_to_fetch_updated = false;
+        ilog("beginning an iteration of fetch items (${count} items to fetch)", ("count", _items_to_fetch.size()));
 
         for (auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end(); )
         {
@@ -730,6 +804,7 @@ namespace bts { namespace net {
           process_block_during_normal_operation(originating_peer, received_message, message_hash);
         break;
       default:
+        process_unrecognized_message(originating_peer, received_message, message_hash);
         break;
       }
     }
@@ -1040,8 +1115,21 @@ namespace bts { namespace net {
       ilog("received item request for id ${id} from peer ${endpoint}", ("id", fetch_item_message_received.item_to_fetch.item_hash)("endpoint", originating_peer->get_remote_endpoint()));
       try
       {
+        message requested_message = _message_cache.get_message(fetch_item_message_received.item_to_fetch.item_hash);
+        ilog("received item request for item ${id} from peer ${endpoint}, returning the item from my message cache",
+             ("endpoint", originating_peer->get_remote_endpoint())
+             ("id", requested_message.id()));
+        originating_peer->send_message(requested_message);
+        return;
+      }
+      catch (fc::key_not_found_exception&)
+      {
+      }
+
+      try
+      {
         message requested_message = _delegate->get_item(fetch_item_message_received.item_to_fetch);
-        ilog("received item request from peer ${endpoint}, returning the item with id ${id} size ${size}",
+        ilog("received item request from peer ${endpoint}, returning the item from delegate with id ${id} size ${size}",
              ("id", requested_message.id())
              ("size", requested_message.size)
              ("endpoint", originating_peer->get_remote_endpoint()));
@@ -1329,6 +1417,8 @@ namespace bts { namespace net {
       {
         ilog("received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint()));
         originating_peer->items_requested_from_peer.erase(iter);
+        trigger_fetch_items_loop();
+
         try
         {
           // we can get into an intersting situation near the end of synchronization.  We can be in
@@ -1380,6 +1470,38 @@ namespace bts { namespace net {
             disconnect_from_peer(peer.get());
           }
         }
+      }
+    }
+
+    void node_impl::process_unrecognized_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
+    {
+      // only process it if we asked for it
+      auto iter = originating_peer->items_requested_from_peer.find(item_id(message_to_process.msg_type, message_hash));
+      if (iter == originating_peer->items_requested_from_peer.end())
+      {
+        wlog("received a message I didn't ask for from peer ${endpoint}, disconnecting from peer", 
+             ("endpoint", originating_peer->get_remote_endpoint()));
+        disconnect_from_peer(originating_peer);
+        return;
+      }
+      else
+      {
+        originating_peer->items_requested_from_peer.erase(iter);
+        trigger_fetch_items_loop();
+
+        // Next: have the delegate process the message
+        try
+        {
+          _delegate->handle_message(message_to_process);
+        }
+        catch (fc::exception& e)
+        {
+          wlog("client rejected block sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint())("e", e.to_string()));
+          return;
+        }
+
+        // finally, if the delegate validated the message, broadcast it to our other peers
+        broadcast(message_to_process);
       }
     }
 
@@ -1628,7 +1750,9 @@ namespace bts { namespace net {
         bts::client::block_message messageToBroadcast = item_to_broadcast.as<bts::client::block_message>();
         _most_recent_blocks_accepted.push_back(messageToBroadcast.block_id);
       }
-      _new_inventory.insert(item_id(item_to_broadcast.msg_type, item_to_broadcast.id()));
+      message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
+      _message_cache.cache_message(item_to_broadcast, hash_of_item_to_broadcast);
+      _new_inventory.insert(item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast));
       trigger_advertise_inventory_loop();
       dump_node_status();
     }
@@ -1641,8 +1765,7 @@ namespace bts { namespace net {
 
     bool node_impl::is_connected() const
     {
-      // TODO
-      return false;
+      return !_active_connections.empty();
     }
 
   }  // end namespace detail

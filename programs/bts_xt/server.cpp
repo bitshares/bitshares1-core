@@ -43,8 +43,6 @@ int main( int argc, char** argv )
 
        if (option_variables.count("trustee-address"))
          cserv.get_chain().set_trustee( bts::blockchain::address(option_variables["trustee-address"].as<std::string>()) );
-       else
-         cserv.get_chain().set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
 
        ilog( "sleep..." );
        fc::usleep( fc::seconds( 60*60*24*365 ) );
