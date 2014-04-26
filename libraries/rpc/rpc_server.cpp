@@ -318,31 +318,43 @@ namespace bts { namespace rpc {
         }
 
         fc::variant login( fc::rpc::json_connection* json_connection, const fc::variants& params );
-        fc::variant help( const fc::variants& params );
-        fc::variant openwallet( const fc::variants& params );
-        fc::variant createwallet( const fc::variants& params );
-        fc::variant currentwallet( const fc::variants& params );
-        fc::variant closewallet( const fc::variants& params );
-        fc::variant walletlock( const fc::variants& params );
-        fc::variant walletpassphrase( const fc::variants& params );
-        fc::variant getnewaddress( const fc::variants& params );
-        fc::variant add_send_address( const fc::variants& params );
-        fc::variant _create_sendtoaddress_transaction( const fc::variants& params );
-        fc::variant sendtransaction( const fc::variants& params );
-        fc::variant sendtoaddress( const fc::variants& params );
-        fc::variant listrecvaddresses( const fc::variants& params );
-        fc::variant list_send_addresses( const fc::variants& params );
-        fc::variant get_send_address_label( const fc::variants& params );
-        fc::variant getbalance( const fc::variants& params );
-        fc::variant get_transaction( const fc::variants& params );
-        fc::variant get_transaction_history( const fc::variants& params );
-        fc::variant getblock( const fc::variants& params );
-        fc::variant validateaddress( const fc::variants& params );
-        fc::variant rescan( const fc::variants& params );
-        fc::variant import_bitcoin_wallet( const fc::variants& params );
-        fc::variant import_private_key( const fc::variants& params );
-        fc::variant importprivkey( const fc::variants& params );
-        fc::variant getconnectioncount(const fc::variants& params);
+
+
+#define DECLARE_RPC_METHOD( r, visitor, elem )  fc::variant elem( const fc::variants& );
+#define DECLARE_RPC_METHODS( METHODS ) BOOST_PP_SEQ_FOR_EACH( DECLARE_RPC_METHOD, v, METHODS ) 
+        DECLARE_RPC_METHODS( 
+             (help)
+             (getinfo)
+             (open_wallet)
+             (create_wallet)
+             (current_wallet)
+             (close_wallet)
+             (walletlock)
+             (walletpassphrase)
+             (getnewaddress)
+             (add_send_address)
+             (_create_sendtoaddress_transaction)
+             (send_transaction)
+             (sendtoaddress)
+             (listrecvaddresses)
+             (list_send_addresses)
+             (get_send_address_label)
+             (getbalance)
+             (getblockhash)
+             (getblockcount)
+             (get_transaction)
+             (get_transaction_history)
+             (getblock)
+             (get_block_by_number)
+             (validateaddress)
+             (rescan)
+             (import_bitcoin_wallet)
+             (import_private_key)
+             (importprivkey)
+             (getconnectioncount)
+             )
+ #undef DECLARE_RPC_METHOD
+ #undef DECLARE_RPC_METHODS
     };
 
     //register_method(method_data{"login", JSON_METHOD_IMPL(login),
@@ -388,15 +400,56 @@ namespace bts { namespace rpc {
       }
       return fc::variant( help_strings );
     }
+    static rpc_server::method_data getinfo_metadata{"getinfo", nullptr,
+                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* returns: */    "info",
+                                     /* params:          name                 type      required */ 
+                                                       { },
+                                   /* prerequisites */ 0} ;
+    fc::variant rpc_server_impl::getinfo(const fc::variants& params)
+    {
+       fc::mutable_variant_object info;
+       info["balance"]          = _client->get_wallet()->get_balance(0).get_rounded_amount();
+       info["version"]          = 0;// BTS_BLOCKCHAIN_VERSION;
+       info["protocolversion"]  = 0;// BTS_NET_PROTOCOL_VERSION;
+       info["walletversion"]    = 0;// BTS_WALLET_VERSION;
+       info["blocks"]           = _client->get_chain()->head_block_num();
+       info["connections"]      = 0;
+       info["unlocked_until"]   = 0;
+       return fc::variant( std::move(info) );
+    }
+    static rpc_server::method_data getblockhash_metadata{"getblockhash", nullptr,
+                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* returns: */    "block_id_type",
+                                     /* params:          name                 type      required */ 
+                                                       { },
+                                   /* prerequisites */ 0} ;
+    fc::variant rpc_server_impl::getblockhash(const fc::variants& params)
+    {
+      return fc::variant(_client->get_chain()->fetch_block( params[0].as_int64() ).id());
+    }
 
-    static rpc_server::method_data openwallet_metadata{"openwallet", nullptr,
+
+    static rpc_server::method_data getblockcount_metadata{"getblockcount", nullptr,
+                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* returns: */    "int",
+                                     /* params:          name                 type      required */ 
+                                                       { },
+                                   /* prerequisites */ 0} ;
+    fc::variant rpc_server_impl::getblockcount(const fc::variants& params)
+    {
+      return fc::variant(_client->get_chain()->head_block_num());
+    }
+
+
+    static rpc_server::method_data open_wallet_metadata{"open_wallet", nullptr,
                                      /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */ 
                                                        {{"wallet_username",   "string", false} ,
                                                         {"wallet_passphrase", "string", false}},
                                    /* prerequisites */ rpc_server::json_authenticated};
-    fc::variant rpc_server_impl::openwallet(const fc::variants& params)
+    fc::variant rpc_server_impl::open_wallet(const fc::variants& params)
     {
       std::string username = "default";
       if (params.size() >= 1 && !params[0].is_null() && !params[0].as_string().empty())
@@ -424,7 +477,7 @@ namespace bts { namespace rpc {
       }          
     }
 
-    static rpc_server::method_data createwallet_metadata{"createwallet", nullptr,
+    static rpc_server::method_data create_wallet_metadata{"create_wallet", nullptr,
                                        /* description */ "create a wallet with the given passphrases",
                                        /* returns: */    "bool",
                                        /* params:          name                   type      required */ 
@@ -434,7 +487,7 @@ namespace bts { namespace rpc {
                                                           {"spending_passphrase", "string", true}
                                                          },
                                      /* prerequisites */ rpc_server::json_authenticated};
-    fc::variant rpc_server_impl::createwallet(const fc::variants& params)
+    fc::variant rpc_server_impl::create_wallet(const fc::variants& params)
     {
       std::string username = "default";
       std::string passphrase;
@@ -462,24 +515,24 @@ namespace bts { namespace rpc {
       }          
     }
 
-    static rpc_server::method_data currentwallet_metadata{"currentwallet", nullptr,
-                                        /* description */ "returns the username passed to openwallet",
+    static rpc_server::method_data current_wallet_metadata{"current_wallet", nullptr,
+                                        /* description */ "returns the username passed to open_wallet",
                                         /* returns: */    "string",
                                         /* params:     */ {},
                                       /* prerequisites */ };
-    fc::variant rpc_server_impl::currentwallet(const fc::variants& params)
+    fc::variant rpc_server_impl::current_wallet(const fc::variants& params)
     {
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
        return fc::variant(_username);
     }
 
-    static rpc_server::method_data closewallet_metadata{"closewallet", nullptr,
+    static rpc_server::method_data close_wallet_metadata{"close_wallet", nullptr,
                                       /* description */ "closes the curent wallet, if one is open.",
                                       /* returns: */    "bool",
                                       /* params:     */ {},
                                     /* prerequisites */ };
-    fc::variant rpc_server_impl::closewallet(const fc::variants& params)
+    fc::variant rpc_server_impl::close_wallet(const fc::variants& params)
     {
        return fc::variant( _client->get_wallet()->close() );
     }
@@ -575,13 +628,13 @@ namespace bts { namespace rpc {
        return fc::variant(_client->get_wallet()->transfer(asset(amount), destination_address, comment));
     }
 
-    static rpc_server::method_data sendtransaction_metadata{"sendtransaction", nullptr,
+    static rpc_server::method_data send_transaction_metadata{"send_transaction", nullptr,
                                           /* description */ "Broadcast a previously-created signed transaction to the network",
                                           /* returns: */    "transaction_id",
                                           /* params:          name                  type                   required */ 
                                                             {{"signed_transaction", "signed_transaction",  true}},
                                         /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network};
-    fc::variant rpc_server_impl::sendtransaction(const fc::variants& params)
+    fc::variant rpc_server_impl::send_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
@@ -685,12 +738,24 @@ namespace bts { namespace rpc {
                                    /* description */ "Retrieves the block header for the given block",
                                    /* returns: */    "block_header",
                                    /* params:          name              type        required */ 
-                                                     {{"block_number",   "uint32_t", true}},
+                                                     {{"block_hash",   "block_id_type", true}},
                                  /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::getblock(const fc::variants& params)
-    {
-      return fc::variant( _client->get_chain()->fetch_block( (uint32_t)params[0].as_int64() )  ); 
-    }
+    { try {
+      auto blocknum = _client->get_chain()->fetch_block_num( params[0].as<block_id_type>() );
+      return fc::variant( _client->get_chain()->fetch_block( blocknum )  ); 
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
+
+    static rpc_server::method_data get_block_by_number_metadata{"get_block_by_number", nullptr,
+                                   /* description */ "Retrieves the block header for the given block",
+                                   /* returns: */    "block_header",
+                                   /* params:          name              type        required */ 
+                                                     {{"block_number",   "int32", true}},
+                                 /* prerequisites */ rpc_server::json_authenticated};
+    fc::variant rpc_server_impl::get_block_by_number(const fc::variants& params)
+    { try {
+      return fc::variant( _client->get_chain()->fetch_block( params[0].as<uint32_t>() ) ); 
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data validateaddress_metadata{"validateaddress", nullptr,
                                           /* description */ "Checks that the given address is valid",
@@ -817,30 +882,35 @@ namespace bts { namespace rpc {
     } while (0)
 
     REGISTER_JSON_METHOD(help);
-    REGISTER_JSON_METHOD(openwallet);
-    REGISTER_JSON_METHOD(createwallet);
-    REGISTER_JSON_METHOD(currentwallet);
-    REGISTER_JSON_METHOD(closewallet);
+    REGISTER_JSON_METHOD(open_wallet);
+    REGISTER_JSON_METHOD(create_wallet);
+    REGISTER_JSON_METHOD(current_wallet);
+    REGISTER_JSON_METHOD(close_wallet);
     REGISTER_JSON_METHOD(walletlock);
     REGISTER_JSON_METHOD(walletpassphrase);
     REGISTER_JSON_METHOD(getnewaddress);
-    REGISTER_JSON_METHOD(add_send_address);
+    REGISTER_JSON_METHOD(getinfo);
+    REGISTER_JSON_METHOD(getblock);
+    REGISTER_JSON_METHOD(getblockhash);
+    REGISTER_JSON_METHOD(getblockcount);
     REGISTER_JSON_METHOD(sendtoaddress);
     REGISTER_JSON_METHOD(listrecvaddresses);
+    REGISTER_JSON_METHOD(rescan);
+    REGISTER_JSON_METHOD(validateaddress);
+    REGISTER_JSON_METHOD(getbalance);
+    REGISTER_JSON_METHOD(importprivkey);
+    REGISTER_JSON_METHOD(getconnectioncount);
+
+    REGISTER_JSON_METHOD(add_send_address);
     REGISTER_JSON_METHOD(list_send_addresses);
     REGISTER_JSON_METHOD(get_send_address_label);
-    REGISTER_JSON_METHOD(getbalance);
     REGISTER_JSON_METHOD(get_transaction_history);
     REGISTER_JSON_METHOD(get_transaction);
-    REGISTER_JSON_METHOD(getblock);
-    REGISTER_JSON_METHOD(validateaddress);
-    REGISTER_JSON_METHOD(rescan);
+    REGISTER_JSON_METHOD(get_block_by_number);
     REGISTER_JSON_METHOD(import_bitcoin_wallet);
-    REGISTER_JSON_METHOD(importprivkey);
     REGISTER_JSON_METHOD(import_private_key);
-    REGISTER_JSON_METHOD(sendtransaction);
+    REGISTER_JSON_METHOD(send_transaction);
     REGISTER_JSON_METHOD(_create_sendtoaddress_transaction);
-    REGISTER_JSON_METHOD(getconnectioncount);
 #undef REGISTER_JSON_METHOD
   }
 
