@@ -2,6 +2,8 @@
 #include <bts/dns/dns_wallet.hpp>
 #include <boost/bind.hpp>
 
+#include <iostream>
+
 namespace bts { namespace dns {
 
   namespace detail
@@ -30,6 +32,7 @@ namespace bts { namespace dns {
 
     fc::variant dns_rpc_server_impl::bid_on_domain(const fc::variants& params)
     {
+      std::cout << params[0].as_string();
       std::string name = params[0].as_string();
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
@@ -104,7 +107,7 @@ namespace bts { namespace dns {
     boost::bind(&detail::dns_rpc_server_impl::METHODNAME, my.get(), _1)
 
     method_data bid_on_domain_metadata{"bid_on_domain", JSON_METHOD_IMPL(bid_on_domain),
-                     /* description */ "TODO: describe me",
+                     /* description */ "Place a bid for an unclaimed name at a particular price.",
                      /* returns: */    "bool",
                      /* params:          name            type       required */
                                        {{"domain_name",  "string",  true},
@@ -113,7 +116,7 @@ namespace bts { namespace dns {
     register_method(bid_on_domain_metadata);
 
     method_data auction_domain_metadata{"auction_domain", JSON_METHOD_IMPL(auction_domain),
-                      /* description */ "TODO: describe me",
+                      /* description */ "Make your name available for bidding at a minimum price.",
                       /* returns: */    "bool",
                       /* params:          name            type       required */
                                         {{"domain_name",  "string",  true},
@@ -122,7 +125,7 @@ namespace bts { namespace dns {
     register_method(auction_domain_metadata);
 
     method_data transfer_domain_metadata{"transfer_domain", JSON_METHOD_IMPL(transfer_domain),
-                       /* description */ "TODO: describe me",
+                       /* description */ "Send a name to an address.",
                        /* returns: */    "bool",
                        /* params:          name            type       required */
                                          {{"domain_name",  "string",  true},
@@ -131,7 +134,7 @@ namespace bts { namespace dns {
     register_method(transfer_domain_metadata);
 
     method_data update_domain_record_metadata{"update_domain_record", JSON_METHOD_IMPL(update_domain_record),
-                            /* description */ "TODO: describe me",
+                            /* description */ "Set the value of a name you own to the contents of a given file..",
                             /* returns: */    "bool",
                             /* params:          name            type       required */
                                               {{"domain_name",  "string",  true},
@@ -140,14 +143,14 @@ namespace bts { namespace dns {
     register_method(update_domain_record_metadata);
 
     method_data list_active_auctions_metadata{"list_active_auctions", JSON_METHOD_IMPL(list_active_auctions),
-                            /* description */ "TODO: describe me",
+                            /* description */ "List names that are available for bidding.",
                             /* returns: */    "vector<pair<asset,claim_dns_output>>",
                             /* params:     */ {},
                           /* prerequisites */ json_authenticated};
     register_method(list_active_auctions_metadata);
 
     method_data lookup_domain_record_metadata{"lookup_domain_record", JSON_METHOD_IMPL(lookup_domain_record),
-                            /* description */ "TODO: describe me",
+                            /* description */ "Get the raw record for a name.",
                             /* returns: */    "string",
                             /* params:          name            type       required */
                                               {{"domain_name",  "string",  true}},

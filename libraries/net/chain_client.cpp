@@ -4,9 +4,7 @@
 #include <bts/net/chain_messages.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/reflect/variant.hpp>
-
 #include <iostream>
-
 
 using namespace bts::blockchain;
 
@@ -39,14 +37,14 @@ namespace bts { namespace net {
                elog( "${e}", ("e", errmsg ) );
             }
         }
-        
+
         virtual void on_connection_disconnected( chain_connection& c )
         {
             start_connect_loop();
         }
         void start_connect_loop()
         {
-             _chain_connect_loop_complete = fc::async( 
+             _chain_connect_loop_complete = fc::async(
                    [this](){ fc::usleep(fc::seconds(1)); chain_connect_loop(); } );
         }
 
@@ -74,10 +72,11 @@ namespace bts { namespace net {
                        // std::cout<< "\rconnected to bitshares network\n";
                        _chain_connected = true;
                        return;
-                    } 
+                    }
                     catch ( const fc::exception& e )
                     {
                        std::cout<< "\nunable to connect to bitshares network at this time.\n";
+	               std::cout<< e.to_detail_string();
                        wlog( "${e}", ("e",e.to_detail_string()));
                     }
                }
