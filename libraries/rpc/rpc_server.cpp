@@ -265,7 +265,8 @@ namespace bts { namespace rpc {
           if (method_data.prerequisites & rpc_server::connected_to_network)
             check_connected_to_network();
           if (arguments.size() > method_data.parameters.size())
-            FC_THROW_EXCEPTION(exception, "too many arguments (expected at most ${count})", ("count", method_data.parameters.size())); 
+            FC_THROW_EXCEPTION(exception, "too many arguments (expected at most ${count})", 
+                                          ("count", method_data.parameters.size())); 
           uint32_t required_argument_count = 0;
           for (const rpc_server::parameter_data& parameter : method_data.parameters)
           {
@@ -492,12 +493,12 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
     {
        bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-       auto amount = params[1].as<asset>();
+       auto amount = params[1].as<int64_t>();
        std::string comment;
        if (params.size() >= 3)
          comment = params[2].as_string();
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
-       return fc::variant(_client->get_wallet()->transfer(amount, destination_address, comment));
+       return fc::variant(_client->get_wallet()->transfer(asset(amount), destination_address, comment));
     }
     fc::variant rpc_server_impl::sendtransaction(const fc::variants& params)
     {
@@ -734,7 +735,7 @@ namespace bts { namespace rpc {
                      /* returns: */    "transaction_id",
                      /* params:          name          type       required */ 
                                        {{"to_address", "address", true},
-                                        {"amount",     "uint64",   true},
+                                        {"amount",     "int64",   true},
                                         {"comment",    "string",  false},
                                         {"to_comment", "string",  false}},
                    /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};
@@ -852,7 +853,7 @@ namespace bts { namespace rpc {
                                          /* returns: */    "signed_transaction",
                                          /* params:          name          type       required */ 
                                                            {{"to_address", "address", true},
-                                                            {"amount",     "asset",   true},
+                                                            {"amount",     "int64",   true},
                                                             {"comment",    "string",  false},
                                                             {"to_comment", "string",  false}},
                                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};

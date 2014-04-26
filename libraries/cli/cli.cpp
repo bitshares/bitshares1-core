@@ -211,7 +211,9 @@ namespace bts { namespace cli {
               return fc::variant();
             }
 
-            fc::variant parse_argument_of_known_type(fc::buffered_istream& argument_stream, const bts::rpc::rpc_server::method_data& method_data, unsigned parameter_index)
+            fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream, 
+                                                      const bts::rpc::rpc_server::method_data& method_data, 
+                                                      unsigned parameter_index)
             {
               const bts::rpc::rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
@@ -223,12 +225,12 @@ namespace bts { namespace cli {
                   fc::variant amount_as_variant = fc::json::from_stream(argument_stream);
                   amount_as_int = amount_as_variant.as_uint64();
                 }
-                catch (fc::bad_cast_exception& e)
+                catch ( fc::bad_cast_exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 }
-                catch (fc::parse_error_exception& e)
+                catch ( fc::parse_error_exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -238,16 +240,17 @@ namespace bts { namespace cli {
               else if (this_parameter.type == "address")
               {
                 // allow addresses to be un-quoted
-                while (isspace(argument_stream.peek()))
+                while( isspace(argument_stream.peek()) )
                   argument_stream.get();
                 fc::stringstream address_stream;
                 try
                 {
-                  while (!isspace(argument_stream.peek()))
+                  while( !isspace(argument_stream.peek()) )
                     address_stream.put(argument_stream.get());
                 }
-                catch (fc::eof_exception&)
+                catch( const fc::eof_exception& )
                 {
+                   // expected and ignored
                 }
                 std::string address_string = address_stream.str();
 
@@ -255,21 +258,21 @@ namespace bts { namespace cli {
                 {
                   bts::blockchain::address::is_valid(address_string);
                 }
-                catch (fc::exception& e)
+                catch ( fc::exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 } 
-                return fc::variant(bts::blockchain::address(address_string));
+                return fc::variant( bts::blockchain::address(address_string) );
               }
               else
               {
                 // assume it's raw JSON
                 try
                 {
-                  return fc::json::from_stream(argument_stream);
+                  return fc::json::from_stream( argument_stream );
                 }
-                catch (fc::parse_error_exception& e)
+                catch( fc::parse_error_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -277,8 +280,8 @@ namespace bts { namespace cli {
               }
             }
 
-            fc::variants parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream, 
-                                                                const std::string& command)
+            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream, 
+                                                                 const std::string& command)
             {
               // quit isn't registered with the RPC server
               if (command == "quit")
@@ -286,7 +289,8 @@ namespace bts { namespace cli {
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
-            fc::variants parse_recognized_interactive_command(fc::buffered_istream& argument_stream, const bts::rpc::rpc_server::method_data& method_data)
+            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream, 
+                                                               const bts::rpc::rpc_server::method_data& method_data)
             {
               fc::variants arguments;
               for (unsigned i = 0; i < method_data.parameters.size(); ++i)
@@ -295,13 +299,13 @@ namespace bts { namespace cli {
                 {
                   arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
-                catch (fc::eof_exception&)
+                catch (const fc::eof_exception& e)
                 {
                   if (!method_data.parameters[i].required)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                             ("argument_number", i + 1)("command", method_data.name));
+                             ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
                 }
                 catch (fc::parse_error_exception& e)
                 {
@@ -353,6 +357,7 @@ namespace bts { namespace cli {
                 return execute_command_and_prompt_for_passwords(command, arguments);
               }
             }
+
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
               if (command == "sendtoaddress")
