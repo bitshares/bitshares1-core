@@ -107,10 +107,14 @@ namespace wallet {
 
            signed_transaction register_delegate( const std::string& n, const fc::variant& v );
 
-           void open( const fc::path& wallet_file, const std::string& password );
+           void open( const std::string& user, const std::string& password );
            bool close();
-           void create( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
+           void create( const std::string& user, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
+           /// create_internal is only used to support old tests that were designed to create wallets with a given filename, 
+           /// it can probably be removed soon
+           void create_internal( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
            bool is_open() const;
+           std::string get_current_user();
 
            void save();
            void backup_wallet( const fc::path& backup_path );

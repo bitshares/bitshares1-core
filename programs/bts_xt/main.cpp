@@ -196,7 +196,7 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
    else
    {
 #ifdef WIN32
-     datadir =  fc::app_path() / "BitSharesX";
+     datadir =  fc::app_path() / "BitSharesXT";
 #elif defined( __APPLE__ )
      datadir =  fc::app_path() / "BitSharesXT";
 #else

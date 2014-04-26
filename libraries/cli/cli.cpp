@@ -93,7 +93,8 @@ namespace bts { namespace cli {
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
                   {
-                    fc::variants arguments{password};
+                    std::string current_wallet_user(_client->get_wallet()->get_current_user());
+                    fc::variants arguments{current_wallet_user, password};
                     _rpc_server->direct_invoke_method("openwallet", arguments);
                     return;
                   }
@@ -511,10 +512,11 @@ namespace bts { namespace cli {
 
     void cli_impl::create_wallet_if_missing()
     {
-      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user("default");
+      std::string user = "default";
+      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user(user);
       if( !fc::exists( wallet_dat ) )
       {
-        std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
+        std::cout << "Creating wallet \""<< user << "\"\n";
         std::cout << "You will be asked to provide two passphrase, the first passphrase\n";
         std::cout << "encrypts the entire contents of your wallet on disk.  The second\n";
         std::cout << "passphrase will only encrypt your private keys.\n\n";
@@ -568,7 +570,7 @@ namespace bts { namespace cli {
           std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
         }
 
-        _client->get_wallet()->create( wallet_dat, pass1, keypass1 );
+        _client->get_wallet()->create( user, pass1, keypass1 );
         std::cout << "Wallet created.\n";
       }
     }

@@ -36,6 +36,7 @@ namespace bts { namespace rpc {
 
     enum method_prerequisites
     {
+      no_prerequisites     = 0,
       json_authenticated   = 1,
       wallet_open          = 2,
       wallet_unlocked      = 4,
@@ -56,6 +57,7 @@ namespace bts { namespace rpc {
       std::string                 return_type;
       std::vector<parameter_data> parameters;
       uint32_t                    prerequisites;
+      std::string                 detailed_description;
     };
 
     rpc_server();
