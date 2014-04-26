@@ -214,8 +214,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
   chain->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
     chain->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
-  else
-    chain->set_trustee(bts::blockchain::address("43cgLS17F2uWJKKFbPoJnnoMSacj"));
+  
   if (option_variables.count("genesis-json"))
   {
     if (chain->head_block_num() == uint32_t(-1))

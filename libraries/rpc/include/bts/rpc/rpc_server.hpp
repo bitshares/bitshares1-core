@@ -86,17 +86,29 @@ namespace bts { namespace rpc {
    typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 
 
+  class exception : public fc::exception {
+  public:
+    exception( fc::log_message&& m );
+    exception( fc::log_messages );
+    exception( const exception& c );
+    exception();
+    virtual const char* what() const throw() override = 0;
+    virtual int32_t get_rpc_error_code() const = 0;
+  };
+
 #define RPC_DECLARE_EXCEPTION(TYPE) \
-  class TYPE : public fc::exception \
+  class TYPE : public exception \
   { \
   public: \
     TYPE( fc::log_message&& m ); \
     TYPE( fc::log_messages ); \
     TYPE( const TYPE& c ); \
     TYPE(); \
-    virtual const char* what() const throw(); \
-    int32_t get_rpc_error_code() const; \
+    virtual const char* what() const throw() override; \
+    int32_t get_rpc_error_code() const override; \
   };
+
+RPC_DECLARE_EXCEPTION(rpc_misc_error_exception)
 
 
 RPC_DECLARE_EXCEPTION(rpc_client_not_connected_exception)
