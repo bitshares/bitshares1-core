@@ -316,7 +316,8 @@ Arguments:
 
 Note:
 Issuing the walletpassphrase command while the wallet is already unlocked will set a new unlock
-time that overrides the old one.
+time that overrides the old one if the new time is longer than the old one, but you can imediately
+lock the wallet with the walletlock command.
 
 Examples:
 
@@ -339,7 +340,7 @@ getnewaddress:
 """
 getnewaddress ( "account" )
 
-Returns a new Bitcoin address for receiving payments.
+Returns a new BitShares address for receiving payments.
 If 'account' is specified (recommended), it is added to the address book 
 so payments received with the address will be credited to 'account'.
 
@@ -347,7 +348,7 @@ Arguments:
 1. "account" (string, optional) The account name for the address to be linked to. if not provided, the default account "" is used. It can also be set to the empty string "" to represent the default account. The account does not need to exist, it will be created if there is no account by the given name.
 
 Result:
-"bitcoinaddress" (string) The new bitcoin address
+"bitsharesaddress" (string) The new BitShares address
 
 Examples:
 > bitshares-cli getnewaddress 
@@ -377,29 +378,28 @@ sendtoaddress:
                                     {"to_comment", "string",  false}},
                /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked | connected_to_network};
 """
-sendtoaddress "bitcoinaddress" amount ( "comment" "comment-to" )
+sendtoaddress "bitsharesaddress" amount ( "comment" "comment-to" )
 
-Sent an amount to a given address. The amount is a real and is rounded to the nearest 0.00000001
+Sent an amount to a given address. The amount is a 64bit integer.
 
-Requires wallet passphrase to be set with walletpassphrase call.
 Arguments:
-1. "bitcoinaddress" (string, required) The bitcoin address to send to.
-2. "amount" (numeric, required) The amount in btc to send. eg 0.1
+1. "bitsharesaddress" (string, required) The bitcoin address to send to.
+2. "amount" (numeric, required) The amount in BTS to send. eg 10
 3. "comment" (string, optional) A comment used to store what the transaction is for. 
 This is not part of the transaction, just kept in your wallet.
 4. "comment-to" (string, optional) A comment to store the name of the person or organization 
 to which you're sending the transaction. This is not part of the 
-transaction, just kept in your wallet.
+transaction, just kept in your wallet (TODO: ignored currently, implement later).
 
 Result:
-"transactionid" (string) The transaction id. (view at https://blockchain.info/tx/[transactionid])
+"transactionid" (string) The transaction id. (view at https://????/tx/[transactionid])
 
 Examples:
-> bitshares-cli sendtoaddress "1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd" 0.1
-> bitshares-cli sendtoaddress "1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd" 0.1 "donation" "seans outpost"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "sendtoaddress", "params": ["1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd", 0.1, "donation", "seans outpost"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+> bitshares-cli sendtoaddress "1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd" 10
+> bitshares-cli sendtoaddress "1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd" 10 "donation" "seans outpost"
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "sendtoaddress", "params": ["1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd", 10, "donation", "seans outpost"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 """
-
+//TODO: determine if we should ignore quotes in interactive cli around address.
 
 listrecvaddresses(BTS, change to recv to receive and add underscores):
                      /* description */ "Lists all receive addresses and their labels associated with this wallet",
@@ -427,19 +427,19 @@ getbalance:
                                 {{"asset", "unit",  false}},
             /* prerequisites */ json_authenticated | wallet_open};
 """
-getbalance ( "account" minconf )
+getbalance ( "account" minimum_confirmations )
 
-If account is not specified, returns the server's total available balance.
+If account is not specified, returns the wallet's total available balance.
 If account is specified, returns the balance in the account.
 Note that the account "" is not the same as leaving the parameter out.
-The server total may be different to the balance in the default "" account.
+The wallet total may be different to the balance in the default "" account.
 
 Arguments:
 1. "account" (string, optional) The selected account, or "*" for entire wallet. It may be the default account using "".
-2. minconf (numeric, optional, default=1) Only include transactions confirmed at least this many times.
+2. minimum_confirmations (numeric, optional, default=1) Only include transactions confirmed at least this many times.
 
 Result:
-amount (numeric) The total amount in btc received for this account.
+amount (numeric) The total amount in BTS received for this account.
 
 Examples:
 
@@ -483,20 +483,20 @@ Arguments:
 
 Result:
 {
-"amount" : x.xxx, (numeric) The transaction amount in btc
+"amount" : xx, (numeric) The transaction amount in BTS
 "confirmations" : n, (numeric) The number of confirmations
 "blockhash" : "hash", (string) The block hash
 "blockindex" : xx, (numeric) The block index
 "blocktime" : ttt, (numeric) The time in seconds since epoch (1 Jan 1970 GMT)
-"txid" : "transactionid", (string) The transaction id, see also https://blockchain.info/tx/[transactionid]
+"txid" : "transactionid", (string) The transaction id, see also https://???.info/tx/[transactionid]
 "time" : ttt, (numeric) The transaction time in seconds since epoch (1 Jan 1970 GMT)
 "timereceived" : ttt, (numeric) The time received in seconds since epoch (1 Jan 1970 GMT)
 "details" : [
 {
 "account" : "accountname", (string) The account name involved in the transaction, can be "" for the default account.
-"address" : "bitcoinaddress", (string) The bitcoin address involved in the transaction
+"address" : "bitsharesaddress", (string) The BitShares address involved in the transaction
 "category" : "send|receive", (string) The category, either 'send' or 'receive'
-"amount" : x.xxx (numeric) The amount in btc
+"amount" : xx (numeric) The amount in BTS
 }
 ,...
 ],
@@ -530,16 +530,16 @@ Result (for verbose = true):
 "confirmations" : n, (numeric) The number of confirmations
 "size" : n, (numeric) The block size
 "height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version
+"version" : n, (numeric) The block version //TODO: fake this
 "merkleroot" : "xxxx", (string) The merkle root
 "tx" : [ (array of string) The transaction ids
 "transactionid" (string) The transaction id
 ,...
 ],
 "time" : ttt, (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)
-"nonce" : n, (numeric) The nonce
+"nonce" : n, (numeric) The nonce //TODO: fake this
 "bits" : "1d00ffff", (string) The bits
-"difficulty" : x.xxx, (numeric) The difficulty
+"difficulty" : x.xxx, (numeric) The difficulty //TODO: fake this
 "previousblockhash" : "hash", (string) The hash of the previous block
 "nextblockhash" : "hash" (string) The hash of the next block
 }
@@ -559,17 +559,17 @@ validateaddress:
                                      {{"address",        "address", true}},
                  /* prerequisites */ json_authenticated};
 """
-validateaddress "bitcoinaddress"
+validateaddress "bitsharesaddress"
 
-Return information about the given bitcoin address.
+Return information about the given BitShares address.
 
 Arguments:
-1. "bitcoinaddress" (string, required) The bitcoin address to validate
+1. "bitsharesaddress" (string, required) The BitShares address to validate
 
 Result:
 {
 "isvalid" : true|false, (boolean) If the address is valid or not. If not, this is the only property returned.
-"address" : "bitcoinaddress", (string) The bitcoin address validated
+"address" : "bitsharesaddress", (string) The BitShares address validated
 "ismine" : true|false, (boolean) If the address is yours or not
 "isscript" : true|false, (boolean) If the key is a script
 "pubkey" : "publickeyhex", (string) The hex value of the raw public key
@@ -606,25 +606,26 @@ importprivkey:
                                     {"rescan",      "bool",         false}},
                /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
 """
-importprivkey "bitcoinprivkey" ( "label" rescan )
+importprivkey "bitcoinprivkey" ( "account" rescan "address_label")
 
 Adds a private key (as returned by dumpprivkey) to your wallet.
 
 Arguments:
 1. "bitcoinprivkey" (string, required) The private key (see dumpprivkey)
-2. "label" (string, optional) an optional label
+2. "account" (string, optional) the name of the account to put this key in
 3. rescan (boolean, optional, default=true) Rescan the wallet for transactions
+4. "address_label" (string,optional) assigns a label to the address being imported
 
 Examples:
 
-Dump a private key
-> bitshares-cli dumpprivkey "myaddress"
+Dump a private key from Bitcoin wallet
+> bitcoin-cli dumpprivkey "myaddress"
 
-Import the private key
+Import the private key to BitShares wallet
 > bitshares-cli importprivkey "mykey"
 
-Import using a label
-> bitshares-cli importprivkey "mykey" "testing" false
+Import using an account name
+> bitshares-cli importprivkey "mykey" "testing" false "address_label"
 
 As a json rpc call
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "importprivkey", "params": ["mykey", "testing", false] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
@@ -638,7 +639,7 @@ import_private_key(BTS):
                                          {"label",       "string",       true}},
                     /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
 
-sendtransaction(BTS, rename send_transaction):
+sendtransaction(BTS, rename _send_transaction):
                    /* description */ "Broadcast a previously-created signed transaction to the network",
                    /* returns: */    "transaction_id",
                    /* params:          name                  type                   required */ 
