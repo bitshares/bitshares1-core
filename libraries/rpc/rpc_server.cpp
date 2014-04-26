@@ -25,7 +25,6 @@ namespace bts { namespace rpc {
          fc::tcp_server      _tcp_serv;
          fc::future<void>    _accept_loop_complete;
          rpc_server*         _self;
-         std::string         _username;
 
          typedef std::map<std::string, rpc_server::method_data> method_map_type;
          method_map_type _method_map;
@@ -466,8 +465,7 @@ namespace bts { namespace rpc {
        
       try
       {
-        _username = username;
-        _client->get_wallet()->open( _client->get_wallet()->get_wallet_filename_for_user(username), passphrase );
+        _client->get_wallet()->open( username, passphrase );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -509,8 +507,7 @@ namespace bts { namespace rpc {
        
       try
       {
-        _username = username;
-        _client->get_wallet()->create( _client->get_wallet()->get_wallet_filename_for_user(username),
+        _client->get_wallet()->create( username,
                                        passphrase, 
                                        keypassword );
         return fc::variant(true);
@@ -533,7 +530,7 @@ namespace bts { namespace rpc {
     {
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
-       return fc::variant(_username);
+       return fc::variant(_client->get_wallet()->get_current_user());
     }
 
     static rpc_server::method_data close_wallet_metadata{"close_wallet", nullptr,

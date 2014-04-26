@@ -170,6 +170,7 @@ namespace bts { namespace wallet {
               uint64_t                                                   _current_fee_rate;
               uint64_t                                                   _stake;
               bool                                                       _is_open;
+              std::string _user; // username used for opening the wallet, filename will be _user + "_wallet.dat"
 
               //std::map<output_index, output_reference>                 _output_index_to_ref;
               // cached data for rapid lookup
@@ -370,8 +371,10 @@ namespace bts { namespace wallet {
       my->_wallet_base_password = std::string();
       return true;
    }
-   void wallet::open( const fc::path& wallet_dat, const fc::string& password )
+   void wallet::open( const std::string& user, const fc::string& password )
    {
+       FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
+       const fc::path& wallet_dat = get_wallet_filename_for_user(user);
        try {
            my->_wallet_dat           = wallet_dat;
            my->_wallet_base_password = password;
@@ -420,9 +423,23 @@ namespace bts { namespace wallet {
    {
       return my->_data_dir / (username + "_wallet.dat");
    }
+   
+   std::string wallet::get_current_user()
+   {
+     return my->_user;
+   }
 
-   void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
-   { try {
+   void wallet::create( const std::string& user, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   {
+      FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
+      const fc::path& wallet_dat = get_wallet_filename_for_user(user);
+      create_internal(wallet_dat, base_password, key_password, is_brain);
+      my->_user = user;
+   }
+
+   void wallet::create_internal( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   { 
+   try {
       FC_ASSERT( !fc::exists( wallet_dat ), "", ("wallet_dat",wallet_dat) );
       FC_ASSERT( key_password.size() >= 8 );
 
