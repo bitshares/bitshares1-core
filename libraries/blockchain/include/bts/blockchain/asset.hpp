@@ -11,7 +11,7 @@ namespace bts { namespace blockchain {
    *  An asset is a fixed point number with
    *  64.64 bit precision.  This is used
    *  for accumalating dividends and 
-   *  calculating prices on the built in exchange.
+   *  calculating prices on the built-in exchange.
    */
   struct asset
   {

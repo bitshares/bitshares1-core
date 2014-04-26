@@ -5,11 +5,6 @@
 #include <fc/log/log_message.hpp>
 #include <bts/client/client.hpp>
 
-namespace fc { namespace rpc { 
-   class json_connection; 
-   typedef std::shared_ptr<json_connection> json_connection_ptr;
-} }
-
 namespace bts { namespace rpc {
   using namespace bts::client;
 
@@ -25,15 +20,45 @@ namespace bts { namespace rpc {
   public:
     struct config
     {
+      config():rpc_user("user"),
+               rpc_password("password"),
+               rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9988")),
+               httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9989")),
+               htdocs("./htdocs"){}
       std::string      rpc_user;
       std::string      rpc_password;
       fc::ip::endpoint rpc_endpoint;
       fc::ip::endpoint httpd_endpoint;
+      fc::path         htdocs;
 
       bool is_valid() const;
     };
 
-    typedef std::function<fc::variant(fc::rpc::json_connection* json_connection, const fc::variants& params)> json_api_method_type;
+    enum method_prerequisites
+    {
+      no_prerequisites     = 0,
+      json_authenticated   = 1,
+      wallet_open          = 2,
+      wallet_unlocked      = 4,
+      connected_to_network = 8,
+    };
+    struct parameter_data
+    {
+      std::string name;
+      std::string type;
+      bool        required;
+    };
+    typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
+    struct method_data
+    {
+      std::string                 name;
+      json_api_method_type        method;
+      std::string                 description;
+      std::string                 return_type;
+      std::vector<parameter_data> parameters;
+      uint32_t                    prerequisites;
+      std::string                 detailed_description;
+    };
 
     rpc_server();
     ~rpc_server();
@@ -45,35 +70,47 @@ namespace bts { namespace rpc {
     /// used to invoke json methods from the cli without going over the network
     fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);
 
+    const method_data& get_method_data(const std::string& method_name);
+
     /** can be called for methods that require the user to be logged in via
     *  RPC.
     */
     void check_connected_to_network();
-    void check_json_connection_authenticated(fc::rpc::json_connection* con);
     void check_wallet_unlocked();
     void check_wallet_is_open();
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
-    void register_method(const std::string& method_name, json_api_method_type method, 
-                         const std::string& parameter_description, const std::string& method_description);
+    void register_method(method_data method);
   private:
       std::unique_ptr<detail::rpc_server_impl> my;
   };
    typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 
 
+  class exception : public fc::exception {
+  public:
+    exception( fc::log_message&& m );
+    exception( fc::log_messages );
+    exception( const exception& c );
+    exception();
+    virtual const char* what() const throw() override = 0;
+    virtual int32_t get_rpc_error_code() const = 0;
+  };
+
 #define RPC_DECLARE_EXCEPTION(TYPE) \
-  class TYPE : public fc::exception \
+  class TYPE : public exception \
   { \
   public: \
     TYPE( fc::log_message&& m ); \
     TYPE( fc::log_messages ); \
     TYPE( const TYPE& c ); \
     TYPE(); \
-    virtual const char* what() const throw(); \
-    int32_t get_rpc_error_code() const; \
+    virtual const char* what() const throw() override; \
+    int32_t get_rpc_error_code() const override; \
   };
+
+RPC_DECLARE_EXCEPTION(rpc_misc_error_exception)
 
 
 RPC_DECLARE_EXCEPTION(rpc_client_not_connected_exception)
@@ -86,4 +123,4 @@ RPC_DECLARE_EXCEPTION(rpc_wallet_open_needed_exception)
 } } // bts::rpc
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT( bts::rpc::rpc_server::config, (rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint) )
+FC_REFLECT( bts::rpc::rpc_server::config, (rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
