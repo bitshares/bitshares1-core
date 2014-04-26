@@ -336,13 +336,13 @@ namespace bts { namespace rpc {
              (_create_sendtoaddress_transaction)
              (send_transaction)
              (sendtoaddress)
-             (listrecvaddresses)
              (list_send_addresses)
+             (list_receive_addresses)
              (get_send_address_label)
              (getbalance)
              (getblockhash)
              (getblockcount)
-             (get_transaction)
+             (gettransaction)
              (get_transaction_history)
              (getblock)
              (get_block_by_number)
@@ -663,12 +663,12 @@ namespace bts { namespace rpc {
       return fc::variant( trx.id() ); 
     }
 
-    static rpc_server::method_data listrecvaddresses_metadata{"listrecvaddresses", nullptr,
+    static rpc_server::method_data list_receive_addresses_metadata{"list_receive_addresses", nullptr,
                                             /* description */ "Lists all receive addresses and their labels associated with this wallet",
                                             /* returns: */    "map<address,string>",
                                             /* params:     */ {},
                                           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
-    fc::variant rpc_server_impl::listrecvaddresses(const fc::variants& params)
+    fc::variant rpc_server_impl::list_receive_addresses(const fc::variants& params)
     {
       std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses ); 
@@ -723,13 +723,13 @@ namespace bts { namespace rpc {
       return fc::variant( _client->get_wallet()->get_transaction_history() );
     }
 
-    static rpc_server::method_data get_transaction_metadata{"get_transaction", nullptr,
+    static rpc_server::method_data gettransaction_metadata{"gettransaction", nullptr,
                                           /* description */ "Retrieves the signed transaction matching the given transaction id",
                                           /* returns: */    "signed_transaction",
                                           /* params:          name              type               required */ 
                                                             {{"transaction_id", "transaction_id",  true}},
                                         /* prerequisites */ rpc_server::json_authenticated};
-    fc::variant rpc_server_impl::get_transaction(const fc::variants& params)
+    fc::variant rpc_server_impl::gettransaction(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->fetch_transaction( params[0].as<transaction_id_type>() )  ); 
     }
@@ -894,7 +894,6 @@ namespace bts { namespace rpc {
     REGISTER_JSON_METHOD(getblockhash);
     REGISTER_JSON_METHOD(getblockcount);
     REGISTER_JSON_METHOD(sendtoaddress);
-    REGISTER_JSON_METHOD(listrecvaddresses);
     REGISTER_JSON_METHOD(rescan);
     REGISTER_JSON_METHOD(validateaddress);
     REGISTER_JSON_METHOD(getbalance);
@@ -902,10 +901,10 @@ namespace bts { namespace rpc {
     REGISTER_JSON_METHOD(getconnectioncount);
 
     REGISTER_JSON_METHOD(add_send_address);
+    REGISTER_JSON_METHOD(list_receive_addresses);
     REGISTER_JSON_METHOD(list_send_addresses);
     REGISTER_JSON_METHOD(get_send_address_label);
     REGISTER_JSON_METHOD(get_transaction_history);
-    REGISTER_JSON_METHOD(get_transaction);
     REGISTER_JSON_METHOD(get_block_by_number);
     REGISTER_JSON_METHOD(import_bitcoin_wallet);
     REGISTER_JSON_METHOD(import_private_key);
