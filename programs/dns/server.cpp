@@ -16,7 +16,8 @@ int main( int argc, char** argv )
        bts::net::chain_server::config cfg;
        cfg.port = 4567;
        cserv.configure(cfg);
-       cserv.get_chain().set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
+       // disable setting trustee with a bad address... replace with a valid trustee address
+       // cserv.get_chain().set_trustee( bts::blockchain::address( "43cgLS17F2uWJKKFbPoJnnoMSacj" ) );
        ilog( "sleep..." );
        fc::usleep( fc::seconds( 60*60*24*365 ) );
    }

@@ -602,4 +602,24 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
 }
 
+BOOST_AUTO_TEST_CASE(one_hundred_node_test)
+{
+  client_processes.resize(100);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].initial_balance = INITIAL_BALANCE;
+
+  create_trustee_and_genesis_block();
+
+  if (bts_xt_client_test_config::test_client_server)
+    launch_server();
+
+  launch_clients();
+
+  establish_rpc_connections();
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    BOOST_CHECK(client_processes[i].rpc_client->getconnectioncount() >= 3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

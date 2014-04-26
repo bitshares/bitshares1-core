@@ -138,11 +138,12 @@ namespace bts { namespace rpc {
                    {
                       fc::mutable_variant_object  result;
                       result["id"]     =  rpc_call["id"];
-                      try {
+                      try 
+                      {
                          result["result"] =  dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
                          s.set_status( fc::http::reply::OK );
-                      } 
+                      }
                       catch ( const fc::exception& e )
                       {
                          s.set_status( fc::http::reply::InternalServerError );
@@ -321,6 +322,7 @@ namespace bts { namespace rpc {
         fc::variant createwallet( const fc::variants& params );
         fc::variant currentwallet( const fc::variants& params );
         fc::variant closewallet( const fc::variants& params );
+        fc::variant walletlock( const fc::variants& params );
         fc::variant walletpassphrase( const fc::variants& params );
         fc::variant getnewaddress( const fc::variants& params );
         fc::variant add_send_address( const fc::variants& params );
@@ -442,6 +444,19 @@ namespace bts { namespace rpc {
        return fc::variant( _client->get_wallet()->close() );
     }
 
+    fc::variant rpc_server_impl::walletlock(const fc::variants& params)
+    {
+       try
+       {
+         _client->get_wallet()->lock_wallet();
+         return fc::variant();
+       }
+       catch (...)
+       {
+         throw rpc_wallet_passphrase_incorrect_exception();
+       }          
+    }
+
     fc::variant rpc_server_impl::walletpassphrase(const fc::variants& params)
     {
        std::string passphrase = params[0].as_string();
@@ -449,7 +464,7 @@ namespace bts { namespace rpc {
        try
        {
          _client->get_wallet()->unlock_wallet(passphrase, fc::seconds(timeout_sec));
-         return fc::variant(true);
+         return fc::variant();
        }
        catch (...)
        {
@@ -679,9 +694,16 @@ namespace bts { namespace rpc {
                  /* prerequisites */ };
     register_method(closewallet_metadata);
 
+    method_data walletlock_metadata{"walletlock", JSON_METHOD_IMPL(walletlock),
+                  /* description */ "lock the private keys in the wallet with the given passphrase",
+                  /* returns: */    "void",
+                  /* params:     */ {},
+                  /* prerequisites */ json_authenticated | wallet_open};
+    register_method(walletlock_metadata);
+
     method_data walletpassphrase_metadata{"walletpassphrase", JSON_METHOD_IMPL(walletpassphrase),
                         /* description */ "unlock the private keys in the wallet with the given passphrase",
-                        /* returns: */    "bool",
+                        /* returns: */    "void",
                         /* params:          name                   type      required */ 
                                           {{"spending_passphrase", "string", true}, 
                                            {"timeout",             "int",    true} },
@@ -925,17 +947,27 @@ namespace bts { namespace rpc {
     my->check_wallet_is_open();
   }
 
+  exception::exception(fc::log_message&& m) : 
+    fc::exception(fc::move(m)) {}
+
+  exception::exception(){}
+  exception::exception(const exception& t) :
+    fc::exception(t) {}
+  exception::exception(fc::log_messages m) : 
+    fc::exception() {}
+
 #define RPC_EXCEPTION_IMPL(TYPE, ERROR_CODE, DESCRIPTION) \
   TYPE::TYPE(fc::log_message&& m) : \
-    fc::exception(fc::move(m)) {} \
+    exception(fc::move(m)) {} \
   TYPE::TYPE(){} \
-  TYPE::TYPE(const TYPE& t) : fc::exception(t) {} \
+  TYPE::TYPE(const TYPE& t) : exception(t) {} \
   TYPE::TYPE(fc::log_messages m) : \
-    fc::exception() {} \
+    exception() {} \
   const char* TYPE::what() const throw() { return DESCRIPTION; } \
   int32_t TYPE::get_rpc_error_code() const { return ERROR_CODE; }
 
 // the codes here match bitcoine error codes in https://github.com/bitcoin/bitcoin/blob/master/src/rpcprotocol.h#L34
+RPC_EXCEPTION_IMPL(rpc_misc_error_exception, -1, "std::exception is thrown during command handling")
 RPC_EXCEPTION_IMPL(rpc_client_not_connected_exception, -9, "The client is not connected to the network")
 RPC_EXCEPTION_IMPL(rpc_wallet_unlock_needed_exception, -13, "The wallet's spending key must be unlocked before executing this command")
 RPC_EXCEPTION_IMPL(rpc_wallet_passphrase_incorrect_exception, -14, "The wallet passphrase entered was incorrect")
