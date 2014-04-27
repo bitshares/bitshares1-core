@@ -18,11 +18,12 @@ namespace bts { namespace blockchain {
    struct block_header
    {
        block_header()
-       :version(0),block_num(-1),next_fee(1),total_shares(0){}
+       :version(0),block_num(-1),next_fee(1),next_reward(0),total_shares(0){}
       
        /** @return digest used for signing */
        fc::sha256          digest()const;
        static uint64_t     calculate_next_fee( uint64_t prev_fee, uint64_t block_size );
+       static uint64_t     calculate_next_reward( uint64_t prev_reward, uint64_t block_fee );
        static uint64_t     min_fee();
 
        /** block_header#next_fee is specified in units of .001 shares, so the
@@ -41,6 +42,18 @@ namespace bts { namespace blockchain {
         * average can actually grow the fee.
         */
        uint64_t            next_fee;        
+       /**
+        * adjusted based upon the average block reward, this reward should be calculated as:
+        *
+        * next_reward = (prev_block.next_reward * (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1) + total_fees/10) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY
+        *
+        * This method was chosen to smooth out block rewards over 24 hours and ensure nice predictable results 
+        * for the delegates without any incentive for the delegates to delay transactions or ignore the
+        * previous block.
+        *
+        * The unit of next_reward is shares.  
+        */
+       uint64_t            next_reward; 
        uint64_t            total_shares; 
        uint160             trx_mroot;       ///< merkle root of trx included in block, required for light client validation
    };
@@ -114,7 +127,7 @@ namespace fc
    void from_variant( const variant& var,  bts::blockchain::trx_output& vo );
 }
 
-FC_REFLECT( bts::blockchain::block_header,  (version)(block_num)(prev)(timestamp)(next_fee)(total_shares)(trx_mroot) )
+FC_REFLECT( bts::blockchain::block_header,  (version)(block_num)(prev)(timestamp)(next_fee)(next_reward)(total_shares)(trx_mroot) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_block_header, (bts::blockchain::block_header), (trustee_signature) )
 FC_REFLECT_DERIVED( bts::blockchain::digest_block,  (bts::blockchain::signed_block_header), (trx_ids)(deterministic_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::trx_block,   (bts::blockchain::signed_block_header),  (trxs) )

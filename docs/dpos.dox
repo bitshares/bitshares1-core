@@ -201,23 +201,25 @@
     @code
         W->Z->A->B---->D
         W->Z->A---->C->D
-    @endocde
+    @endcode
 
     This will produce two chains that are each the same length but skipped different nodes.  D will pick based upon whether he saw B when it was expected.  At this point both alternatives are about equal and delegate E gets to resolve the dispute by picking either
 
     @code
         W->Z->A->B---->D->E
         W->Z->A---->C->D->E
-    @endocde
+    @endcode
 
     Once E chooses the longest chain is once again clearly defined.  If D or E fails to produce a block on time, then this decision making process will continue until one chain is longer than the other.   So long as no delegate signs two blocks on different chains or for the same timeslot this process should be guranteed to resolve in an unambigious manner.
 
-    @subection dpos_conflict_collusion Collusion 
+    @subsection dpos_conflict_collusion Collusion 
 
     It may be possible for delegates to collude to produce the following alternatives:
 
-       A->B->C->D->...
+    @code
+       A->B0->C0->D0->...
        A->B1->C1->D1->...
+    @endcode
 
     In this event you can be sure that delegates B, C and D will be fired once their fraud is detected.  In the mean time
     delegates E through Z would resolve the dispute as soon as it got to their turn (assuming they were online).  If all nodes

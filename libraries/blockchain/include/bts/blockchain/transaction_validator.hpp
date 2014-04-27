@@ -151,10 +151,27 @@ namespace bts { namespace blockchain {
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
 
+          virtual void validate_multi_sig_input(  const meta_trx_input& in, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_password_input(  const meta_trx_input& in, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
           virtual void validate_name_input(  const meta_trx_input& in, 
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
+
           virtual void validate_signature_output( const trx_output& out, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_multi_sig_output( const trx_output& out, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_password_output( const trx_output& out, 
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
 
