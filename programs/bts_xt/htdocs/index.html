@@ -70,7 +70,7 @@
 
               $("input#unlock_wallet").click(function() {
                   $.jsonRPC.request('walletpassphrase', {
-                      params : [$("input#spending_password").val()],
+                      params : [$("input#spending_password").val(), 1000],
                       success : function(data) {
                           console.log( data.result );
                           $("span#unlock_message").text( data.result ); 

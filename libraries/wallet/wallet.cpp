@@ -170,6 +170,7 @@ namespace bts { namespace wallet {
               uint64_t                                                   _current_fee_rate;
               uint64_t                                                   _stake;
               bool                                                       _is_open;
+              std::string _user; // username used for opening the wallet, filename will be _user + "_wallet.dat"
 
               //std::map<output_index, output_reference>                 _output_index_to_ref;
               // cached data for rapid lookup
@@ -370,8 +371,10 @@ namespace bts { namespace wallet {
       my->_wallet_base_password = std::string();
       return true;
    }
-   void wallet::open( const fc::path& wallet_dat, const fc::string& password )
+   void wallet::open( const std::string& user, const fc::string& password )
    {
+       FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
+       const fc::path& wallet_dat = get_wallet_filename_for_user(user);
        try {
            my->_wallet_dat           = wallet_dat;
            my->_wallet_base_password = password;
@@ -420,9 +423,23 @@ namespace bts { namespace wallet {
    {
       return my->_data_dir / (username + "_wallet.dat");
    }
+   
+   std::string wallet::get_current_user()
+   {
+     return my->_user;
+   }
 
-   void wallet::create( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
-   { try {
+   void wallet::create( const std::string& user, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   {
+      FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
+      const fc::path& wallet_dat = get_wallet_filename_for_user(user);
+      create_internal(wallet_dat, base_password, key_password, is_brain);
+      my->_user = user;
+   }
+
+   void wallet::create_internal( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   { 
+   try {
       FC_ASSERT( !fc::exists( wallet_dat ), "", ("wallet_dat",wallet_dat) );
       FC_ASSERT( key_password.size() >= 8 );
 
@@ -577,6 +594,22 @@ namespace bts { namespace wallet {
    std::unordered_map<address,std::string> wallet::get_send_addresses()const
    {
       return my->_data.send_addresses;
+   }
+
+   std::string    wallet::get_send_address_label( const address& addr ) const
+   {
+      auto itr = my->_data.send_addresses.find( addr );
+      if( itr == my->_data.send_addresses.end() || itr->second == std::string() ) return std::string(addr);
+      return itr->second;
+   }
+
+
+   std::string    wallet::get_receive_address_label( const address& addr ) const
+   {
+      auto itr = my->_data.receive_addresses.find( addr );
+      FC_ASSERT( itr != my->_data.receive_addresses.end() );
+      if( itr->second == std::string() ) return std::string(addr);
+      return itr->second;
    }
 
    void wallet::set_fee_rate( uint64_t milli_shares_per_byte )
@@ -774,6 +807,7 @@ namespace bts { namespace wallet {
               if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() );
 
               transaction_state state;
+              state.valid = true;
               state.trx = chain.fetch_trx(trx_num(i, trx_idx));
               bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
@@ -918,25 +952,35 @@ namespace bts { namespace wallet {
       {
          case claim_by_pts: //for genesis block
          {
-           auto claim = out.as<claim_by_pts_output>();           
-           if (is_my_address(claim.owner))
+            auto claim = out.as<claim_by_pts_output>();           
+            if (is_my_address(claim.owner))
             {
-                cache_output( state.trx.vote, out, out_ref, oidx );
-                state.to.push_back( my->pts_to_bts_address(claim.owner) );
-                state.adjust_balance( out.amount, 1 );
-                return true;
+                 cache_output( state.trx.vote, out, out_ref, oidx );
+                 auto receive_addr = my->pts_to_bts_address(claim.owner);
+                 state.from[ receive_addr ] = "genesis"; //get_receive_address_label( receive_addr );
+                 state.adjust_balance( out.amount, 1 );
+                 return true;
+            }
+            else if( state.delta_balance.size() )
+            {
+
             }
             return false;
          }
          case claim_by_signature:
          {
-            auto owner = out.as<claim_by_signature_output>().owner;
-            if( is_my_address( owner ) )
+            auto receive_address = out.as<claim_by_signature_output>().owner;
+            if( is_my_address( receive_address ) )
             {
                cache_output( state.trx.vote, out, out_ref, oidx );
-               state.to.push_back( owner );
+               state.from[ receive_address ] = get_receive_address_label( receive_address );
                state.adjust_balance( out.amount, 1 );
                return true;
+            }
+            else if( state.delta_balance.size() )
+            {
+                // then we are sending funds to someone... 
+                state.to[ receive_address ] = get_send_address_label( receive_address );
             }
             return false;
          }
@@ -948,7 +992,7 @@ namespace bts { namespace wallet {
             {
                FC_ASSERT( itr->second.get_public_key() == claim.owner );
                cache_output( state.trx.vote, out, out_ref, oidx );
-               state.to.push_back( claim.owner );
+               state.to[ claim.owner ] = get_receive_address_label( claim.owner );
                return true;
             }
             return false;

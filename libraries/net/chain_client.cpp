@@ -5,6 +5,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/reflect/variant.hpp>
 
+#include <iostream>
+
 using namespace bts::blockchain;
 
 
