@@ -331,6 +331,14 @@ namespace bts { namespace client {
         return my->_p2p_node->is_connected();
     }
 
+    uint32_t client::get_connection_count() const
+    {
+      if (my->_chain_client)
+        return my->_chain_client->is_connected() ? 1 : 0;
+      else
+        return my->_p2p_node->get_connected_peers().size();
+    }
+
     void client::listen_on_port(uint16_t port_to_listen)
     {
       if (my->_p2p_node)

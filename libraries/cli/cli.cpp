@@ -93,7 +93,8 @@ namespace bts { namespace cli {
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
                   {
-                    fc::variants arguments{password};
+                    std::string current_wallet_user(_client->get_wallet()->get_current_user());
+                    fc::variants arguments{current_wallet_user, password};
                     _rpc_server->direct_invoke_method("openwallet", arguments);
                     return;
                   }
@@ -116,7 +117,7 @@ namespace bts { namespace cli {
                     FC_THROW_EXCEPTION(canceled_exception, "User gave up entering a password");
                   try
                   {
-                    fc::variants arguments{password};
+                    fc::variants arguments{password, 60 * 5}; // default to five minute timeout
                     _rpc_server->direct_invoke_method("walletpassphrase", arguments);
                     return;
                   }
@@ -211,7 +212,9 @@ namespace bts { namespace cli {
               return fc::variant();
             }
 
-            fc::variant parse_argument_of_known_type(fc::buffered_istream& argument_stream, const bts::rpc::rpc_server::method_data& method_data, unsigned parameter_index)
+            fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream, 
+                                                      const bts::rpc::rpc_server::method_data& method_data, 
+                                                      unsigned parameter_index)
             {
               const bts::rpc::rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
@@ -223,12 +226,12 @@ namespace bts { namespace cli {
                   fc::variant amount_as_variant = fc::json::from_stream(argument_stream);
                   amount_as_int = amount_as_variant.as_uint64();
                 }
-                catch (fc::bad_cast_exception& e)
+                catch ( fc::bad_cast_exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 }
-                catch (fc::parse_error_exception& e)
+                catch ( fc::parse_error_exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -238,16 +241,17 @@ namespace bts { namespace cli {
               else if (this_parameter.type == "address")
               {
                 // allow addresses to be un-quoted
-                while (isspace(argument_stream.peek()))
+                while( isspace(argument_stream.peek()) )
                   argument_stream.get();
                 fc::stringstream address_stream;
                 try
                 {
-                  while (!isspace(argument_stream.peek()))
+                  while( !isspace(argument_stream.peek()) )
                     address_stream.put(argument_stream.get());
                 }
-                catch (fc::eof_exception&)
+                catch( const fc::eof_exception& )
                 {
+                   // expected and ignored
                 }
                 std::string address_string = address_stream.str();
 
@@ -255,21 +259,21 @@ namespace bts { namespace cli {
                 {
                   bts::blockchain::address::is_valid(address_string);
                 }
-                catch (fc::exception& e)
+                catch ( fc::exception& e)
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 } 
-                return fc::variant(bts::blockchain::address(address_string));
+                return fc::variant( bts::blockchain::address(address_string) );
               }
               else
               {
                 // assume it's raw JSON
                 try
                 {
-                  return fc::json::from_stream(argument_stream);
+                  return fc::json::from_stream( argument_stream );
                 }
-                catch (fc::parse_error_exception& e)
+                catch( fc::parse_error_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -277,8 +281,8 @@ namespace bts { namespace cli {
               }
             }
 
-            fc::variants parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream, 
-                                                                const std::string& command)
+            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream, 
+                                                                 const std::string& command)
             {
               // quit isn't registered with the RPC server
               if (command == "quit")
@@ -286,7 +290,8 @@ namespace bts { namespace cli {
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
-            fc::variants parse_recognized_interactive_command(fc::buffered_istream& argument_stream, const bts::rpc::rpc_server::method_data& method_data)
+            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream, 
+                                                               const bts::rpc::rpc_server::method_data& method_data)
             {
               fc::variants arguments;
               for (unsigned i = 0; i < method_data.parameters.size(); ++i)
@@ -295,13 +300,13 @@ namespace bts { namespace cli {
                 {
                   arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
-                catch (fc::eof_exception&)
+                catch (const fc::eof_exception& e)
                 {
                   if (!method_data.parameters[i].required)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                             ("argument_number", i + 1)("command", method_data.name));
+                             ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
                 }
                 catch (fc::parse_error_exception& e)
                 {
@@ -353,6 +358,7 @@ namespace bts { namespace cli {
                 return execute_command_and_prompt_for_passwords(command, arguments);
               }
             }
+
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
               if (command == "sendtoaddress")
@@ -506,10 +512,11 @@ namespace bts { namespace cli {
 
     void cli_impl::create_wallet_if_missing()
     {
-      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user("default");
+      std::string user = "default";
+      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user(user);
       if( !fc::exists( wallet_dat ) )
       {
-        std::cout << "Creating wallet "<< wallet_dat.generic_string() << "\n";
+        std::cout << "Creating wallet \""<< user << "\"\n";
         std::cout << "You will be asked to provide two passphrase, the first passphrase\n";
         std::cout << "encrypts the entire contents of your wallet on disk.  The second\n";
         std::cout << "passphrase will only encrypt your private keys.\n\n";
@@ -563,7 +570,7 @@ namespace bts { namespace cli {
           std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
         }
 
-        _client->get_wallet()->create( wallet_dat, pass1, keypass1 );
+        _client->get_wallet()->create( user, pass1, keypass1 );
         std::cout << "Wallet created.\n";
       }
     }
@@ -575,7 +582,7 @@ namespace bts { namespace cli {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
-    my->create_wallet_if_missing();
+    //my->create_wallet_if_missing();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }

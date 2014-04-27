@@ -103,7 +103,6 @@ int main( int argc, char** argv )
       bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
       rpc_server->set_client(c);
 
-      auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
 
       if( option_variables.count("server") )
       {
@@ -134,8 +133,14 @@ int main( int argc, char** argv )
           c->connect_to_peer(option_variables["connect-to"].as<std::string>());
       }
       else
-        c->add_node( "127.0.0.1:4569" );
+      {
+        if (option_variables.count("connect-to"))
+          c->add_node(option_variables["connect-to"].as<std::string>());
+        else
+           c->add_node( "127.0.0.1:4569" );
+      }
 
+      auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
       cli->wait();
 
    } 
@@ -191,7 +196,7 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
    else
    {
 #ifdef WIN32
-     datadir =  fc::app_path() / "BitSharesX";
+     datadir =  fc::app_path() / "BitSharesXT";
 #elif defined( __APPLE__ )
      datadir =  fc::app_path() / "BitSharesXT";
 #else
@@ -209,8 +214,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
   chain->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
     chain->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
-  else
-    chain->set_trustee(bts::blockchain::address("43cgLS17F2uWJKKFbPoJnnoMSacj"));
+  
   if (option_variables.count("genesis-json"))
   {
     if (chain->head_block_num() == uint32_t(-1))

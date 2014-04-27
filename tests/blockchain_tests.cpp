@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
    try {
        fc::temp_directory dir;
        wallet             wall;
-       wall.create( dir.path() / "wallet.dat", "password", "password", true );
+       wall.create_internal( dir.path() / "wallet.dat", "password", "password", true );
 
        for( uint32_t i = 0; i < 100; ++i )
        {

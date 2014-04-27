@@ -89,8 +89,8 @@ class DNSTestState
             db.set_pow_validator(validator);
             db.open(path / "dns_test_db", true);
 
-            wallet1.create(path / "dns_test_wallet1.dat", "password", "password", true);
-            wallet2.create(path / "dns_test_wallet2.dat", "password", "password", true);
+            wallet1.create_internal(path / "dns_test_wallet1.dat", "password", "password", true);
+            wallet2.create_internal(path / "dns_test_wallet2.dat", "password", "password", true);
 
             addrs1 = std::vector<address>();
             addrs2 = std::vector<address>();

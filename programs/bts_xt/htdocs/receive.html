@@ -68,6 +68,21 @@
                       }
                   });
               });
+              $("input#import_btc_wallet").click(function() {
+                  // todo validate passwords match and have all required lengths/etc.
+                  $.jsonRPC.request('import_bitcoin_wallet', {
+                      params : [$("input#wallet_dat").val(), $("input#btc_wallet_password").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          $("span#import_btc_message").text( data.result ); 
+                          update_recv_addresses();
+                      },
+                      error : function(data) {
+                          console.log( data.error );
+                          $("span#import_btc_message").text( data.error.message ); 
+                      }
+                  });
+              });
               $("input#unlock_wallet").click(function() {
                   $.jsonRPC.request('walletpassphrase', {
                       params : [$("input#spending_password").val()],
@@ -104,30 +119,33 @@
 </div>
 <div id="unock_wallet">
   <h2>Unlock Wallet</h2>
-  <form>
   Spending Password: <input type="password" placeholder="" id="spending_password" />
         <input type="button" id="unlock_wallet" value="Unlock" />
-  </form>
   <p><span id="unlock_message"></span></p>
 </div>
 
 <div id="create_address">
   <h2>Create Address</h2>
-  <form>
   Label: <input type="text" placeholder="Address" id ="recvlabel" />
         <input type="button" id="create_address" value="Create" />
-  </form>
   <p><span id="create_message"></span></p>
 </div>
 
 <div id="create_address">
   <h2>Import Key</h2>
-  <form>
   Label: <input type="text" placeholder="Label" id ="privatekeylabel" />
   Private Key: <input type="text" placeholder="Private Key" id ="privatekey" />
         <input type="button" id="import_priv_key" value="Import" />
-  </form>
   <p><span id="create_message"></span></p>
+</div>
+
+<div id="create_address">
+  <h2>Import Bitcoin Wallet</h2>
+  <p> Import Bitcoin &amp; PTS Wallets </p>
+  Bitcoin Wallet Path: <input type="text" placeholder="wallet.dat" id ="wallet_dat" /> <br/>
+  Bitcoin Wallet Password: <input type="password" placeholder="" id ="btc_wallet_password" /> <br/>
+        <input type="button" id="import_btc_wallet" value="Import Bitcoin Wallet" />
+  <p><span id="import_btc_message"></span></p>
 </div>
 
 <hr/>
