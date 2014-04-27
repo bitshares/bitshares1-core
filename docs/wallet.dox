@@ -14,6 +14,15 @@ A wallet password is not required by the wallet. If the wallet password is left 
 
 A spending password is required by the wallet, and it must be at least 8 characters in length. If the user attempts an operation that requires access to the private keys when the keys are not in memory (keys are not held in memory by default), the wallet will automatically generate a request for the spending password. Once the spending password is entered, the wallet will unencrypt the private keys and keep them in memory until a timeout occurs (by default we will use a 5 minute timeout if the user doesn't specify one). 
 
+
+## TODO: Wallet accounts and address memos
+The bitshares wallet supports accounts similar to the accounts supported by the bitcoin wallet. Multiple addresses can be attached to a specific account (an account must contain at least one address). Accounts can be used to control what addresses are used as a set of inputs for a transaction and to manage several different balances within a wallet (for example, like accounts are used in an accounting package).
+
+The bitshares wallet also supports the concept of "address memos". An address memo is a comment attached to a specific address. Address memos are primarily useful as a means of documenting the sources of funds in an account.
+
+When you create a new "receive address" with the "getnewaddress" command, you can optionally specify an account (which may or may not exist yet) and a memo. Similarly, when importing a private key, you can specify an account and a memo if you wish.
+
+
 ## Create a transaction cache for transactions that affect user's wallet (e.g. wallet balance)
 This cache is built by scanning the blockchain and processing pending transactions (currently only processes blockchain transactions, pending transactions support needs to be added). Is there anything special that needs to be done for pending transactions? Should there be extra info in the transaction_state for them (maybe just the -1 to indicate not in a block yet).
 
@@ -401,7 +410,7 @@ Examples:
 """
 //TODO: determine if we should ignore quotes in interactive cli around address.
 
-listrecvaddresses(BTS, change to recv to receive and add underscores):
+list_receive_addresses(BTS):
                      /* description */ "Lists all receive addresses and their labels associated with this wallet",
                      /* returns: */    "map<address,string>",
                      /* params:     */ {},
