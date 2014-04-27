@@ -76,7 +76,7 @@
       - if input is bts::blockchain::claim_fire_delegate
          - transaction is invalid
 
-   -# for each output check to make sure it follows the rules
+  -# for each output check to make sure it follows the rules
 
       - if output is bts::blockchain::claim_by_signature_output
           - add amount to outputs
@@ -110,15 +110,15 @@
           - if delegate_id != 0
              - add BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE to required fees
 
-       - if output is bts::blockchain::claim_fire_delegate_output
+      - if output is bts::blockchain::claim_fire_delegate_output
           - if reason is invalid_transaction_cert
-            -  cast proof to signed_certified_transaction 
+             -  cast proof to signed_certified_transaction 
                - validate contained transaction as of bts::blockchain::certified_transaction#timestamp
                - if contained transaction validity is different than bts::blockchain::certified_transaction#valid
                    - immediately update the delegate voting record with votes_against set to maximum
                - else transaction is invalid.
           - if reason is duplicate_block_signatures 
-            - cast proof to signed_header_conflict
+             - cast proof to signed_header_conflict
                - validate that both headers are signed by the same delegate
                - validate that both headers have the same timestamp
                - validate that the two headers are different
