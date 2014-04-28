@@ -1,11 +1,9 @@
 #include <bts/dns/dns_db.hpp>
-#include <bts/dns/util.hpp>
 
 namespace bts { namespace dns {
 
 dns_db::dns_db()
 {
-    set_transaction_validator(std::make_shared<dns_transaction_validator>(this));
 }
 
 dns_db::~dns_db()
@@ -81,6 +79,19 @@ std::map<std::string, bts::blockchain::output_reference>
     }
 
     return map;
+}
+
+trx_output dns_db::get_key_output(const std::string &key)
+{
+    return fetch_output(get_dns_ref(key));
+}
+
+uint32_t dns_db::get_tx_age(const output_reference &tx_ref)
+{
+    auto tx_ref_id = tx_ref.trx_hash;
+    auto block_num = fetch_trx_num(tx_ref_id).block_num;
+
+    return head_block_num() - block_num;
 }
 
 } } // bts::dns

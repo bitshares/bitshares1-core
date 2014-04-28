@@ -1,6 +1,11 @@
 #pragma once
 
+#include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/outputs.hpp>
+
+#include <fc/io/raw.hpp>
+#include <fc/io/raw_variant.hpp>
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {
 
@@ -33,15 +38,16 @@ struct claim_dns_output
     address             owner;
     std::vector<char>   value;
 
-    claim_dns_output() {}
+    claim_dns_output();
     claim_dns_output(const std::string& k, const last_tx_type_enum& l,
-                        const address& o, const std::vector<char>& v = std::vector<char>());
-
-    bool is_valid() const;
-
-    virtual bool has_valid_key() const;
-    virtual bool has_valid_value() const;
+                     const address& o, const std::vector<char>& v = std::vector<char>());
 };
+
+bool is_dns_output(const trx_output &output);
+claim_dns_output to_dns_output(const trx_output &output);
+
+std::vector<char> serialize_value(const fc::variant &value);
+fc::variant unserialize_value(const std::vector<char> &value);
 
 } } //bts::dns
 

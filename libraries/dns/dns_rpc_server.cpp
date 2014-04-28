@@ -78,7 +78,7 @@ namespace bts { namespace dns {
     }
     fc::variant dns_rpc_server_impl::list_active_auctions(const fc::variants& params)
     {
-      std::vector<trx_output> active_auctions = get_active_auctions(*get_dns_db());
+      std::vector<trx_output> active_auctions = get_dns_wallet()->get_active_auctions();
 
       std::vector<std::pair<bts::blockchain::asset, claim_dns_output> > claim_domain_outputs;
       claim_domain_outputs.reserve(active_auctions.size());

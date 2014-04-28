@@ -7,6 +7,7 @@
 #include <bts/dns/dns_rpc_server.hpp>
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/p2p/p2p_transaction_validator.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
@@ -88,7 +89,7 @@ int main( int argc, char** argv )
 
       auto cfg   = load_config(datadir);
       auto chain = load_and_configure_chain_database(datadir, option_variables);
-      auto wall    = std::make_shared<bts::dns::dns_wallet>();
+      auto wall    = std::make_shared<bts::dns::dns_wallet>(chain);
       wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>(p2p_mode);
@@ -216,6 +217,7 @@ std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::pa
 						          const boost::program_options::variables_map& option_variables)
 {
   auto db = std::make_shared<bts::dns::dns_db>();
+  db->set_transaction_validator(std::make_shared<bts::dns::p2p::p2p_transaction_validator>(db.get()));
   db->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
     db->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
