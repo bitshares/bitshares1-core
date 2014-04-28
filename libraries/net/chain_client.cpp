@@ -6,6 +6,8 @@
 #include <fc/reflect/variant.hpp>
 #include <iostream>
 
+#include <iostream>
+
 using namespace bts::blockchain;
 
 
