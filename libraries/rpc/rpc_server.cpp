@@ -392,12 +392,11 @@ namespace bts { namespace rpc {
     }
 
     static rpc_server::method_data help_metadata{"help", nullptr,
-        /* description */ "lists wallet commands, or get help for a specified command.",
+        /* description */ "Lists commands or detailed help for specified command.",
         /* returns: */    "bool",
         /* params:     */{ { "command", "string", false } },
       /* prerequisites */ rpc_server::no_prerequisites,
       R"(
-       lists wallet commands, or get help for a specified command.
        )"};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
@@ -429,8 +428,9 @@ namespace bts { namespace rpc {
       }
       return fc::variant(help_string);
     }
+
     static rpc_server::method_data getinfo_metadata{"getinfo", nullptr,
-                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* description */ "Unlock the wallet with the given passphrase, if no user specified, 'default' is used.",
                                      /* returns: */    "info",
                                      /* params:          name                 type      required */ 
                                                        { },
@@ -447,15 +447,14 @@ namespace bts { namespace rpc {
        info["unlocked_until"]   = 0;
        return fc::variant( std::move(info) );
     }
+
     static rpc_server::method_data getblockhash_metadata{"getblockhash", nullptr,
-                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* description */ "Returns hash of block in best-block-chain at index provided..",
                                      /* returns: */    "block_id_type",
                                      /* params:          name                 type      required */ 
                                                        { },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
-Returns hash of block in best-block-chain at index provided.
-
 Arguments:
 1. index (numeric, required) The block index
 
@@ -473,14 +472,12 @@ Examples:
 
 
     static rpc_server::method_data getblockcount_metadata{"getblockcount", nullptr,
-                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* description */ "Returns the number of blocks in the longest block chain.",
                                      /* returns: */    "int",
                                      /* params:          name                 type      required */ 
                                                        { },
                                    /* prerequisites */ rpc_server::no_prerequisites,
          R"(
-Returns the number of blocks in the longest block chain.
-
 Result:
 n (numeric) The current block count
 
@@ -495,7 +492,7 @@ Examples:
 
 
     static rpc_server::method_data open_wallet_metadata{"open_wallet", nullptr,
-                                     /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* description */ "Unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */ 
                                                        {{"wallet_username",   "string", false} ,
@@ -531,13 +528,13 @@ Examples:
     }
 
     static rpc_server::method_data create_wallet_metadata{"create_wallet", nullptr,
-                                       /* description */ "create a wallet with the given passphrases",
+                                       /* description */ "Create a wallet with the given passphrases",
                                        /* returns: */    "bool",
                                        /* params:          name                   type      required */ 
                                                          {
-                                                          {"wallet_username",     "string", true},
-                                                          {"wallet_passphrase",   "string", true},
-                                                          {"spending_passphrase", "string", true}
+                                                          {"username",     "string", true},
+                                                          {"wallet_pass",   "string", true},
+                                                          {"spending_pass", "string", true}
                                                          },
                                      /* prerequisites */ rpc_server::json_authenticated,
 									 R"(
@@ -570,7 +567,7 @@ Examples:
     }
 
     static rpc_server::method_data current_wallet_metadata{"current_wallet", nullptr,
-                                        /* description */ "returns the username passed to open_wallet",
+                                        /* description */ "Returns the username passed to open_wallet",
                                         /* returns: */    "string",
                                         /* params:     */ {},
                                         /* prerequisites */ rpc_server::no_prerequisites,
@@ -584,7 +581,7 @@ Examples:
     }
 
     static rpc_server::method_data close_wallet_metadata{"close_wallet", nullptr,
-                                      /* description */ "closes the curent wallet, if one is open.",
+                                      /* description */ "Closes the curent wallet if one is open.",
                                       /* returns: */    "bool",
                                       /* params:     */ {},
                                       /* prerequisites */ rpc_server::no_prerequisites,
@@ -596,7 +593,7 @@ Examples:
     }
 
     static rpc_server::method_data walletlock_metadata{"walletlock", nullptr,
-                                     /* description */ "lock the private keys in the wallet with the given passphrase",
+                                     /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
                                      /* returns: */    "void",
                                      /* params:     */ {},
                                    /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
@@ -614,25 +611,23 @@ Examples:
     }
 
     static rpc_server::method_data walletpassphrase_metadata{"walletpassphrase", nullptr,
-          /* description */ "unlock the private keys in the wallet with the given passphrase",
+          /* description */ "Unlock the private keys in the wallet to enable spending operations",
           /* returns: */    "void",
           /* params:          name                   type      required */ 
-                            {{"spending_passphrase", "string", true}, 
+                            {{"spending_pass", "string", true}, 
                             {"timeout",             "int",    true} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
-walletpassphrase "passphrase" timeout
-
 Stores the wallet decryption key in memory for 'timeout' seconds.
 This is needed prior to performing transactions related to private keys such as sending bitcoins
 
 Arguments:
-1. "passphrase" (string, required) The wallet passphrase
+1. "spending_pass" (string, required) The wallet spending passphrase
 2. timeout (numeric, required) The time to keep the decryption key in seconds.
 
 Note:
 Issuing the walletpassphrase command while the wallet is already unlocked will set a new unlock
-time that overrides the old one if the new time is longer than the old one, but you can imediately
+time that overrides the old one if the new time is longer than the old one, but you can immediately
 lock the wallet with the walletlock command.
 
 Examples:
@@ -662,7 +657,7 @@ As json rpc call
     }
 
     static rpc_server::method_data add_send_address_metadata{"add_send_address", nullptr,
-            /* description */ "add new address for sending payments",
+            /* description */ "Add new address for sending payments",
             /* returns: */    "bool",
             /* params:          name       type       required */ 
                               {{"address", "address", true},
@@ -680,7 +675,7 @@ As json rpc call
     }
 
     static rpc_server::method_data getnewaddress_metadata{"getnewaddress", nullptr,
-          /* description */ "create a new address for receiving payments",
+          /* description */ "Create a new address for receiving payments",
           /* returns: */    "address",
           /* params:          name       type      required */ 
                             {{"account", "string", false},},
@@ -751,7 +746,7 @@ Examples:
     }
 
     static rpc_server::method_data sendtoaddress_metadata{"sendtoaddress", nullptr,
-            /* description */ "Sends the given amount to the given address, assumes shares in DAC",
+            /* description */ "Sends given amount to the given address, assumes shares in DAC",
             /* returns: */    "transaction_id",
             /* params:          name          type       required */ 
                               {{"to_address", "address", true},
@@ -762,14 +757,12 @@ Examples:
           R"(
 sendtoaddress "bitsharesaddress" amount ( "comment" "comment-to" )
 
-Sent an amount to a given address. The amount is a 64bit integer.
-
 Arguments:
-1. "bitsharesaddress" (string, required) The bitcoin address to send to.
+1. "to_address" (string, required) The address to send to.
 2. "amount" (numeric, required) The amount in BTS to send. eg 10
 3. "comment" (string, optional) A comment used to store what the transaction is for. 
 This is not part of the transaction, just kept in your wallet.
-4. "comment-to" (string, optional) A comment to store the name of the person or organization 
+4. "to_comment" (string, optional) A comment to store the name of the person or organization 
 to which you're sending the transaction. This is not part of the 
 transaction, just kept in your wallet (TODO: ignored currently, implement later).
 
@@ -822,7 +815,7 @@ Examples:
     }
 
     static rpc_server::method_data list_send_addresses_metadata{"list_send_addresses", nullptr,
-            /* description */ "Lists all foregin addresses and their labels associated with this wallet",
+            /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<address,string>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -841,6 +834,7 @@ Examples:
                               {{"asset", "unit",  false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
+TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
 getbalance ( "account" min_confirms )
 
 If account is not specified, returns the wallet's total available balance.
@@ -894,18 +888,14 @@ As a json rpc call
     }
 
     static rpc_server::method_data gettransaction_metadata{"gettransaction", nullptr,
-            /* description */ "Retrieves the signed transaction matching the given transaction id",
+            /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
             /* params:          name              type               required */ 
                               {{"transaction_id", "transaction_id",  true}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-gettransaction "txid"
-
-Get detailed information about in-wallet transaction <txid>
-
 Arguments:
-1. "txid" (string, required) The transaction id
+1. "transaction_id" (string, required) The transaction id
 
 Result:
 {
@@ -939,7 +929,7 @@ bExamples
     }
 
     static rpc_server::method_data getblock_metadata{"getblock", nullptr,
-            /* description */ "Retrieves the block header for the given block",
+            /* description */ "Retrieves the block header for the given block hash",
             /* returns: */    "block_header",
             /* params:          name              type        required */ 
                               {{"block_hash",   "block_id_type", true}},
@@ -988,7 +978,7 @@ Examples:
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data get_block_by_number_metadata{"get_block_by_number", nullptr,
-                                   /* description */ "Retrieves the block header for the given block",
+                                   /* description */ "Retrieves the block header for the given block number",
                                    /* returns: */    "block_header",
                                    /* params:          name              type        required */ 
                                                      {{"block_number",   "int32", true}},
@@ -999,15 +989,13 @@ Examples:
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data validateaddress_metadata{"validateaddress", nullptr,
-            /* description */ "Checks that the given address is valid",
+            /* description */ "Return information about given BitShares address.",
             /* returns: */    "bool",
             /* params:          name              type       required */ 
                               {{"address",        "address", true}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-validateaddress "bitsharesaddress"
-
-Return information about the given BitShares address.
+TODO: bitcoin supports all below info
 
 Arguments:
 1. "bitsharesaddress" (string, required) The BitShares address to validate
@@ -1056,11 +1044,11 @@ Examples:
     }
 
     static rpc_server::method_data import_bitcoin_wallet_metadata{"import_bitcoin_wallet", nullptr,
-            /* description */ "Import a bitcoin wallet",
+            /* description */ "Import a bitcoin wallet.",
             /* returns: */    "bool",
             /* params:          name               type       required */ 
-                              {{"wallet_filename", "string",  true},
-                                {"wallet_password", "string",  true}},
+                              {{"wallet_file", "string",  true},
+                                {"wallet_pass", "string",  true}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
@@ -1073,7 +1061,7 @@ Examples:
     }
 
     static rpc_server::method_data import_private_key_metadata{"import_private_key", nullptr,
-            /* description */ "imports a bitshares private key from hex format",
+            /* description */ "Import a bitshares private key from hex format.",
             /* returns: */    "bool",
             /* params:          name           type            required */ 
                               {{"key",         "private_key",  true},
@@ -1092,7 +1080,7 @@ Examples:
     }
 
     static rpc_server::method_data importprivkey_metadata{"importprivkey", nullptr,
-            /* description */ "imports a bitcoin private key from wallet import format WIF",
+            /* description */ "Import a bitcoin private key from wallet import format (WIF).",
             /* returns: */    "bool",
             /* params:          name           type            required */ 
                               {{"key",         "private_key",  true},
@@ -1143,16 +1131,12 @@ As a json rpc call
     }
 
     static rpc_server::method_data getconnectioncount_metadata{"getconnectioncount", nullptr,
-            /* description */ "returns the current number of active peer connections",
+            /* description */ "Returns the number of connections to other nodes.",
             /* returns: */    "bool",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-getconnectioncount
-
-Returns the number of connections to other nodes.
-
-bResult:
+Result:
 n (numeric) The connection count
 
 Examples:
