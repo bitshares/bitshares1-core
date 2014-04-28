@@ -1077,13 +1077,15 @@ Examples:
             /* returns: */    "bool",
             /* params:          name           type            required */ 
                               {{"key",         "private_key",  true},
-                              {"label",       "string",       true}},
+                               {"label",       "string",       false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
-      auto label = params[1].as_string();
+      std::string label;
+      if (params.size() >= 2 && !params[1].is_null())
+        label = params[1].as_string();
       _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
       _client->get_wallet()->save();
       return fc::variant(true);

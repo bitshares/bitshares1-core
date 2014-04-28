@@ -453,7 +453,8 @@ namespace bts { namespace blockchain {
         return trx.outputs[ref.output_idx];
     }
 
-    std::vector<meta_trx_input> chain_database::fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head )
+    std::vector<meta_trx_input> chain_database::fetch_inputs( 
+                             const std::vector<trx_input>& inputs, uint32_t head )
     {
        try
        {
@@ -487,6 +488,7 @@ namespace bts { namespace blockchain {
              metin.output_num   = inputs[i].output_ref.output_idx;
              metin.output       = trx.outputs[metin.output_num];
              metin.meta_output  = trx.meta_outputs[metin.output_num];
+             metin.data         = inputs[i].input_data;
              rtn.push_back( metin );
 
             } FC_RETHROW_EXCEPTIONS( warn, "error fetching input [${i}] ${in}", ("i",i)("in", inputs[i]) );
@@ -527,9 +529,9 @@ namespace bts { namespace blockchain {
     { try {
         auto block_state = my->_trx_validator->create_block_state();
         if( b.block_num == 0 ) { return block_state; } // don't check anything for the genesis block;
+        // TODO: replace hardcoded _trustee with a lookup of the trustee for the timestamp on this block
         FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
-        FC_ASSERT( b.trxs.size()  > 0                                                          );
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         /// time stamps from the future are not allowed
@@ -538,11 +540,13 @@ namespace bts { namespace blockchain {
                    ("get_fee_rate",get_fee_rate())("b.size",b.block_size())
                    );
 
-        // TODO: timestamp should be multiple of BTS_BLOCKCHAIN_INTERVAL_SEC from genesis 
-        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
-                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
+        FC_ASSERT( b.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
 
-        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(10) );
+        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/4)), "",
+                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/4)));
+
+
+        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp)  );
 
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
@@ -566,8 +570,11 @@ namespace bts { namespace blockchain {
             summary += my->_trx_validator->evaluate( strx, block_state );
         }
 
+        FC_ASSERT( b.next_reward     == b.calculate_next_reward( b.next_reward, summary.fees ) )
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
-                   ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
+                   ("b.total_shares",b.total_shares)
+                   ("head_block.total_shares",my->head_block.total_shares)
+                   ("summary.fees",summary.fees) );
 
         return block_state;
 

@@ -16,9 +16,12 @@
 #include <fc/io/console.hpp>
 
 #ifndef WIN32
-#include <readline/readline.h>
-#include <readline/history.h>
-#endif //!WIN32
+# define HAVE_READLINE 1
+#endif
+#ifdef HAVE_READLINE
+# include <readline/readline.h>
+# include <readline/history.h>
+#endif
 
 namespace bts { namespace cli {
 
@@ -55,7 +58,7 @@ namespace bts { namespace cli {
                   } 
                   else 
                   {
-                  #ifndef WIN32
+                  #ifdef HAVE_READLINE
                      char* line_read = nullptr;
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
@@ -67,7 +70,7 @@ namespace bts { namespace cli {
                   #else
                      std::cout<<prompt;
                      std::getline( std::cin, line );
-                  #endif ///WIN32
+                  #endif
                   }
                   return line;
             }
@@ -79,7 +82,7 @@ namespace bts { namespace cli {
                 try
                 {
                   // try to open without a password first
-                  _rpc_server->direct_invoke_method("openwallet", fc::variants());
+                  _rpc_server->direct_invoke_method("open_wallet", fc::variants());
                   return;
                 }
                 catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
@@ -95,7 +98,7 @@ namespace bts { namespace cli {
                   {
                     std::string current_wallet_user(_client->get_wallet()->get_current_user());
                     fc::variants arguments{current_wallet_user, password};
-                    _rpc_server->direct_invoke_method("openwallet", arguments);
+                    _rpc_server->direct_invoke_method("open_wallet", arguments);
                     return;
                   }
                   catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
@@ -184,7 +187,7 @@ namespace bts { namespace cli {
 
               if (response == "Y")
               {
-                result = execute_command_and_prompt_for_passwords("sendtransaction", fc::variants{fc::variant(transaction)});
+                result = execute_command_and_prompt_for_passwords("_send_transaction", fc::variants{fc::variant(transaction)});
                 bts::blockchain::transaction_id_type transaction_id = result.as<bts::blockchain::transaction_id_type>();
                 std::cout << "Transaction sent (id is " << (std::string)transaction_id << ")\n";
                 return result;
@@ -519,15 +522,15 @@ namespace bts { namespace cli {
 
         std::cout << "Please set a passphrase for encrypting your wallet: \n";
         std::string pass1, pass2;
-        pass1  = get_line("wallet passphrase: ", true);
+        pass1  = _self->get_line("wallet passphrase: ", true);
         while( pass1 != pass2 )
         {
-          pass2 = get_line("walletpassword (again): ", true);
+          pass2 = _self->get_line("walletpassword (again): ", true);
           if( pass2 != pass1 )
           {
             std::cout << "Your passphrases did not match, please try again.\n";
             pass2 = std::string();
-            pass1 = get_line("wallet passphrase: ", true);
+            pass1 = _self->get_line("wallet passphrase: ", true);
           }
         }
         if( pass1 == std::string() )
@@ -538,11 +541,11 @@ namespace bts { namespace cli {
         std::cout << "\nPlease set a passphrase for encrypting your private keys: \n";
         std::string keypass1, keypass2;
         bool retry = false;
-        keypass1  = get_line("spending passphrase: ", true);
+        keypass1  = _self->get_line("spending passphrase: ", true);
         while( keypass1 != keypass2 )
         {
           if( keypass1.size() > 8 )
-              keypass2 = get_line("spending passphrase (again): ", true);
+              keypass2 = _self->get_line("spending passphrase (again): ", true);
           else
           {
               std::cout << "Your key passphrase must be more than 8 characters.\n";
@@ -558,7 +561,7 @@ namespace bts { namespace cli {
             retry = false;
             std::cout << "Please try again.\n";
             keypass2 = std::string();
-            keypass1 = get_line("spending passphrase: ", true);
+            keypass1 = _self->get_line("spending passphrase: ", true);
           }
         }
         if( keypass1 == std::string() )
@@ -578,7 +581,7 @@ namespace bts { namespace cli {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
-    //my->create_wallet_if_missing();
+    my->create_wallet_if_missing();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
