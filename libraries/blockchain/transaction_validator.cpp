@@ -133,6 +133,9 @@ namespace bts { namespace blockchain {
    { try {
        transaction_summary sum;
 
+       if( state.trx.valid_until != fc::time_point_sec() )
+          FC_ASSERT( _db->get_head_block().timestamp < state.trx.valid_until );
+
        state.inputs = _db->fetch_inputs( state.trx.inputs );
        auto trx_delegate = _db->lookup_delegate( state.trx.vote );
        FC_ASSERT( !!trx_delegate, "unable to find delegate id ${id}", ("id",state.trx.vote) );
@@ -195,6 +198,12 @@ namespace bts { namespace blockchain {
           case claim_by_signature:
              validate_signature_input( in, state, block_state );            
              break;
+          case claim_by_multi_sig:
+             validate_multi_sig_input( in, state, block_state );
+             break;
+          case claim_by_password:
+             validate_password_input( in, state, block_state );
+             break;
           case claim_name:
              validate_name_input( in, state, block_state );            
              break;
@@ -213,6 +222,12 @@ namespace bts { namespace blockchain {
              break;
           case claim_by_signature:
              validate_signature_output( out, state, block_state );            
+             break;
+          case claim_by_multi_sig:
+             validate_multi_sig_output( out, state, block_state );
+             break;
+          case claim_by_password:
+             validate_password_output( out, state, block_state );
              break;
           case claim_name:
              validate_name_output( out, state, block_state );            
@@ -258,7 +273,7 @@ namespace bts { namespace blockchain {
    void transaction_validator::validate_signature_input( const meta_trx_input& in, 
                                                          transaction_evaluation_state& state,
                                                          const block_evaluation_state_ptr& block_state )
-   {
+   { try {
        auto claim = in.output.as<claim_by_signature_output>(); 
        FC_ASSERT( state.has_signature( claim.owner ), "", ("owner",claim.owner)("sigs",state.sigs) );
        state.add_input_asset( in.output.amount );
@@ -269,12 +284,57 @@ namespace bts { namespace blockchain {
           block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
           block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
        }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void transaction_validator::validate_password_input( const meta_trx_input& in, 
+                                                         transaction_evaluation_state& state,
+                                                         const block_evaluation_state_ptr& block_state )
+   { try {
+       auto claim = in.output.as<claim_by_password_output>(); 
+      if( in.data.size() )
+      {
+         FC_ASSERT( fc::ripemd160::hash( in.data.data(), in.data.size() ) == claim.hashed_password );
+         FC_ASSERT( state.has_signature( claim.payer ) || state.has_signature( claim.payee ) )
+      }
+      else
+      {
+         FC_ASSERT( state.has_signature( claim.payer ) && state.has_signature( claim.payee ) )
+      }
+
+      state.add_input_asset( in.output.amount );
+
+      if( in.output.amount.unit == 0 )
+      {
+         accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+         block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
+         block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void transaction_validator::validate_multi_sig_input( const meta_trx_input& in, 
+                                                         transaction_evaluation_state& state,
+                                                         const block_evaluation_state_ptr& block_state )
+   { try {
+       auto claim = in.output.as<claim_by_multi_sig_output>(); 
+       uint8_t total_sigs = 0;
+       for( auto owner : claim.addresses )
+          if( state.has_signature( owner ) ) ++total_sigs;
+       FC_ASSERT( total_sigs >= claim.required );
+
+       state.add_input_asset( in.output.amount );
+
+       if( in.output.amount.unit == 0 )
+       {
+          accumulate_votes( in.output.amount.get_rounded_amount(), in.source.block_num, state );
+          block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
+          block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
+       }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void transaction_validator::validate_name_input( const meta_trx_input& in, 
                                                          transaction_evaluation_state& state,
                                                          const block_evaluation_state_ptr& block_state )
-   {
+   { try {
        auto claim = in.output.as<claim_name_output>(); 
        FC_ASSERT( state.has_signature( address(claim.owner) ), "", ("owner",claim.owner)("sigs",state.sigs) );
        state.add_name_input( claim );
@@ -286,7 +346,7 @@ namespace bts { namespace blockchain {
           block_state->add_input_delegate_votes( in.delegate_id, in.output.amount );
           block_state->add_output_delegate_votes( state.trx.vote, in.output.amount );
        }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
    void transaction_validator::validate_signature_output( const trx_output& out, 
@@ -296,10 +356,33 @@ namespace bts { namespace blockchain {
        state.add_output_asset( out.amount );
    }
 
+   void transaction_validator::validate_password_output( const trx_output& out, 
+                                                          transaction_evaluation_state& state,
+                                                          const block_evaluation_state_ptr& block_state )
+   {
+       auto claim = out.as<claim_by_password_output>();
+       FC_ASSERT( claim.payer != claim.payee );
+       FC_ASSERT( claim.payer != address() );
+       FC_ASSERT( claim.payee != address() );
+       FC_ASSERT( claim.hashed_password != fc::ripemd160() );
+       state.add_output_asset( out.amount );
+   }
+
+   void transaction_validator::validate_multi_sig_output( const trx_output& out, 
+                                                          transaction_evaluation_state& state,
+                                                          const block_evaluation_state_ptr& block_state )
+   {
+       auto claim = out.as<claim_by_multi_sig_output>();
+       FC_ASSERT( claim.addresses.size() >= claim.required );
+       state.add_output_asset( out.amount );
+   }
+
    void transaction_validator::validate_pts_signature_output( const trx_output& out, 
                                                               transaction_evaluation_state& state,
                                                               const block_evaluation_state_ptr& block_state )
    {
+       // these outputs can only be placed in genesis block
+       FC_ASSERT( _db->head_block_num() == -1 );
        state.add_output_asset( out.amount );
    }
 
@@ -307,15 +390,31 @@ namespace bts { namespace blockchain {
                                                      transaction_evaluation_state& state,
                                                      const block_evaluation_state_ptr& block_state )
    {
+       FC_ASSERT( out.amount.unit == 0 );
+       state.add_output_asset( out.amount );
+
        auto claim = out.as<claim_name_output>(); 
        block_state->add_name_output( claim );
        if( !state.has_name_input( claim ) )
        {
-          auto name_rec = _db->lookup_name( claim.name );
+          auto name_rec     = _db->lookup_name( claim.name );
           FC_ASSERT( !name_rec );
+          auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
+          FC_ASSERT( !delegate_rec );
        }
-       FC_ASSERT( out.amount.unit == 0 );
-       state.add_output_asset( out.amount );
+       else // has_name_input claim
+       {
+          auto name_in = state.get_name_input( claim );
+          if( name_in.delegate_id != 0 )
+          {
+             FC_ASSERT( claim.delegate_id == name_in.delegate_id );
+          }
+          else
+          {
+             auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
+             FC_ASSERT( !delegate_rec );
+          }
+       }
 
        if( claim.delegate_id != 0 )
        {

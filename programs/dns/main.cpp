@@ -7,6 +7,7 @@
 #include <bts/dns/dns_rpc_server.hpp>
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/p2p/p2p_transaction_validator.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
@@ -17,7 +18,7 @@
 
 // refactor away:
 #include <bts/net/chain_server.hpp>
-/// 
+///
 
 struct config
 {
@@ -33,7 +34,7 @@ void print_banner();
 void configure_logging(const fc::path&);
 fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
-std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir, 
+std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir,
 								    const boost::program_options::variables_map& option_variables);
 
 int main( int argc, char** argv )
@@ -76,7 +77,7 @@ int main( int argc, char** argv )
      std::cout << option_config << "\n";
      return 0;
    }
- 
+
 
    bool p2p_mode = option_variables.count("p2p") != 0;
 
@@ -88,7 +89,7 @@ int main( int argc, char** argv )
 
       auto cfg   = load_config(datadir);
       auto chain = load_and_configure_chain_database(datadir, option_variables);
-      auto wall    = std::make_shared<bts::dns::dns_wallet>();
+      auto wall    = std::make_shared<bts::dns::dns_wallet>(chain);
       wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>(p2p_mode);
@@ -114,7 +115,7 @@ int main( int argc, char** argv )
       if( option_variables.count("server") )
       {
         // the user wants us to launch the RPC server.
-        // First, override any config parameters they 
+        // First, override any config parameters they
         bts::rpc::rpc_server::config rpc_config(cfg.rpc);
         if (option_variables.count("rpcuser"))
           rpc_config.rpc_user = option_variables["rpcuser"].as<std::string>();
@@ -129,7 +130,7 @@ int main( int argc, char** argv )
         std::cerr<<"starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
         rpc_server->configure(rpc_config);
       }
-      
+
       if (p2p_mode)
       {
         c->configure( datadir );
@@ -147,8 +148,8 @@ int main( int argc, char** argv )
 
       cli->wait();
 
-   } 
-   catch ( const fc::exception& e ) 
+   }
+   catch ( const fc::exception& e )
    {
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
@@ -212,10 +213,11 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 } FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
 
 
-std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir, 
+std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir,
 						          const boost::program_options::variables_map& option_variables)
 {
   auto db = std::make_shared<bts::dns::dns_db>();
+  db->set_transaction_validator(std::make_shared<bts::dns::p2p::p2p_transaction_validator>(db.get()));
   db->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
     db->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
@@ -236,7 +238,7 @@ std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::pa
         wlog("Error creating genesis block from file ${filename}: ${e}", ("filename", genesis_json_file)("e", e.to_string()));
         return db;
       }
-      try 
+      try
       {
         db->push_block(genesis_block);
       }

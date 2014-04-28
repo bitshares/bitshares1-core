@@ -1,4 +1,4 @@
-# Defines bitshares library target.
+# Defines BitShares library target.
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
@@ -7,7 +7,6 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeMo
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
-
 
 if( WIN32 )
     message( STATUS "Configuring Bitshares on WIN32")
@@ -18,7 +17,7 @@ if( WIN32 )
     set( LEVEL_DB_DIR vendor/leveldb-win )
 
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
-	
+
     set( PLATFORM_SPECIFIC_LIBS WS2_32.lib iphlpapi.lib )
     set(CRYPTO_LIB)
 
@@ -38,12 +37,12 @@ else( WIN32 )
     if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)
       MESSAGE(FATAL_ERROR "Could not find lib readline.")
     endif()
-    
+
     if( APPLE )
         # Apple Specific Options Here
         message( STATUS "Configuring Bitshares on OS X" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++  -Wall -ferror-limit=4" )
-    else( APPLE ) 
+    else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring Bitshares on Linux" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
@@ -57,16 +56,16 @@ endif( WIN32 )
 find_package( BerkeleyDB )
 
 SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread 
-                             date_time 
-                             system 
-                             filesystem 
-                             program_options 
-                             signals 
-                             serialization 
-                             chrono 
-                             unit_test_framework 
-                             context 
+LIST(APPEND BOOST_COMPONENTS thread
+                             date_time
+                             system
+                             filesystem
+                             program_options
+                             signals
+                             serialization
+                             chrono
+                             unit_test_framework
+                             context
                              locale)
 
 set(Boost_USE_STATIC_LIBS ON)
@@ -94,4 +93,3 @@ add_subdirectory( "${LEVEL_DB_DIR}"    )
 add_subdirectory( vendor/miniupnp/miniupnpc )
 add_subdirectory( programs )
 add_subdirectory( tests )
-#add_subdirectory( programs  )

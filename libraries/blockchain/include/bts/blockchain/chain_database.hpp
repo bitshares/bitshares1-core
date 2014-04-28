@@ -9,7 +9,11 @@ namespace fc
    class path;
 };
 
-namespace bts { namespace blockchain {
+namespace bts { 
+   /**
+    *  @brief all types and data associated with the blockchain data structure 
+    */
+   namespace blockchain {
 
     namespace detail  { class chain_database_impl; }
 
