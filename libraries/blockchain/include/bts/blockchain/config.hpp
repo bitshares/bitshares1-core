@@ -3,6 +3,7 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
+#define BTS_BLOCKCHAIN_VERSION 1
 
 #define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC        (30ll)  // 30 seconds 
 #define BTS_BLOCKCHAIN_MAX_SIZE                  (1024*1024*1024*100ll) // 100 GB
@@ -23,4 +24,12 @@
  *  defines the min fee in shares
  */
 #define BTS_BLOCKCHAIN_MIN_FEE                   1
+
+/**
+ *  the minimum mining reward paid to delegates, may result in some inflation 
+ *  if there is no transaction volume.  So long as there are atleast 2KB of
+ *  transactions per block then there will be no inflation.
+ */
+#define BTS_BLOCKCHAIN_MIN_REWARD                200
+
 #define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_MIN_FEE*BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE)

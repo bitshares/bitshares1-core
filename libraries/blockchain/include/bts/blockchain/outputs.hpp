@@ -1,4 +1,9 @@
 #pragma once
+
+/** 
+ *  @file bts/blockchain/outputs.hpp
+ *  @brief defines output types used by blockchain 
+ */
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/asset.hpp>
@@ -10,6 +15,10 @@
 
 namespace bts { namespace blockchain {
 
+/**
+ *  @enum claim_type_enum
+ *  @brief Enumerates the types of supported claim types
+ */
 enum claim_type_enum
 {
    /** basic claim by single address */
@@ -19,6 +28,7 @@ enum claim_type_enum
    claim_by_multi_sig   = 3, ///< N of M signatures required
    claim_by_password    = 4, ///< used for cross-chain trading
    claim_name           = 5, ///< used to register a name that is unique
+   claim_fire_delegate  = 6, ///< used to fire a delegate with cause
    // 10->19 reserved for BitShares X
    // 20->29 reserved for BitShares DNS
 };
@@ -83,7 +93,8 @@ struct claim_by_password_input
 struct claim_by_multi_sig_output
 {
     static const claim_type_enum type;
-    fc::unsigned_int    required;
+    claim_by_multi_sig_output():required(1){}
+    uint8_t              required;
     std::vector<address> addresses;
 };
 
@@ -121,9 +132,45 @@ struct claim_name_output
     uint32_t             delegate_id; 
 
     /**
-     *  Owner of the name / delegate_id 
+     *  Owner of the name / delegate_id, this is the master key that will likely
+     *  remain in cold-storage.
      */
     fc::ecc::public_key  owner;
+
+    /**
+     * This is the active key for this owner, that is not in cold storage and can
+     * be used for signing messages.  
+     */
+    fc::ecc::public_key  active;
+};
+
+enum fire_reason
+{
+     /** produce a transaction that the delegate reported incorrectly 
+      * at the time the signed_certified_transaction was signed. 
+      *
+      * @see bts::blockchain::signed_certified_transaction
+      */
+     invalid_transaction_cert   = 0,
+
+     /**
+      * produce two block headers for the same timeslot signed
+      * by the same delegate.
+      *
+      * @see bts::blockchain::signed_header_conflict
+      */
+     duplicate_block_signatures = 1
+};
+
+struct claim_fire_delegate_output
+{
+    static const claim_type_enum type;
+
+    claim_fire_delegate_output():reason(0){}
+    claim_fire_delegate_output(uint8_t r, std::vector<char> p):reason(r),proof(std::move(p)){}
+
+    uint8_t           reason;
+    std::vector<char> proof;
 };
 
 
@@ -141,7 +188,8 @@ FC_REFLECT( bts::blockchain::claim_by_signature_output, (owner) )
 FC_REFLECT( bts::blockchain::claim_by_pts_output, (owner) )
 FC_REFLECT( bts::blockchain::claim_by_multi_sig_output, (required)(addresses) )
 FC_REFLECT( bts::blockchain::claim_by_password_output, (payer)(payee)(hashed_password) )
-FC_REFLECT( bts::blockchain::claim_name_output, (name)(data)(delegate_id)(owner) )
+FC_REFLECT( bts::blockchain::claim_name_output, (name)(data)(delegate_id)(owner)(active) )
+FC_REFLECT( bts::blockchain::claim_fire_delegate_output,  (reason)(proof)  )
 
 FC_REFLECT( bts::blockchain::claim_by_signature_input,    BOOST_PP_SEQ_NIL )
 FC_REFLECT( bts::blockchain::claim_by_password_input,     (password)       )
