@@ -20,15 +20,15 @@ block_evaluation_state_ptr dns_transaction_validator::create_block_state() const
 
 transaction_summary dns_transaction_validator::evaluate(const signed_transaction &tx,
                                                         const block_evaluation_state_ptr &block_state)
-{
+{ try {
     dns_tx_evaluation_state state(tx);
 
     return on_evaluate(state, block_state);
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 void dns_transaction_validator::validate_input(const meta_trx_input &in, transaction_evaluation_state &state,
                                                const block_evaluation_state_ptr &block_state)
-{
+{ try {
     if (is_domain_output(in.output))
     {
         claim_domain_output dns_input = to_domain_output(in.output);
@@ -42,11 +42,11 @@ void dns_transaction_validator::validate_input(const meta_trx_input &in, transac
     {
         transaction_validator::validate_input(in, state, block_state);
     }
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 void dns_transaction_validator::validate_output(const trx_output &out, transaction_evaluation_state &state,
                                                 const block_evaluation_state_ptr &block_state)
-{
+{ try {
     if (is_domain_output(out))
     {
         claim_domain_output dns_output = to_domain_output(out);
@@ -63,7 +63,7 @@ void dns_transaction_validator::validate_output(const trx_output &out, transacti
     {
         transaction_validator::validate_output(out, state, block_state);
     }
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 void dns_transaction_validator::validate_domain_input(const claim_domain_output &input, const asset &amount,
                                                       dns_tx_evaluation_state &state,
