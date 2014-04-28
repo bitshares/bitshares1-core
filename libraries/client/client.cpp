@@ -69,6 +69,7 @@ namespace bts { namespace client {
 
        void client_impl::trustee_loop()
        {
+          fc::usleep( fc::seconds( 10 ) );
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_trustee_loop_complete.canceled() )
          {

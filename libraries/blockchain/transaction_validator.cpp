@@ -402,12 +402,12 @@ namespace bts { namespace blockchain {
           auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
           FC_ASSERT( !delegate_rec );
        }
-       else
+       else // has_name_input claim
        {
           auto name_in = state.get_name_input( claim );
           if( name_in.delegate_id != 0 )
           {
-            FC_ASSERT( claim.delegate_id == name_in.delegate_id );
+             FC_ASSERT( claim.delegate_id == name_in.delegate_id );
           }
           else
           {

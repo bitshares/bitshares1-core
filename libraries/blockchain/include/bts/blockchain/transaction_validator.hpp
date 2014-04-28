@@ -84,6 +84,12 @@ namespace bts { namespace blockchain {
           {
              return name_inputs.find(o.name) == name_inputs.end();
           }
+          claim_name_output get_name_input( const claim_name_output& c )
+          {
+             auto itr = name_inputs.find( c.name );
+             FC_ASSERT( itr != name_inputs.end() );
+             return itr->second;
+          }
           
           bool     is_output_used( uint32_t out )const;
           void     mark_output_as_used( uint32_t out );
