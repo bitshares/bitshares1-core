@@ -1044,7 +1044,7 @@ namespace bts { namespace wallet {
                 // create a new block state to evaluate transactions in isolation to maximize fees
                 auto block_state = chain_db.get_transaction_validator()->create_block_state();
                 trx_stat s;
-                s.eval = chain_db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); //evaluate_signed_transaction( in_trxs[i] );
+                s.eval = chain_db.get_transaction_validator()->evaluate( in_trxs[i], block_state ); 
                 ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
@@ -1096,12 +1096,15 @@ namespace bts { namespace wallet {
          result.prev            = chain_db.head_block_id();
          result.trx_mroot       = result.calculate_merkle_root(deterministic_trxs);
          result.next_fee        = result.calculate_next_fee( chain_db.get_fee_rate(), result.block_size() );
+         result.next_reward     = result.calculate_next_reward( head_block.next_reward, summary.fees );
          result.total_shares    = head_block.total_shares - summary.fees;
-         result.timestamp       = chain_db.get_pow_validator()->get_time();
+         // round to a multiple of block interval
+         result.timestamp       = fc::time_point_sec( (chain_db.get_pow_validator()->get_time().sec_since_epoch() / 
+                                                       BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+         FC_ASSERT( result.timestamp > head_block.timestamp );
 
          return result;
       } FC_RETHROW_EXCEPTIONS( warn, "error generating new block" );
-
    }
 
    void wallet::set_delegate_trust( uint32_t delegate_id, bool is_trusted )

@@ -69,19 +69,23 @@ namespace bts { namespace client {
 
        void client_impl::trustee_loop()
        {
+          fc::usleep( fc::seconds( 10 ) );
          _last_block = _chain_db->get_head_block().timestamp;
-         while (!_trustee_loop_complete.canceled())
+         while( !_trustee_loop_complete.canceled() )
          {
            signed_transactions pending_trxs;
            pending_trxs = get_pending_transactions();
-           if (pending_trxs.size() && (fc::time_point::now() - _last_block) > fc::seconds(30))
+           _last_block = _chain_db->get_head_block().timestamp;
+           if( (fc::time_point::now() - _last_block) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
            {
              try {
                bts::blockchain::trx_block blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
                blk.sign(_trustee_key);
                // _chain_db->push_block( blk );
                if (_chain_client)
+               {
                  _chain_client->broadcast_block(blk);
+               }
                else
                {
                  _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
@@ -89,17 +93,16 @@ namespace bts { namespace client {
                  // immediately send it back to you 
                  on_new_block(blk);
                }
-
                _last_block = fc::time_point::now();
              }
-             catch (const fc::exception& e)
+             catch( const fc::exception& e )
              {
                elog("error producing block?: ${e}", ("e", e.to_detail_string()));
              }
            }
            fc::usleep(fc::seconds(1));
          }
-       }
+       } // trustee_loop
 
        signed_transactions client_impl::get_pending_transactions() const
        {

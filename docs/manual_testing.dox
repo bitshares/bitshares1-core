@@ -25,14 +25,15 @@ Create a text file named `genesis.json` that looks like this:
     "balances": [
         [
           "PcBT8L6fyjfNzmnTkp1rwfoQTY4ep7RMQx",
-          100000000.
+          1.
         ]
     ]
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Which will give you 100 million BTS to play with. Note that the genesis
-block references the PTS address. All other public key references will use the BTS form
-of the address.
+Which will give you 100 million BTS to play with (whatever value you place in 
+the balance will be multiplied by 10^8, so a value of 1 gives you 100,000,000BTS).
+Note that the genesis block references the PTS address. All other public key 
+references will use the BTS form of the address.
 
 Generate a Trustee
 ------------------

@@ -84,6 +84,12 @@ namespace bts { namespace blockchain {
           {
              return name_inputs.find(o.name) == name_inputs.end();
           }
+          claim_name_output get_name_input( const claim_name_output& c )
+          {
+             auto itr = name_inputs.find( c.name );
+             FC_ASSERT( itr != name_inputs.end() );
+             return itr->second;
+          }
           
           bool     is_output_used( uint32_t out )const;
           void     mark_output_as_used( uint32_t out );
@@ -151,10 +157,27 @@ namespace bts { namespace blockchain {
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
 
+          virtual void validate_multi_sig_input(  const meta_trx_input& in, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_password_input(  const meta_trx_input& in, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
           virtual void validate_name_input(  const meta_trx_input& in, 
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
+
           virtual void validate_signature_output( const trx_output& out, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_multi_sig_output( const trx_output& out, 
+                                                  transaction_evaluation_state& state, 
+                                                  const block_evaluation_state_ptr& block_state );
+
+          virtual void validate_password_output( const trx_output& out, 
                                                   transaction_evaluation_state& state, 
                                                   const block_evaluation_state_ptr& block_state );
 

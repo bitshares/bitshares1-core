@@ -11,15 +11,15 @@
 namespace bts { namespace blockchain  {
 
 
-   digest_block::digest_block( const signed_block_header& b,
-                               const signed_transactions& trxs,
+   digest_block::digest_block( const signed_block_header& b, 
+                               const signed_transactions& trxs, 
                                const signed_transactions& determinstic_trxs )
    :signed_block_header(b)
    {
       trx_ids.reserve( trxs.size() );
-      for( auto trx : trxs )
+      for( auto trx : trxs ) 
          trx_ids.push_back( trx.id() );
-      for( auto trx : determinstic_trxs)
+      for( auto trx : determinstic_trxs) 
          deterministic_ids.push_back( trx.id() );
    }
 
@@ -56,7 +56,7 @@ namespace bts { namespace blockchain  {
 
   /**
    *  The min fee is specified in shares, but for the purposes of the block header there is
-   *  higher precision.
+   *  higher percision.
    */
   uint64_t block_header::min_fee()
   {
@@ -65,11 +65,15 @@ namespace bts { namespace blockchain  {
 
   uint64_t block_header::calculate_next_fee( uint64_t prev_fee, uint64_t block_size )
   {
-     // 0.5% of 4 Million coins divided among 144 blocks per day for 365 blocks per year at 512KB per block
-     // yields the min fee per byte.
      uint64_t next_fee_base = block_size * prev_fee / BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-     uint64_t next_fee = (99*prev_fee + next_fee_base) / 100;
+     uint64_t next_fee = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*prev_fee + next_fee_base) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
      return std::max<uint64_t>(next_fee,min_fee());
+  }
+  uint64_t block_header::calculate_next_reward( uint64_t prev_reward, uint64_t block_fees )
+  {
+     uint64_t next_reward_base = (block_fees/10) * prev_reward / BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+     uint64_t next_reward = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*prev_reward + next_reward_base) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
+     return std::max<uint64_t>(next_reward,BTS_BLOCKCHAIN_MIN_REWARD);
   }
 
 
@@ -89,7 +93,7 @@ namespace bts { namespace blockchain  {
      fc::raw::pack( enc, *this );
      return small_hash( enc.result() );
   }
-
+  
   /**
    *  @return the digest of the block header used to evaluate the proof of work
    */

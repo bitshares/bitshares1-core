@@ -8,11 +8,13 @@ namespace bts { namespace blockchain {
    const claim_type_enum claim_by_password_output::type     = claim_type_enum::claim_by_password;
    const claim_type_enum claim_by_multi_sig_output::type    = claim_type_enum::claim_by_multi_sig;
    const claim_type_enum claim_name_output::type            = claim_type_enum::claim_name;
+   const claim_type_enum claim_fire_delegate_output::type  = claim_type_enum::claim_fire_delegate;
 
 
    const claim_type_enum claim_by_signature_input::type    = claim_type_enum::claim_by_signature;
    const claim_type_enum claim_by_multi_sig_input::type    = claim_type_enum::claim_by_multi_sig;
 
+   /** valid names are selected to follow DNS naming conventions */
    bool claim_name_output::is_valid_name( const std::string& name )
    {
       if( name.size() == 0                ) return false;
@@ -28,6 +30,7 @@ namespace bts { namespace blockchain {
 
       return true;
    }
+
    claim_name_output:: claim_name_output( std::string n, const fc::variant& d, 
                                           uint32_t did, fc::ecc::public_key own )
    :name( std::move(n) ), data( fc::json::to_string(d) ), delegate_id(did), owner( std::move(own) ){}
