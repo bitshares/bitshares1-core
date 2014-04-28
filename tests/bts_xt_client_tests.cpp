@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->openwallet();
+    client_processes[i].rpc_client->open_wallet();
   }
 
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
@@ -432,12 +432,12 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing receive address generation");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    std::unordered_map<bts::blockchain::address, std::string> initial_addresses = client_processes[i].rpc_client->listrecvaddresses();
+    std::unordered_map<bts::blockchain::address, std::string> initial_addresses = client_processes[i].rpc_client->list_receive_addresses();
     BOOST_CHECK(initial_addresses.empty());
     std::string accountName("address_test_account");
     bts::blockchain::address new_address = client_processes[i].rpc_client->getnewaddress(accountName);
     BOOST_CHECK(initial_addresses.find(new_address) == initial_addresses.end());
-    std::unordered_map<bts::blockchain::address, std::string> final_addresses = client_processes[i].rpc_client->listrecvaddresses();
+    std::unordered_map<bts::blockchain::address, std::string> final_addresses = client_processes[i].rpc_client->list_receive_addresses();
     BOOST_CHECK(final_addresses.size() == initial_addresses.size() + 1);
     for (auto value : initial_addresses)
     {
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
 
   establish_rpc_connections();
 
-  client_processes[0].rpc_client->openwallet();
+  client_processes[0].rpc_client->open_wallet();
 
   BOOST_TEST_MESSAGE("Testing getnewaddress() while wallet is locked");
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
@@ -507,7 +507,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->openwallet();
+    client_processes[i].rpc_client->open_wallet();
     BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->openwallet();
+    client_processes[i].rpc_client->open_wallet();
     BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 

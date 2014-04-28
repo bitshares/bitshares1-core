@@ -11,5 +11,7 @@ else()
   set( sources import_bitcoin_wallet.cpp )
 endif()
 
-add_library( bitcoin_import ${sources} )
+file(GLOB HEADERS "include/bts/*.hpp")
+
+add_library( bitcoin_import ${sources} ${HEADERS})
 target_link_libraries( bitcoin_import  fc ${BDB_LIBRARIES} )
