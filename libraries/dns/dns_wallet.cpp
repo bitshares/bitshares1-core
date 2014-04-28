@@ -1,5 +1,4 @@
 #include <bts/dns/dns_wallet.hpp>
-#include <sstream>
 
 namespace bts { namespace dns {
 
@@ -14,14 +13,14 @@ dns_wallet::~dns_wallet()
 }
 
 signed_transaction dns_wallet::bid(const std::string& key, const asset& bid_price,
-                                   const signed_transactions& pending_txs, dns_db& db)
+                                   const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
 
     /* Key should be new, for auction, or expired */
     bool new_or_expired;
     output_reference prev_tx_ref;
-    FC_ASSERT(key_is_available(key, pending_txs, db, new_or_expired, prev_tx_ref), "Key not available");
+    FC_ASSERT(key_is_available(key, pending_txs, new_or_expired, prev_tx_ref), "Key not available");
 
     signed_transaction tx;
     claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::auction, new_receive_address("Key: " + key));
@@ -34,7 +33,7 @@ signed_transaction dns_wallet::bid(const std::string& key, const asset& bid_pric
     {
         tx.inputs.push_back(trx_input(prev_tx_ref));
 
-        auto prev_output = db.fetch_output(prev_tx_ref);
+        auto prev_output = _db->fetch_output(prev_tx_ref);
         FC_ASSERT(_transaction_validator->is_valid_bid_price(bid_price, prev_output.amount), "Invalid bid price");
         auto transfer_amount = _transaction_validator->get_bid_transfer_amount(bid_price, prev_output.amount);
 
@@ -48,83 +47,81 @@ signed_transaction dns_wallet::bid(const std::string& key, const asset& bid_pric
 } FC_RETHROW_EXCEPTIONS(warn, "bid on key ${k} with price ${p}", ("k", key) ("p", bid_price)); }
 
 signed_transaction dns_wallet::ask(const std::string& key, const asset& ask_price,
-                                   const signed_transactions& pending_txs, dns_db& db)
+                                   const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
 
     /* Key should exist and be owned */
     output_reference prev_tx_ref;
-    FC_ASSERT(key_is_useable(key, pending_txs, db, get_unspent_outputs(), prev_tx_ref), "Key unavailable");
+    FC_ASSERT(key_is_useable(key, pending_txs, prev_tx_ref), "Key unavailable");
 
-    auto prev_output = db.fetch_output(prev_tx_ref);
+    auto prev_output = _db->fetch_output(prev_tx_ref);
     auto prev_dns_output = to_dns_output(prev_output);
 
     claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::auction, prev_dns_output.owner);
 
-    return update(dns_output, ask_price, prev_tx_ref, prev_dns_output.owner, db);
+    return update(dns_output, ask_price, prev_tx_ref, prev_dns_output.owner);
 } FC_RETHROW_EXCEPTIONS(warn, "ask on key ${k} with price ${p}", ("k", key) ("p", ask_price)); }
 
 signed_transaction dns_wallet::transfer(const std::string& key, const address& recipient,
-                                       const signed_transactions& pending_txs, dns_db& db)
+                                        const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
 
     /* Key should exist and be owned */
     output_reference prev_tx_ref;
-    FC_ASSERT(key_is_useable(key, pending_txs, db, get_unspent_outputs(), prev_tx_ref), "Key unavailable");
+    FC_ASSERT(key_is_useable(key, pending_txs, prev_tx_ref), "Key unavailable");
 
-    auto prev_output = db.fetch_output(prev_tx_ref);
+    auto prev_output = _db->fetch_output(prev_tx_ref);
     auto prev_dns_output = to_dns_output(prev_output);
 
     claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::update, recipient, prev_dns_output.value);
 
-    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner, db);
+    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner);
 } FC_RETHROW_EXCEPTIONS(warn, "transfer key ${k} with recipient ${r}", ("k", key) ("r", recipient)); }
 
 signed_transaction dns_wallet::release(const std::string& key,
-                                       const signed_transactions& pending_txs, dns_db& db)
+                                       const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
 
     /* Key should exist and be owned */
     output_reference prev_tx_ref;
-    FC_ASSERT(key_is_useable(key, pending_txs, db, get_unspent_outputs(), prev_tx_ref), "Key unavailable");
+    FC_ASSERT(key_is_useable(key, pending_txs, prev_tx_ref), "Key unavailable");
 
-    auto prev_output = db.fetch_output(prev_tx_ref);
+    auto prev_output = _db->fetch_output(prev_tx_ref);
     auto prev_dns_output = to_dns_output(prev_output);
 
     claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::release, prev_dns_output.owner);
 
-    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner, db);
+    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner);
 } FC_RETHROW_EXCEPTIONS(warn, "release key ${k}", ("k", key)); }
 
 signed_transaction dns_wallet::set(const std::string& key, const fc::variant& value,
-                                  const signed_transactions& pending_txs, dns_db& db)
+                                   const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
     FC_ASSERT(_transaction_validator->is_valid_value(serialize_value(value)), "Invalid value");
 
     /* Key should exist and be owned */
     output_reference prev_tx_ref;
-    FC_ASSERT(key_is_useable(key, pending_txs, db, get_unspent_outputs(), prev_tx_ref), "Key unavailable");
+    FC_ASSERT(key_is_useable(key, pending_txs, prev_tx_ref), "Key unavailable");
 
-    auto prev_output = db.fetch_output(prev_tx_ref);
+    auto prev_output = _db->fetch_output(prev_tx_ref);
     auto prev_dns_output = to_dns_output(prev_output);
 
     claim_dns_output dns_output(key, claim_dns_output::last_tx_type_enum::update, prev_dns_output.owner, serialize_value(value));
 
-    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner, db);
+    return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner);
 } FC_RETHROW_EXCEPTIONS(warn, "set key ${k} with value ${v}", ("k", key) ("v", value)); }
 
 fc::variant dns_wallet::lookup(const std::string& key,
-                               const signed_transactions& pending_txs, dns_db& db)
+                               const signed_transactions& pending_txs)
 { try {
     FC_ASSERT(_transaction_validator->is_valid_key(key), "Invalid key");
+    FC_ASSERT(_db->has_dns_ref(key), "Key does not exist");
 
-    // TODO: Also check current pending_txs?
-    FC_ASSERT(db.has_dns_ref(key), "Key does not exist");
-
-    auto output = db.get_key_output(key);
+    auto output = _db->fetch_output(_db->get_dns_ref(key));
 
     return unserialize_value(to_dns_output(output).value);
 } FC_RETHROW_EXCEPTIONS(warn, "lookup key ${k}", ("k", key)); }
@@ -139,6 +136,7 @@ std::vector<trx_output> dns_wallet::get_active_auctions()
         FC_ASSERT(transaction_validator != nullptr);
         return !transaction_validator->auction_is_closed(r);
     };
+
     auto map = _db->filter(f);
 
     for (auto iter = map.begin(); iter != map.end(); iter++)
@@ -184,7 +182,7 @@ bool dns_wallet::scan_output(transaction_state& state, const trx_output& out, co
 }
 
 signed_transaction dns_wallet::update(const claim_dns_output& dns_output, const asset& amount,
-                                      const output_reference& prev_tx_ref, const address& prev_owner, dns_db& db)
+                                      const output_reference& prev_tx_ref, const address& prev_owner)
 { try {
     signed_transaction tx;
     std::unordered_set<address> req_sigs;
@@ -196,9 +194,9 @@ signed_transaction dns_wallet::update(const claim_dns_output& dns_output, const 
     return collect_inputs_and_sign(tx, asset(), req_sigs);
 } FC_RETHROW_EXCEPTIONS(warn, "update on key ${k} with amount ${a}", ("k", dns_output.key) ("a", amount)); }
 
-std::vector<std::string> dns_wallet::get_keys_from_txs(const signed_transactions &txs)
+std::vector<std::string> dns_wallet::get_keys_from_txs(const signed_transactions& txs)
 {
-    std::vector<std::string> keys = std::vector<std::string>();
+    std::vector<std::string> keys;
 
     for (auto &tx : txs)
     {
@@ -214,10 +212,9 @@ std::vector<std::string> dns_wallet::get_keys_from_txs(const signed_transactions
     return keys;
 }
 
-std::vector<std::string> dns_wallet::get_keys_from_unspent(const std::map<bts::wallet::output_index, trx_output>
-                                                &unspent_outputs)
+std::vector<std::string> dns_wallet::get_keys_from_unspent(const std::map<output_index, trx_output>& unspent_outputs)
 {
-    std::vector<std::string> keys = std::vector<std::string>();
+    std::vector<std::string> keys;
 
     for (auto pair : unspent_outputs)
     {
@@ -230,17 +227,16 @@ std::vector<std::string> dns_wallet::get_keys_from_unspent(const std::map<bts::w
     return keys;
 }
 
-bool dns_wallet::key_is_available(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
-                       bool &new_or_expired, output_reference &prev_tx_ref)
+bool dns_wallet::key_is_available(const std::string& key, const signed_transactions& pending_txs, bool& new_or_expired,
+                                  output_reference& prev_tx_ref)
 {
-    return _transaction_validator->key_is_available(key, get_keys_from_txs(pending_txs), db, new_or_expired, prev_tx_ref);
+    return _transaction_validator->key_is_available(key, get_keys_from_txs(pending_txs), new_or_expired, prev_tx_ref);
 }
 
-bool dns_wallet::key_is_useable(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
-                     const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
-                     output_reference &prev_tx_ref)
+bool dns_wallet::key_is_useable(const std::string& key, const signed_transactions& pending_txs, output_reference& prev_tx_ref)
 {
-    return _transaction_validator->key_is_useable(key, get_keys_from_txs(pending_txs), db, get_keys_from_unspent(unspent_outputs), prev_tx_ref);
+    return _transaction_validator->key_is_useable(key, get_keys_from_txs(pending_txs),
+            get_keys_from_unspent(get_unspent_outputs()), prev_tx_ref);
 }
 
 } } // bts::dns

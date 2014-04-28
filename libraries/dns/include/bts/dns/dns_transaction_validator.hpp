@@ -3,7 +3,6 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/dns/dns_db.hpp>
-#include <bts/wallet/wallet.hpp>
 
 namespace bts { namespace dns {
 
@@ -26,22 +25,20 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         virtual void validate_output(const trx_output& out, transaction_evaluation_state& state,
                                      const block_evaluation_state_ptr& block_state) = 0;
 
-        virtual bool auction_is_closed(const output_reference &tx_ref) = 0;
-        virtual bool key_is_expired(const output_reference &tx_ref) = 0;
-
         virtual bool is_valid_output(const claim_dns_output& output) = 0;
         virtual bool is_valid_key(const std::string& key) = 0;
         virtual bool is_valid_value(const std::vector<char>& value) = 0;
 
-        // TODO: get rid of db in args
-        virtual bool key_is_available(const std::string &key, const std::vector<std::string> &key_pool, dns_db &db,
-                               bool &new_or_expired, output_reference &prev_tx_ref) = 0;
-        virtual bool key_is_useable(const std::string &key, const std::vector<std::string> &key_pool, dns_db &db,
-                                    const std::vector<std::string> &unspent_keys,
-                                     output_reference &prev_tx_ref) = 0;
+        virtual bool is_valid_bid_price(const asset& bid_price, const asset& prev_bid_price) = 0;
+        virtual asset get_bid_transfer_amount(const asset& bid_price, const asset& prev_bid_price) = 0;
 
-        virtual bool is_valid_bid_price(const asset &bid_price, const asset &prev_bid_price) = 0;
-        virtual asset get_bid_transfer_amount(const asset &bid_price, const asset &prev_bid_price) = 0;
+        virtual bool auction_is_closed(const output_reference& tx_ref) = 0;
+        virtual bool key_is_expired(const output_reference& tx_ref) = 0;
+
+        virtual bool key_is_available(const std::string& key, const std::vector<std::string>& pending_keys,
+                                      bool& new_or_expired, output_reference& prev_tx_ref) = 0;
+        virtual bool key_is_useable(const std::string& key, const std::vector<std::string>& pending_keys,
+                                    const std::vector<std::string>& unspent_keys, output_reference& prev_tx_ref) = 0;
 
     protected:
         dns_db* _dns_db;

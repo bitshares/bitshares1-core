@@ -37,7 +37,7 @@ namespace bts { namespace dns {
       asset bid = params[1].as<asset>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->bid(name, bid, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->bid(name, bid, tx_pool);
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -48,7 +48,7 @@ namespace bts { namespace dns {
       asset price = params[1].as<asset>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->ask(name, price, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->ask(name, price, tx_pool);
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -59,7 +59,7 @@ namespace bts { namespace dns {
       auto to_owner = params[1].as<bts::blockchain::address>();
       signed_transactions tx_pool;
 
-      auto tx = get_dns_wallet()->transfer(name, to_owner, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->transfer(name, to_owner, tx_pool);
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -71,7 +71,7 @@ namespace bts { namespace dns {
       signed_transactions tx_pool;
 
       // TODO: This needs to be wallet->set
-      auto tx = get_dns_wallet()->bid(name, bid, tx_pool, *get_dns_db());
+      auto tx = get_dns_wallet()->bid(name, bid, tx_pool);
 
       _self->get_client()->broadcast_transaction(tx);
       return fc::variant(true);
@@ -93,7 +93,7 @@ namespace bts { namespace dns {
       std::string name = params[0].as_string();
       signed_transactions tx_pool;
 
-      return get_dns_wallet()->lookup(name, tx_pool, *get_dns_db());
+      return get_dns_wallet()->lookup(name, tx_pool);
     }
 
   } // end namespace detail

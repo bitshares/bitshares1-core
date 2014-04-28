@@ -1,8 +1,8 @@
 #pragma once
 
-#include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_transaction_validator.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <sstream>
 
 namespace bts { namespace dns {
 
@@ -15,32 +15,31 @@ class dns_wallet : public bts::wallet::wallet
         dns_wallet(const dns_db_ptr& db);
         ~dns_wallet();
 
-        // TODO: get rid of db in args
         signed_transaction bid(const std::string& key, const asset& bid_price,
-                               const signed_transactions& pending_txs, dns_db& db);
+                               const signed_transactions& pending_txs);
 
         signed_transaction ask(const std::string& key, const asset& ask_price,
-                               const signed_transactions& pending_txs, dns_db& db);
-
-        signed_transaction transfer(const std::string& key, const address& recipient,
-                                    const signed_transactions& pending_txs, dns_db& db);
-
-        signed_transaction release(const std::string& key,
-                                   const signed_transactions& pending_txs, dns_db& db);
-
-        signed_transaction set(const std::string& key, const fc::variant& value,
-                               const signed_transactions& pending_txs, dns_db& db);
-
-        fc::variant lookup(const std::string& key,
-                           const signed_transactions& pending_txs, dns_db& db);
-
-        // TODO: Also include current pending_txs?
-        std::vector<trx_output> get_active_auctions();
-
-        virtual std::string get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
-        virtual std::string get_output_info_string(const trx_output& out);
+                               const signed_transactions& pending_txs);
 
         using bts::wallet::wallet::transfer;
+        signed_transaction transfer(const std::string& key, const address& recipient,
+                                    const signed_transactions& pending_txs);
+
+        signed_transaction release(const std::string& key,
+                                   const signed_transactions& pending_txs);
+
+        signed_transaction set(const std::string& key, const fc::variant& value,
+                               const signed_transactions& pending_txs);
+
+        // TODO: Also check current pending_txs
+        fc::variant lookup(const std::string& key,
+                           const signed_transactions& pending_txs);
+
+        // TODO: Also check current pending_txs
+        std::vector<trx_output> get_active_auctions();
+
+        virtual std::string get_input_info_string(chain_database& db, const trx_input& in);
+        virtual std::string get_output_info_string(const trx_output& out);
 
     protected:
         virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
@@ -51,18 +50,14 @@ class dns_wallet : public bts::wallet::wallet
         dns_transaction_validator_ptr _transaction_validator;
 
         signed_transaction update(const claim_dns_output& dns_output, const asset& amount,
-                                  const output_reference& prev_tx_ref, const address& prev_owner, dns_db& db);
+                                  const output_reference& prev_tx_ref, const address& prev_owner);
 
-        std::vector<std::string> get_keys_from_txs(const signed_transactions &txs);
-        std::vector<std::string> get_keys_from_unspent(const std::map<bts::wallet::output_index, trx_output>
-                                                        &unspent_outputs);
+        std::vector<std::string> get_keys_from_txs(const signed_transactions& txs);
+        std::vector<std::string> get_keys_from_unspent(const std::map<output_index, trx_output>& unspent_outputs);
 
-        bool key_is_available(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
-                               bool &new_or_expired, output_reference &prev_tx_ref);
-
-        bool key_is_useable(const std::string &key, const signed_transactions &pending_txs, dns_db &db,
-                             const std::map<bts::wallet::output_index, trx_output> &unspent_outputs,
-                             output_reference &prev_tx_ref);
+        bool key_is_available(const std::string& key, const signed_transactions& pending_txs, bool& new_or_expired,
+                              output_reference& prev_tx_ref);
+        bool key_is_useable(const std::string& key, const signed_transactions& pending_txs, output_reference& prev_tx_ref);
 };
 
 typedef std::shared_ptr<dns_wallet> dns_wallet_ptr;

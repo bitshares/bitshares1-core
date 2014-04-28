@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_auction)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_expired)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_new)
         signed_transaction tx;
 
         /* Bid on dns */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -434,13 +434,13 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_auction)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
 
         /* Bid on same dns from second wallet */
-        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs, *state.db);
+        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_expired)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_bid_on_expired)
             state.next_block(txs);
 
         /* Bid on same dns from second wallet */
-        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -507,7 +507,7 @@ BOOST_AUTO_TEST_CASE (validator_bid_on_auction_insufficient_bid_price_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(validator_bid_on_owned_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE (wallet_bid_on_auction_insufficient_bid_price_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE (wallet_bid_on_auction_insufficient_bid_price_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1 , txs, *state.db);
+            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1 , txs);
 
             no_exception = true;
             throw;
@@ -680,7 +680,7 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_owned_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(wallet_bid_on_owned_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs, *state.db);
+            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE2, txs);
 
             no_exception = true;
             throw;
@@ -829,12 +829,12 @@ BOOST_AUTO_TEST_CASE (validator_bid_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         validator->evaluate(tx, block_state);
 
         /* Different dns bid */
-        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Try to validate transaction */
@@ -878,7 +878,7 @@ BOOST_AUTO_TEST_CASE(wallet_bid_invalid_key_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->bid(key, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet1->bid(key, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -910,7 +910,7 @@ BOOST_AUTO_TEST_CASE (wallet_bid_insufficient_funds_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->bid(DNS_TEST_KEY, state.wallet1->get_balance(0), txs, *state.db);
+            tx = state.wallet1->bid(DNS_TEST_KEY, state.wallet1->get_balance(0), txs);
 
             no_exception = true;
             throw;
@@ -940,7 +940,7 @@ BOOST_AUTO_TEST_CASE (wallet_bid_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
 
@@ -948,7 +948,7 @@ BOOST_AUTO_TEST_CASE (wallet_bid_pending_txs_conflict_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet2->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(validator_update)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1034,7 +1034,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_update)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1044,7 +1044,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_update)
             state.next_block(txs);
 
         /* Update dns record */
-        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -1070,7 +1070,7 @@ BOOST_AUTO_TEST_CASE(validator_update_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1133,7 +1133,7 @@ BOOST_AUTO_TEST_CASE(validator_update_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1200,7 +1200,7 @@ BOOST_AUTO_TEST_CASE(validator_update_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1269,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1278,7 +1278,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_in_auction_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
 
             no_exception = true;
             throw;
@@ -1307,7 +1307,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1320,7 +1320,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_not_owner_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+            tx = state.wallet2->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
 
             no_exception = true;
             throw;
@@ -1349,7 +1349,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1366,7 +1366,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_expired_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
 
             no_exception = true;
             throw;
@@ -1402,7 +1402,7 @@ BOOST_AUTO_TEST_CASE (validator_update_invalid_key_fail)
             key.append("A");
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1475,7 +1475,7 @@ BOOST_AUTO_TEST_CASE(validator_update_invalid_value_fail)
         fc::variant value = str;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1543,7 +1543,7 @@ BOOST_AUTO_TEST_CASE (validator_update_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1553,7 +1553,7 @@ BOOST_AUTO_TEST_CASE (validator_update_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Auction dns */
-        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         validator->evaluate(tx, block_state);
 
@@ -1621,7 +1621,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_invalid_key_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->set(key, DNS_TEST_VALUE, txs, *state.db);
+            tx = state.wallet1->set(key, DNS_TEST_VALUE, txs);
 
             no_exception = true;
             throw;
@@ -1656,7 +1656,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_invalid_value_fail)
         fc::variant value = str;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1669,7 +1669,7 @@ BOOST_AUTO_TEST_CASE(wallet_update_invalid_value_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->set(DNS_TEST_KEY, value, txs, *state.db);
+            tx = state.wallet1->set(DNS_TEST_KEY, value, txs);
 
             no_exception = true;
             throw;
@@ -1699,7 +1699,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1709,7 +1709,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Auction dns */
-        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
 
@@ -1717,7 +1717,7 @@ BOOST_AUTO_TEST_CASE (wallet_update_pending_txs_conflict_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+            tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
 
             no_exception = true;
             throw;
@@ -1748,7 +1748,7 @@ BOOST_AUTO_TEST_CASE(validator_transfer)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1803,7 +1803,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_transfer)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1813,7 +1813,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_transfer)
             state.next_block(txs);
 
         /* Update dns record */
-        tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs, *state.db);
+        tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -1839,7 +1839,7 @@ BOOST_AUTO_TEST_CASE(validator_transfer_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1902,7 +1902,7 @@ BOOST_AUTO_TEST_CASE(validator_transfer_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -1969,7 +1969,7 @@ BOOST_AUTO_TEST_CASE(validator_transfer_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2038,7 +2038,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2047,7 +2047,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_in_auction_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs, *state.db);
+            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs);
 
             no_exception = true;
             throw;
@@ -2076,7 +2076,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2089,7 +2089,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_not_owner_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs, *state.db);
+            tx = state.wallet2->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs);
 
             no_exception = true;
             throw;
@@ -2118,7 +2118,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2135,7 +2135,7 @@ BOOST_AUTO_TEST_CASE(wallet_transfer_expired_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs, *state.db);
+            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs);
 
             no_exception = true;
             throw;
@@ -2171,7 +2171,7 @@ BOOST_AUTO_TEST_CASE (validator_transfer_invalid_key_fail)
             key.append("A");
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2239,7 +2239,7 @@ BOOST_AUTO_TEST_CASE (validator_transfer_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2249,7 +2249,7 @@ BOOST_AUTO_TEST_CASE (validator_transfer_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Auction dns */
-        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         validator->evaluate(tx, block_state);
 
@@ -2317,7 +2317,7 @@ BOOST_AUTO_TEST_CASE (wallet_transfer_invalid_key_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->transfer(key, state.random_addr(state.wallet2), txs, *state.db);
+            tx = state.wallet1->transfer(key, state.random_addr(state.wallet2), txs);
 
             no_exception = true;
             throw;
@@ -2347,7 +2347,7 @@ BOOST_AUTO_TEST_CASE (wallet_transfer_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2357,7 +2357,7 @@ BOOST_AUTO_TEST_CASE (wallet_transfer_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Auction dns */
-        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
 
@@ -2365,7 +2365,7 @@ BOOST_AUTO_TEST_CASE (wallet_transfer_pending_txs_conflict_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs, *state.db);
+            tx = state.wallet1->transfer(DNS_TEST_KEY, state.random_addr(state.wallet2), txs);
 
             no_exception = true;
             throw;
@@ -2396,7 +2396,7 @@ BOOST_AUTO_TEST_CASE(validator_auction)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2451,7 +2451,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_auction)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2461,7 +2461,7 @@ BOOST_AUTO_TEST_CASE(wallet_and_validator_auction)
             state.next_block(txs);
 
         /* Auction dns */
-        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
 
         /* Validate transaction */
@@ -2487,7 +2487,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2550,7 +2550,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2617,7 +2617,7 @@ BOOST_AUTO_TEST_CASE(validator_auction_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2686,7 +2686,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_in_auction_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2695,7 +2695,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_in_auction_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -2724,7 +2724,7 @@ BOOST_AUTO_TEST_CASE(wallet_auction_not_owner_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2737,7 +2737,7 @@ BOOST_AUTO_TEST_CASE(wallet_auction_not_owner_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet2->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet2->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -2766,7 +2766,7 @@ BOOST_AUTO_TEST_CASE(wallet_auction_expired_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2783,7 +2783,7 @@ BOOST_AUTO_TEST_CASE(wallet_auction_expired_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -2819,7 +2819,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_invalid_key_fail)
             key.append("A");
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2887,7 +2887,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -2897,7 +2897,7 @@ BOOST_AUTO_TEST_CASE (validator_auction_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Update dns record */
-        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         validator->evaluate(tx, block_state);
 
@@ -2965,7 +2965,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_invalid_key_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->ask(key, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet1->ask(key, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;
@@ -2995,7 +2995,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_pending_txs_conflict_fail)
         signed_transaction tx;
 
         /* Initial dns bid */
-        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+        tx = state.wallet1->bid(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
         state.next_block(txs);
@@ -3005,7 +3005,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_pending_txs_conflict_fail)
             state.next_block(txs);
 
         /* Update dns record */
-        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs, *state.db);
+        tx = state.wallet1->set(DNS_TEST_KEY, DNS_TEST_VALUE, txs);
         wlog("tx: ${tx} ", ("tx", tx));
         txs.push_back(tx);
 
@@ -3013,7 +3013,7 @@ BOOST_AUTO_TEST_CASE (wallet_auction_pending_txs_conflict_fail)
         auto no_exception = false;
         try
         {
-            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs, *state.db);
+            tx = state.wallet1->ask(DNS_TEST_KEY, DNS_TEST_PRICE1, txs);
 
             no_exception = true;
             throw;

@@ -39,15 +39,15 @@ struct claim_dns_output
     std::vector<char>   value;
 
     claim_dns_output();
-    claim_dns_output(const std::string& k, const last_tx_type_enum& l,
-                     const address& o, const std::vector<char>& v = std::vector<char>());
+    claim_dns_output(const std::string& k, const last_tx_type_enum& l, const address& o,
+                     const std::vector<char>& v = std::vector<char>());
 };
 
-bool is_dns_output(const trx_output &output);
-claim_dns_output to_dns_output(const trx_output &output);
+bool is_dns_output(const trx_output& output);
+claim_dns_output to_dns_output(const trx_output& output);
 
-std::vector<char> serialize_value(const fc::variant &value);
-fc::variant unserialize_value(const std::vector<char> &value);
+std::vector<char> serialize_value(const fc::variant& value);
+fc::variant unserialize_value(const std::vector<char>& value);
 
 } } //bts::dns
 
