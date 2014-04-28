@@ -17,15 +17,15 @@ block_evaluation_state_ptr p2p_transaction_validator::create_block_state() const
 
 transaction_summary p2p_transaction_validator::evaluate(const signed_transaction& tx,
                                                         const block_evaluation_state_ptr& block_state)
-{
+{ try {
     p2p_transaction_evaluation_state state(tx);
 
     return on_evaluate(state, block_state);
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 void p2p_transaction_validator::validate_input(const meta_trx_input& in, transaction_evaluation_state& state,
                                                const block_evaluation_state_ptr& block_state)
-{
+{ try {
     if (is_dns_output(in.output))
     {
         claim_dns_output dns_input = to_dns_output(in.output);
@@ -39,11 +39,11 @@ void p2p_transaction_validator::validate_input(const meta_trx_input& in, transac
     {
         transaction_validator::validate_input(in, state, block_state);
     }
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 void p2p_transaction_validator::validate_output(const trx_output& out, transaction_evaluation_state& state,
                                                 const block_evaluation_state_ptr& block_state)
-{
+{ try {
     if (is_dns_output(out))
     {
         claim_dns_output dns_output = to_dns_output(out);
@@ -60,7 +60,7 @@ void p2p_transaction_validator::validate_output(const trx_output& out, transacti
     {
         transaction_validator::validate_output(out, state, block_state);
     }
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 bool p2p_transaction_validator::is_valid_output(const claim_dns_output& output)
 {

@@ -5,13 +5,16 @@
 
 #include <bts/net/chain_server.hpp>
 #include <bts/dns/dns_db.hpp>
+#include <bts/dns/p2p/p2p_transaction_validator.hpp>
 
 int main( int argc, char** argv )
 {
    try {
        fc::configure_logging( fc::logging_config::default_config() );
 
-       bts::blockchain::chain_database_ptr db = std::make_shared<bts::dns::dns_db>();
+       bts::dns::dns_db_ptr dns_db = std::make_shared<bts::dns::dns_db>();
+       dns_db->set_transaction_validator(std::make_shared<bts::dns::p2p::p2p_transaction_validator>(dns_db.get()));
+       bts::blockchain::chain_database_ptr db = dns_db;
        bts::net::chain_server cserv(db);
        bts::net::chain_server::config cfg;
        cfg.port = 4567;
