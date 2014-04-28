@@ -368,7 +368,7 @@ namespace bts { namespace cli {
               {
                 // sendtoaddress does its own output formatting
               }
-              else if(command == "listrecvaddresses")
+              else if(command == "list_receive_addresses")
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
