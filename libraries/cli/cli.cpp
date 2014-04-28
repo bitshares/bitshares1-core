@@ -375,12 +375,8 @@ namespace bts { namespace cli {
               }
               else if (command == "help")
               {
-                std::vector<std::vector<std::string> > help_strings = result.as<std::vector<std::vector<std::string> > >();
-                for (const std::vector<std::string>& command_info : help_strings)
-                {
-                  std::cout << std::setw(35) << std::left << 
-                            (command_info[0] + " " + command_info[1]) << "   " << command_info[2] << "\n";
-                }
+                std::string help_string = result.as<std::string>();
+                std::cout << help_string;
               }
               else if (command == "rescan")
                 std::cout << "\ndone scanning block chain\n";

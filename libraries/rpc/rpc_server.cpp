@@ -10,7 +10,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <sstream>
 #include <limits>
-
+#include <iomanip>
 
 namespace bts { namespace rpc { 
 
@@ -31,6 +31,25 @@ namespace bts { namespace rpc {
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
+
+         std::string make_short_description(const rpc_server::method_data& method_data)
+         {
+           std::string help_string;
+           std::stringstream sstream;
+           //format into columns
+           sstream << std::setw(35) << std::left;
+           help_string = method_data.name + " ";
+           for (const rpc_server::parameter_data& parameter : method_data.parameters)
+           {
+             if (parameter.required)
+               help_string += std::string("<") + parameter.name + std::string("> ");
+             else
+               help_string += std::string("[") + parameter.name + std::string("] ");
+           }
+           sstream << help_string << "  " << method_data.description << "\n";
+           help_string = sstream.str();
+           return help_string;
+         }
 
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
@@ -375,32 +394,40 @@ namespace bts { namespace rpc {
     static rpc_server::method_data help_metadata{"help", nullptr,
         /* description */ "lists wallet commands, or get help for a specified command.",
         /* returns: */    "bool",
-        /* params:     */ {},
-      /* prerequisites */ 0,
+        /* params:     */{ { "command", "string", false } },
+      /* prerequisites */ rpc_server::no_prerequisites,
       R"(
        lists wallet commands, or get help for a specified command.
        )"};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
-      std::vector<std::vector<std::string> > help_strings;
-      for (const method_map_type::value_type& value : _method_map)
+      std::string help_string;
+      if (params.size() == 0) //if no arguments, display list of commands with short description
       {
-        if (value.second.name[0] != '_') // hide undocumented commands
+        for (const method_map_type::value_type& method_data_pair : _method_map)
         {
-          std::vector<std::string> parameter_strings;
-          for (const rpc_server::parameter_data& parameter : value.second.parameters)
+          if (method_data_pair.second.name[0] != '_') // hide undocumented commands
           {
-            if (parameter.required)
-              parameter_strings.push_back(std::string("<") + parameter.name + std::string(">"));
-            else
-              parameter_strings.push_back(std::string("[") + parameter.name + std::string("]"));
+            help_string += make_short_description(method_data_pair.second);
           }
-          help_strings.emplace_back(std::vector<std::string>{value.second.name, 
-                                                             boost::algorithm::join(parameter_strings, " "), 
-                                                             value.second.description});
         }
       }
-      return fc::variant( help_strings );
+      else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
+      { //display detailed description of requested command
+        std::string  command = params[0].as_string();
+        auto itr = _method_map.find(command);
+        if (itr != _method_map.end())
+        {
+          rpc_server::method_data method_data = itr->second;
+          help_string = make_short_description(method_data);
+          help_string += method_data.detailed_description;
+        }
+        else
+        {
+          throw; //TODO figure out how to format an error msg here
+        }
+      }
+      return fc::variant(help_string);
     }
     static rpc_server::method_data getinfo_metadata{"getinfo", nullptr,
                                      /* description */ "unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
@@ -425,7 +452,20 @@ namespace bts { namespace rpc {
                                      /* returns: */    "block_id_type",
                                      /* params:          name                 type      required */ 
                                                        { },
-                                   /* prerequisites */ 0} ;
+                                      /* prerequisites */ rpc_server::no_prerequisites,
+                                      R"(
+Returns hash of block in best-block-chain at index provided.
+
+Arguments:
+1. index (numeric, required) The block index
+
+Result:
+"hash" (string) The block hash
+
+Examples:
+> bitshares-cli getblockhash 1000
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/ 
+    )" };
     fc::variant rpc_server_impl::getblockhash(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->fetch_block( params[0].as_int64() ).id());
@@ -437,7 +477,17 @@ namespace bts { namespace rpc {
                                      /* returns: */    "int",
                                      /* params:          name                 type      required */ 
                                                        { },
-                                   /* prerequisites */ 0} ;
+                                   /* prerequisites */ rpc_server::no_prerequisites,
+         R"(
+Returns the number of blocks in the longest block chain.
+
+Result:
+n (numeric) The current block count
+
+Examples:
+> bitshares-cli getblockcount 
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getblockcount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+         )" } ;
     fc::variant rpc_server_impl::getblockcount(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->head_block_num());
@@ -791,7 +841,7 @@ Examples:
                               {{"asset", "unit",  false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
-getbalance ( "account" minimum_confirmations )
+getbalance ( "account" min_confirms )
 
 If account is not specified, returns the wallet's total available balance.
 If account is specified, returns the balance in the account.
@@ -800,7 +850,7 @@ The wallet total may be different to the balance in the default "" account.
 
 Arguments:
 1. "account" (string, optional) The selected account, or "*" for entire wallet. It may be the default account using "".
-2. minimum_confirmations (numeric, optional, default=1) Only include transactions confirmed at least this many times.
+2. min_confirms (numeric, optional, default=1) Only include transactions confirmed at least this many times.
 
 Result:
 amount (numeric) The total amount in BTS received for this account.
