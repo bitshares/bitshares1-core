@@ -7,6 +7,8 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
 
+file(GLOB HEADERS "include/bts/dns/*.hpp")
+
 add_library( bts_dns
              dns_outputs.cpp
              dns_db.cpp
@@ -14,7 +16,7 @@ add_library( bts_dns
              dns_wallet.cpp
              dns_rpc_server.cpp
              dns_cli.cpp
-             )
+             ${HEADERS} )
 
 target_link_libraries( bts_dns bts_blockchain bts_db bts_rpc bts_wallet fc leveldb )
 

@@ -29,7 +29,7 @@ namespace bts { namespace rpc {
     bts::blockchain::address getnewaddress(const std::string& account = "");
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
-    std::unordered_map<bts::blockchain::address,std::string> listrecvaddresses();
+    std::unordered_map<bts::blockchain::address,std::string> list_receive_addresses();
     bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
     bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
     bts::blockchain::signed_block_header getblock(uint32_t block_num);
@@ -37,7 +37,7 @@ namespace bts { namespace rpc {
     bool rescan(uint32_t block_num = 0);
     bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
     bool import_private_key(const fc::sha256& hash, const std::string& label);
-    bool openwallet(const std::string& wallet_username = "", const std::string& wallet_passphrase = "");
+    bool open_wallet(const std::string& wallet_username = "", const std::string& wallet_passphrase = "");
     bool createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase);
     fc::optional<std::string> currentwallet();
     bool closewallet();
