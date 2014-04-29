@@ -223,46 +223,18 @@ namespace bts { namespace wallet {
                  return pts_addr_itr->second;
               }
 
-              std::vector<trx_input> collect_mining_input( asset& total_input, std::unordered_set<address>& required_signatures )
+              trx_input collect_name_input( const std::string& name, asset& deposit )
               {
-                   uint64_t best_cdd = 0;
-                   std::vector<trx_input> inputs;
-                   inputs.resize(1);
-                   address mine_addr;
-
-                   for( auto out : _data.unspent_outputs  )
+                   for( auto out : _data.unspent_outputs )
                    {
-                       //ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == 0 )
-                       {
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
-                           if( cdd > best_cdd )
-                           {
-                              inputs.back() = trx_input( get_output_ref(out.first) );
-                              best_cdd = cdd;
-                              mine_addr = out.second.as<claim_by_signature_output>().owner;
-                              total_input = out.second.amount;
-                           }
-                       }
-                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == 0 )
-                       {
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
-                           if( cdd > best_cdd )
-                           {
-                              inputs.back() = trx_input( get_output_ref(out.first) );
-                              best_cdd = cdd;
-                              total_input = out.second.amount;
-                              mine_addr = pts_to_bts_address(out.second.as<claim_by_pts_output>().owner);
-                           }
-                       }
+                      if( out.second.claim_func == claim_name )
+                      {
+                         return trx_input( get_output_ref( out.first ) );
+                      }
                    }
-                   FC_ASSERT( best_cdd != 0 );
-                   FC_ASSERT( mine_addr != address() );
-                   ilog( "mine addr ${addr}", ("addr",mine_addr) );
-                   required_signatures.insert( mine_addr );
-                   return inputs;
-
-              } // collect_mining_input
+                   FC_ASSERT( !"Unable to find existing name registration output", 
+                              "name: ${name}", ("name",name) );
+              }
 
 
               /**
@@ -612,7 +584,8 @@ namespace bts { namespace wallet {
    std::string    wallet::get_send_address_label( const address& addr ) const
    {
       auto itr = my->_data.send_addresses.find( addr );
-      if( itr == my->_data.send_addresses.end() || itr->second == std::string() ) return std::string(addr);
+      if( itr == my->_data.send_addresses.end() ) return std::string(addr);
+      if( itr->second == std::string() ) return std::string(addr);
       return itr->second;
    }
 
@@ -620,7 +593,7 @@ namespace bts { namespace wallet {
    std::string    wallet::get_receive_address_label( const address& addr ) const
    {
       auto itr = my->_data.receive_addresses.find( addr );
-      FC_ASSERT( itr != my->_data.receive_addresses.end() );
+      if( itr == my->_data.receive_addresses.end() ) return std::string(addr);
       if( itr->second == std::string() ) return std::string(addr);
       return itr->second;
    }
@@ -709,16 +682,31 @@ namespace bts { namespace wallet {
    signed_transaction wallet::reserve_name( const std::string& name, 
                                             const fc::variant& data, 
                                             const asset& deposit )
-   {
+   { try {
+      signature_set          required_sigs;
+      signed_transaction     trx;
+      asset                  current_name_deposit;
+
+      FC_ASSERT( my->_blockchain );
       FC_ASSERT( claim_name_output::is_valid_name(name), "", ("name",name)  );
+      auto current_name_record = my->_blockchain->lookup_name( name );
+      if( current_name_record )
+      {
+         FC_ASSERT( is_my_address( address(current_name_record->owner) ) );
+         required_sigs.insert( address( current_name_record->owner) );
+         trx.inputs.push_back( my->collect_name_input( name, current_name_deposit ) );
+      }
       auto name_master_key = new_public_key("name-master: "+name);
       auto name_active_key = new_public_key("name-active: "+name);
-      signed_transaction trx;
+      
+
+      auto new_name_deposit = deposit + current_name_deposit;
+
       trx.outputs.push_back( 
             trx_output( claim_name_output( name, data, 0, name_master_key, name_active_key  ), 
-                        deposit ) );
-      return collect_inputs_and_sign( trx, deposit, "reserving name: "+name );
-   }
+                        new_name_deposit ) );
+      return collect_inputs_and_sign( trx, deposit, required_sigs, "reserving name: "+name );
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to reserve name ${name}", ("name",name)("data",data) ) }
 
    signed_transaction wallet::register_delegate( const std::string& name, 
                                                  const fc::variant& data, 
@@ -1031,14 +1019,18 @@ namespace bts { namespace wallet {
          }
          case claim_name:
          {
-            auto claim = out.as<claim_name_output>();
-            auto itr = my->_data.delegate_keys.find( claim.delegate_id );
-            if( itr != my->_data.delegate_keys.end() )
+            auto name_claim = out.as<claim_name_output>();
+            auto name_owner = address( name_claim.owner );
+            if( is_my_address( name_owner ) )
             {
-               FC_ASSERT( itr->second.get_public_key() == claim.owner );
                cache_output( state.trx.vote, out, out_ref, oidx );
-               state.to[ claim.owner ] = get_receive_address_label( claim.owner );
+               state.from[ name_owner ] = get_receive_address_label( name_owner );
+               state.adjust_balance( out.amount, 1 );
                return true;
+            }
+            else // we must be buying the name for someone else
+            {
+                state.to[ name_owner ] = get_send_address_label( name_owner );
             }
             return false;
          }
@@ -1173,7 +1165,7 @@ namespace bts { namespace wallet {
 
 signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, 
                                                    const asset& requested_amount,
-                                                   std::unordered_set<address>& required_signatures, 
+                                                   signature_set& required_signatures, 
                                                    const address& change_addr)
 {
     /* Save original transaction inputs and outputs */

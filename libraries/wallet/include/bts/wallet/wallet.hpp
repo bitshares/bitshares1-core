@@ -13,6 +13,8 @@ namespace blockchain { class chain_database; }
 namespace wallet {
    using namespace bts::blockchain;
 
+   typedef std::unordered_set<address> signature_set;
+
    namespace detail { class wallet_impl; }
 
    struct output_index

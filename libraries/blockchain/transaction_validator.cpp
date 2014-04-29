@@ -1,6 +1,7 @@
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/json.hpp>
 #include <fc/io/raw.hpp>
 
 #include <fc/log/logger.hpp>
@@ -59,6 +60,10 @@ namespace bts { namespace blockchain {
    {
        FC_ASSERT( claim_name_output::is_valid_name( o.name ) );
        FC_ASSERT( name_inputs.find( o.name ) == name_inputs.end() );
+       if( o.data.size() ) 
+       {  /// TODO: verify that data is fully valid and parsed as JSON
+          fc::json::from_string( o.data );
+       }
        name_inputs[o.name] = o;
    }
    void block_evaluation_state::add_input_delegate_votes( int32_t did, const asset& votes )
@@ -389,7 +394,7 @@ namespace bts { namespace blockchain {
    void transaction_validator::validate_name_output( const trx_output& out, 
                                                      transaction_evaluation_state& state,
                                                      const block_evaluation_state_ptr& block_state )
-   {
+   { try {
        FC_ASSERT( out.amount.unit == 0 );
        state.add_output_asset( out.amount );
 
@@ -397,10 +402,13 @@ namespace bts { namespace blockchain {
        block_state->add_name_output( claim );
        if( !state.has_name_input( claim ) )
        {
-          auto name_rec     = _db->lookup_name( claim.name );
-          FC_ASSERT( !name_rec );
-          auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
-          FC_ASSERT( !delegate_rec );
+          auto conflicting_name_record      = _db->lookup_name( claim.name );
+          FC_ASSERT( !conflicting_name_record, 
+                        "the name '${name}' is already registered with the block chain, but not included as an input", 
+                        ("name",claim.name)("conflicting_record",conflicting_name_record) );
+          auto conflicting_delegate_record  = _db->lookup_delegate( claim.delegate_id );
+          FC_ASSERT( !conflicting_delegate_record, "the delegate ID ${id} has already been registered", 
+                        ("id", claim.delegate_id)("conflicting_record",*conflicting_delegate_record) );
        }
        else // has_name_input claim
        {
@@ -409,10 +417,13 @@ namespace bts { namespace blockchain {
           {
              FC_ASSERT( claim.delegate_id == name_in.delegate_id );
           }
-          else
+          else // delegate_id == 0 
           {
-             auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
-             FC_ASSERT( !delegate_rec );
+             if( claim.delegate_id != 0 )
+             {
+                auto delegate_rec = _db->lookup_delegate( claim.delegate_id );
+                FC_ASSERT( !delegate_rec );
+             }
           }
        }
 
@@ -421,7 +432,7 @@ namespace bts { namespace blockchain {
           state.add_required_fees( asset( BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE ) );
        }
 
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
 
