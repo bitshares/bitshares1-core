@@ -439,7 +439,7 @@ namespace bts { namespace rpc {
     }
 
     static rpc_server::method_data getinfo_metadata{"getinfo", nullptr,
-                                     /* description */ "Unlock the wallet with the given passphrase, if no user specified, 'default' is used.",
+                                     /* description */ "Provides common data, such as balance, block count, connections, and lock time",
                                      /* returns: */    "info",
                                      /* params:          name                 type      required */ 
                                                        { },
@@ -461,7 +461,7 @@ namespace bts { namespace rpc {
                                      /* description */ "Returns hash of block in best-block-chain at index provided..",
                                      /* returns: */    "block_id_type",
                                      /* params:          name                 type      required */ 
-                                                       { },
+                                                       { {"block_num", "int", true} },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
 Arguments:
