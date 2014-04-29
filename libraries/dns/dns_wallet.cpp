@@ -4,6 +4,7 @@ namespace bts { namespace dns {
 
 dns_wallet::dns_wallet(const dns_db_ptr& db) : _db(db)
 {
+    FC_ASSERT(db != nullptr);
     _transaction_validator = std::dynamic_pointer_cast<dns_transaction_validator>(db->get_transaction_validator());
     FC_ASSERT(_transaction_validator != nullptr);
 }
