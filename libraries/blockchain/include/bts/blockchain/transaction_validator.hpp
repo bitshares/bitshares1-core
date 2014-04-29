@@ -82,7 +82,7 @@ namespace bts { namespace blockchain {
           void     add_name_input( const claim_name_output& o );
           bool     has_name_input( const claim_name_output& o )
           {
-             return name_inputs.find(o.name) == name_inputs.end();
+             return name_inputs.find(o.name) != name_inputs.end();
           }
           claim_name_output get_name_input( const claim_name_output& c )
           {

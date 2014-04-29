@@ -223,52 +223,25 @@ namespace bts { namespace wallet {
                  return pts_addr_itr->second;
               }
 
-              std::vector<trx_input> collect_mining_input( asset& total_input, std::unordered_set<address>& required_signatures )
+              trx_input collect_name_input( const std::string& name, asset& deposit )
               {
-                   uint64_t best_cdd = 0;
-                   std::vector<trx_input> inputs;
-                   inputs.resize(1);
-                   address mine_addr;
-
-                   for( auto out : _data.unspent_outputs  )
+                   for( auto out : _data.unspent_outputs )
                    {
-                       //ilog( "unspent outputs ${o}", ("o",*itr) );
-                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == 0 )
-                       {
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
-                           if( cdd > best_cdd )
-                           {
-                              inputs.back() = trx_input( get_output_ref(out.first) );
-                              best_cdd = cdd;
-                              mine_addr = out.second.as<claim_by_signature_output>().owner;
-                              total_input = out.second.amount;
-                           }
-                       }
-                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == 0 )
-                       {
-                           auto cdd = out.second.amount.get_rounded_amount() * (_data.last_scanned_block_num - out.first.block_idx+1);
-                           if( cdd > best_cdd )
-                           {
-                              inputs.back() = trx_input( get_output_ref(out.first) );
-                              best_cdd = cdd;
-                              total_input = out.second.amount;
-                              mine_addr = pts_to_bts_address(out.second.as<claim_by_pts_output>().owner);
-                           }
-                       }
+                      if( out.second.claim_func == claim_name )
+                      {
+                         return trx_input( get_output_ref( out.first ) );
+                      }
                    }
-                   FC_ASSERT( best_cdd != 0 );
-                   FC_ASSERT( mine_addr != address() );
-                   ilog( "mine addr ${addr}", ("addr",mine_addr) );
-                   required_signatures.insert( mine_addr );
-                   return inputs;
-
-              } // collect_mining_input
+                   FC_ASSERT( !"Unable to find existing name registration output", 
+                              "name: ${name}", ("name",name) );
+              }
 
 
               /**
                *  Collect inputs that total to at least requested_amount.
                */
-              std::vector<trx_input> collect_inputs( const asset& requested_amount, asset& total_input, std::unordered_set<address>& required_signatures )
+              std::vector<trx_input> collect_inputs( const asset& requested_amount, asset& total_input, 
+                                                     std::unordered_set<address>& required_signatures )
               {
                    std::vector<trx_input> inputs;
                    for( auto out : _data.unspent_outputs )
@@ -424,12 +397,14 @@ namespace bts { namespace wallet {
       return my->_data_dir / (username + "_wallet.dat");
    }
    
-   std::string wallet::get_current_user()
+   std::string wallet::get_current_user()const
    {
      return my->_user;
    }
 
-   void wallet::create( const std::string& user, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   void wallet::create( const std::string& user, 
+                        const fc::string& base_password, 
+                        const fc::string& key_password, bool is_brain )
    {
       FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
       const fc::path& wallet_dat = get_wallet_filename_for_user(user);
@@ -437,7 +412,9 @@ namespace bts { namespace wallet {
       my->_user = user;
    }
 
-   void wallet::create_internal( const fc::path& wallet_dat, const fc::string& base_password, const fc::string& key_password, bool is_brain )
+   void wallet::create_internal( const fc::path& wallet_dat, 
+                                 const fc::string& base_password, 
+                                 const fc::string& key_password, bool is_brain )
    { 
    try {
       FC_ASSERT( !fc::exists( wallet_dat ), "", ("wallet_dat",wallet_dat) );
@@ -458,13 +435,16 @@ namespace bts { namespace wallet {
       if( is_brain )
       {
          FC_ASSERT( base_password.size() >= 8 );
-         my->_data.set_base_key( extended_private_key( fc::sha256::hash( key_password.c_str(), key_password.size() ),
-                                                             fc::sha256::hash( base_password.c_str(), base_password.size() ) ), key_password );
+         my->_data.set_base_key( 
+                     extended_private_key( fc::sha256::hash( key_password.c_str(), key_password.size() ),
+                                           fc::sha256::hash( base_password.c_str(), base_password.size() ) ), 
+                     key_password );
       }
       else
       {
-         my->_data.set_base_key( extended_private_key( fc::ecc::private_key::generate().get_secret(),
-                                                       fc::ecc::private_key::generate().get_secret() ), key_password );
+         my->_data.set_base_key( 
+                     extended_private_key( fc::ecc::private_key::generate().get_secret(),
+                                           fc::ecc::private_key::generate().get_secret() ), key_password );
       }
       my->_data.set_keys( std::unordered_map<address,fc::ecc::private_key>(), key_password );
       my->_is_open = true;
@@ -522,7 +502,9 @@ namespace bts { namespace wallet {
         auto old_tmp = fc::unique_path();
         if( my->_wallet_base_password.size() )
         {
-          fc::aes_save( new_tmp, fc::sha512::hash( my->_wallet_base_password.c_str(), my->_wallet_base_password.size() ), data );
+          fc::aes_save( new_tmp, 
+                        fc::sha512::hash( my->_wallet_base_password.c_str(), my->_wallet_base_password.size() ), 
+                        data );
         }
         else
         {
@@ -536,7 +518,9 @@ namespace bts { namespace wallet {
       {
          if( my->_wallet_base_password.size() != 0 )
          {
-            fc::aes_save( my->_wallet_dat, fc::sha512::hash( my->_wallet_base_password.c_str(), my->_wallet_base_password.size() ), data );
+            fc::aes_save( my->_wallet_dat, 
+                          fc::sha512::hash( my->_wallet_base_password.c_str(), my->_wallet_base_password.size() ), 
+                          data );
          }
          else
          {
@@ -585,7 +569,8 @@ namespace bts { namespace wallet {
    void wallet::add_send_address( const address& addr, const std::string& label )
    { try {
       my->_data.send_addresses[addr] = label;
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to add send address ${addr} with label ${label}", ("addr",addr)("label",label) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to add send address ${addr} with label ${label}", 
+                                   ("addr",addr)("label",label) ) }
 
    std::unordered_map<address,std::string> wallet::get_receive_addresses()const
    {
@@ -599,7 +584,8 @@ namespace bts { namespace wallet {
    std::string    wallet::get_send_address_label( const address& addr ) const
    {
       auto itr = my->_data.send_addresses.find( addr );
-      if( itr == my->_data.send_addresses.end() || itr->second == std::string() ) return std::string(addr);
+      if( itr == my->_data.send_addresses.end() ) return std::string(addr);
+      if( itr->second == std::string() ) return std::string(addr);
       return itr->second;
    }
 
@@ -607,7 +593,7 @@ namespace bts { namespace wallet {
    std::string    wallet::get_receive_address_label( const address& addr ) const
    {
       auto itr = my->_data.receive_addresses.find( addr );
-      FC_ASSERT( itr != my->_data.receive_addresses.end() );
+      if( itr == my->_data.receive_addresses.end() ) return std::string(addr);
       if( itr->second == std::string() ) return std::string(addr);
       return itr->second;
    }
@@ -617,6 +603,9 @@ namespace bts { namespace wallet {
       my->_current_fee_rate = milli_shares_per_byte;
    }
 
+   /**
+    * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
+    */
    void wallet::unlock_wallet( const std::string& key_password, const fc::microseconds& duration )
    { try {
       my->_data.get_base_key( key_password );
@@ -669,9 +658,12 @@ namespace bts { namespace wallet {
 #endif
    } FC_RETHROW_EXCEPTIONS( warn, "unable to unlock wallet" ) }
 
+   /**
+    *  @todo overwrite/clear memory to securely clear keys if OpenSSL doesn't do so already
+    */
    void wallet::lock_wallet()
    {
-      // TODO: overwrite memory
+      for( char& c : my->_wallet_key_password ) c = 0;
       my->_wallet_key_password = std::string();
       my->_my_keys.clear();
    }
@@ -687,12 +679,53 @@ namespace bts { namespace wallet {
        return collect_inputs_and_sign(trx, amnt, memo);
    } FC_RETHROW_EXCEPTIONS( warn, "${amnt} to ${to}", ("amnt",amnt)("to",to) ) }
 
-   signed_transaction wallet::register_delegate( const std::string& name, const fc::variant& data )
+   signed_transaction wallet::reserve_name( const std::string& name, 
+                                            const fc::variant& data, 
+                                            const asset& deposit )
+   { try {
+      signature_set          required_sigs;
+      signed_transaction     trx;
+      asset                  current_name_deposit;
+
+      FC_ASSERT( my->_blockchain );
+      FC_ASSERT( claim_name_output::is_valid_name(name), "", ("name",name)  );
+      auto current_name_record = my->_blockchain->lookup_name( name );
+      if( current_name_record )
+      {
+         FC_ASSERT( is_my_address( address(current_name_record->owner) ) );
+         required_sigs.insert( address( current_name_record->owner) );
+         trx.inputs.push_back( my->collect_name_input( name, current_name_deposit ) );
+      }
+      auto name_master_key = new_public_key("name-master: "+name);
+      auto name_active_key = new_public_key("name-active: "+name);
+      
+
+      auto new_name_deposit = deposit + current_name_deposit;
+
+      trx.outputs.push_back( 
+            trx_output( claim_name_output( name, data, 0, name_master_key, name_active_key  ), 
+                        new_name_deposit ) );
+      return collect_inputs_and_sign( trx, deposit, required_sigs, "reserving name: "+name );
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to reserve name ${name}", ("name",name)("data",data) ) }
+
+   signed_transaction wallet::register_delegate( const std::string& name, 
+                                                 const fc::variant& data, 
+                                                 const asset& deposit )
    {
       FC_ASSERT( claim_name_output::is_valid_name(name), "", ("name",name)  );
+      auto delegate_id = my->_blockchain->get_new_delegate_id();
+      auto delegate_master_key = new_public_key("delegate-master: "+name);
+      auto delegate_active_key = new_public_key("delegate-active: "+name);
       signed_transaction trx;
-      trx.outputs.push_back( trx_output( claim_name_output( name, data, my->_blockchain->get_new_delegate_id(), new_public_key("delegate: "+name) ), asset() ) );
-      return collect_inputs_and_sign( trx, asset(), std::string() );
+      trx.outputs.push_back( 
+            trx_output( claim_name_output( name, data, delegate_id, 
+                                    delegate_master_key, 
+                                    delegate_active_key      ), 
+                        deposit ) );
+
+      return collect_inputs_and_sign( trx, deposit + asset( BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE ), 
+                                      "delegate registration: "+name );
+                                      
    }
 
    void wallet::mark_as_spent( const output_reference& r )
@@ -986,14 +1019,18 @@ namespace bts { namespace wallet {
          }
          case claim_name:
          {
-            auto claim = out.as<claim_name_output>();
-            auto itr = my->_data.delegate_keys.find( claim.delegate_id );
-            if( itr != my->_data.delegate_keys.end() )
+            auto name_claim = out.as<claim_name_output>();
+            auto name_owner = address( name_claim.owner );
+            if( is_my_address( name_owner ) )
             {
-               FC_ASSERT( itr->second.get_public_key() == claim.owner );
                cache_output( state.trx.vote, out, out_ref, oidx );
-               state.to[ claim.owner ] = get_receive_address_label( claim.owner );
+               state.from[ name_owner ] = get_receive_address_label( name_owner );
+               state.adjust_balance( out.amount, 1 );
                return true;
+            }
+            else // we must be buying the name for someone else
+            {
+                state.to[ name_owner ] = get_send_address_label( name_owner );
             }
             return false;
          }
@@ -1126,8 +1163,10 @@ namespace bts { namespace wallet {
      my->_data.delegate_keys[delegate_id] = delegate_key;
    }
 
-signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& requested_amount,
-                                                   std::unordered_set<address>& required_signatures, const address& change_addr)
+signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, 
+                                                   const asset& requested_amount,
+                                                   signature_set& required_signatures, 
+                                                   const address& change_addr)
 {
     /* Save original transaction inputs and outputs */
     auto original_inputs   = trx.inputs;
@@ -1145,11 +1184,17 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
 
         /* Collect necessary inputs */
         total_input = asset(required_input_amount.unit);
-        auto new_inputs = collect_inputs(required_input_amount, total_input, required_signatures); /* Throws if insufficient funds */
+
+        /* Throws if insufficient funds */
+        auto new_inputs = collect_inputs(required_input_amount, total_input, required_signatures); 
         trx.inputs.insert(trx.inputs.end(), new_inputs.begin(), new_inputs.end());
 
-        /* Return change: we always initially assume there will be change, and delete the output if not needed further down in this function */
-        change_amount = total_input - required_input_amount; //note: this will assert if we didn't collect enough inputs (i.e. a bug in collect_inputs)
+        /* Return change: we always initially assume there will be change, and delete the output 
+         * if not needed further down in this function 
+         *
+         *  @note  this will assert if we didn't collect enough inputs (i.e. a bug in collect_inputs)
+         **/
+        change_amount = total_input - required_input_amount; 
         trx.outputs.push_back(trx_output(claim_by_signature_output(change_addr), change_amount));
 
         /* Ensure fee is paid in base units */
@@ -1160,7 +1205,8 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         trx.sigs.clear();
         sign_transaction(trx, required_signatures, false);
         auto fee = (get_fee_rate() * trx.size())/1000;
-        ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte", ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
+        ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte", 
+             ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 
         /* Calculate new minimum input amount */
         required_input_amount += fee;
@@ -1168,7 +1214,9 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
         {
             wlog("not enough to cover amount + fee... grabbing more..");
         }
-    } while (total_input < required_input_amount); /* Try again with the new minimum input amount if the fee ended up too high */
+
+      /* Try again with the new minimum input amount if the fee ended up too high */
+    } while (total_input < required_input_amount); 
 
     /* Recalculate leftover change amount */
     change_amount = total_input - required_input_amount;
@@ -1185,17 +1233,21 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
 }
 
 //this version auto-generates the "change" address from the memo field
-signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& requested_amount,
-                                                   std::unordered_set<address>& required_signatures, const std::string& memo)
+signed_transaction wallet::collect_inputs_and_sign( signed_transaction& trx, 
+                                                    const asset& requested_amount,
+                                                    std::unordered_set<address>& required_signatures, 
+                                                    const std::string& memo )
 {
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change: " + memo));
+    return collect_inputs_and_sign( trx, requested_amount, 
+                                    required_signatures, new_receive_address("Change: " + memo) );
 }
 
 //this version generates the "change" addreess from the fixed string "Change address"
 signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& requested_amount,
                                                    std::unordered_set<address>& required_signatures)
 {
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change address"));
+    return collect_inputs_and_sign( trx, requested_amount, 
+                                    required_signatures, new_receive_address("Change address") );
 }
 
 //this verion has no required signatures and auto-generates the "change' address from the memo field

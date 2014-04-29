@@ -39,7 +39,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
        auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
        auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
        auto key      = fc::ecc::private_key::regenerate(key_hash);
-       dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key() ), asset() ) );
+       dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key(), key.get_public_key() ), asset() ) );
     }
     genesis.trxs.push_back( dtrx );
 

@@ -41,6 +41,10 @@ namespace bts {
        auto dat      = pub.serialize();
        addr = fc::ripemd160::hash( fc::sha512::hash( dat.data, sizeof(dat) ) );
    }
+   address::address( const fc::ecc::public_key_data& pub )
+   {
+       addr = fc::ripemd160::hash( fc::sha512::hash( pub.data, sizeof(pub) ) );
+   }
 
    address::operator std::string()const
    {

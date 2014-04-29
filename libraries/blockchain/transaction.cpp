@@ -90,11 +90,20 @@ namespace fc {
            case bts::blockchain::claim_by_password:
               obj["claim_data"] = fc::raw::unpack<bts::blockchain::claim_by_password_output>(var.claim_data);
               break;
+           case bts::blockchain::claim_name:
+              obj["claim_data"] = fc::raw::unpack<bts::blockchain::claim_name_output>(var.claim_data);
+              break;
+           case bts::blockchain::claim_fire_delegate:
+              obj["claim_data"] = fc::raw::unpack<bts::blockchain::claim_fire_delegate_output>(var.claim_data);
+              break;
+           case bts::blockchain::null_claim_type:
+              break;
         };
         vo = std::move(obj);
       } FC_RETHROW_EXCEPTIONS( warn, "unable to convert output to variant" ) 
    }
 
+   /** @todo update this to use a factory and be polymorphic for derived blockchains */
    void from_variant( const variant& var,  bts::blockchain::trx_output& vo )
    {
        fc::mutable_variant_object obj(var);
@@ -103,7 +112,7 @@ namespace fc {
        from_variant(obj["claim_func"], vo.claim_func);
 
        // TODO: convert this over to a factory
-       switch( int(vo.claim_func) )
+       switch( (bts::blockchain::claim_type_enum)int(vo.claim_func) )
        {
 	        case bts::blockchain::claim_by_pts:
 		      {
@@ -133,6 +142,21 @@ namespace fc {
                   vo.claim_data = fc::raw::pack(c);
                   break;
           }
+          case bts::blockchain::claim_name:
+          {
+                  bts::blockchain::claim_name_output c;
+                  from_variant(obj["claim_data"], c);
+                  vo.claim_data = fc::raw::pack(c);
+                  break;
+          }
+          case bts::blockchain::claim_fire_delegate:
+          {
+                  bts::blockchain::claim_fire_delegate_output c;
+                  from_variant(obj["claim_data"], c);
+                  vo.claim_data = fc::raw::pack(c);
+                  break;
+          }
+          case bts::blockchain::null_claim_type: break;
        };
    }
 };

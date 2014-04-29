@@ -3,7 +3,10 @@
 #include <fc/crypto/ripemd160.hpp>
 #include <string>
 
-namespace fc { namespace ecc { class public_key; } }
+namespace fc { namespace ecc { 
+    class public_key; 
+    typedef fc::array<char,33>  public_key_data; 
+} } // fc::ecc 
 
 namespace bts { namespace blockchain {
 
@@ -23,6 +26,7 @@ namespace bts { namespace blockchain {
        address(); ///< constructs empty / null address
        address( const std::string& base58str );   ///< converts to binary, validates checksum
        address( const fc::ecc::public_key& pub ); ///< converts to binary
+       address( const fc::ecc::public_key_data& pub ); ///< converts to binary
 
        static bool is_valid(const std::string& base58str );
        operator    std::string()const; ///< converts to base58 + checksum

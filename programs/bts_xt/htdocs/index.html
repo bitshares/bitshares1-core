@@ -1,153 +1,314 @@
-<html>
-   <head>
-      <title> BitShares XT Wallet </title>
-      <script type="text/javascript" charset="utf-8" src="js/jquery-1.10.1.min.js" ></script>
-      <script type="text/javascript" charset="utf-8" src="js/jquery.jsonrpc.js" ></script>
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title> BitShares XT Wallet </title>
+	<link rel="shortcut icon" href="img/bitsharesIcon.png" />
+	
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+	<link rel="stylesheet" type="text/css" href="http://angular-ui.github.com/ng-grid/css/ng-grid.css" />
 
+	<link rel="stylesheet" type="text/css" href="css/table.css" />
+	<link rel="stylesheet" type="text/css" href="css/button.css" />
 
-       <script type="text/javascript">
-           $(document).ready(function() {
-               $.jsonRPC.setup({
-                   endPoint : 'http://localhost:9989/rpc',
-                   namespace : ''
-               });
-               $.jsonRPC.request('currentwallet', {
+	<script type="text/javascript" charset="utf-8" src="js/jquery-1.10.1.min.js" ></script>
+    <script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.jsonrpc.js" ></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.2/angular.min.js"></script>
+    <script type="text/javascript" src="http://angular-ui.github.com/ng-grid/lib/ng-grid.debug.js"></script>
+
+	<script type="text/javascript" charset="utf-8" src="js/table.js" ></script>
+    <script type="text/javascript" charset="utf-8" src="js/contacts.js" ></script>
+    <script src="js/file.js"></script>
+
+	<style>
+		#tabs {border: none; margin:0;padding:0;}
+		body {width:100%;margin:0;padding:0;}
+		.ui-dialog-titlebar-close {
+		  visibility: hidden;
+		}
+		#drop_zone {
+		  border: 2px dashed #bbb;
+		  -moz-border-radius: 5px;
+		  -webkit-border-radius: 5px;
+		  border-radius: 5px;
+		  padding: 25px;
+		  text-align: center;
+		  font: 20pt bold 'Vollkorn';
+		  color: #bbb;
+		}
+	</style>
+
+	<script>
+
+		function displayMsg(msg) {
+			//$( "#status" ).text(msg);
+		}
+
+		displayMsg('abc');
+		function passwordPrompt() {
+			checkPassword();
+		}
+
+		function closeDialog() {
+			$( "#dialog" ).dialog( "close" );
+		}
+
+	    function passwordOK() {
+	      sendPassword();
+	    }
+
+		function checkPassword() {
+			$( "#dialog" ).dialog( "open" );
+			coverLayer.show();
+		}
+
+		function sendPassword() {
+              $.jsonRPC.request('walletpassphrase', {
+                  params : [$('#passwordInput').val(), 60],
+                  success : function(data) {
+                      console.log( data.result );
+                      closeDialog();
+                      $("span#unlock_message").text( data.result ); 
+                  },
+                  error : function(data) {
+                      console.log( data.error );
+                      $("#dialog").dialog("widget").effect("shake", { times: 5 }, 100);
+                      $("span#unlock_message").text( data.error.message ); 
+                  }
+              });
+          }
+
+		function createAddress () {
+                  // todo validate passwords match and have all required lengths/etc.
+                  $.jsonRPC.request('getnewaddress', {
+                      params : [$("#recvlabel").val()],
+                      success : function(data) {
+                          console.log( data.result );
+                          update_recv_addresses();
+                      },
+                      error : function(data) {
+                      	alert('error');
+                          console.log( data.error );
+                          displayMsg( data.error.message ); 
+                      }
+                  });
+            }
+	
+		$(function () {
+			angular.bootstrap(document.getElementById("ngContacts"),['contactsApp']);
+			angular.bootstrap(document.getElementById("ngReceive"),['myApp']);
+			
+			$('#passwordInput').keyup(function (e) {
+			    if (e.keyCode === 13) {
+			       passwordOK();
+			    }
+			  });
+
+			$("#tabs").tabs();
+
+		    $("#dialog").dialog({
+		        autoOpen: false,
+		        show: {
+		            effect: "puff",
+		            duration: 400
+		            //easing: 'easeOutQuart'
+		        },
+		        hide: {
+		            effect: "explode",
+		            duration: 600
+		        },
+		        beforeClose: function( event, ui ) {coverLayer.hide();}
+		    });
+
+		    //RPC requests
+		    coverLayer = $('<div>').appendTo("body").css({
+		        "width": "100%",
+		        "height": "100%",
+		        "z-index": "2",
+		        "top": "0px",
+		        "background-color": "rgba(0, 0, 0, 0.5)",
+		        "position": "absolute"
+		    }).hide();
+
+		    $.jsonRPC.setup({
+		        endPoint: 'http://bitshares.org:9989/rpc',
+		        namespace: ''
+		    });
+
+		    $.jsonRPC.request('currentwallet', {
+		        params: [],
+		        success: function (data) {
+		            console.log(data.result);
+		            if (data.result == null)
+		                window.location.replace('/login.html');
+		            $("span#username").text(data.result); //(data.result).appendTo($("p#result"));
+		        },
+		        error: function (data) {
+		            console.log('getbalance error');
+		            console.log(data.error);
+		            $("span#username").text(data.error.message);
+		        }
+		    });
+
+		    $.jsonRPC.request('getbalance', {
+		        params: [],
+		        success: function (data) {
+		            console.log(data.result);
+		            $("span#balance").text(data.result.amount); //(data.result).appendTo($("p#result"));
+		        },
+		        error: function (data) {
+		            console.log('getbalance error');
+		            console.log(data.error);
+		            $("span#balance").text(data.error.message);
+		        }
+		    });
+
+		    var update_transaction_history = function () {
+		        $.jsonRPC.request('get_transaction_history', {
+		            params: [],
+		            success: function (data) {
+		                console.log(data.result);
+		                $("span#trx_history").text(JSON.stringify(data.result)); //(data.result).appendTo($("p#result"));
+		            },
+		            error: function (data) {
+		                console.log('getbalance error');
+		                console.log(data.error);
+		                $("span#trx_history").text(data.error.message);
+		            }
+		        });
+		    };
+		    update_transaction_history();
+
+		    update_recv_addresses = function () {
+		        $.jsonRPC.request('listrecvaddresses', {
+		            params: [],
+		            success: function (data) {
+		                console.log(data.result);
+		                setTableData(data.result);
+		                
+		            },
+		            error: function (data) {
+		                console.log('getbalance error');
+		                console.log(data.error);
+		                displayMsg( data.error.message ); 
+		            }
+		        });
+		    };
+		    update_recv_addresses();
+
+		    var update_send_addresses = function() {
+		    	$.jsonRPC.request('list_send_addresses', {
                    params : [],
                    success : function(data) {
                        console.log( data.result );
-                       if( data.result == null )
-                         window.location.replace('/login.html');
-                       $("span#username").text( data.result ); //(data.result).appendTo($("p#result"));
+                       setContactsData(data.result);
                    },
                    error : function(data) {
                        console.log(  'getbalance error' );
                        console.log(  data.error );
-                       $("span#username").text( data.error.message ); 
-                   }
-               });
-               $.jsonRPC.request('getbalance', {
-                   params : [],
-                   success : function(data) {
-                       console.log( data.result );
-                       $("span#balance").text( data.result.amount ); //(data.result).appendTo($("p#result"));
-                   },
-                   error : function(data) {
-                       console.log(  'getbalance error' );
-                       console.log(  data.error );
-                       $("span#balance").text( data.error.message ); 
-                   }
-               });
-
-               var update_transaction_history = function() { $.jsonRPC.request('get_transaction_history', {
-                   params : [],
-                   success : function(data) {
-                       console.log( data.result );
-                       $("span#trx_history").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
-                   },
-                   error : function(data) {
-                       console.log(  'getbalance error' );
-                       console.log(  data.error );
-                       $("span#trx_history").text( data.error.message ); 
+                       displayMsg( data.error.message ); 
                    }
                }); };
-               update_transaction_history();
+               update_send_addresses();
 
-
-              $("input#transfer").click(function() {
+               add_send_address = function(address, label) {
                   // todo validate passwords match and have all required lengths/etc.
-                  $.jsonRPC.request('sendtoaddress', {
-                      params : [$("input#payto").val(), $("input#amount").val(), $("input#memo").val()],
+                  $.jsonRPC.request('add_send_address', {
+                      params : [address, label],
                       success : function(data) {
                           console.log( data.result );
-                          $("span#transfer_message").text( data.result ); 
+                          update_send_addresses();
                       },
                       error : function(data) {
                           console.log( data.error );
-                          $("span#transfer_message").text( data.error.message ); 
+                          displayMsg( data.error.message ); 
                       }
                   });
-              });
-
-              $("input#unlock_wallet").click(function() {
-                  $.jsonRPC.request('walletpassphrase', {
-                      params : [$("input#spending_password").val(), 1000],
-                      success : function(data) {
-                          console.log( data.result );
-                          $("span#unlock_message").text( data.result ); 
-                      },
-                      error : function(data) {
-                          console.log( data.error );
-                          $("span#unlock_message").text( data.error.message ); 
-                      }
-                  });
-              });
-
-
-              $("input#rescan_wallet").click(function() {
-                  $.jsonRPC.request('rescan', {
-                      params : [0],
-                      success : function(data) {
-                          console.log( data.result );
-                          $("span#unlock_message").text( data.result ); 
-                          update_transaction_history();
-                      },
-                      error : function(data) {
-                          console.log( data.error );
-                          $("span#unlock_message").text( data.error.message ); 
-                      }
-                  });
-              });
-           });
-       </script>
-
-   </head>
+              };
+		});
+	</script>
+</head>
 <body>
+	<div style='position:left; background-color: rgb(236,236,236); vertical-align:middle; padding-bottom: 10px'>
+		<a href='http://bitshares.org' target="_blank">
+			<img src='img/bitsharesTransparentLow.png' style='vertical-align: sub; margin-right:20px'>
+		</a>
+		<span id='username' style='font-size:24px;'>
+		username
+		</span>
+		Unloock:
+		<span id='unlock_message'></span>
+		<button class='basicButton' id='pwd' onclick='passwordPrompt();'>Enter Password</button>
+		<button class='basicButton'>Logout</button>
+		<div id='status'></div>
+	</div>
+	
+	<div id="tabs">
+		<ul>
+			<li><a href="#tabs-1">Wallet</a></li>
+			<li><a href="#tabs-2">Receive Addresses</a></li>
+			<li><a href="#tabs-3">Contacts</a></li>
+			<li><a href="#tabs-4">Import Wallet</a></li>
+			<li><a href="#tabs-5">Block Explorer</a></li>
+		</ul>
+		
+		<div id="tabs-1">
+			Balance:
+			<span id="balance">unknown</span>
+			<br>
+			transfer, bring up dialog to password unlcok on send, send if successful
+			<span id="trx_history"></span>
+		</div>
 
-<h1> BitShares XT Wallet </h1>
+		<div id="tabs-2">
+			<input id='recvlabel' style='width:400px; margin-right:10px'>
+			<button onclick='createAddress();' class='basicButton'>Create Address</button>
+			<br><br>
+			<div id='ngReceive' ng-controller="MyCtrl">
+				<div class="gridStyle" ng-grid="gridOptions"></div>
+				<br>
+				<br>
+				<strong>Filter:</strong>
+				<input type="text" ng-model="filterOptions.filterText">
+		    </div>
+		</div>
 
-<h3> Username: <span id="username">unknown</span> </h3>
-<h3> Balance: <span id="balance">unknown</span> </h3>
-<hr/>
+		<div id="tabs-3">
+		<div id="ngContacts" ng-controller="MyCtrl">
 
-<div id="nav">
-  <ul>
-    <li> <a href="receive.html">Receive Addresses</a> </li>
-    <li> <a href="addressbook.html">Contacts</a> </li>
-    <li> <a href="index.html">Transfer </a></li>
-    <li> Transaction History </li>
-    <li> Block Explorer </li>
-    <li> Address Book </li>
-  </ul>
-</div>
-<div id="unock_wallet">
-  <h2>Unlock Wallet</h2>
-  Spending Password: <input type="password" placeholder="" id="spending_password" />
-        <input type="button" id="unlock_wallet" value="Unlock" />
-  <p><span id="unlock_message"></span></p>
-</div>
+				<div class="gridStyle" ng-grid="gridOptions"></div>
+				<br>
+				<br>
+				<input type="text" placeholder='Filter...' ng-model="filterOptions.filterText">
+		    </div>
 
-<div id="transfer">
-  <h2>Transfer</h2>
-  <form>
-  Pay to: <input type="text" placeholder="Address" id ="payto" />
-  Amount: <input type="text" placeholder="0.0" id ="amount" />
-  Memo: <input type="text" placeholder="Memo" id ="memo" />
-        <input type="button" id="transfer" value="Send" />
-  </form>
-  <p><span id="transfer_message"></span></p>
-</div>
 
-<hr/>
-<div id="transaction_history">
-<h2> Transaction History </h2>
-<input type="button" id="rescan_wallet" value="Rescan" />
-<span id="trx_history"></span>
-<table width="100%">
-  <tbody>
-    <tr><th>Date</th><th>Type</th><th>Address</th><th>Amount</th></tr>
-  </tbody>
-</table>
-</div>
+		    <br>
+		</div>
 
+		<div id="tabs-4">
+			<div id="drop_zone" style='font-size:18px;'>
+				<input style='font-size:20px; text-align: center;' type="file" id="files" name="files[]" multiple />
+				<br><br>
+				OR
+				<br><br>
+				<div style='font-size:30px'>Drop files here</div>
+				<br><br>
+				<output id="list"></output>
+				<br><br>
+				Password:  <input type="password"> <button class='basicButton'>Import</button>
+			</div>
+		</div>
+
+		<div id="tabs-5">
+			To be implemented...
+		</div>
+	</div>
+
+	<div id="dialog" title="Enter password">
+		<input type="password" id='passwordInput'><br><br>
+		<button class='basicButton' onclick='passwordOK()'>OK & Send</button><button class='basicButton' onclick='closeDialog()'>Cancel</button>
+	</div>
 </body>
 </html>
