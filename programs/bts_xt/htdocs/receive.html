@@ -25,19 +25,21 @@
                        $("span#username").text( data.error.message ); 
                    }
                });
+
                var update_recv_addresses = function() { $.jsonRPC.request('listrecvaddresses', {
                    params : [],
                    success : function(data) {
                        console.log( data.result );
-                       $("span#recvaddresses").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
+                       $("#recvaddresses").text( JSON.stringify(data.result) ); //(data.result).appendTo($("p#result"));
                    },
                    error : function(data) {
                        console.log(  'getbalance error' );
                        console.log(  data.error );
-                       $("span#username").text( data.error.message ); 
+                       $("#username").text( data.error.message ); 
                    }
                }); };
                update_recv_addresses();
+              
               $("input#create_address").click(function() {
                   // todo validate passwords match and have all required lengths/etc.
                   $.jsonRPC.request('getnewaddress', {
