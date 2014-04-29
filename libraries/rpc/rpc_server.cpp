@@ -364,12 +364,15 @@ namespace bts { namespace rpc {
              (get_transaction_history)
              (getblock)
              (get_block_by_number)
+             (get_name_record)
+             (reserve_name)
              (validateaddress)
              (rescan)
              (import_bitcoin_wallet)
              (import_private_key)
              (importprivkey)
              (getconnectioncount)
+             (get_delegates)
              )
  #undef DECLARE_RPC_METHOD
  #undef DECLARE_RPC_METHODS
@@ -887,6 +890,32 @@ As a json rpc call
       return fc::variant( _client->get_wallet()->get_transaction_history() );
     }
 
+    static rpc_server::method_data get_name_record_metadata{"get_name_record", nullptr,
+            /* description */ "Retrieves the name record",
+            /* returns: */    "name_record",
+            /* params:          name              type               required */ 
+                             {{"name",          "string",            true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::get_name_record(const fc::variants& params)
+    {
+      return fc::variant( _client->get_chain()->lookup_name(params[0].as_string()) );
+    }
+    static rpc_server::method_data reserve_name_metadata{"reserve_name", nullptr,
+            /* description */ "Retrieves the name record",
+            /* returns: */    "name_record",
+            /* params:          name              type               required */ 
+                             {{"name",          "string",            true},
+                              {"data",          "variant",           true}},
+            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::reserve_name(const fc::variants& params)
+    {
+       return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
+    }
+
     static rpc_server::method_data gettransaction_metadata{"gettransaction", nullptr,
             /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
@@ -1101,7 +1130,7 @@ Arguments:
 Examples:
 
 Dump a private key from Bitcoin wallet
-> bitcoin-cli dumpprivkey "myaddress"
+> bitshares-cli dumpprivkey "myaddress"
 
 Import the private key to BitShares wallet
 > bitshares-cli importprivkey "mykey"
@@ -1128,6 +1157,23 @@ As a json rpc call
         _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
         
       return fc::variant(true);
+    }
+
+    static rpc_server::method_data get_delegates_metadata{"get_delegates", nullptr,
+            /* description */ "Returns the list of delegates sorted by vote",
+            /* returns: */    "vector<delegate_status>",
+            /* params:     */ { {"first", "int", false},
+                                {"count", "int", false} },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"( 
+get_delegates (start, count)             
+
+Returns information about the delegates sorted by their net votes starting from position start and returning up to count items.
+             )" };
+    
+    fc::variant rpc_server_impl::get_delegates(const fc::variants& params)
+    {
+      return fc::variant(_client->get_wallet()->get_delegates());
     }
 
     static rpc_server::method_data getconnectioncount_metadata{"getconnectioncount", nullptr,
