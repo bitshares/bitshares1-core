@@ -48,6 +48,9 @@ struct claim_by_signature_input
    static const claim_type_enum type;
 };
 
+/**
+ *  Basic output that can be spent with a signature of the owner.
+ */
 struct claim_by_signature_output
 {
    static const claim_type_enum type;
@@ -56,6 +59,10 @@ struct claim_by_signature_output
    address  owner; // checksummed hash of public key
 };
 
+/**
+ *  These outputs are used in the genesis block for importing
+ *  balances from AGS and PTS
+ */
 struct claim_by_pts_output
 {
    static const claim_type_enum type;
@@ -103,18 +110,26 @@ struct claim_by_multi_sig_input
     static const claim_type_enum type;
 };
 
+/**
+ *  Defines an output that pairs a name and/or delegate id to
+ *  a JSON string and two public keys.
+ */
 struct claim_name_output
 {
     static const claim_type_enum type;
     
     /**
-     * Valid names start with a-z, are all lower case, and may have -
+     * Valid names start with a-z, are all lower case, and may have '-'
      */
     static bool is_valid_name( const std::string& name );
 
     claim_name_output():delegate_id(0){}
 
-    claim_name_output( std::string n, const fc::variant&, uint32_t did, fc::ecc::public_key own );
+    claim_name_output( std::string name_arg, 
+                       const fc::variant& data_arg, 
+                       uint32_t delegate_id_arg, 
+                       const fc::ecc::public_key_data& owner_arg,
+                       const fc::ecc::public_key_data& active_arg );
 
     std::string          name; ///< a valid name, must follow DNS naming conventions
     std::string          data; ///< a JSON String, must parse to be included.
@@ -135,15 +150,19 @@ struct claim_name_output
      *  Owner of the name / delegate_id, this is the master key that will likely
      *  remain in cold-storage.
      */
-    fc::ecc::public_key  owner;
+    fc::ecc::public_key_data  owner;
 
     /**
      * This is the active key for this owner, that is not in cold storage and can
      * be used for signing messages.  
      */
-    fc::ecc::public_key  active;
+    fc::ecc::public_key_data  active;
 };
 
+/**
+ *  There are several reasons that a delegate may be immediately fired, this
+ *  enumeration enumerates them.  
+ */
 enum fire_reason
 {
      /** produce a transaction that the delegate reported incorrectly 
@@ -162,6 +181,10 @@ enum fire_reason
      duplicate_block_signatures = 1
 };
 
+/**
+ *  This output is used when someone has proof they would like to submit that a 
+ *  delegate should be fired for signing something invalid or contradictory.
+ */
 struct claim_fire_delegate_output
 {
     static const claim_type_enum type;
@@ -169,8 +192,8 @@ struct claim_fire_delegate_output
     claim_fire_delegate_output():reason(0){}
     claim_fire_delegate_output(uint8_t r, std::vector<char> p):reason(r),proof(std::move(p)){}
 
-    uint8_t           reason;
-    std::vector<char> proof;
+    fc::enum_type<fire_reason,uint8_t>  reason;
+    std::vector<char>                   proof;
 };
 
 
