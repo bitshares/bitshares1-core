@@ -45,7 +45,7 @@ bts::blockchain::trx_block create_test_genesis_block(fc::path genesis_json_file)
          auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
          auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
          auto key      = fc::ecc::private_key::regenerate(key_hash);
-         dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key() ), asset() ) );
+         dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key(), key.get_public_key() ), asset() ) );
       }
       b.trxs.push_back( dtrx );
 

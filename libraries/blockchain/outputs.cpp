@@ -31,8 +31,17 @@ namespace bts { namespace blockchain {
       return true;
    }
 
-   claim_name_output:: claim_name_output( std::string n, const fc::variant& d, 
-                                          uint32_t did, fc::ecc::public_key own )
-   :name( std::move(n) ), data( fc::json::to_string(d) ), delegate_id(did), owner( std::move(own) ){}
+   claim_name_output:: claim_name_output( std::string name_arg, 
+                                          const fc::variant& data_arg, 
+                                          uint32_t delegate_id_arg, 
+                                          const fc::ecc::public_key_data& owner_arg,
+                                          const fc::ecc::public_key_data& active_arg
+                                          )
+   :name( std::move(name_arg) ), 
+    data( fc::json::to_string(data_arg) ), 
+    delegate_id(delegate_id_arg), 
+    owner( std::move(owner_arg) ),
+    active( std::move(active_arg) )
+   {}
 
 } } // bts::blockchain
