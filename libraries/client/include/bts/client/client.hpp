@@ -42,6 +42,7 @@ namespace bts { namespace client {
           *  Reserve a name and broadcast it to the network.
           */
          transaction_id_type reserve_name( const std::string& name, const fc::variant& data );
+         transaction_id_type register_delegate( const std::string& name, const fc::variant& data );
 
          fc::path                            get_data_dir()const;
 

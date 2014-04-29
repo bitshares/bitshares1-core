@@ -14,6 +14,45 @@
 
 namespace bts { namespace rpc { 
 
+#define RPC_METHOD_LIST\
+             (help)\
+             (getinfo)\
+             (open_wallet)\
+             (create_wallet)\
+             (current_wallet)\
+             (close_wallet)\
+             (walletlock)\
+             (walletpassphrase)\
+             (getnewaddress)\
+             (add_send_address)\
+             (_create_sendtoaddress_transaction)\
+             (_send_transaction)\
+             (sendtoaddress)\
+             (list_send_addresses)\
+             (list_receive_addresses)\
+             (get_send_address_label)\
+             (getbalance)\
+             (getblockhash)\
+             (getblockcount)\
+             (gettransaction)\
+             (get_transaction_history)\
+             (getblock)\
+             (get_block_by_number)\
+             (get_name_record)\
+             (validateaddress)\
+             (rescan)\
+             (import_bitcoin_wallet)\
+             (import_private_key)\
+             (importprivkey)\
+             (set_receive_address_memo)\
+             (getconnectioncount)\
+             (get_delegates)\
+             (reserve_name)\
+             (register_delegate)\
+             (get_names)
+
+
+
   namespace detail 
   {
     class rpc_server_impl
@@ -340,40 +379,7 @@ namespace bts { namespace rpc {
 
 #define DECLARE_RPC_METHOD( r, visitor, elem )  fc::variant elem( const fc::variants& );
 #define DECLARE_RPC_METHODS( METHODS ) BOOST_PP_SEQ_FOR_EACH( DECLARE_RPC_METHOD, v, METHODS ) 
-        DECLARE_RPC_METHODS( 
-             (help)
-             (getinfo)
-             (open_wallet)
-             (create_wallet)
-             (current_wallet)
-             (close_wallet)
-             (walletlock)
-             (walletpassphrase)
-             (getnewaddress)
-             (add_send_address)
-             (_create_sendtoaddress_transaction)
-             (_send_transaction)
-             (sendtoaddress)
-             (list_send_addresses)
-             (list_receive_addresses)
-             (get_send_address_label)
-             (getbalance)
-             (getblockhash)
-             (getblockcount)
-             (gettransaction)
-             (get_transaction_history)
-             (getblock)
-             (get_block_by_number)
-             (get_name_record)
-             (reserve_name)
-             (validateaddress)
-             (rescan)
-             (import_bitcoin_wallet)
-             (import_private_key)
-             (importprivkey)
-             (getconnectioncount)
-             (get_delegates)
-             )
+        DECLARE_RPC_METHODS( RPC_METHOD_LIST )
  #undef DECLARE_RPC_METHOD
  #undef DECLARE_RPC_METHODS
     };
@@ -711,6 +717,8 @@ Examples:
        return fc::variant(new_address);
     }
 
+    
+
     static rpc_server::method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", nullptr,
           /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
           /* returns: */    "signed_transaction",
@@ -878,6 +886,21 @@ As a json rpc call
       return fc::variant( _client->get_wallet()->get_balance( unit ) ); 
     }
 
+    static rpc_server::method_data set_receive_address_memo_metadata{"set_receive_address_memo", nullptr,
+            /* description */ "Retrieves all transactions into or out of this wallet.",
+            /* returns: */    "map<transaction_id,transaction_state>",
+            /* params:          name     type     required */ 
+                              {{"address", "address",  true},
+                               {"memo", "string",  true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::set_receive_address_memo(const fc::variants& params)
+    {
+      _client->get_wallet()->set_receive_address_memo(params[0].as<address>(), params[1].as_string());
+      return fc::variant();
+    }
+
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
             /* returns: */    "map<transaction_id,transaction_state>",
@@ -914,6 +937,19 @@ As a json rpc call
     fc::variant rpc_server_impl::reserve_name(const fc::variants& params)
     {
        return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
+    }
+    static rpc_server::method_data register_delegate_metadata{"register_delegate", nullptr,
+            /* description */ "Registeres a delegate to be voted upon by shareholders.",
+            /* returns: */    "name_record",
+            /* params:          name              type               required */ 
+                             {{"name",          "string",            true},
+                              {"data",          "variant",           true}},
+            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::register_delegate(const fc::variants& params)
+    {
+       return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
     }
 
     static rpc_server::method_data gettransaction_metadata{"gettransaction", nullptr,
@@ -1159,6 +1195,22 @@ As a json rpc call
       return fc::variant(true);
     }
 
+    static rpc_server::method_data get_names_metadata{"get_names", nullptr,
+            /* description */ "Returns the list of reserved names sorted alphabetically",
+            /* returns: */    "vector<delegate_status>",
+            /* params:     */ { {"first", "string", false},
+                                {"count", "int", false} },
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"( 
+get_names (first, count)             
+
+Returns up to count reserved names that follow first alphabetically.
+             )" };
+    fc::variant rpc_server_impl::get_names(const fc::variants& params)
+    {
+      return fc::variant(_client->get_chain()->get_names( params[0].as_string(), params[0].as_int64() ) );
+    }
+
     static rpc_server::method_data get_delegates_metadata{"get_delegates", nullptr,
             /* description */ "Returns the list of delegates sorted by vote",
             /* returns: */    "vector<delegate_status>",
@@ -1169,6 +1221,11 @@ As a json rpc call
 get_delegates (start, count)             
 
 Returns information about the delegates sorted by their net votes starting from position start and returning up to count items.
+
+Arguments:
+   first - the index of the first delegate to be returned
+   count - the maximum number of delegates to be returned
+
              )" };
     
     fc::variant rpc_server_impl::get_delegates(const fc::variants& params)
@@ -1214,42 +1271,17 @@ Examples:
   {
     my->_self = this;
 
-#define REGISTER_JSON_METHOD(METHODNAME) \
+#define REGISTER_RPC_METHOD( r, visitor, METHODNAME ) \
     do { \
-      method_data data_with_functor(detail::METHODNAME##_metadata); \
+      method_data data_with_functor(detail::BOOST_PP_CAT(METHODNAME,_metadata)); \
       data_with_functor.method = boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1); \
       register_method(data_with_functor); \
-    } while (0)
+    } while (0);
+#define REGISTER_RPC_METHODS( METHODS ) \
+    BOOST_PP_SEQ_FOR_EACH( REGISTER_RPC_METHOD, v, METHODS ) 
 
-    REGISTER_JSON_METHOD(help);
-    REGISTER_JSON_METHOD(open_wallet);
-    REGISTER_JSON_METHOD(create_wallet);
-    REGISTER_JSON_METHOD(current_wallet);
-    REGISTER_JSON_METHOD(close_wallet);
-    REGISTER_JSON_METHOD(walletlock);
-    REGISTER_JSON_METHOD(walletpassphrase);
-    REGISTER_JSON_METHOD(getnewaddress);
-    REGISTER_JSON_METHOD(getinfo);
-    REGISTER_JSON_METHOD(getblock);
-    REGISTER_JSON_METHOD(getblockhash);
-    REGISTER_JSON_METHOD(getblockcount);
-    REGISTER_JSON_METHOD(sendtoaddress);
-    REGISTER_JSON_METHOD(rescan);
-    REGISTER_JSON_METHOD(validateaddress);
-    REGISTER_JSON_METHOD(getbalance);
-    REGISTER_JSON_METHOD(importprivkey);
-    REGISTER_JSON_METHOD(getconnectioncount);
-
-    REGISTER_JSON_METHOD(add_send_address);
-    REGISTER_JSON_METHOD(list_receive_addresses);
-    REGISTER_JSON_METHOD(list_send_addresses);
-    REGISTER_JSON_METHOD(get_send_address_label);
-    REGISTER_JSON_METHOD(get_transaction_history);
-    REGISTER_JSON_METHOD(get_block_by_number);
-    REGISTER_JSON_METHOD(import_bitcoin_wallet);
-    REGISTER_JSON_METHOD(import_private_key);
-    REGISTER_JSON_METHOD(_send_transaction);
-    REGISTER_JSON_METHOD(_create_sendtoaddress_transaction);
+    REGISTER_RPC_METHODS( RPC_METHOD_LIST )
+                        
 #undef REGISTER_JSON_METHOD
   }
 

@@ -164,10 +164,15 @@ namespace wallet {
                                                                         const signed_transactions& trxs);
 
            address                                 import_key( const fc::ecc::private_key& key, 
-                                                               const std::string& label = "" );
+                                                               const std::string& memo = "", 
+                                                               const std::string& account = "");
 
-           address                                 new_receive_address( const std::string& label = "" );
-           fc::ecc::public_key                     new_public_key( const std::string& label = "" );
+           /**
+            *  Updates the memo associated with a receive address
+            */
+           void                                    set_receive_address_memo( const address& addr, const std::string& memo );
+           address                                 new_receive_address( const std::string& memo = "", const std::string& account = "" );
+           fc::ecc::public_key                     new_public_key( const std::string& memo = "", const std::string& account = "" );
 
            std::unordered_map<address,std::string> get_receive_addresses()const;
            std::string                             get_send_address_label( const address& addr )const;
