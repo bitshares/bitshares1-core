@@ -68,6 +68,8 @@ namespace bts { namespace net {
    {
       uint32_t         version;
       fc::ip::endpoint host;
+      /** info contains the fields required by bitcoin-rpc's getpeerinfo call, we will likely
+          extend it with our own fields. */
       fc::variant      info;
    };
 

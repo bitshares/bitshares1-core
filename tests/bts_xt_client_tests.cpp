@@ -35,6 +35,7 @@ struct bts_xt_client_test_config
   static fc::path config_directory;
   static uint16_t base_rpc_port;
   static uint16_t base_p2p_port;
+  static uint16_t base_http_port;
   static bool test_client_server;
 
   bts_xt_client_test_config() 
@@ -84,8 +85,9 @@ struct bts_xt_client_test_config
 fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
 fc::path bts_xt_client_test_config::bts_server_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
-uint16_t bts_xt_client_test_config::base_rpc_port = 20100;
-uint16_t bts_xt_client_test_config::base_p2p_port = 21100;
+uint16_t bts_xt_client_test_config::base_rpc_port  = 20100;
+uint16_t bts_xt_client_test_config::base_p2p_port  = 21100;
+uint16_t bts_xt_client_test_config::base_http_port = 22100;
 bool bts_xt_client_test_config::test_client_server = false;
 
 #define RPC_USERNAME "test"
@@ -211,6 +213,7 @@ struct bts_client_process : managed_process
   fc::ecc::private_key private_key;
   uint16_t rpc_port;
   uint16_t p2p_port;
+  uint16_t http_port;
   bts::rpc::rpc_client_ptr rpc_client;
 
   bts_client_process() : initial_balance(0) {}
@@ -254,6 +257,8 @@ void bts_client_process::launch(uint32_t process_number,
   options.push_back("--rpcpassword=" RPC_PASSWORD);
   options.push_back("--rpcport");
   options.push_back(boost::lexical_cast<std::string>(rpc_port));
+  options.push_back("--httpport");
+  options.push_back(boost::lexical_cast<std::string>(http_port));
   options.push_back("--trustee-address");
   options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
   if (act_as_trustee)
@@ -317,7 +322,7 @@ void bts_client_launcher_fixture::create_trustee_and_genesis_block()
   {
     client_processes[i].private_key = fc::ecc::private_key::generate();
     genesis_block.balances.push_back(std::make_pair(bts::blockchain::pts_address(client_processes[i].private_key.get_public_key()), 
-                                                    client_processes[i].initial_balance));
+                                                    client_processes[i].initial_balance / 100000000));
   }
 
   BOOST_TEST_MESSAGE("Generating trustee keypair");
@@ -338,6 +343,7 @@ void bts_client_launcher_fixture::launch_clients()
   {
     client_processes[i].rpc_port = bts_xt_client_test_config::base_rpc_port + i;
     client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
+    client_processes[i].http_port = bts_xt_client_test_config::base_http_port + i;
     fc::optional<bts::net::genesis_block_config> optional_genesis_block;
     if (i == 0 && !bts_xt_client_test_config::test_client_server)
       optional_genesis_block = genesis_block;
@@ -392,7 +398,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
   client_processes.resize(1);
 
-  client_processes[0].initial_balance = 1000000; // not important, we just need a nonzero balance to avoid crashing
+  client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
 
   create_trustee_and_genesis_block();
 
@@ -426,7 +432,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     BOOST_CHECK_THROW(client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   BOOST_TEST_MESSAGE("Testing receive address generation");
@@ -452,7 +458,7 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
 {
   client_processes.resize(1);
 
-  client_processes[0].initial_balance = 1000000; // not important, we just need a nonzero balance to avoid crashing
+  client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
 
   create_trustee_and_genesis_block();
 
@@ -508,7 +514,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -546,7 +552,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   const uint32_t total_amount_to_transfer = amount_of_each_transfer * number_of_transfers_to_each_recipient * number_of_recipients;
 
   client_processes.resize(number_of_recipients + 1);
-  client_processes[0].initial_balance = total_amount_to_transfer * 2; // allow for fees
+  client_processes[0].initial_balance = std::max<uint64_t>(100000000, total_amount_to_transfer * 2); // allow for fees
 
   create_trustee_and_genesis_block();
 
@@ -561,7 +567,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -601,10 +607,9 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
 }
 
-BOOST_AUTO_TEST_CASE(one_hundred_node_test)
+BOOST_AUTO_TEST_CASE(fifty_node_test)
 {
-  return;
-  client_processes.resize(100);
+  client_processes.resize(50);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = INITIAL_BALANCE;
@@ -618,8 +623,17 @@ BOOST_AUTO_TEST_CASE(one_hundred_node_test)
 
   establish_rpc_connections();
 
+  fc::usleep(fc::seconds(60));
+
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    BOOST_CHECK(client_processes[i].rpc_client->getconnectioncount() >= 3);
+  {
+    unsigned connection_count = client_processes[i].rpc_client->getconnectioncount();
+    if (connection_count < 3)
+    {
+      BOOST_MESSAGE("Client " << i << " only has " << connection_count << " connections");
+    }
+    BOOST_CHECK(connection_count >= 3);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
