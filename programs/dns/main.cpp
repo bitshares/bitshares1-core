@@ -15,9 +15,9 @@
 
 #include <iostream>
 
-#include <bts/dns/dns_cli.hpp>
-#include <bts/dns/dns_rpc_server.hpp>
 #include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/p2p/p2p_cli.hpp>
+#include <bts/dns/p2p/p2p_rpc_server.hpp>
 #include <bts/dns/p2p/p2p_transaction_validator.hpp>
 
 struct config

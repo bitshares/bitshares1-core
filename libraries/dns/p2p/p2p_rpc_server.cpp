@@ -1,6 +1,6 @@
-#include <bts/dns/dns_rpc_server.hpp>
-#include <bts/dns/dns_wallet.hpp>
 #include <boost/bind.hpp>
+#include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/p2p/p2p_rpc_server.hpp>
 
 #include <iostream>
 

@@ -12,6 +12,8 @@ file(GLOB HEADERS "include/bts/dns/p2p/*.hpp")
 
 add_library( bts_dns_p2p
              p2p_transaction_validator.cpp
+             p2p_rpc_server.cpp
+             p2p_cli.cpp
              ${HEADERS} )
 
 target_link_libraries( bts_dns_p2p bts_dns bts_blockchain bts_db bts_rpc bts_wallet fc leveldb )

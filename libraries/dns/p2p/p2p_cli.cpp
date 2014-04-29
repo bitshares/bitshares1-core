@@ -2,7 +2,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <bts/dns/dns_wallet.hpp>
-#include <bts/dns/dns_cli.hpp>
+#include <bts/dns/p2p/p2p_cli.hpp>
 
 namespace bts { namespace dns {
 
