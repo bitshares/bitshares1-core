@@ -1,11 +1,6 @@
 #pragma once
 
 #include <bts/blockchain/transaction.hpp>
-#include <bts/blockchain/outputs.hpp>
-
-#include <fc/io/raw.hpp>
-#include <fc/io/raw_variant.hpp>
-#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {
 

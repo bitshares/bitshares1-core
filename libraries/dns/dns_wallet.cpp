@@ -116,6 +116,7 @@ signed_transaction dns_wallet::set(const std::string& key, const fc::variant& va
     return update(dns_output, prev_output.amount, prev_tx_ref, prev_dns_output.owner);
 } FC_RETHROW_EXCEPTIONS(warn, "set key ${k} with value ${v}", ("k", key) ("v", value)); }
 
+// TODO: Also check current pending_txs
 fc::variant dns_wallet::lookup(const std::string& key,
                                const signed_transactions& pending_txs)
 { try {
@@ -127,6 +128,7 @@ fc::variant dns_wallet::lookup(const std::string& key,
     return unserialize_value(to_dns_output(output).value);
 } FC_RETHROW_EXCEPTIONS(warn, "lookup key ${k}", ("k", key)); }
 
+// TODO: Also check current pending_txs
 std::vector<trx_output> dns_wallet::get_active_auctions()
 {
     std::vector<trx_output> list;

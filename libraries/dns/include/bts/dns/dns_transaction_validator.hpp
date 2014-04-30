@@ -1,8 +1,8 @@
 #pragma once
 
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/dns/dns_db.hpp>
+#include <bts/dns/dns_outputs.hpp>
 
 namespace bts { namespace dns {
 

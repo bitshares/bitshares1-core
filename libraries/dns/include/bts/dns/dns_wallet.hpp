@@ -2,7 +2,6 @@
 
 #include <bts/dns/dns_transaction_validator.hpp>
 #include <bts/wallet/wallet.hpp>
-#include <sstream>
 
 namespace bts { namespace dns {
 
@@ -30,11 +29,9 @@ class dns_wallet : public bts::wallet::wallet
         signed_transaction set(const std::string& key, const fc::variant& value,
                                const signed_transactions& pending_txs);
 
-        // TODO: Also check current pending_txs
         fc::variant lookup(const std::string& key,
                            const signed_transactions& pending_txs);
 
-        // TODO: Also check current pending_txs
         std::vector<trx_output> get_active_auctions();
 
         virtual std::string get_input_info_string(chain_database& db, const trx_input& in);

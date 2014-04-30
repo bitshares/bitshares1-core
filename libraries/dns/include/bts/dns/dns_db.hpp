@@ -2,7 +2,6 @@
 
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/dns/dns_outputs.hpp>
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace dns {

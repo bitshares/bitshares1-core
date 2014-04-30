@@ -1,4 +1,5 @@
 #include <bts/dns/dns_db.hpp>
+#include <bts/dns/dns_outputs.hpp>
 
 namespace bts { namespace dns {
 
