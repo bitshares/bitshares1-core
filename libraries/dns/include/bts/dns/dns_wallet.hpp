@@ -21,7 +21,6 @@ class dns_wallet : public bts::wallet::wallet
         signed_transaction ask(const std::string& key, const asset& ask_price,
                                const signed_transactions& pending_txs);
 
-        using bts::wallet::wallet::transfer;
         signed_transaction transfer(const std::string& key, const address& recipient,
                                     const signed_transactions& pending_txs);
 
