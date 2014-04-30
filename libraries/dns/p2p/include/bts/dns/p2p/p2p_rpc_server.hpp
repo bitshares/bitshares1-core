@@ -33,4 +33,6 @@ class p2p_rpc_server : public bts::rpc::rpc_server
         dns_wallet_ptr get_dns_wallet();
 };
 
+typedef std::shared_ptr<p2p_rpc_server> p2p_rpc_server_ptr;
+
 } } } // bts::dns::p2p

@@ -14,16 +14,16 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         dns_transaction_validator(dns_db* db);
         ~dns_transaction_validator();
 
-        virtual block_evaluation_state_ptr create_block_state() const = 0;
+        virtual block_evaluation_state_ptr create_block_state() const override = 0;
 
         virtual transaction_summary evaluate(const signed_transaction& tx,
-                                             const block_evaluation_state_ptr& block_state) = 0;
+                                             const block_evaluation_state_ptr& block_state) override = 0;
 
         virtual void validate_input(const meta_trx_input& in, transaction_evaluation_state& state,
-                                    const block_evaluation_state_ptr& block_state) = 0;
+                                    const block_evaluation_state_ptr& block_state) override = 0;
 
         virtual void validate_output(const trx_output& out, transaction_evaluation_state& state,
-                                     const block_evaluation_state_ptr& block_state) = 0;
+                                     const block_evaluation_state_ptr& block_state) override = 0;
 
         virtual bool is_valid_output(const claim_dns_output& output) = 0;
         virtual bool is_valid_key(const std::string& key) = 0;

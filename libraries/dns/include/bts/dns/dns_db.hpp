@@ -14,10 +14,10 @@ class dns_db : public bts::blockchain::chain_database
         dns_db();
         ~dns_db();
 
-        virtual void open(const fc::path& dir, bool create = true);
-        virtual void close();
+        virtual void open(const fc::path& dir, bool create = true) override;
+        virtual void close() override;
         virtual void store(const trx_block& blk, const signed_transactions& deterministic_trxs,
-                           const block_evaluation_state_ptr& state);
+                           const block_evaluation_state_ptr& state) override;
 
         uint32_t get_tx_age(const output_reference& tx_ref);
 

@@ -34,12 +34,12 @@ class dns_wallet : public bts::wallet::wallet
 
         std::vector<trx_output> get_active_auctions();
 
-        virtual std::string get_input_info_string(chain_database& db, const trx_input& in);
-        virtual std::string get_output_info_string(const trx_output& out);
+        virtual std::string get_input_info_string(chain_database& db, const trx_input& in) override;
+        virtual std::string get_output_info_string(const trx_output& out) override;
 
     protected:
         virtual bool scan_output(transaction_state& state, const trx_output& out, const output_reference& ref,
-                                 const output_index& idx);
+                                 const output_index& idx) override;
 
     private:
         dns_db_ptr                    _db;
