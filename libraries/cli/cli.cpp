@@ -55,8 +55,8 @@ namespace bts { namespace cli {
                       std::getline( std::cin, line );
                       fc::set_console_echo(true);
                       std::cout << std::endl;
-                  } 
-                  else 
+                  }
+                  else
                   {
                   #ifdef HAVE_READLINE
                      char* line_read = nullptr;
@@ -136,8 +136,8 @@ namespace bts { namespace cli {
             {
               for (;;)
               {
-                // try to execute the method.  If the method needs the wallet to be 
-                // unlocked, it will throw an exception, and we'll attempt to 
+                // try to execute the method.  If the method needs the wallet to be
+                // unlocked, it will throw an exception, and we'll attempt to
                 // unlock it and then retry the command
                 try
                 {
@@ -174,11 +174,11 @@ namespace bts { namespace cli {
             {
               // validate arguments
               FC_ASSERT(arguments.size() >= 2 && arguments.size() <= 4);
-              
+
               // _create_sendtoaddress_transaction takes the same arguments as sendtoaddress
               fc::variant result = execute_command_and_prompt_for_passwords("_create_sendtoaddress_transaction", arguments);
               bts::blockchain::signed_transaction transaction = result.as<bts::blockchain::signed_transaction>();
-              
+
               std::string response;
               std::cout << "About to broadcast transaction:\n\n";
               std::cout << _client->get_wallet()->get_transaction_info_string(*_client->get_chain(), transaction) << "\n";
@@ -207,16 +207,16 @@ namespace bts { namespace cli {
               uint32_t block_num = 0;
               if (arguments.size() == 1)
                 block_num = (uint32_t)arguments[0].as_uint64();
-                
+
               _client->get_wallet()->scan_chain( *_client->get_chain(), block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
                 {
                     std::cout << "scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
-                });              
+                });
               return fc::variant();
             }
 
-            fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream, 
-                                                      const bts::rpc::rpc_server::method_data& method_data, 
+            fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
+                                                      const bts::rpc::rpc_server::method_data& method_data,
                                                       unsigned parameter_index)
             {
               const bts::rpc::rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
@@ -238,7 +238,7 @@ namespace bts { namespace cli {
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
-                }                
+                }
                 return fc::variant(bts::blockchain::asset(amount_as_int));
               }
               else if (this_parameter.type == "address")
@@ -266,7 +266,7 @@ namespace bts { namespace cli {
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
-                } 
+                }
                 return fc::variant( bts::blockchain::address(address_string) );
               }
               else
@@ -280,11 +280,11 @@ namespace bts { namespace cli {
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
-                }                
+                }
               }
             }
 
-            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream, 
+            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                  const std::string& command)
             {
               // quit isn't registered with the RPC server
@@ -293,7 +293,7 @@ namespace bts { namespace cli {
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
-            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream, 
+            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                const bts::rpc::rpc_server::method_data& method_data)
             {
               fc::variants arguments;
@@ -315,7 +315,7 @@ namespace bts { namespace cli {
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
-                } 
+                }
               }
               return arguments;
             }
@@ -337,7 +337,7 @@ namespace bts { namespace cli {
             {
               if (command == "sendtoaddress")
               {
-                // the raw json version sends immediately, in the interactive version we want to 
+                // the raw json version sends immediately, in the interactive version we want to
                 // generate the transaction, have the user confirm it, then broadcast it
                 interactive_sendtoaddress(command, arguments);
                 return fc::variant();
@@ -449,7 +449,7 @@ namespace bts { namespace cli {
 
                   if (command_is_valid)
                   {
-                    try 
+                    try
                     {
                       fc::variant result = _self->execute_interactive_command(command, arguments);
                       _self->format_and_print_result(command, result);
@@ -468,11 +468,11 @@ namespace bts { namespace cli {
               }
             }
 
-            // Parse the given line into a command and arguments, returning them in the form our 
+            // Parse the given line into a command and arguments, returning them in the form our
             // json-rpc server functions require them.
             void parse_json_command(const std::string& line_to_parse, std::string& command, fc::variants& arguments)
             {
-              // the first whitespace-separated token on the line should be an un-quoted 
+              // the first whitespace-separated token on the line should be an un-quoted
               // JSON-RPC command name
               command.clear();
               arguments.clear();
@@ -588,7 +588,7 @@ namespace bts { namespace cli {
 
    cli::~cli()
    {
-      try 
+      try
       {
         wait();
       }
@@ -619,7 +619,7 @@ namespace bts { namespace cli {
 #endif
    void cli::list_delegates( uint32_t count )
    {
-        auto delegates = client()->get_chain()->get_delegates( count );
+        auto delegates = my->_client->get_chain()->get_delegates( count );
 
         std::cerr<<"Delegate Ranking\n";
         std::cerr<<std::setw(6)<<"Rank "<<"  "
@@ -654,23 +654,18 @@ namespace bts { namespace cli {
        return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
    }
 
-   client_ptr cli::client()
-   {
-       return my->_client;
-   }
-
-  fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream, 
-                                                const bts::rpc::rpc_server::method_data& method_data, 
+  fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,
+                                                const bts::rpc::rpc_server::method_data& method_data,
                                                 unsigned parameter_index)
   {
     return my->parse_argument_of_known_type(argument_stream, method_data, parameter_index);
   }
-  fc::variants cli::parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream, 
+  fc::variants cli::parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream,
                                                            const std::string& command)
   {
     return my->parse_unrecognized_interactive_command(argument_stream, command);
   }
-  fc::variants cli::parse_recognized_interactive_command(fc::buffered_istream& argument_stream, 
+  fc::variants cli::parse_recognized_interactive_command(fc::buffered_istream& argument_stream,
                                                          const bts::rpc::rpc_server::method_data& method_data)
   {
     return my->parse_recognized_interactive_command(argument_stream, method_data);

@@ -10,19 +10,19 @@ namespace bts { namespace rpc {
 } }
 
 namespace bts { namespace cli {
-   
+
    using namespace client;
 
    namespace detail {  class cli_impl; }
 
-   class cli 
+   class cli
    {
       public:
          cli( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server );
          virtual ~cli();
 
          virtual void list_delegates( uint32_t count = 0 );
-         
+
          std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false );
 
          void confirm_and_broadcast(signed_transaction& tx);
@@ -30,18 +30,17 @@ namespace bts { namespace cli {
 
 
         /// hooks to implement custom behavior for interactive command, if the default json-style behavior is undesirable
-        virtual fc::variant parse_argument_of_known_type(fc::buffered_istream& argument_stream, 
-                                                         const bts::rpc::rpc_server::method_data& method_data, 
+        virtual fc::variant parse_argument_of_known_type(fc::buffered_istream& argument_stream,
+                                                         const bts::rpc::rpc_server::method_data& method_data,
                                                          unsigned parameter_index);
-        virtual fc::variants parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream, 
+        virtual fc::variants parse_unrecognized_interactive_command(fc::buffered_istream& argument_stream,
                                                                     const std::string& command);
-        virtual fc::variants parse_recognized_interactive_command(fc::buffered_istream& argument_stream, 
+        virtual fc::variants parse_recognized_interactive_command(fc::buffered_istream& argument_stream,
                                                                   const bts::rpc::rpc_server::method_data& method_data);
         virtual fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const std::string& command);
         virtual fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments);
         virtual void format_and_print_result(const std::string& command, const fc::variant& result);
-      protected:
-         virtual client_ptr client();
+
       private:
          std::unique_ptr<detail::cli_impl> my;
    };
