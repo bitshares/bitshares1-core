@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/wallet/delegate_status.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -105,7 +106,6 @@ namespace wallet {
            fc::path get_wallet_filename_for_user(const std::string& username) const;
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
-           void set_delegate_trust( uint32_t did,  bool is_trusted );
 
 
            void open( const std::string& user, const std::string& password );
@@ -130,6 +130,11 @@ namespace wallet {
 
            void save();
            void backup_wallet( const fc::path& backup_path );
+
+
+           std::vector<delegate_status> get_delegates( uint32_t start = 0, uint32_t count = -1 )const;
+           void set_delegate_trust( const std::string& name, trust_state s );
+           void update_delegate_status( const std::string& name,  const delegate_status& s );
 
            void import_bitcoin_wallet( const fc::path& dir, const std::string& passphrase );
 
@@ -159,10 +164,15 @@ namespace wallet {
                                                                         const signed_transactions& trxs);
 
            address                                 import_key( const fc::ecc::private_key& key, 
-                                                               const std::string& label = "" );
+                                                               const std::string& memo = "", 
+                                                               const std::string& account = "");
 
-           address                                 new_receive_address( const std::string& label = "" );
-           fc::ecc::public_key                     new_public_key( const std::string& label = "" );
+           /**
+            *  Updates the memo associated with a receive address
+            */
+           void                                    set_receive_address_memo( const address& addr, const std::string& memo );
+           address                                 new_receive_address( const std::string& memo = "", const std::string& account = "" );
+           fc::ecc::public_key                     new_public_key( const std::string& memo = "", const std::string& account = "" );
 
            std::unordered_map<address,std::string> get_receive_addresses()const;
            std::string                             get_send_address_label( const address& addr )const;
@@ -199,7 +209,7 @@ namespace wallet {
            void                  lock_wallet();
            bool                  is_locked()const;
 
-           signed_transaction    transfer( const asset& amnt, 
+           signed_transaction    send_to_address( const asset& amnt, 
                                            const address& to, 
                                            const std::string& memo = "change" );
 
