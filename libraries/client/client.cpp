@@ -380,4 +380,18 @@ namespace bts { namespace client {
       my->_p2p_node->connect_to_p2p_network();
     }
 
+
+    transaction_id_type client::reserve_name( const std::string& name, const fc::variant& data )
+    { try {
+        auto trx = get_wallet()->reserve_name( name, data );
+        broadcast_transaction( trx );
+        return trx.id();
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
+    transaction_id_type client::register_delegate( const std::string& name, const fc::variant& data )
+    { try {
+        auto trx = get_wallet()->register_delegate( name, data );
+        broadcast_transaction( trx );
+        return trx.id();
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
+
 } } // bts::client

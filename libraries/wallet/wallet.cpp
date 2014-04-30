@@ -483,7 +483,7 @@ namespace bts { namespace wallet {
       for( auto key : priv_keys )
       {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
-         import_key( key, std::string( btc_addr ) );
+         import_key( key, wallet_dat.filename().generic_string() + ":" + std::string( btc_addr ) );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
@@ -535,13 +535,13 @@ namespace bts { namespace wallet {
       return my->get_balance(t);
    }
 
-   address   wallet::import_key( const fc::ecc::private_key& key, const std::string& label )
+   address   wallet::import_key( const fc::ecc::private_key& key, const std::string& memo, const std::string& account )
    { try {
       FC_ASSERT( !is_locked() );
       auto addr = address(key.get_public_key());
       my->_my_keys[addr] = key;
       my->_data.set_keys( my->_my_keys, my->_wallet_key_password );
-      my->_data.receive_addresses[addr] = label;
+      my->_data.receive_addresses[addr] = memo;
 
       my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr;
       my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr;
@@ -551,20 +551,26 @@ namespace bts { namespace wallet {
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
-   fc::ecc::public_key   wallet::new_public_key( const std::string& label )
+   fc::ecc::public_key   wallet::new_public_key( const std::string& memo, const std::string& account )
    { try {
       FC_ASSERT( !is_locked() );
       my->_data.last_used_key++;
       auto base_key = my->_data.get_base_key( my->_wallet_key_password );
       auto new_key = base_key.child( my->_data.last_used_key );
-      import_key(new_key, label);
+      import_key(new_key, memo, account);
       return new_key.get_public_key();
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${memo}'", ("memo",memo) ) }
 
-   address   wallet::new_receive_address( const std::string& label )
+   void   wallet::set_receive_address_memo( const address& addr, const std::string& memo )
    { try {
-      return address( new_public_key( label ) );
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with label '${label}'", ("label",label) ) }
+      my->_data.receive_addresses[addr] = memo;
+      save();
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to update address memo for ${addr} '${memo}'", ("addr",addr)("memo",memo) ) }
+
+   address   wallet::new_receive_address( const std::string& memo, const std::string& account )
+   { try {
+      return address( new_public_key( memo, account ) );
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create new address with memo '${memo}'", ("memo",memo) ) }
 
    void wallet::add_send_address( const address& addr, const std::string& label )
    { try {
@@ -671,7 +677,7 @@ namespace bts { namespace wallet {
    bool wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
 
 
-   signed_transaction wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
+   signed_transaction wallet::send_to_address( const asset& amnt, const address& to, const std::string& memo )
    { try {
        signed_transaction trx;
        trx.outputs.push_back(trx_output(claim_by_signature_output(to), amnt));
@@ -1144,20 +1150,6 @@ namespace bts { namespace wallet {
       } FC_RETHROW_EXCEPTIONS( warn, "error generating new block" );
    }
 
-   void wallet::set_delegate_trust( uint32_t delegate_id, bool is_trusted )
-   {
-      if( is_trusted )
-      {
-         my->_data.trusted_delegates.insert(delegate_id);
-         my->_data.distrusted_delegates.erase(delegate_id);
-      }
-      else
-      {
-         my->_data.distrusted_delegates.insert(delegate_id);
-         my->_data.trusted_delegates.erase(delegate_id);
-      }
-   }
-
    void wallet::import_delegate( uint32_t delegate_id, const fc::ecc::private_key& delegate_key )
    {
      my->_data.delegate_keys[delegate_id] = delegate_key;
@@ -1264,5 +1256,19 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
     std::unordered_set<address> required_signatures;
     return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change address"));
 }
+
+std::vector<delegate_status> wallet::get_delegates( uint32_t start, uint32_t count )const
+{
+   auto delegates = my->_blockchain->get_delegates( count );
+   std::vector<delegate_status> status;
+   status.reserve( delegates.size() );
+   for( auto d : delegates )
+   {
+      status.push_back( delegate_status( d ) );
+   }
+   return status;
+}
+
+
 
 } } // namespace bts::wallet

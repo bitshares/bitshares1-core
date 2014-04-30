@@ -325,6 +325,21 @@ namespace bts { namespace blockchain {
         return fc::optional<name_record>();
      } FC_RETHROW_EXCEPTIONS( warn, "delegate id: ${id}", ("id",del) ) }
 
+     std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )
+     { try {
+          std::vector<name_record> records;
+          records.reserve(100);
+          auto name_itr = my->_name_records.lower_bound( first ); 
+          uint32_t num = 0;
+          if( name_itr.valid() && num < count )
+          {
+             records.push_back( name_itr.value() );
+             ++name_itr;
+             ++num;
+          }
+          return records;
+     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) ) }
+
      std::vector<name_record> chain_database::get_delegates( uint32_t count )
      {
         std::vector<name_record> results;

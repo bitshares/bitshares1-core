@@ -92,6 +92,11 @@ namespace bts {
            */
           std::vector<name_record>  get_delegates( uint32_t count = 100 );
 
+          /**
+           * Returns up to count names after first when sorted alphabetically
+           */
+          std::vector<name_record>  get_names( const std::string& first, uint32_t count = 100 );
+
 
           //@{
           /**

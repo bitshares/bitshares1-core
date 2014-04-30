@@ -16,15 +16,16 @@ A spending password is required by the wallet, and it must be at least 8 charact
 
 
 ## TODO: Wallet accounts and address memos
-The bitshares wallet supports accounts similar to the accounts supported by the bitcoin wallet. Multiple addresses can be attached to a specific account (an account must contain at least one address). Accounts can be used to control what addresses are used as a set of inputs for a transaction and to manage several different balances within a wallet (for example, like accounts are used in an accounting package).
+The bitshares wallet supports accounts similar to the accounts supported by the bitcoin wallet. Multiple addresses can be attached to a specific account (an account must contain at least one address). Accounts can be used to control what addresses are used as a set of inputs for a transaction and to manage several different balances within a wallet (for example, the same way accounts are used in an accounting package). An address can only be owned by a single account. If an account is not specified when creating or importing the address, the address will be owned by the default account called "". An address's account can be changed by using the setaccount method.
 
 The bitshares wallet also supports the concept of "address memos". An address memo is a comment attached to a specific address. Address memos are primarily useful as a means of documenting the sources of funds in an account.
 
 When you create a new "receive address" with the "getnewaddress" command, you can optionally specify an account (which may or may not exist yet) and a memo. Similarly, when importing a private key, you can specify an account and a memo if you wish.
 
 
+
 ## Create a transaction cache for transactions that affect user's wallet (e.g. wallet balance)
-This cache is built by scanning the blockchain and processing pending transactions (currently only processes blockchain transactions, pending transactions support needs to be added). Is there anything special that needs to be done for pending transactions? Should there be extra info in the transaction_state for them (maybe just the -1 to indicate not in a block yet).
+This cache is built by scanning the blockchain and processing pending transactions (currently only processes blockchain transactions, pending transactions support needs to be added). We'll keep blockchain transactions and pending transactions in separate containers as they need to be managed somewhat differently.
 
 ## Compute Confirmed Balance
 A transaction is fully confirmed when it's been included into a block that 51% of the delegates have confirmed by issuing follow-on blocks that point back to that block (via the block hash id pointers). Currently this is computed on the fly from the transaction cache. Note: currently code considers all transactions in a block to be confirmed.
@@ -107,18 +108,95 @@ actually have to be included in the blockchain, but it's included for now for po
 
 # Detailed BitShares Wallet pseudocode
 
-transaction_state: contains effects of a single transaction on the wallet(trx field is the "input" with the broadcast transaction data). We make a transaction_state for each transaction that impacts the wallet balances and we record the changes here to each of our wallet balances (we have balances for each asset type, and we have confirmed and unconfirmed balances for each asset type).
+Major functions:
+1) collecting inputs for generating transactions from a specific account or set of accounts
+2) generating confirmed and unconfirmed balances for the accounts (there's actually multiples assets for each account)
+3) maintaining lists of transactions and pending transactions
+4) unwinding pending transactions and blockchain transactions that are rejected
 
+Two types of data in unconfirmed transactions: money in (can't trust for collecting transaction inputs) and money out (should trust for collecting transaction inputs as outputs that have already been spent).
+
+transaction_state: contains effects of a single transaction on the wallet(trx field is the "input" with the broadcast transaction data). We make a transaction_state for each transaction that impacts the wallet balances and we record the changes here to each of our wallet balances (we have balances for each asset type, and we have confirmed and unconfirmed balances for each asset type). Each account can hold multiple asset types. For simplification purposes, remaining documentation will consider the system as having one asset type.
+
+new data members for wallet:
+
+_block_transactions: map of transactions in blockchain that affect wallet. These get added by scanning blockchain (whenever we receive a new block) and are never removed (except if block is rejected later). This map just grows larger with time,so it should be handled by database eventually. These transactions may or may not yet be confirmed transactions, depending on how many blocks we have received since the block that included them.
+
+
+_pending_transactions: transactions not yet in a block. These get added whenever we generate or receive a transaction. They get removed whenever we find them in a block we are scanning (at that point we're moving them to _block_transactions database).
+These can't possibly be confirmed transactions, no need to check. 
+These transactions are primarily used for computing unconfirmed balances, they're not used for either confirmed balances or collecting inputs to fund transactions (so their outputs shouldn't be added to unspent_outputs). 
+However, they do spend our unspent_outputs, so we do need to remove them from unspent_outputs if they are there: they may or may not be there, depending on whether this is a locally generated transaction that we later receive (does this happen? Maybe not, as p2p code probably shouldn't receive it back...) (in which case we removed it while generating the transaction already, probably this could be done by calling same function that handles it for received transactions) or if it was a remotely generated transaction from another of our wallets (in which case this is first time this wallet learns about the transaction and it needs to remove it from unspent_outputs). Possibly we could check some map to see if the pending transaction has already been processed, but it shouldn't be a common case (most pending transactions we receive will be from others, not ourselves), so probably not worth the effort.
+Wallet needs to add new function that can be called by client code when a transaction is received (we'll call this same function when we locally generate a transaction).
+
+struct account
+  set<address_state> addresses //we uniquify address_state based on address public key
+  balance?
+  unconfirmed_balance?
+// Add an address to addresses member whenever we create a new address or move it to a different account. Should we have an option to delete an account? I suppose an account is implicitly deleted when all addresses are removed from it. Also, all addresses should belong to some account (there is a default account ("") that should be used when an address is created without specifying an account).
+  
+We need to track the unspent_outputs of an account to quickly collect inputs for transactions drawn from that account. The simplest way to do this is to draw from a conceptual union of the unspent_outputs of each address in the account (this simplifies switching addresses between accounts or even deleting an address from consideration entirely if desired).  
+
+map<address,outputs> _unspent_outputs_of_address;
+//Defines mapping from address to it's unspent outputs. 
+Add output to outputs subcontainer whenever we scan a transaction that outputs to the address(scan_output). What about outputs from pending transactions? Let's not add these yet, but instead wait until they've been included in a block (this will happen as part of normal block processing, no need for extra code). Inputs from pending transactions will call mark_as_spent to remove the associated outputs from _unspent_outputs. Eventually we also need to deal with cleaning out transactions coming from blocks that have been rejected (blockchain fork rollback).
+Remove from outputs subcontainer whenever we mark_as_spent.
+
+Invalidating a pending transaction:  need to handle when a pending transaction is canceled/invalidated by another transaction in a new block that spends one of the inputs to our pending transaction. 
+We detect this by submitting all pending transactions to blockchain.evaluate_transaction() whenever we receive a new block.
+
+Handling an invalidated transaction:
+1) we need to re-add any of the transaction inputs' outputs back to _unspent_outputs_of_address for their owning address (money wasn't spent because transaction was invalidated) (except any outputs spent by the "invalidating transaction", of which there should be at least one). TODO: How to handle the overlap of spending inputs between the transaction and the invalidating transaction?
+2) we need to remove any of the transaction's outputs from _unspent_outputs_of_address for their owning address (money wasn't delivered because transaction was invalidated).
+
+We also want to record any invalidated transactions.
+We're not going to consider invalidation between pending transactions.
+
+//address_state: this is only needed if we want to maintain running balances, but it simplifies many possible later changes if we implement it now. We may want to change the _unspent_outputs_of_address to map to these objects instead of outputs and add outputs as a member of this address state object.
+struct address_state
+  address
+  memo
+  account?
+  balance?
+  unconfirmed_balance?
+//do we need to map from addresses to their owning account? If so, we could store it in a field of the address_state object.
+
+The scan_output function scans pending and blockchain transactions. We always add outputs we find here
+to unspent outputs, but we should only add outputs that are from confirmed transactions now.
+Can such an output have already been spent (so it shouldn't be added)? It couldn't have been spent by this wallet, but maybe another wallet could have spent it if it had already processed the block as confirmed a little before we do, then issued out the spending transaction which we then receive and process before processing the original funding transaction in the block. This is an unlikely scenario, but it may be a hole we need to close in the future.
+
+In the current code, spent_outputs is being used to determine if an output is an output we control for balance calculations. But this can be done by checking output_ref_to_index (or output_index_to_ref). Do we have any need to keep track of spent_outputs? Maybe for assertion checking? Looks like not needed, remove.
 @code
+////////////////////////////////////new code
+//just a possible implementation, don't take this one too seriously yet
+compute_all_balances
+  foreach account in accounts
+    foreach address in account
+      foreach unspent output to address
+        if is_confirmed_transaction(output's transaction)
+          address.confirmed_balance += output.amount
+          account.confirmed_balance += address.confirmed_balance
+        else
+          address.unconfirmed_balance += output.amount
+          account.unconfirmed_balance += output.amount
 
-//returns a map of all the wallet transaction states (transaction_id -> transaction_state)
+bool is_confirmed_transaction(transaction_id)
+  if transaction_id in _block_transactions
+    return _transactions[transaction_id].block_number < current_block_number - REQUIRED_CONFIRMING_DELEGATES_COUNT
+  else
+    return false
+
+    //QUESTION: Should this return unconfirmed and pending transactions? Or should that be separately
+    //          accessible?
+    //returns a map of all the wallet transaction states (transaction_id -> transaction_state)
 get_transaction_history()
   return _data.transactions map;
   
-//transfer amount to an address
-transfer(amount,to-address,memo)
+//transfer amount to an address from an account (attach a memo to transaction itself eventually?)
+//transfer(amount,to-address,from-account,memo)
+transfer(to_address,amount,
   create transaction object and set to-address as first transaction output (a change output may also be added by next step)
-  collect_inputs_and_sign(transaction,amount,memo)
+  collect_inputs_and_sign(transaction,amount,from-account,memo)
   
 //this creates a transaction that says you want to be considered as a delegate  
 register_delegate(name,data)
@@ -183,7 +261,7 @@ output_index type: points to an output as (block_number,transaction_index_in_blo
 //For efficiency reasons, the wallet maps outputs as output_indexes. Need more description of nature of increased
 efficiency (space or time saving?).
 
-spent_outputs: this container points to transaction outputs in a transaction that have funds (outputs are unique)
+spent_outputs: this container points to transaction outputs in a transaction that have funds (outputs are unique). Looks like this is not needed, so remove it.
 
 unspent_outputs: this container points to transaction outputs in a transaction whose amounts have been transferred to another address (outputs are unique here)
 
@@ -257,8 +335,168 @@ result generate_next_block(chain_database,input_transactions)
   calculate and return result containing: new block number, 
      a list of all accepted transactions for new block, previous block id,
      merkle root of deterministic transactions for block, fee rate for next block,
-     total outstanding shares after removal of fees, and timestamp
+     total outstanding shares after removal of fees, and timestamp     
 
+
+     
+     
+     
+     
+     
+     
+     
+     
+
+////////////////////////////////////existing code              
+
+//returns a map of all the wallet transaction states (transaction_id -> transaction_state)
+get_transaction_history()
+  return _data.transactions map;
+  
+//transfer amount to an address
+transfer(amount,to-address,memo)
+  create transaction object and set to-address as first transaction output (a change output may also be added by next step)
+  collect_inputs_and_sign(transaction,amount,memo)
+  
+//this creates a transaction that says you want to be considered as a delegate  
+register_delegate(name,data)
+  create transaction object and set transaction output to claim_name_output with a newly generated public key for delegate
+  
+mark_as_spent(output_reference)
+  if output reference is not ours (not in output_ref_to_index map) or we've already spent it
+    just ignore it //consider if we can/should assert if already spent
+  else 
+    remove from unspent_outputs and move to spent_outputs
+  
+void sign_transaction( signed_transaction& transaction, addresses, bool mark_output_as_used = true)
+  sign transaction addresses and mark_as_spent the inputs if requested
+  
+collect_inputs_and_sign(transaction,requested_amount,required_signatures, change_address)
+  required_input = requested_amount
+  save off original inputs and outputs to transaction
+  do
+    restore original inputs and outputs to transaction (this is not efficient, but I suppose we don't care right now)
+    total_input = required_amount
+    new_inputs = collect_inputs(required_input, total_input, required_signatures)
+    add new_inputs to transaction
+    change_amount = total_input - requested_input;
+    add output transaction to change_address for change_amount
+    if requested transaction is not in base asset type
+      return collect_inputs_and_sign again //explain why this is done in more detail
+      
+    sign transaction with any required_signatures (doesn't mark inputs as spent here)
+    compute fee from transaction size
+    required_input += fee
+    if (total_input < required_input)
+      continue;
+    Calculate leftover change
+    change_amount = total_input - required_input
+  while (total_input < required_input);
+  change_amount = total_input - required_fee
+  if change_amount > 0
+    update change output transaction with current change amount
+  else
+    remove change output from transaction
+  clear transactions signatures
+  re-sign transaction, this time marking inputs as spent
+  
+//Collect inputs that total to at least requested_amount.
+inputs collect_inputs(requested_amount, total_input, required_signatures)
+  for each unspent output
+    if output contains proper asset type
+      create an input using this output
+      total_input += output's amount
+      add this output as a required signature for the transaction
+      if (total_input.get_rounded_amount() > requested_amount.get_rounded_amount())
+        return inputs
+  throw "insufficient funds"
+        
+
+
+receive_addresses: these are public keys we control that may be referenced in transaction endpoints. They have no balances until a transaction specifies an output to a receive address.
+
+output_reference type: points to an output as (transaction_hash, output_index_in_transaction)
+
+output_index type: points to an output as (block_number,transaction_index_in_block, output_index_in_transaction)
+//For efficiency reasons, the wallet maps outputs as output_indexes. Need more description of nature of increased
+efficiency (space or time saving?).
+
+spent_outputs: this container points to transaction outputs in a transaction that have funds (outputs are unique). Looks like this is not needed, so remove it.
+
+unspent_outputs: this container points to transaction outputs in a transaction whose amounts have been transferred to another address (outputs are unique here)
+
+bool scan_input(transaction_state,output,output_reference,output_index)
+  if we control the input's output source(it's in our spent or unspent outputs)
+    decrease delta balance of transaction by output amount (this input is our money being spent)
+    return true (input affects wallet)
+  else
+    return false
+
+bool scan_output(transaction_state,output,output_reference,output_index)
+  if we control the output (if output's address is one of our receive addresses)
+    increase delta balance of transaction by output amount (this is money being sent to us)
+    add output to unspent_outputs
+    return true (output affects wallet)
+  else
+    return false
+  
+bool scan_transaction(transaction_state, block_index, transaction_index)
+  foreach input in the transaction
+    if output in output_ref_to_index
+      scan_input(...)
+      mark_as_spent(output_ref) //move from unspent to spent outputs container
+  for each output in the transaction
+    scan_output(...)
+  return true if any input or output affects addresses we control
+  
+scan_chain(chain_database, from_block_num, scan_progress_callback)
+  foreach block starting from_block_num
+    foreach transaction
+      check if any callback is registered for reporting progress of scanning transactions
+      fetch from chain
+      found_output = scan_transaction
+      if found_output 
+        add new transaction state to map (effectively a set) of transactions affecting wallet
+    foreach deterministic transaction
+      fetch from chain
+      found_output = scan_transaction
+      if found_output 
+        add new transaction state to map of transactions affecting wallet
+  set_fee_rate(chain.get_fee_rate())
+  _stake = chain.get_stake()
+  _last_scanned_block_num = head_block_num
+  return if a new input was found or an output was spent
+
+//probably should cache the balances for each asset type instead
+get_balance(asset_type)
+  sum up the unspent_outputs for the requested asset type  
+
+collect_mining_input (deprecated, remove?)
+
+//generate next block from a set of pending transactions
+result generate_next_block(chain_database,input_transactions)
+  chain_db.generate_deterministic_transactions()  
+  foreach transaction in input_transactions
+    validate transaction and discard if invalid (transaction validated in isolation)
+    compute fee for transaction
+    if transaction fee < fee_rate * transaction size
+      report enough fee wasn't paid and skip transaction
+    else
+      add to valid_transactions
+  sort transactions with highest fees first
+  foreach transaction in valid_transactions
+    foreach transaction input
+      if transaction in consumed_outputs
+        mark transaction to be skipped
+      else
+        add transaction to consumed_outputs
+    if transaction has no consumed_outputs
+      try to add it to block (evaluted in context of already added transactions)
+  calculate and return result containing: new block number, 
+     a list of all accepted transactions for new block, previous block id,
+     merkle root of deterministic transactions for block, fee rate for next block,
+     total outstanding shares after removal of fees, and timestamp     
+     
 @endcode
      
 ## General Notes
@@ -648,7 +886,7 @@ import_private_key(BTS):
                                          {"label",       "string",       true}},
                     /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
 
-sendtransaction(BTS, rename _send_transaction):
+_send_transaction(BTS)
                    /* description */ "Broadcast a previously-created signed transaction to the network",
                    /* returns: */    "transaction_id",
                    /* params:          name                  type                   required */ 

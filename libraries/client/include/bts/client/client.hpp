@@ -38,6 +38,12 @@ namespace bts { namespace client {
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
 
+         /**
+          *  Reserve a name and broadcast it to the network.
+          */
+         transaction_id_type reserve_name( const std::string& name, const fc::variant& data );
+         transaction_id_type register_delegate( const std::string& name, const fc::variant& data );
+
          fc::path                            get_data_dir()const;
 
          // returns true if the client is connected to the network (either server or p2p)

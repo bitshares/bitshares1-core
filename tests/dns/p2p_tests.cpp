@@ -132,7 +132,7 @@ class DNSTestState
             validator->skip_time(fc::seconds(DNS_TEST_BLOCK_SECS));
 
             if (txs.size() <= 0)
-                txs.push_back(wallet->transfer(DNS_TEST_PRICE1, random_addr(wallet)));
+                txs.push_back(wallet.send_to_address(DNS_TEST_PRICE1, random_addr(wallet)));
 
             auto next_block = wallet->generate_next_block(*db, txs);
             next_block.sign(auth);
