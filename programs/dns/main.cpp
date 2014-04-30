@@ -105,7 +105,7 @@ int main( int argc, char** argv )
          c->run_trustee(key);
       }
 
-      bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::dns::dns_rpc_server>();
+      bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::dns::p2p::p2p_rpc_server>();
       rpc_server->set_client(c);
 
 
