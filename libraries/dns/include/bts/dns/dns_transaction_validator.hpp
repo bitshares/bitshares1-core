@@ -29,6 +29,9 @@ class dns_tx_evaluation_state : public bts::blockchain::transaction_evaluation_s
 class dns_block_evaluation_state : public bts::blockchain::block_evaluation_state
 {
     public:
+        dns_block_evaluation_state( bts::blockchain::chain_database* blockchain )
+        :bts::blockchain::block_evaluation_state( blockchain ){}
+
         std::vector<std::string> name_pool;
 };
 
