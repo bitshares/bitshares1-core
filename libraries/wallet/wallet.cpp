@@ -491,7 +491,7 @@ namespace bts { namespace wallet {
    void wallet::save()
    { try {
       ilog( "saving wallet\n" );
-      FC_ASSERT(is_open());
+      if( !is_open() ) return;
 
       auto wallet_json = fc::json::to_pretty_string( my->_data );
       std::vector<char> data( wallet_json.begin(), wallet_json.end() );
@@ -677,7 +677,7 @@ namespace bts { namespace wallet {
    bool wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
 
 
-   signed_transaction wallet::transfer( const asset& amnt, const address& to, const std::string& memo )
+   signed_transaction wallet::send_to_address( const asset& amnt, const address& to, const std::string& memo )
    { try {
        signed_transaction trx;
        trx.outputs.push_back(trx_output(claim_by_signature_output(to), amnt));

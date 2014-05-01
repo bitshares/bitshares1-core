@@ -738,7 +738,7 @@ Examples:
        if (params.size() >= 3)
          comment = params[2].as_string();
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
-       return fc::variant(_client->get_wallet()->transfer(asset(amount), destination_address, comment));
+       return fc::variant(_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
     }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
@@ -793,7 +793,7 @@ Examples:
       if (params.size() >= 3)
         comment = params[2].as_string();
       // TODO: we're currently ignoring optional 4, [to-comment]
-      bts::blockchain::signed_transaction trx = _client->get_wallet()->transfer( asset(amount,0), destination_address, comment);
+      bts::blockchain::signed_transaction trx = _client->get_wallet()->send_to_address( asset(amount,0), destination_address, comment);
       _client->broadcast_transaction(trx);
       return fc::variant( trx.id() ); 
     }

@@ -44,7 +44,7 @@ namespace bts { namespace dns {
          FC_ASSERT( params.size() == 2 );
          auto amount = params[0].as<bts::blockchain::asset>();
          auto addr   = params[1].as_string();
-         auto trx    = _client->get_wallet()->transfer( amount, addr );
+         auto trx    = _client->get_wallet()->send_to_address( amount, addr );
          get_client()->broadcast_transaction(trx);
          return fc::variant( trx.id() );
      });
