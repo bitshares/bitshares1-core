@@ -176,6 +176,15 @@ namespace bts { namespace blockchain {
           FC_ASSERT( sum.fees >= state.get_required_fees(0), "",
                      ("fees",sum.fees)("required",state.get_required_fees()));
        }
+
+       /** calculate the resulting delegate voting percent for this transaction */
+       int64_t total_shares = _db->total_shares();
+       int64_t initial_vote = trx_delegate->total_votes();
+       int64_t delta_vote   = to_bips( (state.trx.vote / abs(state.trx.vote)) * state.get_total_out(0), total_shares);
+       int64_t percent = (((initial_vote + delta_vote) * 10000) / BTS_BLOCKCHAIN_BIP) / 100; 
+       FC_ASSERT( percent <  2*(100/BTS_BLOCKCHAIN_DELEGATES) );
+
+
        return sum;
    } FC_RETHROW_EXCEPTIONS( warn, "") }
 

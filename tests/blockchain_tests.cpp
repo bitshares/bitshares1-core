@@ -11,8 +11,35 @@
 #include <fc/thread/thread.hpp>
 
 #include <iostream>
+#include <iomanip>
 using namespace bts::wallet;
 using namespace bts::blockchain;
+
+   void list_delegates( chain_database& db )
+   {
+        auto delegates = db.get_delegates( );
+
+        std::cerr<<"Delegate Ranking\n";
+        std::cerr<<std::setw(6)<<"Rank "<<"  "
+                 <<std::setw(6)<<"ID"<<"  "
+                 <<std::setw(18)<<"NAME"<<"  "
+                 <<std::setw(18)<<"VOTES FOR"<<"  "
+                 <<std::setw(18)<<"VOTES AGAINST"<<"  "
+                 <<"    PERCENT\n";
+        std::cerr<<"==========================================================================================\n";
+        for( uint32_t i = 0; i < delegates.size(); ++i )
+        {
+           std::cerr << std::setw(6)  << i               << "  "
+                     << std::setw(6)  << delegates[i].delegate_id   << "  "
+                     << std::setw(18) << delegates[i].name          << "  "
+                     << std::setw(18) << delegates[i].votes_for     << "  "
+                     << std::setw(18) << delegates[i].votes_against << "  "
+                     << std::setw(18) << double((delegates[i].total_votes()*10000)/BTS_BLOCKCHAIN_BIP)/100  << "%   |\n";
+           ++i;
+        }
+
+      // client()->get_chain()->dump_delegates( count );
+   }
 
 trx_block generate_genesis_block( const std::vector<address>& addr )
 {
@@ -260,7 +287,8 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
               wall.scan_chain( db );
               wall.dump_unspent_outputs();
           }
-          //db.dump_delegates();
+
+          list_delegates( db );
        }
    }
    catch ( const fc::exception& e )
