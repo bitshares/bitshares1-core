@@ -39,6 +39,9 @@ namespace bts { namespace rpc {
       fc::optional<std::string> currentwallet();
       bool closewallet();
       uint32_t getconnectioncount();
+      fc::variants getpeerinfo();
+      void _set_advanced_node_parameters(const fc::variant_object& params);
+      void addnode(const fc::ip::endpoint& node, const std::string& command);
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -144,6 +147,19 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<uint32_t>("getconnectioncount");
     }
+    fc::variants rpc_client_impl::getpeerinfo()
+    {
+      return _json_connection->async_call("getpeerinfo").wait().get_array();
+    }
+    void rpc_client_impl::_set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      _json_connection->async_call("_set_advanced_node_parameters", fc::variant(params)).wait();
+    }
+    void rpc_client_impl::addnode(const fc::ip::endpoint& node, const std::string& command)
+    {
+      _json_connection->async_call("addnode", (std::string)node, command).wait();
+    }
+
   } // end namespace detail
 
 
@@ -241,6 +257,18 @@ namespace bts { namespace rpc {
   uint32_t rpc_client::getconnectioncount()
   {
     return my->getconnectioncount();
+  }
+  fc::variants rpc_client::getpeerinfo()
+  {
+    return my->getpeerinfo();
+  }
+  void rpc_client::_set_advanced_node_parameters(const fc::variant_object& params)
+  {
+    my->_set_advanced_node_parameters(params);
+  }
+  void rpc_client::addnode(const fc::ip::endpoint& node, const std::string& command)
+  {
+    my->addnode(node, command);
   }
 
 } } // bts::rpc

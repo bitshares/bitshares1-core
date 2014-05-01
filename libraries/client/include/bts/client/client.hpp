@@ -49,6 +49,9 @@ namespace bts { namespace client {
          // returns true if the client is connected to the network (either server or p2p)
          bool is_connected() const;
          uint32_t get_connection_count() const;
+         fc::variants get_peer_info() const;
+         void set_advanced_node_parameters(const fc::variant_object& params);
+         void addnode(const fc::ip::endpoint& node, const std::string& command);
 
          void configure( const fc::path& configuration_directory );
 
