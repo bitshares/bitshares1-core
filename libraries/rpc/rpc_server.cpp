@@ -49,7 +49,11 @@ namespace bts { namespace rpc {
              (get_delegates)\
              (reserve_name)\
              (register_delegate)\
-             (get_names)
+             (get_names)\
+             (getpeerinfo)\
+             (_set_advanced_node_parameters)\
+             (addnode)
+
 
 
 
@@ -1247,11 +1251,94 @@ Examples:
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getconnectioncount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 
 )" };
-    fc::variant rpc_server_impl::getconnectioncount(const fc::variants& params)
+    fc::variant rpc_server_impl::getconnectioncount(const fc::variants&)
     {
       return fc::variant(_client->get_connection_count());
     }
 
+    static rpc_server::method_data getpeerinfo_metadata{"getpeerinfo", nullptr,
+            /* description */ "Returns data about each connected node.",
+            /* returns: */    "vector<jsonobject>",
+            /* params:     */ {},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+getpeerinfo
+
+Returns data about each connected network node as a json array of objects.
+
+bResult:
+[
+{
+"addr":"host:port", (string) The ip address and port of the peer
+"addrlocal":"ip:port", (string) local address
+"services":"00000001", (string) The services
+"lastsend": ttt, (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last send
+"lastrecv": ttt, (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last receive
+"bytessent": n, (numeric) The total bytes sent
+"bytesrecv": n, (numeric) The total bytes received
+"conntime": ttt, (numeric) The connection time in seconds since epoch (Jan 1 1970 GMT)
+"pingtime": n, (numeric) ping time
+"pingwait": n, (numeric) ping wait
+"version": v, (numeric) The peer version, such as 7001
+"subver": "/Satoshi:0.8.5/", (string) The string version
+"inbound": true|false, (boolean) Inbound (true) or Outbound (false)
+"startingheight": n, (numeric) The starting height (block) of the peer
+"banscore": n, (numeric) The ban score (stats.nMisbehavior)
+"syncnode" : true|false (boolean) if sync node
+}
+,...
+}
+
+Examples:
+> bitcoin-cli getpeerinfo 
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getpeerinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+)" };
+    fc::variant rpc_server_impl::getpeerinfo(const fc::variants&)
+    {
+      return _client->get_peer_info();
+    }
+
+    static rpc_server::method_data _set_advanced_node_parameters_metadata{"_set_advanced_node_parameters", nullptr,
+            /* description */ "Sets advanced node parameters, used for setting up automated tests",
+            /* returns: */    "null",
+            /* params:     */ { {"params", "jsonobject", true} },
+          /* prerequisites */ rpc_server::json_authenticated,
+  R"(
+Result:
+null
+  )" };
+    fc::variant rpc_server_impl::_set_advanced_node_parameters(const fc::variants& params)
+    {
+      _client->set_advanced_node_parameters(params[0].get_object());
+      return fc::variant();
+    }
+
+    static rpc_server::method_data addnode_metadata{"addnode", nullptr,
+            /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
+            /* returns: */    "null",
+            /* params:          name            type            required */ 
+                              {{"node",         "string",       true},
+                               {"command",      "string",       true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+addnode "node" "add|remove|onetry"
+
+Attempts add or remove a node from the addnode list.
+Or try a connection to a node once.
+
+Arguments:
+1. "node" (string, required) The node (see getpeerinfo for nodes)
+2. "command" (string, required) 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once
+
+Examples:
+> bitcoin-cli addnode "192.168.0.6:8333" "onetry"
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "addnode", "params": ["192.168.0.6:8333", "onetry"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+)" };
+    fc::variant rpc_server_impl::addnode(const fc::variants& params)
+    {
+      _client->addnode(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
+      return fc::variant();
+    }
 
   } // detail
 

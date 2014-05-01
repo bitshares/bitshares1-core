@@ -16,6 +16,7 @@ namespace bts {
    namespace blockchain {
 
     namespace detail  { class chain_database_impl; }
+    uint64_t to_bips( uint64_t shares, uint64_t total_shares );
 
     struct name_record
     {

@@ -106,6 +106,7 @@ namespace bts { namespace net {
       void close_connection();
 
       fc::optional<fc::ip::endpoint> get_remote_endpoint();
+      fc::ip::endpoint get_local_endpoint();
       void set_remote_endpoint(fc::optional<fc::ip::endpoint> new_remote_endpoint);
 
       bool busy();
@@ -249,6 +250,8 @@ namespace bts { namespace net {
       uint32_t             _desired_number_of_connections;
       /** if we have _maximum_number_of_connections or more, we will refuse any inbound connections */
       uint32_t             _maximum_number_of_connections;
+      /** retry connections to peers that have failed or rejected us this often, in seconds */
+      uint32_t              _peer_connection_retry_timeout;
 
       fc::tcp_server       _tcp_server;
       fc::future<void>     _accept_loop_complete;
@@ -339,9 +342,11 @@ namespace bts { namespace net {
       void listen_on_endpoint(const fc::ip::endpoint& ep);
       void listen_on_port(uint16_t port);
       std::vector<peer_status> get_connected_peers() const;
+      uint32_t get_connection_count() const;
       void broadcast(const message& item_to_broadcast);
       void sync_from(const item_id&);
       bool is_connected() const;
+      void set_advanced_node_parameters(const fc::variant_object& params);
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -414,6 +419,11 @@ namespace bts { namespace net {
     {
       return _remote_endpoint;
     }
+    fc::ip::endpoint peer_connection::get_local_endpoint()
+    {
+      return _message_connection.get_socket().local_endpoint();
+    }
+
     void peer_connection::set_remote_endpoint(fc::optional<fc::ip::endpoint> new_remote_endpoint)
     {
       _remote_endpoint = new_remote_endpoint;
@@ -436,8 +446,9 @@ namespace bts { namespace net {
     node_impl::node_impl() : 
       _delegate(nullptr),
       _user_agent_string("bts::net::node"),
-      _desired_number_of_connections(3),
-      _maximum_number_of_connections(5),
+      _desired_number_of_connections(8),
+      _maximum_number_of_connections(12),
+      _peer_connection_retry_timeout(60 * 5),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0)
     {
@@ -491,7 +502,7 @@ namespace bts { namespace net {
             ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
             if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
                 ((iter->last_connection_disposition != last_connection_failed && iter->last_connection_disposition != last_connection_rejected) ||
-                 iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(60 * 5)))
+                 iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
             {
               connect_to(iter->endpoint);
               initiated_connection_this_pass = true;
@@ -853,7 +864,21 @@ namespace bts { namespace net {
         }
       }
       else
-        FC_THROW("unexpected hello_message from peer");
+      {
+        // we can wind up here if we've connected to ourself, and the source and
+        // destination endpoints are the same, causing messages we send out
+        // to arrive back on the initiating socket instead of the receiving
+        // socket.  If we did a complete job of enumerating local addresses,
+        // we could avoid directly connecting to ourselves, or at least detect
+        // immediately when we did it and disconnect.
+
+        // The only way I know of that we'd get an unexpected hello that we 
+        //  can't really guard against is if we do a simulatenous open, we 
+        // probably need to think through that case.  We're not attempting that
+        // yet, though, so it's ok to just disconnect here.
+        wlog("unexpected hello_message from peer, disconnecting");
+        disconnect_from_peer(originating_peer);
+      }
     }
 
     void node_impl::on_hello_reply_message(peer_connection* originating_peer, const hello_reply_message& hello_reply_message_received)
@@ -1574,7 +1599,7 @@ namespace bts { namespace net {
 
       try
       {
-        new_peer->connect_to(remote_endpoint/* ,  _node_configuration.listen_endpoint */);  // blocks until the connection is established and secure connection is negotiated
+        new_peer->connect_to(remote_endpoint, _node_configuration.listen_endpoint);  // blocks until the connection is established and secure connection is negotiated
 
         // connection succeeded.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_succeeded;
@@ -1620,12 +1645,14 @@ namespace bts { namespace net {
         }
         catch (fc::parse_error_exception& parse_error)
         {
-          elog("malformed node configuration file ${filename}: ${error}", ("filename", configuration_file_name)("error", parse_error.to_detail_string()));
+          elog("malformed node configuration file ${filename}: ${error}", 
+               ("filename", configuration_file_name)("error", parse_error.to_detail_string()));
           throw;
         }
         catch (fc::exception& except)
         {
-          elog("unexpected exception while reading configuration file ${filename}: ${error}", ("filename", configuration_file_name)("error", except.to_detail_string()));
+          elog("unexpected exception while reading configuration file ${filename}: ${error}", 
+               ("filename", configuration_file_name)("error", except.to_detail_string()));
           throw;
         }
       }
@@ -1637,7 +1664,8 @@ namespace bts { namespace net {
       }
       catch (fc::exception& except)
       {
-        elog("unable to open peer database ${filename}: ${error}", ("filename", potential_peer_database_file_name)("error", except.to_detail_string()));
+        elog("unable to open peer database ${filename}: ${error}", 
+             ("filename", potential_peer_database_file_name)("error", except.to_detail_string()));
         throw;
       }
     }
@@ -1653,6 +1681,7 @@ namespace bts { namespace net {
       {
         try
         {
+          _tcp_server.set_reuse_address();
           if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
             _tcp_server.listen(_node_configuration.listen_endpoint);
           else
@@ -1665,7 +1694,14 @@ namespace bts { namespace net {
 
     void node_impl::add_node(const fc::ip::endpoint& ep)
     {
-      // TODO
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(ep);
+      // if we've recently connected to this peer, reset the last_connection_attempt_time to allow 
+      // us to immediately retry this peer
+      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
+                                                                                      fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
+        
+      _potential_peer_db.update_entry(updated_peer_record);
+      trigger_p2p_network_connect_loop();
     }
 
     void node_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -1675,6 +1711,8 @@ namespace bts { namespace net {
 
       ilog("node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint));
       peer_connection_ptr new_peer(std::make_shared<peer_connection>(std::ref(*this)));
+      new_peer->get_socket().open();
+      new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint(remote_endpoint);
       _handshaking_connections.insert(new_peer);
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
@@ -1740,7 +1778,40 @@ namespace bts { namespace net {
 
     std::vector<peer_status> node_impl::get_connected_peers() const
     {
-      return std::vector<peer_status>();
+      std::vector<peer_status> statuses;
+      for (const peer_connection_ptr& peer : _active_connections)
+      {
+        peer_status this_peer_status;
+        this_peer_status.version = 0; // TODO
+        fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
+        if (endpoint)
+          this_peer_status.host = *endpoint;
+        fc::mutable_variant_object peer_details;
+        peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
+        peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
+        peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
+        peer_details["lastsend"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["lastrecv"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["bytessent"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["bytesrecv"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["conntime"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["pingtime"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["pingwait"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["version"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["subver"] = peer->user_agent;
+        peer_details["inbound"] = peer->direction == peer_connection_direction::inbound;
+        peer_details["startingheight"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["banscore"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["syncnode"] = ""; // TODO: fill me for bitcoin compatibility
+        this_peer_status.info = peer_details;
+        statuses.push_back(this_peer_status);
+      }
+      return statuses;
+    }
+
+    uint32_t node_impl::get_connection_count() const
+    {
+      return _active_connections.size();
     }
 
     void node_impl::broadcast(const message& item_to_broadcast)
@@ -1766,6 +1837,16 @@ namespace bts { namespace net {
     bool node_impl::is_connected() const
     {
       return !_active_connections.empty();
+    }
+
+    void node_impl::set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      if (params.contains("peer_connection_retry_timeout"))
+        _peer_connection_retry_timeout = (uint32_t)params["peer_connection_retry_timeout"].as_uint64();
+      if (params.contains("desired_number_of_connections"))
+        _desired_number_of_connections = (uint32_t)params["desired_number_of_connections"].as_uint64();
+      if (params.contains("maximum_number_of_connections"))
+        _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
     }
 
   }  // end namespace detail
@@ -1824,6 +1905,11 @@ namespace bts { namespace net {
     return my->get_connected_peers();
   }
 
+  uint32_t node::get_connection_count() const
+  {
+    return my->get_connection_count();
+  }
+
   void node::broadcast(const message& msg)
   {
     my->broadcast(msg);
@@ -1837,6 +1923,10 @@ namespace bts { namespace net {
   bool node::is_connected() const
   {
     return my->is_connected();
+  }
+  void node::set_advanced_node_parameters(const fc::variant_object& params)
+  {
+    my->set_advanced_node_parameters(params);
   }
 
 } } // end namespace bts::net
