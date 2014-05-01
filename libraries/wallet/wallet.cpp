@@ -491,7 +491,7 @@ namespace bts { namespace wallet {
    void wallet::save()
    { try {
       ilog( "saving wallet\n" );
-      FC_ASSERT(is_open());
+      if( !is_open() ) return;
 
       auto wallet_json = fc::json::to_pretty_string( my->_data );
       std::vector<char> data( wallet_json.begin(), wallet_json.end() );
