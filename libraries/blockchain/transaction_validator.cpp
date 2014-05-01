@@ -81,6 +81,21 @@ namespace bts { namespace blockchain {
          _output_votes[did] = votes.get_rounded_amount();
       else
          itr->second += votes.get_rounded_amount();
+
+      enforce_max_delegate_vote( did );
+   }
+
+   void block_evaluation_state::enforce_max_delegate_vote( int32_t did )
+   {
+      if( did < 0 ) return; // negative votes can never push us over the limit
+      add_output_delegate_votes( -did, asset() ); // initialize to 0 
+      
+      auto current_delegate_record = _blockchain->lookup_delegate( did );
+      auto delta_bips = to_bips( _output_votes[did] - _output_votes[-did], _blockchain->total_shares() );
+      FC_ASSERT( delta_bips + current_delegate_record->total_votes() < (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_DELEGATES), 
+                 "no delegate may receive more than 2x the votes a delegate would receive if all delegates received equal votes",
+                 ("delta_bips",delta_bips)("output_votes[did]",_output_votes[did])("output_votes[-did]",_output_votes[-did])
+                 ("LIMIT", (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_DELEGATES)) );
    }
 
    void transaction_evaluation_state::add_input_asset( asset a )
@@ -123,7 +138,7 @@ namespace bts { namespace blockchain {
 
    block_evaluation_state_ptr transaction_validator::create_block_state()const
    {
-      return std::make_shared<block_evaluation_state>();
+      return std::make_shared<block_evaluation_state>(_db);
    }
 
    transaction_summary transaction_validator::evaluate( const signed_transaction& trx, 

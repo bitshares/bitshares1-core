@@ -15,7 +15,7 @@ dns_transaction_validator::~dns_transaction_validator()
 
 block_evaluation_state_ptr dns_transaction_validator::create_block_state() const
 {
-    return std::make_shared<dns_block_evaluation_state>();
+    return std::make_shared<dns_block_evaluation_state>(_db);
 }
 
 transaction_summary dns_transaction_validator::evaluate(const signed_transaction &tx,

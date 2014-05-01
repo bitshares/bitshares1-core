@@ -42,7 +42,6 @@ namespace bts { namespace blockchain {
             r.insert( pts_address(fc::ecc::public_key( signed_key_data ),false,0) );
             r.insert( pts_address(fc::ecc::public_key( signed_key_data ),true,0) );
        }
-       ilog( "${signed_addr}", ("signed_addr",r) );
        return r;
    }
 

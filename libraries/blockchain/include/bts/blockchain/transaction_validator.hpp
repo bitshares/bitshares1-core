@@ -38,6 +38,9 @@ namespace bts { namespace blockchain {
    class block_evaluation_state
    {
       public:
+         block_evaluation_state( chain_database* blockchain )
+         :_blockchain( blockchain ) {}
+         
          virtual ~block_evaluation_state(){}
          void add_name_output( const claim_name_output& o )
          {
@@ -50,6 +53,9 @@ namespace bts { namespace blockchain {
          std::unordered_map<std::string,claim_name_output> _name_outputs;
          std::unordered_map<int32_t,uint64_t>              _input_votes;
          std::unordered_map<int32_t,uint64_t>              _output_votes;
+         chain_database*                                   _blockchain;
+
+         void enforce_max_delegate_vote( int32_t did );
    };
 
    typedef std::shared_ptr<block_evaluation_state> block_evaluation_state_ptr;
