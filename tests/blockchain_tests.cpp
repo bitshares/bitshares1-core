@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           std::vector<signed_transaction> trxs;
           for( uint32_t i = 0; i < 5; ++i )
           {
-             auto trx = wall.transfer( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
+             auto trx = wall.send_to_address( asset( double( rand() % 1000 ) ), addrs[ rand()%addrs.size() ] );
              trxs.push_back( trx );
           }
           sim_validator->skip_time( fc::seconds(60*5) );

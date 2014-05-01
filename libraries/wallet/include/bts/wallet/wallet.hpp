@@ -209,7 +209,7 @@ namespace wallet {
            void                  lock_wallet();
            bool                  is_locked()const;
 
-           signed_transaction    transfer( const asset& amnt, 
+           signed_transaction    send_to_address( const asset& amnt, 
                                            const address& to, 
                                            const std::string& memo = "change" );
 
