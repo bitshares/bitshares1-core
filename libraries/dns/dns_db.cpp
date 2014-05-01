@@ -1,3 +1,4 @@
+#include <bts/blockchain/output_factory.hpp>
 #include <bts/dns/dns_db.hpp>
 #include <bts/dns/dns_outputs.hpp>
 
