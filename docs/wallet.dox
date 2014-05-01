@@ -102,6 +102,17 @@ If a transaction has already been submitted to the network but not yet accepted 
 The transaction fee rate is calculated in the blockchain code and stored into the previous block as "next fee". Fee is validated by all full clients, so the generating delegate can't place an arbitrarily high fee to lock up the network. This means the fee doesn't
 actually have to be included in the blockchain, but it's included for now for potential use of some sort by a lightweight client or if old blocks have been discarded from the blockchain.
 
+## Possible ways to annotate a transaction received by the wallet
+- Check addresses receiving or sending the money against our "send_to" and "receiving_addresses".
+- For receiving addresses, can also show the memo tied to account that contains the address.
+
+## Possible ways to annotate a transaction generated in the wallet
+Everything in the above section ("received by the wallet") can be used to document the transaction, plus a user can add a memo to indicate the purpose of the specific transaction when he generates it. There's also some interesting documentation possibilities here for when we generate a series of transactions using the contact authorization system of shared public key generation.
+
+To summarize, we can annotate the following information to a transaction:
+transaction memo (only for transactions generated in this wallet), sending account memo, sending address memo, and receiving address memo.
+
+
 ## Wallet GUI additional features
 - Display table of all transactions sortable by different column fields
 
@@ -185,16 +196,15 @@ unspent_outputs: this container points to transaction outputs in a transaction w
 //we use these to track wallet information such as current balances for each receiving address in the wallet
 struct receiving_address : public address?
   address
-  memo
-  owning_account?
-  map<output_index, trx_output> unspent_outputs
-  balance?
-  unconfirmed_balance?
+  memo //describes nature of this address (e.g. who sends money to it)
+  map<output_index, trx_output> unspent_outputs //for computing balances and collecting inputs for transactions
+  owning_account? //any use for this?
+  //not going to cache balances, as it would require re-computation everytime transaction becomes confirmed
+  //balance? 
+  //unconfirmed_balance?
 
 struct account
   set<receiving_address> addresses //we uniquify address_state based on address public key
-  balance?
-  unconfirmed_balance?
   //should we have an account memo also?
   get_unspent_outputs() returns union of unspent_outputs of all addresses in acount
 
