@@ -339,7 +339,62 @@ namespace bts { namespace client {
       if (my->_chain_client)
         return my->_chain_client->is_connected() ? 1 : 0;
       else
-        return my->_p2p_node->get_connected_peers().size();
+        return my->_p2p_node->get_connection_count();
+    }
+
+    fc::variants client::get_peer_info() const
+    {
+      fc::variants results;
+      if (my->_p2p_node)
+      {
+        std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
+        for (const bts::net::peer_status& peer_status : peer_statuses)
+        {
+          results.push_back(peer_status.info);
+        }
+      }
+      else
+      {
+        if (my->_chain_client->is_connected())
+        {
+          // fake up some data.  Since we aren't likely to keep the chain_client code
+          // around, we won't go through the trouble of making it accurate yet
+          fc::mutable_variant_object peer_details;
+          peer_details["addr"] = "127.0.0.1:1234";
+          peer_details["addrlocal"] = "127.0.0.1:1234";
+          peer_details["services"] = "00000001";
+          peer_details["lastsend"] = "";
+          peer_details["lastrecv"] = "";
+          peer_details["bytessent"] = "";
+          peer_details["bytesrecv"] = "";
+          peer_details["conntime"] = "";
+          peer_details["pingtime"] = "";
+          peer_details["pingwait"] = "";
+          peer_details["version"] = "";
+          peer_details["subver"] = "";
+          peer_details["inbound"] = false;
+          peer_details["startingheight"] = "";
+          peer_details["banscore"] = "";
+          peer_details["syncnode"] = "";
+          results.push_back(peer_details);
+        }
+      }
+      return results;
+    }
+
+    void client::addnode(const fc::ip::endpoint& node, const std::string& command)
+    {
+      if (my->_p2p_node)
+      {
+        if (command == "add")
+          my->_p2p_node->add_node(node);          
+      }
+    }
+
+    void client::set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      if (my->_p2p_node)
+        my->_p2p_node->set_advanced_node_parameters(params);
     }
 
     void client::listen_on_port(uint16_t port_to_listen)

@@ -5,6 +5,15 @@
 #include <boost/scope_exit.hpp>
 #include <boost/algorithm/string/join.hpp>
 
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/exterior_property.hpp>
+#include <boost/graph/floyd_warshall_shortest.hpp>
+#include <boost/graph/eccentricity.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/graph/copy.hpp>
+
 #include <sstream>
 #include <fstream>
 #include <iomanip>
@@ -271,8 +280,8 @@ void bts_client_process::launch(uint32_t process_number,
     options.push_back("--p2p");
     options.push_back("--port");
     options.push_back(boost::lexical_cast<std::string>(p2p_port));
-    options.push_back("--connect-to");
-    options.push_back(std::string("127.0.0.1:") + boost::lexical_cast<std::string>(bts_xt_client_test_config::base_p2p_port));
+    /* options.push_back("--connect-to");
+    options.push_back(std::string("127.0.0.1:") + boost::lexical_cast<std::string>(bts_xt_client_test_config::base_p2p_port)); */
   }
   if (genesis_block)
   {
@@ -305,12 +314,22 @@ struct bts_client_launcher_fixture
   bts::net::genesis_block_config genesis_block;
   fc::ecc::private_key trustee_key = fc::ecc::private_key::generate();
 
+  uint32_t _peer_connection_retry_timeout;
+  uint32_t _desired_number_of_connections;
+  uint32_t _maximum_number_of_connections;
+  bts_client_launcher_fixture() :
+    _peer_connection_retry_timeout(15 /* sec */),
+    _desired_number_of_connections(3),
+    _maximum_number_of_connections(5)
+  {}
+
   //const uint32_t test_process_count = 10;
   
   void create_trustee_and_genesis_block();
   void launch_server();
   void launch_clients();
   void establish_rpc_connections();
+  void trigger_network_connections();
   void import_initial_balances();
 };
 
@@ -366,6 +385,22 @@ void bts_client_launcher_fixture::establish_rpc_connections()
     client_processes[i].rpc_client->login(RPC_USERNAME, RPC_PASSWORD);
 }
 
+void bts_client_launcher_fixture::trigger_network_connections()
+{
+  BOOST_TEST_MESSAGE("Triggering network connections between active processes");
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::mutable_variant_object parameters;
+    parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
+    parameters["desired_number_of_connections"] = _desired_number_of_connections;
+    parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
+    client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
+    client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
+    //if (i % 4 == 0)
+    //  fc::usleep(fc::milliseconds(250));
+  }
+}
+
 void bts_client_launcher_fixture::import_initial_balances()
 {
   BOOST_TEST_MESSAGE("Importing initial keys and verifying initial balances");
@@ -408,6 +443,8 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   launch_clients();
 
   establish_rpc_connections();
+  trigger_network_connections();
+
 
   BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -468,6 +505,8 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   launch_clients();
 
   establish_rpc_connections();
+  trigger_network_connections();
+
 
   client_processes[0].rpc_client->open_wallet();
 
@@ -509,6 +548,8 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   launch_clients();
 
   establish_rpc_connections();
+  trigger_network_connections();
+
 
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -563,6 +604,8 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
   establish_rpc_connections();
 
+  trigger_network_connections();
+
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -609,6 +652,8 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
 BOOST_AUTO_TEST_CASE(fifty_node_test)
 {
+  /* Note: on Windows, boost::process imposes a limit of 64 child processes, 
+           we should max out at 55 or less to give ourselves some wiggle room */
   client_processes.resize(50);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -623,17 +668,110 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
 
   establish_rpc_connections();
 
-  fc::usleep(fc::seconds(60));
+  trigger_network_connections();
+
+  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
+  // time (happens due to the race of starting a lot of clients at once), they will have time
+  // to retry before we start checking to see how they did
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2)); 
+
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> DirectedGraph;
+  DirectedGraph directed_graph;  
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    unsigned connection_count = client_processes[i].rpc_client->getconnectioncount();
-    if (connection_count < 3)
+    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    for (const fc::variant& peer_info : peers_info)
     {
-      BOOST_MESSAGE("Client " << i << " only has " << connection_count << " connections");
+      fc::variant_object peer_info_object = peer_info.get_object();
+      if (peer_info_object["inbound"].as_bool())
+      {
+        uint16_t peer_p2p_port = fc::ip::endpoint::from_string(peer_info_object["addr"].as_string()).port();
+        boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, directed_graph);
+      }
     }
-    BOOST_CHECK(connection_count >= 3);
+    BOOST_CHECK(peers_info.size() >= _desired_number_of_connections);
+    BOOST_CHECK(peers_info.size() <= _maximum_number_of_connections);
   }
+
+  if (boost::num_vertices(directed_graph))
+  {
+    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
+    typedef boost::exterior_vertex_property<UndirectedGraph, int> DistanceProperty;
+    typedef DistanceProperty::matrix_type DistanceMatrix;
+    typedef DistanceProperty::matrix_map_type DistanceMatrixMap;
+    typedef boost::graph_traits<UndirectedGraph>::edge_descriptor Edge;
+    typedef boost::constant_property_map<Edge, int> WeightMap;
+
+    UndirectedGraph undirected_graph;
+    boost::copy_graph(directed_graph, undirected_graph);
+
+    std::vector<int> component(boost::num_vertices(undirected_graph));
+    int number_of_partitions = boost::connected_components(undirected_graph, &component[0]);
+    BOOST_CHECK(number_of_partitions == 1);
+    if (number_of_partitions != 1)
+    {
+      std::vector<std::vector<int> > nodes_by_component(number_of_partitions);
+      for (unsigned i = 0; i < component.size(); ++i)
+        nodes_by_component[component[i]].push_back(i);
+      BOOST_TEST_MESSAGE("Network is partitioned into " << number_of_partitions<< " disconnected groups");
+      for (unsigned i = 0; i < number_of_partitions; ++i)
+      {
+        std::ostringstream nodes;
+        for (int j = 0; j < nodes_by_component[i].size(); ++j)
+          nodes << " " << nodes_by_component[i][j];
+        BOOST_TEST_MESSAGE("Partition " << i << ":" << nodes.str());
+      }
+    }
+
+    DistanceMatrix distances(boost::num_vertices(undirected_graph));
+    DistanceMatrixMap distance_map(distances, undirected_graph);
+    WeightMap weight_map(1);
+    boost::floyd_warshall_all_pairs_shortest_paths(undirected_graph, distance_map, boost::weight_map(weight_map));
+
+    uint32_t longest_path_source = 0;
+    uint32_t longest_path_destination = 0;
+    int longest_path_length = 0;
+    for (uint32_t i = 0; i < boost::num_vertices(undirected_graph); ++i)
+      for (uint32_t j = 0; j < boost::num_vertices(undirected_graph); ++j)
+      {
+        assert(distances[i][j] == distances[j][i]);
+        if (distances[i][j] > longest_path_length && distances[i][j] != std::numeric_limits<WeightMap::value_type>::max())
+        {
+          longest_path_length = distances[i][j];
+          longest_path_source = i;
+          longest_path_destination = j;
+        }
+      }
+
+    typedef boost::exterior_vertex_property<UndirectedGraph, int> EccentricityProperty;
+    typedef EccentricityProperty::container_type EccentricityContainer;
+    typedef EccentricityProperty::map_type EccentricityMap;
+    int radius, diameter;
+    EccentricityContainer eccentricity_container(boost::num_vertices(undirected_graph));
+    EccentricityMap eccentricity_map(eccentricity_container, undirected_graph);
+    boost::tie(radius, diameter) = boost::all_eccentricities(undirected_graph, distance_map, eccentricity_map);
+
+    // write out a graph for visualization
+    struct graph_property_writer 
+    {
+      void operator()(std::ostream& out) const 
+      {
+        out << "overlap = false;\n";
+        out << "splines = true;\n";
+        out << "node [shape = circle, fontname = Helvetica, fontsize = 10]\n";
+      }
+    };
+
+    fc::path dot_file_path = bts_xt_client_test_config::config_directory / "fifty_nodes.dot";
+    std::ofstream dot_file(dot_file_path.string());
+    dot_file << "// Graph radius is " << radius << ", diameter is " << diameter << "\n";
+    dot_file << "// Longest path is from " << longest_path_source << " to " << longest_path_destination << ", length " << longest_path_length << "\n";
+    dot_file << "//   node parameters: desired_connections: " << _desired_number_of_connections
+             << ", max connections: " << _maximum_number_of_connections << "\n";
+    boost::write_graphviz(dot_file, directed_graph, boost::default_writer(), boost::default_writer(), graph_property_writer());
+    dot_file.close();
+  } // end if num_vertices != 0
 }
 
 BOOST_AUTO_TEST_SUITE_END()

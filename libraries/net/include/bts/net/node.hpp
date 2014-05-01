@@ -122,6 +122,9 @@ namespace bts { namespace net {
          */
         std::vector<peer_status> get_connected_peers()const;
 
+        /** return the number of peers we're actively connected to */
+        uint32_t get_connection_count() const;
+
         /**
          *  Add message to outgoing inventory list, notify peers that
          *  I have a message ready.
@@ -135,6 +138,8 @@ namespace bts { namespace net {
         void      sync_from( const item_id& );
 
         bool      is_connected()const;
+
+        void set_advanced_node_parameters(const fc::variant_object& params);
 
       private:
         std::unique_ptr<detail::node_impl> my;

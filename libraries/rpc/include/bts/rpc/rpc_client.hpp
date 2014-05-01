@@ -42,6 +42,9 @@ namespace bts { namespace rpc {
     fc::optional<std::string> currentwallet();
     bool closewallet();
     uint32_t getconnectioncount();
+    fc::variants getpeerinfo();
+    void _set_advanced_node_parameters(const fc::variant_object& params);
+    void addnode(const fc::ip::endpoint& node, const std::string& command);
   private:
     std::unique_ptr<detail::rpc_client_impl> my;
   };

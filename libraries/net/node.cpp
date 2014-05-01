@@ -342,9 +342,11 @@ namespace bts { namespace net {
       void listen_on_endpoint(const fc::ip::endpoint& ep);
       void listen_on_port(uint16_t port);
       std::vector<peer_status> get_connected_peers() const;
+      uint32_t get_connection_count() const;
       void broadcast(const message& item_to_broadcast);
       void sync_from(const item_id&);
       bool is_connected() const;
+      void set_advanced_node_parameters(const fc::variant_object& params);
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -444,8 +446,8 @@ namespace bts { namespace net {
     node_impl::node_impl() : 
       _delegate(nullptr),
       _user_agent_string("bts::net::node"),
-      _desired_number_of_connections(3),
-      _maximum_number_of_connections(5),
+      _desired_number_of_connections(8),
+      _maximum_number_of_connections(12),
       _peer_connection_retry_timeout(60 * 5),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0)
@@ -1692,7 +1694,14 @@ namespace bts { namespace net {
 
     void node_impl::add_node(const fc::ip::endpoint& ep)
     {
-      // TODO
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(ep);
+      // if we've recently connected to this peer, reset the last_connection_attempt_time to allow 
+      // us to immediately retry this peer
+      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
+                                                                                      fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
+        
+      _potential_peer_db.update_entry(updated_peer_record);
+      trigger_p2p_network_connect_loop();
     }
 
     void node_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -1800,6 +1809,11 @@ namespace bts { namespace net {
       return statuses;
     }
 
+    uint32_t node_impl::get_connection_count() const
+    {
+      return _active_connections.size();
+    }
+
     void node_impl::broadcast(const message& item_to_broadcast)
     {
       if (item_to_broadcast.msg_type == bts::client::block_message_type)
@@ -1823,6 +1837,16 @@ namespace bts { namespace net {
     bool node_impl::is_connected() const
     {
       return !_active_connections.empty();
+    }
+
+    void node_impl::set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      if (params.contains("peer_connection_retry_timeout"))
+        _peer_connection_retry_timeout = (uint32_t)params["peer_connection_retry_timeout"].as_uint64();
+      if (params.contains("desired_number_of_connections"))
+        _desired_number_of_connections = (uint32_t)params["desired_number_of_connections"].as_uint64();
+      if (params.contains("maximum_number_of_connections"))
+        _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
     }
 
   }  // end namespace detail
@@ -1881,6 +1905,11 @@ namespace bts { namespace net {
     return my->get_connected_peers();
   }
 
+  uint32_t node::get_connection_count() const
+  {
+    return my->get_connection_count();
+  }
+
   void node::broadcast(const message& msg)
   {
     my->broadcast(msg);
@@ -1894,6 +1923,10 @@ namespace bts { namespace net {
   bool node::is_connected() const
   {
     return my->is_connected();
+  }
+  void node::set_advanced_node_parameters(const fc::variant_object& params)
+  {
+    my->set_advanced_node_parameters(params);
   }
 
 } } // end namespace bts::net
