@@ -1,11 +1,12 @@
+#include <bts/blockchain/output_factory.hpp>
 #include <bts/dns/dns_db.hpp>
-#include <bts/dns/util.hpp>
+#include <bts/dns/dns_outputs.hpp>
 
 namespace bts { namespace dns {
 
 dns_db::dns_db()
 {
-    set_transaction_validator(std::make_shared<dns_transaction_validator>(this));
+    output_factory::instance().register_output<claim_dns_output>();
 }
 
 dns_db::~dns_db()
@@ -36,20 +37,28 @@ void dns_db::store(const trx_block& blk, const signed_transactions& deterministi
 
         for (auto output : tx.outputs)
         {
-            if (!is_domain_output(output))
+            if (!is_dns_output(output))
                 continue;
 
-            set_dns_ref(to_domain_output(output).name, output_reference(tx.id(), i));
+            set_dns_ref(to_dns_output(output).key, output_reference(tx.id(), i));
         }
     }
 }
 
-void dns_db::set_dns_ref(const std::string& key, const bts::blockchain::output_reference& ref)
+uint32_t dns_db::get_tx_age(const output_reference& tx_ref)
+{
+    auto tx_ref_id = tx_ref.trx_hash;
+    auto block_num = fetch_trx_num(tx_ref_id).block_num;
+
+    return head_block_num() - block_num;
+}
+
+void dns_db::set_dns_ref(const std::string& key, const output_reference& ref)
 {
     _dns2ref.store(key, ref);
 }
 
-bts::blockchain::output_reference dns_db::get_dns_ref(const std::string& key)
+output_reference dns_db::get_dns_ref(const std::string& key)
 { try {
     return _dns2ref.fetch(key);
 } FC_RETHROW_EXCEPTIONS(warn, "Could not fetch DNS key=${key}", ("key", key)) }
@@ -59,13 +68,12 @@ bool dns_db::has_dns_ref(const std::string& key)
     return _dns2ref.find(key).valid();
 }
 
-std::map<std::string, bts::blockchain::output_reference>
-    dns_db::filter(bool (*f)(const std::string&, const bts::blockchain::output_reference&, dns_db& db))
+std::map<std::string, output_reference> dns_db::filter(bool (*f)(const std::string&, const output_reference&, dns_db& db))
 {
-    FC_ASSERT(f != nullptr, "Null filter function");
-    std::map<std::string, bts::blockchain::output_reference> map;
+    FC_ASSERT(f != nullptr, "null filter function");
+    std::map<std::string, output_reference> map;
 
-    bts::db::level_map<std::string, bts::blockchain::output_reference>::iterator iter = _dns2ref.begin();
+    bts::db::level_map<std::string, output_reference>::iterator iter = _dns2ref.begin();
     if (!iter.valid()) return map;
 
     std::string last;

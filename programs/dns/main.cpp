@@ -1,23 +1,24 @@
 #include <boost/program_options.hpp>
+
+#include <bts/net/chain_server.hpp>
 #include <bts/client/client.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
-#include <bts/dns/dns_cli.hpp>
-#include <bts/dns/dns_rpc_server.hpp>
-#include <bts/dns/dns_db.hpp>
-#include <bts/dns/dns_wallet.hpp>
+#include <bts/cli/cli.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
+
 #include <iostream>
 
-// refactor away:
-#include <bts/net/chain_server.hpp>
-/// 
+#include <bts/dns/dns_wallet.hpp>
+#include <bts/dns/p2p/p2p_cli.hpp>
+#include <bts/dns/p2p/p2p_rpc_server.hpp>
+#include <bts/dns/p2p/p2p_transaction_validator.hpp>
 
 struct config
 {
@@ -33,8 +34,8 @@ void print_banner();
 void configure_logging(const fc::path&);
 fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
-std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir, 
-								    const boost::program_options::variables_map& option_variables);
+bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
+                                                                      const boost::program_options::variables_map& option_variables);
 
 int main( int argc, char** argv )
 {
@@ -76,10 +77,8 @@ int main( int argc, char** argv )
      std::cout << option_config << "\n";
      return 0;
    }
- 
 
    bool p2p_mode = option_variables.count("p2p") != 0;
-
 
    try {
       print_banner();
@@ -87,15 +86,13 @@ int main( int argc, char** argv )
       ::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
-//TODO change to dns
       auto chain = load_and_configure_chain_database(datadir, option_variables);
-      auto wall    = std::make_shared<bts::dns::dns_wallet>();
+      auto wall  = std::make_shared<bts::dns::dns_wallet>(std::dynamic_pointer_cast<bts::dns::dns_db>(chain));
       wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>(p2p_mode);
       c->set_chain( chain );
       c->set_wallet( wall );
-
 
       if (option_variables.count("trustee-private-key"))
       {
@@ -108,14 +105,14 @@ int main( int argc, char** argv )
          c->run_trustee(key);
       }
 
-
-      bts::dns::dns_rpc_server_ptr rpc_server = std::make_shared<bts::dns::dns_rpc_server>();
+      bts::dns::p2p::p2p_rpc_server_ptr rpc_server = std::make_shared<bts::dns::p2p::p2p_rpc_server>();
       rpc_server->set_client(c);
-      auto cli = std::make_shared<bts::dns::dns_cli>( c, rpc_server );
+
+
       if( option_variables.count("server") )
       {
         // the user wants us to launch the RPC server.
-        // First, override any config parameters they 
+        // First, override any config parameters they
         bts::rpc::rpc_server::config rpc_config(cfg.rpc);
         if (option_variables.count("rpcuser"))
           rpc_config.rpc_user = option_variables["rpcuser"].as<std::string>();
@@ -130,7 +127,7 @@ int main( int argc, char** argv )
         std::cerr<<"starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
         rpc_server->configure(rpc_config);
       }
-      
+
       if (p2p_mode)
       {
         c->configure( datadir );
@@ -141,15 +138,18 @@ int main( int argc, char** argv )
           c->connect_to_peer(option_variables["connect-to"].as<std::string>());
       }
       else
-	{
-        c->add_node( "127.0.0.1:4569" );
-}
+      {
+        if (option_variables.count("connect-to"))
+          c->add_node(option_variables["connect-to"].as<std::string>());
+        else
+           c->add_node( "127.0.0.1:4567" );
+      }
 
-
+      auto cli = std::make_shared<bts::dns::p2p::p2p_cli>( c, rpc_server );
       cli->wait();
 
-   } 
-   catch ( const fc::exception& e ) 
+   }
+   catch ( const fc::exception& e )
    {
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
@@ -162,7 +162,7 @@ void print_banner()
 {
     std::cout<<"================================================================\n";
     std::cout<<"=                                                              =\n";
-    std::cout<<"=             Welcome to BitShares DNS                         =\n";
+    std::cout<<"=             Welcome to BitShares DNS (.p2p)                  =\n";
     std::cout<<"=                                                              =\n";
     std::cout<<"=  This software is in alpha testing and is not suitable for   =\n";
     std::cout<<"=  real monetary transactions or trading.  Use at your own     =\n";
@@ -171,7 +171,6 @@ void print_banner()
     std::cout<<"=  Type 'help' for usage information.                          =\n";
     std::cout<<"================================================================\n";
 }
-
 
 void configure_logging(const fc::path& data_dir)
 {
@@ -190,6 +189,7 @@ void configure_logging(const fc::path& data_dir)
    cfg.loggers.push_back(dlc);
    fc::configure_logging( cfg );
 }
+
 
 fc::path get_data_dir(const boost::program_options::variables_map& option_variables)
 { try {
@@ -212,17 +212,19 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 
 } FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
 
-
-std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::path& datadir, 
-						          const boost::program_options::variables_map& option_variables)
+bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
+                                                                      const boost::program_options::variables_map& option_variables)
 {
-  auto db = std::make_shared<bts::dns::dns_db>();
-  db->open( datadir / "chain", true );
+  auto dns_chain = std::make_shared<bts::dns::dns_db>();
+  dns_chain->set_transaction_validator(std::make_shared<bts::dns::p2p::p2p_transaction_validator>(dns_chain.get()));
+  bts::blockchain::chain_database_ptr chain = dns_chain;
+  chain->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
-    db->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
+    chain->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
+
   if (option_variables.count("genesis-json"))
   {
-    if (db->head_block_num() == uint32_t(-1))
+    if (chain->head_block_num() == uint32_t(-1))
     {
       fc::path genesis_json_file(option_variables["genesis-json"].as<std::string>());
       bts::blockchain::trx_block genesis_block;
@@ -233,11 +235,11 @@ std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::pa
       catch (fc::exception& e)
       {
         wlog("Error creating genesis block from file ${filename}: ${e}", ("filename", genesis_json_file)("e", e.to_string()));
-        return db;
+        return chain;
       }
-      try 
+      try
       {
-        db->push_block(genesis_block);
+        chain->push_block(genesis_block);
       }
       catch ( const fc::exception& e )
       {
@@ -247,11 +249,8 @@ std::shared_ptr<bts::dns::dns_db> load_and_configure_chain_database(const fc::pa
     else
       wlog("Ignoring genesis-json command-line argument because our blockchain already has a genesis block");
   }
-  return db;
+  return chain;
 }
-
-
-
 
 config load_config( const fc::path& datadir )
 { try {

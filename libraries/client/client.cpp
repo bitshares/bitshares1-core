@@ -12,8 +12,8 @@
 
 namespace bts { namespace client {
 
-    namespace detail 
-    { 
+    namespace detail
+    {
        class client_impl : public bts::net::chain_client_delegate,
                            public bts::net::node_delegate
        {
@@ -57,7 +57,7 @@ namespace bts { namespace client {
             fc::ecc::private_key                                        _trustee_key;
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
-                                                                        
+
             bts::blockchain::trx_block                                  _next_block;
             bts::net::chain_client_ptr                                  _chain_client;
             bts::net::node_ptr                                          _p2p_node;
@@ -90,7 +90,7 @@ namespace bts { namespace client {
                {
                  _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
                  // with the p2p code, if you broadcast something to the network, it will not
-                 // immediately send it back to you 
+                 // immediately send it back to you
                  on_new_block(blk);
                }
                _last_block = fc::time_point::now();
@@ -228,7 +228,7 @@ namespace bts { namespace client {
          catch (const fc::key_not_found_exception&)
          {
            // not in our cache.  Either it has already expired from our cache, or
-           // it's a request for an actual block during synchronization.  
+           // it's a request for an actual block during synchronization.
          }
 #endif
 
@@ -275,7 +275,7 @@ namespace bts { namespace client {
              my->_trustee_loop_complete.cancel();
              ilog( "waiting for trustee loop to complete" );
              my->_trustee_loop_complete.wait();
-          } 
+          }
        }
        catch ( const fc::canceled_exception& ) {}
        catch ( const fc::exception& e )
@@ -301,6 +301,7 @@ namespace bts { namespace client {
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
     bts::blockchain::chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
+    signed_transactions client::get_pending_transactions()const { return my->get_pending_transactions(); }
 
     void client::broadcast_transaction( const signed_transaction& trx )
     {

@@ -8,13 +8,13 @@ namespace bts { namespace client {
     using namespace bts::blockchain;
 
     namespace detail { class client_impl; }
-    
-    /** 
+
+    /**
      * @class client
-     * @brief integrates the network, wallet, and blockchain 
+     * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client 
+    class client
     {
        public:
          client(bool enable_p2p = false);
@@ -37,6 +37,7 @@ namespace bts { namespace client {
          bts::blockchain::chain_database_ptr get_chain()const;
          bts::wallet::wallet_ptr             get_wallet()const;
          bts::net::node_ptr                  get_node()const;
+         signed_transactions                 get_pending_transactions()const;
 
          /**
           *  Reserve a name and broadcast it to the network.
