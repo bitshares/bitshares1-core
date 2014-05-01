@@ -5,6 +5,7 @@ namespace bts { namespace dns {
 
 dns_db::dns_db()
 {
+    output_factory::instance().register_output<claim_dns_output>();
 }
 
 dns_db::~dns_db()

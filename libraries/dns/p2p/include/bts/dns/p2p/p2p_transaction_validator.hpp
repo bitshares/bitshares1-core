@@ -37,6 +37,8 @@ struct p2p_transaction_evaluation_state : public bts::blockchain::transaction_ev
 
 struct p2p_block_evaluation_state : public bts::blockchain::block_evaluation_state
 {
+    p2p_block_evaluation_state(dns_db* db) : bts::blockchain::block_evaluation_state(db) {}
+
     std::vector<std::string> pending_keys;
 };
 

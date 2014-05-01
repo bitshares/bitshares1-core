@@ -44,4 +44,5 @@ namespace bts { namespace blockchain {
     active( std::move(active_arg) )
    {}
 
+
 } } // bts::blockchain

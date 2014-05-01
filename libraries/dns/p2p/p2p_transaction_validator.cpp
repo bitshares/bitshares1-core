@@ -12,7 +12,7 @@ p2p_transaction_validator::~p2p_transaction_validator()
 
 block_evaluation_state_ptr p2p_transaction_validator::create_block_state() const
 {
-    return std::make_shared<p2p_block_evaluation_state>();
+    return std::make_shared<p2p_block_evaluation_state>(_dns_db);
 }
 
 transaction_summary p2p_transaction_validator::evaluate(const signed_transaction& tx,
