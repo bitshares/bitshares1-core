@@ -1,6 +1,7 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/output_factory.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <leveldb/db.h>
 #include <bts/db/level_pod_map.hpp>
@@ -301,6 +302,12 @@ namespace bts { namespace blockchain {
      chain_database::chain_database()
      :my( new detail::chain_database_impl() )
      {
+         output_factory::instance().register_output<claim_by_signature_output>();
+         output_factory::instance().register_output<claim_by_pts_output>();
+         output_factory::instance().register_output<claim_by_multi_sig_output>();
+         output_factory::instance().register_output<claim_by_password_output>();
+         output_factory::instance().register_output<claim_name_output>();
+         output_factory::instance().register_output<claim_fire_delegate_output>();
          my->_self = this;
          my->_trx_validator = std::make_shared<transaction_validator>(this);
          my->_pow_validator = std::make_shared<pow_validator>(this);
