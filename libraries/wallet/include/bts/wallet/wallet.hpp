@@ -133,7 +133,7 @@ namespace wallet {
 
 
            std::vector<delegate_status> get_delegates( uint32_t start = 0, uint32_t count = -1 )const;
-           void set_delegate_trust( const std::string& name, trust_state s );
+           void set_delegate_trust( const std::string& name, trust_state_enum s );
            void update_delegate_status( const std::string& name,  const delegate_status& s );
 
            void import_bitcoin_wallet( const fc::path& dir, const std::string& passphrase );
