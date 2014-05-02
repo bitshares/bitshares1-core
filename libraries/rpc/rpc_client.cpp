@@ -42,6 +42,7 @@ namespace bts { namespace rpc {
       fc::variants getpeerinfo();
       void _set_advanced_node_parameters(const fc::variant_object& params);
       void addnode(const fc::ip::endpoint& node, const std::string& command);
+      void stop();
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -159,7 +160,10 @@ namespace bts { namespace rpc {
     {
       _json_connection->async_call("addnode", (std::string)node, command).wait();
     }
-
+    void rpc_client_impl::stop()
+    {
+      _json_connection->async_call("stop").wait();
+    }
   } // end namespace detail
 
 
@@ -269,6 +273,10 @@ namespace bts { namespace rpc {
   void rpc_client::addnode(const fc::ip::endpoint& node, const std::string& command)
   {
     my->addnode(node, command);
+  }
+  void rpc_client::stop()
+  {
+    my->stop();
   }
 
 } } // bts::rpc

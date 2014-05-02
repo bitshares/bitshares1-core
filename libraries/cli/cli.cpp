@@ -287,7 +287,7 @@ namespace bts { namespace cli {
             fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                  const std::string& command)
             {
-              // quit isn't registered with the RPC server
+              // quit isn't registered with the RPC server, the RPC server spells it "stop"
               if (command == "quit")
                 return fc::variants();
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));

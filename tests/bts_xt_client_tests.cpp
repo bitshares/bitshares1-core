@@ -373,6 +373,9 @@ void bts_client_launcher_fixture::launch_clients()
 
 void bts_client_launcher_fixture::establish_rpc_connections()
 {
+  fc::usleep(fc::seconds(10));
+
+
   BOOST_TEST_MESSAGE("Establishing JSON-RPC connections to all processes");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -396,8 +399,7 @@ void bts_client_launcher_fixture::trigger_network_connections()
     parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
     client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
     client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
-    //if (i % 4 == 0)
-    //  fc::usleep(fc::milliseconds(250));
+    fc::usleep(fc::milliseconds(250));
   }
 }
 
@@ -588,12 +590,18 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 {
   /* Create 1000 transfers from node 0 to all other nodes, */
   const uint32_t number_of_recipients = 10;
-  const uint32_t number_of_transfers_to_each_recipient = 100;
-  const uint32_t amount_of_each_transfer = 1000;
+  const uint32_t number_of_transfers_to_each_recipient = 10;
+  const uint32_t amount_of_each_transfer = 10;
   const uint32_t total_amount_to_transfer = amount_of_each_transfer * number_of_transfers_to_each_recipient * number_of_recipients;
+  const uint32_t initial_balance_for_each_node =  std::max<uint64_t>(100000000, total_amount_to_transfer * 2); // allow for fees;
+  
 
   client_processes.resize(number_of_recipients + 1);
-  client_processes[0].initial_balance = std::max<uint64_t>(100000000, total_amount_to_transfer * 2); // allow for fees
+
+  // we're only sending from node 0, but we need to set a balance for more than just one node
+  // to allow the delegate vote to be spread out enough
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].initial_balance = initial_balance_for_each_node;
 
   create_trustee_and_genesis_block();
 
@@ -630,7 +638,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
       client_processes[0].rpc_client->sendtoaddress(recieve_addresses[i], amount_of_each_transfer);
       // temporary workaround: 
       ++total_transfer_count;
-      if (total_transfer_count % 100 == 0)
+      if (total_transfer_count % 50 == 0)
       {
         BOOST_TEST_MESSAGE("sleeping for a block");
         fc::usleep(fc::seconds(30));
@@ -644,10 +652,137 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   
   uint64_t total_balances_recieved = 0;
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_recieved += client_processes[i].rpc_client->getbalance(0).amount;
+    total_balances_recieved += (client_processes[i].rpc_client->getbalance(0).amount - initial_balance_for_each_node);
 
   BOOST_TEST_MESSAGE("Recieved " << total_balances_recieved << " in total");
   BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
+
+  // get the total amount of data transferred
+  std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    uint64_t total_in = 0;
+    uint64_t total_out = 0;
+    for (const fc::variant& peer_info : peers_info)
+    {
+      fc::variant_object peer_info_object = peer_info.get_object();
+      total_out += peer_info_object["bytessent"].as_uint64();
+      total_in += peer_info_object["bytesrecv"].as_uint64();
+    }
+    rx_tx_bytes.push_back(std::make_pair(total_in, total_out));
+  }
+  BOOST_TEST_MESSAGE("Peer\tSent\tReceived");
+  BOOST_TEST_MESSAGE("-----------------------------------------------------");
+  for (unsigned i = 0; i < rx_tx_bytes.size(); ++i)
+    BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
+}
+
+BOOST_AUTO_TEST_CASE(untracked_transactions)
+{
+  // This test will try to send a ton of transfers.
+  // we'll launch 50 clients,
+  // each with, say, 100M BTS
+  // then send as many small transactions as it can,
+  // transferring to the other nodes.
+  // when a transfer fails, it will begin again with the next node
+  
+  client_processes.resize(50);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].initial_balance = 100000000;
+
+  create_trustee_and_genesis_block();
+
+  if (bts_xt_client_test_config::test_client_server)
+    launch_server();
+
+  launch_clients();
+
+  establish_rpc_connections();
+
+  trigger_network_connections();
+
+  BOOST_TEST_MESSAGE("Opening and unlocking wallets");
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].rpc_client->open_wallet();
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+  }
+
+  import_initial_balances();
+
+  std::vector<bts::blockchain::address> recieve_addresses;
+  recieve_addresses.resize(client_processes.size());
+  BOOST_TEST_MESSAGE("Generating receive addresses for each recieving node");
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    recieve_addresses[i] = client_processes[i].rpc_client->getnewaddress("test");
+
+  //// initial setup is done
+
+  // let's try to generate 10 blocks
+  uint32_t num_blocks = 10;
+  for (int block_number = 0; block_number < num_blocks; ++block_number)
+  {
+    //BOOST_TEST_MESSAGE("Making as many 1000 transfers from node 0 to the rest of the nodes");
+    unsigned next_recipient = 1;
+    unsigned transactions_in_this_block = 0;
+    for (unsigned process = 0; process < client_processes.size(); ++process)
+    {
+      for (int transfer = 0; ; ++transfer)
+      {
+        try
+        {
+          client_processes[process].rpc_client->sendtoaddress(recieve_addresses[next_recipient], 10);
+          next_recipient = (next_recipient + 1) % client_processes.size();
+          if (next_recipient == process)
+            next_recipient = (next_recipient + 1) % client_processes.size();
+          ++transactions_in_this_block;
+        }
+        catch (const fc::exception&)
+        {
+          BOOST_TEST_MESSAGE("Only able to send " << (transfer + 1) << " transfers from process " << process);
+          break;
+        }
+      }
+    }
+    BOOST_TEST_MESSAGE("Done sending all transfers in this block, total of " << transactions_in_this_block << " transactions");
+    fc::usleep(fc::seconds(30));
+  }
+
+#if 0
+
+  BOOST_TEST_MESSAGE("Done making transfers, waiting 30 seconds for a block to be formed");
+  fc::usleep(fc::seconds(30));
+  BOOST_TEST_MESSAGE("Collecting balances from recipients");
+  
+  uint64_t total_balances_recieved = 0;
+  for (unsigned i = 1; i < client_processes.size(); ++i)
+    total_balances_recieved += (client_processes[i].rpc_client->getbalance(0).amount - initial_balance_for_each_node);
+
+  BOOST_TEST_MESSAGE("Recieved " << total_balances_recieved << " in total");
+  BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
+#endif
+  // get the total amount of data transferred
+  std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    uint64_t total_in = 0;
+    uint64_t total_out = 0;
+    for (const fc::variant& peer_info : peers_info)
+    {
+      fc::variant_object peer_info_object = peer_info.get_object();
+      total_out += peer_info_object["bytessent"].as_uint64();
+      total_in += peer_info_object["bytesrecv"].as_uint64();
+    }
+    rx_tx_bytes.push_back(std::make_pair(total_in, total_out));
+  }
+  
+  BOOST_TEST_MESSAGE("Peer\tSent\tReceived");
+  BOOST_TEST_MESSAGE("-----------------------------------------------------");
+  for (unsigned i = 0; i < rx_tx_bytes.size(); ++i)
+    BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
 }
 
 BOOST_AUTO_TEST_CASE(fifty_node_test)

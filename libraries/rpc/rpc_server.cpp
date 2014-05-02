@@ -52,7 +52,8 @@ namespace bts { namespace rpc {
              (get_names)\
              (getpeerinfo)\
              (_set_advanced_node_parameters)\
-             (addnode)
+             (addnode)\
+             (stop)
 
 
 
@@ -1337,6 +1338,22 @@ Examples:
     fc::variant rpc_server_impl::addnode(const fc::variants& params)
     {
       _client->addnode(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
+      return fc::variant();
+    }
+
+    static rpc_server::method_data stop_metadata{"stop", nullptr,
+            /* description */ "Stop BitShares server",
+            /* returns: */    "null",
+            /* params:     */ {},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+stop
+
+Stop BitShares server.
+)" };
+    fc::variant rpc_server_impl::stop(const fc::variants& params)
+    {
+      _client->stop();
       return fc::variant();
     }
 
