@@ -414,7 +414,7 @@ namespace bts { namespace blockchain {
         my->blocks.close();
         my->block_trxs.close();
         my->_delegate_records.close();
-        my->_name_records.close()
+        my->_name_records.close();
      }
 
     uint32_t chain_database::head_block_num()const
