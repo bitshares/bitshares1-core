@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include <bts/dns/dns_wallet.hpp>
 
 namespace bts { namespace dns {
