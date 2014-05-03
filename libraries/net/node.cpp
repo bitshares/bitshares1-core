@@ -74,7 +74,7 @@ namespace bts { namespace net {
       fc::optional<boost::tuple<item_id, fc::time_point> > item_ids_requested_from_peer; /// we check this to detect a timed-out request and in busy()
       /// @}
 
-      /// non-syncronization state data
+      /// non-synchronization state data
       /// @{
       std::unordered_set<item_id> inventory_peer_advertised_to_us;
       std::unordered_set<item_id> inventory_advertised_to_peer; /// TODO: make this a map to the time/block# we advertised it so we can expire items off of the list
@@ -104,6 +104,9 @@ namespace bts { namespace net {
 
       void send_message(const message& message_to_send);
       void close_connection();
+
+      uint64_t get_total_bytes_sent() const;
+      uint64_t get_total_bytes_received() const;
 
       fc::optional<fc::ip::endpoint> get_remote_endpoint();
       fc::ip::endpoint get_local_endpoint();
@@ -174,6 +177,7 @@ namespace bts { namespace net {
          void block_accepted();
          void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache);
          message get_message(const message_hash_type& hash_of_message_to_lookup);
+         size_t size() const { return _message_cache.size(); }
     };
 
     void blockchain_tied_message_cache::block_accepted()
@@ -413,6 +417,16 @@ namespace bts { namespace net {
     void peer_connection::close_connection()
     {
       _message_connection.close_connection();
+    }
+
+    uint64_t peer_connection::get_total_bytes_sent() const
+    {
+      return _message_connection.get_total_bytes_sent();
+    }
+
+    uint64_t peer_connection::get_total_bytes_received() const
+    {
+      return _message_connection.get_total_bytes_received();
     }
 
     fc::optional<fc::ip::endpoint> peer_connection::get_remote_endpoint()
@@ -662,6 +676,11 @@ namespace bts { namespace net {
         std::unordered_set<item_id> inventory_to_advertise;
         inventory_to_advertise.swap(_new_inventory);
 
+        // process all inventory to advertise and construct the inventory messages we'll send
+        // first, then send them all in a batch (to avoid any fiber interruption points while
+        // we're computing the messages)
+        std::list<std::pair<peer_connection_ptr, item_ids_inventory_message> > inventory_messages_to_send;
+
         for (const peer_connection_ptr& peer : _active_connections)
         {
           // only advertise to peers who are in sync with us
@@ -684,9 +703,12 @@ namespace bts { namespace net {
               ilog("advertising ${count} new item(s) of ${types} type(s) to peer ${endpoint}", 
                    ("count", total_items_to_send_to_this_peer)("types", items_to_advertise_by_type.size())("endpoint", peer->get_remote_endpoint()));
             for (auto items_group : items_to_advertise_by_type)
-              peer->send_message(item_ids_inventory_message(items_group.first, items_group.second));
+              inventory_messages_to_send.push_back(std::make_pair(peer, item_ids_inventory_message(items_group.first, items_group.second)));
           }
         }
+
+        for (auto iter = inventory_messages_to_send.begin(); iter != inventory_messages_to_send.end(); ++iter)
+          iter->first->send_message(iter->second);
 
         if (_new_inventory.empty())
         {
@@ -1479,6 +1501,7 @@ namespace bts { namespace net {
             }
           }
           broadcast(message_to_process);
+          _message_cache.block_accepted();
         }
         catch (fc::exception&)
         {
@@ -1754,6 +1777,23 @@ namespace bts { namespace net {
         ilog("  handshaking peer ${endpoint} in state ${state}", 
              ("endpoint", peer->get_remote_endpoint())("state", peer->state));
       }
+
+      ilog("--------- MEMORY USAGE ------------");
+      ilog("node._active_sync_requests size: ${size}", ("size", _active_sync_requests.size()));
+      ilog("node._received_sync_items size: ${size}", ("size", _received_sync_items.size()));
+      ilog("node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size()));
+      ilog("node._new_inventory size: ${size}", ("size", _new_inventory.size()));
+      ilog("node._message_cache size: ${size}", ("size", _message_cache.size()));
+      for (const peer_connection_ptr& peer : _active_connections)
+      {
+        ilog("  peer ${endpoint}", ("endpoint", peer->get_remote_endpoint()));
+        ilog("    peer.ids_of_items_to_get size: ${size}", ("size", peer->ids_of_items_to_get.size()));
+        ilog("    peer.inventory_peer_advertised_to_us size: ${size}", ("size", peer->inventory_peer_advertised_to_us.size()));
+        ilog("    peer.inventory_advertised_to_peer size: ${size}", ("size", peer->inventory_advertised_to_peer.size()));
+        ilog("    peer.items_requested_from_peer size: ${size}", ("size", peer->items_requested_from_peer.size()));
+        ilog("    peer.sync_items_requested_from_peer size: ${size}", ("size", peer->sync_items_requested_from_peer.size()));
+      }
+      ilog("--------- END MEMORY USAGE ------------");
     }
 
     void node_impl::disconnect_from_peer(peer_connection* peer_to_disconnect)
@@ -1792,8 +1832,8 @@ namespace bts { namespace net {
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
         peer_details["lastsend"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["lastrecv"] = ""; // TODO: fill me for bitcoin compatibility
-        peer_details["bytessent"] = ""; // TODO: fill me for bitcoin compatibility
-        peer_details["bytesrecv"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["bytessent"] = peer->get_total_bytes_sent();
+        peer_details["bytesrecv"] = peer->get_total_bytes_received();
         peer_details["conntime"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["pingtime"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["pingwait"] = ""; // TODO: fill me for bitcoin compatibility
