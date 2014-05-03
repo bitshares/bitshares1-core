@@ -1,0 +1,3 @@
+private key: a0ff8b61ba6eece8e79b1e549b6dfdca0591db96be054a725e74a5b62fc20f90
+bts address: KPZvNkWhZXek3fSuQG78sobgKuty6qRrC
+pts address: PuG6vaWRjgwF1qabsru3byjWF3wsAfCjPW

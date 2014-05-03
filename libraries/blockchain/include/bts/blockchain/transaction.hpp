@@ -156,6 +156,7 @@ struct meta_trx_input
    fc::signed_int    delegate_id;
    trx_output        output;
    meta_trx_output   meta_output;
+   std::vector<char> data;
 };
 
 
@@ -224,6 +225,6 @@ FC_REFLECT( bts::blockchain::trx_output, (amount)(claim_func)(claim_data) )
 FC_REFLECT( bts::blockchain::transaction, (version)(stake)(vote)(valid_until)(inputs)(outputs) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (sigs) );
 FC_REFLECT( bts::blockchain::meta_trx_output, (trx_id)(input_num) )
-FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(delegate_id)(output)(meta_output) )
+FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(delegate_id)(output)(meta_output)(data) )
 FC_REFLECT_DERIVED( bts::blockchain::meta_trx, (bts::blockchain::signed_transaction), (meta_outputs) );
 

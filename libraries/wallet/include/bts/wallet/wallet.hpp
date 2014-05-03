@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/wallet/delegate_status.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -12,6 +13,8 @@ namespace blockchain { class chain_database; }
 
 namespace wallet {
    using namespace bts::blockchain;
+
+   typedef std::unordered_set<address> signature_set;
 
    namespace detail { class wallet_impl; }
 
@@ -55,7 +58,7 @@ namespace wallet {
       transaction_state():delta_balance(0),block_num(-1),valid(false){}
       signed_transaction                   trx;
       /** outputs of the transaction that are not controlled by this wallet
-       *  
+       *
        *  These would be addresses belonging to 3rd parties.
        **/
       std::map<address,std::string>        to;
@@ -103,23 +106,53 @@ namespace wallet {
            fc::path get_wallet_filename_for_user(const std::string& username) const;
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
-           void set_delegate_trust( uint32_t did,  bool is_trusted );
 
-           signed_transaction register_delegate( const std::string& n, const fc::variant& v );
 
            void open( const std::string& user, const std::string& password );
            bool close();
-           void create( const std::string& user, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
-           /// create_internal is only used to support old tests that were designed to create wallets with a given filename, 
-           /// it can probably be removed soon
-           void create_internal( const fc::path& wallet_file, const std::string& base_pass, const std::string& key_pass, bool is_brain = false );
-           bool is_open() const;
-           std::string get_current_user();
+           void create( const std::string& user,
+                        const std::string& base_pass,
+                        const std::string& key_pass, bool is_brain = false );
+
+           /// create_internal is only used to support old tests that were designed to
+           /// create wallets with a given filename, it can probably be removed soon
+           //
+           /// @todo  determine if this method can be removed
+           /// @deprecated
+           void create_internal( const fc::path& wallet_file, const std::string& base_pass,
+                                 const std::string& key_pass, bool is_brain = false );
+           bool is_open()const;
+
+           /**
+            *  The current user name is based upon the name passed to wallet#open or wallet#create
+            */
+           std::string get_current_user()const;
 
            void save();
            void backup_wallet( const fc::path& backup_path );
 
+
+           std::vector<delegate_status> get_delegates( uint32_t start = 0, uint32_t count = -1 )const;
+           void set_delegate_trust( const std::string& name, trust_state_enum s );
+           void update_delegate_status( const std::string& name,  const delegate_status& s );
+
            void import_bitcoin_wallet( const fc::path& dir, const std::string& passphrase );
+
+           /**
+            *  Attempts to reserve name for user if it has not already been reserved.
+            *  be used as a canidate for delegate.  Users may optionally specifiy an
+            *  amount to deposit on their name to give it reputation.  This amount
+            *  can be spent later when updating the name.
+            */
+           signed_transaction reserve_name( const std::string& name, const fc::variant& value,
+                                            const asset& deposit = asset());
+
+           /**
+            *  This method is similar to reserve_name, except that it pays the fee required
+            *  to register as a delegate.
+            */
+           signed_transaction register_delegate( const std::string& n, const fc::variant& v,
+                                                 const asset& deposit = asset());
 
           /** Given a set of user-provided transactions, this method will generate a block that
            * uses transactions prioritized by fee up until the maximum size.  Invalid transactions
@@ -127,14 +160,23 @@ namespace wallet {
            *
            * @note some transaction may be valid stand-alone, but may conflict with other transactions.
            */
-           trx_block                               generate_next_block( chain_database& db, const signed_transactions& trxs);
+           trx_block                               generate_next_block( chain_database& db,
+                                                                        const signed_transactions& trxs);
 
-           address                                 import_key( const fc::ecc::private_key& key, const std::string& label = "" );
-           address                                 new_receive_address( const std::string& label = "" );
-           fc::ecc::public_key                     new_public_key( const std::string& label = "" );
+           address                                 import_key( const fc::ecc::private_key& key,
+                                                               const std::string& memo = "",
+                                                               const std::string& account = "");
+
+           /**
+            *  Updates the memo associated with a receive address
+            */
+           void                                    set_receive_address_memo( const address& addr, const std::string& memo );
+           address                                 new_receive_address( const std::string& memo = "", const std::string& account = "" );
+           fc::ecc::public_key                     new_public_key( const std::string& memo = "", const std::string& account = "" );
 
            std::unordered_map<address,std::string> get_receive_addresses()const;
            std::string                             get_send_address_label( const address& addr )const;
+           void                                    remove_send_address( const address& addr );
 
            bool                                    is_my_address( const address& a )const;
            bool                                    is_my_address( const pts_address& a )const;
@@ -159,22 +201,30 @@ namespace wallet {
            /** provides the password required to gain access to the private keys
             *  associated with this wallet.
             */
-           void                  unlock_wallet( const std::string& key_password, const fc::microseconds& duration = fc::microseconds::maximum());
+           void                  unlock_wallet( const std::string& key_password,
+                                                const fc::microseconds& duration = fc::microseconds::maximum());
            /**
             *  removes private keys from memory
             */
            void                  lock_wallet();
            bool                  is_locked()const;
 
-           signed_transaction    transfer( const asset& amnt, const address& to, const std::string& memo = "change" );
+           signed_transaction    send_to_address( const asset& amnt,
+                                           const address& to,
+                                           const std::string& memo = "change" );
 
            /** returns all transactions issued */
            std::unordered_map<transaction_id_type, transaction_state> get_transaction_history()const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
-           void sign_transaction( signed_transaction& trx, const std::unordered_set<address>& addresses, bool mark_output_as_used = true);
+           void sign_transaction( signed_transaction& trx,
+                                  const std::unordered_set<address>& addresses,
+                                  bool mark_output_as_used = true);
 
-           bool scan_chain( bts::blockchain::chain_database& chain, uint32_t from_block_num = 0,  scan_progress_callback cb = scan_progress_callback() );
+           bool scan_chain( bts::blockchain::chain_database& chain,
+                            uint32_t from_block_num = 0,
+                            scan_progress_callback cb = scan_progress_callback() );
+
            void mark_as_spent( const output_reference& r );
 
            void dump_txs(bts::blockchain::chain_database& db, uint32_t count);
@@ -182,28 +232,53 @@ namespace wallet {
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
 
-           std::vector<trx_input> collect_inputs( const asset& min_amnt, asset& total_in, std::unordered_set<address>& req_sigs );
+           std::vector<trx_input> collect_inputs( const asset& min_amnt,
+                                                  asset& total_in,
+                                                  std::unordered_set<address>& req_sigs );
 
-           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
-                                                      std::unordered_set<address>& req_sigs, const address& change_addr);
-           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
-                                                      std::unordered_set<address>& req_sigs, const std::string& memo);
-           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
-                                                      std::unordered_set<address>& req_sigs);
-           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt,
-                                                      const std::string& memo);
-           signed_transaction collect_inputs_and_sign(signed_transaction& trx, const asset& min_amnt);
+           signed_transaction collect_inputs_and_sign( signed_transaction& trx,
+                                                       const asset& min_amnt,
+                                                       std::unordered_set<address>& req_sigs,
+                                                       const address& change_addr );
 
-           std::string                         get_transaction_info_string(bts::blockchain::chain_database& db, const transaction& tx);
+           signed_transaction collect_inputs_and_sign( signed_transaction& trx,
+                                                       const asset& min_amnt,
+                                                       std::unordered_set<address>& req_sigs,
+                                                       const std::string& memo );
+
+           signed_transaction collect_inputs_and_sign( signed_transaction& trx,
+                                                       const asset& min_amnt,
+                                                       std::unordered_set<address>& req_sigs );
+
+           signed_transaction collect_inputs_and_sign( signed_transaction& trx,
+                                                       const asset& min_amnt,
+                                                       const std::string& memo );
+
+           signed_transaction collect_inputs_and_sign( signed_transaction& trx, const asset& min_amnt );
+
+           std::string                         get_transaction_info_string( bts::blockchain::chain_database& db,
+                                                                            const transaction& tx);
+
            virtual std::string                 get_output_info_string(const trx_output& out);
-           virtual std::string                 get_input_info_string(bts::blockchain::chain_database& db, const trx_input& in);
+           virtual std::string                 get_input_info_string(bts::blockchain::chain_database& db,
+                                                                     const trx_input& in);
 
 
         protected:
            virtual void dump_output( const trx_output& out );
-           virtual bool scan_output( transaction_state& state, const trx_output& out, const output_reference& ref, const output_index& idx );
-           virtual void scan_input( transaction_state& state, const output_reference& ref, const output_index& idx );
-           virtual void cache_output( int32_t vote, const trx_output& out, const output_reference& ref, const output_index& idx );
+           virtual bool scan_output( transaction_state& state,
+                                     const trx_output& out,
+                                     const output_reference& ref,
+                                     const output_index& idx );
+
+           virtual void scan_input( transaction_state& state,
+                                    const output_reference& ref,
+                                    const output_index& idx );
+
+           virtual void cache_output( int32_t vote,
+                                      const trx_output& out,
+                                      const output_reference& ref,
+                                      const output_index& idx );
 
         private:
            bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );

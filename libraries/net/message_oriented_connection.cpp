@@ -16,6 +16,10 @@ namespace bts { namespace net {
       message_oriented_connection_delegate *_delegate;
       stcp_socket _sock;
       fc::future<void> _read_loop_done;
+      uint64_t _bytes_received;
+      uint64_t _bytes_sent;
+
+
       void read_loop();
       void start_read_loop();
     public:
@@ -27,11 +31,15 @@ namespace bts { namespace net {
       message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate = nullptr);
       void send_message(const message& message_to_send);
       void close_connection();
+      uint64_t get_total_bytes_sent() const;
+      uint64_t get_total_bytes_received() const;
     };
 
     message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate) : 
       _self(self),
-      _delegate(delegate)
+      _delegate(delegate),
+      _bytes_received(0),
+      _bytes_sent(0)
     {
     }
 
@@ -72,13 +80,17 @@ namespace bts { namespace net {
         {
           char buffer[BUFFER_SIZE];
           _sock.read(buffer, BUFFER_SIZE);
+          _bytes_received += BUFFER_SIZE;
           memcpy((char*)&m, buffer, sizeof(message_header));
 
           size_t remaining_bytes_with_padding = 16 * ((m.size - LEFTOVER + 15) / 16);
           m.data.resize(LEFTOVER + remaining_bytes_with_padding); //give extra 16 bytes to allow for padding added in send call
           std::copy(buffer + sizeof(message_header), buffer + sizeof(buffer), m.data.begin());
           if (remaining_bytes_with_padding)
+          {
             _sock.read(&m.data[LEFTOVER], remaining_bytes_with_padding);
+            _bytes_received += remaining_bytes_with_padding;
+          }
           m.data.resize(m.size); // truncate off the padding bytes
 
           try 
@@ -132,12 +144,23 @@ namespace bts { namespace net {
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
         _sock.write(padded_message.get(), size_with_padding);
         _sock.flush();
+        _bytes_sent += size_with_padding;
       } FC_RETHROW_EXCEPTIONS( warn, "unable to send message" );    
     }
 
     void message_oriented_connection_impl::close_connection()
     {
       _sock.close();
+    }
+
+    uint64_t message_oriented_connection_impl::get_total_bytes_sent() const
+    {
+      return _bytes_sent;
+    }
+
+    uint64_t message_oriented_connection_impl::get_total_bytes_received() const
+    {
+      return _bytes_received;
     }
   } // end namespace bts::net::detail
 
@@ -179,6 +202,16 @@ namespace bts { namespace net {
   void message_oriented_connection::close_connection()
   {
     my->close_connection();
+  }
+
+  uint64_t message_oriented_connection::get_total_bytes_sent() const
+  {
+    return my->get_total_bytes_sent();
+  }
+
+  uint64_t message_oriented_connection::get_total_bytes_received() const
+  {
+    return my->get_total_bytes_received();
   }
 
 } } // end namespace bts::net

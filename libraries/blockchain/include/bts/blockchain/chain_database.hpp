@@ -9,9 +9,14 @@ namespace fc
    class path;
 };
 
-namespace bts { namespace blockchain {
+namespace bts { 
+   /**
+    *  @brief all types and data associated with the blockchain data structure 
+    */
+   namespace blockchain {
 
     namespace detail  { class chain_database_impl; }
+    uint64_t to_bips( uint64_t shares, uint64_t total_shares );
 
     struct name_record
     {
@@ -87,6 +92,11 @@ namespace bts { namespace blockchain {
            *  @return the top *count* delegates by vote.
            */
           std::vector<name_record>  get_delegates( uint32_t count = 100 );
+
+          /**
+           * Returns up to count names after first when sorted alphabetically
+           */
+          std::vector<name_record>  get_names( const std::string& first, uint32_t count = 100 );
 
 
           //@{

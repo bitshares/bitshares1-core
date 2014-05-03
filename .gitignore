@@ -1,21 +1,16 @@
-*.swp
 *.a
 *.o
 *.dylib
-*.lib
 *.cmake
+*.lib
 *.sw*
 
 docs/html
 docs/latex
 
 CMakeCache.txt
-Makefile
 CMakeFiles
-
-tests/blockchain_tests
-tests/dns_tests
-tests/simple_net_test_client
+Makefile
 
 programs/bts_xt/bts_xt
 programs/bts_xt/bts_xt_client
@@ -23,10 +18,18 @@ programs/bts_xt/bts_xt_server
 programs/bts_xt/log.txt
 
 programs/dns/chain
-programs/dns/dns_client
-programs/dns/dns_server
 programs/dns/log.txt
+programs/dns/p2p_client
+programs/dns/p2p_server
 
 programs/kids/kids
 
 programs/utils/bts_create_key
+
+tests/blockchain_tests
+
+tests/bts_xt_client_tests
+
+tests/simple_net_test_client
+
+tests/dns/p2p_tests

@@ -1,6 +1,7 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction_validator.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/output_factory.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <leveldb/db.h>
 #include <bts/db/level_pod_map.hpp>
@@ -301,6 +302,12 @@ namespace bts { namespace blockchain {
      chain_database::chain_database()
      :my( new detail::chain_database_impl() )
      {
+         output_factory::instance().register_output<claim_by_signature_output>();
+         output_factory::instance().register_output<claim_by_pts_output>();
+         output_factory::instance().register_output<claim_by_multi_sig_output>();
+         output_factory::instance().register_output<claim_by_password_output>();
+         output_factory::instance().register_output<claim_name_output>();
+         output_factory::instance().register_output<claim_fire_delegate_output>();
          my->_self = this;
          my->_trx_validator = std::make_shared<transaction_validator>(this);
          my->_pow_validator = std::make_shared<pow_validator>(this);
@@ -324,6 +331,21 @@ namespace bts { namespace blockchain {
            return itr.value();
         return fc::optional<name_record>();
      } FC_RETHROW_EXCEPTIONS( warn, "delegate id: ${id}", ("id",del) ) }
+
+     std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )
+     { try {
+          std::vector<name_record> records;
+          records.reserve(100);
+          auto name_itr = my->_name_records.lower_bound( first ); 
+          uint32_t num = 0;
+          if( name_itr.valid() && num < count )
+          {
+             records.push_back( name_itr.value() );
+             ++name_itr;
+             ++num;
+          }
+          return records;
+     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) ) }
 
      std::vector<name_record> chain_database::get_delegates( uint32_t count )
      {
@@ -388,9 +410,11 @@ namespace bts { namespace blockchain {
      {
         my->blk_id2num.close();
         my->trx_id2num.close();
+        my->meta_trxs.close();
         my->blocks.close();
         my->block_trxs.close();
-        my->meta_trxs.close();
+        my->_delegate_records.close();
+        my->_name_records.close();
      }
 
     uint32_t chain_database::head_block_num()const
@@ -453,7 +477,8 @@ namespace bts { namespace blockchain {
         return trx.outputs[ref.output_idx];
     }
 
-    std::vector<meta_trx_input> chain_database::fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head )
+    std::vector<meta_trx_input> chain_database::fetch_inputs( 
+                             const std::vector<trx_input>& inputs, uint32_t head )
     {
        try
        {
@@ -487,6 +512,7 @@ namespace bts { namespace blockchain {
              metin.output_num   = inputs[i].output_ref.output_idx;
              metin.output       = trx.outputs[metin.output_num];
              metin.meta_output  = trx.meta_outputs[metin.output_num];
+             metin.data         = inputs[i].input_data;
              rtn.push_back( metin );
 
             } FC_RETHROW_EXCEPTIONS( warn, "error fetching input [${i}] ${in}", ("i",i)("in", inputs[i]) );
@@ -527,9 +553,9 @@ namespace bts { namespace blockchain {
     { try {
         auto block_state = my->_trx_validator->create_block_state();
         if( b.block_num == 0 ) { return block_state; } // don't check anything for the genesis block;
+        // TODO: replace hardcoded _trustee with a lookup of the trustee for the timestamp on this block
         FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
-        FC_ASSERT( b.trxs.size()  > 0                                                          );
         FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
         FC_ASSERT( b.prev         == my->head_block_id                                         );
         /// time stamps from the future are not allowed
@@ -538,11 +564,13 @@ namespace bts { namespace blockchain {
                    ("get_fee_rate",get_fee_rate())("b.size",b.block_size())
                    );
 
-        // TODO: timestamp should be multiple of BTS_BLOCKCHAIN_INTERVAL_SEC from genesis 
-        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(10)), "",
-                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(10)));
+        FC_ASSERT( b.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
 
-        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp) + fc::seconds(10) );
+        FC_ASSERT( b.timestamp    <= (my->_pow_validator->get_time() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/4)), "",
+                   ("b.timestamp", b.timestamp)("future",my->_pow_validator->get_time()+ fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/4)));
+
+
+        FC_ASSERT( b.timestamp    > fc::time_point(my->head_block.timestamp)  );
 
 
         validate_unique_inputs( b.trxs, deterministic_trxs );
@@ -566,8 +594,11 @@ namespace bts { namespace blockchain {
             summary += my->_trx_validator->evaluate( strx, block_state );
         }
 
+        FC_ASSERT( b.next_reward     == b.calculate_next_reward( b.next_reward, summary.fees ) )
         FC_ASSERT( b.total_shares    == my->head_block.total_shares - summary.fees, "",
-                   ("b.total_shares",b.total_shares)("head_block.total_shares",my->head_block.total_shares)("summary.fees",summary.fees) );
+                   ("b.total_shares",b.total_shares)
+                   ("head_block.total_shares",my->head_block.total_shares)
+                   ("summary.fees",summary.fees) );
 
         return block_state;
 
