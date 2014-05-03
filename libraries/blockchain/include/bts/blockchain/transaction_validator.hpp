@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 namespace bts { namespace blockchain {
-   
+
    class chain_database;
 
    class transaction_summary
@@ -11,16 +11,15 @@ namespace bts { namespace blockchain {
       public:
          transaction_summary();
          virtual ~transaction_summary(){};
-         
+
          int64_t valid_votes;  // votes for valid blocks
          int64_t invalid_votes; // votes for invalid blocks
          int64_t spent; // ignoring coindays, what is the total amount spent
          int64_t fees;
-         
+
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
          transaction_summary& operator +=( const transaction_summary& a );
    };
-
 
    /**
     *  @class block_evaluation_state
@@ -33,14 +32,14 @@ namespace bts { namespace blockchain {
     *  valid on their own may not be valid in the context of other transactions.
     *
     *  This class is designed to be derived from when extending the basic
-    *  blockchain to add additional evaluation criterion. 
+    *  blockchain to add additional evaluation criterion.
     */
    class block_evaluation_state
    {
       public:
          block_evaluation_state( chain_database* blockchain )
          :_blockchain( blockchain ) {}
-         
+
          virtual ~block_evaluation_state(){}
          void add_name_output( const claim_name_output& o )
          {
@@ -60,7 +59,7 @@ namespace bts { namespace blockchain {
 
    typedef std::shared_ptr<block_evaluation_state> block_evaluation_state_ptr;
 
-   /** 
+   /**
     * @class transaction_evaluation_state
     * @brief Tracks the state associated with the evaluation of the transaction.
     */
@@ -77,7 +76,7 @@ namespace bts { namespace blockchain {
 
           transaction_evaluation_state( const signed_transaction& trx );
           virtual ~transaction_evaluation_state();
-          
+
           int64_t  get_total_in( asset::unit_type t = 0 )const;
           int64_t  get_total_out( asset::unit_type t = 0 )const;
           int64_t  get_required_fees( asset::unit_type t = 0 )const;
@@ -96,7 +95,7 @@ namespace bts { namespace blockchain {
              FC_ASSERT( itr != name_inputs.end() );
              return itr->second;
           }
-          
+
           bool     is_output_used( uint32_t out )const;
           void     mark_output_as_used( uint32_t out );
 
@@ -107,22 +106,21 @@ namespace bts { namespace blockchain {
           bool has_signature( const address& a )const;
           bool has_signature( const pts_address& a )const;
 
-          std::unordered_set<address>               sigs;
-          std::unordered_set<pts_address>           pts_sigs;
+          std::unordered_set<address>                       sigs;
+          std::unordered_set<pts_address>                   pts_sigs;
 
           /** valid votes are those where one of the previous two blocks
-           * is referenced by the transaction and the input 
+           * is referenced by the transaction and the input
            */
-          uint64_t                                  valid_votes;
-          uint64_t                                  invalid_votes;
-          uint64_t                                  spent;
-
+          uint64_t                                          valid_votes;
+          uint64_t                                          invalid_votes;
+          uint64_t                                          spent;
 
           void balance_assets()const;
 
       //private:
-          std::unordered_map<asset::unit_type,asset_io>  total;
-          std::unordered_set<uint32_t>                   used_outputs;
+          std::unordered_map<asset::unit_type,asset_io>     total;
+          std::unordered_set<uint32_t>                      used_outputs;
    };  // transaction_evaluation_state
 
    /**
@@ -141,58 +139,58 @@ namespace bts { namespace blockchain {
           virtual ~transaction_validator();
 
           /**
-           *  This method can be specialized by derived classes to track 
-           *  additional state that must be validated in the context of 
+           *  This method can be specialized by derived classes to track
+           *  additional state that must be validated in the context of
            *  other transactions that are not yet part of the blockchain.
            */
           virtual block_evaluation_state_ptr create_block_state()const;
-          
-          virtual transaction_summary evaluate( const signed_transaction& trx, 
+
+          virtual transaction_summary evaluate( const signed_transaction& trx,
                                                 const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state, 
+          virtual void validate_input( const meta_trx_input& in, transaction_evaluation_state& state,
                                        const block_evaluation_state_ptr& block_state );
-          virtual void validate_output( const trx_output& in, transaction_evaluation_state& state, 
+          virtual void validate_output( const trx_output& in, transaction_evaluation_state& state,
                                         const block_evaluation_state_ptr& block_state );
-          
+
           virtual void validate_pts_signature_input( const meta_trx_input& in,
                                                      transaction_evaluation_state& state,
                                                      const  block_evaluation_state_ptr& block_state );
 
-          virtual void validate_signature_input(  const meta_trx_input& in, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_signature_input(  const meta_trx_input& in,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_multi_sig_input(  const meta_trx_input& in, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_multi_sig_input(  const meta_trx_input& in,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_password_input(  const meta_trx_input& in, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_password_input(  const meta_trx_input& in,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_name_input(  const meta_trx_input& in, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_name_input(  const meta_trx_input& in,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_signature_output( const trx_output& out, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_signature_output( const trx_output& out,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_multi_sig_output( const trx_output& out, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_multi_sig_output( const trx_output& out,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_password_output( const trx_output& out, 
-                                                  transaction_evaluation_state& state, 
+          virtual void validate_password_output( const trx_output& out,
+                                                  transaction_evaluation_state& state,
                                                   const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_pts_signature_output( const trx_output& out, 
-                                                      transaction_evaluation_state& state, 
+          virtual void validate_pts_signature_output( const trx_output& out,
+                                                      transaction_evaluation_state& state,
                                                       const block_evaluation_state_ptr& block_state );
 
-          virtual void validate_name_output( const trx_output& out, 
-                                              transaction_evaluation_state& state, 
+          virtual void validate_name_output( const trx_output& out,
+                                              transaction_evaluation_state& state,
                                               const block_evaluation_state_ptr& block_state );
        protected:
           void accumulate_votes( uint64_t amnt, uint32_t source_block_num,
@@ -205,8 +203,8 @@ namespace bts { namespace blockchain {
 
 } } // namespace bts::blockchain
 
-FC_REFLECT( bts::blockchain::transaction_summary, (valid_votes)(invalid_votes)(fees) )
-
+FC_REFLECT( bts::blockchain::transaction_summary, (valid_votes)(invalid_votes)(spent)(fees) )
+FC_REFLECT( bts::blockchain::block_evaluation_state, (_name_outputs)(_input_votes)(_output_votes)(_blockchain) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::asset_io, (in)(out)(required_fees) )
-FC_REFLECT( bts::blockchain::transaction_evaluation_state, (name_inputs)(inputs)(trx)(sigs)
-                                                          (pts_sigs)(valid_votes)(invalid_votes)(spent)(used_outputs)(total) )
+FC_REFLECT( bts::blockchain::transaction_evaluation_state, (name_inputs)(inputs)(trx)(sigs)(pts_sigs)(valid_votes)
+                                                           (invalid_votes)(spent)(total)(used_outputs) )
