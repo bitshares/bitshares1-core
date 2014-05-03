@@ -288,6 +288,5 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid)(fees) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(to)(from)(memo)(delta_balance)(fees)(block_num)(valid) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
-

@@ -202,7 +202,6 @@ BOOST_AUTO_TEST_CASE (templ)
  * wallet_bid_insufficient_funds_fail
  * wallet_bid_pending_txs_conflict_fail
  *
- * /// TODO: Merge transfer and update tests
  * validator_update
  * wallet_and_validator_update
  *

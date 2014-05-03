@@ -34,45 +34,38 @@ FC_REFLECT( trx_stat, (trx_idx)(eval) )
 
 namespace bts { namespace wallet {
 
-
-
    /**
     * this is the data that is stored on disk in an encrypted form protected by
     * the wallet password.
     */
    struct wallet_data
    {
-       uint32_t                                                 version;
-       uint32_t                                                 last_used_key;
-       uint32_t                                                 last_scanned_block_num;
-       std::unordered_map<address,std::string>                  receive_addresses;
-       std::unordered_map<pts_address,address>                  receive_pts_addresses;
-       std::unordered_map<address,std::string>                  send_addresses;
+       uint32_t                                                     version;
+       uint32_t                                                     last_used_key;
+       uint32_t                                                     last_scanned_block_num;
+       std::unordered_map<address,std::string>                      receive_addresses;
+       std::unordered_map<pts_address,address>                      receive_pts_addresses;
+       std::unordered_map<address,std::string>                      send_addresses;
 
        /**
         *  If this wallet is a delegate wallet, these are the keys that it controls
         *  for producing blocks.
         */
-       std::unordered_map<uint32_t,fc::ecc::private_key>        delegate_keys;
-       std::unordered_set<uint32_t>                             trusted_delegates;
-       std::unordered_set<uint32_t>                             distrusted_delegates;
+       std::unordered_map<uint32_t,fc::ecc::private_key>            delegate_keys;
+       std::unordered_set<uint32_t>                                 trusted_delegates;
+       std::unordered_set<uint32_t>                                 distrusted_delegates;
 
-
-
-
-       //std::vector<fc::ecc::private_key>                 keys;
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
-       std::vector<char>                                        encrypted_keys;
-       std::vector<char>                                        encrypted_base_key;
+       std::vector<char>                                            encrypted_keys;
+       std::vector<char>                                            encrypted_base_key;
 
-
-       std::unordered_map<transaction_id_type, transaction_state> transactions; //map of all transactions affecting wallet balance
-       std::map<output_index, trx_output>                         unspent_outputs;
-       std::map<output_index, trx_output>                         spent_outputs;
+       std::unordered_map<transaction_id_type, transaction_state>   transactions; // map of all transactions affecting wallet balance
+       std::map<output_index, trx_output>                           unspent_outputs;
+       std::map<output_index, trx_output>                           spent_outputs;
 
        /** maps block#.trx#.output# (internal form used for efficiency) to trx_id.output# (form stored in blockchain)*/
-       std::map<output_index, output_reference>                   output_index_to_ref;
-       std::map<output_index, int32_t>                            votes;
+       std::map<output_index, output_reference>                     output_index_to_ref;
+       std::map<output_index, int32_t>                              votes;
 
        std::unordered_map<address,fc::ecc::private_key>    decrypt_keys( const std::string& password )
        { try {
@@ -158,33 +151,37 @@ namespace bts { namespace wallet {
       {
           public:
               wallet_impl():_stake(0),_is_open(false),_blockchain(nullptr){}
-              std::string _wallet_base_password; // used for saving/loading the wallet
-              std::string _wallet_key_password;  // used to access private keys
-              fc::time_point _wallet_relock_time;
-              fc::future<void> _wallet_relocker_done;
 
-              fc::path                                                   _wallet_dat;
-              fc::path                                                   _data_dir;
-              wallet_data                                                _data;
+              std::string                                                   _wallet_base_password; // used for saving/loading the wallet
+              std::string                                                   _wallet_key_password;  // used to access private keys
+              fc::time_point                                                _wallet_relock_time;
+              fc::future<void>                                              _wallet_relocker_done;
+
+              fc::path                                                      _wallet_dat;
+              fc::path                                                      _data_dir;
+              wallet_data                                                   _data;
               /** millishares per byte */
-              uint64_t                                                   _current_fee_rate;
-              uint64_t                                                   _stake;
-              bool                                                       _is_open;
-              std::string _user; // username used for opening the wallet, filename will be _user + "_wallet.dat"
+              uint64_t                                                      _current_fee_rate;
+              uint64_t                                                      _stake;
+              bool                                                          _is_open;
 
-              //std::map<output_index, output_reference>                 _output_index_to_ref;
+              // username used for opening the wallet, filename will be _user + "_wallet.dat"
+              std::string                                                   _user;
+
+              //std::map<output_index, output_reference>                    _output_index_to_ref;
               // cached data for rapid lookup
-              std::unordered_map<output_reference, output_index>         _output_ref_to_index;
+              std::unordered_map<output_reference, output_index>            _output_ref_to_index;
 
               // keep sorted so we spend oldest first to maximize CDD
-              //std::map<output_index, trx_output>                       _unspent_outputs;
-              //std::map<output_index, trx_output>                       _spent_outputs;
+              //std::map<output_index, trx_output>                          _unspent_outputs;
+              //std::map<output_index, trx_output>                          _spent_outputs;
 
               // maps address to private key index
-              std::unordered_map<address,fc::ecc::private_key>             _my_keys;
-              std::unordered_map<transaction_id_type,signed_transaction>   _id_to_signed_transaction;
+              std::unordered_map<address,fc::ecc::private_key>              _my_keys;
+              std::unordered_map<transaction_id_type,signed_transaction>    _id_to_signed_transaction;
 
-              chain_database*                                              _blockchain;
+              // TODO: Why not shared ptr?
+              chain_database*                                               _blockchain;
 
               uint64_t get_fee_rate()
               {
@@ -610,10 +607,10 @@ namespace bts { namespace wallet {
       my->_data.set_keys( my->_my_keys, my->_wallet_key_password );
       my->_data.receive_addresses[addr] = memo;
 
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr;
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr; // Uncompressed PTS
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr; // Compressed PTS
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr; // Uncompressed BTC
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr; // Compressed BTC
 
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
@@ -1158,7 +1155,7 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size())/1000 )
+                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size())/1000 )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
                         ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
