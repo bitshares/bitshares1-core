@@ -394,7 +394,6 @@ namespace bts { namespace client {
 
     void client::stop()
     {
-      
     }
 
     void client::set_advanced_node_parameters(const fc::variant_object& params)
