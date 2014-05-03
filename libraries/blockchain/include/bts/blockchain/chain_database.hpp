@@ -9,9 +9,9 @@ namespace fc
    class path;
 };
 
-namespace bts { 
+namespace bts {
    /**
-    *  @brief all types and data associated with the blockchain data structure 
+    *  @brief all types and data associated with the blockchain data structure
     */
    namespace blockchain {
 
@@ -84,7 +84,7 @@ namespace bts {
           void evaluate_transaction( const signed_transaction& trx );
 
           fc::optional<name_record> lookup_name( const std::string& name );
-          fc::optional<name_record> lookup_delegate( uint16_t del );
+          fc::optional<name_record> lookup_delegate( uint32_t del );
 
           /**
            *  @param count - the number of delegates to return
