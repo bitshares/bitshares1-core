@@ -117,7 +117,6 @@ namespace bts { namespace wallet {
    };
 } } // bts::wallet
 
-
 FC_REFLECT( bts::wallet::wallet_data,
             (version)
             (last_used_key)

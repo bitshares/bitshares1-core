@@ -52,11 +52,11 @@ namespace wallet {
         uint16_t   output_idx;
    };
 
-
    struct transaction_state
    {
       transaction_state():delta_balance(0),block_num(-1),valid(false){}
       signed_transaction                   trx;
+
       /** outputs of the transaction that are not controlled by this wallet
        *
        *  These would be addresses belonging to 3rd parties.
@@ -69,10 +69,10 @@ namespace wallet {
       std::map<address,std::string>        from;
 
       std::string                          memo;
-      std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
-      std::unordered_map<uint16_t,int64_t> fees; /// unit vs amount
-      uint32_t                             block_num; // block that included it, -1 if not included
-      bool                                 valid;     // is this transaction currently valid if it is not confirmed...
+      std::unordered_map<uint16_t,int64_t> delta_balance; // unit vs amount
+      std::unordered_map<uint16_t,int64_t> fees;          // unit vs amount
+      uint32_t                             block_num;     // block that included it, -1 if not included
+      bool                                 valid;         // is this transaction currently valid if it is not confirmed...
 
       void adjust_balance( asset amnt, int64_t direction = 1 )
       {

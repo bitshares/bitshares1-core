@@ -136,7 +136,7 @@ namespace bts {
 
           uint32_t                      get_output_age( const output_reference& output_ref );
 
-          trx_num                       fetch_trx_num( const uint160& trx_id );
+          trx_num                       fetch_trx_num( const transaction_id_type& trx_id );
           meta_trx                      fetch_trx( const trx_num& t );
 
           signed_transaction            fetch_transaction( const transaction_id_type& trx_id );

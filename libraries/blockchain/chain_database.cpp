@@ -21,8 +21,11 @@
 #include <iomanip>
 
 namespace fc {
-  template<> struct get_typename<std::vector<uint160>>        { static const char* name()  { return "std::vector<uint160>";  } };
-  template<> struct get_typename<fc::ecc::compact_signature>  { static const char* name()  { return "fc::ecc::compact_signature";  } };
+  template<> struct get_typename<std::vector<bts::blockchain::transaction_id_type>>
+  { static const char* name()  { return "std::vector<transaction_id_type>"; } };
+
+  template<> struct get_typename<fc::ecc::compact_signature>
+  { static const char* name()  { return "fc::ecc::compact_signature"; } };
 } // namespace fc
 
 namespace bts { namespace blockchain {
@@ -62,30 +65,30 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl() {}
 
-            chain_database*                                     _self;
+            chain_database*                                                 _self;
 
-            bts::db::level_map<block_id_type,uint32_t>          _blk_id2num;
-            bts::db::level_map<uint160,trx_num>                 _trx_id2num;
-            bts::db::level_map<trx_num,meta_trx>                _meta_trxs;
-            bts::db::level_map<uint32_t,signed_block_header>    _blocks;
-            bts::db::level_map<uint32_t,std::vector<uint160>>   _block_trxs;
+            bts::db::level_map<block_id_type,uint32_t>                      _blk_id2num;
+            bts::db::level_map<transaction_id_type,trx_num>                 _trx_id2num;
+            bts::db::level_map<trx_num,meta_trx>                            _meta_trxs;
+            bts::db::level_map<uint32_t,signed_block_header>                _blocks;
+            bts::db::level_map<uint32_t,std::vector<transaction_id_type>>   _block_trxs;
 
-            bts::db::level_map< uint32_t, name_record >         _delegate_records;
-            bts::db::level_map< std::string, name_record >      _name_records;
+            bts::db::level_map< uint32_t, name_record >                     _delegate_records;
+            bts::db::level_map< std::string, name_record >                  _name_records;
 
             /**
              *  track the delegate votes by rank
              */
-            std::set<vote_del>                                  _votes_to_delegate;
-            std::map<uint32_t, int64_t>                         _delegate_to_votes;
+            std::set<vote_del>                                              _votes_to_delegate;
+            std::map<uint32_t, int64_t>                                     _delegate_to_votes;
 
-            pow_validator_ptr                                   _pow_validator;
-            transaction_validator_ptr                           _trx_validator;
-            address                                             _trustee;
+            pow_validator_ptr                                               _pow_validator;
+            transaction_validator_ptr                                       _trx_validator;
+            address                                                         _trustee;
 
             /** cache this information because it is required in many calculations  */
-            trx_block                                           _head_block;
-            block_id_type                                       _head_block_id;
+            trx_block                                                       _head_block;
+            block_id_type                                                   _head_block_id;
 
             void update_delegate( const name_record& rec  )
             {
@@ -143,7 +146,7 @@ namespace bts { namespace blockchain {
                                 const signed_transactions& deterministic_trxs,
                                 const block_evaluation_state_ptr& state  )
             { try {
-                std::vector<uint160> trxs_ids;
+                std::vector<transaction_id_type> trxs_ids;
                 std::map<int32_t,uint64_t> delegate_votes;
                 for( uint32_t i = 1; i <= 100; ++i )
                 {
@@ -213,7 +216,7 @@ namespace bts { namespace blockchain {
                    store_genesis( b, deterministic_trxs, state );
                    return;
                 }
-                std::vector<uint160> trxs_ids;
+                std::vector<transaction_id_type> trxs_ids;
 
                 // store individual transactions
                 for( uint32_t cur_trx = 0; cur_trx < b.trxs.size(); ++cur_trx )
@@ -422,7 +425,7 @@ namespace bts { namespace blockchain {
        return my->_head_block.id();
     }
 
-    trx_num    chain_database::fetch_trx_num( const uint160& trx_id )
+    trx_num    chain_database::fetch_trx_num( const transaction_id_type& trx_id )
     { try {
        return my->_trx_id2num.fetch(trx_id);
     } FC_RETHROW_EXCEPTIONS( warn, "trx_id ${trx_id}", ("trx_id",trx_id) ) }

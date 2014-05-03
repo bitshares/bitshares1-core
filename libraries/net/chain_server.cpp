@@ -53,10 +53,6 @@ bts::blockchain::trx_block create_test_genesis_block(fc::path genesis_json_file)
       bts::blockchain::signed_transaction coinbase;
       coinbase.version = 0;
 
-      // TODO: simplify to one output per tx and evenly allocate votes among delegates
-      uint8_t output_idx = 0;
-      int32_t  current_delegate = 0;
-      uint64_t total_votes = 0;
       uint64_t total = 0;
       for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
       {

@@ -55,9 +55,6 @@ namespace bts { namespace rpc {
              (addnode)\
              (stop)
 
-
-
-
   namespace detail
   {
     class rpc_server_impl
@@ -1291,7 +1288,7 @@ bResult:
 }
 
 Examples:
-> bitcoin-cli getpeerinfo 
+> bitcoin-cli getpeerinfo
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getpeerinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 )" };
     fc::variant rpc_server_impl::getpeerinfo(const fc::variants&)
@@ -1317,7 +1314,7 @@ null
     static rpc_server::method_data addnode_metadata{"addnode", nullptr,
             /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
             /* returns: */    "null",
-            /* params:          name            type            required */ 
+            /* params:          name            type            required */
                               {{"node",         "string",       true},
                                {"command",      "string",       true}},
           /* prerequisites */ rpc_server::json_authenticated,
