@@ -232,45 +232,88 @@ namespace bts { namespace wallet {
                          return trx_input( get_output_ref( out.first ) );
                       }
                    }
-                   FC_ASSERT( !"Unable to find existing name registration output", 
+                   FC_ASSERT( !"Unable to find existing name registration output",
                               "name: ${name}", ("name",name) );
               }
 
-
               /**
-               *  Collect inputs that total to at least requested_amount.
+               *  Collect inputs that total to at least requested_amount and that take away votes
+               *  according to the documented voting algorithm.
+               *
+               *  @sa dpos_voting_algorithm
                */
-              std::vector<trx_input> collect_inputs( const asset& requested_amount, asset& total_input, 
+              std::vector<trx_input> collect_inputs( const asset& requested_amount, asset& total_input,
                                                      std::unordered_set<address>& required_signatures )
               {
-                   std::vector<trx_input> inputs;
-                   for( auto out : _data.unspent_outputs )
-                   {
-                      //ilog( "unspent outputs ${o}", ("o",out) );
-                       if( out.second.claim_func == claim_by_signature && out.second.amount.unit == requested_amount.unit )
-                       {
-                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
-                           total_input += out.second.amount;
-                           required_signatures.insert( out.second.as<claim_by_signature_output>().owner );
-                       //    ilog( "total in ${in}  min ${min}", ( "in",total_input)("min",requested_amount) );
-                           if( total_input.get_rounded_amount() >= requested_amount.get_rounded_amount() )
-                           {
-                              return inputs;
-                           }
-                       }
-                       else if( out.second.claim_func == claim_by_pts && out.second.amount.unit == requested_amount.unit )
-                       {
-                           inputs.push_back( trx_input( get_output_ref(out.first) ) );
-                           total_input += out.second.amount;
-                           required_signatures.insert( _data.receive_pts_addresses[out.second.as<claim_by_pts_output>().owner] );
-                        //   ilog( "total in ${in}  min ${min}", ( "in",total_input)("min",requested_amount) );
-                           if( total_input.get_rounded_amount() >= requested_amount.get_rounded_amount() )
-                           {
-                              return inputs;
-                           }
-                       }
-                   }
-                   FC_ASSERT( !"Unable to collect sufficient unspent inputs", "", ("requested_amount",requested_amount)("total_collected",total_input) );
+                  std::vector<trx_input> inputs;
+                  std::vector<std::pair<output_reference, trx_output>> remaining_outputs;
+
+                  /* If any unspent outputs are voting for a delegate in the distrusted_delegates list,
+                   * then select all such outputs as inputs to the transaction. This will maximize the rate
+                   * at which this distrusted delegate will be voted out. Additionally, if any unspent outputs
+                   * are more than 11 months old, then pro-actively include them to renew them. */
+                  for ( auto pair : _data.unspent_outputs )
+                  {
+                      auto output_ref = get_output_ref( pair.first );
+                      auto trx = _blockchain->fetch_transaction( output_ref.trx_hash );
+                      auto output = pair.second;
+
+                      if ( _data.distrusted_delegates.count( trx.vote ) > 0
+                           || _blockchain->get_output_age( output_ref ) > ((BTS_BLOCKCHAIN_BLOCKS_PER_YEAR / 12) * 11) )
+                      {
+                          // TODO: Also include other units and claim_types?
+                          if ( output.claim_func == claim_by_pts && output.amount.unit == requested_amount.unit )
+                              required_signatures.insert( _data.receive_pts_addresses[output.as<claim_by_pts_output>().owner] );
+                          else if ( output.claim_func == claim_by_signature && output.amount.unit == requested_amount.unit )
+                              required_signatures.insert( output.as<claim_by_signature_output>().owner );
+                          else
+                              continue;
+
+                          inputs.push_back( trx_input( output_ref ) );
+
+                          //if ( output.amount.unit == requested_amount.unit ) // TODO: See above; needed if other units are included
+                          total_input += output.amount;
+                      }
+                      else
+                      {
+                          remaining_outputs.push_back( std::pair<output_reference, trx_output>( output_ref, output ) );
+                      }
+                  }
+
+                  if ( total_input.amount >= requested_amount.amount )
+                      return inputs;
+
+                  /* If more outputs are required, select them in order from oldest to newest to minimize
+                   * the risk of inactivity fees. */
+                  auto comp = [&]( const std::pair<output_reference, trx_output>& l, const std::pair<output_reference, trx_output>& r )->bool
+                  {
+                      return _blockchain->get_output_age( l.first ) > _blockchain->get_output_age( r.first );
+                  };
+                  std::sort( remaining_outputs.begin(), remaining_outputs.end(), comp );
+
+                  for ( auto pair : remaining_outputs )
+                  {
+                      auto output_ref = pair.first;
+                      auto output = pair.second;
+
+                      if ( output.claim_func == claim_by_pts && output.amount.unit == requested_amount.unit )
+                          required_signatures.insert( _data.receive_pts_addresses[output.as<claim_by_pts_output>().owner] );
+                      else if ( output.claim_func == claim_by_signature && output.amount.unit == requested_amount.unit )
+                          required_signatures.insert( output.as<claim_by_signature_output>().owner );
+                      else
+                          continue;
+
+                      inputs.push_back( trx_input( output_ref ) );
+                      total_input += output.amount;
+
+                      if ( total_input.amount >= requested_amount.amount )
+                          break;
+                  }
+
+                  if ( total_input.amount < requested_amount.amount )
+                      FC_ASSERT( !"Unable to collect sufficient unspent inputs", "", ("requested_amount", requested_amount)("total_collected", total_input) );
+
+                  return inputs;
               }
 
               /**
@@ -281,12 +324,34 @@ namespace bts { namespace wallet {
                */
               int32_t select_delegate_vote()
               { try {
-                   FC_ASSERT( _data.trusted_delegates.size() > 0  );
-                   // for now we will randomly select a trusted delegate to vote for... this
-                   std::vector<uint32_t> trusted_del( _data.trusted_delegates.begin(), _data.trusted_delegates.end() );
-                   return int32_t(trusted_del[rand()%trusted_del.size()]);
-              } FC_RETHROW_EXCEPTIONS(warn, "") }
+                   /* If any distrusted_delegates are in the top 200 of the ranked_delegates,
+                    * vote against the distrusted delegate with the highest current rank. */
+                   const auto ranked_delegate_records = _blockchain->get_delegates( 200 );
+                   for ( const auto ranked_delegate_record : ranked_delegate_records )
+                   {
+                       if ( _data.distrusted_delegates.count( ranked_delegate_record.delegate_id ) > 0 )
+                           return -int32_t( ranked_delegate_record.delegate_id );
+                   }
 
+                   /* If there are no trusted_delegates in then vote for the observed_delegate
+                    * with the highest score and less than 1% of the vote. */
+                   FC_ASSERT( _data.trusted_delegates.size() > 0, "no trusted_delegates and observed_delegates not implemented" );
+
+                   /* If not voting against anyone, vote for the trusted_delegate with the lowest rank. */
+                   auto lowest_trusted_delegate_votes = std::numeric_limits<int64_t>::max();
+                   auto lowest_trusted_delegate = 0;
+                   for ( const auto trusted_delegate : _data.trusted_delegates )
+                   {
+                       auto trusted_delegate_votes = _blockchain->lookup_delegate( trusted_delegate )->total_votes();
+                       if ( trusted_delegate_votes < lowest_trusted_delegate_votes )
+                       {
+                           lowest_trusted_delegate_votes = trusted_delegate_votes;
+                           lowest_trusted_delegate = trusted_delegate;
+                       }
+                   }
+
+                   return int32_t( lowest_trusted_delegate );
+              } FC_RETHROW_EXCEPTIONS(warn, "") }
 
               /** completes a transaction signing it and logging it, this is different than wallet::sign_transaction which
                *  merely signs the transaction without checking anything else or storing the transaction.

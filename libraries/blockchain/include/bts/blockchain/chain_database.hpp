@@ -89,7 +89,7 @@ namespace bts {
           /**
            *  @param count - the number of delegates to return
            *
-           *  @return the top *count* delegates by vote.
+           *  @return the top *count* delegates by vote, sorted in descending order.
            */
           std::vector<name_record>  get_delegates( uint32_t count = 100 );
 
@@ -135,6 +135,7 @@ namespace bts {
           uint64_t                    get_fee_rate()const;
           uint32_t                    get_new_delegate_id()const;
 
+          uint32_t                      get_output_age( const output_reference& output_ref );
 
 
          trx_num    fetch_trx_num( const uint160& trx_id );

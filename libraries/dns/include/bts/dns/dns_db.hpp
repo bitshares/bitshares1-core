@@ -19,8 +19,6 @@ class dns_db : public bts::blockchain::chain_database
         virtual void store(const trx_block& blk, const signed_transactions& deterministic_trxs,
                            const block_evaluation_state_ptr& state) override;
 
-        uint32_t get_tx_age(const output_reference& tx_ref);
-
         // TODO: Add delete operation
         void                set_dns_ref(const std::string& key, const output_reference& ref);
         output_reference    get_dns_ref(const std::string& key);

@@ -98,7 +98,7 @@ bool p2p_transaction_validator::auction_is_closed(const output_reference& tx_ref
     FC_ASSERT(is_dns_output(output));
 
     auto dns_output = to_dns_output(output);
-    auto age = _dns_db->get_tx_age(tx_ref);
+    auto age = _dns_db->get_output_age(tx_ref);
 
     if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction
         && age < DNS_AUCTION_DURATION_BLOCKS)
@@ -116,7 +116,7 @@ bool p2p_transaction_validator::key_is_expired(const output_reference& tx_ref)
         return false;
 
     auto dns_output = to_dns_output(output);
-    auto age = _dns_db->get_tx_age(tx_ref);
+    auto age = _dns_db->get_output_age(tx_ref);
 
     if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction)
         return age >= (DNS_AUCTION_DURATION_BLOCKS + DNS_EXPIRE_DURATION_BLOCKS);

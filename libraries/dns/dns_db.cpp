@@ -45,14 +45,6 @@ void dns_db::store(const trx_block& blk, const signed_transactions& deterministi
     }
 }
 
-uint32_t dns_db::get_tx_age(const output_reference& tx_ref)
-{
-    auto tx_ref_id = tx_ref.trx_hash;
-    auto block_num = fetch_trx_num(tx_ref_id).block_num;
-
-    return head_block_num() - block_num;
-}
-
 void dns_db::set_dns_ref(const std::string& key, const output_reference& ref)
 {
     _dns2ref.store(key, ref);

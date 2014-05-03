@@ -54,6 +54,7 @@ namespace bts { namespace blockchain {
           }
           friend bool operator < ( const vote_del& a, const vote_del& b )
           {
+             /* Reverse comparison so highest rank is sorted to beginning of std::set */
              return a.votes > b.votes ? true : (a.votes == b.votes ? a.delegate_id > b.delegate_id : false);
           }
        };
@@ -680,6 +681,13 @@ namespace bts { namespace blockchain {
        while( my->_delegate_to_votes.find(new_id) != my->_delegate_to_votes.end() )
             new_id = fc::time_point::now().time_since_epoch().count() ^ rand();
        return new_id;
+    }
+
+    uint32_t chain_database::get_output_age( const output_reference& output_ref )
+    {
+        auto trx_id = output_ref.trx_hash;
+        auto block_num = fetch_trx_num( trx_id ).block_num;
+        return head_block_num() - block_num;
     }
 
 }  } // bts::blockchain
