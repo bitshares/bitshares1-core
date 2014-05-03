@@ -27,6 +27,7 @@ namespace bts { namespace cli {
 
          void confirm_and_broadcast(signed_transaction& tx);
          void wait();
+         void quit();
 
 
         /// hooks to implement custom behavior for interactive command, if the default json-style behavior is undesirable

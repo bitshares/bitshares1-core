@@ -590,6 +590,7 @@ namespace bts { namespace cli {
    {
       try
       {
+        my->_client->get_wallet()->save();
         wait();
       }
       catch ( const fc::exception& e )
@@ -647,6 +648,10 @@ namespace bts { namespace cli {
    void cli::wait()
    {
        my->_cin_complete.wait();
+   }
+   void cli::quit()
+   {
+      my->_cin_complete.cancel();
    }
 
    std::string cli::get_line( const std::string& prompt, bool no_echo )
