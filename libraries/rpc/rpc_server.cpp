@@ -199,7 +199,7 @@ namespace bts { namespace rpc {
                       result["id"]     =  rpc_call["id"];
                       try
                       {
-                         result["result"] =  dispatch_authenticated_method(call_itr->second, params);
+                         result["result"] = dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
                          s.set_status( fc::http::reply::OK );
                       }
@@ -528,8 +528,8 @@ Examples:
       }
       catch( const fc::exception& e )
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
-         throw;
+        wlog( "${e}", ("e",e.to_detail_string() ) );
+        throw e;
       }
       catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
       {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'

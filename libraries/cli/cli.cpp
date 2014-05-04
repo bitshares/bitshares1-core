@@ -82,17 +82,18 @@ namespace bts { namespace cli {
                 try
                 {
                   // try to open without a password first
-                    std::cout << "open no pw\n";
                   _rpc_server->direct_invoke_method("open_wallet", fc::variants());
-                    std::cout << "no pw returned\n";
                   return;
                 }
                 catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
                 {
-                    std::cout << "no pw except\n";
                 }
-
-                    std::cout << "try w/pw\n";
+                catch (const fc::exception& e)
+                {
+                }
+                catch (...)
+                {
+                }
 
                 while (1)
                 {
@@ -814,7 +815,7 @@ namespace bts { namespace cli {
         std::cout << std::string( trx_state.trx.id() ) << " ";
         std::cout << "\n";
         ++num;
-        //if (num > 5) break;
+        if (num > 5) break;
      }
 
   }
