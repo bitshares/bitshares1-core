@@ -697,7 +697,19 @@ namespace bts { namespace cli {
 
   void cli::print_transaction_history()
   {
-     auto trx_hist = my->_client->get_wallet()->get_transaction_history();
+     auto hist = my->_client->get_wallet()->get_transaction_history();
+     std::vector< std::pair<transaction_id_type,wallet::transaction_state> > trx_hist;
+     for( auto h : hist ) trx_hist.push_back( h );
+
+     std::sort( trx_hist.begin(), trx_hist.end(), []( const std::pair<transaction_id_type,wallet::transaction_state>& a, const std::pair<transaction_id_type, wallet::transaction_state>& b )
+                {
+                    if( a.second.block_num == b.second.block_num )
+                       return a.second.trx_num < b.second.trx_num; 
+                    return ( a.second.block_num < b.second.block_num );
+                } 
+              );
+
+
      //std::cout << fc::json::to_pretty_string(trx_hist) << "\n";
      std::cout << std::setw( 3 ) << "#" <<"  ";
      std::cout << std::setw( 5 ) << "BLK" <<"  ";
