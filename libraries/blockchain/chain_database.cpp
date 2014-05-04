@@ -54,6 +54,7 @@ namespace bts { namespace blockchain {
           }
           friend bool operator < ( const vote_del& a, const vote_del& b )
           {
+             /* Reverse comparison so highest rank is sorted to beginning of std::set */
              return a.votes > b.votes ? true : (a.votes == b.votes ? a.delegate_id > b.delegate_id : false);
           }
        };
@@ -145,8 +146,8 @@ namespace bts { namespace blockchain {
             }
 
             /** the genesis block requires some special treatment and initialization */
-            void store_genesis( const trx_block& b, 
-                                const signed_transactions& deterministic_trxs, 
+            void store_genesis( const trx_block& b,
+                                const signed_transactions& deterministic_trxs,
                                 const block_evaluation_state_ptr& state  )
             { try {
                 std::vector<uint160> trxs_ids;
@@ -209,8 +210,8 @@ namespace bts { namespace blockchain {
             }  FC_RETHROW_EXCEPTIONS( warn, "error storing genesis block " ) } // store_genesis
 
 
-            void store( const trx_block& b, 
-                        const signed_transactions& deterministic_trxs, 
+            void store( const trx_block& b,
+                        const signed_transactions& deterministic_trxs,
                         const block_evaluation_state_ptr& state  )
             { try {
 
@@ -244,7 +245,7 @@ namespace bts { namespace blockchain {
                 block_trxs.store( b.block_num, trxs_ids );
 
                 blk_id2num.store( b.id(), b.block_num );
-                
+
 
                 // update name name records...
                 for( auto item : state->_name_outputs )
@@ -324,7 +325,7 @@ namespace bts { namespace blockchain {
         return fc::optional<name_record>();
      }
 
-     fc::optional<name_record> chain_database::lookup_delegate( uint16_t del )
+     fc::optional<name_record> chain_database::lookup_delegate( uint32_t del )
      { try {
         auto itr = my->_delegate_records.find( del );
         if( itr.valid() )
@@ -336,7 +337,7 @@ namespace bts { namespace blockchain {
      { try {
           std::vector<name_record> records;
           records.reserve(100);
-          auto name_itr = my->_name_records.lower_bound( first ); 
+          auto name_itr = my->_name_records.lower_bound( first );
           uint32_t num = 0;
           if( name_itr.valid() && num < count )
           {
@@ -355,7 +356,7 @@ namespace bts { namespace blockchain {
         uint32_t i = 0;
         for( auto del : my->_votes_to_delegate )
         {
-           results.push_back( *lookup_delegate( del.delegate_id ) );   
+           results.push_back( *lookup_delegate( del.delegate_id ) );
            ++i;
            if( i == count ) return results;
         }
@@ -477,7 +478,7 @@ namespace bts { namespace blockchain {
         return trx.outputs[ref.output_idx];
     }
 
-    std::vector<meta_trx_input> chain_database::fetch_inputs( 
+    std::vector<meta_trx_input> chain_database::fetch_inputs(
                              const std::vector<trx_input>& inputs, uint32_t head )
     {
        try
@@ -680,6 +681,13 @@ namespace bts { namespace blockchain {
        while( my->_delegate_to_votes.find(new_id) != my->_delegate_to_votes.end() )
             new_id = fc::time_point::now().time_since_epoch().count() ^ rand();
        return new_id;
+    }
+
+    uint32_t chain_database::get_output_age( const output_reference& output_ref )
+    {
+        auto trx_id = output_ref.trx_hash;
+        auto block_num = fetch_trx_num( trx_id ).block_num;
+        return head_block_num() - block_num;
     }
 
 }  } // bts::blockchain

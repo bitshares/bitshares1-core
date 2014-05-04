@@ -9,9 +9,9 @@ namespace fc
    class path;
 };
 
-namespace bts { 
+namespace bts {
    /**
-    *  @brief all types and data associated with the blockchain data structure 
+    *  @brief all types and data associated with the blockchain data structure
     */
    namespace blockchain {
 
@@ -84,12 +84,12 @@ namespace bts {
           void evaluate_transaction( const signed_transaction& trx );
 
           fc::optional<name_record> lookup_name( const std::string& name );
-          fc::optional<name_record> lookup_delegate( uint16_t del );
+          fc::optional<name_record> lookup_delegate( uint32_t del );
 
           /**
            *  @param count - the number of delegates to return
            *
-           *  @return the top *count* delegates by vote.
+           *  @return the top *count* delegates by vote, sorted in descending order.
            */
           std::vector<name_record>  get_delegates( uint32_t count = 100 );
 
@@ -135,6 +135,7 @@ namespace bts {
           uint64_t                    get_fee_rate()const;
           uint32_t                    get_new_delegate_id()const;
 
+          uint32_t                      get_output_age( const output_reference& output_ref );
 
 
          trx_num    fetch_trx_num( const uint160& trx_id );

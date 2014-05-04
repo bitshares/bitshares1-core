@@ -31,6 +31,13 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 config   load_config( const fc::path& datadir );
 bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir, 
                                                                       const boost::program_options::variables_map& option_variables);
+bts::client::client* _global_client = nullptr;
+
+void handle_signal( int signum )
+{
+  if( _global_client ) _global_client->get_wallet()->save();
+  exit( 1 ); 
+}
 
 int main( int argc, char** argv )
 {
@@ -86,6 +93,7 @@ int main( int argc, char** argv )
       wall->set_data_directory( datadir );
 
       auto c = std::make_shared<bts::client::client>(p2p_mode);
+      _global_client = c.get();
       c->set_chain( chain );
       c->set_wallet( wall );
 

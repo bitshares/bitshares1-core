@@ -4,25 +4,25 @@
 
    Delegated Proof of Stake (DPOS) is a process by which shareholders can exersize their influence over the generation of
    blocks by contributing to the selection of delegates.  Delegates have one role: produce blocks at the scheduled time and
-   include as many valid transactions as possible.   
+   include as many valid transactions as possible.
 
-   The following sections outline the algorithm used to ensure the most effective and reliable block generation possible. 
+   The following sections outline the algorithm used to ensure the most effective and reliable block generation possible.
    The network establishes a set of rules and and procedures that aim to keep power decentralized and rapidly handle any
-   abuse.  
+   abuse.
 
-   @section dpos_assumptions  Assumptions & Invariants 
+   @section dpos_assumptions  Assumptions & Invariants
 
    -# For the purpose of this algorithm design we are making the assumption that the client is synchronized via NTP to within
    a couple of seconds of UTC time.
 
-   -# At all times every share is either voting for or against some delegate but not both.  
-   Every transaction moves a vote from one delegate to either the same delegate or another delegate.  
+   -# At all times every share is either voting for or against some delegate but not both.
+   Every transaction moves a vote from one delegate to either the same delegate or another delegate.
 
    -# At all times no delegate may have more than 2% of the vote.  Any transaction or block that would give
    a delegate more than 2% of the vote is to be rejected.
 
    -# Anyone with sufficient stake has a right to vote for themself and produce blocks at the scheduled time.  If someone
-      abuses this role then others can deny them this right by voting against them.  In this way even large shareholders 
+      abuses this role then others can deny them this right by voting against them.  In this way even large shareholders
       are kept in check if enough small shareholders stand against them.
 
    -# The goal of the following algorithm is to minimize extra load on the network in order to maximize transaction
@@ -41,7 +41,7 @@
             votes are positive or negative.
 
           - delegates are registered using the bts::blockchain::claim_name_output class
-            
+
              - When bts::blockchain::claim_name_output#delegate_id is 0 indicates that the name is not elegible to receive votes, if
                 the name already has votes then those votes are no longer counted in the ranking of delegates as the delegate has
                 resigned.
@@ -50,44 +50,44 @@
 
              -  bts::blockchain::claim_name_output#data  can be used to provide additional data about the delegate, such as a website.
 
-      -# When registering an identifier a signup fee equal to 100 times the average revenue per block must be paid.  
+      -# When registering an identifier a signup fee equal to 100 times the average revenue per block must be paid.
 
             - This will insure that a delegate must produce at least 1000 blocks to break even and discourage people from running for the delegate position
-              that are not serious.   
+              that are not serious.
 
             - 1000 blocks is between 2 weeks and 2 months depending upon the block interval chosen by the network.
 
       -# All delegates must renew their registration once per year
-          - those in the top 100 may renew for free after 11 months. 
-          - those who are not in the top 100 must pay the registration fee again.  
+          - those in the top 100 may renew for free after 11 months.
+          - those who are not in the top 100 must pay the registration fee again.
 
       -# When a delegate registers they must also specify a unique name, and an optional value to associate with that name.  This
         allows a delegate to include information such as a website along with their registration.
-     
+
 
    @section dpos_voting_algorithm  Voting Algorithm
 
    Every wallet contains the following information:
-      
+
       -# trusted_delegates - array of delegate IDs that are trusted unless evidence to the contrary is observed by the client.
 
-      -# distrusted_delegates - an array of delegate IDs that are implicitly distrusted regardless of any evidence. 
+      -# distrusted_delegates - an array of delegate IDs that are implicitly distrusted regardless of any evidence.
 
       -# observed_delegates - an array of delegate IDs and observed statistical data sorted by this data.
 
-   The blockchain tracks the following: 
+   The blockchain tracks the following:
 
       -# ranked_delegates   - a sorted array of all delegates in the block chain by net votes (for - against)
 
 
    When generating a transaction the wallet must pick exactly one delegate to vote for using the following algorithm:
-      
+
       -# If any distrusted_delegates are in the top 200 of the ranked_delegates, vote against the distrusted delegate with
          the highest current rank.
 
       -# If not voting against anyone, vote for the trusted_delegate with the lowest rank.
 
-      -# If there are no trusted_delegates in then vote for the observed_delegate with the highest score and less than 1% 
+      -# If there are no trusted_delegates in then vote for the observed_delegate with the highest score and less than 1%
          of the vote.
 
    When generating a transaction the wallet must pick who to take votes from by selecting inputs.  The following process is
@@ -96,33 +96,33 @@
       -# If any unspent outputs are voting for a delegate in the distrusted_delegates list, then select all such outputs as
          inputs to the transaction.  This will maximize the rate at which this distrusted delegate will be voted out.
 
-      -# Select the oldest unspent output first to minimize the risk of inactivity fees.
-
       -# If any unspent outputs are more than 11 months old, then pro-actively include them to renew them.
+
+      -# If more outputs are required, select them in order from oldest to newest to minimize the risk of inactivity fees.
 
 
    @section dpos_delegate_scoring Delegate Scoring
 
-      When scoring a delegate a client attempts to guage their performance based upon their own observation of the 
-      network.  This performance will measure the following statistics 
+      When scoring a delegate a client attempts to guage their performance based upon their own observation of the
+      network.  This performance will measure the following statistics
 
        -# total blocks produced - total blocks produced and signed by this delegate
 
        -# total blocks missed - if a delegate was scheduled to produce a block and the block was not produced and included in the chain,
 
        -# median late latency - delta time between when the block was received and when the block should have been produced.  This can
-           be caused by many factors, some of which may not be the fault of the producer.   
+           be caused by many factors, some of which may not be the fault of the producer.
 
        -# median early latency - if a block arrives early, this measures how early it arrives.  This is an indication that either the
            clients clock is delayed, or the delegate is slow.  A delegate that is consistantly earlier than its peers is likely attempting
            to cheat this metric.   A delegate that is consitantly later (late latency) is likely slow.  By weighting early/late latency
            equally no client can gain an advantage over peers and all must strive to achieve the same statistics as all other delegates.
 
-       -# percent of known transactions included in the block that were received prior to the blocks scheduled production time. 
+       -# percent of known transactions included in the block that were received prior to the blocks scheduled production time.
 
             - the ideal value here is 1
 
-       -# percent of unknown transactions included in the block, an indication the delegate may be generating secret transactions. 
+       -# percent of unknown transactions included in the block, an indication the delegate may be generating secret transactions.
 
             - the ideal value here is 0.
 
@@ -130,30 +130,30 @@
 
        -# percent of maximum fee paid to delegate.  The maximum is 10% of average per-block revenue of last 100 blocks.
 
-            - the ideal value here is 0, but delegates do not work for free.  Cheaper delegates are ranked higher. 
+            - the ideal value here is 0, but delegates do not work for free.  Cheaper delegates are ranked higher.
 
        To calculate a delegate score there is no absolute measures we can use, instead we can only compare delegates against
        eachother.  To do this we will rank delegates by each field and then calculate the average of their ranking in each
        category, perhapse weighted by some constant.
 
 
-   @section dpos_block_validation Block Validation 
-      
+   @section dpos_block_validation Block Validation
+
      When a block is received the wallet should perform the following actions:
 
      -# Lookup the observed_delegates record and note the following:
 
          -# latency
 
-         -# percent of expected transactions that the block included 
+         -# percent of expected transactions that the block included
 
-         -# percent of unexpected transactions that the block included 
+         -# percent of unexpected transactions that the block included
 
       -# Validate the block and push it onto the block chain
 
          -# the last transaction in the block may include a payment to the delegate for up to 10% of the average
             revenue earned by the network over the last 100 blocks.
-         
+
    @section dpos_block_producer  Block Producer
 
       Any wallet that contains a registered delegate ID ranked in the top 100 knows when to produce a block based upon the
@@ -163,7 +163,7 @@
       @code
       CURRENT_TIME    = UTC_SEC / BLOCK_INTERVAL
       ROUND_TIME      = (CURRENT_TIME / 100) * 100
-      PRODUCE_TIME    = (ROUND_TIME + RANK) * BLOCK_INTERVAL 
+      PRODUCE_TIME    = (ROUND_TIME + RANK) * BLOCK_INTERVAL
       If PRODUCE_TIME < CURRENT_TIME then PRODUCE_TIME += 100 * BLOCK_INTERVAL
       @endcode
 
@@ -183,7 +183,7 @@
 
     If a client is forced to choose between these two alternative chains, then it picks the longer chain, <code>A->B->C->D->E->F</code> over the shorter chain <code>A->H->I->J->K</code>.
 
-    Another case is the event where missing B doesn't change the delegate ranking, so 
+    Another case is the event where missing B doesn't change the delegate ranking, so
     delegate C can choose to produce any of the following chains:
 
     @code
@@ -194,7 +194,7 @@
         *---------->C
     @endcode
 
-    This can be done for either malicious reasons or because of a network split.  In this particular case either node B or C could be the guilty party.  If B waited to send then C is legitimate in building off of A, where as if B sent on time the C is attempting to harm B.   C cannot sign two different blocks without getting fired, so whatever choice he makes is 'final' for him.   
+    This can be done for either malicious reasons or because of a network split.  In this particular case either node B or C could be the guilty party.  If B waited to send then C is legitimate in building off of A, where as if B sent on time the C is attempting to harm B.   C cannot sign two different blocks without getting fired, so whatever choice he makes is 'final' for him.
 
     At this point D will pick one of the following:
 
@@ -212,7 +212,7 @@
 
     Once E chooses the longest chain is once again clearly defined.  If D or E fails to produce a block on time, then this decision making process will continue until one chain is longer than the other.   So long as no delegate signs two blocks on different chains or for the same timeslot this process should be guranteed to resolve in an unambigious manner.
 
-    @subsection dpos_conflict_collusion Collusion 
+    @subsection dpos_conflict_collusion Collusion
 
     It may be possible for delegates to collude to produce the following alternatives:
 
@@ -226,11 +226,11 @@
     were 'off line' and had no way to determine whehter D or D1 came first then the ultimate dispute resolution is handled by
     TaPOS (Transactions as Proof of Stake) where the individuals making the transactions included by B-D recorded what they
     saw at the time.    TaPOS over such a short time horizon could be manipulated by a large shareholder (which a delegate is
-    is likely to be.   
+    is likely to be.
 
     @subsection dpos_conflict_conclusion Conclusion
 
-    It will always be possible to identify which chain was public and seen by the most shareholders/delegates by simply inspecting the data after the fact.  Any time a delegate misses a block everyone on the network knows that confirmation times must increase to allow enough follow-on delegates to vote on what they saw by producing a block for one chain or another. 
+    It will always be possible to identify which chain was public and seen by the most shareholders/delegates by simply inspecting the data after the fact.  Any time a delegate misses a block everyone on the network knows that confirmation times must increase to allow enough follow-on delegates to vote on what they saw by producing a block for one chain or another.
 
 
 */
