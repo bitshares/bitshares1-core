@@ -914,6 +914,9 @@ namespace bts { namespace wallet {
 
               transaction_state state;
               state.valid = true;
+              state.block_num = i;
+              state.trx_num   = trx_idx; 
+              state.confirm_time = blk.timestamp;
               state.trx = chain.fetch_trx(trx_num(i, trx_idx));
               bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
@@ -923,6 +926,10 @@ namespace bts { namespace wallet {
           for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
           {
               transaction_state state;
+              state.valid = true;
+              state.block_num = i;
+              state.trx_num   = trx_idx; 
+              state.confirm_time = blk.timestamp;
               state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) );
               bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )

@@ -350,6 +350,10 @@ namespace bts { namespace cli {
                   _self->list_delegates( );
                 return fc::variant();
               }
+              else if ( command == "get_transaction_history" )
+              {
+                 _self->print_transaction_history();
+              }
               else if (command == "rescan")
                 return interactive_rescan(command, arguments);
               else if(command == "quit")
@@ -360,6 +364,7 @@ namespace bts { namespace cli {
               {
                 return execute_command_and_prompt_for_passwords(command, arguments);
               }
+              return fc::variant();
             }
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
@@ -572,6 +577,8 @@ namespace bts { namespace cli {
         _client->get_wallet()->create( user, pass1, keypass1 );
         std::cout << "Wallet created.\n";
       }
+      interactive_open_wallet();
+      _self->print_transaction_history();
     }
   } // end namespace detail
 
@@ -686,6 +693,79 @@ namespace bts { namespace cli {
   void cli::format_and_print_result(const std::string& command, const fc::variant& result)
   {
     return my->format_and_print_result(command, result);
+  }
+
+  void cli::print_transaction_history()
+  {
+     auto hist = my->_client->get_wallet()->get_transaction_history();
+     std::vector< std::pair<transaction_id_type,wallet::transaction_state> > trx_hist;
+     for( auto h : hist ) trx_hist.push_back( h );
+
+     std::sort( trx_hist.begin(), trx_hist.end(), []( const std::pair<transaction_id_type,wallet::transaction_state>& a, const std::pair<transaction_id_type, wallet::transaction_state>& b )
+                {
+                    if( a.second.block_num == b.second.block_num )
+                       return a.second.trx_num < b.second.trx_num; 
+                    return ( a.second.block_num < b.second.block_num );
+                } 
+              );
+
+
+     //std::cout << fc::json::to_pretty_string(trx_hist) << "\n";
+     std::cout << std::setw( 3 ) << "#" <<"  ";
+     std::cout << std::setw( 5 ) << "BLK" <<"  ";
+     std::cout << std::setw( 10 ) << "DATE" <<"  ";
+     std::cout << std::setw( 40 ) << "FROM" <<"    |   ";
+     std::cout << std::setw( 40 ) << "TO" <<"  ";
+     std::cout << std::setw( 20 ) << "AMOUNT" <<"  ";
+     std::cout << "\n------------------------------------------------------------------------------------------\n";
+     uint32_t num = 0;
+     for( auto trx_state : trx_hist )
+     {
+        std::cout << std::setw( 3 ) << num << "  ";
+        {
+           std::stringstream ss;
+           ss << trx_state.second.block_num <<"."<<trx_state.second.trx_num;
+           std::cout << std::setw( 5 ) << ss.str() << "  ";
+        }
+        std::cout << std::setw( 10 ) << fc::variant(trx_state.second.confirm_time).as_string() << "  ";
+        {
+           std::stringstream ss;
+           if( trx_state.second.to.size() == 0 )
+           {
+              if( trx_state.second.from.size() )
+              {
+                  int count = 0;
+                  for( auto from : trx_state.second.from ) 
+                  {
+                     if( count ) ss <<", ";
+                     ss << from.second;
+                     ++count;
+                     break;
+                  }
+              }
+           }
+           std::cout << std::setw( 40 ) << ss.str() << "   |   ";
+        }
+        {
+           std::stringstream ss;
+           if( trx_state.second.from.size() )
+           {
+               int count = 0;
+               for( auto to : trx_state.second.to ) 
+               {
+                  if( count ) ss <<", ";
+                  ss << to.second ;
+                  ++count;
+               }
+           }
+           std::cout << std::setw( 40 ) << ss.str() << " ";
+        }
+        std::cout << std::setw( 20 ) << trx_state.second.delta_balance[0] << "    | id:  ";
+        std::cout << std::string( trx_state.first ) << " ";
+        std::cout << "\n";
+        ++num;
+     }
+
   }
 
 
