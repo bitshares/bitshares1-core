@@ -30,12 +30,12 @@ namespace bts { namespace cli {
       class cli_impl
       {
          public:
-            client_ptr       _client;
-            bts::rpc::rpc_server_ptr   _rpc_server;
-            bts::cli::cli*   _self;
-            fc::thread*      _main_thread;
-            fc::thread       _cin_thread;
-            fc::future<void> _cin_complete;
+            client_ptr                  _client;
+            bts::rpc::rpc_server_ptr    _rpc_server;
+            bts::cli::cli*              _self;
+            fc::thread*                 _main_thread;
+            fc::thread                  _cin_thread;
+            fc::future<void>            _cin_complete;
 
             cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
               _client(client),
@@ -287,9 +287,10 @@ namespace bts { namespace cli {
             fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                  const std::string& command)
             {
-              // quit isn't registered with the RPC server, the RPC server spells it "stop"
+              /* Quit isn't registered with the RPC server, the RPC server spells it "stop" */
               if (command == "quit")
                 return fc::variants();
+
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
@@ -351,7 +352,9 @@ namespace bts { namespace cli {
                 return fc::variant();
               }
               else if (command == "rescan")
+              {
                 return interactive_rescan(command, arguments);
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -382,7 +385,52 @@ namespace bts { namespace cli {
                 std::cout << help_string;
               }
               else if (command == "rescan")
+              {
                 std::cout << "\ndone scanning block chain\n";
+              }
+              else if (command == "get_transaction_history")
+              {
+                  std::vector<transaction_state> trx_states;
+
+                  auto trx_pairs = result.as<std::unordered_map<transaction_id_type, transaction_state>>();
+                  for (auto trx_pair : trx_pairs)
+                      trx_states.push_back(trx_pair.second);
+
+                  /* Sort from oldest to newest */
+                  auto comp = [](const transaction_state& l, const transaction_state& r)->bool { return l.block_num < r.block_num; };
+                  std::sort(trx_states.begin(), trx_states.end(), comp);
+
+                  char timestamp_buffer[20];
+                  for (auto trx_state : trx_states)
+                  {
+                      auto block = _rpc_server->get_client()->get_chain()->fetch_block(trx_state.block_num);
+                      auto timestamp = time_t(block.timestamp.sec_since_epoch());
+                      strftime(timestamp_buffer, std::extent<decltype(timestamp_buffer)>::value, "%F %X", localtime(&timestamp));
+
+                      std::cout << "[" << timestamp_buffer << "] ";
+
+                      if (trx_state.delta_balance[0] > 0) std::cout << "+";
+                      else if (trx_state.delta_balance[0] < 0) std::cout << "-";
+                      std::cout << abs(trx_state.delta_balance[0]) << " bts (";
+
+                      if (trx_state.block_num <= 0) std::cout << "genesis block";
+                      else std::cout << trx_state.fees[0] << " bts fee";
+
+                      std::cout << ", ";
+
+                      if (trx_state.trx.vote > 0) std::cout << "+";
+                      else std::cout << "-";
+
+                      auto delegate = abs(trx_state.trx.vote);
+                      auto name = _rpc_server->get_client()->get_chain()->lookup_delegate(delegate)->name;
+
+                      std::cout << name << " vote)";
+
+                      if (trx_state.memo != std::string()) std::cout << " - " << trx_state.memo;
+
+                      std::cout << "\n";
+                  }
+              }
               else
               {
                 // there was no custom handler for this particular command, see if the return type
@@ -525,7 +573,7 @@ namespace bts { namespace cli {
         pass1  = _self->get_line("wallet passphrase: ", true);
         while( pass1 != pass2 )
         {
-          pass2 = _self->get_line("walletpassword (again): ", true);
+          pass2 = _self->get_line("wallet passphrase (again): ", true);
           if( pass2 != pass1 )
           {
             std::cout << "Your passphrases did not match, please try again.\n";
@@ -649,6 +697,7 @@ namespace bts { namespace cli {
    {
        my->_cin_complete.wait();
    }
+
    void cli::quit()
    {
       my->_cin_complete.cancel();
@@ -687,6 +736,5 @@ namespace bts { namespace cli {
   {
     return my->format_and_print_result(command, result);
   }
-
 
 } } // bts::cli

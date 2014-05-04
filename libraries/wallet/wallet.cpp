@@ -856,14 +856,15 @@ namespace bts { namespace wallet {
       }
    }
 
-   bool wallet::scan_transaction( transaction_state& state, uint32_t block_idx, uint32_t trx_idx )
+   bool wallet::scan_transaction( transaction_state& state, uint16_t trx_idx )
    {
        bool found = false;
        //for each input in transaction, get source output of the input as a reference (trx_id.output#)
        //  convert the reference to an output index (block#.trx#.output#) if it is a known output we control, otherwise skip it
-       for( uint32_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
+       for( uint16_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
        {
            auto output_ref = state.trx.inputs[in_idx].output_ref;
+           if (state.block_num > 0) state.adjust_fees(my->_blockchain->fetch_output(output_ref).amount, 1);
            auto output_index_itr = my->_output_ref_to_index.find(output_ref);
            if (output_index_itr == my->_output_ref_to_index.end())
            {
@@ -876,11 +877,12 @@ namespace bts { namespace wallet {
 
        // for each output in transaction
        transaction_id_type trx_id = state.trx.id();
-       for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
+       for( uint16_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
-           const trx_output& out   = state.trx.outputs[out_idx];
-           const output_reference  out_ref( trx_id,out_idx );
-           const output_index      oidx( block_idx, trx_idx, out_idx );
+           const trx_output& out = state.trx.outputs[out_idx];
+           if (state.block_num > 0) state.adjust_fees(out.amount, -1);
+           const output_reference out_ref( trx_id,out_idx );
+           const output_index oidx( state.block_num, trx_idx, out_idx );
            found |= scan_output( state, out, out_ref, oidx );
        }
        return found;
@@ -897,38 +899,34 @@ namespace bts { namespace wallet {
        my->_blockchain = &chain;
        bool found = false;
        auto head_block_num = chain.head_block_num();
-       if( head_block_num == uint32_t(-1) ) return false;
+       if( head_block_num == trx_num::invalid_block_num ) return false;
 
-       // for each block
-       for( uint32_t i = from_block_num; i <= head_block_num; ++i )
+       for( uint32_t blk_idx = from_block_num; blk_idx <= head_block_num; ++blk_idx )
        {
-          auto blk = chain.fetch_digest_block( i );
-          // for each transaction
-          for( uint32_t trx_idx = 0; trx_idx < blk.trx_ids.size(); ++trx_idx )
+          auto blk = chain.fetch_digest_block( blk_idx );
+
+          for( uint16_t trx_idx = 0; trx_idx < (blk.trx_ids.size()+blk.deterministic_ids.size()); ++trx_idx )
           {
-              if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() );
+              if( cb ) cb( blk_idx, head_block_num, trx_idx, blk.trx_ids.size()+blk.deterministic_ids.size() );
 
               transaction_state state;
+              state.trx = chain.fetch_trx( trx_num( blk_idx, trx_idx ) );
+              state.block_num = blk_idx;
+
+              // TODO: //also modify delta if only inputs are in wallet and no outputs
+              bool found_output = scan_transaction( state, trx_idx );
               state.valid = true;
-              state.trx = chain.fetch_trx(trx_num(i, trx_idx));
-              bool found_output = scan_transaction( state, i, trx_idx );
-              if( found_output )
-                 my->_data.transactions[state.trx.id()] = state;
-              found |= found_output;
-          }
-          for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
-          {
-              transaction_state state;
-              state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) );
-              bool found_output = scan_transaction( state, i, trx_idx );
+
               if( found_output )
                  my->_data.transactions[state.trx.id()] = state;
               found |= found_output;
           }
        }
+
        set_fee_rate( chain.get_fee_rate() );
-       my->_stake                       = chain.get_stake();
+       my->_stake = chain.get_stake();
        my->_data.last_scanned_block_num = head_block_num;
+
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -1042,14 +1040,12 @@ namespace bts { namespace wallet {
 
    bool wallet::is_my_address(const pts_address& address_to_check)const
    {
-     if (my->_data.receive_pts_addresses.find(address_to_check) == my->_data.receive_pts_addresses.end())
-         return false;
-     ilog("found my address ${a}", ("a", address_to_check));
-      return true;
+     return my->_data.receive_pts_addresses.find(address_to_check) != my->_data.receive_pts_addresses.end();
    }
 
-   bool wallet::scan_output( transaction_state& state, const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
+   bool wallet::scan_output( transaction_state& state, const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    { try {
+      /* TODO: Include claim_by_multi_sig and claim_by_password */
       switch( out.claim_func )
       {
          case claim_by_pts: //for genesis block
@@ -1144,7 +1140,7 @@ namespace bts { namespace wallet {
          std::vector<trx_stat>  stats;
          stats.reserve(in_trxs.size());
 
-         for( uint32_t i = 0; i < in_trxs.size(); ++i )
+         for( uint16_t i = 0; i < in_trxs.size(); ++i )
          {
             try {
                 // create a new block state to evaluate transactions in isolation to maximize fees
@@ -1171,7 +1167,6 @@ namespace bts { namespace wallet {
          std::sort( stats.begin(), stats.end() );
          std::unordered_set<output_reference> consumed_outputs;
 
-
          // create new block state to reject transactions that conflict with transactions that
          // have already been included in the block.
          auto block_state = chain_db.get_transaction_validator()->create_block_state();
@@ -1183,7 +1178,7 @@ namespace bts { namespace wallet {
             {
                if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
                {
-                    stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
+                    stats[i].trx_idx = trx_num::invalid_trx_idx; // mark it to be skipped, input conflict
                     break;
                }
             }

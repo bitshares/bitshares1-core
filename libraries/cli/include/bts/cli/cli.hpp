@@ -11,7 +11,8 @@ namespace bts { namespace rpc {
 
 namespace bts { namespace cli {
 
-   using namespace client;
+   using namespace bts::client;
+   using namespace bts::wallet;
 
    namespace detail {  class cli_impl; }
 

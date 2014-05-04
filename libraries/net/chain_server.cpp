@@ -439,7 +439,7 @@ void chain_server::configure( const chain_server::config& c )
     // my->block_gen_loop_complete = fc::async( [=](){ my->block_gen_loop(); } );
 
      my->_chain->open( "chain" );
-     if( my->_chain->head_block_num() == uint32_t(-1) )
+     if( my->_chain->head_block_num() == trx_num::invalid_block_num )
      {
          auto genesis = create_test_genesis_block("genesis.json");
          ilog( "about to push" );

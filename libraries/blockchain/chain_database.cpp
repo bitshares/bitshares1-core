@@ -382,13 +382,11 @@ namespace bts { namespace blockchain {
          my->_delegate_records.open( dir / "delegate_records", create );
          my->_name_records.open( dir / "name_records", create );
 
-
-         // read the last block from the DB
+         /* Read the last block from the DB */
          my->_blocks.last( my->_head_block.block_num, my->_head_block );
-         if( my->_head_block.block_num != uint32_t(-1) )
+         if( my->_head_block.block_num != trx_num::invalid_block_num )
          {
             my->_head_block_id = my->_head_block.id();
-
 
             auto itr = my->_delegate_records.begin();
             while( itr.valid() )
@@ -481,7 +479,7 @@ namespace bts { namespace blockchain {
     {
        try
        {
-          if( head == uint32_t(-1) )
+          if( head == trx_num::invalid_block_num )
           {
             head = head_block_num();
           }

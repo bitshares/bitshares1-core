@@ -95,9 +95,10 @@ struct trx_num
     /**
      *  -1 block_num is used to identifiy default initialization.
      */
-    static const uint32_t  invalid_block_num  = uint32_t(-1);
-    static const uint16_t  invalid_trx_idx    = uint16_t(-1);
-    static const uint8_t   invalid_output_num = uint8_t(-1);
+    static const uint32_t invalid_block_num  = uint32_t(-1);
+    static const uint16_t invalid_trx_idx    = uint16_t(-1);
+    static const uint8_t  invalid_input_num  = uint8_t(-1);
+    static const uint8_t  invalid_output_num = uint8_t(-1);
 
     trx_num(uint32_t b = invalid_block_num, uint16_t t = invalid_trx_idx)
     :block_num(b),trx_idx(t){}
@@ -127,9 +128,9 @@ struct trx_num
 struct meta_trx_output
 {
    meta_trx_output()
-   :input_num(trx_num::invalid_output_num){}
+   :input_num(trx_num::invalid_input_num){}
    trx_num   trx_id;
-   uint8_t   input_num; // TODO: define -1 as the constant for
+   uint8_t   input_num;
 
    bool is_spent()const
    {

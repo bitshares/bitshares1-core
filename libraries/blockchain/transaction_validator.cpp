@@ -410,8 +410,8 @@ namespace bts { namespace blockchain {
                                                               transaction_evaluation_state& state,
                                                               const block_evaluation_state_ptr& block_state )
    {
-       // these outputs can only be placed in genesis block
-       FC_ASSERT( _db->head_block_num() == uint32_t(-1) );
+       /* These outputs can only be placed in the genesis block */
+       FC_ASSERT( _db->head_block_num() == trx_num::invalid_block_num );
        state.add_output_asset( out.amount );
    }
 
