@@ -71,7 +71,9 @@ namespace wallet {
       std::string                          memo;
       std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
       std::unordered_map<uint16_t,int64_t> fees; /// unit vs amount
-      uint32_t                             block_num; // block that included it, -1 if not included
+      int32_t                              block_num; // block that included it, -1 if not included
+      int32_t                              trx_num; // block that included it, -1 if not included
+      fc::time_point_sec                   confirm_time; // block that included it, -1 if not included
       bool                                 valid;     // is this transaction currently valid if it is not confirmed...
 
       void adjust_balance( asset amnt, int64_t direction = 1 )
@@ -288,6 +290,6 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid)(fees) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(trx_num)(confirm_time)(to)(from)(delta_balance)(valid)(fees) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
 
