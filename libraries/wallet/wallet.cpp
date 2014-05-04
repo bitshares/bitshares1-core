@@ -407,6 +407,7 @@ namespace bts { namespace wallet {
       my->_wallet_base_password = std::string();
       return true;
    }
+
    void wallet::open( const std::string& user, const fc::string& password )
    {
        FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
@@ -912,11 +913,12 @@ namespace bts { namespace wallet {
               transaction_state state;
               state.trx = chain.fetch_trx( trx_num( blk_idx, trx_idx ) );
               state.block_num = blk_idx;
+              state.trx_num = trx_idx;
+              state.confirm_time = blk.timestamp;
 
               // TODO: //also modify delta if only inputs are in wallet and no outputs
               bool found_output = scan_transaction( state, trx_idx );
               state.valid = true;
-
               if( found_output )
                  my->_data.transactions[state.trx.id()] = state;
               found |= found_output;

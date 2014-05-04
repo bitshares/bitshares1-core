@@ -54,7 +54,7 @@ namespace wallet {
 
    struct transaction_state
    {
-      transaction_state():block_num(trx_num::invalid_block_num),valid(false){}
+      transaction_state():block_num(trx_num::invalid_block_num),trx_num(trx_num::invalid_trx_idx),valid(false){}
 
       signed_transaction                   trx;
 
@@ -75,6 +75,9 @@ namespace wallet {
       std::unordered_map<uint16_t,int64_t> fees;          // unit -> amount
 
       uint32_t                             block_num;     // block that included it, -1 if not included
+      uint16_t                             trx_num;       // trx id in block, -1 if not included
+      fc::time_point_sec                   confirm_time;
+
       bool                                 valid;         // is this transaction currently valid if it is not confirmed...
 
       void adjust_balance( asset amnt, int64_t direction )
@@ -304,5 +307,5 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(from)(to)(memo)(delta_balance)(fees)(block_num)(valid) )
+FC_REFLECT( bts::wallet::transaction_state, (trx)(from)(to)(memo)(delta_balance)(fees)(block_num)(trx_num)(confirm_time)(valid) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
