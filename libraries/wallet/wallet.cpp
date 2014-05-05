@@ -637,7 +637,7 @@ namespace bts { namespace wallet {
 
    void   wallet::set_receive_address_memo( const address& addr, const std::string& memo )
    { try {
-     auto& found = my->_data.receive_addresses.find(receive_address(addr));
+     auto found = my->_data.receive_addresses.find(receive_address(addr));
      if (found != my->_data.receive_addresses.end())
      {
        auto changed_address = *found;
