@@ -4,11 +4,14 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/block_miner.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/block.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/log/logger.hpp>
+#include <fc/io/json.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/thread/thread.hpp>
+#include <bts/net/chain_server.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -325,3 +328,159 @@ BOOST_AUTO_TEST_CASE( blockchain_replace_head_block )
 {
 
 }
+
+/**
+ * this test case is intended to replicate one of the bts_xt_client_test
+ * cases that was failing, but without the processes and networking
+ * complicating things.
+ * Here we generate a number of wallet and send as many transactions 
+ * from each wallet out to all the other wallets, until we can't
+ * find any more unspent outputs to pull from.  Then we wait for the
+ * next block and do the same thing.  We should be able to make as
+ * many transactions as before, since each transaction in the
+ * previous round should have generated a change address we can 
+ * use as an input to this round.
+ */
+BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
+{
+  boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_messages);
+
+  const uint32_t wallet_count = 50;
+  try
+  {
+    fc::path base_dir = fc::temp_directory_path() / "blockchain_tests";
+    fc::remove_all(base_dir);
+
+    bts::net::genesis_block_config genesis_block_config;
+    fc::ecc::private_key trustee_key = fc::ecc::private_key::generate();
+
+    struct client_info
+    {
+      fc::ecc::private_key initial_key;
+      uint64_t initial_balance;
+      wallet_ptr wallet;
+      bts::blockchain::address receive_address;
+    };
+
+    std::vector<client_info> clients;
+
+    for (int i = 0; i < wallet_count; ++i)
+    {
+      client_info info;
+      info.initial_balance = 100000000;
+      info.initial_key = fc::ecc::private_key::generate();
+
+      genesis_block_config.balances.push_back(std::make_pair(bts::blockchain::pts_address(info.initial_key.get_public_key()), 
+                                                             info.initial_balance / 100000000));
+
+      std::ostringstream wallet_dir_name;
+      wallet_dir_name << "wallet_" << i;
+      fc::path wallet_path = base_dir / wallet_dir_name.str();
+      fc::create_directories(wallet_path);
+      info.wallet = std::make_shared<bts::wallet::wallet>();
+      info.wallet->create_internal(wallet_path / "wallet.dat", "password", "password", false);
+      info.receive_address = info.wallet->new_receive_address("test_rx_address");
+      clients.push_back(info);
+    }
+
+    fc::path genesis_json = base_dir / "genesis.json";
+    fc::json::save_to_file(genesis_block_config, genesis_json, true);
+    bts::blockchain::trx_block genesis_block = create_test_genesis_block(genesis_json);
+
+    chain_database blockchain;
+    blockchain.set_trustee( trustee_key.get_public_key() );
+    blockchain.open( base_dir / "chain" );
+    genesis_block.sign(trustee_key);
+    blockchain.push_block(genesis_block);
+    
+    for (int i = 0; i < wallet_count; ++i)
+    {
+      BOOST_CHECK(clients[i].wallet->get_balance(0).amount == 0);
+      clients[i].wallet->import_key(clients[i].initial_key, "initial_key");
+      clients[i].wallet->scan_chain(blockchain);
+      BOOST_CHECK(clients[i].wallet->get_balance(0).amount == clients[i].initial_balance);
+    }
+
+    for (int loop_count = 0; loop_count < 10; ++loop_count)
+    {
+      std::vector<signed_transaction> transactions;
+      uint32_t next_recipient = 1;
+      for (int client_index = 0; client_index < wallet_count; ++client_index)
+      {
+        clients[client_index].wallet->dump_unspent_outputs();
+        BOOST_TEST_MESSAGE("initial balance " << clients[client_index].wallet->get_balance(0).amount);
+        int transfer_count = 0;
+        for (;;) // send money for as long as we think we have money to send
+        {
+          try
+          {
+            asset starting_balance = clients[client_index].wallet->get_balance(0);
+            signed_transaction transaction = clients[client_index].wallet->send_to_address(asset(10),
+                                                                                           clients[next_recipient].receive_address);
+            transactions.push_back(transaction);
+            asset ending_balance = clients[client_index].wallet->get_balance(0);
+            BOOST_CHECK(ending_balance <= starting_balance - 10);
+            //BOOST_CHECK(ending_balance >= starting_balance - 10 - 500 /* 500 is way larger than max expected tx fee */);
+            next_recipient = (next_recipient + 1) % wallet_count;
+            if (next_recipient == client_index)
+              next_recipient = (next_recipient + 1) % wallet_count;
+            ++transfer_count;
+          }
+          catch (const fc::exception&)
+          {
+            ilog("Only able to send ${count} transactions from client ${client}", ("count", transfer_count)("client", client_index));
+            BOOST_TEST_MESSAGE("ending balance " << clients[client_index].wallet->get_balance(0).amount);
+            break;
+          }
+        }
+      } // each wallet
+
+      trx_block next_block = clients[0].wallet->generate_next_block(blockchain, transactions);
+      next_block.sign(trustee_key);
+      ilog( "generated block: ${b}", ("b", next_block ));
+      blockchain.push_block(next_block);
+      for (int client_index = 0; client_index < wallet_count; ++client_index)
+        clients[client_index].wallet->scan_chain(blockchain, blockchain.get_head_block().block_num);
+    } // each iteration of the test
+  }// try
+  catch (const fc::exception& e)
+  {
+    std::cerr<<e.to_detail_string()<<"\n";
+    elog( "${e}", ( "e", e.to_detail_string() ) );
+    throw;
+  }
+}
+#if 0
+
+    for( uint32_t i = 0; i < 100; ++i )
+    {
+      auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
+      auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+      auto key      = fc::ecc::private_key::regenerate(key_hash);
+      wall.import_delegate( i+1, key );
+    }
+
+    fc::ecc::private_key auth = fc::ecc::private_key::generate();
+
+    std::vector<address> addrs;
+    addrs.reserve(80);
+    for( uint32_t i = 0; i < 80; ++i )
+    {
+      addrs.push_back( wall.new_receive_address() );
+    }
+
+    chain_database     db;
+    db.set_trustee( auth.get_public_key() );
+    auto sim_validator = std::make_shared<sim_pow_validator>( fc::time_point::now() );
+    db.set_pow_validator( sim_validator );
+    db.open( dir.path() / "chain" );
+    auto genblk = generate_genesis_block( addrs );
+    genblk.sign(auth);
+    db.push_block( genblk );
+
+    wall.scan_chain( db );
+    wall.dump_unspent_outputs();
+    //db.dump_delegates();
+
+}
+#endif
