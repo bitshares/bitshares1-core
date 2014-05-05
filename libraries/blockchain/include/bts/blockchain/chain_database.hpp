@@ -79,25 +79,24 @@ namespace bts {
            *  such as automatic inactivity fees, lottery winners, and market making.   This method
            *  can be overloaded to
            */
-          virtual signed_transactions generate_deterministic_transactions();
+          virtual signed_transactions   generate_deterministic_transactions();
 
-          void evaluate_transaction( const signed_transaction& trx );
+          void                          evaluate_transaction( const signed_transaction& trx );
 
-          fc::optional<name_record> lookup_name( const std::string& name );
-          fc::optional<name_record> lookup_delegate( uint32_t del );
+          fc::optional<name_record>     lookup_name( const std::string& name );
+          fc::optional<name_record>     lookup_delegate( uint32_t del );
 
           /**
            *  @param count - the number of delegates to return
            *
            *  @return the top *count* delegates by vote, sorted in descending order.
            */
-          std::vector<name_record>  get_delegates( uint32_t count = 100 );
+          std::vector<name_record>      get_delegates( uint32_t count = 100 );
 
           /**
            * Returns up to count names after first when sorted alphabetically
            */
-          std::vector<name_record>  get_names( const std::string& first, uint32_t count = 100 );
-
+          std::vector<name_record>      get_names( const std::string& first, uint32_t count = 100 );
 
           //@{
           /**
@@ -108,65 +107,65 @@ namespace bts {
            *  there are no chain forks until the consensus algorithm can
            *  be reached.
            */
-          void                        set_trustee( const address& addr );
-          address                     get_trustee()const;
+          void                          set_trustee( const address& addr );
+          address                       get_trustee()const;
           //@}
 
           /**
            * When testing the chain there are different POW validation checks, so
            * this must be set by the creator of the chain.
            */
-          void set_pow_validator( const pow_validator_ptr& v );
-          pow_validator_ptr get_pow_validator()const;
+          void                          set_pow_validator( const pow_validator_ptr& v );
+          pow_validator_ptr             get_pow_validator()const;
 
-          void set_transaction_validator( const transaction_validator_ptr& v );
-          transaction_validator_ptr get_transaction_validator()const;
+          void                          set_transaction_validator( const transaction_validator_ptr& v );
+          transaction_validator_ptr     get_transaction_validator()const;
 
-          virtual void open( const fc::path& dir, bool create = true );
-          virtual void close();
+          virtual void                  open( const fc::path& dir, bool create = true );
+          virtual void                  close();
 
-          const signed_block_header&  get_head_block()const;
-          uint64_t                    total_shares()const;
-          uint32_t                    head_block_num()const;
-          block_id_type               head_block_id()const;
-          uint64_t                    get_stake(); // head - 1
+          const signed_block_header&    get_head_block()const;
+          uint64_t                      total_shares()const;
+          uint32_t                      head_block_num()const;
+          block_id_type                 head_block_id()const;
+          uint64_t                      get_stake(); // head - 1
 
           /** return the fee rate in shares */
-          uint64_t                    get_fee_rate()const;
-          uint32_t                    get_new_delegate_id()const;
+          uint64_t                      get_fee_rate()const;
+          uint32_t                      get_new_delegate_id()const;
 
           uint32_t                      get_output_age( const output_reference& output_ref );
 
+          trx_num                       fetch_trx_num( const transaction_id_type& trx_id );
+          meta_trx                      fetch_trx( const trx_num& t );
 
-         trx_num    fetch_trx_num( const uint160& trx_id );
-         meta_trx   fetch_trx( const trx_num& t );
+          signed_transaction            fetch_transaction( const transaction_id_type& trx_id );
+          std::vector<meta_trx_input>   fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head = trx_num::invalid_block_num );
 
-         signed_transaction          fetch_transaction( const transaction_id_type& trx_id );
-         std::vector<meta_trx_input> fetch_inputs( const std::vector<trx_input>& inputs, uint32_t head = trx_num::invalid_block_num );
+          trx_output                    fetch_output(const output_reference& ref);
 
-         trx_output fetch_output(const output_reference& ref);
+          uint32_t                      fetch_block_num( const block_id_type& block_id );
+          signed_block_header           fetch_block( uint32_t block_num );
+          digest_block                  fetch_digest_block( uint32_t block_num );
+          trx_block                     fetch_trx_block( uint32_t block_num );
 
-         uint32_t                   fetch_block_num( const block_id_type& block_id );
-         signed_block_header        fetch_block( uint32_t block_num );
-         digest_block               fetch_digest_block( uint32_t block_num );
-         trx_block                  fetch_trx_block( uint32_t block_num );
+          /**
+           *  Validates the block and then pushes it into the database.
+           *
+           *  Attempts to append block b to the block chain with the given trxs.
+           */
+          void                          push_block( const trx_block& b );
 
-         /**
-          *  Validates the block and then pushes it into the database.
-          *
-          *  Attempts to append block b to the block chain with the given trxs.
-          */
-         void push_block( const trx_block& b );
-
-         /**
-          *  Removes the top block from the stack and marks all spent outputs as
-          *  unspent.
-          */
-         virtual trx_block pop_block();
+          /**
+           *  Removes the top block from the stack and marks all spent outputs as
+           *  unspent.
+           */
+          virtual trx_block             pop_block();
 
        private:
-         void   store_trx( const signed_transaction& trx, const trx_num& t );
-         std::unique_ptr<detail::chain_database_impl> my;
+          void                          store_trx( const signed_transaction& trx, const trx_num& t );
+
+          std::unique_ptr<detail::chain_database_impl> my;
     }; // chain_database
 
     typedef std::shared_ptr<chain_database> chain_database_ptr;

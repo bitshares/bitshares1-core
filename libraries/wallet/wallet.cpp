@@ -34,45 +34,38 @@ FC_REFLECT( trx_stat, (trx_idx)(eval) )
 
 namespace bts { namespace wallet {
 
-
-
    /**
     * this is the data that is stored on disk in an encrypted form protected by
     * the wallet password.
     */
    struct wallet_data
    {
-       uint32_t                                                 version;
-       uint32_t                                                 last_used_key;
-       uint32_t                                                 last_scanned_block_num;
-       std::unordered_map<address,std::string>                  receive_addresses;
-       std::unordered_map<pts_address,address>                  receive_pts_addresses;
-       std::unordered_map<address,std::string>                  send_addresses;
+       uint32_t                                                     version;
+       uint32_t                                                     last_used_key;
+       uint32_t                                                     last_scanned_block_num;
+       std::unordered_map<address,std::string>                      receive_addresses;
+       std::unordered_map<pts_address,address>                      receive_pts_addresses;
+       std::unordered_map<address,std::string>                      send_addresses;
 
        /**
         *  If this wallet is a delegate wallet, these are the keys that it controls
         *  for producing blocks.
         */
-       std::unordered_map<uint32_t,fc::ecc::private_key>        delegate_keys;
-       std::unordered_set<uint32_t>                             trusted_delegates;
-       std::unordered_set<uint32_t>                             distrusted_delegates;
+       std::unordered_map<uint32_t,fc::ecc::private_key>            delegate_keys;
+       std::unordered_set<uint32_t>                                 trusted_delegates;
+       std::unordered_set<uint32_t>                                 distrusted_delegates;
 
-
-
-
-       //std::vector<fc::ecc::private_key>                 keys;
        // an aes encrypted std::unordered_map<address,fc::ecc::private_key>
-       std::vector<char>                                        encrypted_keys;
-       std::vector<char>                                        encrypted_base_key;
+       std::vector<char>                                            encrypted_keys;
+       std::vector<char>                                            encrypted_base_key;
 
-
-       std::unordered_map<transaction_id_type, transaction_state> transactions; //map of all transactions affecting wallet balance
-       std::map<output_index, trx_output>                         unspent_outputs;
-       std::map<output_index, trx_output>                         spent_outputs;
+       std::unordered_map<transaction_id_type, transaction_state>   transactions; // map of all transactions affecting wallet balance
+       std::map<output_index, trx_output>                           unspent_outputs;
+       std::map<output_index, trx_output>                           spent_outputs;
 
        /** maps block#.trx#.output# (internal form used for efficiency) to trx_id.output# (form stored in blockchain)*/
-       std::map<output_index, output_reference>                   output_index_to_ref;
-       std::map<output_index, int32_t>                            votes;
+       std::map<output_index, output_reference>                     output_index_to_ref;
+       std::map<output_index, int32_t>                              votes;
 
        std::unordered_map<address,fc::ecc::private_key>    decrypt_keys( const std::string& password )
        { try {
@@ -124,7 +117,6 @@ namespace bts { namespace wallet {
    };
 } } // bts::wallet
 
-
 FC_REFLECT( bts::wallet::wallet_data,
             (version)
             (last_used_key)
@@ -158,33 +150,37 @@ namespace bts { namespace wallet {
       {
           public:
               wallet_impl():_stake(0),_is_open(false),_blockchain(nullptr){}
-              std::string _wallet_base_password; // used for saving/loading the wallet
-              std::string _wallet_key_password;  // used to access private keys
-              fc::time_point _wallet_relock_time;
-              fc::future<void> _wallet_relocker_done;
 
-              fc::path                                                   _wallet_dat;
-              fc::path                                                   _data_dir;
-              wallet_data                                                _data;
+              std::string                                                   _wallet_base_password; // used for saving/loading the wallet
+              std::string                                                   _wallet_key_password;  // used to access private keys
+              fc::time_point                                                _wallet_relock_time;
+              fc::future<void>                                              _wallet_relocker_done;
+
+              fc::path                                                      _wallet_dat;
+              fc::path                                                      _data_dir;
+              wallet_data                                                   _data;
               /** millishares per byte */
-              uint64_t                                                   _current_fee_rate;
-              uint64_t                                                   _stake;
-              bool                                                       _is_open;
-              std::string _user; // username used for opening the wallet, filename will be _user + "_wallet.dat"
+              uint64_t                                                      _current_fee_rate;
+              uint64_t                                                      _stake;
+              bool                                                          _is_open;
 
-              //std::map<output_index, output_reference>                 _output_index_to_ref;
+              // username used for opening the wallet, filename will be _user + "_wallet.dat"
+              std::string                                                   _user;
+
+              //std::map<output_index, output_reference>                    _output_index_to_ref;
               // cached data for rapid lookup
-              std::unordered_map<output_reference, output_index>         _output_ref_to_index;
+              std::unordered_map<output_reference, output_index>            _output_ref_to_index;
 
               // keep sorted so we spend oldest first to maximize CDD
-              //std::map<output_index, trx_output>                       _unspent_outputs;
-              //std::map<output_index, trx_output>                       _spent_outputs;
+              //std::map<output_index, trx_output>                          _unspent_outputs;
+              //std::map<output_index, trx_output>                          _spent_outputs;
 
               // maps address to private key index
-              std::unordered_map<address,fc::ecc::private_key>             _my_keys;
-              std::unordered_map<transaction_id_type,signed_transaction>   _id_to_signed_transaction;
+              std::unordered_map<address,fc::ecc::private_key>              _my_keys;
+              std::unordered_map<transaction_id_type,signed_transaction>    _id_to_signed_transaction;
 
-              chain_database*                                              _blockchain;
+              // TODO: Why not shared ptr?
+              chain_database*                                               _blockchain;
 
               uint64_t get_fee_rate()
               {
@@ -411,6 +407,7 @@ namespace bts { namespace wallet {
       my->_wallet_base_password = std::string();
       return true;
    }
+
    void wallet::open( const std::string& user, const fc::string& password )
    {
        FC_ASSERT(my->_data_dir != fc::path()); // data dir must be set so we know where to look for the wallet file
@@ -610,10 +607,10 @@ namespace bts { namespace wallet {
       my->_data.set_keys( my->_my_keys, my->_wallet_key_password );
       my->_data.receive_addresses[addr] = memo;
 
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr;
-      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr;
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr; // Uncompressed PTS
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr; // Compressed PTS
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), false, 0 ) ] = addr; // Uncompressed BTC
+      my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true, 0 ) ]  = addr; // Compressed BTC
 
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
@@ -677,6 +674,7 @@ namespace bts { namespace wallet {
    }
 
    /**
+    * TODO
     * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
     */
    void wallet::unlock_wallet( const std::string& key_password, const fc::microseconds& duration )
@@ -732,6 +730,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "unable to unlock wallet" ) }
 
    /**
+    *  TODO
     *  @todo overwrite/clear memory to securely clear keys if OpenSSL doesn't do so already
     */
    void wallet::lock_wallet()
@@ -742,7 +741,6 @@ namespace bts { namespace wallet {
    }
 
    bool wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
-
 
    signed_transaction wallet::send_to_address( const asset& amnt, const address& to, const std::string& memo )
    { try {
@@ -833,10 +831,23 @@ namespace bts { namespace wallet {
       return my->sign_transaction( trx, addresses, mark_output_as_used );
    }
 
-   /** returns all transactions issued */
-   std::unordered_map<transaction_id_type, transaction_state> wallet::get_transaction_history()const
+   std::vector<transaction_state> wallet::get_transaction_history()const
    {
-      return my->_data.transactions;
+       std::vector<transaction_state> trx_states;
+       trx_states.reserve(my->_data.transactions.size());
+
+       for (auto trx_pair : my->_data.transactions)
+           trx_states.push_back(trx_pair.second);
+
+       /* Sort from oldest to newest */
+       auto comp = [](const transaction_state& l, const transaction_state& r)->bool
+       {
+           if (l.block_num == r.block_num) return l.trx_num < r.trx_num;
+           return l.block_num < r.block_num;
+       };
+       std::sort(trx_states.begin(), trx_states.end(), comp);
+
+       return trx_states;
    }
 
    //if output index is an output we control (is an unspent or spent output), decrease our wallet balance based on this output's amount
@@ -860,14 +871,15 @@ namespace bts { namespace wallet {
       }
    }
 
-   bool wallet::scan_transaction( transaction_state& state, uint32_t block_idx, uint32_t trx_idx )
+   bool wallet::scan_transaction( transaction_state& state, uint16_t trx_idx )
    {
        bool found = false;
        //for each input in transaction, get source output of the input as a reference (trx_id.output#)
        //  convert the reference to an output index (block#.trx#.output#) if it is a known output we control, otherwise skip it
-       for( uint32_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
+       for( uint16_t in_idx = 0; in_idx < state.trx.inputs.size(); ++in_idx )
        {
            auto output_ref = state.trx.inputs[in_idx].output_ref;
+           if (state.block_num > 0) state.adjust_fees(my->_blockchain->fetch_output(output_ref).amount, 1);
            auto output_index_itr = my->_output_ref_to_index.find(output_ref);
            if (output_index_itr == my->_output_ref_to_index.end())
            {
@@ -880,11 +892,12 @@ namespace bts { namespace wallet {
 
        // for each output in transaction
        transaction_id_type trx_id = state.trx.id();
-       for( uint32_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
+       for( uint16_t out_idx = 0; out_idx < state.trx.outputs.size(); ++out_idx )
        {
-           const trx_output& out   = state.trx.outputs[out_idx];
-           const output_reference  out_ref( trx_id,out_idx );
-           const output_index      oidx( block_idx, trx_idx, out_idx );
+           const trx_output& out = state.trx.outputs[out_idx];
+           if (state.block_num > 0) state.adjust_fees(out.amount, -1);
+           const output_reference out_ref( trx_id,out_idx );
+           const output_index oidx( state.block_num, trx_idx, out_idx );
            found |= scan_output( state, out, out_ref, oidx );
        }
        return found;
@@ -901,45 +914,35 @@ namespace bts { namespace wallet {
        my->_blockchain = &chain;
        bool found = false;
        auto head_block_num = chain.head_block_num();
-       if( head_block_num == uint32_t(-1) ) return false;
+       if( head_block_num == trx_num::invalid_block_num ) return false;
 
-       // for each block
-       for( uint32_t i = from_block_num; i <= head_block_num; ++i )
+       for( uint32_t blk_idx = from_block_num; blk_idx <= head_block_num; ++blk_idx )
        {
-          auto blk = chain.fetch_digest_block( i );
-          // for each transaction
-          for( uint32_t trx_idx = 0; trx_idx < blk.trx_ids.size(); ++trx_idx )
+          auto blk = chain.fetch_digest_block( blk_idx );
+
+          for( uint16_t trx_idx = 0; trx_idx < (blk.trx_ids.size()+blk.deterministic_ids.size()); ++trx_idx )
           {
-              if( cb ) cb( i, head_block_num, trx_idx, blk.trx_ids.size() );
+              if( cb ) cb( blk_idx, head_block_num, trx_idx, blk.trx_ids.size()+blk.deterministic_ids.size() );
 
               transaction_state state;
-              state.valid = true;
-              state.block_num = i;
-              state.trx_num   = trx_idx; 
+              state.trx = chain.fetch_trx( trx_num( blk_idx, trx_idx ) );
+              state.block_num = blk_idx;
+              state.trx_num = trx_idx;
               state.confirm_time = blk.timestamp;
-              state.trx = chain.fetch_trx(trx_num(i, trx_idx));
-              bool found_output = scan_transaction( state, i, trx_idx );
-              if( found_output )
-                 my->_data.transactions[state.trx.id()] = state;
-              found |= found_output;
-          }
-          for( uint32_t trx_idx = 0; trx_idx < blk.deterministic_ids.size(); ++trx_idx )
-          {
-              transaction_state state;
+
+              // TODO: also modify delta if only inputs are in wallet and no outputs
+              bool found_output = scan_transaction( state, trx_idx );
               state.valid = true;
-              state.block_num = i;
-              state.trx_num   = trx_idx; 
-              state.confirm_time = blk.timestamp;
-              state.trx = chain.fetch_trx( trx_num( i, blk.trx_ids.size() + trx_idx ) );
-              bool found_output = scan_transaction( state, i, trx_idx );
               if( found_output )
                  my->_data.transactions[state.trx.id()] = state;
               found |= found_output;
           }
        }
+
        set_fee_rate( chain.get_fee_rate() );
-       my->_stake                       = chain.get_stake();
+       my->_stake = chain.get_stake();
        my->_data.last_scanned_block_num = head_block_num;
+
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -953,7 +956,7 @@ namespace bts { namespace wallet {
        {
             if (i == count) break;
             i++;
-            std::cerr << get_transaction_info_string(chain_db, tx.second.trx) << "\n";
+            std::cerr << get_transaction_info_string(chain_db, tx.trx) << "\n";
        }
    }
    /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
@@ -1053,14 +1056,12 @@ namespace bts { namespace wallet {
 
    bool wallet::is_my_address(const pts_address& address_to_check)const
    {
-     if (my->_data.receive_pts_addresses.find(address_to_check) == my->_data.receive_pts_addresses.end())
-         return false;
-     ilog("found my address ${a}", ("a", address_to_check));
-      return true;
+     return my->_data.receive_pts_addresses.find(address_to_check) != my->_data.receive_pts_addresses.end();
    }
 
-   bool wallet::scan_output( transaction_state& state, const trx_output& out, const output_reference& out_ref, const bts::wallet::output_index& oidx )
+   bool wallet::scan_output( transaction_state& state, const trx_output& out, const output_reference& out_ref, const output_index& oidx )
    { try {
+      /* TODO: Include claim_by_multi_sig and claim_by_password */
       switch( out.claim_func )
       {
          case claim_by_pts: //for genesis block
@@ -1155,7 +1156,7 @@ namespace bts { namespace wallet {
          std::vector<trx_stat>  stats;
          stats.reserve(in_trxs.size());
 
-         for( uint32_t i = 0; i < in_trxs.size(); ++i )
+         for( uint16_t i = 0; i < in_trxs.size(); ++i )
          {
             try {
                 // create a new block state to evaluate transactions in isolation to maximize fees
@@ -1165,7 +1166,7 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( s.eval.fees < (get_fee_rate() * in_trxs[i].size())/1000 )
+                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size())/1000 )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
                         ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
@@ -1182,7 +1183,6 @@ namespace bts { namespace wallet {
          std::sort( stats.begin(), stats.end() );
          std::unordered_set<output_reference> consumed_outputs;
 
-
          // create new block state to reject transactions that conflict with transactions that
          // have already been included in the block.
          auto block_state = chain_db.get_transaction_validator()->create_block_state();
@@ -1194,7 +1194,7 @@ namespace bts { namespace wallet {
             {
                if( !consumed_outputs.insert( trx.inputs[in].output_ref ).second )
                {
-                    stats[i].trx_idx = uint16_t(-1); // mark it to be skipped, input conflict
+                    stats[i].trx_idx = trx_num::invalid_trx_idx; // mark it to be skipped, input conflict
                     break;
                }
             }
@@ -1305,7 +1305,7 @@ signed_transaction wallet::collect_inputs_and_sign( signed_transaction& trx,
                                                     const std::string& memo )
 {
     return collect_inputs_and_sign( trx, requested_amount,
-                                    required_signatures, new_receive_address("Change: " + memo) );
+                                    required_signatures, new_receive_address(memo) );
 }
 
 //this version generates the "change" addreess from the fixed string "Change address"
@@ -1313,7 +1313,7 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    std::unordered_set<address>& required_signatures)
 {
     return collect_inputs_and_sign( trx, requested_amount,
-                                    required_signatures, new_receive_address("Change address") );
+                                    required_signatures, new_receive_address("change") );
 }
 
 //this verion has no required signatures and auto-generates the "change' address from the memo field
@@ -1321,14 +1321,14 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    const std::string& memo)
 {
     std::unordered_set<address> required_signatures;
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change: " + memo));
+    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address(memo));
 }
 
 //this verion has no required signatures and auto-generates the "change" address from "Change address" string.
 signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& requested_amount)
 {
     std::unordered_set<address> required_signatures;
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change address"));
+    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("change"));
 }
 
 std::vector<delegate_status> wallet::get_delegates( uint32_t start, uint32_t count )const

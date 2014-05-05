@@ -55,9 +55,6 @@ namespace bts { namespace rpc {
              (addnode)\
              (stop)
 
-
-
-
   namespace detail
   {
     class rpc_server_impl
@@ -202,7 +199,7 @@ namespace bts { namespace rpc {
                       result["id"]     =  rpc_call["id"];
                       try
                       {
-                         result["result"] =  dispatch_authenticated_method(call_itr->second, params);
+                         result["result"] = dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
                          s.set_status( fc::http::reply::OK );
                       }
@@ -531,8 +528,8 @@ Examples:
       }
       catch( const fc::exception& e )
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
-         throw;
+        wlog( "${e}", ("e",e.to_detail_string() ) );
+        throw e;
       }
       catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
       {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
@@ -908,7 +905,7 @@ As a json rpc call
 
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
-            /* returns: */    "map<transaction_id,transaction_state>",
+            /* returns: */    "std::vector<transaction_state>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
@@ -1291,7 +1288,7 @@ bResult:
 }
 
 Examples:
-> bitcoin-cli getpeerinfo 
+> bitcoin-cli getpeerinfo
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getpeerinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 )" };
     fc::variant rpc_server_impl::getpeerinfo(const fc::variants&)
@@ -1317,7 +1314,7 @@ null
     static rpc_server::method_data addnode_metadata{"addnode", nullptr,
             /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
             /* returns: */    "null",
-            /* params:          name            type            required */ 
+            /* params:          name            type            required */
                               {{"node",         "string",       true},
                                {"command",      "string",       true}},
           /* prerequisites */ rpc_server::json_authenticated,

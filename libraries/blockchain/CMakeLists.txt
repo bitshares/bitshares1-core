@@ -3,9 +3,10 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../db/include" )
 
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
-add_library( bts_blockchain 
+add_library( bts_blockchain
              small_hash.cpp
              difficulty.cpp
+             momentum.cpp
              address.cpp
              pts_address.cpp
              asset.cpp
@@ -14,7 +15,6 @@ add_library( bts_blockchain
              block.cpp
              transaction_validator.cpp
              chain_database.cpp
-             momentum.cpp
              ${HEADERS}
            )
 
