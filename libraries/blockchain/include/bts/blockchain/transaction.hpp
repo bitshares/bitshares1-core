@@ -12,13 +12,11 @@
 
 namespace bts { namespace blockchain {
 
-typedef uint160 transaction_id_type;
-
 /**
  *  @class trx_input
  *  @brief references an unspent output and provides data required to spend it.
  *
- *  Defines the source of an input used 
+ *  Defines the source of an input used
  *  as part of a transaction.  If must first
  *  reference an existing unspent output and
  *  then provide the input data required to
@@ -59,7 +57,7 @@ struct trx_input
  *  have its own 'memory pool' in the chain state data structure. This
  *  has the added benefit of conserving space, separating bids/asks/
  *  escrow/and normal transfers into different memory segments and
- *  should give better memory performance.   
+ *  should give better memory performance.
  */
 struct trx_output
 {
@@ -90,27 +88,28 @@ struct trx_output
  *  @brief References a transaction by its location in the blockchain
  *
  *  The location in the blockchain is given by the block number and index of
- *  the transaction.  
+ *  the transaction.
  */
 struct trx_num
 {
-    /** 
+    /**
      *  -1 block_num is used to identifiy default initialization.
      */
-    static const uint32_t  invalid_block_num  = uint32_t(-1);
-    static const uint16_t  invalid_trx_idx    = uint16_t(-1);
-    static const uint8_t   invalid_output_num = uint8_t(-1);
+    static const uint32_t invalid_block_num  = uint32_t(-1);
+    static const uint16_t invalid_trx_idx    = uint16_t(-1);
+    static const uint8_t  invalid_input_num  = uint8_t(-1);
+    static const uint8_t  invalid_output_num = uint8_t(-1);
 
     trx_num(uint32_t b = invalid_block_num, uint16_t t = invalid_trx_idx)
     :block_num(b),trx_idx(t){}
 
     uint32_t block_num;
     uint16_t trx_idx;
-  
+
     friend bool operator < ( const trx_num& a, const trx_num& b )
     {
-      return a.block_num == b.block_num ? 
-             a.trx_idx   <  b.trx_idx   : 
+      return a.block_num == b.block_num ?
+             a.trx_idx   <  b.trx_idx   :
              a.block_num <  b.block_num ;
     }
     friend bool operator == ( const trx_num& a, const trx_num& b )
@@ -122,18 +121,18 @@ struct trx_num
 
 
 /**
- *  @class meta_trx_output 
+ *  @class meta_trx_output
  *  @brief extra data about each output, such as where it was spent
  *
  */
 struct meta_trx_output
 {
    meta_trx_output()
-   :input_num(trx_num::invalid_output_num){}
+   :input_num(trx_num::invalid_input_num){}
    trx_num   trx_id;
-   uint8_t   input_num; // TODO: define -1 as the constant for 
+   uint8_t   input_num;
 
-   bool is_spent()const 
+   bool is_spent()const
    {
      return trx_id.block_num != trx_num::invalid_block_num;
    }
@@ -196,8 +195,8 @@ struct signed_transaction : public transaction
 typedef std::vector<signed_transaction> signed_transactions;
 
 /**
- *  @class meta_trx 
- *  @brief addes meta information about all outputs of a signed transaction 
+ *  @class meta_trx
+ *  @brief addes meta information about all outputs of a signed transaction
  */
 struct meta_trx : public signed_transaction
 {

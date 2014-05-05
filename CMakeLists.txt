@@ -9,7 +9,7 @@ include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 if( WIN32 )
-    message( STATUS "Configuring Bitshares on WIN32")
+    message( STATUS "Configuring BitShares on WIN32")
     set( DB_VERSION 60 )
     set( BDB_STATIC_LIBS 1 )
 
@@ -40,11 +40,11 @@ else( WIN32 )
 
     if( APPLE )
         # Apple Specific Options Here
-        message( STATUS "Configuring Bitshares on OS X" )
+        message( STATUS "Configuring BitShares on OS X" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++  -Wall -ferror-limit=4" )
     else( APPLE )
         # Linux Specific Options Here
-        message( STATUS "Configuring Bitshares on Linux" )
+        message( STATUS "Configuring BitShares on Linux" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
         set( rt_library rt )
         set( pthread_library pthread)

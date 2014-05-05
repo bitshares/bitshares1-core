@@ -29,14 +29,14 @@ void print_banner();
 void configure_logging(const fc::path&);
 fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
-bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir, 
+bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
                                                                       const boost::program_options::variables_map& option_variables);
 bts::client::client* _global_client = nullptr;
 
 void handle_signal( int signum )
 {
   if( _global_client ) _global_client->get_wallet()->save();
-  exit( 1 ); 
+  exit( 1 );
 }
 
 int main( int argc, char** argv )
@@ -79,7 +79,7 @@ int main( int argc, char** argv )
      std::cout << option_config << "\n";
      return 0;
    }
-   
+
    bool p2p_mode = option_variables.count("p2p") != 0;
 
    try {
@@ -115,7 +115,7 @@ int main( int argc, char** argv )
       if( option_variables.count("server") )
       {
         // the user wants us to launch the RPC server.
-        // First, override any config parameters they 
+        // First, override any config parameters they
         bts::rpc::rpc_server::config rpc_config(cfg.rpc);
         if (option_variables.count("rpcuser"))
           rpc_config.rpc_user = option_variables["rpcuser"].as<std::string>();
@@ -130,7 +130,7 @@ int main( int argc, char** argv )
         std::cerr<<"starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
         rpc_server->configure(rpc_config);
       }
-      
+
       if (p2p_mode)
       {
         c->configure( datadir );
@@ -151,8 +151,8 @@ int main( int argc, char** argv )
       auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
       cli->wait();
 
-   } 
-   catch ( const fc::exception& e ) 
+   }
+   catch ( const fc::exception& e )
    {
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
@@ -215,17 +215,17 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 
 } FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
 
-bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir, 
+bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
                                                                       const boost::program_options::variables_map& option_variables)
 {
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
   chain->open( datadir / "chain", true );
   if (option_variables.count("trustee-address"))
     chain->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
-  
+
   if (option_variables.count("genesis-json"))
   {
-    if (chain->head_block_num() == uint32_t(-1))
+    if (chain->head_block_num() == trx_num::invalid_block_num)
     {
       fc::path genesis_json_file(option_variables["genesis-json"].as<std::string>());
       bts::blockchain::trx_block genesis_block;
@@ -238,7 +238,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
         wlog("Error creating genesis block from file ${filename}: ${e}", ("filename", genesis_json_file)("e", e.to_string()));
         return chain;
       }
-      try 
+      try
       {
         chain->push_block(genesis_block);
       }

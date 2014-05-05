@@ -151,14 +151,13 @@ BOOST_AUTO_TEST_CASE( blockchain_name_reservation )
        std::vector<signed_transaction> trxs;
        auto trx = name_wallet.reserve_name( "dan", fc::variant("checkdata") );
        trxs.push_back( trx );
-      
+
        sim_validator->skip_time( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
        auto next_block = wall.generate_next_block( db, trxs );
        ilog( "block: ${b}", ("b", next_block ) );
        sim_validator->skip_time( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
        next_block.sign( auth );
        db.push_block( next_block );
-       auto head_id = db.head_block_id();
 
        wall.scan_chain( db );
        name_wallet.scan_chain( db );
@@ -166,7 +165,7 @@ BOOST_AUTO_TEST_CASE( blockchain_name_reservation )
 
        // this should throw an exception because the name dan is in use by name_wallet
        //  testing the wallet generation is not good enough, we must also assume the
-       //  wallet produced a valid transaction and verify that the blockchain 
+       //  wallet produced a valid transaction and verify that the blockchain
        //  rejected it.
        bool caught_duplicate_name = false;
        try {
@@ -185,7 +184,7 @@ BOOST_AUTO_TEST_CASE( blockchain_name_reservation )
        {
           try {
             db.evaluate_transaction( trx );
-          } 
+          }
           catch ( const fc::exception& e )
           {
              elog( "update failed: ${e}", ("e",e.to_detail_string() ) );
@@ -193,14 +192,13 @@ BOOST_AUTO_TEST_CASE( blockchain_name_reservation )
           }
 
           trxs.back() = trx;
-         
+
           sim_validator->skip_time( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
           auto next_block = wall.generate_next_block( db, trxs );
           ilog( "block: ${b}", ("b", next_block ) );
           sim_validator->skip_time( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
           next_block.sign( auth );
           db.push_block( next_block );
-          auto head_id = db.head_block_id();
 
           wall.scan_chain( db );
        }
@@ -280,7 +278,6 @@ BOOST_AUTO_TEST_CASE( blockchain_simple_chain )
           sim_validator->skip_time( fc::seconds(30) );
           next_block.sign( auth );
           db.push_block( next_block );
-          auto head_id = db.head_block_id();
 
           if( i % 10 == 0 )
           {
