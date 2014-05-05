@@ -78,7 +78,7 @@ namespace bts { namespace rpc {
            std::string help_string;
            std::stringstream sstream;
            //format into columns
-           sstream << std::setw(35) << std::left;
+           sstream << std::setw(70) << std::left;
            help_string = method_data.name + " ";
            for (const rpc_server::parameter_data& parameter : method_data.parameters)
            {
@@ -906,13 +906,18 @@ As a json rpc call
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
             /* returns: */    "std::vector<transaction_state>",
-            /* params:     */ {},
+            /* params:          name     type     required */
+                              {{"count", "unsigned",  false}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
     {
-      return fc::variant( _client->get_wallet()->get_transaction_history() );
+      unsigned count = 0;
+      if (params.size() == 1)
+          count = params[0].as<unsigned>();
+
+      return fc::variant( _client->get_wallet()->get_transaction_history( count ) );
     }
 
     static rpc_server::method_data get_name_record_metadata{"get_name_record", nullptr,
@@ -1127,31 +1132,44 @@ Examples:
       return fc::variant(true);
     }
 
+    // TODO: get account argument
     static rpc_server::method_data import_private_key_metadata{"import_private_key", nullptr,
-            /* description */ "Import a bitshares private key from hex format.",
+            /* description */ "Import a BTS/PTS/BTC private key in hex format",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},
-                               {"label",       "string",       false}},
+                                {"label",       "string",       false},
+                                {"rescan",      "bool",         false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
+      auto key = params[0].as<fc::ecc::private_key>();
       std::string label;
       if (params.size() >= 2 && !params[1].is_null())
         label = params[1].as_string();
-      _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
+
+      bool rescan = false;
+      if (params.size() == 3 && params[2].as_bool())
+        rescan = true;
+
+      _client->get_wallet()->import_key(key, label);
       _client->get_wallet()->save();
+
+      if (rescan)
+          _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
+
       return fc::variant(true);
     }
 
+    // TODO: get account argument
     static rpc_server::method_data importprivkey_metadata{"importprivkey", nullptr,
-            /* description */ "Import a bitcoin private key from wallet import format (WIF).",
+            /* description */ "Import a PTS/BTC private key in wallet import format (WIF)",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},
-                                {"label",       "string",       true},
+                                {"label",       "string",       false},
                                 {"rescan",      "bool",         false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
@@ -1186,13 +1204,12 @@ As a json rpc call
       bool rescan = false;
       if (params.size() == 3 && params[2].as_bool())
         rescan = true;
-      FC_ASSERT( !"Importing from WIF format not yet implemented" );
-      // TODO: convert bitcoin wallet import format wif to privakey
-      //_client->get_wallet()->import_key(privkey, label);
+
+      _client->get_wallet()->import_wif_key(wif, label);
       _client->get_wallet()->save();
 
       if (rescan)
-        _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
+          _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
 
       return fc::variant(true);
     }
