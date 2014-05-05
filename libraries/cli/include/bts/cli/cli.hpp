@@ -42,7 +42,7 @@ namespace bts { namespace cli {
           virtual fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments);
           virtual void format_and_print_result(const std::string& command, const fc::variant& result);
 
-          void print_transaction_history(std::unordered_map<transaction_id_type, transaction_state> trx_history);
+          void print_transaction_history(std::vector<transaction_state>& trx_states);
 
       private:
           std::unique_ptr<detail::cli_impl> my;

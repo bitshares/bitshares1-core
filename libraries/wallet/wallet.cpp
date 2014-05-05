@@ -674,6 +674,7 @@ namespace bts { namespace wallet {
    }
 
    /**
+    * TODO
     * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
     */
    void wallet::unlock_wallet( const std::string& key_password, const fc::microseconds& duration )
@@ -729,6 +730,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "unable to unlock wallet" ) }
 
    /**
+    *  TODO
     *  @todo overwrite/clear memory to securely clear keys if OpenSSL doesn't do so already
     */
    void wallet::lock_wallet()
@@ -739,7 +741,6 @@ namespace bts { namespace wallet {
    }
 
    bool wallet::is_locked()const { return my->_wallet_key_password.size() == 0; }
-
 
    signed_transaction wallet::send_to_address( const asset& amnt, const address& to, const std::string& memo )
    { try {
@@ -830,10 +831,23 @@ namespace bts { namespace wallet {
       return my->sign_transaction( trx, addresses, mark_output_as_used );
    }
 
-   /** returns all transactions issued */
-   std::unordered_map<transaction_id_type, transaction_state> wallet::get_transaction_history()const
+   std::vector<transaction_state> wallet::get_transaction_history()const
    {
-      return my->_data.transactions;
+       std::vector<transaction_state> trx_states;
+       trx_states.reserve(my->_data.transactions.size());
+
+       for (auto trx_pair : my->_data.transactions)
+           trx_states.push_back(trx_pair.second);
+
+       /* Sort from oldest to newest */
+       auto comp = [](const transaction_state& l, const transaction_state& r)->bool
+       {
+           if (l.block_num == r.block_num) return l.trx_num < r.trx_num;
+           return l.block_num < r.block_num;
+       };
+       std::sort(trx_states.begin(), trx_states.end(), comp);
+
+       return trx_states;
    }
 
    //if output index is an output we control (is an unspent or spent output), decrease our wallet balance based on this output's amount
@@ -916,7 +930,7 @@ namespace bts { namespace wallet {
               state.trx_num = trx_idx;
               state.confirm_time = blk.timestamp;
 
-              // TODO: //also modify delta if only inputs are in wallet and no outputs
+              // TODO: also modify delta if only inputs are in wallet and no outputs
               bool found_output = scan_transaction( state, trx_idx );
               state.valid = true;
               if( found_output )
@@ -942,7 +956,7 @@ namespace bts { namespace wallet {
        {
             if (i == count) break;
             i++;
-            std::cerr << get_transaction_info_string(chain_db, tx.second.trx) << "\n";
+            std::cerr << get_transaction_info_string(chain_db, tx.trx) << "\n";
        }
    }
    /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
@@ -1291,7 +1305,7 @@ signed_transaction wallet::collect_inputs_and_sign( signed_transaction& trx,
                                                     const std::string& memo )
 {
     return collect_inputs_and_sign( trx, requested_amount,
-                                    required_signatures, new_receive_address("Change: " + memo) );
+                                    required_signatures, new_receive_address(memo) );
 }
 
 //this version generates the "change" addreess from the fixed string "Change address"
@@ -1299,7 +1313,7 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    std::unordered_set<address>& required_signatures)
 {
     return collect_inputs_and_sign( trx, requested_amount,
-                                    required_signatures, new_receive_address("Change address") );
+                                    required_signatures, new_receive_address("change") );
 }
 
 //this verion has no required signatures and auto-generates the "change' address from the memo field
@@ -1307,14 +1321,14 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, cons
                                                    const std::string& memo)
 {
     std::unordered_set<address> required_signatures;
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change: " + memo));
+    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address(memo));
 }
 
 //this verion has no required signatures and auto-generates the "change" address from "Change address" string.
 signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx, const asset& requested_amount)
 {
     std::unordered_set<address> required_signatures;
-    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("Change address"));
+    return collect_inputs_and_sign(trx, requested_amount, required_signatures, new_receive_address("change"));
 }
 
 std::vector<delegate_status> wallet::get_delegates( uint32_t start, uint32_t count )const

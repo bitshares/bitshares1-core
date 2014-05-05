@@ -1,4 +1,5 @@
 #pragma once
+
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
 #include <bts/wallet/delegate_status.hpp>
@@ -232,8 +233,8 @@ namespace wallet {
                                            const address& to,
                                            const std::string& memo = "change" );
 
-           /** returns all transactions issued */
-           std::unordered_map<transaction_id_type, transaction_state> get_transaction_history()const;
+           /** returns all transactions issued, sorted from oldest to newest */
+           std::vector<transaction_state> get_transaction_history()const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
            void sign_transaction( signed_transaction& trx,

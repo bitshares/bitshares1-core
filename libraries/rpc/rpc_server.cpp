@@ -905,7 +905,7 @@ As a json rpc call
 
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
-            /* returns: */    "map<transaction_id,transaction_state>",
+            /* returns: */    "std::vector<transaction_state>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(

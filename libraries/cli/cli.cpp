@@ -397,40 +397,8 @@ namespace bts { namespace cli {
               }
               else if (command == "get_transaction_history")
               {
-                _self->print_transaction_history(result.as<std::unordered_map<transaction_id_type, transaction_state>>());
-
-
-                /*
-                  char timestamp_buffer[20];
-                  for (auto trx_state : trx_states)
-                  {
-                      auto timestamp = time_t(trx_state.confirm_time);
-                      strftime(timestamp_buffer, std::extent<decltype(timestamp_buffer)>::value, "%F %X", localtime(&timestamp));
-
-                      std::cout << "[" << timestamp_buffer << "] ";
-
-                      if (trx_state.delta_balance[0] > 0) std::cout << "+";
-                      else if (trx_state.delta_balance[0] < 0) std::cout << "-";
-                      std::cout << abs(trx_state.delta_balance[0]) << " xts (";
-
-                      if (trx_state.block_num <= 0) std::cout << "genesis block";
-                      else std::cout << trx_state.fees[0] << " xts fee";
-
-                      std::cout << ", ";
-
-                      if (trx_state.trx.vote > 0) std::cout << "+";
-                      else std::cout << "-";
-
-                      auto delegate = abs(trx_state.trx.vote);
-                      auto name = _rpc_server->get_client()->get_chain()->lookup_delegate(delegate)->name;
-
-                      std::cout << name << " vote)";
-
-                      if (trx_state.memo != std::string()) std::cout << " - " << trx_state.memo;
-
-                      std::cout << "\n";
-                  }
-                  */
+                auto trx_history = result.as<std::vector<transaction_state>>();
+                _self->print_transaction_history(trx_history);
               }
               else
               {
@@ -623,8 +591,6 @@ namespace bts { namespace cli {
       }
 
       interactive_open_wallet();
-
-      _self->print_transaction_history(_client->get_wallet()->get_transaction_history());
     }
   } // end namespace detail
 
@@ -742,82 +708,96 @@ namespace bts { namespace cli {
     return my->format_and_print_result(command, result);
   }
 
-  void cli::print_transaction_history(std::unordered_map<transaction_id_type, transaction_state> trx_history)
+  void cli::print_transaction_history(std::vector<transaction_state>& trx_states)
   {
-                  std::vector<transaction_state> trx_states;
-                  trx_states.reserve(trx_history.size());
+    /* Print header */
+    std::cout << std::setw(  3 ) << "#";
+    std::cout << std::setw(  6 ) << "BLK" << ".";
+    std::cout << std::setw(  5 ) << std::left << "TRX";
+    std::cout << std::setw( 21 ) << "TIMESTAMP";
+    std::cout << std::setw( 12 ) << " AMOUNT";
+    std::cout << std::setw( 40 ) << "FROM";
+    std::cout << std::setw( 40 ) << "TO";
+    std::cout << std::setw(  6 ) << "FEE";
+    std::cout << std::setw( 14 ) << " VOTE";
+    std::cout << std::setw( 40 ) << "ID";
+    std::cout << "\n----------------------------------------------------------------------------------------------";
+    std::cout <<   "----------------------------------------------------------------------------------------------\n";
+    std::cout << std::right;
 
-                  for (auto trx_pair : trx_history)
-                      trx_states.push_back(trx_pair.second);
+    auto count = 1;
+    char timestamp_buffer[20];
+    for( auto trx_state : trx_states )
+    {
+        /* Print index */
+        std::cout << std::setw( 3 ) << count;
 
-                  /* Sort from oldest to newest */
-                  // TODO: Move to RPC server
-                  auto comp = [](const transaction_state& l, const transaction_state& r)->bool
-                  {
-                      if (l.block_num == r.block_num) return l.trx_num < r.trx_num;
-                      return l.block_num < r.block_num;
-                  };
-                  std::sort(trx_states.begin(), trx_states.end(), comp);
+        /* Print block and transaction numbers */
+        std::cout << std::setw( 6 ) << trx_state.block_num << ".";
+        std::cout << std::setw( 5 ) << std::left << trx_state.trx_num;
 
+        /* Print timestamp */
+        auto timestamp = time_t(trx_state.confirm_time.sec_since_epoch());
+        strftime(timestamp_buffer, std::extent<decltype(timestamp_buffer)>::value, "%F %X", localtime(&timestamp));
+        std::cout << std::setw( 21 ) << timestamp_buffer;
 
-
-     //std::cout << fc::json::to_pretty_string(trx_hist) << "\n";
-     std::cout << std::setw( 3 ) << "#" <<"  ";
-     std::cout << std::setw( 5 ) << "BLK" <<"  ";
-     std::cout << std::setw( 10 ) << "DATE" <<"  ";
-     std::cout << std::setw( 40 ) << "FROM" <<"    |   ";
-     std::cout << std::setw( 40 ) << "TO" <<"  ";
-     std::cout << std::setw( 20 ) << "AMOUNT" <<"  ";
-     std::cout << "\n------------------------------------------------------------------------------------------\n";
-     uint32_t num = 1;
-     for( auto trx_state : trx_states )
-     {
-        std::cout << std::setw( 3 ) << num << "  ";
+        /* Print amount */
         {
-           std::stringstream ss;
-           ss << trx_state.block_num <<"."<< trx_state.trx_num;
-           std::cout << std::setw( 5 ) << ss.str() << "  ";
+            std::stringstream ss;
+            if (trx_state.delta_balance[0] > 0) ss << "+";
+            else if (trx_state.delta_balance[0] < 0) ss << "-";
+            ss << abs(trx_state.delta_balance[0]);
+            std::cout << std::setw( 12 ) << ss.str();
         }
-        std::cout << std::setw( 10 ) << fc::variant(trx_state.confirm_time).as_string() << "  ";
-        {
-           std::stringstream ss;
-           if( trx_state.to.size() == 0 )
-           {
-              if( trx_state.from.size() )
-              {
-                  int count = 0;
-                  for( auto from : trx_state.from )
-                  {
-                     if( count ) ss <<", ";
-                     ss << from.second;
-                     ++count;
-                     break;
-                  }
-              }
-           }
-           std::cout << std::setw( 40 ) << ss.str() << "   |   ";
-        }
-        {
-           std::stringstream ss;
-           if( trx_state.from.size() )
-           {
-               int count = 0;
-               for( auto to : trx_state.to )
-               {
-                  if( count ) ss <<", ";
-                  ss << to.second;
-                  ++count;
-               }
-           }
-           std::cout << std::setw( 40 ) << ss.str() << " ";
-        }
-        std::cout << std::setw( 20 ) << trx_state.delta_balance[0] << "    | id:  ";
-        std::cout << std::string( trx_state.trx.id() ) << " ";
-        std::cout << "\n";
-        ++num;
-        if (num > 5) break;
-     }
 
+        /* Print from addresses */
+        {
+            std::stringstream ss;
+            auto n = 0;
+            for (auto pair : trx_state.from)
+            {
+                if (n) ss << ", ";
+                ss << pair.second;
+                ++n;
+                break; // TODO
+            }
+            std::cout << std::setw( 40 ) << ss.str();
+        }
+
+        /* Print to addresses */
+        {
+            std::stringstream ss;
+            auto n = 0;
+            for (auto pair : trx_state.to)
+            {
+                if (n) ss << ", ";
+                ss << pair.second;
+                ++n;
+                break; // TODO
+            }
+            std::cout << std::setw( 40 ) << ss.str();
+        }
+
+        /* Print fee */
+        std::cout << std::setw( 6 ) << trx_state.fees[0];
+
+        /* Print delegate vote */
+        {
+            std::stringstream ss;
+            auto delegate = abs(trx_state.trx.vote);
+            auto name = my->_rpc_server->get_client()->get_chain()->lookup_delegate(delegate)->name;
+            if (trx_state.trx.vote > 0) ss << "+";
+            else ss << "-";
+            ss << name;
+            std::cout << std::setw( 14 ) << ss.str();
+        }
+
+        /* Print transaction ID */
+        std::cout << std::setw( 40 ) << std::string( trx_state.trx.id() );
+
+        std::cout << std::right << "\n";
+        ++count;
+    }
   }
 
 } } // bts::cli
