@@ -88,6 +88,18 @@ fc::variant p2p_rpc_server::lookup_domain_record(const fc::variants& params)
     return get_dns_wallet()->lookup(domain_name, get_client()->get_pending_transactions());
 }
 
+static rpc_server::method_data name_show_metadata { "name_show", nullptr,
+/* description: */  "Lookup a domain name's record",
+/* returns: */      "string",
+/* params:           name            type      required */
+                  {{"domain_name",  "string",  true}},
+/* prerequisites: */ rpc_server::json_authenticated };
+fc::variant p2p_rpc_server::name_show(const fc::variants& params)
+{
+    return "{\"value\":{\"ip\":\"192.168.1.1\"}}";
+}
+
+
 static rpc_server::method_data list_active_domain_auctions_metadata { "list_active_domain_auctions", nullptr,
 /* description: */  "List currently active domain name auctions",
 /* returns: */      "vector<pair<asset, claim_dns_output>>",
