@@ -127,7 +127,6 @@ namespace wallet {
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
 
-
            void open( const std::string& user, const std::string& password );
            bool close();
            void create( const std::string& user,
@@ -186,6 +185,10 @@ namespace wallet {
            address                                 import_key( const fc::ecc::private_key& key,
                                                                const std::string& memo = "",
                                                                const std::string& account = "");
+
+           void                                    import_wif_key( const std::string& wif,
+                                                                   const std::string& memo = "",
+                                                                   const std::string& account = "");
 
            /**
             *  Updates the memo associated with a receive address

@@ -1,24 +1,26 @@
-#include <bts/wallet/wallet.hpp>
-#include <bts/wallet/extended_address.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/import_bitcoin_wallet.hpp>
-#include <unordered_map>
-#include <map>
+#include <bts/wallet/extended_address.hpp>
+#include <bts/wallet/wallet.hpp>
+
+#include <fc/crypto/aes.hpp>
+#include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/json.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/reflect/variant.hpp>
-#include <fc/crypto/aes.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
-#include <sstream>
 
-#include <iostream>
-#include <iomanip>
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <unordered_map>
 
 struct trx_stat
 {
@@ -543,14 +545,12 @@ namespace bts { namespace wallet {
    void wallet::import_bitcoin_wallet( const fc::path& wallet_dat, const std::string& passphrase )
    { try {
       auto priv_keys = bts::import_bitcoin_wallet(  wallet_dat, passphrase );
-   //   ilog( "keys: ${keys}", ("keys",priv_keys) );
       for( auto key : priv_keys )
       {
          auto btc_addr = pts_address( key.get_public_key(), false, 0 );
          import_key( key, wallet_dat.filename().generic_string() + ":" + std::string( btc_addr ) );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
-
 
    void wallet::save()
    { try {
@@ -599,7 +599,7 @@ namespace bts { namespace wallet {
       return my->get_balance(t);
    }
 
-   address   wallet::import_key( const fc::ecc::private_key& key, const std::string& memo, const std::string& account )
+   address wallet::import_key( const fc::ecc::private_key& key, const std::string& memo, const std::string& account )
    { try {
       FC_ASSERT( !is_locked() );
       auto addr = address(key.get_public_key());
@@ -615,7 +615,15 @@ namespace bts { namespace wallet {
       return addr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import private key" ) }
 
-   fc::ecc::public_key   wallet::new_public_key( const std::string& memo, const std::string& account )
+   void wallet::import_wif_key( const std::string& wif, const std::string& memo, const std::string& account )
+   { try {
+      auto wif_bytes = fc::from_base58(wif);
+      auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
+
+      import_key(key, memo, account);
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to import wif private key" ) }
+
+   fc::ecc::public_key wallet::new_public_key( const std::string& memo, const std::string& account )
    { try {
       FC_ASSERT( !is_locked() );
       my->_data.last_used_key++;
