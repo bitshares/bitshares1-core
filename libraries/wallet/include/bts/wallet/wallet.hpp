@@ -236,8 +236,8 @@ namespace wallet {
                                            const address& to,
                                            const std::string& memo = "change" );
 
-           /** returns all transactions issued, sorted from oldest to newest */
-           std::vector<transaction_state> get_transaction_history()const;
+           /** returns last n (default 0 means all) transactions issued, sorted from oldest to newest */
+           std::vector<transaction_state> get_transaction_history(unsigned n = 0)const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
            void sign_transaction( signed_transaction& trx,

@@ -906,13 +906,18 @@ As a json rpc call
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
             /* returns: */    "std::vector<transaction_state>",
-            /* params:     */ {},
+            /* params:          name     type     required */
+                              {{"count", "unsigned",  false}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
     {
-      return fc::variant( _client->get_wallet()->get_transaction_history() );
+      unsigned count = 0;
+      if (params.size() == 1)
+          count = params[0].as<unsigned>();
+
+      return fc::variant( _client->get_wallet()->get_transaction_history( count ) );
     }
 
     static rpc_server::method_data get_name_record_metadata{"get_name_record", nullptr,

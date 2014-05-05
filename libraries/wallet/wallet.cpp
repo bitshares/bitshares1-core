@@ -839,7 +839,7 @@ namespace bts { namespace wallet {
       return my->sign_transaction( trx, addresses, mark_output_as_used );
    }
 
-   std::vector<transaction_state> wallet::get_transaction_history()const
+   std::vector<transaction_state> wallet::get_transaction_history(unsigned n)const
    {
        std::vector<transaction_state> trx_states;
        trx_states.reserve(my->_data.transactions.size());
@@ -854,6 +854,9 @@ namespace bts { namespace wallet {
            return l.block_num < r.block_num;
        };
        std::sort(trx_states.begin(), trx_states.end(), comp);
+
+       if (n > 0 && n < trx_states.size())
+           return std::vector<transaction_state>(trx_states.end() - n, trx_states.end());
 
        return trx_states;
    }
