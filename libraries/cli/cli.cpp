@@ -385,6 +385,7 @@ namespace bts { namespace cli {
                 auto addrs = _client->get_wallet()->get_receive_addresses();
                 for( auto addr : addrs )
                   std::cout << std::setw( 33 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
+                std::cout << std::right;
               }
               else if (command == "help")
               {

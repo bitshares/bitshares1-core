@@ -127,7 +127,6 @@ namespace wallet {
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
 
-
            void open( const std::string& user, const std::string& password );
            bool close();
            void create( const std::string& user,
@@ -187,6 +186,10 @@ namespace wallet {
                                                                const std::string& memo = "",
                                                                const std::string& account = "");
 
+           void                                    import_wif_key( const std::string& wif,
+                                                                   const std::string& memo = "",
+                                                                   const std::string& account = "");
+
            /**
             *  Updates the memo associated with a receive address
             */
@@ -233,8 +236,8 @@ namespace wallet {
                                            const address& to,
                                            const std::string& memo = "change" );
 
-           /** returns all transactions issued, sorted from oldest to newest */
-           std::vector<transaction_state> get_transaction_history()const;
+           /** returns last n (default 0 means all) transactions issued, sorted from oldest to newest */
+           std::vector<transaction_state> get_transaction_history(unsigned n = 0)const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
            void sign_transaction( signed_transaction& trx,
