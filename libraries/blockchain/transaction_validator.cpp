@@ -430,9 +430,13 @@ namespace bts { namespace blockchain {
           FC_ASSERT( !conflicting_name_record,
                         "the name '${name}' is already registered with the block chain, but not included as an input",
                         ("name",claim.name)("conflicting_record",conflicting_name_record) );
-          auto conflicting_delegate_record  = _db->lookup_delegate( claim.delegate_id );
-          FC_ASSERT( !conflicting_delegate_record, "the delegate ID ${id} has already been registered",
-                        ("id", claim.delegate_id)("conflicting_record",*conflicting_delegate_record) );
+
+          if( claim.delegate_id != 0 )
+          {
+              auto conflicting_delegate_record  = _db->lookup_delegate( claim.delegate_id );
+              FC_ASSERT( !conflicting_delegate_record, "the delegate ID ${id} has already been registered",
+                         ("id", claim.delegate_id)("conflicting_record",*conflicting_delegate_record) );
+          }
        }
        else // has_name_input claim
        {
