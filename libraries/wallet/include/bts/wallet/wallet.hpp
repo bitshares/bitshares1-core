@@ -53,6 +53,15 @@ namespace wallet {
         uint16_t   output_idx;
    };
 
+   struct receive_address : public address
+   {
+     receive_address(address addr = address(), std::string m = std::string()) : address(addr), memo(m) {}
+
+     std::string memo;
+     std::map<output_index, trx_output> unspent_outputs;
+   };
+
+
    struct transaction_state
    {
       transaction_state():block_num(trx_num::invalid_block_num),trx_num(trx_num::invalid_trx_idx),valid(false){}
@@ -197,7 +206,7 @@ namespace wallet {
            address                                 new_receive_address( const std::string& memo = "", const std::string& account = "" );
            fc::ecc::public_key                     new_public_key( const std::string& memo = "", const std::string& account = "" );
 
-           std::unordered_map<address,std::string> get_receive_addresses()const;
+           std::unordered_set<receive_address>     get_receive_addresses()const;
            std::string                             get_send_address_label( const address& addr )const;
            void                                    remove_send_address( const address& addr );
 
@@ -311,5 +320,24 @@ namespace wallet {
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
+namespace std {
+  template <>
+  class hash<bts::wallet::receive_address>
+  {
+  public:
+    size_t operator()(const bts::wallet::receive_address& a) const 
+    {
+      return (uint64_t(a.addr._hash[0]) << 32) | uint64_t(a.addr._hash[0]);
+    }
+  };
+}
+
+namespace fc
+{
+  void to_variant(const bts::wallet::receive_address& var, variant& vo);
+  void from_variant(const variant& var, bts::wallet::receive_address& receive_address);
+}
+
 FC_REFLECT( bts::wallet::transaction_state, (trx)(from)(to)(memo)(delta_balance)(fees)(block_num)(trx_num)(confirm_time)(valid) )
 FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
+FC_REFLECT_DERIVED( bts::wallet::receive_address, (bts::blockchain::address), (memo) )

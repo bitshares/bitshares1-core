@@ -802,14 +802,14 @@ Examples:
 
     static rpc_server::method_data list_receive_addresses_metadata{"list_receive_addresses", nullptr,
             /* description */ "Lists all receive addresses and their labels associated with this wallet",
-            /* returns: */    "map<address,string>",
+            /* returns: */    "set<receive_address>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::list_receive_addresses(const fc::variants& params)
     {
-      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
+      std::unordered_set<bts::wallet::receive_address> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses );
     }
 

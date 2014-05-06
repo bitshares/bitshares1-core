@@ -9,6 +9,7 @@
     (transfer_domain) \
     (update_domain_record) \
     (lookup_domain_record) \
+    (name_show) \
     (list_active_domain_auctions)
 
 namespace bts { namespace dns { namespace p2p {

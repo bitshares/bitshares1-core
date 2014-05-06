@@ -45,7 +45,8 @@ namespace bts { namespace wallet {
        uint32_t                                                     version;
        uint32_t                                                     last_used_key;
        uint32_t                                                     last_scanned_block_num;
-       std::unordered_map<address,std::string>                      receive_addresses;
+       //std::unordered_map<address,std::string>                      receive_addresses;
+       std::unordered_set<receive_address>                          receive_addresses;
        std::unordered_map<pts_address,address>                      receive_pts_addresses;
        std::unordered_map<address,std::string>                      send_addresses;
 
@@ -605,7 +606,8 @@ namespace bts { namespace wallet {
       auto addr = address(key.get_public_key());
       my->_my_keys[addr] = key;
       my->_data.set_keys( my->_my_keys, my->_wallet_key_password );
-      my->_data.receive_addresses[addr] = memo;
+
+      my->_data.receive_addresses.insert( receive_address(addr,memo) );
 
       my->_data.receive_pts_addresses[ pts_address( key.get_public_key() ) ]           = addr; // Uncompressed PTS
       my->_data.receive_pts_addresses[ pts_address( key.get_public_key(), true ) ]     = addr; // Compressed PTS
@@ -635,8 +637,16 @@ namespace bts { namespace wallet {
 
    void   wallet::set_receive_address_memo( const address& addr, const std::string& memo )
    { try {
-      my->_data.receive_addresses[addr] = memo;
-      save();
+     auto found = my->_data.receive_addresses.find(receive_address(addr));
+     if (found != my->_data.receive_addresses.end())
+     {
+       auto changed_address = *found;
+       changed_address.memo = memo;
+       my->_data.receive_addresses.insert(changed_address);
+       save();
+     }
+     else
+       throw "Could not find address in receiving adddress list";
    } FC_RETHROW_EXCEPTIONS( warn, "unable to update address memo for ${addr} '${memo}'", ("addr",addr)("memo",memo) ) }
 
    address   wallet::new_receive_address( const std::string& memo, const std::string& account )
@@ -650,7 +660,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "unable to add send address ${addr} with label ${label}",
                                    ("addr",addr)("label",label) ) }
 
-   std::unordered_map<address,std::string> wallet::get_receive_addresses()const
+   std::unordered_set<receive_address> wallet::get_receive_addresses()const
    {
       return my->_data.receive_addresses;
    }
@@ -672,8 +682,8 @@ namespace bts { namespace wallet {
    {
       auto itr = my->_data.receive_addresses.find( addr );
       if( itr == my->_data.receive_addresses.end() ) return std::string(addr);
-      if( itr->second == std::string() ) return std::string(addr);
-      return itr->second;
+      if( itr->memo == std::string() ) return std::string(addr);
+      return itr->memo;
    }
 
    void wallet::set_fee_rate( uint64_t milli_shares_per_byte )
@@ -1357,3 +1367,20 @@ std::vector<delegate_status> wallet::get_delegates( uint32_t start, uint32_t cou
 
 
 } } // namespace bts::wallet
+
+namespace fc
+{
+  void to_variant(const bts::wallet::receive_address& var, variant& vo)
+  {
+    fc::mutable_variant_object variant_object;
+    variant_object["addr"] = std::string(static_cast<bts::blockchain::address>(var));
+    variant_object["memo"] = var.memo;
+    vo = variant_object;
+  }
+  void from_variant(const variant& var, bts::wallet::receive_address& receive_address)
+  {
+
+    receive_address.addr = bts::blockchain::address(var.get_object()["addr"].as_string()).addr;
+    receive_address.memo = var.get_object()["memo"].as_string();
+  }
+}
