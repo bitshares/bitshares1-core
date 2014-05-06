@@ -313,7 +313,9 @@ namespace bts { namespace blockchain {
 
      chain_database::~chain_database()
      {
+         close();
      }
+
      fc::optional<name_record> chain_database::lookup_name( const std::string& name )
      {
         auto itr = my->_name_records.find( name );
@@ -418,6 +420,7 @@ namespace bts { namespace blockchain {
     {
        return my->_head_block.block_num;
     }
+
     block_id_type chain_database::head_block_id()const
     {
        return my->_head_block.id();

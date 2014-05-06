@@ -1,16 +1,20 @@
 #include <bts/rpc/rpc_server.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/network/tcp_socket.hpp>
-#include <fc/rpc/json_connection.hpp>
-#include <fc/io/json.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/network/http/server.hpp>
-#include <fc/interprocess/file_mapping.hpp>
-#include <boost/bind.hpp>
+
 #include <boost/algorithm/string/join.hpp>
-#include <sstream>
-#include <limits>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/bind.hpp>
+
+#include <fc/interprocess/file_mapping.hpp>
+#include <fc/io/json.hpp>
+#include <fc/network/http/server.hpp>
+#include <fc/network/tcp_socket.hpp>
+#include <fc/reflect/variant.hpp>
+#include <fc/rpc/json_connection.hpp>
+#include <fc/thread/thread.hpp>
+
 #include <iomanip>
+#include <limits>
+#include <sstream>
 
 namespace bts { namespace rpc {
 
@@ -41,7 +45,7 @@ namespace bts { namespace rpc {
              (get_name_record)\
              (validateaddress)\
              (rescan)\
-             (import_bitcoin_wallet)\
+             (import_wallet)\
              (import_private_key)\
              (importprivkey)\
              (set_receive_address_memo)\
@@ -424,7 +428,7 @@ namespace bts { namespace rpc {
       }
       else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
       { //display detailed description of requested command
-        std::string  command = params[0].as_string();
+        std::string command = params[0].as_string();
         auto itr = _method_map.find(command);
         if (itr != _method_map.end())
         {
@@ -437,6 +441,8 @@ namespace bts { namespace rpc {
           throw; //TODO figure out how to format an error msg here
         }
       }
+
+      boost::algorithm::trim(help_string);
       return fc::variant(help_string);
     }
 
@@ -878,7 +884,6 @@ The total amount in the account named tabby with at least 6 confirmations
 
 As a json rpc call
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getbalance", "params": ["tabby", 6] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-
      )" };
     fc::variant rpc_server_impl::getbalance(const fc::variants& params)
     {
@@ -1115,26 +1120,26 @@ Examples:
       return fc::variant(true);
     }
 
-    static rpc_server::method_data import_bitcoin_wallet_metadata{"import_bitcoin_wallet", nullptr,
-            /* description */ "Import a bitcoin wallet.",
+    static rpc_server::method_data import_wallet_metadata{"import_wallet", nullptr,
+            /* description */ "Import a BTC/PTS wallet",
             /* returns: */    "bool",
             /* params:          name               type       required */
-                              {{"wallet_file", "string",  true},
-                                {"wallet_pass", "string",  true}},
+                              {{"filename", "string",  true}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
-    fc::variant rpc_server_impl::import_bitcoin_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::import_wallet(const fc::variants& params)
     {
-      auto wallet_dat      = params[0].as<fc::path>();
-      auto wallet_password = params[1].as_string();
+      auto arguments       = params[0].as<std::pair<fc::path, std::string>>();
+      auto wallet_dat      = arguments.first;
+      auto wallet_password = arguments.second;
       _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
       return fc::variant(true);
     }
 
     // TODO: get account argument
     static rpc_server::method_data import_private_key_metadata{"import_private_key", nullptr,
-            /* description */ "Import a BTS/PTS/BTC private key in hex format",
+            /* description */ "Import a BTC/PTS/BTS private key in hex format",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},
@@ -1165,7 +1170,7 @@ Examples:
 
     // TODO: get account argument
     static rpc_server::method_data importprivkey_metadata{"importprivkey", nullptr,
-            /* description */ "Import a PTS/BTC private key in wallet import format (WIF)",
+            /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},

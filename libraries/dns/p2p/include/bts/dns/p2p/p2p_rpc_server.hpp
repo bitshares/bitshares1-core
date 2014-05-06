@@ -29,7 +29,7 @@ class p2p_rpc_server : public bts::rpc::rpc_server
 
     public:
         p2p_rpc_server();
-        ~p2p_rpc_server();
+        virtual ~p2p_rpc_server() override;
 
         dns_wallet_ptr get_dns_wallet();
 };

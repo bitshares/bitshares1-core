@@ -393,11 +393,13 @@ namespace bts { namespace wallet {
 
    wallet::~wallet()
    {
-      try {
-        save();
-      } catch ( const fc::exception& e )
+      try
       {
-         wlog( "unhandled exception while saving wallet ${e}", ("e",e.to_detail_string()) );
+         close();
+      }
+      catch ( const fc::exception& e )
+      {
+         wlog( "unhandled exception while closing wallet ${e}", ("e",e.to_detail_string()) );
       }
    }
 
