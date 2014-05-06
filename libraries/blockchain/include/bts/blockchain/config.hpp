@@ -76,3 +76,9 @@
  *  perform reliably for 10 days should lose money.
  */
 #define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_MIN_FEE*BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_DELEGATES )
+
+/**
+ * If defined, this disables the requirement that a valid transaction must not
+ * result in a delegate having more than 2% of the total vote
+ */
+//#define DISABLE_DELEGATE_MAX_VOTE_CHECK 1
