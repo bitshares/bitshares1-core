@@ -84,14 +84,15 @@ namespace bts { namespace client {
                // _chain_db->push_block( blk );
                if (_chain_client)
                {
+                 on_new_block(blk);
                  _chain_client->broadcast_block(blk);
                }
                else
                {
-                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
                  // with the p2p code, if you broadcast something to the network, it will not
                  // immediately send it back to you
                  on_new_block(blk);
+                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
                }
                _last_block = fc::time_point::now();
              }
@@ -122,7 +123,11 @@ namespace bts { namespace client {
        {
          try
          {
-           _chain_db->push_block(block);
+           ilog("Received a new block from the server, block is ${block}", ("block", block));
+           if (block.id() == _chain_db->head_block_id())
+             ilog("Ignoring this block, I already have it.  That probably means I'm the trustee who generated the block");
+           else
+             _chain_db->push_block(block);
          }
          catch (fc::exception& e)
          {
@@ -140,7 +145,9 @@ namespace bts { namespace client {
        {
          _chain_db->evaluate_transaction(trx); // throws exception if invalid trx.
          if (_pending_trxs.insert(std::make_pair(trx.id(), trx)).second)
-           ilog("new transaction");
+         {
+           ilog("new transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
+         }
          else
            wlog("duplicate transaction, ignoring");
        }
@@ -305,6 +312,7 @@ namespace bts { namespace client {
 
     void client::broadcast_transaction( const signed_transaction& trx )
     {
+      ilog("broadcasting transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
       if (my->_chain_client)
         my->_chain_client->broadcast_transaction( trx );
       else
