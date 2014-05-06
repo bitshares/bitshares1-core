@@ -1,4 +1,6 @@
 #include <fc/thread/thread.hpp>
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/enum_type.hpp>
@@ -18,6 +20,8 @@ namespace bts { namespace net {
       fc::future<void> _read_loop_done;
       uint64_t _bytes_received;
       uint64_t _bytes_sent;
+      fc::mutex _send_mutex;
+
 
 
       void read_loop();
@@ -142,6 +146,7 @@ namespace bts { namespace net {
         std::unique_ptr<char[]> padded_message(new char[size_with_padding]);
         memcpy(padded_message.get(), (char*)&message_to_send, sizeof(message_header));
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
+        fc::scoped_lock<fc::mutex> lock(_send_mutex);
         _sock.write(padded_message.get(), size_with_padding);
         _sock.flush();
         _bytes_sent += size_with_padding;
