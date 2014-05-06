@@ -79,7 +79,7 @@ namespace bts { namespace net {
           }
           return tmp;
          } FC_RETHROW_EXCEPTIONS( warn, 
-              "error unpacking network message as a '${type}'  ${x} != ${msg_type}", 
+              "error unpacking network message as a '${type}'  ${x} !=? ${msg_type}", 
               ("type", fc::get_typename<T>::name() )
               ("x", T::type)
               ("msg_type", msg_type)
