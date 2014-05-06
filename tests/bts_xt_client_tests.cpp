@@ -84,6 +84,9 @@ struct bts_xt_client_test_config
     if (option_variables.count("bts-server-exe"))
       bts_server_exe = option_variables["bts-server-exe"].as<std::string>().c_str();
 
+    if (option_variables.count("client-server"))
+      test_client_server = true;
+
     std::cout << "Testing " << bts_client_exe.string() << "\n";
     std::cout << "Using config directory " << config_directory.string() << "\n";
     fc::create_directories(config_directory);
@@ -391,15 +394,23 @@ void bts_client_launcher_fixture::establish_rpc_connections()
 void bts_client_launcher_fixture::trigger_network_connections()
 {
   BOOST_TEST_MESSAGE("Triggering network connections between active processes");
+    
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::mutable_variant_object parameters;
-    parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
-    parameters["desired_number_of_connections"] = _desired_number_of_connections;
-    parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
-    client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
-    client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
-    fc::usleep(fc::milliseconds(250));
+    if (bts_xt_client_test_config::test_client_server)
+    {
+      //client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
+    }
+    else //test p2p
+    {
+      fc::mutable_variant_object parameters;
+      parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
+      parameters["desired_number_of_connections"] = _desired_number_of_connections;
+      parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
+      client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
+      client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
+      fc::usleep(fc::milliseconds(250));
+    }
   }
 }
 
@@ -690,6 +701,8 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
 
   client_processes.resize(50);
 
+  const uint32_t expected_number_of_transfers = 1000 / client_processes.size();
+
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = 100000000;
 
@@ -739,15 +752,19 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
           if (next_recipient == process)
             next_recipient = (next_recipient + 1) % client_processes.size();
           ++transactions_in_this_block;
+
+
         }
         catch (const fc::exception&)
         {
-          BOOST_TEST_MESSAGE("Only able to send " << (transfer + 1) << " transfers from process " << process);
+          BOOST_TEST_MESSAGE("Only able to send " << transfer << " transfers from process " << process);
+          BOOST_CHECK_GE(transfer, expected_number_of_transfers);
           break;
         }
       }
     }
-    BOOST_TEST_MESSAGE("Done sending all transfers in this block, total of " << transactions_in_this_block << " transactions");
+    BOOST_TEST_MESSAGE("Done sending all transfers in round " << block_number << ", total of " << transactions_in_this_block << " transactions");
+    BOOST_TEST_MESSAGE("Sleeping for 30 seconds to allow a block to be generated");
     fc::usleep(fc::seconds(30));
   }
 
