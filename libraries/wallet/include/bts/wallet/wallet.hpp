@@ -53,7 +53,7 @@ namespace wallet {
         uint16_t   output_idx;
    };
 
-   struct receive_address : public address
+   struct receive_address : public bts::blockchain::address
    {
      receive_address(address addr = address(), std::string m = std::string()) : address(addr), memo(m) {}
 
