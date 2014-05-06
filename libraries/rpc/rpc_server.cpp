@@ -99,7 +99,7 @@ namespace bts { namespace rpc {
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
              s.add_header( "Connection", "close" );
-             ilog( "handle request ${r}", ("r",r.path) );
+             // ilog( "handle request ${r}", ("r",r.path) );
 
              try {
                 if( _config.rpc_user.size() )
@@ -114,7 +114,7 @@ namespace bts { namespace rpc {
                       username    = userpass.substr( 0, split );
                       password    = userpass.substr( split + 1 );
                    }
-                   ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
+                   // ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
                    if( _config.rpc_user     != username ||
                        _config.rpc_password != password )
                    {
@@ -193,7 +193,7 @@ namespace bts { namespace rpc {
                    auto method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
 
-                   ilog( "method: ${m}  params: ${p}", ("m", method_name)("p",params) );
+                   // ilog( "method: ${m}  params: ${p}", ("m", method_name)("p",params) );
                    ilog( "call: ${c}", ("c", str) );
 
                    auto call_itr = _method_map.find( method_name );
@@ -310,7 +310,7 @@ namespace bts { namespace rpc {
                                                          const rpc_server::method_data& method_data,
                                                          const fc::variants& arguments)
         {
-          ilog( "arguments: ${params}", ("params",arguments) );
+          // ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & rpc_server::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
             FC_THROW_EXCEPTION(exception, "not logged in");
@@ -320,7 +320,7 @@ namespace bts { namespace rpc {
         fc::variant dispatch_authenticated_method(const rpc_server::method_data& method_data,
                                                   const fc::variants& arguments)
         {
-          ilog( "arguments: ${params}", ("params",arguments) );
+          // ilog( "arguments: ${params}", ("params",arguments) );
           if (method_data.prerequisites & rpc_server::wallet_open)
             check_wallet_is_open();
           if (method_data.prerequisites & rpc_server::wallet_unlocked)
@@ -347,7 +347,7 @@ namespace bts { namespace rpc {
         // This method invokes the function directly, called by the CLI intepreter.
         fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
         {
-          ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
+          // ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
           auto iter = _method_map.find(method_name);
           if (iter == _method_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
