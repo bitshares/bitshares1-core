@@ -1253,8 +1253,13 @@ namespace bts { namespace net {
           {
             ilog("adding item ${item_hash} from inventory message to our list of items to fetch",
                  ("item_hash", item_hash));
-            _items_to_fetch.push_back(advertised_item_id);
-            trigger_fetch_items_loop();
+            if (std::find(_items_to_fetch.begin(), _items_to_fetch.end(), advertised_item_id) == _items_to_fetch.end())
+            {
+              _items_to_fetch.push_back(advertised_item_id);
+              trigger_fetch_items_loop();
+            }
+            else
+              elog("Error: would have added the same item to _items_to_fetch twice.  Need a set.");
           }
         }
       }
