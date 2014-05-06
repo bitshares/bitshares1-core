@@ -646,6 +646,12 @@ namespace bts { namespace net {
               peer->send_message(fetch_item_message(item_id_to_fetch));
               break;
             }
+#ifndef NDEBUG
+            else if (peer->inventory_peer_advertised_to_us.find(*iter) != peer->inventory_peer_advertised_to_us.end())
+            {
+              ilog("would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash)("endpoint", peer->get_remote_endpoint()));
+            }
+#endif
           }
           if (!item_fetched)
             ++iter;

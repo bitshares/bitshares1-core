@@ -556,7 +556,9 @@ namespace bts { namespace blockchain {
         // TODO: replace hardcoded _trustee with a lookup of the trustee for the timestamp on this block
         FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
-        FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
+        FC_ASSERT( b.block_num    == head_block_num() + 1, 
+                   "block did not immediately follow the previous block by number: current head_block_num: ${current_head}, new block_num ${new_block_num}", 
+                   ("current_head", head_block_num())("new_block_num", b.block_num));
         FC_ASSERT( b.prev         == my->_head_block_id                                         );
         /// time stamps from the future are not allowed
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( my->_head_block.next_fee,  b.block_size() ), "",
