@@ -12,7 +12,7 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
 {
     public:
         dns_transaction_validator(dns_db* db);
-        ~dns_transaction_validator();
+        virtual ~dns_transaction_validator() override;
 
         virtual block_evaluation_state_ptr create_block_state() const override = 0;
 
@@ -32,13 +32,13 @@ class dns_transaction_validator : public bts::blockchain::transaction_validator
         virtual bool is_valid_bid_price(const asset& bid_price, const asset& prev_bid_price) = 0;
         virtual asset get_bid_transfer_amount(const asset& bid_price, const asset& prev_bid_price) = 0;
 
-        virtual bool auction_is_closed(const output_reference& tx_ref) = 0;
-        virtual bool key_is_expired(const output_reference& tx_ref) = 0;
+        virtual bool auction_is_closed(const output_reference& output_ref) = 0;
+        virtual bool key_is_expired(const output_reference& output_ref) = 0;
 
         virtual bool key_is_available(const std::string& key, const std::vector<std::string>& pending_keys,
-                                      bool& new_or_expired, output_reference& prev_tx_ref) = 0;
+                                      bool& new_or_expired, output_reference& prev_output_ref) = 0;
         virtual bool key_is_useable(const std::string& key, const std::vector<std::string>& pending_keys,
-                                    const std::vector<std::string>& unspent_keys, output_reference& prev_tx_ref) = 0;
+                                    const std::vector<std::string>& unspent_keys, output_reference& prev_output_ref) = 0;
 
     protected:
         dns_db* _dns_db;

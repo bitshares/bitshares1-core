@@ -11,7 +11,7 @@ dns_db::dns_db()
 
 dns_db::~dns_db()
 {
-    close();
+    _dns2ref.close();
 }
 
 void dns_db::open(const fc::path& dir, bool create)

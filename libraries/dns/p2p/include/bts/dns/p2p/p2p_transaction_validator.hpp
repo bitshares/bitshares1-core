@@ -48,7 +48,7 @@ class p2p_transaction_validator : public bts::dns::dns_transaction_validator
 {
     public:
         p2p_transaction_validator(dns_db* db);
-        ~p2p_transaction_validator();
+        virtual ~p2p_transaction_validator() override;
 
         virtual block_evaluation_state_ptr create_block_state() const override;
 
@@ -68,13 +68,13 @@ class p2p_transaction_validator : public bts::dns::dns_transaction_validator
         virtual bool is_valid_bid_price(const asset& bid_price, const asset& prev_bid_price) override;
         virtual asset get_bid_transfer_amount(const asset& bid_price, const asset& prev_bid_price) override;
 
-        virtual bool auction_is_closed(const output_reference& tx_ref) override;
-        virtual bool key_is_expired(const output_reference& tx_ref) override;
+        virtual bool auction_is_closed(const output_reference& output_ref) override;
+        virtual bool key_is_expired(const output_reference& output_ref) override;
 
         virtual bool key_is_available(const std::string& key, const std::vector<std::string>& pending_keys,
-                                      bool& new_or_expired, output_reference& prev_tx_ref) override;
+                                      bool& new_or_expired, output_reference& prev_output_ref) override;
         virtual bool key_is_useable(const std::string& key, const std::vector<std::string>& pending_keys,
-                                    const std::vector<std::string>& unspent_keys, output_reference& prev_tx_ref) override;
+                                    const std::vector<std::string>& unspent_keys, output_reference& prev_output_ref) override;
 
     private:
         void validate_p2p_input(const claim_dns_output& input, const asset& amount,

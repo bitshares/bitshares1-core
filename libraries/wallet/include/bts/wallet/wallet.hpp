@@ -129,7 +129,7 @@ namespace wallet {
    {
         public:
            wallet();
-           ~wallet();
+           virtual ~wallet();
 
            void set_data_directory( const fc::path& dir );
            fc::path get_wallet_filename_for_user(const std::string& username) const;
@@ -325,7 +325,7 @@ namespace std {
   class hash<bts::wallet::receive_address>
   {
   public:
-    size_t operator()(const bts::wallet::receive_address& a) const 
+    size_t operator()(const bts::wallet::receive_address& a) const
     {
       return (uint64_t(a.addr._hash[0]) << 32) | uint64_t(a.addr._hash[0]);
     }

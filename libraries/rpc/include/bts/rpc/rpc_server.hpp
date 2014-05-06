@@ -10,12 +10,11 @@ namespace bts { namespace rpc {
 
   namespace detail { class rpc_server_impl; }
 
-
   /**
   *  @class rpc_server
   *  @brief provides a json-rpc interface to the bts client
   */
-  class rpc_server 
+  class rpc_server
   {
   public:
     struct config
@@ -42,13 +41,16 @@ namespace bts { namespace rpc {
       wallet_unlocked      = 4,
       connected_to_network = 8,
     };
+
     struct parameter_data
     {
       std::string name;
       std::string type;
       bool        required;
     };
+
     typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
+
     struct method_data
     {
       std::string                 name;
@@ -61,7 +63,7 @@ namespace bts { namespace rpc {
     };
 
     rpc_server();
-    ~rpc_server();
+    virtual ~rpc_server();
 
     client_ptr  get_client()const;
     void        set_client( const client_ptr& c );
@@ -78,10 +80,12 @@ namespace bts { namespace rpc {
     void check_connected_to_network();
     void check_wallet_unlocked();
     void check_wallet_is_open();
+
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
     void register_method(method_data method);
+
   private:
       std::unique_ptr<detail::rpc_server_impl> my;
   };
@@ -112,12 +116,10 @@ namespace bts { namespace rpc {
 
 RPC_DECLARE_EXCEPTION(rpc_misc_error_exception)
 
-
 RPC_DECLARE_EXCEPTION(rpc_client_not_connected_exception)
 
 RPC_DECLARE_EXCEPTION(rpc_wallet_unlock_needed_exception)
 RPC_DECLARE_EXCEPTION(rpc_wallet_passphrase_incorrect_exception)
-
 RPC_DECLARE_EXCEPTION(rpc_wallet_open_needed_exception)
 
 } } // bts::rpc
