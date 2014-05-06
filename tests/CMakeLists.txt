@@ -1,11 +1,11 @@
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/blockchain/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/db/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/wallet/include )
+include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
 
 add_executable( blockchain_tests blockchain_tests.cpp )
-target_link_libraries( blockchain_tests bts_wallet bts_blockchain bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
+target_link_libraries( blockchain_tests bts_wallet bts_blockchain bts_net bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
 
-include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
 
 if( WIN32 )

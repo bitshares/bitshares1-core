@@ -53,6 +53,7 @@ namespace bts { namespace client {
          fc::variants get_peer_info() const;
          void set_advanced_node_parameters(const fc::variant_object& params);
          void addnode(const fc::ip::endpoint& node, const std::string& command);
+         void stop();
 
          void configure( const fc::path& configuration_directory );
 

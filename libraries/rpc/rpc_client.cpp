@@ -26,7 +26,7 @@ namespace bts { namespace rpc {
       bts::blockchain::address getnewaddress(const std::string& account);
       bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                          const std::string& comment, const std::string& comment_to);
-      std::unordered_map<bts::blockchain::address,std::string> list_receive_addresses();
+      std::unordered_set<bts::wallet::receive_address> list_receive_addresses();
       bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
       bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
       bts::blockchain::signed_block_header getblock(uint32_t block_num);
@@ -42,6 +42,7 @@ namespace bts { namespace rpc {
       fc::variants getpeerinfo();
       void _set_advanced_node_parameters(const fc::variant_object& params);
       void addnode(const fc::ip::endpoint& node, const std::string& command);
+      void stop();
     };
 
     void rpc_client_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
@@ -87,9 +88,9 @@ namespace bts { namespace rpc {
       return _json_connection->call<bts::blockchain::transaction_id_type>("sendtoaddress", fc::variant((std::string)address), fc::variant(amount), fc::variant(comment), fc::variant(comment_to));
     }
 
-    std::unordered_map<bts::blockchain::address,std::string> rpc_client_impl::list_receive_addresses()
+    std::unordered_set<bts::wallet::receive_address> rpc_client_impl::list_receive_addresses()
     {
-      return _json_connection->call<std::unordered_map<bts::blockchain::address,std::string> >("list_receive_addresses");
+      return _json_connection->call<std::unordered_set<bts::wallet::receive_address> >("list_receive_addresses");
     }
 
     bts::blockchain::asset rpc_client_impl::getbalance(bts::blockchain::asset_type asset_type)
@@ -159,7 +160,10 @@ namespace bts { namespace rpc {
     {
       _json_connection->async_call("addnode", (std::string)node, command).wait();
     }
-
+    void rpc_client_impl::stop()
+    {
+      _json_connection->async_call("stop").wait();
+    }
   } // end namespace detail
 
 
@@ -198,7 +202,7 @@ namespace bts { namespace rpc {
     return my->sendtoaddress(address, amount, comment, comment_to);
   }
 
-  std::unordered_map<bts::blockchain::address,std::string> rpc_client::list_receive_addresses()
+  std::unordered_set<bts::wallet::receive_address> rpc_client::list_receive_addresses()
   {
     return my->list_receive_addresses();
   }
@@ -269,6 +273,10 @@ namespace bts { namespace rpc {
   void rpc_client::addnode(const fc::ip::endpoint& node, const std::string& command)
   {
     my->addnode(node, command);
+  }
+  void rpc_client::stop()
+  {
+    my->stop();
   }
 
 } } // bts::rpc

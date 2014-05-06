@@ -30,12 +30,12 @@ namespace bts { namespace cli {
       class cli_impl
       {
          public:
-            client_ptr       _client;
-            bts::rpc::rpc_server_ptr   _rpc_server;
-            bts::cli::cli*   _self;
-            fc::thread*      _main_thread;
-            fc::thread       _cin_thread;
-            fc::future<void> _cin_complete;
+            client_ptr                  _client;
+            bts::rpc::rpc_server_ptr    _rpc_server;
+            bts::cli::cli*              _self;
+            fc::thread*                 _main_thread;
+            fc::thread                  _cin_thread;
+            fc::future<void>            _cin_complete;
 
             cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
               _client(client),
@@ -86,6 +86,12 @@ namespace bts { namespace cli {
                   return;
                 }
                 catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
+                {
+                }
+                catch (const fc::exception& e)
+                {
+                }
+                catch (...)
                 {
                 }
 
@@ -287,9 +293,10 @@ namespace bts { namespace cli {
             fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                  const std::string& command)
             {
-              // quit isn't registered with the RPC server
+              /* Quit isn't registered with the RPC server, the RPC server spells it "stop" */
               if (command == "quit")
                 return fc::variants();
+
               FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
@@ -351,7 +358,9 @@ namespace bts { namespace cli {
                 return fc::variant();
               }
               else if (command == "rescan")
+              {
                 return interactive_rescan(command, arguments);
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -360,6 +369,7 @@ namespace bts { namespace cli {
               {
                 return execute_command_and_prompt_for_passwords(command, arguments);
               }
+              return fc::variant();
             }
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
@@ -374,7 +384,8 @@ namespace bts { namespace cli {
                 std::cout << "--------------------------------------------------------------------------------\n";
                 auto addrs = _client->get_wallet()->get_receive_addresses();
                 for( auto addr : addrs )
-                  std::cout << std::setw( 33 ) << std::left << std::string(addr.first) << " : " << addr.second << "\n";
+                  std::cout << std::setw( 33 ) << std::left << std::string(addr.addr) << " : " << addr.memo << "\n";
+                std::cout << std::right;
               }
               else if (command == "help")
               {
@@ -382,7 +393,14 @@ namespace bts { namespace cli {
                 std::cout << help_string;
               }
               else if (command == "rescan")
+              {
                 std::cout << "\ndone scanning block chain\n";
+              }
+              else if (command == "get_transaction_history")
+              {
+                auto trx_history = result.as<std::vector<transaction_state>>();
+                _self->print_transaction_history(trx_history);
+              }
               else
               {
                 // there was no custom handler for this particular command, see if the return type
@@ -525,7 +543,7 @@ namespace bts { namespace cli {
         pass1  = _self->get_line("wallet passphrase: ", true);
         while( pass1 != pass2 )
         {
-          pass2 = _self->get_line("walletpassword (again): ", true);
+          pass2 = _self->get_line("wallet passphrase (again): ", true);
           if( pass2 != pass1 )
           {
             std::cout << "Your passphrases did not match, please try again.\n";
@@ -572,6 +590,8 @@ namespace bts { namespace cli {
         _client->get_wallet()->create( user, pass1, keypass1 );
         std::cout << "Wallet created.\n";
       }
+
+      interactive_open_wallet();
     }
   } // end namespace detail
 
@@ -590,6 +610,7 @@ namespace bts { namespace cli {
    {
       try
       {
+        my->_client->get_wallet()->save();
         wait();
       }
       catch ( const fc::exception& e )
@@ -649,6 +670,11 @@ namespace bts { namespace cli {
        my->_cin_complete.wait();
    }
 
+   void cli::quit()
+   {
+      my->_cin_complete.cancel();
+   }
+
    std::string cli::get_line( const std::string& prompt, bool no_echo )
    {
        return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
@@ -683,5 +709,96 @@ namespace bts { namespace cli {
     return my->format_and_print_result(command, result);
   }
 
+  void cli::print_transaction_history(std::vector<transaction_state>& trx_states)
+  {
+    /* Print header */
+    std::cout << std::setw(  3 ) << "#";
+    std::cout << std::setw(  6 ) << "BLK" << ".";
+    std::cout << std::setw(  5 ) << std::left << "TRX";
+    std::cout << std::setw( 21 ) << "TIMESTAMP";
+    std::cout << std::setw( 12 ) << " AMOUNT";
+    std::cout << std::setw( 40 ) << "FROM";
+    std::cout << std::setw( 40 ) << "TO";
+    std::cout << std::setw(  6 ) << "FEE";
+    std::cout << std::setw( 14 ) << " VOTE";
+    std::cout << std::setw( 40 ) << "ID";
+    std::cout << "\n----------------------------------------------------------------------------------------------";
+    std::cout <<   "----------------------------------------------------------------------------------------------\n";
+    std::cout << std::right;
+
+    auto count = 1;
+    char timestamp_buffer[20];
+    for( auto trx_state : trx_states )
+    {
+        /* Print index */
+        std::cout << std::setw( 3 ) << count;
+
+        /* Print block and transaction numbers */
+        std::cout << std::setw( 6 ) << trx_state.block_num << ".";
+        std::cout << std::setw( 5 ) << std::left << trx_state.trx_num;
+
+        /* Print timestamp */
+        auto timestamp = time_t(trx_state.confirm_time.sec_since_epoch());
+        strftime(timestamp_buffer, std::extent<decltype(timestamp_buffer)>::value, "%F %X", localtime(&timestamp));
+        std::cout << std::setw( 21 ) << timestamp_buffer;
+
+        /* Print amount */
+        {
+            std::stringstream ss;
+            if (trx_state.delta_balance[0] > 0) ss << "+";
+            else if (trx_state.delta_balance[0] < 0) ss << "-";
+            ss << abs(trx_state.delta_balance[0]);
+            std::cout << std::setw( 12 ) << ss.str();
+        }
+
+        /* Print from addresses */
+        {
+            std::stringstream ss;
+            auto n = 0;
+            for (auto pair : trx_state.from)
+            {
+                if (n) ss << ", ";
+                ss << pair.second;
+                ++n;
+                break; // TODO
+            }
+            std::cout << std::setw( 40 ) << ss.str();
+        }
+
+        /* Print to addresses */
+        {
+            std::stringstream ss;
+            auto n = 0;
+            for (auto pair : trx_state.to)
+            {
+                if (n) ss << ", ";
+                ss << pair.second;
+                ++n;
+                break; // TODO
+            }
+            std::cout << std::setw( 40 ) << ss.str();
+        }
+
+        /* Print fee */
+        std::cout << std::setw( 6 ) << trx_state.fees[0];
+
+        /* Print delegate vote */
+        {
+            std::stringstream ss;
+            auto delegate = abs(trx_state.trx.vote);
+            auto name = my->_rpc_server->get_client()->get_chain()->lookup_delegate(delegate)->name;
+            if (trx_state.trx.vote > 0) ss << "+";
+            else ss << "-";
+            ss << name;
+            std::cout << std::setw( 14 ) << ss.str();
+        }
+
+        /* Print transaction ID */
+        std::cout << std::setw( 40 ) << std::string( trx_state.trx.id() );
+
+        std::cout << std::right << "\n";
+        ++count;
+    }
+  }
 
 } } // bts::cli

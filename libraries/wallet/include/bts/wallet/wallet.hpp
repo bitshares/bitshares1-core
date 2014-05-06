@@ -1,4 +1,5 @@
 #pragma once
+
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
 #include <bts/wallet/delegate_status.hpp>
@@ -52,38 +53,66 @@ namespace wallet {
         uint16_t   output_idx;
    };
 
+   struct receive_address : public address
+   {
+     receive_address(address addr = address(), std::string m = std::string()) : address(addr), memo(m) {}
+
+     std::string memo;
+     std::map<output_index, trx_output> unspent_outputs;
+   };
+
 
    struct transaction_state
    {
-      transaction_state():delta_balance(0),block_num(-1),valid(false){}
+      transaction_state():block_num(trx_num::invalid_block_num),trx_num(trx_num::invalid_trx_idx),valid(false){}
+
       signed_transaction                   trx;
-      /** outputs of the transaction that are not controlled by this wallet
-       *
-       *  These would be addresses belonging to 3rd parties.
-       **/
-      std::map<address,std::string>        to;
 
       /** outputs of the transaction that are controlled by this wallet, identifies who sent the
        * transaction based upon who the user gave the address to.  This is not the
        * address of the sender, but our local account*/
       std::map<address,std::string>        from;
 
-      std::string                          memo;
-      std::unordered_map<uint16_t,int64_t> delta_balance; /// unit vs amount
-      std::unordered_map<uint16_t,int64_t> fees; /// unit vs amount
-      uint32_t                             block_num; // block that included it, -1 if not included
-      bool                                 valid;     // is this transaction currently valid if it is not confirmed...
+      /** outputs of the transaction that are not controlled by this wallet
+       *
+       *  These would be addresses belonging to 3rd parties.
+       **/
+      std::map<address,std::string>        to;
 
-      void adjust_balance( asset amnt, int64_t direction = 1 )
+      std::string                          memo;
+
+      std::unordered_map<uint16_t,int64_t> delta_balance; // unit -> amount
+      std::unordered_map<uint16_t,int64_t> fees;          // unit -> amount
+
+      uint32_t                             block_num;     // block that included it, -1 if not included
+      uint16_t                             trx_num;       // trx id in block, -1 if not included
+      fc::time_point_sec                   confirm_time;
+
+      bool                                 valid;         // is this transaction currently valid if it is not confirmed...
+
+      void adjust_balance( asset amnt, int64_t direction )
       {
          auto itr = delta_balance.find(amnt.unit);
          if( itr == delta_balance.end() )
          {
-              delta_balance[amnt.unit] = amnt.get_rounded_amount()*direction;
+              delta_balance[amnt.unit] = amnt.amount*direction;
          }
          else
          {
-            itr->second += amnt.get_rounded_amount()*direction;
+              itr->second += amnt.amount*direction;
+         }
+      }
+
+      void adjust_fees( asset amnt, int64_t direction )
+      {
+         auto itr = fees.find(amnt.unit);
+         if( itr == fees.end() )
+         {
+              fees[amnt.unit] = amnt.amount*direction;
+         }
+         else
+         {
+              itr->second += amnt.amount*direction;
          }
       }
    };
@@ -106,7 +135,6 @@ namespace wallet {
            fc::path get_wallet_filename_for_user(const std::string& username) const;
 
            void import_delegate( uint32_t did, const fc::ecc::private_key& k );
-
 
            void open( const std::string& user, const std::string& password );
            bool close();
@@ -167,6 +195,10 @@ namespace wallet {
                                                                const std::string& memo = "",
                                                                const std::string& account = "");
 
+           void                                    import_wif_key( const std::string& wif,
+                                                                   const std::string& memo = "",
+                                                                   const std::string& account = "");
+
            /**
             *  Updates the memo associated with a receive address
             */
@@ -174,7 +206,7 @@ namespace wallet {
            address                                 new_receive_address( const std::string& memo = "", const std::string& account = "" );
            fc::ecc::public_key                     new_public_key( const std::string& memo = "", const std::string& account = "" );
 
-           std::unordered_map<address,std::string> get_receive_addresses()const;
+           std::unordered_set<receive_address>     get_receive_addresses()const;
            std::string                             get_send_address_label( const address& addr )const;
            void                                    remove_send_address( const address& addr );
 
@@ -213,8 +245,8 @@ namespace wallet {
                                            const address& to,
                                            const std::string& memo = "change" );
 
-           /** returns all transactions issued */
-           std::unordered_map<transaction_id_type, transaction_state> get_transaction_history()const;
+           /** returns last n (default 0 means all) transactions issued, sorted from oldest to newest */
+           std::vector<transaction_state> get_transaction_history(unsigned n = 0)const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
            void sign_transaction( signed_transaction& trx,
@@ -281,13 +313,31 @@ namespace wallet {
                                       const output_index& idx );
 
         private:
-           bool scan_transaction( transaction_state& trx, uint32_t block_idx, uint32_t trx_idx );
+           bool scan_transaction( transaction_state& trx, uint16_t trx_idx );
            std::unique_ptr<detail::wallet_impl> my;
    };
 
    typedef std::shared_ptr<wallet> wallet_ptr;
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_state, (trx)(memo)(block_num)(to)(from)(delta_balance)(valid)(fees) )
-FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
+namespace std {
+  template <>
+  class hash<bts::wallet::receive_address>
+  {
+  public:
+    size_t operator()(const bts::wallet::receive_address& a) const 
+    {
+      return (uint64_t(a.addr._hash[0]) << 32) | uint64_t(a.addr._hash[0]);
+    }
+  };
+}
 
+namespace fc
+{
+  void to_variant(const bts::wallet::receive_address& var, variant& vo);
+  void from_variant(const variant& var, bts::wallet::receive_address& receive_address);
+}
+
+FC_REFLECT( bts::wallet::transaction_state, (trx)(from)(to)(memo)(delta_balance)(fees)(block_num)(trx_num)(confirm_time)(valid) )
+FC_REFLECT( bts::wallet::output_index, (block_idx)(trx_idx)(output_idx) )
+FC_REFLECT_DERIVED( bts::wallet::receive_address, (bts::blockchain::address), (memo) )

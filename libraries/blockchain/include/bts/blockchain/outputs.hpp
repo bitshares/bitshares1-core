@@ -119,7 +119,8 @@ struct claim_name_output
     static const claim_type_enum type;
     
     /**
-     * Valid names start with a-z, are all lower case, and may have '-'
+     * Valid names start with a-z, are all lower case, and may have '-' (but can't
+     * start or end with it)
      */
     static bool is_valid_name( const std::string& name );
 

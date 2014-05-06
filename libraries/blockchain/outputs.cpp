@@ -18,7 +18,8 @@ namespace bts { namespace blockchain {
    bool claim_name_output::is_valid_name( const std::string& name )
    {
       if( name.size() == 0                ) return false;
-      if( name[0] < 'a' || name [0] > 'z' ) return false;
+      if( name[0] < 'a' || name[0] > 'z' ) return false;
+      if( name[0] == '-' || name[name.length() - 1] == '-')  return false;
 
       for( auto c : name )
       {

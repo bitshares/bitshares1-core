@@ -52,10 +52,8 @@ namespace bts { namespace rpc {
              (get_names)\
              (getpeerinfo)\
              (_set_advanced_node_parameters)\
-             (addnode)
-
-
-
+             (addnode)\
+             (stop)
 
   namespace detail
   {
@@ -80,7 +78,7 @@ namespace bts { namespace rpc {
            std::string help_string;
            std::stringstream sstream;
            //format into columns
-           sstream << std::setw(35) << std::left;
+           sstream << std::setw(70) << std::left;
            help_string = method_data.name + " ";
            for (const rpc_server::parameter_data& parameter : method_data.parameters)
            {
@@ -201,7 +199,7 @@ namespace bts { namespace rpc {
                       result["id"]     =  rpc_call["id"];
                       try
                       {
-                         result["result"] =  dispatch_authenticated_method(call_itr->second, params);
+                         result["result"] = dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
                          s.set_status( fc::http::reply::OK );
                       }
@@ -530,8 +528,8 @@ Examples:
       }
       catch( const fc::exception& e )
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
-         throw;
+        wlog( "${e}", ("e",e.to_detail_string() ) );
+        throw e;
       }
       catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
       {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
@@ -804,14 +802,14 @@ Examples:
 
     static rpc_server::method_data list_receive_addresses_metadata{"list_receive_addresses", nullptr,
             /* description */ "Lists all receive addresses and their labels associated with this wallet",
-            /* returns: */    "map<address,string>",
+            /* returns: */    "set<receive_address>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::list_receive_addresses(const fc::variants& params)
     {
-      std::unordered_map<bts::blockchain::address,std::string> addresses = _client->get_wallet()->get_receive_addresses();
+      std::unordered_set<bts::wallet::receive_address> addresses = _client->get_wallet()->get_receive_addresses();
       return fc::variant( addresses );
     }
 
@@ -907,14 +905,19 @@ As a json rpc call
 
     static rpc_server::method_data get_transaction_history_metadata{"get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
-            /* returns: */    "map<transaction_id,transaction_state>",
-            /* params:     */ {},
+            /* returns: */    "std::vector<transaction_state>",
+            /* params:          name     type     required */
+                              {{"count", "unsigned",  false}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
     {
-      return fc::variant( _client->get_wallet()->get_transaction_history() );
+      unsigned count = 0;
+      if (params.size() == 1)
+          count = params[0].as<unsigned>();
+
+      return fc::variant( _client->get_wallet()->get_transaction_history( count ) );
     }
 
     static rpc_server::method_data get_name_record_metadata{"get_name_record", nullptr,
@@ -1129,31 +1132,44 @@ Examples:
       return fc::variant(true);
     }
 
+    // TODO: get account argument
     static rpc_server::method_data import_private_key_metadata{"import_private_key", nullptr,
-            /* description */ "Import a bitshares private key from hex format.",
+            /* description */ "Import a BTS/PTS/BTC private key in hex format",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},
-                               {"label",       "string",       false}},
+                                {"label",       "string",       false},
+                                {"rescan",      "bool",         false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
     fc::variant rpc_server_impl::import_private_key(const fc::variants& params)
     {
+      auto key = params[0].as<fc::ecc::private_key>();
       std::string label;
       if (params.size() >= 2 && !params[1].is_null())
         label = params[1].as_string();
-      _client->get_wallet()->import_key(params[0].as<fc::ecc::private_key>(), label);
+
+      bool rescan = false;
+      if (params.size() == 3 && params[2].as_bool())
+        rescan = true;
+
+      _client->get_wallet()->import_key(key, label);
       _client->get_wallet()->save();
+
+      if (rescan)
+          _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
+
       return fc::variant(true);
     }
 
+    // TODO: get account argument
     static rpc_server::method_data importprivkey_metadata{"importprivkey", nullptr,
-            /* description */ "Import a bitcoin private key from wallet import format (WIF).",
+            /* description */ "Import a PTS/BTC private key in wallet import format (WIF)",
             /* returns: */    "bool",
             /* params:          name           type            required */
                               {{"key",         "private_key",  true},
-                                {"label",       "string",       true},
+                                {"label",       "string",       false},
                                 {"rescan",      "bool",         false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
@@ -1188,13 +1204,12 @@ As a json rpc call
       bool rescan = false;
       if (params.size() == 3 && params[2].as_bool())
         rescan = true;
-      FC_ASSERT( !"Importing from WIF format not yet implemented" );
-      // TODO: convert bitcoin wallet import format wif to privakey
-      //_client->get_wallet()->import_key(privkey, label);
+
+      _client->get_wallet()->import_wif_key(wif, label);
       _client->get_wallet()->save();
 
       if (rescan)
-        _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
+          _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
 
       return fc::variant(true);
     }
@@ -1290,7 +1305,7 @@ bResult:
 }
 
 Examples:
-> bitcoin-cli getpeerinfo 
+> bitcoin-cli getpeerinfo
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getpeerinfo", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 )" };
     fc::variant rpc_server_impl::getpeerinfo(const fc::variants&)
@@ -1316,7 +1331,7 @@ null
     static rpc_server::method_data addnode_metadata{"addnode", nullptr,
             /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
             /* returns: */    "null",
-            /* params:          name            type            required */ 
+            /* params:          name            type            required */
                               {{"node",         "string",       true},
                                {"command",      "string",       true}},
           /* prerequisites */ rpc_server::json_authenticated,
@@ -1337,6 +1352,22 @@ Examples:
     fc::variant rpc_server_impl::addnode(const fc::variants& params)
     {
       _client->addnode(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
+      return fc::variant();
+    }
+
+    static rpc_server::method_data stop_metadata{"stop", nullptr,
+            /* description */ "Stop BitShares server",
+            /* returns: */    "null",
+            /* params:     */ {},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+stop
+
+Stop BitShares server.
+)" };
+    fc::variant rpc_server_impl::stop(const fc::variants& params)
+    {
+      _client->stop();
       return fc::variant();
     }
 
