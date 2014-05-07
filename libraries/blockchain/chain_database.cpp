@@ -229,10 +229,7 @@ namespace bts { namespace blockchain {
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
                    store( trx, trx_num( b.block_num, trxs_ids.size() ) );
-                   // TODO: why don't we include this here... do determinsitic trxs not
-                   // get included in the merkel root... does this hinder light weight
-                   // clients.
-                  // trxs_ids.push_back( trx.id() );
+                   trxs_ids.push_back( trx.id() );
                 }
 
                 _head_block    = b;
