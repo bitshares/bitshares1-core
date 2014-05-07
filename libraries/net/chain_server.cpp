@@ -263,6 +263,7 @@ namespace detail
              {
                 try {
                    auto blk = m.as<block_message>();
+                   ilog("received block message, current head block number is ${num}: ${msg}", ("num", _chain->head_block_num())("msg", blk));
                    _chain->push_block( blk.block_data );
                    for( auto trx : blk.block_data.trxs )
                    {

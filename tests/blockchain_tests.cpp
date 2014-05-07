@@ -333,12 +333,12 @@ BOOST_AUTO_TEST_CASE( blockchain_replace_head_block )
  * this test case is intended to replicate one of the bts_xt_client_test
  * cases that was failing, but without the processes and networking
  * complicating things.
- * Here we generate a number of wallet and send as many transactions 
+ * Here we generate a number of wallet and send as many transactions
  * from each wallet out to all the other wallets, until we can't
  * find any more unspent outputs to pull from.  Then we wait for the
  * next block and do the same thing.  We should be able to make as
  * many transactions as before, since each transaction in the
- * previous round should have generated a change address we can 
+ * previous round should have generated a change address we can
  * use as an input to this round.
  */
 BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
@@ -364,13 +364,13 @@ BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
 
     std::vector<client_info> clients;
 
-    for (int i = 0; i < wallet_count; ++i)
+    for (uint32_t i = 0; i < wallet_count; ++i)
     {
       client_info info;
       info.initial_balance = 100000000;
       info.initial_key = fc::ecc::private_key::generate();
 
-      genesis_block_config.balances.push_back(std::make_pair(bts::blockchain::pts_address(info.initial_key.get_public_key()), 
+      genesis_block_config.balances.push_back(std::make_pair(bts::blockchain::pts_address(info.initial_key.get_public_key()),
                                                              info.initial_balance / 100000000));
 
       std::ostringstream wallet_dir_name;
@@ -392,8 +392,8 @@ BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
     blockchain.open( base_dir / "chain" );
     genesis_block.sign(trustee_key);
     blockchain.push_block(genesis_block);
-    
-    for (int i = 0; i < wallet_count; ++i)
+
+    for (uint32_t i = 0; i < wallet_count; ++i)
     {
       BOOST_CHECK(clients[i].wallet->get_balance(0).amount == 0);
       clients[i].wallet->import_key(clients[i].initial_key, "initial_key");
@@ -405,7 +405,7 @@ BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
     {
       std::vector<signed_transaction> transactions;
       uint32_t next_recipient = 1;
-      for (int client_index = 0; client_index < wallet_count; ++client_index)
+      for (uint32_t client_index = 0; client_index < wallet_count; ++client_index)
       {
         clients[client_index].wallet->dump_unspent_outputs();
         BOOST_TEST_MESSAGE("initial balance " << clients[client_index].wallet->get_balance(0).amount);
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
       next_block.sign(trustee_key);
       ilog( "generated block: ${b}", ("b", next_block ));
       blockchain.push_block(next_block);
-      for (int client_index = 0; client_index < wallet_count; ++client_index)
+      for (uint32_t client_index = 0; client_index < wallet_count; ++client_index)
         clients[client_index].wallet->scan_chain(blockchain, blockchain.get_head_block().block_num);
     } // each iteration of the test
   }// try

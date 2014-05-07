@@ -87,6 +87,7 @@ namespace bts { namespace blockchain {
 
    void block_evaluation_state::enforce_max_delegate_vote( int32_t did )
    {
+#if !defined(DISABLE_DELEGATE_MAX_VOTE_CHECK)
       if( did < 0 ) return; // negative votes can never push us over the limit
       add_output_delegate_votes( -did, asset() ); // initialize to 0
 
@@ -96,6 +97,7 @@ namespace bts { namespace blockchain {
                  "no delegate may receive more than 2x the votes a delegate would receive if all delegates received equal votes",
                  ("delta_bips",delta_bips)("output_votes[did]",_output_votes[did])("output_votes[-did]",_output_votes[-did])
                  ("LIMIT", (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_DELEGATES)) );
+#endif
    }
 
    void transaction_evaluation_state::add_input_asset( asset a )
@@ -192,13 +194,14 @@ namespace bts { namespace blockchain {
                      ("fees",sum.fees)("required",state.get_required_fees()));
        }
 
+#if !defined(DISABLE_DELEGATE_MAX_VOTE_CHECK)
        /** calculate the resulting delegate voting percent for this transaction */
        int64_t total_shares = _db->total_shares();
        int64_t initial_vote = trx_delegate->total_votes();
        int64_t delta_vote   = to_bips( (state.trx.vote / abs(state.trx.vote)) * state.get_total_out(0), total_shares);
        int64_t percent = (((initial_vote + delta_vote) * 10000) / BTS_BLOCKCHAIN_BIP) / 100;
        FC_ASSERT( percent <  2*(100/BTS_BLOCKCHAIN_DELEGATES) );
-
+#endif
 
        return sum;
    } FC_RETHROW_EXCEPTIONS( warn, "") }

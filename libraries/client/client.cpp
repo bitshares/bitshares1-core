@@ -84,14 +84,15 @@ namespace bts { namespace client {
                // _chain_db->push_block( blk );
                if (_chain_client)
                {
+                 on_new_block(blk);
                  _chain_client->broadcast_block(blk);
                }
                else
                {
-                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
                  // with the p2p code, if you broadcast something to the network, it will not
                  // immediately send it back to you
                  on_new_block(blk);
+                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
                }
                _last_block = fc::time_point::now();
              }
@@ -122,7 +123,11 @@ namespace bts { namespace client {
        {
          try
          {
-           _chain_db->push_block(block);
+           ilog("Received a new block from the server, current head block is ${num}, block is ${block}", ("num", _chain_db->head_block_num())("block", block));
+           if (block.id() == _chain_db->head_block_id())
+             ilog("Ignoring this block, I already have it.  That probably means I'm the trustee who generated the block");
+           else
+             _chain_db->push_block(block);
          }
          catch (fc::exception& e)
          {
@@ -140,9 +145,14 @@ namespace bts { namespace client {
        {
          _chain_db->evaluate_transaction(trx); // throws exception if invalid trx.
          if (_pending_trxs.insert(std::make_pair(trx.id(), trx)).second)
-           ilog("new transaction");
+           ilog("new transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
          else
-           wlog("duplicate transaction, ignoring");
+         {
+           trx_message original_trx_message(trx);
+           bts::net::message original_message(original_trx_message);
+           wlog("duplicate transaction with id ${id}, should have arrived in message ${message_id}, ignoring", 
+                ("id", trx.id())("message_id", original_message.id()));
+         }
        }
 
 
@@ -151,6 +161,25 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        bool client_impl::has_item(const bts::net::item_id& id)
        {
+         if (id.item_type == block_message_type)
+         {
+           try
+           {
+             _chain_db->fetch_block_num(id.item_hash);
+             return true;
+           }
+           catch (const fc::key_not_found_exception&)
+           {
+             return false;
+           }
+         }
+
+         if (id.item_type == trx_message_type)
+         {
+           auto iter = _pending_trxs.find(id.item_hash);
+           return iter != _pending_trxs.end();
+         }
+
          return false;
        }
        void client_impl::handle_message(const bts::net::message& message_to_handle)
@@ -167,6 +196,7 @@ namespace bts { namespace client {
          case trx_message_type:
            {
              trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
+             ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
              on_new_transaction(trx_message_to_handle.trx);
              break;
            }
@@ -305,13 +335,14 @@ namespace bts { namespace client {
 
     void client::broadcast_transaction( const signed_transaction& trx )
     {
+      ilog("broadcasting transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
       if (my->_chain_client)
         my->_chain_client->broadcast_transaction( trx );
       else
       {
-        my->_p2p_node->broadcast(trx_message(trx));
         // p2p doesn't send messages back to the originator
         my->on_new_transaction(trx);
+        my->_p2p_node->broadcast(trx_message(trx));
       }
     }
 
@@ -366,8 +397,8 @@ namespace bts { namespace client {
           peer_details["services"] = "00000001";
           peer_details["lastsend"] = "";
           peer_details["lastrecv"] = "";
-          peer_details["bytessent"] = "";
-          peer_details["bytesrecv"] = "";
+          peer_details["bytessent"] = "0";
+          peer_details["bytesrecv"] = "0";
           peer_details["conntime"] = "";
           peer_details["pingtime"] = "";
           peer_details["pingwait"] = "";

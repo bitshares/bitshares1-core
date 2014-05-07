@@ -92,13 +92,13 @@ asset p2p_transaction_validator::get_bid_transfer_amount(const asset& bid_price,
     return bid_price - DNS_BID_FEE_RATIO(bid_price - prev_bid_price);
 }
 
-bool p2p_transaction_validator::auction_is_closed(const output_reference& tx_ref)
+bool p2p_transaction_validator::auction_is_closed(const output_reference& output_ref)
 {
-    auto output = _dns_db->fetch_output(tx_ref);
+    auto output = _dns_db->fetch_output(output_ref);
     FC_ASSERT(is_dns_output(output));
 
     auto dns_output = to_dns_output(output);
-    auto age = _dns_db->get_output_age(tx_ref);
+    auto age = _dns_db->get_output_age(output_ref);
 
     if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction
         && age < DNS_AUCTION_DURATION_BLOCKS)
@@ -107,16 +107,16 @@ bool p2p_transaction_validator::auction_is_closed(const output_reference& tx_ref
     return true;
 }
 
-bool p2p_transaction_validator::key_is_expired(const output_reference& tx_ref)
+bool p2p_transaction_validator::key_is_expired(const output_reference& output_ref)
 {
-    auto output = _dns_db->fetch_output(tx_ref);
+    auto output = _dns_db->fetch_output(output_ref);
     FC_ASSERT(is_dns_output(output));
 
-    if (!auction_is_closed(tx_ref))
+    if (!auction_is_closed(output_ref))
         return false;
 
     auto dns_output = to_dns_output(output);
-    auto age = _dns_db->get_output_age(tx_ref);
+    auto age = _dns_db->get_output_age(output_ref);
 
     if (dns_output.last_tx_type == claim_dns_output::last_tx_type_enum::auction)
         return age >= (DNS_AUCTION_DURATION_BLOCKS + DNS_EXPIRE_DURATION_BLOCKS);
@@ -128,7 +128,7 @@ bool p2p_transaction_validator::key_is_expired(const output_reference& tx_ref)
 
 /* Check if key is available for bid: new, in auction, or expired */
 bool p2p_transaction_validator::key_is_available(const std::string& key, const std::vector<std::string>& pending_keys,
-                                                 bool& new_or_expired, output_reference& prev_tx_ref)
+                                                 bool& new_or_expired, output_reference& prev_output_ref)
 {
     new_or_expired = false;
 
@@ -141,17 +141,17 @@ bool p2p_transaction_validator::key_is_available(const std::string& key, const s
         return true;
     }
 
-    prev_tx_ref = _dns_db->get_dns_ref(key);
+    prev_output_ref = _dns_db->get_dns_ref(key);
 
-    if (key_is_expired(prev_tx_ref))
+    if (key_is_expired(prev_output_ref))
         new_or_expired = true;
 
-    return !auction_is_closed(prev_tx_ref) || new_or_expired;
+    return !auction_is_closed(prev_output_ref) || new_or_expired;
 }
 
 /* Check if key is available for value update or auction */
 bool p2p_transaction_validator::key_is_useable(const std::string& key, const std::vector<std::string>& pending_keys,
-                                               const std::vector<std::string>& unspent_keys, output_reference& prev_tx_ref)
+                                               const std::vector<std::string>& unspent_keys, output_reference& prev_output_ref)
 {
     if (std::find(pending_keys.begin(), pending_keys.end(), key) != pending_keys.end())
         return false;
@@ -159,12 +159,12 @@ bool p2p_transaction_validator::key_is_useable(const std::string& key, const std
     if (!_dns_db->has_dns_ref(key))
         return false;
 
-    prev_tx_ref = _dns_db->get_dns_ref(key);
+    prev_output_ref = _dns_db->get_dns_ref(key);
 
-    if (!auction_is_closed(prev_tx_ref))
+    if (!auction_is_closed(prev_output_ref))
         return false;
 
-    if (key_is_expired(prev_tx_ref))
+    if (key_is_expired(prev_output_ref))
         return false;
 
     /* Check if spendable */
@@ -182,10 +182,10 @@ void p2p_transaction_validator::validate_p2p_input(const claim_dns_output& input
     FC_ASSERT(!state.seen_dns_input, "More than one dns claim input in tx: ${tx}", ("tx", state.trx));
     FC_ASSERT(_dns_db->has_dns_ref(input.key), "Input references invalid key");
 
-    auto tx_ref = _dns_db->get_dns_ref(input.key);
-    FC_ASSERT(!key_is_expired(tx_ref), "Input key is expired");
+    auto output_ref = _dns_db->get_dns_ref(input.key);
+    FC_ASSERT(!key_is_expired(output_ref), "Input key is expired");
 
-    if (auction_is_closed(tx_ref))
+    if (auction_is_closed(output_ref))
         FC_ASSERT(state.has_signature(input.owner), "Non-bid input not signed by owner");
 
     state.add_input_asset(amount);
@@ -207,8 +207,8 @@ void p2p_transaction_validator::validate_p2p_output(const claim_dns_output& outp
 
     /* Check key status */
     bool new_or_expired;
-    output_reference prev_tx_ref;
-    auto available = key_is_available(output.key, block_state->pending_keys, new_or_expired, prev_tx_ref);
+    output_reference prev_output_ref;
+    auto available = key_is_available(output.key, block_state->pending_keys, new_or_expired, prev_output_ref);
 
     /* If we haven't seen a dns input then the only valid output is a new dns auction */
     if (!state.seen_dns_input)
@@ -225,7 +225,7 @@ void p2p_transaction_validator::validate_p2p_output(const claim_dns_output& outp
     FC_ASSERT(output.key == state.dns_input.key, "Bid tx refers to different input and output keys");
 
     /* Bid in existing auction */
-    if (!auction_is_closed(prev_tx_ref))
+    if (!auction_is_closed(prev_output_ref))
     {
         ilog("Currently in an auction");
         FC_ASSERT(available, "Key not available");
@@ -258,7 +258,7 @@ void p2p_transaction_validator::validate_p2p_output(const claim_dns_output& outp
 
     /* Update or sale */
     ilog("Auction is over.");
-    FC_ASSERT(!key_is_expired(prev_tx_ref), "Key is expired");
+    FC_ASSERT(!key_is_expired(prev_output_ref), "Key is expired");
 
     /* Keep output amount constant when updating dns record */
     if (output.last_tx_type == claim_dns_output::last_tx_type_enum::update)
@@ -271,7 +271,7 @@ void p2p_transaction_validator::validate_p2p_output(const claim_dns_output& outp
     }
 
     /* If you're the owner, do whatever you like! */
-    auto prev_dns_output = to_dns_output(_dns_db->fetch_output(prev_tx_ref));
+    auto prev_dns_output = to_dns_output(_dns_db->fetch_output(prev_output_ref));
     FC_ASSERT(state.has_signature(prev_dns_output.owner), "DNS tx missing required signature: ${tx}", ("tx", state.trx));
     ilog("Tx signed by owner");
 }

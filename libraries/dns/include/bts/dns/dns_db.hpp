@@ -12,7 +12,7 @@ class dns_db : public bts::blockchain::chain_database
 {
     public:
         dns_db();
-        ~dns_db();
+        virtual ~dns_db() override;
 
         virtual void open(const fc::path& dir, bool create = true) override;
         virtual void close() override;

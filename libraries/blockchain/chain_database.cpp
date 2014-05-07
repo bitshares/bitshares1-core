@@ -229,10 +229,7 @@ namespace bts { namespace blockchain {
                 for( const signed_transaction& trx : deterministic_trxs )
                 {
                    store( trx, trx_num( b.block_num, trxs_ids.size() ) );
-                   // TODO: why don't we include this here... do determinsitic trxs not
-                   // get included in the merkel root... does this hinder light weight
-                   // clients.
-                  // trxs_ids.push_back( trx.id() );
+                   trxs_ids.push_back( trx.id() );
                 }
 
                 _head_block    = b;
@@ -313,7 +310,9 @@ namespace bts { namespace blockchain {
 
      chain_database::~chain_database()
      {
+         close();
      }
+
      fc::optional<name_record> chain_database::lookup_name( const std::string& name )
      {
         auto itr = my->_name_records.find( name );
@@ -418,6 +417,7 @@ namespace bts { namespace blockchain {
     {
        return my->_head_block.block_num;
     }
+
     block_id_type chain_database::head_block_id()const
     {
        return my->_head_block.id();
@@ -553,7 +553,9 @@ namespace bts { namespace blockchain {
         // TODO: replace hardcoded _trustee with a lookup of the trustee for the timestamp on this block
         FC_ASSERT( b.signee() == my->_trustee );
         FC_ASSERT( b.version      == 0                                                         );
-        FC_ASSERT( b.block_num    == head_block_num() + 1                                      );
+        FC_ASSERT( b.block_num    == head_block_num() + 1, 
+                   "block did not immediately follow the previous block by number: current head_block_num: ${current_head}, new block_num ${new_block_num}", 
+                   ("current_head", head_block_num())("new_block_num", b.block_num));
         FC_ASSERT( b.prev         == my->_head_block_id                                         );
         /// time stamps from the future are not allowed
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( my->_head_block.next_fee,  b.block_size() ), "",
