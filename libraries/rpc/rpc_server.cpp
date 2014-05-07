@@ -412,6 +412,11 @@ namespace bts { namespace rpc {
         /* params:     */{ { "command", "string", false } },
       /* prerequisites */ rpc_server::no_prerequisites,
       R"(
+Arguments:
+1. "command" (string, optional) The command to get help on
+
+Result:
+"text" (string) The help text
        )"};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
