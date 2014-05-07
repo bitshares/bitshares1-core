@@ -13,6 +13,8 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -236,7 +238,12 @@ namespace bts { namespace net {
       fc::promise<void>::ptr _retrigger_fetch_item_loop_promise;
       bool                   _items_to_fetch_updated;
       fc::future<void>       _fetch_item_loop_done;
-      std::list<item_id>     _items_to_fetch; /// list of items we know another peer has and we want
+
+      typedef boost::multi_index_container<item_id, 
+                                           boost::multi_index::indexed_by<boost::multi_index::sequenced<>,
+                                                                          boost::multi_index::hashed_unique<boost::multi_index::identity<item_id>, std::hash<item_id> > >
+                                           > items_to_fetch_set_type;
+      items_to_fetch_set_type _items_to_fetch; /// list of items we know another peer has and we want
       // @}
 
       /// used by the task that advertises inventory during normal operation
@@ -1251,15 +1258,13 @@ namespace bts { namespace net {
           originating_peer->inventory_peer_advertised_to_us.insert(advertised_item_id);
           if (!we_requested_this_item_from_a_peer)
           {
-            ilog("adding item ${item_hash} from inventory message to our list of items to fetch",
-                 ("item_hash", item_hash));
-            if (std::find(_items_to_fetch.begin(), _items_to_fetch.end(), advertised_item_id) == _items_to_fetch.end())
+            auto insert_result = _items_to_fetch.push_back(advertised_item_id);
+            if (insert_result.second)
             {
-              _items_to_fetch.push_back(advertised_item_id);
+              ilog("addinged item ${item_hash} from inventory message to our list of items to fetch",
+                   ("item_hash", item_hash));
               trigger_fetch_items_loop();
             }
-            else
-              elog("Error: would have added the same item to _items_to_fetch twice.  Need a set.");
           }
         }
       }
