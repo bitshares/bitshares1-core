@@ -32,7 +32,7 @@ Building BitShares Toolkit on OS X 10.9
 
     wget http://download.oracle.com/berkeley-db/db-6.0.30.tar.gz
     tar -xzvf db-6.0.30.tar.gz
-    cd db-6.0.30/build_linux
+    cd db-6.0.30/build_unix
     ../dist/configure --enable-cxx --prefix=/usr/local CPPFLAGS=-stdlib=libc++ 
     make
     sudo make install
