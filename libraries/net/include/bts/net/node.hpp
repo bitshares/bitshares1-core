@@ -1,6 +1,8 @@
 #pragma once
 #include <bts/net/core_messages.hpp>
 #include <bts/net/message.hpp>
+#include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/block.hpp>
 
 namespace bts { namespace net {
 
@@ -140,7 +142,8 @@ namespace bts { namespace net {
         bool      is_connected()const;
 
         void set_advanced_node_parameters(const fc::variant_object& params);
-
+        fc::time_point get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id);
+        fc::time_point get_block_first_seen_time(const bts::blockchain::block_id_type& block_id);
       private:
         std::unique_ptr<detail::node_impl> my;
    };
