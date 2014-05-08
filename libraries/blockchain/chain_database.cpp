@@ -148,47 +148,42 @@ namespace bts { namespace blockchain {
             { try {
                 std::vector<transaction_id_type> trxs_ids;
                 std::map<int32_t,uint64_t> delegate_votes;
-                for( uint32_t i = 1; i <= 100; ++i )
+                for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
                 {
                    delegate_votes[i] = 0;
                 }
-                for( uint32_t cur_trx = 0 ; cur_trx < b.trxs.size(); ++cur_trx )
+                for( uint16_t cur_trx = 0 ; cur_trx < b.trxs.size(); ++cur_trx )
                 {
                     store( b.trxs[cur_trx], trx_num( b.block_num, cur_trx) );
                     trxs_ids.push_back( b.trxs[cur_trx].id() );
-                    if( cur_trx == 0 )
+                    ilog( " processing transaction ${o}", ("o",cur_trx) );
+
+                    for( uint16_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
                     {
-                       for( uint32_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
+                       if( b.trxs[cur_trx].outputs[o].claim_func == claim_name )
                        {
-                          if( b.trxs[cur_trx].outputs[o].claim_func == claim_name )
-                          {
-                             auto claim = b.trxs[cur_trx].outputs[o].as<claim_name_output>();
-                             update_name_record( claim.name, claim );
-                       //    if( claim.delegate_id != 0 )
-                             update_delegate( name_record( claim ) );
-                          }
+                          auto claim = b.trxs[cur_trx].outputs[o].as<claim_name_output>();
+                          update_name_record( claim.name, claim );
+                          update_delegate( name_record( claim ) );
                        }
-                    }
-                    else // cur_trx != 0
-                    {
-                       ilog( " processing transaction ${o}", ("o",cur_trx) );
-                       name_record rec = _delegate_records.fetch( b.trxs[cur_trx].vote );
-                       // first transaction registers names... the rest are initial balance
-                       for( uint32_t o = 0; o < b.trxs[cur_trx].outputs.size(); ++o )
+                       else
                        {
+                          name_record rec = _delegate_records.fetch( b.trxs[cur_trx].vote );
+                          // first transaction registers names... the rest are initial balance
+
                           ilog( "   processing output  ${o}  ${data}", ("o",o)("data",b.trxs[cur_trx].outputs[o]) );
                           FC_ASSERT( delegate_votes.find( b.trxs[cur_trx].vote ) != delegate_votes.end() );
                           delegate_votes[b.trxs[cur_trx].vote] += b.trxs[cur_trx].outputs[o].amount.get_rounded_amount();
-                          ilog( "total_shares: ${total}", ("total",b.total_shares) );
+
                           rec.votes_for += to_bips( b.trxs[cur_trx].outputs[o].amount.get_rounded_amount(), b.total_shares );
-                          ilog( "votes for: ${v}", ("v",rec.votes_for) );
                           ilog( "rec: ${rc}", ("rc",rec) );
-                       }
-                       ilog( "updating delegate..." );
-                       update_delegate( rec );
-                    }
+                          //ilog( "updating delegate..." );
+                          update_delegate( rec );
+                      }
+                   }
                 }
-                elog( "total votes:\n ${e}", ("e",fc::json::to_pretty_string( delegate_votes) ) );
+
+                //elog( "total votes:\n ${e}", ("e",fc::json::to_pretty_string( delegate_votes) ) );
                 uint64_t sum = 0;
                 for( auto i : delegate_votes )
                 {
@@ -551,12 +546,12 @@ namespace bts { namespace blockchain {
         auto block_state = my->_trx_validator->create_block_state();
         if( b.block_num == 0 ) { return block_state; } // don't check anything for the genesis block;
         // TODO: replace hardcoded _trustee with a lookup of the trustee for the timestamp on this block
-        FC_ASSERT( b.signee() == my->_trustee );
-        FC_ASSERT( b.version      == 0                                                         );
-        FC_ASSERT( b.block_num    == head_block_num() + 1, 
-                   "block did not immediately follow the previous block by number: current head_block_num: ${current_head}, new block_num ${new_block_num}", 
-                   ("current_head", head_block_num())("new_block_num", b.block_num));
-        FC_ASSERT( b.prev         == my->_head_block_id                                         );
+        FC_ASSERT( b.signee()   == my->_trustee );
+        FC_ASSERT( b.version    == BTS_BLOCKCHAIN_VERSION );
+        FC_ASSERT( b.block_num  == head_block_num() + 1,
+                   "block did not immediately follow the previous block by number: current head_block_num: ${current_head}, new block_num ${new_block_num}",
+                   ("current_head", head_block_num())("new_block_num", b.block_num) );
+        FC_ASSERT( b.prev       == my->_head_block_id );
         /// time stamps from the future are not allowed
         FC_ASSERT( b.next_fee     == b.calculate_next_fee( my->_head_block.next_fee,  b.block_size() ), "",
                    ("b.next_fee",b.next_fee)("b.calculate_next_fee", b.calculate_next_fee( my->_head_block.next_fee, b.block_size()))
@@ -583,7 +578,7 @@ namespace bts { namespace blockchain {
         for( int32_t i = 0; i <= last; ++i )
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
-            FC_ASSERT( b.trxs[i].version == 0 );
+            FC_ASSERT( b.trxs[i].version == BTS_TRANSACTION_VERSION );
             FC_ASSERT( uint64_t(trx_summary.fees) >= (b.trxs[i].size() * fee_rate)/1000 );
             summary += trx_summary;
         }

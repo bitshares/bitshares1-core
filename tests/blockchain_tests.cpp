@@ -47,7 +47,7 @@ using namespace bts::blockchain;
 trx_block generate_genesis_block( const std::vector<address>& addr )
 {
     trx_block genesis;
-    genesis.version           = 0;
+    genesis.version           = BTS_BLOCKCHAIN_VERSION;
     genesis.block_num         = 0;
     genesis.timestamp         = fc::time_point::now();
     genesis.next_fee          = block_header::min_fee();
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE( blockchain_test_change_address_processing )
 
     fc::path genesis_json = base_dir / "genesis.json";
     fc::json::save_to_file(genesis_block_config, genesis_json, true);
-    bts::blockchain::trx_block genesis_block = create_test_genesis_block(genesis_json);
+    bts::blockchain::trx_block genesis_block = create_genesis_block(genesis_json);
 
     chain_database blockchain;
     blockchain.set_trustee( trustee_key.get_public_key() );
