@@ -1,13 +1,14 @@
 #pragma once
+
+#include <bts/db/fwd.hpp>
+#include <bts/net/chain_connection.hpp>
 #include <bts/net/message.hpp>
 #include <bts/net/stcp_socket.hpp>
-#include <bts/net/chain_connection.hpp>
-#include <bts/db/fwd.hpp>
+
 #include <fc/reflect/reflect.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <set>
-
 
 namespace bts { namespace net {
 
@@ -16,19 +17,20 @@ namespace bts { namespace net {
   class connection;
   typedef std::shared_ptr<chain_connection> connection_ptr;
 
-
-
   struct genesis_block_config
   {
-     genesis_block_config():supply(0),blockheight(0){}
-     double                                            supply;
-     uint64_t                                          blockheight;
-     std::vector< std::pair<bts::blockchain::pts_address,double> > balances;
+     genesis_block_config():supply(0) {}
+
+     double                                                         supply;
+     std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
   };
 } } // bts::net
+
 FC_REFLECT( bts::net::genesis_block_config, (supply)(balances) )
+
 namespace bts { namespace net {
-  bts::blockchain::trx_block create_test_genesis_block(fc::path genesis_json_file);
+
+  bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file);
 
   /**
    * @brief defines the set of callbacks that a server provides.
@@ -71,7 +73,7 @@ namespace bts { namespace net {
 
         chain_server();
         chain_server( bts::blockchain::chain_database_ptr& chain );
-        ~chain_server();
+        virtual ~chain_server();
 
         void close();
 

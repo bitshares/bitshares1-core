@@ -456,9 +456,9 @@ namespace bts { namespace rpc {
     {
        fc::mutable_variant_object info;
        info["balance"]          = _client->get_wallet()->get_balance(0).get_rounded_amount();
-       info["version"]          = 0;// BTS_BLOCKCHAIN_VERSION;
-       info["protocolversion"]  = 0;// BTS_NET_PROTOCOL_VERSION;
-       info["walletversion"]    = 0;// BTS_WALLET_VERSION;
+       info["version"]          = BTS_BLOCKCHAIN_VERSION;
+       info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
+       info["walletversion"]    = BTS_WALLET_VERSION;
        info["blocks"]           = _client->get_chain()->head_block_num();
        info["connections"]      = 0;
        info["unlocked_until"]   = 0;
@@ -1027,7 +1027,7 @@ Result (for verbose = true):
 "confirmations" : n, (numeric) The number of confirmations
 "size" : n, (numeric) The block size
 "height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version //TODO: fake this
+"version" : n, (numeric) The block version
 "merkleroot" : "xxxx", (string) The merkle root
 "tx" : [ (array of string) The transaction ids
 "transactionid" (string) The transaction id
