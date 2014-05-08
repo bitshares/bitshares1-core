@@ -18,7 +18,7 @@ namespace bts { namespace blockchain {
 
    std::unordered_set<address> signed_transaction::get_signed_addresses()const
    {
-       auto dig = digest(); 
+       auto dig = digest();
        std::unordered_set<address> r;
        for( auto itr = sigs.begin(); itr != sigs.end(); ++itr )
        {
@@ -29,13 +29,13 @@ namespace bts { namespace blockchain {
 
    std::unordered_set<pts_address> signed_transaction::get_signed_pts_addresses()const
    {
-       auto dig = digest(); 
+       auto dig = digest();
        std::unordered_set<pts_address> r;
        // add both compressed and uncompressed forms...
        for( auto itr = sigs.begin(); itr != sigs.end(); ++itr )
        {
             auto signed_key_data = fc::ecc::public_key( *itr, dig ).serialize();
-            
+
             // note: 56 is the version bit of protoshares
             r.insert( pts_address(fc::ecc::public_key( signed_key_data),false,56) );
             r.insert( pts_address(fc::ecc::public_key( signed_key_data ),true,56) );
@@ -53,10 +53,10 @@ namespace bts { namespace blockchain {
       return small_hash( enc.result() );
    }
 
-   void    signed_transaction::sign( const fc::ecc::private_key& k )
+   void signed_transaction::sign( const fc::ecc::private_key& k )
    {
     try {
-      sigs.insert( k.sign_compact( digest() ) );  
+      sigs.insert( k.sign_compact( digest() ) );
      } FC_RETHROW_EXCEPTIONS( warn, "error signing transaction", ("trx", *this ) );
    }
 

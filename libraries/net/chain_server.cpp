@@ -27,122 +27,131 @@ using namespace bts::blockchain;
 namespace bts { namespace net {
 
 /**
- *  When creating the genesis block it must initialize the genesis block to vote
- *  evenly for the top 100 delegates and register the top 100 delegates.
+ *  For now, when creating a genesis block we initialize the genesis block to register
+ *  and vote evenly for the top BTS_BLOCKCHAIN_DELEGATES delegates.
  */
-bts::blockchain::trx_block create_test_genesis_block(fc::path genesis_json_file)
-{
-   try {
-      FC_ASSERT( fc::exists(genesis_json_file) );
-      auto config = fc::json::from_file(genesis_json_file).as<genesis_block_config>();
-      bts::blockchain::trx_block b;
+bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
+{ try {
+    FC_ASSERT( fc::exists(genesis_json_file) );
+    auto config = fc::json::from_file( genesis_json_file ).as<genesis_block_config>();
+    bts::blockchain::trx_block b;
 
-      signed_transaction dtrx;
-      dtrx.vote = 0;
-      // create initial delegates
-      for( uint32_t i = 0; i < 100; ++i )
-      {
-         auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
-         auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
-         auto key      = fc::ecc::private_key::regenerate(key_hash);
-         dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i+1, key.get_public_key(), key.get_public_key() ), asset() ) );
-      }
-      b.trxs.push_back( dtrx );
+    /* Create initial delegates */
+    /* TODO: Load from Keyhotee Founder IDs and split into trxs of no more than invalid_output_num outputs */
+    signed_transaction dtrx;
+    dtrx.vote = 0;
+    for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
+    {
+        auto name       = "delegate-"+fc::to_string( int64_t( i ) );
+        auto key_hash   = fc::sha256::hash( name.c_str(), name.size() );
+        auto key        = fc::ecc::private_key::regenerate(key_hash);
+        dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i, key.get_public_key(), key.get_public_key() ), asset() ) );
+    }
+    b.trxs.push_back( dtrx );
+    FC_ASSERT(b.trxs.size() != trx_num::invalid_trx_idx, "Too many transactions in genesis block!");
 
+    /* Scale balances for a total supply of BTS_BLOCKCHAIN_INITIAL_SHARES */
+    double total_unscaled = 0;
+    for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
+        total_unscaled += itr->second;
 
-      bts::blockchain::signed_transaction coinbase;
-      coinbase.version = 0;
+    const double scale = double(BTS_BLOCKCHAIN_INITIAL_SHARES) / total_unscaled;
+    ilog( "scale ${t}", ("t",scale) );
+    uint64_t total = 0;
+    for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
+    {
+        itr->second *= scale;;
+        total += uint64_t(itr->second);
+    }
+    ilog( "total number of shares ${t}", ("t",total) );
 
-      uint64_t total = 0;
-      for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
-      {
-          itr->second *=  100000000;;
-          total += itr->second;
-      }
-      FC_ASSERT(total >= 100, "genesis block must contain enough balances to distribute amongst the delegates");
-      // we limit the size of any individual input in the genesis block --
-      // if any is larger than 1%, it will be impossible to spend because
-      // spending it will put some delegate at 2% of the votes.
-      // here we limit them to 1/10%, which makes for easier testing (we
-      // can crank it back up closer to 1% later)
-      int64_t tenth_percent = total / 1000;
-      elog( "tenth of a percent: ${one}", ("one",tenth_percent) );
+    /* We limit the size of any individual output in the genesis block --
+     * if any is larger than 1%, it will be impossible to spend because
+     * spending it will put some delegate at 2% of the votes.
+     * Here we limit them to 1/10%, which makes for easier testing (we
+     * can crank it back up closer to 1% later). */
+    const uint64_t tenth_percent = total / 1000;
+    ilog( "tenth of a percent of share supply: ${one}", ("one",tenth_percent) );
 
+    /* Split up balances into outputs */
+    std::vector<trx_output> outputs;
+    std::map<pts_address, std::set<uint64_t>> output_amounts;
+    uint64_t trx_amount = 0;
+    for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
+    {
+        auto addr = itr->first;
+        auto addr_balance = uint64_t(itr->second);
 
-      int64_t cur_trx_total = 0;
-      int64_t total_supply = 0;
-      for( auto itr = config.balances.begin(); itr != config.balances.end(); ++itr )
-      {
-         auto delta = tenth_percent - cur_trx_total;
-         if( delta > itr->second )
-         {
-            coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( itr->second ) ) );
-            cur_trx_total += itr->second;
-         }
-         else
-         {
-            coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( delta ) ) );
-            cur_trx_total += delta;
-            total_supply += cur_trx_total;
-            coinbase.vote = ((total_supply / tenth_percent)%100)+1;
-            ilog( "vote: ${v}", ("v",coinbase.vote) );
+        while( addr_balance > 0 )
+        {
+            uint64_t output_amount;
+            if( trx_amount + addr_balance < tenth_percent )
+                output_amount = addr_balance;
+            else
+                output_amount = tenth_percent - trx_amount;
 
-            b.trxs.emplace_back( std::move(coinbase) );
-            coinbase.outputs.clear();
-            cur_trx_total = 0;
+            /* Force unique outputs to ensure unique transactions */
+            while( output_amounts[addr].count( output_amount ) > 0 )
+                output_amount--;
+            output_amounts[addr].insert( output_amount );
 
-            int64_t change = itr->second - delta;
-            while( change >= tenth_percent )
-            {
-               coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( tenth_percent ) ) );
-               total_supply += tenth_percent;
-               coinbase.vote = ((total_supply / tenth_percent)%100)+1;
-               ilog( "vote: ${v}", ("v",coinbase.vote) );
-               b.trxs.emplace_back( coinbase );
-               coinbase.outputs.clear();
-               change -= tenth_percent;
-               cur_trx_total = 0;
-            }
-            if( change != 0 )
-            {
-               coinbase.outputs.push_back( trx_output( claim_by_pts_output( itr->first ), asset( change ) ) );
-               cur_trx_total = change;
-            }
-         }
-         if( coinbase.outputs.size() == 0xff )
-         {
-            coinbase.vote = ((total_supply / tenth_percent)%100)+1;
+            outputs.push_back( trx_output( claim_by_pts_output( addr ), asset( output_amount ) ) );
+            addr_balance -= output_amount;
+            trx_amount += output_amount;
+            trx_amount %= tenth_percent;
+        }
+    }
+
+    /* Collect outputs into transactions */
+    std::set<transaction_id_type> trx_ids;
+    signed_transaction coinbase;
+    uint16_t trx_count = 0;
+    uint8_t trx_output_count = 0;
+    trx_amount = 0;
+    total = 0;
+    for( auto itr = outputs.begin(); itr != outputs.end(); ++itr)
+    {
+        auto output = *itr;
+
+        coinbase.outputs.push_back( output );
+        trx_amount += output.amount.amount;
+        trx_output_count++;
+
+        /* If transaction has enough voting power, no room for more outputs, or no outputs are left */
+        if(trx_amount >= tenth_percent
+           || trx_output_count == trx_num::invalid_output_num
+           || itr == (outputs.end() - 1))
+        {
+            coinbase.vote = (trx_count % BTS_BLOCKCHAIN_DELEGATES) + 1;
+
+            /* Make sure transaction is unique */
+            auto trx_id = coinbase.id();
+            FC_ASSERT( trx_ids.count( trx_id ) <= 0, "Duplicate transaction!" );
+            trx_ids.insert( trx_id );
+
             b.trxs.emplace_back( coinbase );
             coinbase.outputs.clear();
-         }
-      }
-      if( coinbase.outputs.size() )
-      {
-         coinbase.vote = ((total_supply / tenth_percent)%100)+1;
-         ilog( "vote: ${v}", ("v",coinbase.vote) );
-         b.trxs.emplace_back( coinbase );
-         coinbase.outputs.clear();
-      }
+            trx_count++;
 
-      b.version         = 0;
-      b.block_num       = 0;
-      b.prev            = bts::blockchain::block_id_type();
-      b.timestamp       = fc::time_point::now();
-      b.next_fee        = bts::blockchain::block_header::min_fee();
-      b.total_shares    = int64_t(total_supply);
+            total += trx_amount;
+            trx_amount = 0;
+            trx_output_count = 0;
 
-      b.trx_mroot   = b.calculate_merkle_root(signed_transactions());
+            FC_ASSERT( b.trxs.size() != trx_num::invalid_trx_idx, "Too many transactions in genesis block!" );
+        }
+    }
 
-      //auto str = fc::json::to_pretty_string(var); //b);
-      //ilog( "block: \n${b}", ("b", str ) );
-      return b;
-   }
-   catch ( const fc::exception& e )
-   {
-      ilog( "caught exception!: ${e}", ("e", e.to_detail_string()) );
-      throw;
-   }
-}
+    b.version       = BTS_BLOCKCHAIN_VERSION;
+    b.block_num     = 0;
+    b.prev          = bts::blockchain::block_id_type();
+    b.timestamp     = fc::time_point::now();
+    b.next_fee      = bts::blockchain::block_header::min_fee();
+    b.total_shares  = total;
+
+    b.trx_mroot     = b.calculate_merkle_root(signed_transactions());
+
+    return b;
+} FC_RETHROW_EXCEPTIONS(warn, ""); }
 
 namespace detail
 {
@@ -163,6 +172,7 @@ namespace detail
         {
            close();
         }
+
         void close()
         {
             ilog( "closing connections..." );
@@ -410,9 +420,6 @@ namespace detail
    };
 }
 
-
-
-
 chain_server::chain_server()
 :my( new detail::chain_server_impl() ){}
 
@@ -421,7 +428,6 @@ chain_server::chain_server( bts::blockchain::chain_database_ptr& chain )
 
 chain_server::~chain_server()
 { }
-
 
 void chain_server::set_delegate( chain_server_delegate* sd )
 {
@@ -442,7 +448,7 @@ void chain_server::configure( const chain_server::config& c )
      my->_chain->open( "chain" );
      if( my->_chain->head_block_num() == trx_num::invalid_block_num )
      {
-         auto genesis = create_test_genesis_block("genesis.json");
+         auto genesis = create_genesis_block("genesis.json");
          ilog( "about to push" );
          try {
             //ilog( "genesis block: \n${s}", ("s", fc::json::to_pretty_string(genesis) ) );

@@ -471,18 +471,18 @@ namespace bts { namespace cli {
             void print_transaction_history(std::vector<transaction_state>& trx_states)
             {
                 /* Print header */
-                std::cout << std::setw(  3 ) << "#";
+                std::cout << std::setw(  4 ) << "#";
                 std::cout << std::setw(  6 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 21 ) << "CONFIRMED";
-                std::cout << std::setw( 12 ) << " AMOUNT";
+                std::cout << std::setw( 13 ) << " AMOUNT";
                 std::cout << std::setw( 40 ) << "FROM";
                 std::cout << std::setw( 40 ) << "TO";
                 std::cout << std::setw(  6 ) << "FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
                 std::cout << std::setw( 40 ) << "ID";
-                std::cout << "\n----------------------------------------------------------------------------------------------";
-                std::cout <<   "----------------------------------------------------------------------------------------------\n";
+                std::cout << "\n-----------------------------------------------------------------------------------------------";
+                std::cout <<   "-----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right;
 
                 auto count = 1;
@@ -490,7 +490,7 @@ namespace bts { namespace cli {
                 for( auto trx_state : trx_states )
                 {
                     /* Print index */
-                    std::cout << std::setw( 3 ) << count;
+                    std::cout << std::setw( 4 ) << count;
 
                     /* Print block and transaction numbers */
                     std::cout << std::setw( 6 ) << trx_state.block_num << ".";
@@ -504,10 +504,10 @@ namespace bts { namespace cli {
                     /* Print amount */
                     {
                         std::stringstream ss;
-                        if (trx_state.delta_balance[0] > 0) ss << "+";
-                        else if (trx_state.delta_balance[0] < 0) ss << "-";
-                        ss << abs(trx_state.delta_balance[0]);
-                        std::cout << std::setw( 12 ) << ss.str();
+                        if (trx_state.delta_balance[0] > 0) ss << "+" << trx_state.delta_balance[0];
+                        else if (trx_state.delta_balance[0] < 0) ss << "-" << -trx_state.delta_balance[0];
+                        else ss << " 0";
+                        std::cout << std::setw( 13 ) << ss.str();
                     }
 
                     /* Print from addresses */
@@ -544,11 +544,8 @@ namespace bts { namespace cli {
                     /* Print delegate vote */
                     {
                         std::stringstream ss;
-                        auto delegate = abs(trx_state.trx.vote);
-                        auto name = _rpc_server->get_client()->get_chain()->lookup_delegate(delegate)->name;
-                        if (trx_state.trx.vote > 0) ss << "+";
-                        else ss << "-";
-                        ss << name;
+                        if (trx_state.trx.vote > 0) ss << "+" << _rpc_server->get_client()->get_chain()->lookup_delegate(trx_state.trx.vote)->name;
+                        else ss << "-" << _rpc_server->get_client()->get_chain()->lookup_delegate(-trx_state.trx.vote)->name;
                         std::cout << std::setw( 14 ) << ss.str();
                     }
 

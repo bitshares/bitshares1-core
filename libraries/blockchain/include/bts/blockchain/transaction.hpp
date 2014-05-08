@@ -1,14 +1,17 @@
 #pragma once
-#include <bts/blockchain/output_reference.hpp>
+
 #include <bts/blockchain/address.hpp>
-#include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/output_reference.hpp>
 #include <bts/blockchain/outputs.hpp>
+#include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/small_hash.hpp>
+
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/sha224.hpp>
-#include <fc/io/varint.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/io/varint.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -97,7 +100,6 @@ struct trx_num
      */
     static const uint32_t invalid_block_num  = uint32_t(-1);
     static const uint16_t invalid_trx_idx    = uint16_t(-1);
-    static const uint8_t  invalid_input_num  = uint8_t(-1);
     static const uint8_t  invalid_output_num = uint8_t(-1);
 
     trx_num(uint32_t b = invalid_block_num, uint16_t t = invalid_trx_idx)
@@ -128,7 +130,7 @@ struct trx_num
 struct meta_trx_output
 {
    meta_trx_output()
-   :input_num(trx_num::invalid_input_num){}
+   :input_num(trx_num::invalid_output_num){}
    trx_num   trx_id;
    uint8_t   input_num;
 
@@ -166,7 +168,7 @@ struct meta_trx_input
  */
 struct transaction
 {
-   transaction():version(0),stake(0){}
+   transaction():version(BTS_TRANSACTION_VERSION),vote(0),stake(0){}
    fc::sha256                   digest()const;
 
    uint8_t                      version;
