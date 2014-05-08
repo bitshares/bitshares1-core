@@ -18,7 +18,7 @@ namespace bts { namespace blockchain {
    struct block_header
    {
        block_header()
-       :version(0),block_num(-1),next_fee(1),next_reward(0),total_shares(0){}
+       :version(BTS_BLOCKCHAIN_VERSION),block_num(trx_num::invalid_block_num),next_fee(1),next_reward(0),total_shares(0){}
 
        /** @return digest used for signing */
        fc::sha256           digest()const;
@@ -132,4 +132,3 @@ FC_REFLECT( bts::blockchain::block_header,  (version)(block_num)(prev)(timestamp
 FC_REFLECT_DERIVED( bts::blockchain::signed_block_header, (bts::blockchain::block_header), (trustee_signature) )
 FC_REFLECT_DERIVED( bts::blockchain::digest_block,  (bts::blockchain::signed_block_header), (trx_ids)(deterministic_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::trx_block,   (bts::blockchain::signed_block_header),  (trxs) )
-

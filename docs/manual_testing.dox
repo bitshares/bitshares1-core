@@ -2,7 +2,7 @@
 @defgroup manual_testing Manual Testing
 @brief How to test bts_xt_client and bts_xt_server by hand
 
-@section client-server-testing Testing bts_xt_client in client-server mode 
+@section client-server-testing Testing bts_xt_client in client-server mode
 
 Generate a genesis block
 ------------------------
@@ -30,10 +30,11 @@ Create a text file named `genesis.json` that looks like this:
     ]
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Which will give you 100 million BTS to play with (whatever value you place in 
-the balance will be multiplied by 10^8, so a value of 1 gives you 100,000,000BTS).
-Note that the genesis block references the PTS address. All other public key 
-references will use the BTS form of the address.
+The balances in the genesis block will be scaled to give a total share supply
+of BTS_BLOCKCHAIN_INITIAL_SHARES (currently 80 trillion) BTS. So this block will
+assign 80,000,000,000,000BTS to address PcBT8L6fyjfNzmnTkp1rwfoQTY4ep7RMQx.
+Note that the genesis block references only PTS (or BTC) addresses. All subsequent
+transactions will use the BTS form of the address.
 
 Generate a Trustee
 ------------------
@@ -49,7 +50,7 @@ this generated a trustee_key.txt file containing:
 Launch the Server
 -----------------
 The server currently puts its data files in the current working directory, so
-you probably want to create a clean directory with the `genesis.json` you 
+you probably want to create a clean directory with the `genesis.json` you
 generated earlier to run it from:
 
     mkdir C:\TEMP\BitsharesX_Server
@@ -62,7 +63,7 @@ Or for Linux:
 
 Now run the server from that directory, passing the BTS address of your trustee
 on the command line
- 
+
     cd C:\TEMP\BitsharesX_Server
     E:\Invictus\build\programs\bts_xt\Debug\bts_xt_server.exe --trustee-address Meg1Bg3jCeaimZwwePDSok43VCHze3dwE
 
@@ -73,7 +74,7 @@ it to regenerate the chain database.
 
 Launch the Clients
 ------------------
-To launch multiple clients, you'll need to start each with a different 
+To launch multiple clients, you'll need to start each with a different
 configuration directory.  By default, they'll all write to the system-
 dependent application data directory.
 
@@ -98,8 +99,8 @@ from the server and be ready to go.  You can check your balance with the
 
 Get access to the BTS you put in the genesis block
 --------------------------------------------------
-Now, import the private key you used in the genesis block into one of the 
-clients to get access to the BTS from the corresponding address in the genesis 
+Now, import the private key you used in the genesis block into one of the
+clients to get access to the BTS from the corresponding address in the genesis
 block.  After importing it, rescan the block chain so the client will see
 your new balance.  Let's do this in client 1.
 
@@ -109,7 +110,7 @@ your new balance.  Let's do this in client 1.
     >>> getbalance
     100000000
 
-@note the quotes around the private key are required because the arguments are interpreted as JSON values. 
+@note the quotes around the private key are required because the arguments are interpreted as JSON values.
 
 Do a transfer
 -------------

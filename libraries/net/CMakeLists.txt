@@ -2,6 +2,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/db/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
 
 file(GLOB HEADERS "include/bts/net/*.hpp")
     

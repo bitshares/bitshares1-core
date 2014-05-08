@@ -1,8 +1,12 @@
 #pragma once
+
+#include <bts/blockchain/config.hpp>
+
 #include <fc/crypto/ripemd160.hpp>
-#include <fc/reflect/reflect.hpp>
 #include <fc/network/ip.hpp>
+#include <fc/reflect/reflect.hpp>
 #include <fc/time.hpp>
+
 #include <vector>
 
 namespace bts { namespace net {
@@ -15,7 +19,7 @@ namespace bts { namespace net {
 
       item_id() {}
       item_id(uint32_t type, const item_hash_t& hash) :
-        item_type(type), 
+        item_type(type),
         item_hash(hash)
       {}
       bool operator==(const item_id& other) const
@@ -39,7 +43,7 @@ namespace bts { namespace net {
     address_message_type                       = 5010,
   };
 
-  const uint32_t core_protocol_version = 1;
+  const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
 
   struct item_ids_inventory_message
   {
@@ -81,7 +85,7 @@ namespace bts { namespace net {
 
     fetch_blockchain_item_ids_message() {}
     fetch_blockchain_item_ids_message(const item_id& last_item_seen) :
-      last_item_seen(last_item_seen) 
+      last_item_seen(last_item_seen)
     {}
   };
 

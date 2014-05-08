@@ -6,27 +6,27 @@
      -# move inactive accounts forward charging a 5% fee
      -# execute any market operations
 
-  -# check the version number == 0 
+  -# check the version number == 1 (BTS_BLOCKCHAIN_VERSION)
   -# check that the block number is one greater than the prior block
   -# check that the timestamp is greater than previous timestamp and not in the future.
-  -# check that the timestamp is a multiple of the block interval 
+  -# check that the timestamp is a multiple of the block interval
   -# check that the block is signed by the trustee / delegate responsible for the given time slot
   -# blocks with no transactions are valid, so the number of transactions is ignored
-  
+
   -# validate that all inputs to included transactions and deterministic transactions are unique
   -# validate that the merkle root is the combination of all determinsitic and user transactions
 
       - This has the effect of validating all deterministic transactions
 
   -# For each transaction
-    
+
       -# evaluate the transaction to make sure it follows all rules (defined elsewhere)
       -# make sure the version number is 0
       -# make sure the minimum transaction fee is paid
       -# accumulate fee stats from all transactions
 
   -# For each deterministic transaction
-      
+
       -# evaluate and accumulate all fees associated with it.
 
   -# validate that the current delegate reward is updated to reflect the weighted average.
@@ -35,7 +35,7 @@
          should smooth out changes in the average reward over 24 hours.
 
   -# validate that new issuance is less than or equal to 10% of the weighted average of fees.
-     
+
       -# every block is allowed a single transaction that issues 10% of the average block fee
       to the delegate that created it.
 
@@ -47,28 +47,29 @@
 
   The following algorithm is used for evaluating transactions
 
+  -# check the version number == 1 (BTS_TRANSACTION_VERSION)
   -# if bts::blockchain::signed_transaction#valid_until != 0, then make sure prev_block.time_stamp < trx.valid_until
-  -# make sure all inputs are unique 
+  -# make sure all inputs are unique
   -# make sure all inputs exist and are unspent
   -# for each input check to make sure it follows the rules
-      - if input is bts::blockchain::claim_by_signature 
+      - if input is bts::blockchain::claim_by_signature
          - check that the transaction is signed by the signature
          - add amount to inputs
 
-      - if input is bts::blockchain::claim_by_pts  
+      - if input is bts::blockchain::claim_by_pts
          - check that the transaction is signed by owner
          - add amount to inputs
 
-      - if input is bts::blockchain::claim_by_multi_sig 
-         - check that the at least trx.claim.required signatures are present 
+      - if input is bts::blockchain::claim_by_multi_sig
+         - check that the at least trx.claim.required signatures are present
          - add amount to inputs
 
-      - if input is bts::blockchain::claim_by_password  
-         - check that the transaction is signed by payer and payee 
-             or that the hash(password) == password_hash and either 
+      - if input is bts::blockchain::claim_by_password
+         - check that the transaction is signed by payer and payee
+             or that the hash(password) == password_hash and either
              payer or payee have signed
          - add amount to inputs
-      
+
       - if input is bts::blockchain::claim_name
          - check that the transaction is signed by owner
          - add amount to inputs
@@ -82,7 +83,7 @@
           - add amount to outputs
 
       - if output is bts::blockchain::claim_by_pts_output
-          - make sure this is the genesis block as these outputs 
+          - make sure this is the genesis block as these outputs
             are not allowed after the genesis block
           - add amount to outputs
 
@@ -99,10 +100,10 @@
           - assert that the output unit is 0 (shares in the DAC)
           - add amount to outputs
           - if no name is provided as an input
-             - assert that the name is unique for the entire blockchain 
+             - assert that the name is unique for the entire blockchain
              - assert that the delegate_id is unique for entire blockchain (or 0)
           - if name is provided as an input
-             - if input.delegate_id is 0 
+             - if input.delegate_id is 0
                 assert that the output.delegate_id unique for entire blockchain
              - if input.delegate_id is not 0
                 assert that the output.delegate_id is unchanged
@@ -112,12 +113,12 @@
 
       - if output is bts::blockchain::claim_fire_delegate_output
           - if reason is invalid_transaction_cert
-             -  cast proof to signed_certified_transaction 
+             -  cast proof to signed_certified_transaction
                - validate contained transaction as of bts::blockchain::certified_transaction#timestamp
                - if contained transaction validity is different than bts::blockchain::certified_transaction#valid
                    - immediately update the delegate voting record with votes_against set to maximum
                - else transaction is invalid.
-          - if reason is duplicate_block_signatures 
+          - if reason is duplicate_block_signatures
              - cast proof to signed_header_conflict
                - validate that both headers are signed by the same delegate
                - validate that both headers have the same timestamp

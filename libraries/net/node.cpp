@@ -13,6 +13,8 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -108,6 +110,9 @@ namespace bts { namespace net {
       uint64_t get_total_bytes_sent() const;
       uint64_t get_total_bytes_received() const;
 
+      fc::time_point get_last_message_sent_time() const;
+      fc::time_point get_last_message_received_time() const;
+
       fc::optional<fc::ip::endpoint> get_remote_endpoint();
       fc::ip::endpoint get_local_endpoint();
       void set_remote_endpoint(fc::optional<fc::ip::endpoint> new_remote_endpoint);
@@ -144,40 +149,54 @@ namespace bts { namespace net {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
     class blockchain_tied_message_cache 
     {
-       private:
-         static const uint32_t cache_duration_in_blocks = 2;
+    private:
+      static const uint32_t cache_duration_in_blocks = 2;
 
-         struct message_hash_index{};
-         struct block_clock_index{};
-         struct message_info
-         {
-           message_hash_type message_hash;
-           message           message_body;
-           uint32_t          block_clock_when_received;
-           message_info(const message_hash_type& message_hash,
-                        const message&           message_body,
-                        uint32_t                 block_clock_when_received) :
-             message_hash(message_hash),
-             message_body(message_body),
-             block_clock_when_received (block_clock_when_received)
-           {}
-         };
-         typedef boost::multi_index_container<message_info, 
-                                              boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::tag<message_hash_index>, 
-                                                                                                                boost::multi_index::member<message_info, message_hash_type, &message_info::message_hash> >,
-                                                                             boost::multi_index::ordered_non_unique<boost::multi_index::tag<block_clock_index>, 
-                                                                                                                    boost::multi_index::member<message_info, uint32_t, &message_info::block_clock_when_received> > > > message_cache_container;
-         message_cache_container _message_cache;
+      struct message_hash_index{};
+      struct message_contents_hash_index{};
+      struct block_clock_index{};
+      struct message_info
+      {
+        message_hash_type message_hash;
+        message           message_body;
+        uint32_t          block_clock_when_received;
 
-         uint32_t block_clock;
-       public:
-         blockchain_tied_message_cache() :
-           block_clock(0)
-         {}
-         void block_accepted();
-         void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache);
-         message get_message(const message_hash_type& hash_of_message_to_lookup);
-         size_t size() const { return _message_cache.size(); }
+        // for network performance stats
+        fc::time_point    first_seen_time;
+        fc::uint160_t     message_contents_hash; // hash of whatever the message contains (if it's a transaction, this is the transaction id, if it's a block, it's the block_id)
+
+        message_info(const message_hash_type& message_hash,
+                     const message&           message_body,
+                     uint32_t                 block_clock_when_received,
+                     fc::time_point           message_receive_time,
+                     fc::uint160_t            message_contents_hash) :
+          message_hash(message_hash),
+          message_body(message_body),
+          block_clock_when_received(block_clock_when_received),
+          first_seen_time(message_receive_time),
+          message_contents_hash(message_contents_hash)
+        {}
+      };
+      typedef boost::multi_index_container<message_info, 
+                                          boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::tag<message_hash_index>, 
+                                                                                                            boost::multi_index::member<message_info, message_hash_type, &message_info::message_hash> >,
+                                                                         boost::multi_index::ordered_non_unique<boost::multi_index::tag<message_contents_hash_index>, 
+                                                                                                                boost::multi_index::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
+                                                                         boost::multi_index::ordered_non_unique<boost::multi_index::tag<block_clock_index>, 
+                                                                                                                boost::multi_index::member<message_info, uint32_t, &message_info::block_clock_when_received> > > > message_cache_container;
+      message_cache_container _message_cache;
+
+      uint32_t block_clock;
+    public:
+      blockchain_tied_message_cache() :
+        block_clock(0)
+      {}
+      void block_accepted();
+      void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
+                         fc::time_point message_receive_time, const fc::uint160_t& message_content_hash);
+      message get_message(const message_hash_type& hash_of_message_to_lookup);
+      fc::time_point get_message_first_seen_time(const fc::uint160_t& hash_of_message_contents_to_lookup) const;
+      size_t size() const { return _message_cache.size(); }
     };
 
     void blockchain_tied_message_cache::block_accepted()
@@ -185,12 +204,12 @@ namespace bts { namespace net {
       ++block_clock;
       if (block_clock > cache_duration_in_blocks)
         _message_cache.get<block_clock_index>().erase(_message_cache.get<block_clock_index>().begin(), 
-                                                     _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
+                                                      _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
     }
 
-    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache)
+    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, fc::time_point message_receive_time, const fc::uint160_t& message_content_hash)
     {
-      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock));
+      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock, message_receive_time, message_content_hash));
     }
 
     message blockchain_tied_message_cache::get_message(const message_hash_type& hash_of_message_to_lookup)
@@ -200,6 +219,17 @@ namespace bts { namespace net {
         return iter->message_body;
       FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
     }
+    fc::time_point blockchain_tied_message_cache::get_message_first_seen_time(const fc::uint160_t& hash_of_message_contents_to_lookup) const
+    {
+      if (hash_of_message_contents_to_lookup != fc::uint160_t())
+      {
+        message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup);
+        if (iter != _message_cache.get<message_contents_hash_index>().end())
+          return iter->first_seen_time;
+      }
+      FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -236,7 +266,12 @@ namespace bts { namespace net {
       fc::promise<void>::ptr _retrigger_fetch_item_loop_promise;
       bool                   _items_to_fetch_updated;
       fc::future<void>       _fetch_item_loop_done;
-      std::list<item_id>     _items_to_fetch; /// list of items we know another peer has and we want
+
+      typedef boost::multi_index_container<item_id, 
+                                           boost::multi_index::indexed_by<boost::multi_index::sequenced<>,
+                                                                          boost::multi_index::hashed_unique<boost::multi_index::identity<item_id>, std::hash<item_id> > >
+                                           > items_to_fetch_set_type;
+      items_to_fetch_set_type _items_to_fetch; /// list of items we know another peer has and we want
       // @}
 
       /// used by the task that advertises inventory during normal operation
@@ -347,10 +382,12 @@ namespace bts { namespace net {
       void listen_on_port(uint16_t port);
       std::vector<peer_status> get_connected_peers() const;
       uint32_t get_connection_count() const;
-      void broadcast(const message& item_to_broadcast);
+      void broadcast(const message& item_to_broadcast, fc::time_point mesage_receive_time = fc::time_point::now());
       void sync_from(const item_id&);
       bool is_connected() const;
       void set_advanced_node_parameters(const fc::variant_object& params);
+      fc::time_point get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id);
+      fc::time_point get_block_first_seen_time(const bts::blockchain::block_id_type& block_id);
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -427,6 +464,16 @@ namespace bts { namespace net {
     uint64_t peer_connection::get_total_bytes_received() const
     {
       return _message_connection.get_total_bytes_received();
+    }
+
+    fc::time_point peer_connection::get_last_message_sent_time() const
+    {
+      return _message_connection.get_last_message_sent_time();
+    }
+
+    fc::time_point peer_connection::get_last_message_received_time() const
+    {
+      return _message_connection.get_last_message_received_time();
     }
 
     fc::optional<fc::ip::endpoint> peer_connection::get_remote_endpoint()
@@ -1251,15 +1298,13 @@ namespace bts { namespace net {
           originating_peer->inventory_peer_advertised_to_us.insert(advertised_item_id);
           if (!we_requested_this_item_from_a_peer)
           {
-            ilog("adding item ${item_hash} from inventory message to our list of items to fetch",
-                 ("item_hash", item_hash));
-            if (std::find(_items_to_fetch.begin(), _items_to_fetch.end(), advertised_item_id) == _items_to_fetch.end())
+            auto insert_result = _items_to_fetch.push_back(advertised_item_id);
+            if (insert_result.second)
             {
-              _items_to_fetch.push_back(advertised_item_id);
+              ilog("addinged item ${item_hash} from inventory message to our list of items to fetch",
+                   ("item_hash", item_hash));
               trigger_fetch_items_loop();
             }
-            else
-              elog("Error: would have added the same item to _items_to_fetch twice.  Need a set.");
           }
         }
       }
@@ -1451,11 +1496,7 @@ namespace bts { namespace net {
 
     void node_impl::process_block_during_normal_operation(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
     {
-      //std::ostringstream bytes;
-      //for (const unsigned char& byte : message_to_process.data)
-      //  bytes << " " << std::setw(2) << std::setfill('0') << std::hex << (unsigned)byte;
-      //ilog("actual bytes are${bytes}", ("bytes", bytes.str()));
-      //ilog("item's real hash is ${hash}", ("hash", fc::ripemd160::hash(&message_to_process.data[0], message_to_process.data.size())));
+      fc::time_point message_receive_time = fc::time_point::now();
 
       dump_node_status();
 
@@ -1511,7 +1552,7 @@ namespace bts { namespace net {
               peer->inventory_advertised_to_peer.insert(block_message_item_id);
             }
           }
-          broadcast(message_to_process);
+          broadcast(message_to_process, message_receive_time);
           _message_cache.block_accepted();
         }
         catch (fc::exception&)
@@ -1534,6 +1575,8 @@ namespace bts { namespace net {
 
     void node_impl::process_unrecognized_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
     {
+      fc::time_point message_receive_time = fc::time_point::now();
+
       // only process it if we asked for it
       auto iter = originating_peer->items_requested_from_peer.find(item_id(message_to_process.msg_type, message_hash));
       if (iter == originating_peer->items_requested_from_peer.end())
@@ -1560,7 +1603,7 @@ namespace bts { namespace net {
         }
 
         // finally, if the delegate validated the message, broadcast it to our other peers
-        broadcast(message_to_process);
+        broadcast(message_to_process, message_receive_time);
       }
     }
 
@@ -1841,8 +1884,8 @@ namespace bts { namespace net {
         peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
         peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
-        peer_details["lastsend"] = ""; // TODO: fill me for bitcoin compatibility
-        peer_details["lastrecv"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["lastsend"] = peer->get_last_message_sent_time().sec_since_epoch();
+        peer_details["lastrecv"] = peer->get_last_message_received_time().sec_since_epoch();
         peer_details["bytessent"] = peer->get_total_bytes_sent();
         peer_details["bytesrecv"] = peer->get_total_bytes_received();
         peer_details["conntime"] = ""; // TODO: fill me for bitcoin compatibility
@@ -1865,15 +1908,23 @@ namespace bts { namespace net {
       return _active_connections.size();
     }
 
-    void node_impl::broadcast(const message& item_to_broadcast)
+    void node_impl::broadcast(const message& item_to_broadcast, fc::time_point message_receive_time)
     {
+      fc::uint160_t hash_of_message_contents;
       if (item_to_broadcast.msg_type == bts::client::block_message_type)
       {
-        bts::client::block_message messageToBroadcast = item_to_broadcast.as<bts::client::block_message>();
-        _most_recent_blocks_accepted.push_back(messageToBroadcast.block_id);
+        bts::client::block_message block_message_to_broadcast = item_to_broadcast.as<bts::client::block_message>();
+        hash_of_message_contents = block_message_to_broadcast.block_id; // for debugging
+        _most_recent_blocks_accepted.push_back(block_message_to_broadcast.block_id);
+      }
+      else if (item_to_broadcast.msg_type == bts::client::trx_message_type)
+      {
+        bts::client::trx_message transaction_message_to_broadcast = item_to_broadcast.as<bts::client::trx_message>();
+        hash_of_message_contents = transaction_message_to_broadcast.trx.id(); // for debugging
       }
       message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
-      _message_cache.cache_message(item_to_broadcast, hash_of_item_to_broadcast);
+
+      _message_cache.cache_message(item_to_broadcast, hash_of_item_to_broadcast, message_receive_time, hash_of_message_contents);
       _new_inventory.insert(item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast));
       trigger_advertise_inventory_loop();
       dump_node_status();
@@ -1898,6 +1949,16 @@ namespace bts { namespace net {
         _desired_number_of_connections = (uint32_t)params["desired_number_of_connections"].as_uint64();
       if (params.contains("maximum_number_of_connections"))
         _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
+    }
+
+    fc::time_point node_impl::get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id)
+    {
+      return _message_cache.get_message_first_seen_time(transaction_id);
+    }
+
+    fc::time_point node_impl::get_block_first_seen_time(const bts::blockchain::block_id_type& block_id)
+    {
+      return _message_cache.get_message_first_seen_time(block_id);
     }
 
   }  // end namespace detail
@@ -1975,9 +2036,20 @@ namespace bts { namespace net {
   {
     return my->is_connected();
   }
+
   void node::set_advanced_node_parameters(const fc::variant_object& params)
   {
     my->set_advanced_node_parameters(params);
+  }
+
+  fc::time_point node::get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id)
+  {
+    return my->get_transaction_first_seen_time(transaction_id);
+  }
+
+  fc::time_point node::get_block_first_seen_time(const bts::blockchain::block_id_type& block_id)
+  {
+    return my->get_block_first_seen_time(block_id);
   }
 
 } } // end namespace bts::net

@@ -57,7 +57,9 @@ namespace bts { namespace rpc {
              (getpeerinfo)\
              (_set_advanced_node_parameters)\
              (addnode)\
-             (stop)
+             (stop)\
+             (_get_transaction_first_seen_time)\
+             (_get_block_first_seen_time)
 
   namespace detail
   {
@@ -461,9 +463,9 @@ Result:
     {
        fc::mutable_variant_object info;
        info["balance"]          = _client->get_wallet()->get_balance(0).get_rounded_amount();
-       info["version"]          = 0;// BTS_BLOCKCHAIN_VERSION;
-       info["protocolversion"]  = 0;// BTS_NET_PROTOCOL_VERSION;
-       info["walletversion"]    = 0;// BTS_WALLET_VERSION;
+       info["version"]          = BTS_BLOCKCHAIN_VERSION;
+       info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
+       info["walletversion"]    = BTS_WALLET_VERSION;
        info["blocks"]           = _client->get_chain()->head_block_num();
        info["connections"]      = 0;
        info["unlocked_until"]   = 0;
@@ -1032,7 +1034,7 @@ Result (for verbose = true):
 "confirmations" : n, (numeric) The number of confirmations
 "size" : n, (numeric) The block size
 "height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version //TODO: fake this
+"version" : n, (numeric) The block version
 "merkleroot" : "xxxx", (string) The merkle root
 "tx" : [ (array of string) The transaction ids
 "transactionid" (string) The transaction id
@@ -1381,6 +1383,46 @@ Stop BitShares server.
       return fc::variant();
     }
 
+    static rpc_server::method_data _get_transaction_first_seen_time_metadata{"_get_transaction_first_seen_time", nullptr,
+            /* description */ "Returns the time the transaction was first seen by this client",
+            /* returns: */    "null",
+            /* params:          name              type               required */
+                              {{"transaction_id", "transaction_id",  true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+_get_transaction_first_seen_time <transaction_id>
+
+Returns the time the transaction was first seen by this client.
+
+This interrogates the p2p node's message cache to find out when it first saw this transaction.
+The data in the message cache is only kept for a few blocks, so you can only use this to ask
+about recent transactions. This is intended to be used to track message propagation delays
+in our test network.
+)" };
+    fc::variant rpc_server_impl::_get_transaction_first_seen_time(const fc::variants& params)
+    {
+      return fc::variant(_client->get_transaction_first_seen_time(params[0].as<transaction_id_type>()));
+    }
+    static rpc_server::method_data _get_block_first_seen_time_metadata{"_get_block_first_seen_time", nullptr,
+            /* description */ "Returns the time the block was first seen by this client",
+            /* returns: */    "null",
+            /* params:          name              type        required */
+                              {{"block_hash",   "block_id_type", true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+_get_block_first_seen_time <block_hash>
+
+Returns the time the block was first seen by this client.
+
+This interrogates the p2p node's message cache to find out when it first saw this transaction.
+The data in the message cache is only kept for a few blocks, so you can only use this to ask
+about recent transactions. This is intended to be used to track message propagation delays
+in our test network.
+)" };
+    fc::variant rpc_server_impl::_get_block_first_seen_time(const fc::variants& params)
+    {
+      return fc::variant(_client->get_block_first_seen_time(params[0].as<block_id_type>()));
+    }
   } // detail
 
   bool rpc_server::config::is_valid() const

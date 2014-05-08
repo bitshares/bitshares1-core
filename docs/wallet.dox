@@ -12,7 +12,7 @@ A wallet potentially has two passwords: a "wallet password" that unencypts the w
 
 A wallet password is not required by the wallet. If the wallet password is left blank, the wallet file (which contains a cache of the wallet status such as wallet-affecting transactions, etc) will be stored in human-readable JSON form. If a wallet password is required by the wallet, no commands can be performed on the wallet until the wallet password is provided.
 
-A spending password is required by the wallet, and it must be at least 8 characters in length. If the user attempts an operation that requires access to the private keys when the keys are not in memory (keys are not held in memory by default), the wallet will automatically generate a request for the spending password. Once the spending password is entered, the wallet will unencrypt the private keys and keep them in memory until a timeout occurs (by default we will use a 5 minute timeout if the user doesn't specify one). 
+A spending password is required by the wallet, and it must be at least 8 characters in length. If the user attempts an operation that requires access to the private keys when the keys are not in memory (keys are not held in memory by default), the wallet will automatically generate a request for the spending password. Once the spending password is entered, the wallet will unencrypt the private keys and keep them in memory until a timeout occurs (by default we will use a 5 minute timeout if the user doesn't specify one).
 
 
 ## TODO: Wallet accounts and address memos
@@ -67,7 +67,7 @@ It's possible that a wallet may compute a transaction without having seen the "l
 Vote down delegates when there is a valid transaction not getting included in the blockchain for more than one block from the time you receive it. For now we will just log this as a diagnostic aid.
 
 ## Methods of canceling locally-created transactions
-If a transaction has been generated locally but not yet submitted to the p2p network, it can simply be removed from the pending transaction queue. 
+If a transaction has been generated locally but not yet submitted to the p2p network, it can simply be removed from the pending transaction queue.
 
 If a transaction has already been submitted to the network but not yet accepted into a block, it can potentially be canceled by issuing a transaction with a higher fee that double spends one of the inputs of the transaction to be canceled. If this canceling transaction manages to make it to the block generating delegate before the block is created, it will get ranked higher in the transaction list and therefore invalidate the original transaction we want to cancel.
 
@@ -135,7 +135,7 @@ _block_transactions: map of transactions in blockchain that affect wallet. These
 
 
 _pending_transactions: transactions not yet in a block. These get added whenever we generate or receive a transaction. They get removed whenever we find them in a block we are scanning (at that point we're moving them to _block_transactions database).
-These can't possibly be confirmed transactions, no need to check. 
+These can't possibly be confirmed transactions, no need to check.
 These transactions are primarily used for computing unconfirmed balances, they're not used for either confirmed balances or collecting inputs to fund transactions.  But we still need to accumulate these outputs as they affect the unconfirmed balance of each address. We will need to add them to unspent_balances. We're using a map for the unspent outputs, so we shouldn't need to worry about duplicates when they get added again later when the pending transaction is finally included into a block.
 
 Also these transactions spend our unspent_outputs, so we do need to remove spent outputs from unspent_outputs if they are there: this may or may not have already been done, depending on whether this is a locally generated transaction that we later receive. If we generate it locally, we should account for it when we generate it. If it was a remotely generated transaction from another of our wallets, this is first time this wallet learns about the transaction and it needs to remove it from unspent_outputs. Possibly we could check some map to see if the pending transaction has already been processed, but it shouldn't be a common case (most pending transactions we receive will be from others, not ourselves), so maybe not necessary, needs further thought/investigation. Wallet needs to add new function that can be called by client code when a transaction is received (we'll call this same function when we locally generate a transaction).
@@ -147,15 +147,15 @@ struct account
   balance?
   unconfirmed_balance?
 // Add an address to addresses member whenever we create a new address or move it to a different account. Should we have an option to delete an account? I suppose an account is implicitly deleted when all addresses are removed from it. Also, all addresses should belong to some account (there is a default account ("") that should be used when an address is created without specifying an account).
-  
-We need to track the unspent_outputs of an account to quickly collect inputs for transactions drawn from that account. The simplest way to do this is to draw from a conceptual union of the unspent_outputs of each address in the account (this simplifies switching addresses between accounts or even deleting an address from consideration entirely if desired).  
+
+We need to track the unspent_outputs of an account to quickly collect inputs for transactions drawn from that account. The simplest way to do this is to draw from a conceptual union of the unspent_outputs of each address in the account (this simplifies switching addresses between accounts or even deleting an address from consideration entirely if desired).
 
 map<address,outputs> _unspent_outputs_of_address;
-//Defines mapping from address to it's unspent outputs. 
+//Defines mapping from address to it's unspent outputs.
 Add output to outputs subcontainer whenever we scan a transaction that outputs to the address(scan_output). What about outputs from pending transactions? Let's not add these yet, but instead wait until they've been included in a block (this will happen as part of normal block processing, no need for extra code). Inputs from pending transactions will call mark_as_spent to remove the associated outputs from _unspent_outputs. Eventually we also need to deal with cleaning out transactions coming from blocks that have been rejected (blockchain fork rollback).
 Remove from outputs subcontainer whenever we mark_as_spent.
 
-Invalidating a pending transaction:  need to handle when a pending transaction is canceled/invalidated by another transaction in a new block that spends one of the inputs to our pending transaction. 
+Invalidating a pending transaction:  need to handle when a pending transaction is canceled/invalidated by another transaction in a new block that spends one of the inputs to our pending transaction.
 We detect this by submitting all pending transactions to blockchain.evaluate_transaction() whenever we receive a new block.
 
 Handling an invalidated transaction:
@@ -200,7 +200,7 @@ struct receiving_address : public address?
   map<output_index, trx_output> unspent_outputs //for computing balances and collecting inputs for transactions
   owning_account? //any use for this?
   //not going to cache balances, as it would require re-computation everytime transaction becomes confirmed
-  //balance? 
+  //balance?
   //unconfirmed_balance?
 
 struct account
@@ -242,28 +242,28 @@ bool is_confirmed_transaction(transaction_id)
 get_transaction_history()
   return _data.transactions map;
 
-//this creates a transaction that says you want to be considered as a delegate  
+//this creates a transaction that says you want to be considered as a delegate
 register_delegate(name,data)
   create transaction object and set transaction output to claim_name_output with a newly generated public key for delegate
-    
+
 //transfer amount to an address from an account (attach a memo to transaction itself eventually?). This used to be: transfer(amount,to-address,memo)
 send_to_address(to_address,amount,memo)
   create transaction object and set to-address as first transaction output (a change output may also be added by next step)
   available_funding_outputs = union of unspent_outputs from all receive addresses (we'll count genesis block funding info as receive accounts also)
   collect_inputs_and_sign(transaction,amount,available_funding_outputs,memo)
-  
+
 //new function
 send_from_account(from_account,to_address,amount,min_confirmations?, memo,comment_to)
   create transaction object and set to-address as first transaction output (a change output may also be added by next step)
   available_funding_outputs = from_account.get_unspent_outputs()
   collect_inputs_and_sign(transaction,amount,available_funding_outputs,memo)
-    
+
 mark_as_spent(output_reference)
   remove output_reference from address.unspent_outputs
-  
+
 void sign_transaction( signed_transaction& transaction, addresses, bool mark_output_as_used = true)
   sign transaction addresses and mark_as_spent the inputs if requested
-  
+
 collect_inputs_and_sign(transaction,requested_amount,required_signatures, change_address, unspent_outputs)
   required_input = requested_amount
   save off original inputs and outputs to transaction
@@ -276,7 +276,7 @@ collect_inputs_and_sign(transaction,requested_amount,required_signatures, change
     add output transaction to change_address for change_amount
     if requested transaction is not in base asset type
       return collect_inputs_and_sign again //get danL to explain why this is done in more detail
-      
+
     sign transaction with any required_signatures (doesn't mark inputs as spent here)
     compute fee from transaction size
     required_input += fee
@@ -292,7 +292,7 @@ collect_inputs_and_sign(transaction,requested_amount,required_signatures, change
     remove change output from transaction
   clear transactions signatures
   re-sign transaction, this time marking inputs as spent
-  
+
 //Collect inputs that total to at least requested_amount.
 inputs collect_inputs(requested_amount, total_input, required_signatures, unspent_outputs)
   for each unspent output in unspent_outputs
@@ -303,7 +303,7 @@ inputs collect_inputs(requested_amount, total_input, required_signatures, unspen
       if (total_input.get_rounded_amount() > requested_amount.get_rounded_amount())
         return inputs
   throw "insufficient funds"
-        
+
 
 bool scan_input(transaction_state,output,output_reference,output_index)
   if we control the input's output source
@@ -322,7 +322,7 @@ bool scan_output(transaction_state,output,output_reference,output_index)
     return true (output affects wallet)
   else
     return false
-  
+
 bool scan_transaction(transaction_state, block_index, transaction_index)
   foreach input in the transaction
     if output in output_ref_to_index
@@ -331,20 +331,20 @@ bool scan_transaction(transaction_state, block_index, transaction_index)
   for each output in the transaction
     scan_output(...)
   return true if any input or output affects addresses we control
-  
-//scan chain is called every time we receive a new block  
+
+//scan chain is called every time we receive a new block
 scan_chain(chain_database, from_block_num, scan_progress_callback)
   foreach block starting from_block_num
     foreach transaction
       check if any callback is registered for reporting progress of scanning transactions
       fetch from chain
       found_output = scan_transaction
-      if found_output 
+      if found_output
         add new transaction state to map (effectively a set) of transactions affecting wallet
     foreach deterministic transaction
       fetch from chain
       found_output = scan_transaction
-      if found_output 
+      if found_output
         add new transaction state to map of transactions affecting wallet
   set_fee_rate(chain.get_fee_rate())
   _stake = chain.get_stake()
@@ -356,7 +356,7 @@ get_balance(asset_type)
 
 //generate next block from a set of pending transactions
 result generate_next_block(chain_database,input_transactions)
-  chain_db.generate_deterministic_transactions()  
+  chain_db.generate_deterministic_transactions()
   foreach transaction in input_transactions
     validate transaction and discard if invalid (transaction validated in isolation)
     compute fee for transaction
@@ -374,45 +374,45 @@ result generate_next_block(chain_database,input_transactions)
         add transaction to consumed_outputs
     if transaction has no consumed_outputs
       try to add it to block (evaluted in context of already added transactions)
-  calculate and return result containing: new block number, 
+  calculate and return result containing: new block number,
      a list of all accepted transactions for new block, previous block id,
      merkle root of deterministic transactions for block, fee rate for next block,
-     total outstanding shares after removal of fees, and timestamp     
+     total outstanding shares after removal of fees, and timestamp
 
 
-     
-     
-     
-     
-     
-     
-     
-     
 
-////////////////////////////////////existing code              
+
+
+
+
+
+
+
+
+////////////////////////////////////existing code
 
 //returns a map of all the wallet transaction states (transaction_id -> transaction_state)
 get_transaction_history()
   return _data.transactions map;
-  
+
 //transfer amount to an address
 transfer(amount,to-address,memo)
   create transaction object and set to-address as first transaction output (a change output may also be added by next step)
   collect_inputs_and_sign(transaction,amount,memo)
-  
-//this creates a transaction that says you want to be considered as a delegate  
+
+//this creates a transaction that says you want to be considered as a delegate
 register_delegate(name,data)
   create transaction object and set transaction output to claim_name_output with a newly generated public key for delegate
-  
+
 mark_as_spent(output_reference)
   if output reference is not ours (not in output_ref_to_index map) or we've already spent it
     just ignore it //consider if we can/should assert if already spent
-  else 
+  else
     remove from unspent_outputs and move to spent_outputs
-  
+
 void sign_transaction( signed_transaction& transaction, addresses, bool mark_output_as_used = true)
   sign transaction addresses and mark_as_spent the inputs if requested
-  
+
 collect_inputs_and_sign(transaction,requested_amount,required_signatures, change_address)
   required_input = requested_amount
   save off original inputs and outputs to transaction
@@ -425,7 +425,7 @@ collect_inputs_and_sign(transaction,requested_amount,required_signatures, change
     add output transaction to change_address for change_amount
     if requested transaction is not in base asset type
       return collect_inputs_and_sign again //explain why this is done in more detail
-      
+
     sign transaction with any required_signatures (doesn't mark inputs as spent here)
     compute fee from transaction size
     required_input += fee
@@ -441,7 +441,7 @@ collect_inputs_and_sign(transaction,requested_amount,required_signatures, change
     remove change output from transaction
   clear transactions signatures
   re-sign transaction, this time marking inputs as spent
-  
+
 //Collect inputs that total to at least requested_amount.
 inputs collect_inputs(requested_amount, total_input, required_signatures)
   for each unspent output
@@ -452,7 +452,7 @@ inputs collect_inputs(requested_amount, total_input, required_signatures)
       if (total_input.get_rounded_amount() > requested_amount.get_rounded_amount())
         return inputs
   throw "insufficient funds"
-        
+
 bool scan_input(transaction_state,output,output_reference,output_index)
   if we control the input's output source(it's in our spent or unspent outputs)
     decrease delta balance of transaction by output amount (this input is our money being spent)
@@ -467,7 +467,7 @@ bool scan_output(transaction_state,output,output_reference,output_index)
     return true (output affects wallet)
   else
     return false
-  
+
 bool scan_transaction(transaction_state, block_index, transaction_index)
   foreach input in the transaction
     if output in output_ref_to_index
@@ -476,19 +476,19 @@ bool scan_transaction(transaction_state, block_index, transaction_index)
   for each output in the transaction
     scan_output(...)
   return true if any input or output affects addresses we control
-  
+
 scan_chain(chain_database, from_block_num, scan_progress_callback)
   foreach block starting from_block_num
     foreach transaction
       check if any callback is registered for reporting progress of scanning transactions
       fetch from chain
       found_output = scan_transaction
-      if found_output 
+      if found_output
         add new transaction state to map (effectively a set) of transactions affecting wallet
     foreach deterministic transaction
       fetch from chain
       found_output = scan_transaction
-      if found_output 
+      if found_output
         add new transaction state to map of transactions affecting wallet
   set_fee_rate(chain.get_fee_rate())
   _stake = chain.get_stake()
@@ -497,13 +497,13 @@ scan_chain(chain_database, from_block_num, scan_progress_callback)
 
 //probably should cache the balances for each asset type instead
 get_balance(asset_type)
-  sum up the unspent_outputs for the requested asset type  
+  sum up the unspent_outputs for the requested asset type
 
 collect_mining_input (deprecated, remove?)
 
 //generate next block from a set of pending transactions
 result generate_next_block(chain_database,input_transactions)
-  chain_db.generate_deterministic_transactions()  
+  chain_db.generate_deterministic_transactions()
   foreach transaction in input_transactions
     validate transaction and discard if invalid (transaction validated in isolation)
     compute fee for transaction
@@ -520,13 +520,13 @@ result generate_next_block(chain_database,input_transactions)
         add transaction to consumed_outputs
     if transaction has no consumed_outputs
       try to add it to block (evaluted in context of already added transactions)
-  calculate and return result containing: new block number, 
+  calculate and return result containing: new block number,
      a list of all accepted transactions for new block, previous block id,
      merkle root of deterministic transactions for block, fee rate for next block,
-     total outstanding shares after removal of fees, and timestamp     
-     
+     total outstanding shares after removal of fees, and timestamp
+
 @endcode
-     
+
 ## General Notes
 - Generation of transactions (transfer) could be speeded up a lot (there's a lot of potential for re-doing old work when the fees require more inputs to the transaction), but probably we don't care right now.
 
@@ -540,13 +540,13 @@ result generate_next_block(chain_database,input_transactions)
 
 # Wallet RPC API
 Below are a list of the RPC commands supported by the wallet and the usage of each command. When defining new commands, if it is not a bitcoin-compatible command, use underscores to separate words in the command (for example, use add_send_address, not addsendaddress as this is a non-bitcoin compatible commands).
-    
-help: 
+
+help:
 lists wallet commands, or get help for a specified command.
 
-openwallet (BTS): 
+openwallet (BTS):
 unlock the wallet with the given passphrase, if no user is specified 'default' will be used.
-              /* params:          name                 type      required */ 
+              /* params:          name                 type      required */
                                 {{"wallet_username",   "string", false} ,
                                  {"wallet_passphrase", "string", false}},
 
@@ -554,7 +554,7 @@ unlock the wallet with the given passphrase, if no user is specified 'default' w
 createwallet(BTS):
                 /* description */ "create a wallet with the given passphrases",
                 /* returns: */    "bool",
-                /* params:          name                   type      required */ 
+                /* params:          name                   type      required */
                                   {
                                    {"wallet_username",     "string", true},
                                    {"wallet_passphrase",   "string", true},
@@ -575,8 +575,8 @@ closewallet(BTS):
 walletpassphrase:
                     /* description */ "unlock the private keys in the wallet with the given passphrase",
                     /* returns: */    "bool",
-                    /* params:          name                   type      required */ 
-                                      {{"spending_passphrase", "string", true}, 
+                    /* params:          name                   type      required */
+                                      {{"spending_passphrase", "string", true},
                                        {"timeout",             "int",    true} },
                   /* prerequisites */ json_authenticated | wallet_open};
 """
@@ -600,7 +600,7 @@ unlock the wallet for 60 seconds
 > bitshares-cli walletpassphrase "my pass phrase" 60
 
 Lock the wallet again (before 60 seconds)
-> bitshares-cli walletlock 
+> bitshares-cli walletlock
 
 As json rpc call
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "walletpassphrase", "params": ["my pass phrase", 60] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
@@ -609,14 +609,14 @@ As json rpc call
 getnewaddress:
                  /* description */ "create a new address for receiving payments",
                  /* returns: */    "address",
-                 /* params:          name       type      required */ 
+                 /* params:          name       type      required */
                                    {{"account", "string", false}},
                /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
 """
 getnewaddress ( "account" )
 
 Returns a new BitShares address for receiving payments.
-If 'account' is specified (recommended), it is added to the address book 
+If 'account' is specified (recommended), it is added to the address book
 so payments received with the address will be credited to 'account'.
 
 Arguments:
@@ -626,18 +626,18 @@ Result:
 "bitsharesaddress" (string) The new BitShares address
 
 Examples:
-> bitshares-cli getnewaddress 
+> bitshares-cli getnewaddress
 > bitshares-cli getnewaddress ""
 > bitshares-cli getnewaddress "myaccount"
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getnewaddress", "params": ["myaccount"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 """
 
-               
-               
+
+
 add_send_address (BTS):
                     /* description */ "add new address for sending payments",
                     /* returns: */    "bool",
-                    /* params:          name       type       required */ 
+                    /* params:          name       type       required */
                                       {{"address", "address", true},
                                        {"label",   "string",  true}  },
                   /* prerequisites */ json_authenticated | wallet_open };
@@ -646,7 +646,7 @@ add_send_address (BTS):
 sendtoaddress:
                  /* description */ "Sends the given amount to the given address, assumes shares in DAC",
                  /* returns: */    "transaction_id",
-                 /* params:          name          type       required */ 
+                 /* params:          name          type       required */
                                    {{"to_address", "address", true},
                                     {"amount",     "uint64",   true},
                                     {"comment",    "string",  false},
@@ -660,10 +660,10 @@ Sent an amount to a given address. The amount is a 64bit integer.
 Arguments:
 1. "bitsharesaddress" (string, required) The bitcoin address to send to.
 2. "amount" (numeric, required) The amount in BTS to send. eg 10
-3. "comment" (string, optional) A comment used to store what the transaction is for. 
+3. "comment" (string, optional) A comment used to store what the transaction is for.
 This is not part of the transaction, just kept in your wallet.
-4. "comment-to" (string, optional) A comment to store the name of the person or organization 
-to which you're sending the transaction. This is not part of the 
+4. "comment-to" (string, optional) A comment to store the name of the person or organization
+to which you're sending the transaction. This is not part of the
 transaction, just kept in your wallet (TODO: ignored currently, implement later).
 
 Result:
@@ -691,14 +691,14 @@ list_send_addresses(BTS):
 get_send_address_label(BTS):
                           /* description */ "Looks up the label for a single send address, returns null if not found",
                           /* returns: */    "string",
-                         /* params:            name          type       required */ 
+                         /* params:            name          type       required */
                                             { {"address",    "address", true} },
                         /* prerequisites */ json_authenticated | wallet_open};
 
 getbalance:
               /* description */ "Returns the wallet's current balance",
               /* returns: */    "asset",
-              /* params:          name     type     required */ 
+              /* params:          name     type     required */
                                 {{"asset", "unit",  false}},
             /* prerequisites */ json_authenticated | wallet_open};
 """
@@ -719,7 +719,7 @@ amount (numeric) The total amount in BTS received for this account.
 Examples:
 
 The total amount in the server across all accounts
-> bitshares-cli getbalance 
+> bitshares-cli getbalance
 
 The total amount in the server across all accounts, with at least 5 confirmations
 > bitshares-cli getbalance "*" 6
@@ -741,11 +741,11 @@ get_transaction_history(BTS):
                            /* params:     */ {},
                          /* prerequisites */ json_authenticated};
 
-                         
+
 get_transaction (BTC compatible, change to gettransaction):
                    /* description */ "Retrieves the signed transaction matching the given transaction id",
                    /* returns: */    "signed_transaction",
-                   /* params:          name              type               required */ 
+                   /* params:          name              type               required */
                                      {{"transaction_id", "transaction_id",  true}},
                  /* prerequisites */ json_authenticated};
 """
@@ -786,7 +786,7 @@ bExamples
 getblock:
             /* description */ "Retrieves the block header for the given block",
             /* returns: */    "block_header",
-            /* params:          name              type        required */ 
+            /* params:          name              type        required */
                               {{"block_number",   "uint32_t", true}},
           /* prerequisites */ json_authenticated};
 """
@@ -805,7 +805,7 @@ Result (for verbose = true):
 "confirmations" : n, (numeric) The number of confirmations
 "size" : n, (numeric) The block size
 "height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version //TODO: fake this
+"version" : n, (numeric) The block version
 "merkleroot" : "xxxx", (string) The merkle root
 "tx" : [ (array of string) The transaction ids
 "transactionid" (string) The transaction id
@@ -830,7 +830,7 @@ Examples:
 validateaddress:
                    /* description */ "Checks that the given address is valid",
                    /* returns: */    "bool",
-                   /* params:          name              type       required */ 
+                   /* params:          name              type       required */
                                      {{"address",        "address", true}},
                  /* prerequisites */ json_authenticated};
 """
@@ -860,14 +860,14 @@ Examples:
 rescan(BTS):
           /* description */ "Rescan the block chain from the given block",
           /* returns: */    "bool",
-          /* params:          name              type    required */ 
+          /* params:          name              type    required */
                             {{"starting_block", "bool", false}},
         /* prerequisites */ json_authenticated | wallet_open};
 
 import_bitcoin_wallet(BTS):
                          /* description */ "Import a bitcoin wallet",
                          /* returns: */    "bool",
-                         /* params:          name               type       required */ 
+                         /* params:          name               type       required */
                                            {{"wallet_filename", "string",  true},
                                             {"wallet_password", "string",  true}},
                        /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
@@ -875,7 +875,7 @@ import_bitcoin_wallet(BTS):
 importprivkey:
                  /* description */ "imports a bitcoin private key from wallet import format WIF",
                  /* returns: */    "bool",
-                 /* params:          name           type            required */ 
+                 /* params:          name           type            required */
                                    {{"key",         "private_key",  true},
                                     {"label",       "string",       true},
                                     {"rescan",      "bool",         false}},
@@ -909,7 +909,7 @@ As a json rpc call
 import_private_key(BTS):
                       /* description */ "imports a bitshares private key from hex format",
                       /* returns: */    "bool",
-                      /* params:          name           type            required */ 
+                      /* params:          name           type            required */
                                         {{"key",         "private_key",  true},
                                          {"label",       "string",       true}},
                     /* prerequisites */ json_authenticated | wallet_open | wallet_unlocked};
@@ -917,14 +917,14 @@ import_private_key(BTS):
 _send_transaction(BTS)
                    /* description */ "Broadcast a previously-created signed transaction to the network",
                    /* returns: */    "transaction_id",
-                   /* params:          name                  type                   required */ 
+                   /* params:          name                  type                   required */
                                      {{"signed_transaction", "signed_transaction",  true}},
                  /* prerequisites */ json_authenticated | connected_to_network};
 
 _create_sendtoaddress_transaction(BTS, only temporary command, will be replaced soon):
                                      /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
                                      /* returns: */    "signed_transaction",
-                                     /* params:          name          type       required */ 
+                                     /* params:          name          type       required */
                                                        {{"to_address", "address", true},
                                                         {"amount",     "asset",   true},
                                                         {"comment",    "string",  false},
@@ -945,7 +945,7 @@ bResult:
 n (numeric) The connection count
 
 Examples:
-> bitshares-cli getconnectioncount 
+> bitshares-cli getconnectioncount
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "getconnectioncount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 """
 

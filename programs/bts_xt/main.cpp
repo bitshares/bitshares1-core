@@ -231,7 +231,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
       bts::blockchain::trx_block genesis_block;
       try
       {
-        genesis_block = bts::net::create_test_genesis_block(genesis_json_file);
+        genesis_block = bts::net::create_genesis_block(genesis_json_file);
       }
       catch (fc::exception& e)
       {

@@ -1,6 +1,9 @@
 #pragma once
+
 #include <bts/net/core_messages.hpp>
 #include <bts/net/message.hpp>
+#include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/block.hpp>
 
 namespace bts { namespace net {
 
@@ -21,7 +24,7 @@ namespace bts { namespace net {
          virtual bool has_item( const net::item_id& id ) = 0;
 
          /**
-          *  @brief allows the application to validate an item prior to 
+          *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
           *  @throws exception if error validating the item, otherwise the item is
@@ -36,18 +39,18 @@ namespace bts { namespace net {
           *  in our blockchain after the last item returned in the result,
           *  or 0 if the result contains the last item in the blockchain
           */
-         virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id, 
+         virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id,
                                                         uint32_t& remaining_item_count,
                                                         uint32_t limit = 2000 ) = 0;
 
          /**
-          *  Given the hash of the requested data, fetch the body. 
+          *  Given the hash of the requested data, fetch the body.
           */
          virtual message get_item( const item_id& id ) = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.
-          * 
+          *
           *  @param item_type the type of the item we're synchronizing, will be the same as item passed to the sync_from() call
           *  @param item_count the number of items known to the node that haven't been sent to handle_item() yet.
           *                    After `item_count` more calls to handle_item(), the node will be in sync
@@ -140,7 +143,8 @@ namespace bts { namespace net {
         bool      is_connected()const;
 
         void set_advanced_node_parameters(const fc::variant_object& params);
-
+        fc::time_point get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id);
+        fc::time_point get_block_first_seen_time(const bts::blockchain::block_id_type& block_id);
       private:
         std::unique_ptr<detail::node_impl> my;
    };
