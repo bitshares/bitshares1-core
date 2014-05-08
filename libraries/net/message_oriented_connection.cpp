@@ -1,4 +1,6 @@
 #include <fc/thread/thread.hpp>
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/enum_type.hpp>
@@ -18,6 +20,10 @@ namespace bts { namespace net {
       fc::future<void> _read_loop_done;
       uint64_t _bytes_received;
       uint64_t _bytes_sent;
+      fc::time_point _last_message_received_time;
+      fc::time_point _last_message_sent_time;
+      fc::mutex _send_mutex;
+
 
 
       void read_loop();
@@ -33,6 +39,8 @@ namespace bts { namespace net {
       void close_connection();
       uint64_t get_total_bytes_sent() const;
       uint64_t get_total_bytes_received() const;
+      fc::time_point get_last_message_sent_time() const;
+      fc::time_point get_last_message_received_time() const;
     };
 
     message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate) : 
@@ -93,8 +101,10 @@ namespace bts { namespace net {
           }
           m.data.resize(m.size); // truncate off the padding bytes
 
+          _last_message_received_time = fc::time_point::now();
+
           try 
-          { 
+          {
             // message handling errors are warnings...
             _delegate->on_message(_self, m);
           } 
@@ -142,9 +152,11 @@ namespace bts { namespace net {
         std::unique_ptr<char[]> padded_message(new char[size_with_padding]);
         memcpy(padded_message.get(), (char*)&message_to_send, sizeof(message_header));
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
+        fc::scoped_lock<fc::mutex> lock(_send_mutex);
         _sock.write(padded_message.get(), size_with_padding);
         _sock.flush();
         _bytes_sent += size_with_padding;
+        _last_message_sent_time = fc::time_point::now();
       } FC_RETHROW_EXCEPTIONS( warn, "unable to send message" );    
     }
 
@@ -162,6 +174,17 @@ namespace bts { namespace net {
     {
       return _bytes_received;
     }
+
+    fc::time_point message_oriented_connection_impl::get_last_message_sent_time() const
+    {
+      return _last_message_sent_time;
+    }
+
+    fc::time_point message_oriented_connection_impl::get_last_message_received_time() const
+    {
+      return _last_message_received_time;
+    }
+
   } // end namespace bts::net::detail
 
 
@@ -212,6 +235,16 @@ namespace bts { namespace net {
   uint64_t message_oriented_connection::get_total_bytes_received() const
   {
     return my->get_total_bytes_received();
+  }
+
+  fc::time_point message_oriented_connection::get_last_message_sent_time() const
+  {
+    return my->get_last_message_sent_time();
+  }
+
+  fc::time_point message_oriented_connection::get_last_message_received_time() const
+  {
+    return my->get_last_message_received_time();
   }
 
 } } // end namespace bts::net
