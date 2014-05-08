@@ -247,21 +247,6 @@ namespace bts { namespace client {
 
        bts::net::message client_impl::get_item(const bts::net::item_id& id)
        {
-#if 0
-         try
-         {
-           bts::net::message result = _message_cache.get_message(id.item_hash);
-           ilog("get_item() returning message from _message_cache (id: ${item_hash})", ("item_hash", result.id()));
-           ilog("item's real hash is ${hash}", ("hash", fc::ripemd160::hash(&result.data[0], result.data.size())));
-           return result;
-         }
-         catch (const fc::key_not_found_exception&)
-         {
-           // not in our cache.  Either it has already expired from our cache, or
-           // it's a request for an actual block during synchronization.
-         }
-#endif
-
          if (id.item_type == block_message_type)
          {
            uint32_t block_number = _chain_db->fetch_block_num(id.item_hash);
@@ -427,6 +412,21 @@ namespace bts { namespace client {
     {
     }
 
+
+    fc::time_point client::get_transaction_first_seen_time(const transaction_id_type& transaction_id)
+    {
+      if (my->_p2p_node)
+        return my->_p2p_node->get_transaction_first_seen_time(transaction_id);
+      return fc::time_point();
+    }
+
+    fc::time_point client::get_block_first_seen_time(const block_id_type& block_id)
+    {
+      if (my->_p2p_node)
+        return my->_p2p_node->get_block_first_seen_time(block_id);
+      return fc::time_point();
+    }
+
     void client::set_advanced_node_parameters(const fc::variant_object& params)
     {
       if (my->_p2p_node)
@@ -484,5 +484,22 @@ namespace bts { namespace client {
         broadcast_transaction( trx );
         return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
+
+    fc::sha256 client_notification::digest()const
+    {
+      fc::sha256::encoder enc;
+      fc::raw::pack(enc, *this);
+      return enc.result();
+    }
+
+    void client_notification::sign(const fc::ecc::private_key& key)
+    {
+      signature = key.sign_compact(digest());
+    }
+
+    fc::ecc::public_key client_notification::signee() const
+    {
+      return fc::ecc::public_key(signature, digest());
+    }
 
 } } // bts::client

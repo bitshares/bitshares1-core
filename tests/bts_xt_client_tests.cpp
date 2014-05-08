@@ -334,6 +334,7 @@ struct bts_client_launcher_fixture
   void establish_rpc_connections();
   void trigger_network_connections();
   void import_initial_balances();
+  int verify_network_connectivity(const fc::path& output_path);
 };
 
 void bts_client_launcher_fixture::create_trustee_and_genesis_block()
@@ -367,8 +368,16 @@ void bts_client_launcher_fixture::launch_clients()
     client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
     client_processes[i].http_port = bts_xt_client_test_config::base_http_port + i;
     fc::optional<bts::net::genesis_block_config> optional_genesis_block;
+#if 1
+    // simulate the condition where some clients start without a genesis block shipped to them
     if (i == 0 && !bts_xt_client_test_config::test_client_server)
       optional_genesis_block = genesis_block;
+#else
+    // simulate the condition where all clients and all servers start with a genesis block
+    // this doesn't currently work, because the initial block contains a timestamp and each
+    // client will generate a different genesis block
+    optional_genesis_block = genesis_block;
+#endif
     client_processes[i].launch(i, trustee_key, i == 0,
                                optional_genesis_block);
   }
@@ -421,8 +430,115 @@ void bts_client_launcher_fixture::import_initial_balances()
   {
     client_processes[i].rpc_client->import_private_key(client_processes[i].private_key.get_secret(), "blah");
     client_processes[i].rpc_client->rescan(0);
-    BOOST_CHECK(client_processes[i].rpc_client->getbalance(0) == client_processes[i].initial_balance);
+    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->getbalance(0).amount, client_processes[i].initial_balance);
   }
+}
+
+int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& output_path)
+{
+  fc::create_directories(output_path);
+
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> DirectedGraph;
+  DirectedGraph directed_graph;
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    for (const fc::variant& peer_info : peers_info)
+    {
+      fc::variant_object peer_info_object = peer_info.get_object();
+      if (peer_info_object["inbound"].as_bool())
+      {
+        uint16_t peer_p2p_port = fc::ip::endpoint::from_string(peer_info_object["addr"].as_string()).port();
+        boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, directed_graph);
+      }
+    }
+    BOOST_CHECK(peers_info.size() >= _desired_number_of_connections);
+    BOOST_CHECK(peers_info.size() <= _maximum_number_of_connections);
+  }
+
+  unsigned number_of_partitions = 0;
+
+  if (boost::num_vertices(directed_graph))
+  {
+    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
+    typedef boost::exterior_vertex_property<UndirectedGraph, int> DistanceProperty;
+    typedef DistanceProperty::matrix_type DistanceMatrix;
+    typedef DistanceProperty::matrix_map_type DistanceMatrixMap;
+    typedef boost::graph_traits<UndirectedGraph>::edge_descriptor Edge;
+    typedef boost::constant_property_map<Edge, int> WeightMap;
+
+    UndirectedGraph undirected_graph;
+    boost::copy_graph(directed_graph, undirected_graph);
+
+    std::vector<int> component(boost::num_vertices(undirected_graph));
+    number_of_partitions = boost::connected_components(undirected_graph, &component[0]);
+    BOOST_CHECK(number_of_partitions == 1);
+    if (number_of_partitions != 1)
+    {
+      std::vector<std::vector<int> > nodes_by_component(number_of_partitions);
+      for (unsigned i = 0; i < component.size(); ++i)
+        nodes_by_component[component[i]].push_back(i);
+      BOOST_TEST_MESSAGE("Network is partitioned into " << number_of_partitions<< " disconnected groups");
+      for (unsigned i = 0; i < number_of_partitions; ++i)
+      {
+        std::ostringstream nodes;
+        for (unsigned j = 0; j < nodes_by_component[i].size(); ++j)
+          nodes << " " << nodes_by_component[i][j];
+        BOOST_TEST_MESSAGE("Partition " << i << ":" << nodes.str());
+      }
+    }
+
+    DistanceMatrix distances(boost::num_vertices(undirected_graph));
+    DistanceMatrixMap distance_map(distances, undirected_graph);
+    WeightMap weight_map(1);
+    boost::floyd_warshall_all_pairs_shortest_paths(undirected_graph, distance_map, boost::weight_map(weight_map));
+
+    uint32_t longest_path_source = 0;
+    uint32_t longest_path_destination = 0;
+    int longest_path_length = 0;
+    for (uint32_t i = 0; i < boost::num_vertices(undirected_graph); ++i)
+      for (uint32_t j = 0; j < boost::num_vertices(undirected_graph); ++j)
+      {
+        assert(distances[i][j] == distances[j][i]);
+        if (distances[i][j] > longest_path_length && distances[i][j] != std::numeric_limits<WeightMap::value_type>::max())
+        {
+          longest_path_length = distances[i][j];
+          longest_path_source = i;
+          longest_path_destination = j;
+        }
+      }
+
+    typedef boost::exterior_vertex_property<UndirectedGraph, int> EccentricityProperty;
+    typedef EccentricityProperty::container_type EccentricityContainer;
+    typedef EccentricityProperty::map_type EccentricityMap;
+    int radius, diameter;
+    EccentricityContainer eccentricity_container(boost::num_vertices(undirected_graph));
+    EccentricityMap eccentricity_map(eccentricity_container, undirected_graph);
+    boost::tie(radius, diameter) = boost::all_eccentricities(undirected_graph, distance_map, eccentricity_map);
+
+    // write out a graph for visualization
+    struct graph_property_writer
+    {
+      void operator()(std::ostream& out) const
+      {
+        out << "overlap = false;\n";
+        out << "splines = true;\n";
+        out << "node [shape = circle, fontname = Helvetica, fontsize = 10]\n";
+      }
+    };
+
+    fc::path dot_file_path = output_path / "network_map.dot";
+    std::ofstream dot_file(dot_file_path.string());
+    dot_file << "// Graph radius is " << radius << ", diameter is " << diameter << "\n";
+    dot_file << "// Longest path is from " << longest_path_source << " to " << longest_path_destination << ", length " << longest_path_length << "\n";
+    dot_file << "//   node parameters: desired_connections: " << _desired_number_of_connections
+             << ", max connections: " << _maximum_number_of_connections << "\n";
+    boost::write_graphviz(dot_file, directed_graph, boost::default_writer(), boost::default_writer(), graph_property_writer());
+    dot_file.close();
+  } // end if num_vertices != 0
+
+  return number_of_partitions;
 }
 
 
@@ -713,9 +829,13 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
 
   launch_clients();
 
+
   establish_rpc_connections();
 
   trigger_network_connections();
+
+  int number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "untracked_transactions");
+  BOOST_REQUIRE_EQUAL(number_of_partitions, 1);
 
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -734,13 +854,16 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
 
   //// initial setup is done
 
+  uint32_t total_number_of_transactions = 0;
+  fc::time_point test_start_time = fc::time_point::now();
+
   // let's try to generate 10 blocks
   uint32_t num_blocks = 10;
   for (uint32_t block_number = 0; block_number < num_blocks; ++block_number)
   {
     //BOOST_TEST_MESSAGE("Making as many 1000 transfers from node 0 to the rest of the nodes");
-    unsigned next_recipient = 1;
-    unsigned transactions_in_this_block = 0;
+    uint32_t next_recipient = 1;
+    uint32_t transactions_in_this_block = 0;
     for (unsigned process = 0; process < client_processes.size(); ++process)
     {
       for (int transfer = 0; ; ++transfer)
@@ -757,30 +880,23 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
         }
         catch (const fc::exception&)
         {
-          BOOST_TEST_MESSAGE("Only able to send " << transfer << " transfers from process " << process);
+          if (transfer >= expected_number_of_transfers)
+            BOOST_TEST_MESSAGE("Sent " << transfer << " transfers from process " << process << " in round " << block_number);
+          else
+            BOOST_TEST_MESSAGE("Only able to send " << transfer << " transfers from process " << process << " in round " << block_number);
           BOOST_CHECK_GE(transfer, expected_number_of_transfers);
           break;
         }
       }
     }
+    total_number_of_transactions += transactions_in_this_block;
     BOOST_TEST_MESSAGE("Done sending all transfers in round " << block_number << ", total of " << transactions_in_this_block << " transactions");
     BOOST_TEST_MESSAGE("Sleeping for 30 seconds to allow a block to be generated");
     fc::usleep(fc::seconds(30));
   }
 
-#if 0
+  fc::time_point test_end_time = fc::time_point::now();
 
-  BOOST_TEST_MESSAGE("Done making transfers, waiting 30 seconds for a block to be formed");
-  fc::usleep(fc::seconds(30));
-  BOOST_TEST_MESSAGE("Collecting balances from recipients");
-
-  uint64_t total_balances_recieved = 0;
-  for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_recieved += (client_processes[i].rpc_client->getbalance(0).amount - initial_balance_for_each_node);
-
-  BOOST_TEST_MESSAGE("Recieved " << total_balances_recieved << " in total");
-  BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
-#endif
   // get the total amount of data transferred
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -801,6 +917,11 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("-----------------------------------------------------");
   for (unsigned i = 0; i < rx_tx_bytes.size(); ++i)
     BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
+  uint32_t run_time_in_seconds = (test_end_time - test_start_time).count() / fc::seconds(1).count();
+  BOOST_TEST_MESSAGE("Test ran for " << run_time_in_seconds << " seconds");
+  BOOST_TEST_MESSAGE("Total number of transactions: " << total_number_of_transactions << ", presumably in about " << 
+                     (run_time_in_seconds / 30) << " blocks");
+  BOOST_TEST_MESSAGE("That's about " << (total_number_of_transactions / run_time_in_seconds) << " transactions per second");
 }
 
 BOOST_AUTO_TEST_CASE(fifty_node_test)
@@ -828,103 +949,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   // to retry before we start checking to see how they did
   fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
 
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> DirectedGraph;
-  DirectedGraph directed_graph;
-
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
-    for (const fc::variant& peer_info : peers_info)
-    {
-      fc::variant_object peer_info_object = peer_info.get_object();
-      if (peer_info_object["inbound"].as_bool())
-      {
-        uint16_t peer_p2p_port = fc::ip::endpoint::from_string(peer_info_object["addr"].as_string()).port();
-        boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, directed_graph);
-      }
-    }
-    BOOST_CHECK(peers_info.size() >= _desired_number_of_connections);
-    BOOST_CHECK(peers_info.size() <= _maximum_number_of_connections);
-  }
-
-  if (boost::num_vertices(directed_graph))
-  {
-    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UndirectedGraph;
-    typedef boost::exterior_vertex_property<UndirectedGraph, int> DistanceProperty;
-    typedef DistanceProperty::matrix_type DistanceMatrix;
-    typedef DistanceProperty::matrix_map_type DistanceMatrixMap;
-    typedef boost::graph_traits<UndirectedGraph>::edge_descriptor Edge;
-    typedef boost::constant_property_map<Edge, int> WeightMap;
-
-    UndirectedGraph undirected_graph;
-    boost::copy_graph(directed_graph, undirected_graph);
-
-    std::vector<int> component(boost::num_vertices(undirected_graph));
-    unsigned number_of_partitions = boost::connected_components(undirected_graph, &component[0]);
-    BOOST_CHECK(number_of_partitions == 1);
-    if (number_of_partitions != 1)
-    {
-      std::vector<std::vector<int> > nodes_by_component(number_of_partitions);
-      for (unsigned i = 0; i < component.size(); ++i)
-        nodes_by_component[component[i]].push_back(i);
-      BOOST_TEST_MESSAGE("Network is partitioned into " << number_of_partitions<< " disconnected groups");
-      for (unsigned i = 0; i < number_of_partitions; ++i)
-      {
-        std::ostringstream nodes;
-        for (unsigned j = 0; j < nodes_by_component[i].size(); ++j)
-          nodes << " " << nodes_by_component[i][j];
-        BOOST_TEST_MESSAGE("Partition " << i << ":" << nodes.str());
-      }
-    }
-
-    DistanceMatrix distances(boost::num_vertices(undirected_graph));
-    DistanceMatrixMap distance_map(distances, undirected_graph);
-    WeightMap weight_map(1);
-    boost::floyd_warshall_all_pairs_shortest_paths(undirected_graph, distance_map, boost::weight_map(weight_map));
-
-    uint32_t longest_path_source = 0;
-    uint32_t longest_path_destination = 0;
-    int longest_path_length = 0;
-    for (uint32_t i = 0; i < boost::num_vertices(undirected_graph); ++i)
-      for (uint32_t j = 0; j < boost::num_vertices(undirected_graph); ++j)
-      {
-        assert(distances[i][j] == distances[j][i]);
-        if (distances[i][j] > longest_path_length && distances[i][j] != std::numeric_limits<WeightMap::value_type>::max())
-        {
-          longest_path_length = distances[i][j];
-          longest_path_source = i;
-          longest_path_destination = j;
-        }
-      }
-
-    typedef boost::exterior_vertex_property<UndirectedGraph, int> EccentricityProperty;
-    typedef EccentricityProperty::container_type EccentricityContainer;
-    typedef EccentricityProperty::map_type EccentricityMap;
-    int radius, diameter;
-    EccentricityContainer eccentricity_container(boost::num_vertices(undirected_graph));
-    EccentricityMap eccentricity_map(eccentricity_container, undirected_graph);
-    boost::tie(radius, diameter) = boost::all_eccentricities(undirected_graph, distance_map, eccentricity_map);
-
-    // write out a graph for visualization
-    struct graph_property_writer
-    {
-      void operator()(std::ostream& out) const
-      {
-        out << "overlap = false;\n";
-        out << "splines = true;\n";
-        out << "node [shape = circle, fontname = Helvetica, fontsize = 10]\n";
-      }
-    };
-
-    fc::path dot_file_path = bts_xt_client_test_config::config_directory / "fifty_nodes.dot";
-    std::ofstream dot_file(dot_file_path.string());
-    dot_file << "// Graph radius is " << radius << ", diameter is " << diameter << "\n";
-    dot_file << "// Longest path is from " << longest_path_source << " to " << longest_path_destination << ", length " << longest_path_length << "\n";
-    dot_file << "//   node parameters: desired_connections: " << _desired_number_of_connections
-             << ", max connections: " << _maximum_number_of_connections << "\n";
-    boost::write_graphviz(dot_file, directed_graph, boost::default_writer(), boost::default_writer(), graph_property_writer());
-    dot_file.close();
-  } // end if num_vertices != 0
+  verify_network_connectivity(bts_xt_client_test_config::config_directory / "fifty_node_test");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -54,6 +54,8 @@ namespace bts { namespace client {
          void set_advanced_node_parameters(const fc::variant_object& params);
          void addnode(const fc::ip::endpoint& node, const std::string& command);
          void stop();
+         fc::time_point get_transaction_first_seen_time(const transaction_id_type& transaction_id);
+         fc::time_point get_block_first_seen_time(const block_id_type& block_id);
 
          void configure( const fc::path& configuration_directory );
 
@@ -67,4 +69,22 @@ namespace bts { namespace client {
 
     typedef std::shared_ptr<client> client_ptr;
 
+    /* Message broadcast on the network to notify all clients of some important information
+      (security vulnerability, new version, that sort of thing) */
+    class client_notification
+    {
+    public:
+      fc::time_point_sec         timestamp;
+      std::string                message;
+      fc::ecc::compact_signature signature;
+
+      //client_notification();
+      fc::sha256 digest() const;
+      void sign(const fc::ecc::private_key& key);
+      fc::ecc::public_key signee() const;
+    };
+    typedef std::shared_ptr<client_notification> client_notification_ptr;
+
 } } // bts::client
+
+FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
