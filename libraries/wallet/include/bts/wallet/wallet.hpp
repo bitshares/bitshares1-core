@@ -321,7 +321,7 @@ namespace wallet {
 
 namespace std {
   template <>
-  class hash<bts::wallet::receive_address>
+  struct hash<bts::wallet::receive_address>
   {
   public:
     size_t operator()(const bts::wallet::receive_address& a) const
