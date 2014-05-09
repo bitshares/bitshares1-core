@@ -343,7 +343,12 @@ namespace bts { namespace rpc {
           if (arguments.size() < required_argument_count)
             FC_THROW_EXCEPTION(exception, "too few arguments (expected at least ${count})", ("count", required_argument_count));
 
-          return method_data.method(arguments);
+          auto result = method_data.method(arguments);
+
+          if (method_data.prerequisites & rpc_server::wallet_unlocked)
+            _client->get_wallet()->save();
+
+          return result;
         }
 
         // This method invokes the function directly, called by the CLI intepreter.
@@ -1167,7 +1172,6 @@ Examples:
         rescan = true;
 
       _client->get_wallet()->import_key(key, label);
-      _client->get_wallet()->save();
 
       if (rescan)
           _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
@@ -1218,7 +1222,6 @@ As a json rpc call
         rescan = true;
 
       _client->get_wallet()->import_wif_key(wif, label);
-      _client->get_wallet()->save();
 
       if (rescan)
           _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
