@@ -545,7 +545,8 @@ namespace bts { namespace cli {
                     {
                         std::stringstream ss;
                         if (trx_state.trx.vote > 0) ss << "+" << _rpc_server->get_client()->get_chain()->lookup_delegate(trx_state.trx.vote)->name;
-                        else ss << "-" << _rpc_server->get_client()->get_chain()->lookup_delegate(-trx_state.trx.vote)->name;
+                        else if (trx_state.trx.vote < 0) ss << "-" << _rpc_server->get_client()->get_chain()->lookup_delegate(-trx_state.trx.vote)->name;
+                        else ss << " 0";
                         std::cout << std::setw( 14 ) << ss.str();
                     }
 

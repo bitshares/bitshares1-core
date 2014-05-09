@@ -37,18 +37,67 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
     bts::blockchain::trx_block b;
 
     /* Create initial delegates */
-    /* TODO: Load from Keyhotee Founder IDs and split into trxs of no more than invalid_output_num outputs */
-    signed_transaction dtrx;
-    dtrx.vote = 0;
-    for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
+    std::set<std::string> names;
+    signed_transaction ntrx;
+    uint32_t name_count = 0;
+    uint32_t name_output_count = 0;
+
+    /* Load names from genesis file */
+    for( auto itr = config.names.begin(); itr != config.names.end(); ++itr)
     {
-        auto name       = "delegate-"+fc::to_string( int64_t( i ) );
-        auto key_hash   = fc::sha256::hash( name.c_str(), name.size() );
-        auto key        = fc::ecc::private_key::regenerate(key_hash);
-        dtrx.outputs.push_back( trx_output( claim_name_output( name, std::string(), i, key.get_public_key(), key.get_public_key() ), asset() ) );
+        auto name = itr->first;
+        auto key = itr->second;
+        name_count++;
+
+        /* Make sure name is unique */
+        FC_ASSERT( names.count( name ) <= 0, "Duplicate name!" );
+        names.insert( name );
+
+        auto output = trx_output( claim_name_output( name, std::string(), name_count, key, key ), asset() );
+        ntrx.outputs.push_back( output );
+        name_output_count++;
+
+        /* If transaction has no room for more outputs, or no outputs are left */
+        if( name_output_count == trx_num::invalid_output_num
+            || itr == (config.names.end() - 1) )
+        {
+            b.trxs.emplace_back( ntrx );
+            ntrx.outputs.clear();
+
+            name_output_count = 0;
+
+            FC_ASSERT( b.trxs.size() != trx_num::invalid_trx_idx, "Too many transactions in genesis block!" );
+        }
     }
-    b.trxs.push_back( dtrx );
-    FC_ASSERT(b.trxs.size() != trx_num::invalid_trx_idx, "Too many transactions in genesis block!");
+
+    /* Create additional names if we don't have at least BTS_BLOCKCHAIN_NUM_DELEGATES */
+    name_output_count = 0;
+    for( auto i = name_count + 1; i <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
+    {
+        auto name = "delegate-"+fc::to_string( int64_t( i ) );
+        auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
+        auto key = fc::ecc::private_key::regenerate(key_hash);
+
+        /* Make sure name is unique */
+        FC_ASSERT( names.count( name ) <= 0, "Duplicate name!" );
+        names.insert( name );
+
+        auto output = trx_output( claim_name_output( name, std::string(), i, key.get_public_key(), key.get_public_key() ), asset() );
+        ntrx.outputs.push_back( output );
+        name_output_count++;
+
+        /* If transaction has no room for more outputs, or no outputs are left */
+        if( name_output_count == trx_num::invalid_output_num
+            || i == BTS_BLOCKCHAIN_NUM_DELEGATES )
+        {
+            b.trxs.emplace_back( ntrx );
+            ntrx.outputs.clear();
+
+            name_output_count = 0;
+
+            FC_ASSERT( b.trxs.size() != trx_num::invalid_trx_idx, "Too many transactions in genesis block!" );
+        }
+    }
 
     /* Scale balances for a total supply of BTS_BLOCKCHAIN_INITIAL_SHARES */
     double total_unscaled = 0;
@@ -118,9 +167,9 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
         trx_output_count++;
 
         /* If transaction has enough voting power, no room for more outputs, or no outputs are left */
-        if(trx_amount >= max_trx_amount
-           || trx_output_count == trx_num::invalid_output_num
-           || itr == (outputs.end() - 1))
+        if( trx_amount >= max_trx_amount
+            || trx_output_count == trx_num::invalid_output_num
+            || itr == (outputs.end() - 1) )
         {
             coinbase.vote = (trx_count % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
 

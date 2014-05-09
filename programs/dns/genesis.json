@@ -1,5 +1,8 @@
 {
+    "names": [
+        ["toast", "02e51e03b7930d000ec4a329ef2d0ea893dee760abd821f4e292f9de42b3a96c36"]
+    ],
     "balances": [
-        ["PuG6vaWRjgwF1qabsru3byjWF3wsAfCjPW", 1.0]
+        ["PuG6vaWRjgwF1qabsru3byjWF3wsAfCjPW", "1.0"]
     ]
 }
