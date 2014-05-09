@@ -139,7 +139,7 @@ struct claim_name_output
      *  A value of 0 means that this registration is to reserve the name only, and
      *  not for the purpose of being voted on to be a potential delegate.  
      *
-     *  A delegate by resign by updating their delegate_id to be 0 in which case
+     *  A delegate can resign by updating their delegate_id to be 0 in which case
      *  all clients who voted for this delegate must reallocate their votes 
      *
      *  If delegate_id is not 0 then a registration fee is required equal to the

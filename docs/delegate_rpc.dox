@@ -1,0 +1,76 @@
+/**
+@defgroup delegate_registration Delegate Registration
+@brief Registering names and block generation delegates in a bitshares blockchain
+
+# Delegate RPC commands
+
+Note: inline help is wrong for some of these. Also much of this is old and will probably change soon, as RPC calls have been simplified in latest design.
+
+@code
+vector<delegate_status> get_delegates(first,count): currently always returns first 100 delegates
+vector<name_record> get_names(first, count): returns the names that follow first name alphabetically (up to count)
+@endcode
+
+* trx_id register_delegate(name,profile): calls the implementation in the client that calls the implementation in the wallet with a zero deposit (the wallet  takes name, profile, and deposit). The wallet assigns a delegate id, generates a master key and an active key from the name, and then creates a transaction with this data (including the profile).
+* trx_id reserve_name(name,profile): similar to register delegate, but for non-delegates. In the new design, this call and register delegate call will be unified.
+
+## Ideas for API
+* Maybe change reserve_name to register_name to match the register_delegate method? It's confusing now, because it potentially implies it's reserving the name for later use as a delegate, but this doesn't work as currently designed, because different keys are generated. If we do plan to allow a name to be reserved for use as delegate, how is that going to work?
+* Need to implement API for resigning as a delegate.
+* Do we want a way to remove name registrations?
+
+@code
+name_record get_name_record(name): returns name_record for a single name
+@endcode
+
+## Blockchain data structures
+@code
+claim_name_output
+  name
+  profile (required to be in json format)
+  delegate_id
+  owner_key
+  active_key
+@endcode  
+
+## RPC data structures
+
+@code
+name_record (returned by get_name_record and get_names, and also as a subset of get_delegates)
+  delegate_id
+  name
+  data
+  owner_key
+  votes_for
+  votes_against
+  
+delegate_status : public blockchain::name_record (returned by get_delegates)
+  trust_state
+  blocks_produced
+  blocks_missed
+  transactions_included
+  transactions_excluded
+Note: Currently none of this is computed and delegate is untrused by default. Name record itself is initialized from blockchain's name_record.
+@endcode
+
+## Usage
+User can reserve a name along with his "profile" data in the blockchain. Name must follow rules defined by claim_name_output::is_valid_name. The profile data can be any valid jason code. The wallet generates a master key and an active key from this name. Then the client broadcasts this info as a transaction to the network. Currently there is no RPC support for using a custom key in the wallet. Name registrations all share the same "delegate_id" of 0 (meaning they won't be included in the delegate election process).
+
+The user can also deposit assets to the name. Multiple transactions can be made to increase the deposited amount. This transfers money from some of the users account to an escrow location. How does this money later get claimed by someone (including the original depositor)?
+
+Similar to registering a name, a user can register to be a delegate. This works the same as a regular name registration, with a few exceptions: 
+* the walletassigns a randomly generated (but unreserved) delegate_id. 
+* a different set of keys will be generated for the same name (because a different prefix is added to the name before key generation).
+
+Delegates can resign from the election process by issuing a delegate transaction with delegate_id of 0. How is this really done? We need to know that the person resigning is the delegate, which could mean signing some type of transaction with the active key for the delegate that is resigning.
+
+Examples of useful profile information for network topology concerns include location and ip address info.
+
+## Useful features
+Ability for delegates to directly connect as peers by accessing each other's profile data to get their ip addresses. Delegates might want to allow more peers than regular clients. Delegates that hook up to other delegates could be one figure of merit for them, although figuring out how to determine this could require some work, so probably we can code for it without enforcing it via voting.
+
+
+# Network Broadcast/Alert Messages
+Message sent by delegates to warn users of problems. The message is sent using the standard p2p network inventory system (same one used for transactions and blocks). Message is signed with delegate's key and clients will verify that the sender is a currently valid top100 delegate before propagating the message. We should also support a "developer key" that isn't required to be a delegate, in case of problems with the delegate election system itself. The message will be a simple string of some max size (say 1 block) that will be displayed in the wallet's GUI and a "priority level" to indicate the  relative importance of the message. GUIs can control the display of the message based on the priority level (for example, low priority messages can be put into a mailbox for perusal at the user's leisure). We could also potentially limit the amount of messages a particular delegate can send per hour.
+
+*/
