@@ -5,6 +5,7 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/net/node.hpp>
 
 #include <fc/network/ip.hpp>
 #include <fc/filesystem.hpp>
@@ -44,7 +45,11 @@ namespace bts { namespace rpc {
     bool closewallet();
     uint32_t getconnectioncount();
     fc::variants getpeerinfo();
+    fc::variant_object getinfo();
     void _set_advanced_node_parameters(const fc::variant_object& params);
+    bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+    bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+
     void addnode(const fc::ip::endpoint& node, const std::string& command);
     void stop();
   private:

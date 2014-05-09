@@ -412,19 +412,25 @@ namespace bts { namespace client {
     {
     }
 
-
-    fc::time_point client::get_transaction_first_seen_time(const transaction_id_type& transaction_id)
+    bts::net::message_propagation_data client::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
       if (my->_p2p_node)
-        return my->_p2p_node->get_transaction_first_seen_time(transaction_id);
-      return fc::time_point();
+        return my->_p2p_node->get_transaction_propagation_data(transaction_id);
+      FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
-    fc::time_point client::get_block_first_seen_time(const block_id_type& block_id)
+    bts::net::message_propagation_data client::get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
     {
       if (my->_p2p_node)
-        return my->_p2p_node->get_block_first_seen_time(block_id);
-      return fc::time_point();
+        return my->_p2p_node->get_block_propagation_data(block_id);
+      FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
+    }
+
+    fc::uint160_t client::get_node_id() const
+    {
+      if (my->_p2p_node)
+        return my->_p2p_node->get_node_id();      
+      return fc::uint160_t();
     }
 
     void client::set_advanced_node_parameters(const fc::variant_object& params)
