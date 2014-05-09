@@ -177,20 +177,35 @@ void print_banner()
 
 void configure_logging(const fc::path& data_dir)
 {
-   fc::file_appender::config ac;
-   ac.filename = data_dir / "log.txt";
-   ac.truncate = false;
-   ac.flush    = true;
-   fc::logging_config cfg;
-
-   cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
-
-   fc::logger_config dlc;
-   dlc.level = fc::log_level::debug;
-   dlc.name = "default";
-   dlc.appenders.push_back("default");
-   cfg.loggers.push_back(dlc);
-   fc::configure_logging( cfg );
+    fc::logging_config cfg;
+    
+    fc::file_appender::config ac;
+    ac.filename = data_dir / "log.txt";
+    ac.truncate = false;
+    ac.flush    = true;
+    
+    fc::file_appender::config ac_rpc;
+    ac_rpc.filename = data_dir / "rpc.log";
+    ac_rpc.truncate = false;
+    ac_rpc.flush    = true;
+    
+    cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
+    cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+    
+    fc::logger_config dlc;
+    dlc.level = fc::log_level::debug;
+    dlc.name = "default";
+    dlc.appenders.push_back("default");
+    
+    fc::logger_config dlc_rpc;
+    dlc_rpc.level = fc::log_level::debug;
+    dlc_rpc.name = "rpc";
+    dlc_rpc.appenders.push_back("rpc");
+    
+    cfg.loggers.push_back(dlc);
+    cfg.loggers.push_back(dlc_rpc);
+    
+    fc::configure_logging( cfg );
 }
 
 
