@@ -1,4 +1,5 @@
 #pragma once
+#include <bts/blockchain/pts_address.hpp>
 #include <fc/array.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <string>
@@ -27,6 +28,7 @@ namespace bts { namespace blockchain {
        address( const std::string& base58str );   ///< converts to binary, validates checksum
        address( const fc::ecc::public_key& pub ); ///< converts to binary
        address( const fc::ecc::public_key_data& pub ); ///< converts to binary
+       address( const pts_address& pub ); ///< converts to binary
 
        static bool is_valid(const std::string& base58str );
        operator    std::string()const; ///< converts to base58 + checksum
