@@ -24,7 +24,7 @@ struct fork_state
   bool valid()     { is_valid  && *is_valid;  }
   bool can_link()  { is_linked && !invalid()  }
 
-fork_db          => block_num to  fork_state 
+fork_db          => block_id to  fork_state 
    - track the information required to track the status of various forks
 
 
