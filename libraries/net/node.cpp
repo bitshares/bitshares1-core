@@ -162,18 +162,18 @@ namespace bts { namespace net {
         uint32_t          block_clock_when_received;
 
         // for network performance stats
-        fc::time_point    first_seen_time;
+        message_propagation_data propagation_data;
         fc::uint160_t     message_contents_hash; // hash of whatever the message contains (if it's a transaction, this is the transaction id, if it's a block, it's the block_id)
 
         message_info(const message_hash_type& message_hash,
                      const message&           message_body,
                      uint32_t                 block_clock_when_received,
-                     fc::time_point           message_receive_time,
+                     const message_propagation_data& propagation_data,
                      fc::uint160_t            message_contents_hash) :
           message_hash(message_hash),
           message_body(message_body),
           block_clock_when_received(block_clock_when_received),
-          first_seen_time(message_receive_time),
+          propagation_data(propagation_data),
           message_contents_hash(message_contents_hash)
         {}
       };
@@ -193,9 +193,9 @@ namespace bts { namespace net {
       {}
       void block_accepted();
       void cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
-                         fc::time_point message_receive_time, const fc::uint160_t& message_content_hash);
+                         const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash);
       message get_message(const message_hash_type& hash_of_message_to_lookup);
-      fc::time_point get_message_first_seen_time(const fc::uint160_t& hash_of_message_contents_to_lookup) const;
+      message_propagation_data get_message_propagation_data(const fc::uint160_t& hash_of_message_contents_to_lookup) const;
       size_t size() const { return _message_cache.size(); }
     };
 
@@ -207,9 +207,9 @@ namespace bts { namespace net {
                                                       _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
     }
 
-    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, fc::time_point message_receive_time, const fc::uint160_t& message_content_hash)
+    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash)
     {
-      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock, message_receive_time, message_content_hash));
+      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock, propagation_data, message_content_hash));
     }
 
     message blockchain_tied_message_cache::get_message(const message_hash_type& hash_of_message_to_lookup)
@@ -219,13 +219,13 @@ namespace bts { namespace net {
         return iter->message_body;
       FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
     }
-    fc::time_point blockchain_tied_message_cache::get_message_first_seen_time(const fc::uint160_t& hash_of_message_contents_to_lookup) const
+    message_propagation_data blockchain_tied_message_cache::get_message_propagation_data(const fc::uint160_t& hash_of_message_contents_to_lookup) const
     {
       if (hash_of_message_contents_to_lookup != fc::uint160_t())
       {
         message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup);
         if (iter != _message_cache.get<message_contents_hash_index>().end())
-          return iter->first_seen_time;
+          return iter->propagation_data;
       }
       FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
     }
@@ -382,12 +382,14 @@ namespace bts { namespace net {
       void listen_on_port(uint16_t port);
       std::vector<peer_status> get_connected_peers() const;
       uint32_t get_connection_count() const;
-      void broadcast(const message& item_to_broadcast, fc::time_point mesage_receive_time = fc::time_point::now());
+      void broadcast(const message& item_to_broadcast, const message_propagation_data& propagation_data);
+      void broadcast(const message& item_to_broadcast);
       void sync_from(const item_id&);
       bool is_connected() const;
       void set_advanced_node_parameters(const fc::variant_object& params);
-      fc::time_point get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id);
-      fc::time_point get_block_first_seen_time(const bts::blockchain::block_id_type& block_id);
+      message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+      message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+      fc::uint160_t get_node_id() const;
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -1526,11 +1528,12 @@ namespace bts { namespace net {
           // block through the sync mechanism.  Further, we must request both blocks because 
           // we don't know they're the same (for the peer in normal operation, it has only told us the
           // message id, for the peer in the sync case we only known the block_id).
+          fc::time_point message_validated_time;
           if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
                         block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
           {
             _delegate->handle_message(block_message_to_process);
-
+            message_validated_time = fc::time_point::now();
             // TODO: only record it as accepted if it has a valid signature.
             _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
           }
@@ -1552,7 +1555,8 @@ namespace bts { namespace net {
               peer->inventory_advertised_to_peer.insert(block_message_item_id);
             }
           }
-          broadcast(message_to_process, message_receive_time);
+          message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
+          broadcast(message_to_process, propagation_data);
           _message_cache.block_accepted();
         }
         catch (fc::exception&)
@@ -1592,9 +1596,11 @@ namespace bts { namespace net {
         trigger_fetch_items_loop();
 
         // Next: have the delegate process the message
+        fc::time_point message_validated_time;
         try
         {
           _delegate->handle_message(message_to_process);
+          message_validated_time = fc::time_point::now();
         }
         catch (fc::exception& e)
         {
@@ -1603,7 +1609,8 @@ namespace bts { namespace net {
         }
 
         // finally, if the delegate validated the message, broadcast it to our other peers
-        broadcast(message_to_process, message_receive_time);
+        message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
+        broadcast(message_to_process, propagation_data);
       }
     }
 
@@ -1908,7 +1915,7 @@ namespace bts { namespace net {
       return _active_connections.size();
     }
 
-    void node_impl::broadcast(const message& item_to_broadcast, fc::time_point message_receive_time)
+    void node_impl::broadcast(const message& item_to_broadcast, const message_propagation_data& propagation_data)
     {
       fc::uint160_t hash_of_message_contents;
       if (item_to_broadcast.msg_type == bts::client::block_message_type)
@@ -1924,10 +1931,17 @@ namespace bts { namespace net {
       }
       message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
 
-      _message_cache.cache_message(item_to_broadcast, hash_of_item_to_broadcast, message_receive_time, hash_of_message_contents);
+      _message_cache.cache_message(item_to_broadcast, hash_of_item_to_broadcast, propagation_data, hash_of_message_contents);
       _new_inventory.insert(item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast));
       trigger_advertise_inventory_loop();
       dump_node_status();
+    }
+
+    void node_impl::broadcast(const message& item_to_broadcast)
+    {
+      // this version is called directly from the clien
+      message_propagation_data propagation_data{fc::time_point::now(), fc::time_point::now(), _node_id};
+      broadcast(item_to_broadcast, propagation_data);
     }
 
     void node_impl::sync_from(const item_id& last_item_id_seen)
@@ -1951,14 +1965,19 @@ namespace bts { namespace net {
         _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
     }
 
-    fc::time_point node_impl::get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id)
+    message_propagation_data node_impl::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
-      return _message_cache.get_message_first_seen_time(transaction_id);
+      return _message_cache.get_message_propagation_data(transaction_id);
     }
 
-    fc::time_point node_impl::get_block_first_seen_time(const bts::blockchain::block_id_type& block_id)
+    message_propagation_data node_impl::get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
     {
-      return _message_cache.get_message_first_seen_time(block_id);
+      return _message_cache.get_message_propagation_data(block_id);
+    }
+
+    fc::uint160_t node_impl::get_node_id() const
+    {
+      return _node_id;
     }
 
   }  // end namespace detail
@@ -2042,14 +2061,17 @@ namespace bts { namespace net {
     my->set_advanced_node_parameters(params);
   }
 
-  fc::time_point node::get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id)
+  message_propagation_data node::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
   {
-    return my->get_transaction_first_seen_time(transaction_id);
+    return my->get_transaction_propagation_data(transaction_id);
   }
-
-  fc::time_point node::get_block_first_seen_time(const bts::blockchain::block_id_type& block_id)
+  message_propagation_data node::get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
   {
-    return my->get_block_first_seen_time(block_id);
+    return my->get_block_propagation_data(block_id);
+  }
+  fc::uint160_t node::get_node_id() const
+  {
+    return my->get_node_id();
   }
 
 } } // end namespace bts::net

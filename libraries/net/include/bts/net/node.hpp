@@ -9,6 +9,15 @@ namespace bts { namespace net {
 
    namespace detail { class node_impl; }
 
+  // during network development, we need to track message propagation across the network
+  // using a structure like this:
+  struct message_propagation_data
+  {
+    fc::time_point received_time;
+    fc::time_point validated_time;
+    fc::uint160_t originating_peer;
+  };
+
    /**
     *  @class node_delegate
     *  @brief used by node reports status to client or fetch data from client
@@ -143,8 +152,9 @@ namespace bts { namespace net {
         bool      is_connected()const;
 
         void set_advanced_node_parameters(const fc::variant_object& params);
-        fc::time_point get_transaction_first_seen_time(const bts::blockchain::transaction_id_type& transaction_id);
-        fc::time_point get_block_first_seen_time(const bts::blockchain::block_id_type& block_id);
+        message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+        message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+        fc::uint160_t get_node_id() const;
       private:
         std::unique_ptr<detail::node_impl> my;
    };
@@ -152,3 +162,5 @@ namespace bts { namespace net {
    typedef std::shared_ptr<node> node_ptr;
 
 } } // bts::net
+
+FC_REFLECT(bts::net::message_propagation_data, (received_time)(validated_time)(originating_peer));
