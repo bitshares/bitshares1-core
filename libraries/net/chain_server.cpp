@@ -28,7 +28,7 @@ namespace bts { namespace net {
 
 /**
  *  For now, when creating a genesis block we initialize the genesis block to register
- *  and vote evenly for the top BTS_BLOCKCHAIN_DELEGATES delegates.
+ *  and vote evenly for the top BTS_BLOCKCHAIN_NUM_DELEGATES delegates.
  */
 bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
 { try {
@@ -40,7 +40,7 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
     /* TODO: Load from Keyhotee Founder IDs and split into trxs of no more than invalid_output_num outputs */
     signed_transaction dtrx;
     dtrx.vote = 0;
-    for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
+    for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
     {
         auto name       = "delegate-"+fc::to_string( int64_t( i ) );
         auto key_hash   = fc::sha256::hash( name.c_str(), name.size() );
@@ -70,8 +70,8 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
      * spending it will put some delegate at 2% of the votes.
      * Here we limit them to 1/10%, which makes for easier testing (we
      * can crank it back up closer to 1% later). */
-    const uint64_t tenth_percent = total / 1000;
-    ilog( "tenth of a percent of share supply: ${one}", ("one",tenth_percent) );
+    const uint64_t max_trx_amount = total / 1000;
+    ilog( "max shares per trx: ${m}", ("m",max_trx_amount) );
 
     /* Split up balances into outputs */
     std::vector<trx_output> outputs;
@@ -85,10 +85,10 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
         while( addr_balance > 0 )
         {
             uint64_t output_amount;
-            if( trx_amount + addr_balance < tenth_percent )
+            if( trx_amount + addr_balance < max_trx_amount )
                 output_amount = addr_balance;
             else
-                output_amount = tenth_percent - trx_amount;
+                output_amount = max_trx_amount - trx_amount;
 
             /* Force unique outputs to ensure unique transactions */
             while( output_amounts[addr].count( output_amount ) > 0 )
@@ -98,7 +98,7 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
             outputs.push_back( trx_output( claim_by_pts_output( addr ), asset( output_amount ) ) );
             addr_balance -= output_amount;
             trx_amount += output_amount;
-            trx_amount %= tenth_percent;
+            trx_amount %= max_trx_amount;
         }
     }
 
@@ -118,11 +118,11 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
         trx_output_count++;
 
         /* If transaction has enough voting power, no room for more outputs, or no outputs are left */
-        if(trx_amount >= tenth_percent
+        if(trx_amount >= max_trx_amount
            || trx_output_count == trx_num::invalid_output_num
            || itr == (outputs.end() - 1))
         {
-            coinbase.vote = (trx_count % BTS_BLOCKCHAIN_DELEGATES) + 1;
+            coinbase.vote = (trx_count % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
 
             /* Make sure transaction is unique */
             auto trx_id = coinbase.id();

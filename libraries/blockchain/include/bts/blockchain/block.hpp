@@ -26,10 +26,10 @@ namespace bts { namespace blockchain {
        static uint64_t      calculate_next_reward( uint64_t prev_reward, uint64_t block_fee );
        static uint64_t      min_fee();
 
-       /** block_header#next_fee is specified in units of .001 shares, so the
-        * fee per byte is next_fee / 1000
+       /** block_header#next_fee is specified in units of millishares, so the
+        *  fee per byte is next_fee / 1000
         */
-       int64_t              get_next_fee()const { return next_fee / 1000; }
+       int64_t              get_next_fee()const { return next_fee / BTS_BLOCKCHAIN_FEE_RATE_FACTOR; }
 
        uint8_t              version;
        uint32_t             block_num;

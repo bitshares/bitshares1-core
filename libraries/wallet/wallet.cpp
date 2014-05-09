@@ -1189,10 +1189,10 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size())/1000 )
+                if( s.eval.fees < BTS_BLOCKCHAIN_CALCULATE_FEE( in_trxs[i].size(), get_fee_rate() ) )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
-                        ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
+                        ("trx",in_trxs[i])("s",s.eval)("f", BTS_BLOCKCHAIN_CALCULATE_FEE( in_trxs[i].size(), get_fee_rate() ) ) );
                   continue;
                 }
                 s.trx_idx = i;
@@ -1293,7 +1293,7 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx,
         /* Calculate fee required for signed transaction */
         trx.sigs.clear();
         sign_transaction(trx, required_signatures, false);
-        auto fee = (get_fee_rate() * trx.size())/1000;
+        auto fee = BTS_BLOCKCHAIN_CALCULATE_FEE( trx.size(), get_fee_rate() );
         ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte",
              ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 

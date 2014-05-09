@@ -47,7 +47,7 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_DELEGATES                    (100)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                (100)
 
 /**
  * A BIP is one 1/2^15 of the share supply at any given time.
@@ -66,6 +66,16 @@
 #define BTS_BLOCKCHAIN_MIN_FEE                      1
 
 /**
+ *  Calculate fee in millishares per byte so that there is enough precision for the fee adjustment
+ *  algorithm to operate when the BTS_BLOCKCHAIN_MIN_FEE is 1 share per byte.
+ *
+ *  @param size Size in bytes
+ *  @param rate Shares per byte
+ */
+#define BTS_BLOCKCHAIN_FEE_RATE_FACTOR              1000
+#define BTS_BLOCKCHAIN_CALCULATE_FEE( size, rate )  ((size * rate)/BTS_BLOCKCHAIN_FEE_RATE_FACTOR)
+
+/**
  *  the minimum mining reward paid to delegates, may result in some inflation
  *  if there is no transaction volume.  So long as there are atleast 2KB of
  *  transactions per block then there will be no inflation.
@@ -78,7 +88,8 @@
  *  delegate that is elected and produces blocks for 10 days can break even.  Any delegate that cannot
  *  perform reliably for 10 days should lose money.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE    (BTS_BLOCKCHAIN_MIN_FEE*BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_DELEGATES )
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE    (BTS_BLOCKCHAIN_MIN_FEE*BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE\
+                                                     *BTS_BLOCKCHAIN_BLOCKS_PER_DAY/BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**
  * If defined, this disables the requirement that a valid transaction must not
