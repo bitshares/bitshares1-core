@@ -1,0 +1,66 @@
+Every wallet stores data encrypted in a level_db database  
+  - index -1 is reserved for the master private key
+  - index -2 -> -200 million are reserved for non-hiearchial keys
+  - the first 100 million records are reserved for contact ids
+  - the second 100 million records are reserved for name ids
+  - the third 100 million records are reserved for asset ids
+  - the forth 100 million records are reserved for transaction ids
+
+Every wallet has access to various items in the blockchain
+  - assets issued by this wallet 
+  - balances controlled by this wallet
+  - names registered to this wallet
+  - transactions involving private keys known to this wallet 
+
+Every wallet mantains a set of 'contacts' 
+  - a contact is someone with whom that wallet sends or receives transactions
+  - keys for contacts are generated using a hierarchial deterministic wallet
+  - tracks the hierarchial key indexes for sending/receiving from this contact
+   
+
+
+The user workflow is as follows:
+
+   UserA 
+      create_wallet 
+      userb_record = create_contact( "UserB" )
+      send UserB userb_record.extended_recv_key
+      recv extended_recv_key from UserB
+      set_contact_extended_send_key( userb_ext_key );
+
+      send_to_contact( "UserB", "ammount" );
+
+
+on receive block:
+   does it extend the current head ?
+      attempt to push it....
+          if it fails discard it.
+   are there missing blocks in the recent history (past 100 blocks)
+      is this block one of those missing blocks?
+          start a new fork and cache incase the fork grows
+      does this block build off of one of the forks?
+          cache and note fork length.
+          if fork length > current head 
+             pop blocks back to fork origin
+             apply blocks forward
+                if applied block fails, discard blocks that build upon it
+                   revert back to the original fork.
+   if any block fails to apply note the delegate that signed it and flag their record 
+   if any delegate signs two blocks for the same timeslot create a transaction to fire them
+
+
+every BLOCK_INTERVAL
+   check to see if we should produce this block..
+      if so produce it... and broadcast it
+
+on receive transaction
+   put into pending trx queue in chain_database
+
+on push block... 
+   if timestamp is 'now' then check all pending transactions more than BLOCK_INTERVAL/2 old that were not included in the block... and note in the delegates record.
+      note how many transactions were included that were not in your pending queue... 
+      delegate stats should be kept in the chain database
+
+
+
+

@@ -28,11 +28,11 @@ namespace bts { namespace client {
       static const message_type_enum type;
 
       block_message(){}
-      block_message( const blockchain::block_id_type& id, const bts::blockchain::trx_block& blk, const fc::ecc::compact_signature& s )
+      block_message( const blockchain::block_id_type& id, const bts::blockchain::full_block& blk, const fc::ecc::compact_signature& s )
       :block_id(id),block(blk),signature(s){}
 
       blockchain::block_id_type  block_id;
-      bts::blockchain::trx_block block;
+      bts::blockchain::full_block block;
       fc::ecc::compact_signature signature;
    };
 

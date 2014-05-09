@@ -4,9 +4,6 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION 1
-#define BTS_TRANSACTION_VERSION                     1
-#define BTS_NET_PROTOCOL_VERSION                    1
-#define BTS_WALLET_VERSION                          1
 
 /**
  *  The address prepended to string representation of
@@ -59,7 +56,7 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                 (10)
+#define BTS_BLOCKCHAIN_DELEGATES                 (10)
 
 /**
  * A BIP is one 1/2^15 of the share supply at any given time.  
@@ -76,16 +73,6 @@
  *  defines the min fee in milli-shares per byte
  */
 #define BTS_BLOCKCHAIN_MIN_FEE                   1000 
-/**
- *  Calculate fee in millishares per byte so that there is enough precision for the fee adjustment
- *  algorithm to operate when the BTS_BLOCKCHAIN_MIN_FEE is 1 share per byte.
- *
- *  @param size Size in bytes
- *  @param rate Shares per byte
- * 
- */
-#define BTS_BLOCKCHAIN_FEE_RATE_FACTOR              1000
-#define BTS_BLOCKCHAIN_CALCULATE_FEE( size, rate )  ((size * rate)/BTS_BLOCKCHAIN_FEE_RATE_FACTOR)
 
 /**
  *  the minimum mining reward paid to delegates, may result in some inflation 
@@ -100,7 +87,7 @@
  *  delegate that is elected and produces blocks for 10 days can break even.  Any delegate that cannot
  *  perform reliably for 10 days should lose money.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_NUM_DELEGATES )
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_DELEGATES )
 
 /**
  *  Defines the fee required to register a asset, this fee is set to discourage anyone from registering all of the symbols and is equal to the fee of all

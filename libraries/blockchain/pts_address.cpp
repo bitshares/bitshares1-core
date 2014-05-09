@@ -6,7 +6,6 @@
 #include <fc/exception/exception.hpp>
 
 #include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/small_hash.hpp>
 
 namespace bts { namespace blockchain {
    pts_address::pts_address()

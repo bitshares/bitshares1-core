@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bts/blockchain/config.hpp>
+#include <bts/net/net_config.hpp>
 
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/network/ip.hpp>
