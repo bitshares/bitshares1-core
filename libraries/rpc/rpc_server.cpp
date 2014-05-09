@@ -1173,9 +1173,8 @@ Examples:
      )" };
     fc::variant rpc_server_impl::import_wallet(const fc::variants& params)
     {
-      auto arguments       = params[0].as<std::pair<fc::path, std::string>>();
-      auto wallet_dat      = arguments.first;
-      auto wallet_password = arguments.second;
+      auto wallet_dat      = params[0].as<fc::path>();
+      auto wallet_password = params[1].as<std::string>();
       _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
       return fc::variant(true);
     }
