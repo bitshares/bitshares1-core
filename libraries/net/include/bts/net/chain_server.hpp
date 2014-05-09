@@ -19,14 +19,14 @@ namespace bts { namespace net {
 
   struct genesis_block_config
   {
-     genesis_block_config():supply(0) {}
+     genesis_block_config() {}
 
-     double                                                         supply;
-     std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
+     std::vector<std::pair<std::string, fc::ecc::public_key_data>>  names;
+     std::vector<std::pair<bts::blockchain::pts_address, double>>   balances;
   };
 } } // bts::net
 
-FC_REFLECT( bts::net::genesis_block_config, (supply)(balances) )
+FC_REFLECT( bts::net::genesis_block_config, (names)(balances) )
 
 namespace bts { namespace net {
 

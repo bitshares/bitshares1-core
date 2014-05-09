@@ -412,7 +412,7 @@ void bts_client_launcher_fixture::establish_rpc_connections()
 void bts_client_launcher_fixture::trigger_network_connections()
 {
   BOOST_TEST_MESSAGE("Triggering network connections between active processes");
-    
+
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     if (bts_xt_client_test_config::test_client_server)
@@ -990,7 +990,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
     uint32_t transactions_in_this_block = 0;
     for (unsigned process = 0; process < client_processes.size(); ++process)
     {
-      for (int transfer = 0; ; ++transfer)
+      for (unsigned transfer = 0; ; ++transfer)
       {
         try
         {
@@ -1041,7 +1041,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
     BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
   uint32_t run_time_in_seconds = (test_end_time - test_start_time).count() / fc::seconds(1).count();
   BOOST_TEST_MESSAGE("Test ran for " << run_time_in_seconds << " seconds");
-  BOOST_TEST_MESSAGE("Total number of transactions: " << total_number_of_transactions << ", presumably in about " << 
+  BOOST_TEST_MESSAGE("Total number of transactions: " << total_number_of_transactions << ", presumably in about " <<
                      (run_time_in_seconds / 30) << " blocks");
   BOOST_TEST_MESSAGE("That's about " << (total_number_of_transactions / run_time_in_seconds) << " transactions per second");
 }

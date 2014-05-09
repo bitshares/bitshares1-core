@@ -56,11 +56,11 @@ namespace bts { namespace blockchain  {
 
   /**
    *  The min fee is specified in shares, but for the purposes of the block header there is
-   *  higher percision.
+   *  higher precision.
    */
   uint64_t block_header::min_fee()
   {
-     return BTS_BLOCKCHAIN_MIN_FEE * 1000;
+     return BTS_BLOCKCHAIN_MIN_FEE * BTS_BLOCKCHAIN_FEE_RATE_FACTOR;
   }
 
   uint64_t block_header::calculate_next_fee( uint64_t prev_fee, uint64_t block_size )

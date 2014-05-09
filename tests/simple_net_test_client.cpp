@@ -25,9 +25,9 @@ using namespace bts::blockchain;
 using namespace bts::net;
 using namespace bts::client;
 
-// Generate a fake starting block.  
-// This block has all elements default-initialized, except for the block 
-// number which is 1.  (chosen because we'll consider a signature valid if 
+// Generate a fake starting block.
+// This block has all elements default-initialized, except for the block
+// number which is 1.  (chosen because we'll consider a signature valid if
 // it is equal to the block number, and we treat a signature of 0 to mean
 // no signature.
 block_message generate_fake_genesis_block()
@@ -44,7 +44,7 @@ block_message generate_fake_genesis_block()
 using namespace boost::multi_index;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-class blockchain_tied_message_cache 
+class blockchain_tied_message_cache
 {
    private:
      static const uint32_t cache_duration_in_blocks = 2;
@@ -82,7 +82,7 @@ void blockchain_tied_message_cache::block_accepted()
 {
   ++block_clock;
   if (block_clock > cache_duration_in_blocks)
-    _message_cache.get<block_clock_index>().erase(_message_cache.get<block_clock_index>().begin(), 
+    _message_cache.get<block_clock_index>().erase(_message_cache.get<block_clock_index>().begin(),
                                                  _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
 }
 
@@ -109,7 +109,7 @@ class simple_net_test_miner : public bts::net::node_delegate
 
      // blockchain is a series of block_messages
      struct block_hash_index{};
-     typedef boost::multi_index_container<block_message, indexed_by<random_access<>, 
+     typedef boost::multi_index_container<block_message, indexed_by<random_access<>,
                                                                     ordered_unique<tag<block_hash_index>, member<block_message, block_id_type, &block_message::block_id> > > > ordered_blockchain_container;
      ordered_blockchain_container _blockchain;
 
@@ -128,7 +128,7 @@ class simple_net_test_miner : public bts::net::node_delegate
        transaction_id_type                 transaction_id;
        uint32_t                            chain_length_when_received;
      };
-     typedef boost::multi_index_container<transaction_with_timestamp, indexed_by<ordered_unique<tag<transaction_hash_index>, member<transaction_with_timestamp, transaction_id_type, &transaction_with_timestamp::transaction_id> >, 
+     typedef boost::multi_index_container<transaction_with_timestamp, indexed_by<ordered_unique<tag<transaction_hash_index>, member<transaction_with_timestamp, transaction_id_type, &transaction_with_timestamp::transaction_id> >,
                                                                                  ordered_non_unique<tag<chain_length_index>, member<transaction_with_timestamp, uint32_t, &transaction_with_timestamp::chain_length_when_received> > > > transaction_container;
      transaction_container _transactions;
 
@@ -153,16 +153,16 @@ class simple_net_test_miner : public bts::net::node_delegate
      void set_config_dir(const std::string& config_dir);
      void connect_to(fc::ip::endpoint remote_endpoint);
      void start();
-     void generate_signed_block();    
+     void generate_signed_block();
      void run();
 
      /* Implement node_delegate */
      bool has_item(const item_id& id) override;
      void handle_message(const message&) override;
-     std::vector<item_hash_t> get_item_ids(const item_id& from_id, 
+     std::vector<item_hash_t> get_item_ids(const item_id& from_id,
                                            uint32_t& remaining_item_count,
                                            uint32_t limit = 2000) override;
-     message get_item(const item_id& id) override; 
+     message get_item(const item_id& id) override;
      void sync_status(uint32_t item_type, uint32_t item_count) override;
      void connection_count_changed(uint32_t c) override;
 };
@@ -189,12 +189,12 @@ void simple_net_test_miner::set_config_dir(const std::string& config_dir)
 
 void simple_net_test_miner::start()
 {
-  assert(!_blockchain.empty());
+  FC_ASSERT(!_blockchain.empty());
   _synchronized = false;
 
   if (!fc::exists(_config_dir))
     fc::create_directories(_config_dir);
-  
+
   fc::file_appender::config appender_config;
   appender_config.filename = _config_dir / "log.txt";
   appender_config.truncate = false;
@@ -249,18 +249,18 @@ void simple_net_test_miner::run()
 void simple_net_test_miner::push_valid_signed_block(const block_message& block_to_push)
 {
   auto push_result = _blockchain.push_back(block_to_push);
-  assert(push_result.second); // assert that insert succeeded
+  FC_ASSERT(push_result.second); // assert that insert succeeded
 
   // any unsigned blocks we have are garbage
   _unsigned_blocks.clear();
 
   // prune list of cached messages
   _message_cache.block_accepted();
-  
+
   // prune list of uncommitted _transactions
   unsigned cached_transaction_duration_in_blocks = 2;
   if (_blockchain.size() > cached_transaction_duration_in_blocks)
-    _transactions.get<chain_length_index>().erase(_transactions.get<chain_length_index>().begin(), 
+    _transactions.get<chain_length_index>().erase(_transactions.get<chain_length_index>().begin(),
                                                   _transactions.get<chain_length_index>().lower_bound(_blockchain.size() - cached_transaction_duration_in_blocks));
 
   if (!_synchronized)
@@ -275,14 +275,14 @@ void simple_net_test_miner::push_valid_signed_block(const block_message& block_t
 
 bool simple_net_test_miner::is_block_valid(const block_message& block_to_check)
 {
-  assert(!_blockchain.empty()); // we should always start with the genesis block
+  FC_ASSERT(!_blockchain.empty()); // we should always start with the genesis block
   if (_blockchain.empty())
-    return true; // no way of knowing 
-  block_to_check.block.prev;
+    return true; // no way of knowing
+  //block_to_check.block.prev;
   ordered_blockchain_container::index<block_hash_index>::type::iterator iter = _blockchain.get<block_hash_index>().find(block_to_check.block.prev);
   if (iter != _blockchain.get<block_hash_index>().end())
     return true;
-  wlog("Got invalid block ${block}.  It's prev hash is ${prev} so I'm calling it invalid", 
+  wlog("Got invalid block ${block}.  It's prev hash is ${prev} so I'm calling it invalid",
        ("block",block_to_check.block_id)("prev",block_to_check.block.prev));
   wlog("Last block on the block chain is ${id}",("id", _blockchain.back().block_id));
   return false;
@@ -292,7 +292,7 @@ void simple_net_test_miner::store_transaction(const trx_message& transaction_to_
 {
   transaction_with_timestamp transaction_info;
   transaction_info.transaction = transaction_to_store.trx;
-  transaction_info.transaction_id = transaction_to_store.trx.id(); 
+  transaction_info.transaction_id = transaction_to_store.trx.id();
   transaction_info.chain_length_when_received = _blockchain.size();
   _transactions.insert(transaction_info);
 }
@@ -366,7 +366,7 @@ void simple_net_test_miner::handle_message(const message& message_to_handle)
   _message_cache.cache_message(message_to_handle, message_to_handle.id());
 }
 
-std::vector<item_hash_t> simple_net_test_miner::get_item_ids(const item_id& from_id, 
+std::vector<item_hash_t> simple_net_test_miner::get_item_ids(const item_id& from_id,
                                                              uint32_t& remaining_item_count,
                                                              uint32_t limit)
 {
@@ -394,7 +394,7 @@ std::vector<item_hash_t> simple_net_test_miner::get_item_ids(const item_id& from
   return hashes_to_return;
 }
 
-message simple_net_test_miner::get_item(const item_id& id) 
+message simple_net_test_miner::get_item(const item_id& id)
 {
   try
   {
@@ -406,7 +406,7 @@ message simple_net_test_miner::get_item(const item_id& id)
   catch (const fc::key_not_found_exception&)
   {
     // not in our cache.  Either it has already expired from our cache, or
-    // it's a request for an actual block during synchronization.  
+    // it's a request for an actual block during synchronization.
   }
 
   if (id.item_type == block_message_type)

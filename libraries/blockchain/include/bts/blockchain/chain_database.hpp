@@ -91,12 +91,12 @@ namespace bts {
            *
            *  @return the top *count* delegates by vote, sorted in descending order.
            */
-          std::vector<name_record>      get_delegates( uint32_t count = 100 );
+          std::vector<name_record>      get_delegates( uint32_t count = BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           /**
            * Returns up to count names after first when sorted alphabetically
            */
-          std::vector<name_record>      get_names( const std::string& first, uint32_t count = 100 );
+          std::vector<name_record>      get_names( const std::string& first, uint32_t count = BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           //@{
           /**
