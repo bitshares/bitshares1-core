@@ -2,6 +2,8 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/db/level_map.hpp>
 #include <fc/crypto/aes.hpp>
+#include <fc/crypto/base58.hpp>
+#include <bts/import_bitcoin_wallet.hpp>
 
 #include <iostream>
 
@@ -28,6 +30,9 @@ namespace bts { namespace wallet {
             wallet* self;
 
             asset _current_fee;
+
+            bool           _is_open;
+            fc::time_point _relock_time;
 
             /** meta_record_property_enum is the key */
             std::unordered_map<int,wallet_meta_record>                          _meta;
@@ -60,6 +65,14 @@ namespace bts { namespace wallet {
 
             /** caches all addresses and where in the hierarchial tree they can be found */
             std::unordered_map<address, hkey_index>                             _receive_keys;
+
+            std::string get_address_label( const hkey_index& idx )
+            {
+               auto contact_itr = _contacts.find( idx.contact_num );
+               if( contact_itr != _contacts.end() )
+                  return contact_itr->second.name;
+               return std::string();
+            }
 
             /** used when hkey_index == (X,Y,-N) to lookup foreign private keys, where
              * N is the key into _extra_receive_keys
@@ -568,7 +581,7 @@ namespace bts { namespace wallet {
          my->initialize_wallet();
       }
       my->_current_fee = my->get_default_fee();
-
+      my->_is_open = true;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
    void wallet::lock()
@@ -581,15 +594,27 @@ namespace bts { namespace wallet {
       return my->_wallet_password != fc::sha512();
    }
 
-   void wallet::close()
+   bool wallet::close()
    { try {
+      if( !my->_is_open ) return false;
       my->_wallet_db.close();
+      my->_is_open = false;
+      return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::unlock( const std::string& password )
+   bool wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
+      FC_ASSERT( is_open() );
       FC_ASSERT( password.size() > 0 );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
+
+      if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) ) 
+      {
+         my->_wallet_password = fc::sha512();
+         return false;
+      }
+      my->_relock_time = fc::time_point::now() + timeout;
+      return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
@@ -883,5 +908,36 @@ namespace bts { namespace wallet {
       }
       return next_time;
    }
+
+   std::unordered_map<address,std::string> wallet::get_send_addresses()const
+   {
+      std::unordered_map<address,std::string> result;
+      return result;
+   }
+
+   std::unordered_map<address,std::string> wallet::get_receive_addresses()const
+   {
+      std::unordered_map<address,std::string> result;
+      for( auto item : my->_receive_keys )
+      {
+          result[item.first] = my->get_address_label( item.second );
+      }
+      return result;
+   }
+   void wallet::import_bitcoin_wallet( const fc::path& wallet_dat, const std::string& passphrase )
+   { try {
+      auto priv_keys = bts::import_bitcoin_wallet(  wallet_dat, passphrase );
+      for( auto key : priv_keys )
+      {
+         import_private_key( key, wallet_dat.filename().generic_string() );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
+
+   void wallet::import_wif_key( const std::string& wif, const std::string& contact_name )
+   { try {
+      auto wif_bytes = fc::from_base58(wif);
+      auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
+      import_private_key(key, contact_name);
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to import wif private key" ) }
 
 } } // bts::wallet

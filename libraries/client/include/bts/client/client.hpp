@@ -17,7 +17,7 @@ namespace bts { namespace client {
     class client
     {
        public:
-         client(bool enable_p2p = false);
+         client();
          ~client();
 
          void set_chain( const bts::blockchain::chain_database_ptr& chain );

@@ -32,21 +32,29 @@ namespace bts { namespace blockchain {
 
          transaction_evaluation_state_ptr              store_pending_transaction( const signed_transaction& trx );
          std::vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
+         bool                                          is_known_transaction( const transaction_id_type& trx_id );
 
          /** produce a block for the given timeslot, the block is not signed because that is the 
           * role of the wallet.  
           */
          full_block generate_block( fc::time_point_sec timestamp );
 
+         bool                  is_known_block( const block_id_type& block_id )const;
+
          fc::ecc::public_key   get_signing_delegate_key( fc::time_point_sec )const;
          name_id_type          get_signing_delegate_id( fc::time_point_sec )const;
+         uint32_t              get_block_num( const block_id_type& )const;
          signed_block_header   get_block_header( const block_id_type& )const;
          signed_block_header   get_block_header( uint32_t block_num )const;
          full_block            get_block( const block_id_type& )const;
          full_block            get_block( uint32_t block_num )const;
          signed_block_header   get_head_block()const;
+         uint32_t              get_head_block_num()const;
+         block_id_type         get_head_block_id()const;
          osigned_transaction   get_transaction( const transaction_id_type& trx_id )const;
          otransaction_location get_transaction_location( const transaction_id_type& trx_id )const;
+
+         std::vector<name_record> get_names( const std::string& first, uint32_t count )const;
 
          /** should perform any chain reorganization required 
           *  
@@ -55,6 +63,7 @@ namespace bts { namespace blockchain {
           *  having to process raw transactions.
           **/
          virtual void  push_block( const full_block& block_data );
+
 
          /**
           *  Evaluate the transaction and return the results.
@@ -68,7 +77,9 @@ namespace bts { namespace blockchain {
          /** return the current fee rate in millishares */
          virtual int64_t              get_fee_rate()const;
          virtual int64_t              get_delegate_pay_rate()const;
-         std::vector<name_id_type>    get_delegates_by_vote()const;
+         std::vector<name_id_type>    get_active_delegates()const;
+         std::vector<name_id_type>    get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
+         std::vector<name_record>     get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
 
          virtual void                 remove_asset_record( asset_id_type id )const;
          virtual void                 remove_account_record( const account_id_type& id )const;

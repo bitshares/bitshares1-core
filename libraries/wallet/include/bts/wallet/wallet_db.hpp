@@ -157,6 +157,7 @@ namespace bts { namespace wallet {
        int32_t                        index;
        extended_private_key  get_extended_private_key( const fc::sha512& password )const;
        std::vector<char>              encrypted_key;
+       fc::sha512                     checksum;
    };
 
    /**
@@ -223,7 +224,7 @@ FC_REFLECT( bts::wallet::wallet_transaction_record,
 FC_REFLECT_DERIVED( bts::wallet::wallet_asset_record, (bts::wallet::asset_record), (index) )
 FC_REFLECT_DERIVED( bts::wallet::wallet_account_record, (bts::wallet::account_record), (index) )
 FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::wallet::name_record), (index) )
-FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key) )
+FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::private_key_record,  (index)(contact_index)(encrypted_key) )
 
 namespace bts { namespace wallet {

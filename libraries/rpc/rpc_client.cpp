@@ -26,8 +26,8 @@ namespace bts { namespace rpc {
       bts::blockchain::address getnewaddress(const std::string& account);
       bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                          const std::string& comment, const std::string& comment_to);
-      std::unordered_set<bts::wallet::receive_address> list_receive_addresses();
-      bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
+      std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
+      bts::blockchain::asset getbalance(bts::blockchain::asset_id_type asset_type);
       bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
       bts::blockchain::signed_block_header getblock(uint32_t block_num);
       bool validateaddress(bts::blockchain::address address);
@@ -92,12 +92,12 @@ namespace bts { namespace rpc {
       return _json_connection->call<bts::blockchain::transaction_id_type>("sendtoaddress", fc::variant((std::string)address), fc::variant(amount), fc::variant(comment), fc::variant(comment_to));
     }
 
-    std::unordered_set<bts::wallet::receive_address> rpc_client_impl::list_receive_addresses()
+    std::unordered_map<blockchain::address,std::string> rpc_client_impl::list_receive_addresses()const
     {
-      return _json_connection->call<std::unordered_set<bts::wallet::receive_address> >("list_receive_addresses");
+      return _json_connection->call<std::unordered_map<blockchain::address,std::string> >("list_receive_addresses");
     }
 
-    bts::blockchain::asset rpc_client_impl::getbalance(bts::blockchain::asset_type asset_type)
+    bts::blockchain::asset rpc_client_impl::getbalance(bts::blockchain::asset_id_type asset_type)
     {
       return _json_connection->call<bts::blockchain::asset>("getbalance", fc::variant(asset_type));
     }
@@ -218,12 +218,12 @@ namespace bts { namespace rpc {
     return my->sendtoaddress(address, amount, comment, comment_to);
   }
 
-  std::unordered_set<bts::wallet::receive_address> rpc_client::list_receive_addresses()
+  std::unordered_map<blockchain::address,std::string> rpc_client::list_receive_addresses()const
   {
     return my->list_receive_addresses();
   }
 
-  bts::blockchain::asset rpc_client::getbalance(bts::blockchain::asset_type asset_type)
+  bts::blockchain::asset rpc_client::getbalance(bts::blockchain::asset_id_type asset_type)
   {
     return my->getbalance(asset_type);
   }

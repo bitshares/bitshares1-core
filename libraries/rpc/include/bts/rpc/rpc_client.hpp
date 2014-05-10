@@ -31,8 +31,8 @@ namespace bts { namespace rpc {
     bts::blockchain::address getnewaddress(const std::string& account = "");
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
-    std::unordered_set<bts::wallet::receive_address> list_receive_addresses();
-    bts::blockchain::asset getbalance(bts::blockchain::asset_type asset_type);
+    std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
+    bts::blockchain::asset getbalance(bts::blockchain::asset_id_type asset_type);
     bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
     bts::blockchain::signed_block_header getblock(uint32_t block_num);
     bool validateaddress(bts::blockchain::address address);

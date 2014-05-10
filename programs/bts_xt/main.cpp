@@ -1,6 +1,5 @@
 #include <boost/program_options.hpp>
 
-#include <bts/net/chain_server.hpp>
 #include <bts/client/client.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
@@ -33,11 +32,6 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
                                                                       const boost::program_options::variables_map& option_variables);
 bts::client::client* _global_client = nullptr;
 
-void handle_signal( int signum )
-{
-  if( _global_client ) _global_client->get_wallet()->save();
-  exit( 1 );
-}
 
 int main( int argc, char** argv )
 {
@@ -45,7 +39,6 @@ int main( int argc, char** argv )
    boost::program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", boost::program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
-                              ("p2p", "enable p2p mode")
                               ("port", boost::program_options::value<uint16_t>(), "set port to listen on")
                               ("connect-to", boost::program_options::value<std::string>(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
@@ -80,7 +73,6 @@ int main( int argc, char** argv )
      return 0;
    }
 
-   bool p2p_mode = option_variables.count("p2p") != 0;
 
    try {
       print_banner();
@@ -89,28 +81,16 @@ int main( int argc, char** argv )
 
       auto cfg   = load_config(datadir);
       auto chain = load_and_configure_chain_database(datadir, option_variables);
-      auto wall  = std::make_shared<bts::wallet::wallet>();
+      auto wall  = std::make_shared<bts::wallet::wallet>(chain);
       wall->set_data_directory( datadir );
 
-      auto c = std::make_shared<bts::client::client>(p2p_mode);
+      auto c = std::make_shared<bts::client::client>();
       _global_client = c.get();
       c->set_chain( chain );
       c->set_wallet( wall );
 
-      if (option_variables.count("trustee-private-key"))
-      {
-         auto key = fc::variant(option_variables["trustee-private-key"].as<std::string>()).as<fc::ecc::private_key>();
-         c->run_trustee(key);
-      }
-      else if( fc::exists( "trustee.key" ) )
-      {
-         auto key = fc::json::from_file( "trustee.key" ).as<fc::ecc::private_key>();
-         c->run_trustee(key);
-      }
-
       bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
       rpc_server->set_client(c);
-
 
       if( option_variables.count("server") )
       {
@@ -131,22 +111,12 @@ int main( int argc, char** argv )
         rpc_server->configure(rpc_config);
       }
 
-      if (p2p_mode)
-      {
-        c->configure( datadir );
-        if (option_variables.count("port"))
-          c->listen_on_port(option_variables["port"].as<uint16_t>());
-        c->connect_to_p2p_network();
-        if (option_variables.count("connect-to"))
-          c->connect_to_peer(option_variables["connect-to"].as<std::string>());
-      }
-      else
-      {
-        if (option_variables.count("connect-to"))
-          c->add_node(option_variables["connect-to"].as<std::string>());
-        else
-           c->add_node( "127.0.0.1:4569" );
-      }
+      c->configure( datadir );
+      if (option_variables.count("port"))
+        c->listen_on_port(option_variables["port"].as<uint16_t>());
+      c->connect_to_p2p_network();
+      if (option_variables.count("connect-to"))
+        c->connect_to_peer(option_variables["connect-to"].as<std::string>());
 
       auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
       cli->wait();
@@ -234,37 +204,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
                                                                       const boost::program_options::variables_map& option_variables)
 {
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
-  chain->open( datadir / "chain", true );
-  if (option_variables.count("trustee-address"))
-    chain->set_trustee(bts::blockchain::address(option_variables["trustee-address"].as<std::string>()));
-
-  if (option_variables.count("genesis-json"))
-  {
-    if (chain->head_block_num() == trx_num::invalid_block_num)
-    {
-      fc::path genesis_json_file(option_variables["genesis-json"].as<std::string>());
-      bts::blockchain::trx_block genesis_block;
-      try
-      {
-        genesis_block = bts::net::create_genesis_block(genesis_json_file);
-      }
-      catch (fc::exception& e)
-      {
-        wlog("Error creating genesis block from file ${filename}: ${e}", ("filename", genesis_json_file)("e", e.to_string()));
-        return chain;
-      }
-      try
-      {
-        chain->push_block(genesis_block);
-      }
-      catch ( const fc::exception& e )
-      {
-        wlog( "error pushing genesis block to blockchain database: ${e}", ("e", e.to_detail_string() ) );
-      }
-    }
-    else
-      wlog("Ignoring genesis-json command-line argument because our blockchain already has a genesis block");
-  }
+  chain->open( datadir / "chain" );
   return chain;
 }
 

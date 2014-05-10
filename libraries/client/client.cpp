@@ -2,7 +2,6 @@
 
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
-#include <bts/net/chain_client.hpp>
 #include <bts/net/node.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <fc/reflect/variant.hpp>
@@ -14,23 +13,13 @@ namespace bts { namespace client {
 
     namespace detail
     {
-       class client_impl : public bts::net::chain_client_delegate,
-                           public bts::net::node_delegate
+       class client_impl : public bts::net::node_delegate
        {
           public:
-            client_impl(bool use_p2p = false)
+            client_impl()
             {
-              if (use_p2p)
-              {
                 _p2p_node = std::make_shared<bts::net::node>();
                 _p2p_node->set_delegate(this);
-              }
-              else
-              {
-                // use server-based implementation
-                _chain_client = std::make_shared<bts::net::chain_client>();
-                _chain_client->set_delegate(this);
-              }
             }
 
             void trustee_loop();
@@ -38,8 +27,8 @@ namespace bts { namespace client {
 
             /* Implement chain_client_impl */
             // @{
-            virtual void on_new_block(const trx_block& block) override;
-            virtual void on_new_transaction(const signed_transaction& trx) override;
+            virtual void on_new_block(const full_block& block);
+            virtual void on_new_transaction(const signed_transaction& trx);
             /// @}
 
             /* Implement node_delegate */
@@ -58,8 +47,6 @@ namespace bts { namespace client {
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
 
-            bts::blockchain::trx_block                                  _next_block;
-            bts::net::chain_client_ptr                                  _chain_client;
             bts::net::node_ptr                                          _p2p_node;
             bts::blockchain::chain_database_ptr                         _chain_db;
             std::unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
@@ -73,6 +60,7 @@ namespace bts { namespace client {
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_trustee_loop_complete.canceled() )
          {
+            /*
            signed_transactions pending_trxs;
            pending_trxs = get_pending_transactions();
            _last_block = _chain_db->get_head_block().timestamp;
@@ -101,6 +89,7 @@ namespace bts { namespace client {
                elog("error producing block?: ${e}", ("e", e.to_detail_string()));
              }
            }
+           */
            fc::usleep(fc::seconds(1));
          }
        } // trustee_loop
@@ -119,40 +108,25 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       void client_impl::on_new_block(const trx_block& block)
+       void client_impl::on_new_block(const full_block& block)
        {
          try
          {
-           ilog("Received a new block from the server, current head block is ${num}, block is ${block}", ("num", _chain_db->head_block_num())("block", block));
-           if (block.id() == _chain_db->head_block_id())
-             ilog("Ignoring this block, I already have it.  That probably means I'm the trustee who generated the block");
-           else
-             _chain_db->push_block(block);
+           ilog("Received a new block from the server, current head block is ${num}, block is ${block}", 
+                ("num", _chain_db->get_head_block_num())("block", block));
+
+           _chain_db->push_block(block);
          }
          catch (fc::exception& e)
          {
            wlog("Error pushing block ${block}: ${error}", ("block", block)("error", e.to_string()));
            throw;
          }
-
-         for (auto trx : block.trxs)
-           _pending_trxs.erase(trx.id());
-         ilog("");
-         _wallet->scan_chain(*_chain_db, block.block_num);
        }
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
        {
-         _chain_db->evaluate_transaction(trx); // throws exception if invalid trx.
-         if (_pending_trxs.insert(std::make_pair(trx.id(), trx)).second)
-           ilog("new transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
-         else
-         {
-           trx_message original_trx_message(trx);
-           bts::net::message original_message(original_trx_message);
-           wlog("duplicate transaction with id ${id}, should have arrived in message ${message_id}, ignoring", 
-                ("id", trx.id())("message_id", original_message.id()));
-         }
+         _chain_db->store_pending_transaction(trx); // throws exception if invalid trx.
        }
 
 
@@ -163,43 +137,33 @@ namespace bts { namespace client {
        {
          if (id.item_type == block_message_type)
          {
-           try
-           {
-             _chain_db->fetch_block_num(id.item_hash);
-             return true;
-           }
-           catch (const fc::key_not_found_exception&)
-           {
-             return false;
-           }
+           return _chain_db->is_known_block( id.item_hash );
          }
 
          if (id.item_type == trx_message_type)
          {
-           auto iter = _pending_trxs.find(id.item_hash);
-           return iter != _pending_trxs.end();
+           return _chain_db->is_known_transaction( id.item_hash );
          }
-
          return false;
        }
        void client_impl::handle_message(const bts::net::message& message_to_handle)
        {
          switch (message_to_handle.msg_type)
          {
-         case block_message_type:
-           {
-             block_message block_message_to_handle(message_to_handle.as<block_message>());
-             ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block_id));
-             on_new_block(block_message_to_handle.block);
-             break;
-           }
-         case trx_message_type:
-           {
-             trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
-             ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
-             on_new_transaction(trx_message_to_handle.trx);
-             break;
-           }
+            case block_message_type:
+              {
+                block_message block_message_to_handle(message_to_handle.as<block_message>());
+                ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block_id));
+                on_new_block(block_message_to_handle.block);
+                break;
+              }
+            case trx_message_type:
+              {
+                trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
+                ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
+                on_new_transaction(trx_message_to_handle.trx);
+                break;
+              }
          }
        }
 
@@ -211,7 +175,7 @@ namespace bts { namespace client {
          uint32_t last_seen_block_num;
          try
          {
-           last_seen_block_num = _chain_db->fetch_block_num(from_id.item_hash);
+           last_seen_block_num = _chain_db->get_block_num(from_id.item_hash);
          }
          catch (fc::key_not_found_exception&)
          {
@@ -223,7 +187,7 @@ namespace bts { namespace client {
              return std::vector<bts::net::item_hash_t>();
            }
          }
-         remaining_item_count = _chain_db->head_block_num() - last_seen_block_num;
+         remaining_item_count = _chain_db->get_head_block_num() - last_seen_block_num;
          uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
          std::vector<bts::net::item_hash_t> hashes_to_return;
          hashes_to_return.reserve(items_to_get_this_iteration);
@@ -233,7 +197,7 @@ namespace bts { namespace client {
            signed_block_header header;
            try
            {
-             header = _chain_db->fetch_block(last_seen_block_num);
+             header = _chain_db->get_block(last_seen_block_num);
            }
            catch (fc::key_not_found_exception&)
            {
@@ -249,12 +213,12 @@ namespace bts { namespace client {
        {
          if (id.item_type == block_message_type)
          {
-           uint32_t block_number = _chain_db->fetch_block_num(id.item_hash);
+        //   uint32_t block_number = _chain_db->get_block_num(id.item_hash);
            bts::client::block_message block_message_to_send;
-           block_message_to_send.block = _chain_db->fetch_trx_block(block_number);
+           block_message_to_send.block = _chain_db->get_block(id.item_hash);
            block_message_to_send.block_id = block_message_to_send.block.id();
            FC_ASSERT(id.item_hash == block_message_to_send.block_id);
-           block_message_to_send.signature = block_message_to_send.block.trustee_signature;
+        //   block_message_to_send.signature = block_message_to_send.block.trustee_signature;
            return block_message_to_send;
          }
 
@@ -277,8 +241,8 @@ namespace bts { namespace client {
 
     }
 
-    client::client(bool enable_p2p /* = false */)
-    :my( new detail::client_impl(enable_p2p) )
+    client::client()
+    :my( new detail::client_impl() )
     {
     }
 
@@ -302,15 +266,12 @@ namespace bts { namespace client {
     void client::set_chain( const bts::blockchain::chain_database_ptr& ptr )
     {
        my->_chain_db = ptr;
-       if (my->_chain_client)
-         my->_chain_client->set_chain( ptr );
     }
 
     void client::set_wallet( const bts::wallet::wallet_ptr& wall )
     {
        FC_ASSERT( my->_chain_db );
        my->_wallet = wall;
-       my->_wallet->scan_chain( *my->_chain_db, my->_chain_db->head_block_num() );
     }
 
     bts::wallet::wallet_ptr client::get_wallet()const { return my->_wallet; }
@@ -321,20 +282,10 @@ namespace bts { namespace client {
     void client::broadcast_transaction( const signed_transaction& trx )
     {
       ilog("broadcasting transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
-      if (my->_chain_client)
-        my->_chain_client->broadcast_transaction( trx );
-      else
-      {
-        // p2p doesn't send messages back to the originator
-        my->on_new_transaction(trx);
-        my->_p2p_node->broadcast(trx_message(trx));
-      }
-    }
 
-    void client::add_node( const std::string& ep )
-    {
-      if (my->_chain_client)
-        my->_chain_client->add_node(ep);
+      // p2p doesn't send messages back to the originator
+      my->on_new_transaction(trx);
+      my->_p2p_node->broadcast(trx_message(trx));
     }
 
     void client::run_trustee( const fc::ecc::private_key& k )
@@ -345,57 +296,22 @@ namespace bts { namespace client {
 
     bool client::is_connected() const
     {
-      if (my->_chain_client)
-        return my->_chain_client->is_connected();
-      else
         return my->_p2p_node->is_connected();
     }
 
     uint32_t client::get_connection_count() const
     {
-      if (my->_chain_client)
-        return my->_chain_client->is_connected() ? 1 : 0;
-      else
-        return my->_p2p_node->get_connection_count();
+       return my->_p2p_node->get_connection_count();
     }
 
     fc::variants client::get_peer_info() const
     {
       fc::variants results;
-      if (my->_p2p_node)
-      {
         std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
         for (const bts::net::peer_status& peer_status : peer_statuses)
         {
           results.push_back(peer_status.info);
         }
-      }
-      else
-      {
-        if (my->_chain_client->is_connected())
-        {
-          // fake up some data.  Since we aren't likely to keep the chain_client code
-          // around, we won't go through the trouble of making it accurate yet
-          fc::mutable_variant_object peer_details;
-          peer_details["addr"] = "127.0.0.1:1234";
-          peer_details["addrlocal"] = "127.0.0.1:1234";
-          peer_details["services"] = "00000001";
-          peer_details["lastsend"] = "";
-          peer_details["lastrecv"] = "";
-          peer_details["bytessent"] = "0";
-          peer_details["bytesrecv"] = "0";
-          peer_details["conntime"] = "";
-          peer_details["pingtime"] = "";
-          peer_details["pingwait"] = "";
-          peer_details["version"] = "";
-          peer_details["subver"] = "";
-          peer_details["inbound"] = false;
-          peer_details["startingheight"] = "";
-          peer_details["banscore"] = "";
-          peer_details["syncnode"] = "";
-          results.push_back(peer_details);
-        }
-      }
       return results;
     }
 
@@ -468,11 +384,11 @@ namespace bts { namespace client {
         return;
       bts::net::item_id head_item_id;
       head_item_id.item_type = bts::client::block_message_type;
-      uint32_t last_block_num = my->_chain_db->head_block_num();
+      uint32_t last_block_num = my->_chain_db->get_head_block_num();
       if (last_block_num == (uint32_t)-1)
         head_item_id.item_hash = bts::net::item_hash_t();
       else
-        head_item_id.item_hash = my->_chain_db->head_block_id();
+        head_item_id.item_hash = my->_chain_db->get_head_block_id();
       my->_p2p_node->sync_from(head_item_id);
       my->_p2p_node->connect_to_p2p_network();
     }
@@ -486,9 +402,10 @@ namespace bts { namespace client {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
     transaction_id_type client::register_delegate( const std::string& name, const fc::variant& data )
     { try {
-        auto trx = get_wallet()->register_delegate( name, data );
-        broadcast_transaction( trx );
-        return trx.id();
+             FC_ASSERT( !"Not Implemented" );
+        //auto trx = get_wallet()->register_delegate( name, data );
+        //broadcast_transaction( trx );
+       // return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
 
     fc::sha256 client_notification::digest()const

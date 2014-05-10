@@ -83,6 +83,8 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():_last_asset_id(0),_last_name_id(0){}
 
+            void                       initialize_genesis();
+
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       switch_to_fork( const block_id_type& block_id );
             void                       extend_chain( const full_block& blk );
@@ -386,19 +388,42 @@ namespace bts { namespace blockchain {
          wlog( "unexpected exception closing database\n" );
       }
    }
+   std::vector<name_id_type> chain_database::get_active_delegates()const
+   {
+      return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_DELEGATES );
+   }
 
    /**
     *  @return the top BTS_BLOCKCHAIN_DELEGATES by vote
     */
-   std::vector<name_id_type> chain_database::get_delegates_by_vote()const
+   std::vector<name_id_type> chain_database::get_delegates_by_vote(uint32_t first, uint32_t count )const
    { try {
       auto del_vote_itr = my->_delegate_vote_index.begin();
       std::vector<name_id_type> sorted_delegates;
-      uint32_t count = 0;
-      while( count < BTS_BLOCKCHAIN_DELEGATES && del_vote_itr.valid() )
+      uint32_t pos = 0;
+      while( sorted_delegates.size() < count && del_vote_itr.valid() )
       {
-         sorted_delegates.push_back( del_vote_itr.key().delegate_id );
-         ++count;
+         if( pos >= first )
+            sorted_delegates.push_back( del_vote_itr.key().delegate_id );
+         ++pos;
+         ++del_vote_itr;
+      }
+      return sorted_delegates;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   /**
+    *  @return the top BTS_BLOCKCHAIN_DELEGATES by vote
+    */
+   std::vector<name_record> chain_database::get_delegate_records_by_vote(uint32_t first, uint32_t count )const
+   { try {
+      auto del_vote_itr = my->_delegate_vote_index.begin();
+      std::vector<name_record> sorted_delegates;
+      uint32_t pos = 0;
+      while( sorted_delegates.size() < count && del_vote_itr.valid() )
+      {
+         if( pos >= first )
+            sorted_delegates.push_back( *get_name_record(del_vote_itr.value()) );
+         ++pos;
          ++del_vote_itr;
       }
       return sorted_delegates;
@@ -453,6 +478,9 @@ namespace bts { namespace blockchain {
          ++pending_itr;
       }
 
+      if( last_block_num == -1 )
+         my->initialize_genesis();
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
    void chain_database::close()
@@ -480,7 +508,7 @@ namespace bts { namespace blockchain {
 
       int64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       int64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_DELEGATES;
-      auto sorted_delegates = get_delegates_by_vote();
+      auto sorted_delegates = get_active_delegates();
 
       FC_ASSERT( delegate_pos < sorted_delegates.size() );
       return  sorted_delegates[delegate_pos];
@@ -837,6 +865,11 @@ namespace bts { namespace blockchain {
       elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
       return next_block;
+   }
+
+   void detail::chain_database_impl::initialize_genesis()
+   {
+
    }
 
 } } // namespace bts::blockchain
