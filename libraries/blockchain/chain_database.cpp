@@ -9,6 +9,23 @@
 #include <fc/log/logger.hpp>
 using namespace bts::blockchain;
 
+   struct name_config
+   {
+      std::string               name;
+      bool                      is_delegate;
+      fc::ecc::public_key_data  owner;
+   };
+  struct genesis_block_config
+  {
+     genesis_block_config():supply(0) {}
+
+     double                                                         supply;
+     std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
+     std::vector< name_config >                                     names;
+  };
+FC_REFLECT( name_config, (name)(is_delegate)(owner) )
+FC_REFLECT( genesis_block_config, (supply)(balances)(names) )
+
 struct vote_del
 {
    vote_del( int64_t v = 0, name_id_type del = 0 )
@@ -81,7 +98,7 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            chain_database_impl():_last_asset_id(0),_last_name_id(0){}
+            chain_database_impl():self(nullptr),_observer(nullptr),_last_asset_id(0),_last_name_id(0){}
 
             void                       initialize_genesis();
 
@@ -107,6 +124,7 @@ namespace bts { namespace blockchain {
 
 
             chain_database*                                           self;
+            chain_observer*                                           _observer;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> > _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>         _fork_db;
@@ -309,8 +327,12 @@ namespace bts { namespace blockchain {
          try {
             verify_header( block_data );
 
+            block_summary summary;
+            summary.block_data = block_data;
+
             // create a pending state to track changes that would apply as we evaluate the block
             pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(self->shared_from_this());
+            summary.applied_changes = pending_state;
 
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_determinsitic_updates(pending_state);
@@ -343,6 +365,8 @@ namespace bts { namespace blockchain {
             clear_redo_state( block_id );
 
             update_head_block( block_data );
+
+            if( _observer ) _observer->block_applied( summary );
          } 
          catch ( const fc::exception& e )
          {
@@ -862,14 +886,68 @@ namespace bts { namespace blockchain {
       next_block.fee_rate           = next_block.next_fee( my->_head_block_header.fee_rate, block_size );
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
-      elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
+
+      elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
+            ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
       return next_block;
    }
 
    void detail::chain_database_impl::initialize_genesis()
    {
+      #include "genesis.json"
+      auto config = fc::json::from_string( genesis_json ).as<genesis_block_config>();
 
+      double total_unscaled = 0;
+      for( auto item : config.balances ) total_unscaled += item.second;
+      double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / total_unscaled;
+
+      std::vector<name_config> delegate_config;
+      for( auto item : config.names )
+         if( item.is_delegate ) delegate_config.push_back( item );
+
+      FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES, 
+                 "genesis.json does not contain enough initial delegates", 
+                 ("required",BTS_BLOCKCHAIN_NUM_DELEGATES)("provided",delegate_config.size()) );
+
+      // everyone will vote for every delegate initially
+      scale_factor /= BTS_BLOCKCHAIN_NUM_DELEGATES;
+
+      name_record god; god.id = 0; god.name = "god";
+
+      self->store_name_record( god );
+
+      fc::time_point_sec timestamp = fc::time_point::now();
+      uint64_t i = 1;
+      for( auto name : config.names )
+      {
+         name_record rec;
+         rec.id          = i;
+         rec.name        = name.name;
+         rec.owner_key   = name.owner;
+         rec.active_key  = name.owner;
+         rec.last_update = timestamp;
+         rec.is_delegate = name.is_delegate;
+         if( name.is_delegate )
+            rec.votes_for   = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
+         self->store_name_record( rec );
+         ++i;
+      }
+      
+      for( auto item : config.balances )
+      {
+         for( uint32_t delegate_id = 1; delegate_id <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++delegate_id )
+         {
+            account_record initial_balance( item.first,
+                                            asset( share_type( item.second * scale_factor), 0 ), delegate_id );
+            self->store_account_record( initial_balance );
+         }
+      }
+   }
+
+   void chain_database::set_observer( chain_observer* observer )
+   {
+      my->_observer = observer;
    }
 
 } } // namespace bts::blockchain

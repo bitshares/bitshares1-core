@@ -1,0 +1,10 @@
+const char* genesis_json = R"({
+  "balances" : [ 
+     ["Pgo3AKZcokGd5jPoJJ49gNaZpFmM29mQGb",  4000000]
+  ],
+  "names" : [
+    { "name" : "delegate-1", "is_delegate": true, "owner" : "" },
+    { "name" : "delegate-2", "is_delegate": true, "owner" : "" },
+    { "name" : "delegate-3", "is_delegate": true, "owner" : "" }
+  ]
+})";

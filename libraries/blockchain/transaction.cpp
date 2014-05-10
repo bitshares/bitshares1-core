@@ -124,7 +124,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::update_delegate_votes()
    {
       auto asset_rec = _current_state->get_asset_record( BASE_ASSET_ID );
-      auto max_votes = 2 * (asset_rec->current_share_supply / BTS_BLOCKCHAIN_DELEGATES);
+      auto max_votes = 2 * (asset_rec->current_share_supply / BTS_BLOCKCHAIN_NUM_DELEGATES);
 
       for( auto del_vote : net_delegate_votes )
       {

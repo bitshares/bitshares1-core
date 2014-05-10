@@ -15,7 +15,22 @@ namespace bts { namespace blockchain {
    {
       full_block                                    block_data;
       pending_chain_state_ptr                       applied_changes;
-      std::vector<transaction_evaluation_state_ptr> transaction_states;
+   };
+
+   class chain_observer
+   {
+      public:
+         virtual ~chain_observer(){}
+
+         /**
+          * This method is called anytime the blockchain state changes including
+          * undo operations.
+          */
+         virtual void state_changed( const pending_chain_state_ptr& state ) = 0;
+         /**
+          *  This method is called anytime a block is applied to the chain.
+          */
+         virtual void block_applied( const block_summary& summary ) = 0;
    };
 
    class chain_database : public chain_interface, public std::enable_shared_from_this<chain_database>
@@ -27,8 +42,7 @@ namespace bts { namespace blockchain {
          void open( const fc::path& data_dir );
          void close();
 
-         /** used until DPOS is activated */
-         void set_trustee( const fc::ecc::public_key& trustee_key );
+         void set_observer( chain_observer* observer );
 
          transaction_evaluation_state_ptr              store_pending_transaction( const signed_transaction& trx );
          std::vector<transaction_evaluation_state_ptr> get_pending_transactions()const;

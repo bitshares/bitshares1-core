@@ -57,7 +57,10 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_DELEGATES                 (10)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                 (10)
+
+/** @deprecated use BTS_BLOCKCHAIN_NUM_DELEGATES */
+#define BTS_BLOCKCHAIN_DELEGATES                 BTS_BLOCKCHAIN_NUM_DELEGATES
 
 /**
  * A BIP is one 1/2^15 of the share supply at any given time.  
@@ -88,7 +91,7 @@
  *  delegate that is elected and produces blocks for 10 days can break even.  Any delegate that cannot
  *  perform reliably for 10 days should lose money.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_DELEGATES )
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_NUM_DELEGATES )
 
 /**
  *  Defines the fee required to register a asset, this fee is set to discourage anyone from registering all of the symbols and is equal to the fee of all
