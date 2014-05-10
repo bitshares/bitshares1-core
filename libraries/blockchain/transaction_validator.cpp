@@ -36,21 +36,21 @@ namespace bts { namespace blockchain {
         return pts_sigs.find( a ) != pts_sigs.end();
    }
 
-   int64_t transaction_evaluation_state::get_total_in( asset_type t )const
+   uint64_t transaction_evaluation_state::get_total_in( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
        return itr->second.in;
    }
 
-   int64_t transaction_evaluation_state::get_total_out( asset_type t )const
+   uint64_t transaction_evaluation_state::get_total_out( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
        return itr->second.out;
    }
 
-   int64_t transaction_evaluation_state::get_required_fees( asset_type t )const
+   uint64_t transaction_evaluation_state::get_required_fees( asset_type t )const
    {
        auto itr = total.find( t );
        if( itr == total.end() ) return 0;
@@ -93,10 +93,10 @@ namespace bts { namespace blockchain {
 
       auto current_delegate_record = _blockchain->lookup_delegate( did );
       auto delta_bips = to_bips( _output_votes[did] - _output_votes[-did], _blockchain->total_shares() );
-      FC_ASSERT( delta_bips + current_delegate_record->total_votes() < (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_DELEGATES),
+      FC_ASSERT( delta_bips + current_delegate_record->total_votes() < (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_NUM_DELEGATES),
                  "no delegate may receive more than 2x the votes a delegate would receive if all delegates received equal votes",
                  ("delta_bips",delta_bips)("output_votes[did]",_output_votes[did])("output_votes[-did]",_output_votes[-did])
-                 ("LIMIT", (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_DELEGATES)) );
+                 ("LIMIT", (2*BTS_BLOCKCHAIN_BIP / BTS_BLOCKCHAIN_NUM_DELEGATES)) );
 #endif
    }
 
@@ -200,7 +200,7 @@ namespace bts { namespace blockchain {
        int64_t initial_vote = trx_delegate->total_votes();
        int64_t delta_vote   = to_bips( (state.trx.vote / abs(state.trx.vote)) * state.get_total_out(0), total_shares);
        int64_t percent = (((initial_vote + delta_vote) * 10000) / BTS_BLOCKCHAIN_BIP) / 100;
-       FC_ASSERT( percent <  2*(100/BTS_BLOCKCHAIN_DELEGATES) );
+       FC_ASSERT( percent <  2*(100/BTS_BLOCKCHAIN_NUM_DELEGATES) );
 #endif
 
        return sum;

@@ -58,8 +58,8 @@ namespace bts { namespace rpc {
              (_set_advanced_node_parameters)\
              (addnode)\
              (stop)\
-             (_get_transaction_first_seen_time)\
-             (_get_block_first_seen_time)
+             (_get_transaction_propagation_data)\
+             (_get_block_propagation_data)
 
   namespace detail
   {
@@ -100,8 +100,11 @@ namespace bts { namespace rpc {
 
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
+             fc::time_point begin_time = fc::time_point::now();
+             fc_ilog( fc::logger::get("rpc"), "Started ${path} ${method} at ${time}", ("path",r.path)("method",r.method)("time",begin_time));
+             fc::http::reply::status_code status = fc::http::reply::OK; 
+             
              s.add_header( "Connection", "close" );
-             // ilog( "handle request ${r}", ("r",r.path) );
 
              try {
                 if( _config.rpc_user.size() )
@@ -116,25 +119,29 @@ namespace bts { namespace rpc {
                       username    = userpass.substr( 0, split );
                       password    = userpass.substr( split + 1 );
                    }
-                   // ilog( "username: '${u}' password: '${p}' config ${c}", ("u",username)("p",password)("c",_config) );
                    if( _config.rpc_user     != username ||
                        _config.rpc_password != password )
                    {
+                      fc_ilog( fc::logger::get("rpc"), "Unauthorized ${path}, username: ${user}", ("path",r.path)("user",username));
                       s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
                       std::string message = "Unauthorized";
                       s.set_length( message.size() );
                       s.set_status( fc::http::reply::NotAuthorized );
                       s.write( message.c_str(), message.size() );
+                      return;
                    }
                 }
 
-                auto dotpos = r.path.find( ".." );
-                FC_ASSERT( dotpos == std::string::npos );
-                auto filename = _config.htdocs / r.path.substr(1,std::string::npos);
-                if( r.path == "/" )
-                {
-                    filename = _config.htdocs / "index.html";
-                }
+                fc::string path = r.path;
+                auto pos = path.find( '?' );
+                if( pos != std::string::npos ) path.resize(pos);
+    
+                pos = path.find( ".." );
+                FC_ASSERT( pos == std::string::npos );
+                
+                if( path == "/" ) path = "/index.html";
+                 
+                auto filename = _config.htdocs / path.substr(1,std::string::npos);
                 if( fc::exists( filename ) )
                 {
                     FC_ASSERT( !fc::is_directory( filename ) );
@@ -144,59 +151,71 @@ namespace bts { namespace rpc {
 
                     fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
                     fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
-
+                    fc_ilog( fc::logger::get("rpc"), "Processing ${path}, size: ${size}", ("path",r.path)("size",file_size));
                     s.set_status( fc::http::reply::OK );
                     s.set_length( file_size );
                     s.write( (const char*)mr.get_address(), mr.get_size() );
-                    return;
                 }
-                if( r.path == fc::path("/rpc") )
+                else if( r.path == fc::path("/rpc") )
                 {
-                   handle_http_rpc( r, s );
-                   return;
+                    status = handle_http_rpc( r, s );
                 }
-                filename = _config.htdocs / "404.html";
-                FC_ASSERT( !fc::is_directory( filename ) );
-                auto file_size = fc::file_size( filename );
-                FC_ASSERT( file_size != 0 );
-
-                fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
-                fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
-
-                s.set_status( fc::http::reply::OK );
-                s.set_length( file_size );
-                s.write( (const char*)mr.get_address(), mr.get_size() );
-             }
+                else 
+                {
+                    fc_ilog( fc::logger::get("rpc"), "Not found ${path} (${file})", ("path",r.path)("file",filename));
+                    filename = _config.htdocs / "404.html";
+                    FC_ASSERT( !fc::is_directory( filename ) );
+                    auto file_size = fc::file_size( filename );
+                    FC_ASSERT( file_size != 0 );
+                    fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
+                    fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
+                    s.set_status( fc::http::reply::NotFound );
+                    s.set_length( file_size );
+                    s.write( (const char*)mr.get_address(), mr.get_size() );
+                    status = fc::http::reply::NotFound;
+                }
+             } 
              catch ( const fc::exception& e )
              {
                     std::string message = "Internal Server Error\n";
                     message += e.to_detail_string();
+                    fc_ilog( fc::logger::get("rpc"), "Internal Server Error ${path} - ${msg}", ("path",r.path)("msg",message));
+                    elog("Internal Server Error ${path} - ${msg}", ("path",r.path)("msg",message));
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::InternalServerError );
                     s.write( message.c_str(), message.size() );
                     elog( "${e}", ("e",e.to_detail_string() ) );
-             }
+                    status = fc::http::reply::InternalServerError;
+                 
+             } 
              catch ( ... )
              {
                     std::string message = "Invalid RPC Request\n";
+                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path}", ("path",r.path));
+                    elog("Invalid RPC Request ${path}", ("path",r.path));
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::BadRequest );
                     s.write( message.c_str(), message.size() );
-                    ilog( "${e}", ("e",message) );
+                    status = fc::http::reply::BadRequest;
              }
-
+             
+             fc::time_point end_time = fc::time_point::now();
+             fc_ilog( fc::logger::get("rpc"), "Completed ${path} ${status} in ${ms}ms", ("path",r.path)("status",(int)status)("ms",(end_time - begin_time).count()/1000));
          }
 
-         void handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
+         fc::http::reply::status_code handle_http_rpc(const fc::http::request& r, const fc::http::server::response& s )
          {
+                fc::http::reply::status_code status = fc::http::reply::OK;
                 std::string str(r.body.data(),r.body.size());
+                fc::string method_name;
                 try {
                    auto rpc_call = fc::json::from_string( str ).get_object();
-                   auto method_name = rpc_call["method"].as_string();
+                   method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
-
-                   // ilog( "method: ${m}  params: ${p}", ("m", method_name)("p",params) );
-                   ilog( "call: ${c}", ("c", str) );
+                   auto params_log = fc::json::to_string(rpc_call["params"]);
+                   if(method_name.find_first_of("wallet") != std::string::npos || method_name.find_first_of("priv") != std::string::npos)
+                       params_log = "***";
+                   fc_ilog( fc::logger::get("rpc"), "Processing ${path} ${method} (${params})", ("path",r.path)("method",method_name)("params",params_log));
 
                    auto call_itr = _method_map.find( method_name );
                    if( call_itr != _method_map.end() )
@@ -207,62 +226,73 @@ namespace bts { namespace rpc {
                       {
                          result["result"] = dispatch_authenticated_method(call_itr->second, params);
                          auto reply = fc::json::to_string( result );
-                         s.set_status( fc::http::reply::OK );
+                         status = fc::http::reply::OK;
+                         s.set_status( status );
                       }
                       catch ( const fc::exception& e )
                       {
-                         s.set_status( fc::http::reply::InternalServerError );
-                         result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
+                          status = fc::http::reply::InternalServerError;
+                          s.set_status( status );
+                          result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
                       }
                       ilog( "${e}", ("e",result) );
                       auto reply = fc::json::to_string( result );
                       s.set_length( reply.size() );
                       s.write( reply.c_str(), reply.size() );
-                      return;
+                      auto reply_log = reply.size() > 100 ? reply.substr(0,99) + ".." :  reply;
+                      fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
+                      return status;
                    }
                    else
                    {
+                       fc_ilog( fc::logger::get("rpc"), "Invalid Method ${path} ${method}", ("path",r.path)("method",method_name));
+                       elog( "Invalid Method ${path} ${method}", ("path",r.path)("method",method_name));
                        std::string message = "Invalid Method: " + method_name;
                        fc::mutable_variant_object  result;
                        result["id"]     =  rpc_call["id"];
-                       s.set_status( fc::http::reply::NotFound );
+                       status = fc::http::reply::NotFound;
+                       s.set_status( status );
                        result["error"] = fc::mutable_variant_object( "message", message );
-
-                       ilog( "${e}", ("e",result) );
                        auto reply = fc::json::to_string( result );
                        s.set_length( reply.size() );
                        s.write( reply.c_str(), reply.size() );
-                       return;
+                       return status;
                    }
                 }
                 catch ( const fc::exception& e )
                 {
+                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.to_detail_string()));
+                    elog( "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.to_detail_string()));
                     std::string message = "Invalid RPC Request\n";
                     message += e.to_detail_string();
                     s.set_length( message.size() );
-                    s.set_status( fc::http::reply::BadRequest );
+                    status = fc::http::reply::BadRequest;
+                    s.set_status( status );
                     s.write( message.c_str(), message.size() );
-                    elog( "${e}", ("e",e.to_detail_string() ) );
                 }
                 catch ( const std::exception& e )
                 {
+                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.what()));
+                    elog( "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.what()));
                     std::string message = "Invalid RPC Request\n";
                     message += e.what();
                     s.set_length( message.size() );
-                    s.set_status( fc::http::reply::BadRequest );
+                    status = fc::http::reply::BadRequest;
+                    s.set_status( status );
                     s.write( message.c_str(), message.size() );
-                    elog( "${e}", ("e",message) );
                 }
                 catch (...)
                 {
+                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method} ...", ("path",r.path)("method",method_name));
+                    elog( "Invalid RPC Request ${path} ${method} ...", ("path",r.path)("method",method_name));
                     std::string message = "Invalid RPC Request\n";
                     s.set_length( message.size() );
-                    s.set_status( fc::http::reply::BadRequest );
+                    status = fc::http::reply::BadRequest;
+                    s.set_status( status );
                     s.write( message.c_str(), message.size() );
-                    elog( "${e}", ("e",message) );
                 }
+                return status;
          }
-
 
          void accept_loop()
          {
@@ -343,7 +373,12 @@ namespace bts { namespace rpc {
           if (arguments.size() < required_argument_count)
             FC_THROW_EXCEPTION(exception, "too few arguments (expected at least ${count})", ("count", required_argument_count));
 
-          return method_data.method(arguments);
+          auto result = method_data.method(arguments);
+
+          if (method_data.prerequisites & rpc_server::wallet_unlocked)
+            _client->get_wallet()->save();
+
+          return result;
         }
 
         // This method invokes the function directly, called by the CLI intepreter.
@@ -414,6 +449,11 @@ namespace bts { namespace rpc {
         /* params:     */{ { "command", "string", false } },
       /* prerequisites */ rpc_server::no_prerequisites,
       R"(
+Arguments:
+1. "command" (string, optional) The command to get help on
+
+Result:
+"text" (string) The help text
        )"};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
@@ -464,6 +504,7 @@ namespace bts { namespace rpc {
        info["blocks"]           = _client->get_chain()->head_block_num();
        info["connections"]      = 0;
        info["unlocked_until"]   = 0;
+       info["_node_id"]         = _client->get_node_id();
        return fc::variant( std::move(info) );
     }
 
@@ -1132,9 +1173,8 @@ Examples:
      )" };
     fc::variant rpc_server_impl::import_wallet(const fc::variants& params)
     {
-      auto arguments       = params[0].as<std::pair<fc::path, std::string>>();
-      auto wallet_dat      = arguments.first;
-      auto wallet_password = arguments.second;
+      auto wallet_dat      = params[0].as<fc::path>();
+      auto wallet_password = params[1].as<std::string>();
       _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
       return fc::variant(true);
     }
@@ -1162,7 +1202,6 @@ Examples:
         rescan = true;
 
       _client->get_wallet()->import_key(key, label);
-      _client->get_wallet()->save();
 
       if (rescan)
           _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
@@ -1213,7 +1252,6 @@ As a json rpc call
         rescan = true;
 
       _client->get_wallet()->import_wif_key(wif, label);
-      _client->get_wallet()->save();
 
       if (rescan)
           _client->get_wallet()->scan_chain(*_client->get_chain(), 0);
@@ -1378,14 +1416,14 @@ Stop BitShares server.
       return fc::variant();
     }
 
-    static rpc_server::method_data _get_transaction_first_seen_time_metadata{"_get_transaction_first_seen_time", nullptr,
+    static rpc_server::method_data _get_transaction_propagation_data_metadata{"_get_transaction_propagation_data", nullptr,
             /* description */ "Returns the time the transaction was first seen by this client",
-            /* returns: */    "null",
+            /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type               required */
                               {{"transaction_id", "transaction_id",  true}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_transaction_first_seen_time <transaction_id>
+_get_transaction_propagation_data <transaction_id>
 
 Returns the time the transaction was first seen by this client.
 
@@ -1394,18 +1432,18 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_transaction_first_seen_time(const fc::variants& params)
+    fc::variant rpc_server_impl::_get_transaction_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_transaction_first_seen_time(params[0].as<transaction_id_type>()));
+      return fc::variant(_client->get_transaction_propagation_data(params[0].as<transaction_id_type>()));
     }
-    static rpc_server::method_data _get_block_first_seen_time_metadata{"_get_block_first_seen_time", nullptr,
+    static rpc_server::method_data _get_block_propagation_data_metadata{"_get_block_propagation_data", nullptr,
             /* description */ "Returns the time the block was first seen by this client",
-            /* returns: */    "null",
+            /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type        required */
                               {{"block_hash",   "block_id_type", true}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_block_first_seen_time <block_hash>
+_get_block_propagation_data <block_hash>
 
 Returns the time the block was first seen by this client.
 
@@ -1414,18 +1452,18 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_block_first_seen_time(const fc::variants& params)
+    fc::variant rpc_server_impl::_get_block_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_block_first_seen_time(params[0].as<block_id_type>()));
+      return fc::variant(_client->get_block_propagation_data(params[0].as<block_id_type>()));
     }
   } // detail
 
   bool rpc_server::config::is_valid() const
   {
-    if (rpc_user.empty())
-      return false;
-    if (rpc_password.empty())
-      return false;
+//    if (rpc_user.empty())
+//      return false;
+//    if (rpc_password.empty())
+//      return false;
     if (!rpc_endpoint.port())
       return false;
     return true;

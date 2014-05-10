@@ -1,4 +1,5 @@
 #include <bts/blockchain/outputs.hpp>
+#include <fc/exception/exception.hpp>
 #include <fc/io/json.hpp>
 
 namespace bts { namespace blockchain {
@@ -32,18 +33,18 @@ namespace bts { namespace blockchain {
       return true;
    }
 
-   claim_name_output:: claim_name_output( std::string name_arg, 
-                                          const fc::variant& data_arg, 
-                                          uint32_t delegate_id_arg, 
+   claim_name_output::claim_name_output( std::string name_arg,
+                                          const fc::variant& data_arg,
+                                          uint32_t delegate_id_arg,
                                           const fc::ecc::public_key_data& owner_arg,
-                                          const fc::ecc::public_key_data& active_arg
-                                          )
-   :name( std::move(name_arg) ), 
-    data( fc::json::to_string(data_arg) ), 
-    delegate_id(delegate_id_arg), 
+                                          const fc::ecc::public_key_data& active_arg )
+   :name( std::move(name_arg) ),
+    data( fc::json::to_string(data_arg) ),
+    delegate_id(delegate_id_arg),
     owner( std::move(owner_arg) ),
     active( std::move(active_arg) )
-   {}
-
+   {
+       FC_ASSERT(is_valid_name(name));
+   }
 
 } } // bts::blockchain

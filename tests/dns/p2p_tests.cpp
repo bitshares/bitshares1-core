@@ -36,7 +36,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
     signed_transaction dtrx;
     dtrx.vote = 0;
     // create initial delegates
-    for( uint32_t i = 0; i < 100; ++i )
+    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
     {
        auto name     = "delegate-"+fc::to_string( int64_t(i+1) );
        auto key_hash = fc::sha256::hash( name.c_str(), name.size() );
@@ -47,7 +47,7 @@ trx_block generate_genesis_block( const std::vector<address>& addr )
 
     // generate an initial genesis block that evenly allocates votes among all
     // delegates.
-    for( uint32_t i = 0; i < 100; ++i )
+    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
     {
        signed_transaction trx;
        trx.vote = i + 1;

@@ -1,3 +1,7 @@
+/**
+  @defgroup p2p_design Pseudocode for Peer-to-Peer Network
+
+@code  
 class client : public node_delegate
 {
 public:
@@ -476,3 +480,7 @@ struct potential_peer_data
   connection_history_type  connection_history;
 };
 level_db<potential_peer_data> potential_peer_db;
+
+@endcode
+
+*/

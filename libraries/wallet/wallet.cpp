@@ -851,7 +851,7 @@ namespace bts { namespace wallet {
       return my->sign_transaction( trx, addresses, mark_output_as_used );
    }
 
-   std::vector<transaction_state> wallet::get_transaction_history(unsigned n)const
+   std::vector<transaction_state> wallet::get_transaction_history(unsigned count)const
    {
        std::vector<transaction_state> trx_states;
        trx_states.reserve(my->_data.transactions.size());
@@ -867,8 +867,8 @@ namespace bts { namespace wallet {
        };
        std::sort(trx_states.begin(), trx_states.end(), comp);
 
-       if (n > 0 && n < trx_states.size())
-           return std::vector<transaction_state>(trx_states.end() - n, trx_states.end());
+       if (count > 0 && count < trx_states.size())
+           return std::vector<transaction_state>(trx_states.end() - count, trx_states.end());
 
        return trx_states;
    }
@@ -969,19 +969,6 @@ namespace bts { namespace wallet {
        return found;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   /* @brief Dumps info strings for this wallet's last N transactions
-    */
-   void wallet::dump_txs(chain_database& chain_db, uint32_t count)
-   {
-       auto txs = get_transaction_history();
-       uint32_t i = 0;
-       for (auto tx : txs)
-       {
-            if (i == count) break;
-            i++;
-            std::cerr << get_transaction_info_string(chain_db, tx.trx) << "\n";
-       }
-   }
    /* @brief Dump this wallet's subset of the blockchain's unspent transaction output set
     */
    void wallet::dump_unspent_outputs()
@@ -1189,10 +1176,10 @@ namespace bts { namespace wallet {
                 ilog( "eval: ${eval}  size: ${size} get_fee_rate ${r}", ("eval",s.eval)("size",in_trxs[i].size())("r",get_fee_rate()) );
 
                // TODO: enforce fees
-                if( uint64_t(s.eval.fees) < (get_fee_rate() * in_trxs[i].size())/1000 )
+                if( s.eval.fees < BTS_BLOCKCHAIN_CALCULATE_FEE( in_trxs[i].size(), get_fee_rate() ) )
                 {
                   wlog( "ignoring transaction ${trx} because it doesn't pay minimum fee ${f}\n\n state: ${s}",
-                        ("trx",in_trxs[i])("s",s.eval)("f", (get_fee_rate()*in_trxs[i].size())/1000) );
+                        ("trx",in_trxs[i])("s",s.eval)("f", BTS_BLOCKCHAIN_CALCULATE_FEE( in_trxs[i].size(), get_fee_rate() ) ) );
                   continue;
                 }
                 s.trx_idx = i;
@@ -1293,7 +1280,7 @@ signed_transaction wallet::collect_inputs_and_sign(signed_transaction& trx,
         /* Calculate fee required for signed transaction */
         trx.sigs.clear();
         sign_transaction(trx, required_signatures, false);
-        auto fee = (get_fee_rate() * trx.size())/1000;
+        auto fee = BTS_BLOCKCHAIN_CALCULATE_FEE( trx.size(), get_fee_rate() );
         ilog("required fee ${f} for bytes ${b} at rate ${r} milli-shares per byte",
              ("f", fee) ("b", trx.size()) ("r", get_fee_rate()));
 

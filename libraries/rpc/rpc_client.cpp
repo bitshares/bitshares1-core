@@ -40,7 +40,11 @@ namespace bts { namespace rpc {
       bool closewallet();
       uint32_t getconnectioncount();
       fc::variants getpeerinfo();
+      fc::variant_object getinfo();
       void _set_advanced_node_parameters(const fc::variant_object& params);
+      bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+      bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+
       void addnode(const fc::ip::endpoint& node, const std::string& command);
       void stop();
     };
@@ -152,9 +156,21 @@ namespace bts { namespace rpc {
     {
       return _json_connection->async_call("getpeerinfo").wait().get_array();
     }
+    fc::variant_object rpc_client_impl::getinfo()
+    {
+      return _json_connection->async_call("getinfo").wait().get_object();
+    }
     void rpc_client_impl::_set_advanced_node_parameters(const fc::variant_object& params)
     {
       _json_connection->async_call("_set_advanced_node_parameters", fc::variant(params)).wait();
+    }
+    bts::net::message_propagation_data rpc_client_impl::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+    {
+      return _json_connection->call<bts::net::message_propagation_data>("_get_transaction_propagation_data", fc::variant(transaction_id));
+    }
+    bts::net::message_propagation_data rpc_client_impl::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+    {
+      return _json_connection->call<bts::net::message_propagation_data>("_get_block_propagation_data", fc::variant(block_id));
     }
     void rpc_client_impl::addnode(const fc::ip::endpoint& node, const std::string& command)
     {
@@ -266,9 +282,21 @@ namespace bts { namespace rpc {
   {
     return my->getpeerinfo();
   }
+  fc::variant_object rpc_client::getinfo()
+  {
+    return my->getinfo();
+  }
   void rpc_client::_set_advanced_node_parameters(const fc::variant_object& params)
   {
     my->_set_advanced_node_parameters(params);
+  }
+  bts::net::message_propagation_data rpc_client::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+  {
+    return my->_get_transaction_propagation_data(transaction_id);
+  }
+  bts::net::message_propagation_data rpc_client::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+  {
+    return my->_get_block_propagation_data(block_id);
   }
   void rpc_client::addnode(const fc::ip::endpoint& node, const std::string& command)
   {

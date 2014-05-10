@@ -246,7 +246,7 @@ namespace wallet {
                                            const std::string& memo = "change" );
 
            /** returns last n (default 0 means all) transactions issued, sorted from oldest to newest */
-           std::vector<transaction_state> get_transaction_history(unsigned n = 0)const;
+           std::vector<transaction_state> get_transaction_history(unsigned count = 0)const;
 
            void sign_transaction( signed_transaction& trx, const address& addr );
            void sign_transaction( signed_transaction& trx,
@@ -259,7 +259,6 @@ namespace wallet {
 
            void mark_as_spent( const output_reference& r );
 
-           void dump_txs(bts::blockchain::chain_database& db, uint32_t count);
            void dump_unspent_outputs();
 
            const std::map<output_index,trx_output>&  get_unspent_outputs()const;
@@ -322,7 +321,7 @@ namespace wallet {
 
 namespace std {
   template <>
-  class hash<bts::wallet::receive_address>
+  struct hash<bts::wallet::receive_address>
   {
   public:
     size_t operator()(const bts::wallet::receive_address& a) const

@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
             { try {
                 std::vector<transaction_id_type> trxs_ids;
                 std::map<int32_t,uint64_t> delegate_votes;
-                for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
+                for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
                 {
                    delegate_votes[i] = 0;
                 }
@@ -579,7 +579,7 @@ namespace bts { namespace blockchain {
         {
             trx_summary = my->_trx_validator->evaluate( b.trxs[i], block_state );
             FC_ASSERT( b.trxs[i].version == BTS_TRANSACTION_VERSION );
-            FC_ASSERT( uint64_t(trx_summary.fees) >= (b.trxs[i].size() * fee_rate)/1000 );
+            FC_ASSERT( trx_summary.fees >= BTS_BLOCKCHAIN_CALCULATE_FEE( b.trxs[i].size(), fee_rate ) );
             summary += trx_summary;
         }
 

@@ -12,10 +12,10 @@ namespace bts { namespace blockchain {
          transaction_summary();
          virtual ~transaction_summary(){};
 
-         int64_t valid_votes;  // votes for valid blocks
-         int64_t invalid_votes; // votes for invalid blocks
-         int64_t spent; // ignoring coindays, what is the total amount spent
-         int64_t fees;
+         uint64_t valid_votes;  // votes for valid blocks
+         uint64_t invalid_votes; // votes for invalid blocks
+         uint64_t spent; // ignoring coindays, what is the total amount spent
+         uint64_t fees;
 
          friend bool operator + ( const transaction_summary& a, const transaction_summary& b );
          transaction_summary& operator +=( const transaction_summary& a );
@@ -69,17 +69,17 @@ namespace bts { namespace blockchain {
           struct asset_io
           {
              asset_io():in(0),out(0),required_fees(0){}
-             int64_t in;
-             int64_t out;
-             int64_t required_fees; ///< extra fees that are required
+             uint64_t in;
+             uint64_t out;
+             uint64_t required_fees; ///< extra fees that are required
           };
 
           transaction_evaluation_state( const signed_transaction& trx );
           virtual ~transaction_evaluation_state();
 
-          int64_t  get_total_in( asset::unit_type t = 0 )const;
-          int64_t  get_total_out( asset::unit_type t = 0 )const;
-          int64_t  get_required_fees( asset::unit_type t = 0 )const;
+          uint64_t  get_total_in( asset::unit_type t = 0 )const;
+          uint64_t  get_total_out( asset::unit_type t = 0 )const;
+          uint64_t  get_required_fees( asset::unit_type t = 0 )const;
 
           void     add_required_fees( asset a );
           void     add_input_asset( asset a );
