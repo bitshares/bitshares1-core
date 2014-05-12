@@ -192,6 +192,7 @@ namespace bts { namespace wallet {
             /** the key index that the account belongs to */
             void index_account( const hkey_index& idx, const account_record& account )
             {
+               ilog( "index account ${a} ${idx}", ("a",account)("idx",idx) );
                auto id = account.id();
                auto itr = _accounts.find( id );
                if( itr == _accounts.end() )
@@ -244,8 +245,13 @@ namespace bts { namespace wallet {
                    case withdraw_signature_type:
                    {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
+                      ilog( "owner: ${owner}  ${is_mine}  ${recv}", 
+                            ("owner",owner)("is_mine",is_my_address(owner))("recv",_receive_keys) );
                       if( is_my_address( owner ) )
+                      {
+                          ilog( "index..." );
                           index_account( _receive_keys.find( owner )->second, account );
+                      }
                       break;
                    }
                    case withdraw_multi_sig_type:
@@ -590,8 +596,17 @@ namespace bts { namespace wallet {
             {
                auto pkr = record.as<private_key_record>();
                my->_extra_receive_keys[pkr.index] = pkr;
-               my->_receive_keys[ pkr.get_private_key(my->_wallet_password).get_public_key() ] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+               auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
+               my->_receive_keys[ address( pubkey ) ] = 
+                  hkey_index( pkr.contact_index, 0, pkr.index );
+               my->_receive_keys[ address(pts_address(pubkey,false,56) )] = 
+                  hkey_index( pkr.contact_index, 0, pkr.index );
+               my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] = 
+                  hkey_index( pkr.contact_index, 0, pkr.index );
+               my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] = 
+                  hkey_index( pkr.contact_index, 0, pkr.index );
+               my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] = 
+                  hkey_index( pkr.contact_index, 0, pkr.index );
                break;
             }
             case meta_record_type:
@@ -706,7 +721,8 @@ namespace bts { namespace wallet {
    void wallet::import_private_key( const fc::ecc::private_key& priv_key, int32_t contact_index )
    {
       FC_ASSERT( is_unlocked() );
-      address pub_address( priv_key.get_public_key() );
+      auto key = priv_key.get_public_key();
+      address pub_address( key );
       if( my->_receive_keys.find( pub_address ) != my->_receive_keys.end() )
       {
          wlog( "duplicate import of key ${a}", ("a",pub_address) );
@@ -716,6 +732,10 @@ namespace bts { namespace wallet {
       auto pkr = private_key_record( key_num, contact_index, priv_key, my->_wallet_password );
       my->_extra_receive_keys[key_num] = pkr;
       my->_receive_keys[pub_address] = hkey_index( contact_index, 0, key_num );
+      my->_receive_keys[ address(pts_address(key,false,56) )] = hkey_index( contact_index, 0, key_num );
+      my->_receive_keys[ address(pts_address(key,true,56) ) ] = hkey_index( contact_index, 0, key_num );
+      my->_receive_keys[ address(pts_address(key,false,0) ) ] = hkey_index( contact_index, 0, key_num );
+      my->_receive_keys[ address(pts_address(key,true,0) )  ] = hkey_index( contact_index, 0, key_num );
 
       my->_wallet_db.store( key_num, pkr );
    }

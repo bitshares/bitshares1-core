@@ -28,9 +28,14 @@ const char* test_keys = R"([
 BOOST_AUTO_TEST_CASE( genesis_block_test )
 {
    try {
+      fc::temp_directory dir2; 
       fc::temp_directory dir; 
+
       chain_database_ptr blockchain = std::make_shared<chain_database>();
       blockchain->open( dir.path() );
+
+      chain_database_ptr blockchain2 = std::make_shared<chain_database>();
+      blockchain2->open( dir2.path() );
 
       ilog( "." );
       auto delegate_list = blockchain->get_delegates_by_vote();
@@ -41,16 +46,19 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          ilog( "${i}] ${delegate}", ("i",i) ("delegate", name_rec ) );
       }
       blockchain->scan_names( [=]( const name_record& a ) {
-         ilog( "\n${a}", ("a",fc::json::to_pretty_string(a) ) );
+         ilog( "\nname: ${a}", ("a",fc::json::to_pretty_string(a) ) );
       });
 
       blockchain->scan_assets( [=]( const asset_record& a ) {
-         ilog( "\n${a}", ("a",fc::json::to_pretty_string(a) ) );
+         ilog( "\nasset: ${a}", ("a",fc::json::to_pretty_string(a) ) );
       });
 
 
       wallet  my_wallet( blockchain );
-      my_wallet.open( dir.path() / "wallet", "password" );
+      my_wallet.open( dir.path() / "my_wallet", "password" );
+
+      wallet  your_wallet( blockchain2 );
+      your_wallet.open( dir2.path() / "your_wallet", "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
@@ -58,7 +66,38 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          my_wallet.import_private_key( key );
       }
       my_wallet.scan_state();
-      ilog( "next block production time: ${t}", ("t",my_wallet.next_block_production_time()) );
+
+         ilog( "my balance: ${my}   your balance: ${your}",
+               ("my",my_wallet.get_balance(0))
+               ("your",your_wallet.get_balance(0)) );
+
+      for( uint32_t i = 0; i < 8; ++i )
+      {
+         auto next_block_time = my_wallet.next_block_production_time();
+         ilog( "next block production time: ${t}", ("t",next_block_time) );
+         full_block next_block = blockchain->generate_block( next_block_time );
+         my_wallet.sign_block( next_block );
+         blockchain->push_block( next_block );
+         blockchain2->push_block( next_block );
+
+         fc::usleep( fc::microseconds(1200000) );
+
+         for( uint64_t t = 0; t < 1; ++t )
+         {
+            auto your_address = your_wallet.get_new_address("my-"+fc::to_string(t));
+            auto trx = my_wallet.send_to_address( asset( 3000000 ), your_address );
+            blockchain->store_pending_transaction( trx );
+            blockchain2->store_pending_transaction( trx );
+         }
+
+         auto wait_until_time = my_wallet.next_block_production_time();
+         auto sleep_time = wait_until_time - fc::time_point::now();
+         ilog( "my balance: ${my}   your balance: ${your}",
+               ("my",my_wallet.get_balance(0))
+               ("your",your_wallet.get_balance(0)) );
+         ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
+         fc::usleep( sleep_time );
+      }
 
       blockchain->close();
    } 

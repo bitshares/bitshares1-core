@@ -74,6 +74,8 @@ struct block_fork_data
    bool                       is_included; ///< is included in the current chain database
 };
 FC_REFLECT( block_fork_data, (next_blocks)(is_linked)(is_valid)(is_included) )
+FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
+
 
 namespace bts { namespace blockchain {
 
@@ -95,7 +97,8 @@ namespace bts { namespace blockchain {
             void                       mark_invalid( const block_id_type& id );
             void                       mark_included( const block_id_type& id, bool state );
             void                       verify_header( const full_block& );
-            void                       apply_transactions( uint32_t block_num, const std::vector<signed_transaction>&, 
+            void                       apply_transactions( uint32_t block_num, 
+                                                           const std::vector<signed_transaction>&, 
                                                            const pending_chain_state_ptr& );
             void                       pay_delegate( fc::time_point_sec time_slot, share_type amount,
                                                            const pending_chain_state_ptr& );
@@ -441,6 +444,10 @@ namespace bts { namespace blockchain {
    void chain_database::open( const fc::path& data_dir )
    { try {
       fc::create_directories( data_dir );
+
+      my->_fork_number_db.open( data_dir / "fork_number_db", true );
+      my->_fork_db.open( data_dir / "fork_db", true );
+      my->_undo_state.open( data_dir / "undo_state", true );
 
       my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
       my->_pending_transactions.open( data_dir / "pending_transactions", true );
@@ -899,8 +906,18 @@ namespace bts { namespace blockchain {
       scale_factor /= BTS_BLOCKCHAIN_NUM_DELEGATES;
 
       name_record god; god.id = 0; god.name = "god";
-
       self->store_name_record( god );
+
+      asset_record base_asset; 
+      base_asset.id = 0;
+      base_asset.symbol = BTS_ADDRESS_PREFIX;
+      base_asset.name = "BitShares XTS";
+      base_asset.description = "Shares in the DAC";
+      base_asset.issuer_name_id = god.id;
+      base_asset.current_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
+      base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
+      base_asset.collected_fees = 0;
+      self->store_asset_record( base_asset );
 
       fc::time_point_sec timestamp = fc::time_point::now();
       uint64_t i = 1;

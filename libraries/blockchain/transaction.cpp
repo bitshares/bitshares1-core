@@ -92,6 +92,7 @@ namespace bts { namespace blockchain {
       {
          if( fee.second < 0 ) fail( BTS_INSUFFICIENT_FUNDS, fc::variant(fee) );
          auto asset_record = _current_state->get_asset_record( fee.first );
+         FC_ASSERT( !!asset_record, "unable to find asset ${a}", ("a",fee.first) );
          asset_record->collected_fees += fee.second;
          asset_record->current_share_supply -= fee.second;
          _current_state->store_asset_record( *asset_record );
