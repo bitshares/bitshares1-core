@@ -11,48 +11,19 @@
 using namespace bts::blockchain;
 using namespace bts::wallet;
 
-void initialize_chain_state( chain_database_ptr blockchain, const std::vector<address>& addresses )
-{
-   fc::time_point_sec timestamp = fc::time_point::now();
-   // create the identities for the initial delegates
-   for( uint64_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
-   {
-      name_record initial_delegate;
-      initial_delegate.id = i;
-      initial_delegate.name = "delegate-"+fc::to_string(i);
-      initial_delegate.owner_key = fc::ecc::private_key::regenerate( fc::sha256::hash( initial_delegate.name.c_str(), initial_delegate.name.size() ) ).get_public_key().serialize();
-      initial_delegate.active_key = initial_delegate.owner_key;
-      initial_delegate.last_update = timestamp;
-      initial_delegate.is_delegate = true;
-      initial_delegate.votes_for   = BTS_BLOCKCHAIN_MAX_SHARES/BTS_BLOCKCHAIN_DELEGATES;
+const char* test_keys = R"([
+  "dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f",
+  "7fee1dc3110ba4abe134822c257c9db5beadbe557763cc54e3dc59b699978a50",
+  "4e42e82970d3307d26634572cddbf8424c10cee1c8c7fcebdd9417942a08a1bd",
+  "e44baa4f693f1bd71ba8f6b8509c56dd41206e2cff07efcf7b42fc79464a1c59",
+  "18fd5207b1a0d72465b8f3ed06b44232a366a76f559c5da3aec9f306e179278f",
+  "6dc61837b51d0bb80143c1a7ba5c957f122faa96e0a6ff76ba25f9ff42ef69fd",
+  "45b0a66b5016618700b4d4fbfa85efd1b0724e8ae95b09a6c9ec850a05254f48",
+  "602751d179b75da5432c64a3360a7309609636056c31deae37b8441230c968eb",
+  "8ced7ac956e1755e87c21b1b265979c848c79b3bea3b855bb5b819d3baa72ed2",
+  "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
+])"; 
 
-      blockchain->store_name_record( initial_delegate );
-   }
-
-   for( uint32_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
-   {
-      account_record initial_balance( addresses[i%addresses.size()], 
-                                      asset( BTS_BLOCKCHAIN_MAX_SHARES/BTS_BLOCKCHAIN_DELEGATES, 0 ), i );
-      blockchain->store_account_record( initial_balance );
-   }
-
-   name_record god;
-   god.id = 0;
-   god.name = "god";
-
-   blockchain->store_name_record( god );
-
-   asset_record base_asset;
-   base_asset.id                   = 0;
-   base_asset.symbol               = BTS_ADDRESS_PREFIX;
-   base_asset.name                 = "BitShares XT";
-   base_asset.description          = "The base shares of the DAC";
-   base_asset.issuer_name_id       = 0;
-   base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-   base_asset.current_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-
-   blockchain->store_asset_record( base_asset );
-}
 
 BOOST_AUTO_TEST_CASE( genesis_block_test )
 {
@@ -61,176 +32,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       chain_database_ptr blockchain = std::make_shared<chain_database>();
       blockchain->open( dir.path() );
 
-      wallet  my_wallet( blockchain );
-      my_wallet.open( dir.path() / "wallet", "password" );
-
-      std::vector<address> addresses;
-
-      for( uint32_t i = 0; i < 10; ++i )
-         addresses.push_back( my_wallet.get_new_address() );
-
-      initialize_chain_state( blockchain, addresses );
-
-
-      for( uint64_t i = 1; i <= BTS_BLOCKCHAIN_DELEGATES; ++i )
-      {
-         std::string delegate_name = "delegate-"+fc::to_string(i);
-         my_wallet.import_private_key( 
-                    fc::ecc::private_key::regenerate( fc::sha256::hash( delegate_name.c_str(), 
-                                                                        delegate_name.size() ) ) );
-      }
-
-      my_wallet.scan_state();
-      ilog( "balance: ${b}", ("b", my_wallet.get_balance() ) );
-
-      for( uint32_t i = 0; i < 3; ++i )
-      {
-         auto spend_trx = my_wallet.send_to_address( asset( 400000000, 0 ), address() );
-         ilog( "\n${spend_trx}", ("spend_trx", fc::json::to_pretty_string( spend_trx ) ) );
-
-         ilog( "size: ${s}", ("s",spend_trx.data_size() ) );
-
-         auto eval_state = blockchain->store_pending_transaction( spend_trx );
-         FC_ASSERT( eval_state );
-         ilog( "\n${eval_state}", ("eval_state", fc::json::to_pretty_string( *eval_state ) ) );
-      }
-
-      for( uint32_t i = 0; i < 2; ++i )
-      {
-         auto next_block_time = my_wallet.next_block_production_time();
-         ilog( "next block production time: ${t}", ("t",next_block_time) );
-         auto wait_time = next_block_time - fc::time_point::now();
-         ilog( "waiting ${s} seconds to produce block", ("s", wait_time.count()/1000000 ) );
-         fc::usleep( wait_time );
-         ilog( "producing block" );
-         auto pending_trxs = blockchain->get_pending_transactions();
-         auto next_block   = blockchain->generate_block( next_block_time );
-         ilog( "produced block:\n${b}", ("b",fc::json::to_pretty_string( next_block ) ) );
-         my_wallet.sign_block( next_block );
-
-         blockchain->push_block( next_block );
-
-         /** the wallet can ony perform this operation if it controls the ID of the
-          * current delegate.
-          */
-         // auto next_block = my_wallet.create_next_block( trxs );
-
-         ilog( "balance: ${b}", ("b", my_wallet.get_balance() ) );
-         fc::usleep( fc::seconds(2) );
-      }
-
-      for( uint32_t i = 0; i < 3; ++i )
-      {
-         auto spend_trx = my_wallet.send_to_address( asset( 20000000000, 0 ), address() );
-         ilog( "\n${spend_trx}", ("spend_trx", fc::json::to_pretty_string( spend_trx ) ) );
-
-         ilog( "size: ${s}", ("s",spend_trx.data_size() ) );
-
-         auto eval_state = blockchain->store_pending_transaction( spend_trx );
-         FC_ASSERT( eval_state );
-         ilog( "\n${eval_state}", ("eval_state", fc::json::to_pretty_string( *eval_state ) ) );
-      }
-
-      for( uint32_t i = 0; i < 1; ++i )
-      {
-         auto next_block_time = my_wallet.next_block_production_time();
-         ilog( "next block production time: ${t}", ("t",next_block_time) );
-         auto wait_time = next_block_time - fc::time_point::now();
-         ilog( "waiting ${s} seconds to produce block", ("s", wait_time.count()/1000000 ) );
-         fc::usleep( wait_time );
-         ilog( "producing block" );
-         auto pending_trxs = blockchain->get_pending_transactions();
-         auto next_block   = blockchain->generate_block( next_block_time );
-         ilog( "produced block:\n${b}", ("b",fc::json::to_pretty_string( next_block ) ) );
-         my_wallet.sign_block( next_block );
-
-         blockchain->push_block( next_block );
-
-         /** the wallet can ony perform this operation if it controls the ID of the
-          * current delegate.
-          */
-         // auto next_block = my_wallet.create_next_block( trxs );
-
-         ilog( "balance: ${b}", ("b", my_wallet.get_balance() ) );
-         fc::usleep( fc::seconds(2) );
-      }
-
-      auto name_reg_trx = my_wallet.reserve_name( "dan", nullptr );
-      auto eval_state = blockchain->store_pending_transaction( name_reg_trx );
-      ilog( "\n${eval_state}", ("eval_state", fc::json::to_pretty_string( *eval_state ) ) );
-
-      {
-         auto next_block_time = my_wallet.next_block_production_time();
-         ilog( "next block production time: ${t}", ("t",next_block_time) );
-         auto wait_time = next_block_time - fc::time_point::now();
-         ilog( "waiting ${s} seconds to produce block", ("s", wait_time.count()/1000000 ) );
-         fc::usleep( wait_time );
-         ilog( "producing block" );
-         auto next_block   = blockchain->generate_block( next_block_time );
-
-         my_wallet.sign_block( next_block );
-         blockchain->push_block( next_block );
-
-
-         /** the wallet can ony perform this operation if it controls the ID of the
-          * current delegate.
-          */
-         // auto next_block = my_wallet.create_next_block( trxs );
-
-         ilog( "balance: ${b}", ("b", my_wallet.get_balance() ) );
-      }
-      bool did_throw = false;
-      try {
-         auto name_reg_trx = my_wallet.reserve_name( "dan", nullptr );
-      } catch ( const fc::exception& e )
-      {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
-         did_throw = true;
-      }
-      FC_ASSERT( did_throw );
-
-
-
-
-
-      {
-         fc::usleep( fc::seconds(1) );
-         auto update_name_reg_trx = my_wallet.update_name( "dan", "cool data" );
-         auto eval_state = blockchain->store_pending_transaction( update_name_reg_trx );
-         ilog( "\n${eval_state}", ("eval_state", fc::json::to_pretty_string( *eval_state ) ) );
-
-         auto next_block_time = my_wallet.next_block_production_time();
-         ilog( "next block production time: ${t}", ("t",next_block_time) );
-         auto wait_time = next_block_time - fc::time_point::now();
-         ilog( "waiting ${s} seconds to produce block", ("s", wait_time.count()/1000000 ) );
-         fc::usleep( wait_time );
-         ilog( "producing block" );
-         auto next_block   = blockchain->generate_block( next_block_time );
-
-         my_wallet.sign_block( next_block );
-         blockchain->push_block( next_block );
-
-
-         /** the wallet can ony perform this operation if it controls the ID of the
-          * current delegate.
-          */
-         // auto next_block = my_wallet.create_next_block( trxs );
-
-         ilog( "balance: ${b}", ("b", my_wallet.get_balance() ) );
-      }
-
-
-
-
-
-
-
-
-
-
-
-      
-
+      ilog( "." );
       auto delegate_list = blockchain->get_delegates_by_vote();
       ilog( "delegates: ${delegate_list}", ("delegate_list",delegate_list) );
       for( uint32_t i = 0; i < delegate_list.size(); ++i )
@@ -246,6 +48,16 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          ilog( "\n${a}", ("a",fc::json::to_pretty_string(a) ) );
       });
 
+
+      wallet  my_wallet( blockchain );
+      my_wallet.open( dir.path() / "wallet", "password" );
+
+      auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
+      for( auto key: keys )
+      {
+         my_wallet.import_private_key( key );
+      }
+      my_wallet.scan_state();
       ilog( "next block production time: ${t}", ("t",my_wallet.next_block_production_time()) );
 
       blockchain->close();
@@ -253,6 +65,11 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
    catch ( const fc::exception& e )
    {
       elog( "${e}", ("e",e.to_detail_string() ) );
+      throw;
+   }
+   catch ( ... )
+   {
+      elog( "exception" );
       throw;
    }
 }

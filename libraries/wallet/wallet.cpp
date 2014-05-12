@@ -171,8 +171,9 @@ namespace bts { namespace wallet {
                 return meta_itr->second.value.as_int64();
             }
 
-            void initialize_wallet()
+            void initialize_wallet( const std::string& password )
             {
+               _wallet_password = fc::sha512::hash( password.c_str(), password.size() );
                FC_ASSERT( _wallet_password != fc::sha512(), "No wallet password specified" );
 
                auto key = fc::ecc::private_key::generate();
@@ -183,6 +184,7 @@ namespace bts { namespace wallet {
                _master_key = master_key_record();
                _master_key->index = get_new_index();
                _master_key->encrypted_key = fc::aes_encrypt( _wallet_password, fc::raw::pack(exp) );
+               _master_key->checksum = fc::sha512::hash( _wallet_password );
 
                _wallet_db.store( _master_key->index, wallet_record( *_master_key ) );
             }
@@ -536,7 +538,6 @@ namespace bts { namespace wallet {
    void wallet::open( const fc::path& wallet_dir, const std::string& password )
    { try {
       my->_wallet_db.open( wallet_dir, true );
-      unlock(password);
 
       auto record_itr = my->_wallet_db.begin();
       while( record_itr.valid() )
@@ -605,7 +606,7 @@ namespace bts { namespace wallet {
       if( !my->_master_key )
       {
          wlog( "No master key record found, initializing new wallet" );
-         my->initialize_wallet();
+         my->initialize_wallet(password);
       }
       my->_current_fee = my->get_default_fee();
       my->_is_open = true;
@@ -633,7 +634,6 @@ namespace bts { namespace wallet {
 
    bool wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
-      FC_ASSERT( is_open() );
       FC_ASSERT( password.size() > 0 );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
