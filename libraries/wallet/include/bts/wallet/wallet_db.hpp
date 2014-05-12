@@ -168,9 +168,10 @@ namespace bts { namespace wallet {
    {
        static const uint32_t          type;
 
-       private_key_record():index(0),contact_index(0){}
+       private_key_record():index(0),contact_index(0),extra_key_index(0){}
        private_key_record( int32_t index, 
                            int32_t contact_idx, 
+                           int32_t extra_index,
                            const fc::ecc::private_key&, 
                            const fc::sha512& password );
 
@@ -178,6 +179,7 @@ namespace bts { namespace wallet {
 
        int32_t                        index;
        int32_t                        contact_index;
+       int32_t                        extra_key_index;
        std::vector<char>              encrypted_key;
    };
 
@@ -225,7 +227,7 @@ FC_REFLECT_DERIVED( bts::wallet::wallet_asset_record, (bts::wallet::asset_record
 FC_REFLECT_DERIVED( bts::wallet::wallet_account_record, (bts::wallet::account_record), (index) )
 FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::wallet::name_record), (index) )
 FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
-FC_REFLECT( bts::wallet::private_key_record,  (index)(contact_index)(encrypted_key) )
+FC_REFLECT( bts::wallet::private_key_record,  (index)(contact_index)(extra_key_index)(encrypted_key) )
 
 namespace bts { namespace wallet {
        template<typename RecordType>

@@ -90,6 +90,7 @@ namespace bts { namespace blockchain {
             void                       initialize_genesis();
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
+            void                       clear_pending(  const full_block& blk );
             void                       switch_to_fork( const block_id_type& block_id );
             void                       extend_chain( const full_block& blk );
             std::vector<block_id_type> get_fork_history( const block_id_type& id );
@@ -160,6 +161,16 @@ namespace bts { namespace blockchain {
          auto itr = _fork_number_db.find( block_num );
          if( itr.valid() ) return itr.value();
          return current_blocks;
+      }
+      void  chain_database_impl::clear_pending(  const full_block& blk )
+      {
+         for( auto trx: blk.user_transactions )
+         {
+            auto id = trx.id();
+            _pending_transactions.remove( id );
+         }
+         // TODO... only clear the real ones...
+         _pending_fee_index.clear();    
       }
 
       /**
@@ -245,6 +256,7 @@ namespace bts { namespace blockchain {
                transaction_evaluation_state_ptr trx_eval_state = 
                       std::make_shared<transaction_evaluation_state>(pending_state);
                trx_eval_state->evaluate( trx );
+               ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
               // TODO:  capture the evaluation state with a callback for wallets...
               // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
                pending_state->store_transaction_location( trx.id(), 
@@ -271,9 +283,9 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::save_redo_state( const block_id_type& block_id, 
                                                  const pending_chain_state_ptr& pending_state )
-      {
+      {try{
            _redo_state.store( block_id, *pending_state );
-      }
+      }FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
       void chain_database_impl::clear_redo_state( const block_id_type& id )
       {
          _redo_state.remove(id);
@@ -287,7 +299,9 @@ namespace bts { namespace blockchain {
             FC_ASSERT( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
             FC_ASSERT( block_data.timestamp >  _head_block_header.timestamp, "", 
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
-            FC_ASSERT( block_data.timestamp <  fc::time_point::now() );
+            fc::time_point_sec now = fc::time_point::now();
+            FC_ASSERT( block_data.timestamp <=  now,
+                       "${t} < ${now}", ("t",block_data.timestamp)("now",now));
 
             size_t block_size = block_data.block_size();
             auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
@@ -311,6 +325,7 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
+         ilog( "extend chain..." );
          auto block_id = block_data.id();
          try {
             verify_header( block_data );
@@ -344,6 +359,7 @@ namespace bts { namespace blockchain {
             // TODO: verify that apply changes can be called any number of
             // times without changing the database other than the first 
             // attempt.
+           // ilog( "apply changes\n${s}", ("s",fc::json::to_pretty_string( *pending_state) ) );
             pending_state->apply_changes();
 
             mark_included( block_id, true );
@@ -353,6 +369,8 @@ namespace bts { namespace blockchain {
             clear_redo_state( block_id );
 
             update_head_block( block_data );
+
+            clear_pending( block_data );
 
             if( _observer ) _observer->block_applied( summary );
          } 
@@ -448,6 +466,7 @@ namespace bts { namespace blockchain {
       my->_fork_number_db.open( data_dir / "fork_number_db", true );
       my->_fork_db.open( data_dir / "fork_db", true );
       my->_undo_state.open( data_dir / "undo_state", true );
+      my->_redo_state.open( data_dir / "redo_state", true );
 
       my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
       my->_pending_transactions.open( data_dir / "pending_transactions", true );
@@ -594,6 +613,7 @@ namespace bts { namespace blockchain {
 
       block_fork_data fork = my->store_and_index( block_id, block_data );
 
+      ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
@@ -873,7 +893,7 @@ namespace bts { namespace blockchain {
       }
 
       next_block.block_num          = my->_head_block_header.block_num + 1;
-      next_block.previous           = my->_head_block_header.id();
+      next_block.previous           = my->_head_block_id;
       next_block.timestamp          = timestamp;
       next_block.fee_rate           = next_block.next_fee( my->_head_block_header.fee_rate, block_size );
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();

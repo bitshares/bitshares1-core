@@ -54,9 +54,12 @@ namespace bts{ namespace wallet {
      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_key ) );
   }
   
-  private_key_record::private_key_record( int32_t index, int32_t contact_idx, 
+  private_key_record::private_key_record( int32_t index_arg, int32_t contact_idx_arg, int32_t extra_index_arg,
                                           const fc::ecc::private_key& key, const fc::sha512& password )
   {
+     index = index_arg;
+     contact_index = contact_idx_arg;
+     extra_key_index = extra_index_arg;
      encrypted_key = fc::aes_encrypt( password, fc::raw::pack( key ) );
   }
 

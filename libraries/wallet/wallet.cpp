@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define EXTRA_PRIVATE_KEY_BASE (100*1000*1000ll)
-#define ACCOUNT_INDEX_BASE     (200*1000*1000ll)
+//#define ACCOUNT_INDEX_BASE     (200*1000*1000ll)
 
 
 namespace bts { namespace wallet {
@@ -47,6 +47,7 @@ namespace bts { namespace wallet {
              */
             virtual void block_applied( const block_summary& summary ) override
             {
+               state_changed( summary.applied_changes );
                for( auto trx : summary.block_data.user_transactions )
                {
                   scan_transaction( trx );
@@ -245,11 +246,8 @@ namespace bts { namespace wallet {
                    case withdraw_signature_type:
                    {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
-                      ilog( "owner: ${owner}  ${is_mine}  ${recv}", 
-                            ("owner",owner)("is_mine",is_my_address(owner))("recv",_receive_keys) );
                       if( is_my_address( owner ) )
                       {
-                          ilog( "index..." );
                           index_account( _receive_keys.find( owner )->second, account );
                       }
                       break;
@@ -488,7 +486,8 @@ namespace bts { namespace wallet {
 
             fc::ecc::private_key get_private_key( const hkey_index& index )
             { try {
-                if( index.address_num < 0 )
+                //if( index.address_num < 0 )
+                if( index.trx_num == -1 )
                 {
                     auto priv_key_rec_itr = _extra_receive_keys.find( index.address_num );
                     if( priv_key_rec_itr == _extra_receive_keys.end() )
@@ -673,6 +672,7 @@ namespace bts { namespace wallet {
         wcr.index             = ++my->_last_contact_index;
         wcr.name              = name;
         wcr.extended_send_key = contact_pub_key;
+        wlog( "creating contact '${name}'", ("name",wcr) );
 
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
@@ -728,14 +728,15 @@ namespace bts { namespace wallet {
          wlog( "duplicate import of key ${a}", ("a",pub_address) );
          return;
       }
-      int32_t key_num = -(EXTRA_PRIVATE_KEY_BASE + my->_extra_receive_keys.size());
-      auto pkr = private_key_record( key_num, contact_index, priv_key, my->_wallet_password );
+      int32_t key_num = my->_extra_receive_keys.size();
+      auto record_id = my->get_new_index();
+      auto pkr = private_key_record( record_id, contact_index, key_num, priv_key, my->_wallet_password );
       my->_extra_receive_keys[key_num] = pkr;
-      my->_receive_keys[pub_address] = hkey_index( contact_index, 0, key_num );
-      my->_receive_keys[ address(pts_address(key,false,56) )] = hkey_index( contact_index, 0, key_num );
-      my->_receive_keys[ address(pts_address(key,true,56) ) ] = hkey_index( contact_index, 0, key_num );
-      my->_receive_keys[ address(pts_address(key,false,0) ) ] = hkey_index( contact_index, 0, key_num );
-      my->_receive_keys[ address(pts_address(key,true,0) )  ] = hkey_index( contact_index, 0, key_num );
+      my->_receive_keys[pub_address] = hkey_index( contact_index, -1, key_num );
+      my->_receive_keys[ address(pts_address(key,false,56) )] = hkey_index( contact_index, -1, key_num );
+      my->_receive_keys[ address(pts_address(key,true,56) ) ] = hkey_index( contact_index, -1, key_num );
+      my->_receive_keys[ address(pts_address(key,false,0) ) ] = hkey_index( contact_index, -1, key_num );
+      my->_receive_keys[ address(pts_address(key,true,0) )  ] = hkey_index( contact_index, -1, key_num );
 
       my->_wallet_db.store( key_num, pkr );
    }

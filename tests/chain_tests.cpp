@@ -71,32 +71,42 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
                ("my",my_wallet.get_balance(0))
                ("your",your_wallet.get_balance(0)) );
 
+      share_type total_sent = 0;
       for( uint32_t i = 0; i < 8; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
          ilog( "next block production time: ${t}", ("t",next_block_time) );
+
+         auto wait_until_time = my_wallet.next_block_production_time();
+         auto sleep_time = wait_until_time - fc::time_point::now();
+         ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
+         fc::usleep( sleep_time );
+
+
          full_block next_block = blockchain->generate_block( next_block_time );
          my_wallet.sign_block( next_block );
          blockchain->push_block( next_block );
          blockchain2->push_block( next_block );
+
+         ilog( "my balance: ${my}   your balance: ${your}",
+               ("my",my_wallet.get_balance(0))
+               ("your",your_wallet.get_balance(0)) );
+         FC_ASSERT( total_sent == your_wallet.get_balance(0).amount, "",
+                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance(0).amount));
 
          fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 0; t < 1; ++t )
          {
             auto your_address = your_wallet.get_new_address("my-"+fc::to_string(t));
-            auto trx = my_wallet.send_to_address( asset( 3000000 ), your_address );
+            auto amnt = rand()%30000;
+            auto trx = my_wallet.send_to_address( asset( amnt ), your_address );
             blockchain->store_pending_transaction( trx );
             blockchain2->store_pending_transaction( trx );
+            total_sent += amnt;
+            ilog( "trx: ${trx}", ("trx",trx) );
          }
 
-         auto wait_until_time = my_wallet.next_block_production_time();
-         auto sleep_time = wait_until_time - fc::time_point::now();
-         ilog( "my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance(0))
-               ("your",your_wallet.get_balance(0)) );
-         ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
-         fc::usleep( sleep_time );
       }
 
       blockchain->close();

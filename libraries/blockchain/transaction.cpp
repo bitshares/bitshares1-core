@@ -263,6 +263,7 @@ namespace bts { namespace blockchain {
       if( arec->condition.asset_id == 0 ) 
          sub_vote( arec->condition.delegate_id, op.amount );
 
+      wlog( "store after withdraw ${r}", ("r",*arec) );
       _current_state->store_account_record( *arec );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
@@ -429,7 +430,6 @@ namespace bts { namespace blockchain {
       if( !!op.active_key )
          cur_record->active_key = *op.active_key;
 
-      ilog( "store ${r}   op.json_data ${d} ${op}", ("r",*cur_record)("d",op.json_data)("op",op) );
       _current_state->store_name_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 

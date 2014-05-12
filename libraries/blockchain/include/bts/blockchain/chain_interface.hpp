@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
    {
       account_record():balance(0){}
       account_record( const withdraw_condition& c )
-      :condition(c){}
+      :balance(0),condition(c){}
 
       account_record( const address& owner, const asset& balance, name_id_type delegate_id );
 
