@@ -170,6 +170,7 @@ namespace bts { namespace blockchain {
             _pending_transactions.remove( id );
          }
          // TODO... only clear the real ones...
+         elog( "ERROR... calling clear here will cause all unprocessed transactions to be lost, please fix ASAP" );
          _pending_fee_index.clear();    
       }
 
@@ -857,6 +858,12 @@ namespace bts { namespace blockchain {
           trxs.push_back( item.second );
       }
       return trxs;
+   }
+   bool chain_database::is_known_transaction( const transaction_id_type& trx_id )
+   {
+      auto pending_itr = my->_pending_transactions.find( trx_id );
+      if( pending_itr.valid() ) return true;
+      return !!get_transaction_location( trx_id );
    }
 
    full_block chain_database::generate_block( fc::time_point_sec timestamp )
