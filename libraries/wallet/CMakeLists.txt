@@ -7,6 +7,7 @@ file(GLOB HEADERS "include/bts/wallet/*.hpp")
 
 add_library( bts_wallet 
              wallet.cpp
+             wallet_db.cpp
              extended_address.cpp
              ${HEADERS}
            )

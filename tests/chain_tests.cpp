@@ -1,7 +1,7 @@
 #define BOOST_TEST_MODULE BlockchainTests2
 #include <boost/test/unit_test.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/wallet.hpp>
+#include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
@@ -9,6 +9,7 @@
 #include <fc/thread/thread.hpp>
 
 using namespace bts::blockchain;
+using namespace bts::wallet;
 
 void initialize_chain_state( chain_database_ptr blockchain, const std::vector<address>& addresses )
 {
@@ -107,8 +108,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          ilog( "produced block:\n${b}", ("b",fc::json::to_pretty_string( next_block ) ) );
          my_wallet.sign_block( next_block );
 
-         auto summary = blockchain->push_block( next_block );
-         my_wallet.scan(summary);
+         blockchain->push_block( next_block );
 
          /** the wallet can ony perform this operation if it controls the ID of the
           * current delegate.
@@ -144,8 +144,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          ilog( "produced block:\n${b}", ("b",fc::json::to_pretty_string( next_block ) ) );
          my_wallet.sign_block( next_block );
 
-         auto summary = blockchain->push_block( next_block );
-         my_wallet.scan(summary);
+         blockchain->push_block( next_block );
 
          /** the wallet can ony perform this operation if it controls the ID of the
           * current delegate.
@@ -170,9 +169,8 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          auto next_block   = blockchain->generate_block( next_block_time );
 
          my_wallet.sign_block( next_block );
-         auto summary = blockchain->push_block( next_block );
+         blockchain->push_block( next_block );
 
-         my_wallet.scan(summary);
 
          /** the wallet can ony perform this operation if it controls the ID of the
           * current delegate.
@@ -210,9 +208,8 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          auto next_block   = blockchain->generate_block( next_block_time );
 
          my_wallet.sign_block( next_block );
-         auto summary = blockchain->push_block( next_block );
+         blockchain->push_block( next_block );
 
-         my_wallet.scan(summary);
 
          /** the wallet can ony perform this operation if it controls the ID of the
           * current delegate.

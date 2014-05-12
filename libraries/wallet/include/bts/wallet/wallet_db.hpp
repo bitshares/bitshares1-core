@@ -105,11 +105,11 @@ namespace bts { namespace wallet {
        static const uint32_t type;
        wallet_transaction_record():transmit_count(0){}
 
-       wallet_transaction_record( int32_t i, transaction_evaluation_state s )
-       :index(i),state(s){}
+       wallet_transaction_record( int32_t i, const signed_transaction& s )
+       :index(i),trx(s){}
 
        int32_t                        index;
-       transaction_evaluation_state   state;
+       signed_transaction             trx;
        std::string                    memo;
        fc::time_point                 received;
        transaction_location           location;
@@ -214,7 +214,7 @@ FC_REFLECT( bts::wallet::wallet_contact_record,
 
 FC_REFLECT( bts::wallet::wallet_transaction_record,
             (index)
-            (state)
+            (trx)
             (memo)
             (received)
             (location) 

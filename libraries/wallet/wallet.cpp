@@ -15,7 +15,7 @@ namespace bts { namespace wallet {
 
    namespace detail 
    {
-      class wallet_impl
+      class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
             wallet_impl():_last_contact_index(-1)
@@ -25,6 +25,32 @@ namespace bts { namespace wallet {
                // is of lower value to prevent initial spam attacks.   We also
                // want to subsidize the delegates earlly on.
                _current_fee = asset( 1000*100, 0 );
+            }
+
+            virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
+            {
+               for( auto account : applied_changes->accounts )
+               {
+                  scan_account( account.second );         
+               }
+               for( auto current_asset : applied_changes->assets )
+               {
+                  scan_asset( current_asset.second );
+               }
+               for( auto name : applied_changes->names )
+               {
+                  scan_name( name.second );
+               }
+            }
+            /**
+             *  This method is called anytime a block is applied to the chain.
+             */
+            virtual void block_applied( const block_summary& summary ) override
+            {
+               for( auto trx : summary.block_data.user_transactions )
+               {
+                  scan_transaction( trx );
+               }
             }
 
             wallet* self;
@@ -368,10 +394,10 @@ namespace bts { namespace wallet {
                return _assets.find( op.asset_id ) != _assets.end();
             }
 
-            void scan_transaction_state( const transaction_evaluation_state_ptr& state )
+            void scan_transaction( const signed_transaction& trx )
             {
                 bool mine = false;
-                for( auto op : state->trx.operations )
+                for( auto op : trx.operations )
                 {
                    switch( (operation_type_enum)op.type  )
                    {
@@ -405,20 +431,20 @@ namespace bts { namespace wallet {
                 }
                 if( mine )
                 {
-                   store_transaction( state );
+                   store_transaction( trx );
                 }
             }
-            void store_transaction( const transaction_evaluation_state_ptr& state )
+            void store_transaction( const signed_transaction& trx )
             {
-               auto trx_id = state->trx.id();
+               auto trx_id = trx.id();
                auto trx_rec_itr = _transactions.find( trx_id );
                if( trx_rec_itr != _transactions.end() )
                {
-                  trx_rec_itr->second.state = *state;
+                  trx_rec_itr->second.trx = trx;
                }
                else
                {
-                  _transactions[trx_id] = wallet_transaction_record( get_new_index(), *state );
+                  _transactions[trx_id] = wallet_transaction_record( get_new_index(), trx );
                   trx_rec_itr = _transactions.find( trx_id );
                }   
                _wallet_db.store( trx_rec_itr->second.index, trx_rec_itr->second );
@@ -501,6 +527,7 @@ namespace bts { namespace wallet {
    {
       my->self = this;
       my->_blockchain = chain_db;
+      chain_db->set_observer( my.get() );
    }
 
    wallet::~wallet(){}
@@ -536,7 +563,7 @@ namespace bts { namespace wallet {
             case transaction_record_type: 
             {
                auto wtr    = record.as<wallet_transaction_record>();
-               auto trx_id = wtr.state.trx.id();
+               auto trx_id = wtr.trx.id();
                my->_transactions[trx_id] = wtr;
                break;
             }
@@ -583,6 +610,8 @@ namespace bts { namespace wallet {
       my->_current_fee = my->get_default_fee();
       my->_is_open = true;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
+
+   bool wallet::is_open()const { return my->_is_open; }
 
    void wallet::lock()
    {
@@ -661,6 +690,19 @@ namespace bts { namespace wallet {
       return cons;
    }
 
+   void wallet::import_private_key( const fc::ecc::private_key& priv_key, const std::string& contact_name )
+   {
+       auto contact_itr = my->_contact_name_index.find( contact_name );
+       if( contact_itr != my->_contact_name_index.end() )
+       {
+          import_private_key( priv_key, contact_itr->second );
+       }
+       else
+       {
+          create_contact( contact_name );
+          import_private_key( priv_key, contact_name );
+       }
+   }
    void wallet::import_private_key( const fc::ecc::private_key& priv_key, int32_t contact_index )
    {
       FC_ASSERT( is_unlocked() );
@@ -693,21 +735,9 @@ namespace bts { namespace wallet {
 
    void wallet::scan( const block_summary& summary )
    {
-      for( auto account : summary.applied_changes->accounts )
+      for( auto trx : summary.block_data.user_transactions )
       {
-         my->scan_account( account.second );         
-      }
-      for( auto current_asset : summary.applied_changes->assets )
-      {
-         my->scan_asset( current_asset.second );
-      }
-      for( auto name : summary.applied_changes->names )
-      {
-         my->scan_name( name.second );
-      }
-      for( auto trx_state : summary.transaction_states )
-      {
-         my->scan_transaction_state( trx_state );
+     //    my->scan_transaction_state( trx_state );
       }
    }
    asset wallet::get_balance( asset_id_type asset_id  )

@@ -1,5 +1,6 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/genesis_config.hpp>
 
 #include <bts/db/level_pod_map.hpp>
 #include <bts/db/level_map.hpp>
@@ -9,22 +10,6 @@
 #include <fc/log/logger.hpp>
 using namespace bts::blockchain;
 
-   struct name_config
-   {
-      std::string               name;
-      bool                      is_delegate;
-      fc::ecc::public_key_data  owner;
-   };
-  struct genesis_block_config
-  {
-     genesis_block_config():supply(0) {}
-
-     double                                                         supply;
-     std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
-     std::vector< name_config >                                     names;
-  };
-FC_REFLECT( name_config, (name)(is_delegate)(owner) )
-FC_REFLECT( genesis_block_config, (supply)(balances)(names) )
 
 struct vote_del
 {
