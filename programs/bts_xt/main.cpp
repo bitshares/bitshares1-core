@@ -46,8 +46,6 @@ int main( int argc, char** argv )
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
                               ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
-                              ("trustee-private-key", boost::program_options::value<std::string>(), "act as a trustee using the given private key")
-                              ("trustee-address", boost::program_options::value<std::string>(), "trust the given BTS address to generate blocks")
                               ("genesis-json", boost::program_options::value<std::string>(), "generate a genesis block with the given json file (only for testing, only accepted when the blockchain is empty)");
 
    boost::program_options::positional_options_description positional_config;
@@ -88,6 +86,7 @@ int main( int argc, char** argv )
       _global_client = c.get();
       c->set_chain( chain );
       c->set_wallet( wall );
+      c->run_delegate();
 
       bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
       rpc_server->set_client(c);

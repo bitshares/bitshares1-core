@@ -30,7 +30,7 @@ namespace bts { namespace client {
           *  Produces a block every 30 seconds if there is at least
           *  once transaction.
           */
-         void run_trustee( const fc::ecc::private_key& k );
+         void run_delegate();
 
          void add_node( const std::string& ep );
 

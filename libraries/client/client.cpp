@@ -22,7 +22,7 @@ namespace bts { namespace client {
                 _p2p_node->set_delegate(this);
             }
 
-            void trustee_loop();
+            void delegate_loop();
             signed_transactions get_pending_transactions() const;
 
             /* Implement chain_client_impl */
@@ -43,7 +43,6 @@ namespace bts { namespace client {
             virtual void connection_count_changed(uint32_t c) override;
             /// @}
 
-            fc::ecc::private_key                                        _trustee_key;
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
 
@@ -51,61 +50,52 @@ namespace bts { namespace client {
             bts::blockchain::chain_database_ptr                         _chain_db;
             std::unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
             bts::wallet::wallet_ptr                                     _wallet;
-            fc::future<void>                                            _trustee_loop_complete;
+            fc::future<void>                                            _delegate_loop_complete;
        };
 
-       void client_impl::trustee_loop()
+       void client_impl::delegate_loop()
        {
           fc::usleep( fc::seconds( 10 ) );
          _last_block = _chain_db->get_head_block().timestamp;
-         while( !_trustee_loop_complete.canceled() )
+         while( !_delegate_loop_complete.canceled() )
          {
             auto now = fc::time_point::now();
             auto next_block_time = _wallet->next_block_production_time();
-            if( (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
+            ilog( "next block time: ${b}  interval: ${i} seconds", 
+                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
+            if( next_block_time < now && 
+                (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
                fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
                continue;
             }
             else
             {
-               fc::usleep( (next_block_time - now) );
-               // produce block, sign and broadcast
-            }
-
-            /*
-           signed_transactions pending_trxs;
-           pending_trxs = get_pending_transactions();
-           _last_block = _chain_db->get_head_block().timestamp;
-           if( (fc::time_point::now() - _last_block) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
-           {
-             try {
-               bts::blockchain::trx_block blk = _wallet->generate_next_block(*_chain_db, pending_trxs);
-               blk.sign(_trustee_key);
-               // _chain_db->push_block( blk );
-               if (_chain_client)
+               if( _wallet->is_unlocked() )
                {
-                 on_new_block(blk);
-                 _chain_client->broadcast_block(blk);
+                  ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
+                  try {
+                     fc::usleep( (next_block_time - now) );
+                     full_block next_block = _chain_db->generate_block( next_block_time );
+                     _wallet->sign_block( next_block );
+
+                     on_new_block(next_block);
+                     _p2p_node->broadcast(block_message(next_block.id(), next_block, 
+                                                        next_block.signee ));
+                  } 
+                  catch ( const fc::exception& e )
+                  {
+                     wlog( "${e}", ("e",e.to_detail_string() ) );
+                  }
                }
                else
                {
-                 // with the p2p code, if you broadcast something to the network, it will not
-                 // immediately send it back to you
-                 on_new_block(blk);
-                 _p2p_node->broadcast(block_message(blk.id(), blk, blk.trustee_signature));
+                  elog( "unable to produce block because wallet is locked" );
                }
-               _last_block = fc::time_point::now();
-             }
-             catch( const fc::exception& e )
-             {
-               elog("error producing block?: ${e}", ("e", e.to_detail_string()));
-             }
-           }
-           */
-           fc::usleep(fc::seconds(1));
+            }
+            fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2) );
          }
-       } // trustee_loop
+       } // delegate_loop
 
        signed_transactions client_impl::get_pending_transactions() const
        {
@@ -231,7 +221,7 @@ namespace bts { namespace client {
            block_message_to_send.block = _chain_db->get_block(id.item_hash);
            block_message_to_send.block_id = block_message_to_send.block.id();
            FC_ASSERT(id.item_hash == block_message_to_send.block_id);
-        //   block_message_to_send.signature = block_message_to_send.block.trustee_signature;
+        //   block_message_to_send.signature = block_message_to_send.block.delegate_signature;
            return block_message_to_send;
          }
 
@@ -262,11 +252,11 @@ namespace bts { namespace client {
     client::~client()
     {
        try {
-          if( my->_trustee_loop_complete.valid() )
+          if( my->_delegate_loop_complete.valid() )
           {
-             my->_trustee_loop_complete.cancel();
-             ilog( "waiting for trustee loop to complete" );
-             my->_trustee_loop_complete.wait();
+             my->_delegate_loop_complete.cancel();
+             ilog( "waiting for delegate loop to complete" );
+             my->_delegate_loop_complete.wait();
           }
        }
        catch ( const fc::canceled_exception& ) {}
@@ -301,10 +291,9 @@ namespace bts { namespace client {
       my->_p2p_node->broadcast(trx_message(trx));
     }
 
-    void client::run_trustee( const fc::ecc::private_key& k )
+    void client::run_delegate( )
     {
-       my->_trustee_key = k;
-       my->_trustee_loop_complete = fc::async( [=](){ my->trustee_loop(); } );
+       my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );
     }
 
     bool client::is_connected() const

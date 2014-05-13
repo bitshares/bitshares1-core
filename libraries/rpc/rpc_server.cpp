@@ -46,6 +46,7 @@ namespace bts { namespace rpc {
              (get_name_record)\
              (validateaddress)\
              (rescan)\
+             (rescan_state)\
              (import_wallet)\
              (import_private_key)\
              (importprivkey)\
@@ -551,10 +552,11 @@ Examples:
 
 
     static rpc_server::method_data open_wallet_metadata{"open_wallet", nullptr,
-                                     /* description */ "Opens the wallet at the given path, if no path is given then the default wallet will be opened.",
+                                     /* description */ "Opens the wallet at the given path.",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
-                                                       {{"wallet_name",   "path", false} },
+                                                       {{"wallet_name",   "path", true},
+                                                        {"password",      "string", true} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -563,10 +565,7 @@ Wallets exist in the wallet data directory
     {
       try
       {
-         if( params.size() )
-           _client->get_wallet()->open( params[0].as_string() );
-         else
-           _client->get_wallet()->open_named_wallet( "default" );
+         _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -586,7 +585,8 @@ Wallets exist in the wallet data directory
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
-                                                       {{"wallet_name",   "string", true} },
+                                                       {{"wallet_name",   "string", true}, 
+                                                        {"password",   "string", true} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -595,7 +595,7 @@ Wallets exist in the wallet data directory
     {
       try
       {
-        _client->get_wallet()->open_named_wallet( params[0].as_string() );
+        _client->get_wallet()->open_named_wallet( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -1162,6 +1162,20 @@ Examples:
       if (params.size() == 1)
         block_num = (uint32_t)params[0].as_int64();
       _client->get_wallet()->scan_chain( block_num);
+      return fc::variant(true);
+    }
+
+    static rpc_server::method_data rescan_state_metadata{"rescan_state", nullptr,
+            /* description */ "Rescans the genesis block and state (not the transactions)",
+            /* returns: */    "bool",
+            /* params:          name              type    required */
+                              {},
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::rescan_state(const fc::variants& params)
+    {
+      _client->get_wallet()->scan_state();
       return fc::variant(true);
     }
 

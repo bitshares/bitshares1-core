@@ -33,7 +33,7 @@ namespace bts { namespace wallet {
        template<typename RecordType>
        RecordType as()const;
 
-       fc::enum_type<wallet_record_type,uint8_t>   type;
+       fc::enum_type<uint8_t,wallet_record_type>   type;
        std::string                                 json_data;
    };
 
@@ -199,7 +199,9 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type,
                    (transaction_record_type)
                    (account_record_type)
                    (name_record_type)
+                   (private_key_record_type)
                    (asset_record_type)
+                   (meta_record_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_meta_record, (index)(key)(value) )

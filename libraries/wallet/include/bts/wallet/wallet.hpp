@@ -23,9 +23,9 @@ namespace bts { namespace wallet {
          fc::path    get_wallet_filename_for_user( const std::string& username )const;
 
          std::string get_wallet_name()const;
-         void        open_named_wallet( const std::string& wallet_name );
+         void        open_named_wallet( const std::string& wallet_name, const std::string& password = "password" );
          void        create_named_wallet( const std::string& wallet_name, const std::string& key_password = "password" );
-         void        open( const fc::path& file );
+         void        open( const fc::path& file, const std::string& password  = "password");
          void        backup_wallet( const fc::path& file );
 
          bool        is_open()const;

@@ -44,14 +44,14 @@ namespace bts{ namespace wallet {
   }
 
   extended_private_key    master_key_record::get_extended_private_key( const fc::sha512& password )const
-  {
+  { try {
      return fc::raw::unpack<extended_private_key>( fc::aes_decrypt( password, encrypted_key ) );
-  }
+  } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
   fc::ecc::private_key    private_key_record::get_private_key( const fc::sha512& password )const
-  {
+  { try {
      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_key ) );
-  }
+  } FC_RETHROW_EXCEPTIONS( warn, "" ) }
   
   private_key_record::private_key_record( int32_t index_arg, int32_t contact_idx_arg, int32_t extra_index_arg,
                                           const fc::ecc::private_key& key, const fc::sha512& password )

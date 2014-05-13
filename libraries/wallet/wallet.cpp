@@ -205,7 +205,7 @@ namespace bts { namespace wallet {
             void initialize_wallet( const std::string& password )
             {
                _wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-               FC_ASSERT( _wallet_password != fc::sha512(), "No wallet password specified" );
+               FC_ASSERT( password.size() > 0 , "No wallet password specified" );
 
                auto key = fc::ecc::private_key::generate();
                auto chain_code = fc::ecc::private_key::generate();
@@ -576,11 +576,11 @@ namespace bts { namespace wallet {
    wallet::~wallet(){}
 
 
-   void wallet::open_named_wallet( const std::string& wallet_name )
+   void wallet::open_named_wallet( const std::string& wallet_name, const std::string& password )
    { try {
       try {
          close();
-         open( my->_data_dir / wallet_name );
+         open( my->_data_dir / wallet_name, password );
          my->_wallet_name = wallet_name;
       } catch ( ... ) { my->_wallet_name = ""; throw; }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) )
@@ -596,88 +596,97 @@ namespace bts { namespace wallet {
             my->initialize_wallet( password );
          }
          close();
-         open_named_wallet( wallet_name );
-         unlock( password );
+         open_named_wallet( wallet_name, password );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet with name ${name}", ("name",wallet_name) ) }
 
-   void wallet::open( const fc::path& wallet_dir )
+   void wallet::open( const fc::path& wallet_dir, const std::string& password )
    { try {
-      FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}", ("wallet_dir",wallet_dir) )
+      FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}  ${password}", ("wallet_dir",wallet_dir)("password",password) )
 
       std::cout << "Opening wallet " << wallet_dir.generic_string() << "\n";
 
+      my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
       my->_wallet_db.open( wallet_dir, true );
 
       auto record_itr = my->_wallet_db.begin();
       while( record_itr.valid() )
       {
          auto record = record_itr.value();
-         switch( (wallet_record_type)record.type )
-         {
-            case master_key_record_type:
+         wlog( "wallet record: ${r}:", ("r",record) );
+         try {
+            switch( (wallet_record_type)record.type )
             {
-               my->_master_key = record.as<master_key_record>();
-               break;
-            }
-            case contact_record_type:
-            {
-               auto cr = record.as<wallet_contact_record>();
-               FC_ASSERT( cr.index == record_itr.key() );
-               my->_contacts[cr.index] = cr;
-               my->_contact_name_index[cr.name] = cr.index;
+               case master_key_record_type:
+               {
+                  my->_master_key = record.as<master_key_record>();
+                  unlock( password );
+                  break;
+               }
+               case contact_record_type:
+               {
+                  auto cr = record.as<wallet_contact_record>();
+                  FC_ASSERT( cr.index == record_itr.key() );
+                  my->_contacts[cr.index] = cr;
+                  my->_contact_name_index[cr.name] = cr.index;
 
-             //  if( my->get_last_contact_index() < cr.index )
-             //     my->_last_contact_index = cr.index;
-               break;
+                //  if( my->get_last_contact_index() < cr.index )
+                //     my->_last_contact_index = cr.index;
+                  break;
+               }
+               case transaction_record_type: 
+               {
+                  auto wtr    = record.as<wallet_transaction_record>();
+                  auto trx_id = wtr.trx.id();
+                  my->_transactions[trx_id] = wtr;
+                  break;
+               }
+               case name_record_type:
+               {
+                  auto wnr = record.as<wallet_name_record>();
+                  my->_names[wnr.id] = wnr;
+                  break;
+               }
+               case asset_record_type:
+               {
+                  auto wnr = record.as<wallet_asset_record>();
+                  my->_assets[wnr.id] = wnr;
+                  break;
+               }
+               case account_record_type:
+               {
+                  auto war = record.as<wallet_account_record>();
+                  my->_accounts[war.id()] = war;
+                  break;
+               }
+               case private_key_record_type:
+               {
+                  auto pkr = record.as<private_key_record>();
+                  my->_extra_receive_keys[pkr.index] = pkr;
+                  auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
+                  my->_receive_keys[ address( pubkey ) ] = 
+                     hkey_index( pkr.contact_index, 0, pkr.index );
+                  my->_receive_keys[ address(pts_address(pubkey,false,56) )] = 
+                     hkey_index( pkr.contact_index, 0, pkr.index );
+                  my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] = 
+                     hkey_index( pkr.contact_index, 0, pkr.index );
+                  my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] = 
+                     hkey_index( pkr.contact_index, 0, pkr.index );
+                  my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] = 
+                     hkey_index( pkr.contact_index, 0, pkr.index );
+                  break;
+               }
+               case meta_record_type:
+               {
+                  auto metar = record.as<wallet_meta_record>();
+                  my->_meta[metar.key] = metar;
+                  break;
+               }
             }
-            case transaction_record_type: 
-            {
-               auto wtr    = record.as<wallet_transaction_record>();
-               auto trx_id = wtr.trx.id();
-               my->_transactions[trx_id] = wtr;
-               break;
-            }
-            case name_record_type:
-            {
-               auto wnr = record.as<wallet_name_record>();
-               my->_names[wnr.id] = wnr;
-               break;
-            }
-            case asset_record_type:
-            {
-               auto wnr = record.as<wallet_asset_record>();
-               my->_assets[wnr.id] = wnr;
-               break;
-            }
-            case account_record_type:
-            {
-               auto war = record.as<wallet_account_record>();
-               my->_accounts[war.id()] = war;
-               break;
-            }
-            case private_key_record_type:
-            {
-               auto pkr = record.as<private_key_record>();
-               my->_extra_receive_keys[pkr.index] = pkr;
-               auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
-               my->_receive_keys[ address( pubkey ) ] = 
-                  hkey_index( pkr.contact_index, 0, pkr.index );
-               my->_receive_keys[ address(pts_address(pubkey,false,56) )] = 
-                  hkey_index( pkr.contact_index, 0, pkr.index );
-               my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] = 
-                  hkey_index( pkr.contact_index, 0, pkr.index );
-               my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] = 
-                  hkey_index( pkr.contact_index, 0, pkr.index );
-               my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] = 
-                  hkey_index( pkr.contact_index, 0, pkr.index );
-               break;
-            }
-            case meta_record_type:
-            {
-               auto metar = record.as<wallet_meta_record>();
-               my->_meta[metar.key] = metar;
-               break;
-            }
+         } 
+         catch ( const fc::exception& e )
+         {
+            elog( "error loading wallet record: ${e}", ("e",e.to_detail_string() ) );
+            // TODO: log errors and report them to user...
          }
          ++record_itr;
       }
@@ -686,6 +695,8 @@ namespace bts { namespace wallet {
       scan_chain( my->get_last_scanned_block_number() );
 
       my->_is_open = true;
+      lock();
+
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
    bool wallet::is_open()const { return my->_is_open; }
@@ -727,6 +738,7 @@ namespace bts { namespace wallet {
    bool wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
       FC_ASSERT( password.size() > 0 );
+      FC_ASSERT( !!my->_master_key );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
       if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) ) 
