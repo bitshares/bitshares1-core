@@ -79,38 +79,7 @@ namespace bts { namespace cli {
             {
               if( !_client->get_wallet()->is_open() )
               {
-                try
-                {
-                  // try to open without a passphrase first
                   _rpc_server->direct_invoke_method("open_wallet", fc::variants());
-                  return;
-                }
-                catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
-                {
-                }
-                catch (const fc::exception& e)
-                {
-                }
-                catch (...)
-                {
-                }
-
-                while (1)
-                {
-                  std::string passphrase = _self->get_line("wallet passphrase: ", true);
-                  if (passphrase.empty())
-                    FC_THROW_EXCEPTION(canceled_exception, "User gave up entering wallet passphrase");
-                  try
-                  {
-                    fc::variants arguments{_client->get_wallet()->get_current_user(), passphrase};
-                    _rpc_server->direct_invoke_method("open_wallet", arguments);
-                    return;
-                  }
-                  catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
-                  {
-                    std::cout << "Invalid passphrase, try again\n";
-                  }
-                }
               }
             }
 
@@ -740,8 +709,8 @@ namespace bts { namespace cli {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
-    my->create_wallet_if_missing();
-    my->interactive_open_wallet();
+   // my->create_wallet_if_missing();
+   // my->interactive_open_wallet();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }

@@ -146,9 +146,6 @@ namespace bts { namespace blockchain {
          case withdraw_op_type:
             evaluate_withdraw( op.as<withdraw_operation>() );
             break;
-         case first_deposit_op_type:
-            evaluate_first_deposit( op.as<first_deposit_operation>() );
-            break;
          case deposit_op_type:
             evaluate_deposit( op.as<deposit_operation>() );
             break;
@@ -273,7 +270,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( !error_code, "Error evaluating transaction ${error_code}", ("error_code",error_code)("data",data) );
    }
 
-   void transaction_evaluation_state::evaluate_first_deposit( const first_deposit_operation& op )
+   void transaction_evaluation_state::evaluate_deposit( const deposit_operation& op )
    { try {
        auto deposit_account_id = op.account_id();
        auto delegate_record = _current_state->get_name_record( op.condition.delegate_id );
@@ -296,21 +293,6 @@ namespace bts { namespace blockchain {
        _current_state->store_account_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
-   void transaction_evaluation_state::evaluate_deposit( const deposit_operation& op )
-   { try {
-       auto cur_record = _current_state->get_account_record( op.account_id );
-       if( !cur_record ) fail( BTS_UNKNOWN_ADDRESS, fc::variant(op) );
-
-       cur_record->last_update   = _current_state->timestamp();
-       cur_record->balance       += op.amount;
-
-       sub_balance( op.account_id, asset(op.amount, cur_record->condition.asset_id) );
-
-       if( cur_record->condition.asset_id == 0 ) 
-          add_vote( cur_record->condition.delegate_id, op.amount );
-
-       _current_state->store_account_record( *cur_record );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
 
    void transaction_evaluation_state::add_vote( name_id_type delegate_id, share_type amount )
@@ -514,7 +496,7 @@ namespace bts { namespace blockchain {
 
    void transaction::deposit( const address& owner, const asset& amount, name_id_type delegate_id )
    {
-      operations.push_back( first_deposit_operation( owner, amount, delegate_id ) );
+      operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
    void transaction::reserve_name( const std::string& name, 
                                    const std::string& json_data, 

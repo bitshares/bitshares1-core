@@ -8,13 +8,12 @@ namespace bts { namespace blockchain {
    {
       null_op_type          = 0,
       withdraw_op_type      = 1,
-      first_deposit_op_type = 2,
-      deposit_op_type       = 3,
-      reserve_name_op_type = 4,
-      update_name_op_type   = 6,
-      create_asset_op_type  = 7,
-      update_asset_op_type  = 8,
-      issue_asset_op_type   = 9
+      deposit_op_type       = 2,
+      reserve_name_op_type  = 3,
+      update_name_op_type   = 4,
+      create_asset_op_type  = 5,
+      update_asset_op_type  = 6,
+      issue_asset_op_type   = 7
    };
 
    /**
@@ -85,17 +84,6 @@ namespace bts { namespace blockchain {
        std::vector<char> claim_input_data;
    };
 
-   /**
-    *  Adds a balance to the address, the share type is
-    *  implied by the address which has a defined
-    *  condition.
-    */
-   struct deposit_operation
-   {
-       static const operation_type_enum type; 
-       account_id_type                  account_id;
-       share_type                       amount;
-   };
 
    /**
     *  The first time a deposit is made to a new address
@@ -103,14 +91,14 @@ namespace bts { namespace blockchain {
     *  defined.  After the first deposit then future 
     *  deposits merely reference the address.
     */
-   struct first_deposit_operation 
+   struct deposit_operation 
    {
        static const operation_type_enum type; 
        /** owner is just the hash of the condition */
        account_id_type                account_id()const;
 
-       first_deposit_operation():amount(0){}
-       first_deposit_operation( const address& owner, const asset& amnt, name_id_type delegate_id );
+       deposit_operation():amount(0){}
+       deposit_operation( const address& owner, const asset& amnt, name_id_type delegate_id );
 
        /** the condition that the funds may be withdrawn,
         *  this is only necessary if the address is new.
@@ -220,7 +208,6 @@ namespace bts { namespace blockchain {
 FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (null_op_type)
                  (withdraw_op_type)
-                 (first_deposit_op_type)
                  (deposit_op_type)
                  (create_asset_op_type)
                  (update_asset_op_type)
@@ -231,8 +218,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (account_id)(amount)(claim_input_data) )
-FC_REFLECT( bts::blockchain::deposit_operation, (account_id)(amount) )
-FC_REFLECT( bts::blockchain::first_deposit_operation, (amount)(condition) )
+FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_name_id)(maximum_share_supply) )
 FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_name_id) )
 FC_REFLECT( bts::blockchain::issue_asset_operation, (asset_id)(account_id)(amount) )

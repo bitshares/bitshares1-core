@@ -4,7 +4,6 @@
 namespace bts { namespace blockchain {
    const operation_type_enum withdraw_operation::type      = withdraw_op_type;
    const operation_type_enum deposit_operation::type       = deposit_op_type;
-   const operation_type_enum first_deposit_operation::type = first_deposit_op_type;
    const operation_type_enum create_asset_operation::type  = create_asset_op_type;
    const operation_type_enum update_asset_operation::type  = update_asset_op_type;
    const operation_type_enum issue_asset_operation::type   = issue_asset_op_type;
@@ -12,12 +11,12 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_name_operation::type   = update_name_op_type;
 
 
-   account_id_type  first_deposit_operation::account_id()const
+   account_id_type  deposit_operation::account_id()const
    {
       return condition.get_account();
    }
 
-   first_deposit_operation::first_deposit_operation( const address& owner, 
+   deposit_operation::deposit_operation( const address& owner, 
                                                      const asset& amnt, 
                                                      name_id_type delegate_id )
    {
@@ -42,9 +41,6 @@ namespace fc {
       {
          case withdraw_operation::type:
             obj["data"] =  fc::raw::unpack<withdraw_operation>( var.data );
-            break;
-         case first_deposit_operation::type:
-            obj[ "data"] = fc::raw::unpack<first_deposit_operation>( var.data );
             break;
          case deposit_operation::type:
             obj[ "data"] = fc::raw::unpack<deposit_operation>( var.data );
@@ -80,9 +76,6 @@ namespace fc {
       {
          case withdraw_operation::type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_operation>() );
-            break;
-         case first_deposit_operation::type:
-            vo.data = fc::raw::pack( obj["data"].as<first_deposit_operation>() );
             break;
          case deposit_operation::type:
             vo.data = fc::raw::pack( obj["data"].as<deposit_operation>() );

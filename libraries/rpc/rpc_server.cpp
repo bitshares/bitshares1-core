@@ -22,6 +22,8 @@ namespace bts { namespace rpc {
              (help)\
              (getinfo)\
              (open_wallet)\
+             (create_named_wallet)\
+             (open_named_wallet)\
              (current_wallet)\
              (close_wallet)\
              (walletlock)\
@@ -549,27 +551,22 @@ Examples:
 
 
     static rpc_server::method_data open_wallet_metadata{"open_wallet", nullptr,
-                                     /* description */ "Unlock the wallet with the given passphrase, if no user is specified 'default' will be used.",
+                                     /* description */ "Opens the wallet at the given path, if no path is given then the default wallet will be opened.",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
-                                                       {{"wallet_username",   "string", false} ,
-                                                        {"wallet_passphrase", "string", false}},
+                                                       {{"wallet_name",   "path", false} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
+Wallets exist in the wallet data directory
 								   )"};
     fc::variant rpc_server_impl::open_wallet(const fc::variants& params)
     {
-      std::string username = "default";
-      if (params.size() >= 1 && !params[0].is_null() && !params[0].as_string().empty())
-        username = params[0].as_string();
-
-      std::string passphrase;
-      if( params.size() >= 2 && !params[1].is_null() )
-        passphrase = params[1].as_string();
-
       try
       {
-        _client->get_wallet()->open( username, passphrase );
+         if( params.size() )
+           _client->get_wallet()->open( params[0].as_string() );
+         else
+           _client->get_wallet()->open_named_wallet( "default" );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -585,8 +582,54 @@ Examples:
     }
 
 
+    static rpc_server::method_data open_named_wallet_metadata{"open_named_wallet", nullptr,
+                                     /* description */ "Opens the wallet of the given name",
+                                     /* returns: */    "bool",
+                                     /* params:          name                 type      required */
+                                                       {{"wallet_name",   "string", true} },
+                                   /* prerequisites */ rpc_server::json_authenticated,
+								   R"(
+Wallets exist in the wallet data directory
+								   )"};
+    fc::variant rpc_server_impl::open_named_wallet(const fc::variants& params)
+    {
+      try
+      {
+        _client->get_wallet()->open_named_wallet( params[0].as_string() );
+        return fc::variant(true);
+      }
+      catch( const fc::exception& e )
+      {
+        wlog( "${e}", ("e",e.to_detail_string() ) );
+        throw e;
+      }
+      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
+      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
+                  //       or some other filesystem error then it should be properly reported.
+        throw rpc_wallet_passphrase_incorrect_exception();
+      }
+    }
+
+    static rpc_server::method_data create_named_wallet_metadata{"create_named_wallet", nullptr,
+                                     /* description */ "Opens the wallet of the given name",
+                                     /* returns: */    "bool",
+                                     /* params:          name                 type      required */
+                                                       {{"wallet_name",   "string", true},
+                                                        {"password", "string", true} },
+                                   /* prerequisites */ rpc_server::json_authenticated,
+								   R"(
+Wallets exist in the wallet data directory
+								   )"};
+    fc::variant rpc_server_impl::create_named_wallet(const fc::variants& params)
+    { try {
+        _client->get_wallet()->create_named_wallet( params[0].as_string(), params[1].as_string() );
+        return fc::variant(true);
+    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+
     static rpc_server::method_data current_wallet_metadata{"current_wallet", nullptr,
-                                        /* description */ "Returns the username passed to open_wallet",
+                                        /* description */ "Returns the wallet name passed to open_named_wallet",
                                         /* returns: */    "string",
                                         /* params:     */ {},
                                         /* prerequisites */ rpc_server::no_prerequisites,
@@ -596,7 +639,7 @@ Examples:
     {
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
-       return fc::variant(_client->get_wallet()->get_current_user());
+       return fc::variant(_client->get_wallet()->get_wallet_name());
     }
 
     static rpc_server::method_data close_wallet_metadata{"close_wallet", nullptr,
@@ -1231,7 +1274,13 @@ Returns up to count reserved names that follow first alphabetically.
              )" };
     fc::variant rpc_server_impl::get_names(const fc::variants& params)
     {
-      return fc::variant(_client->get_chain()->get_names( params[0].as_string(), params[0].as_int64() ) );
+      std::string first;
+      uint32_t count = uint32_t(-1);
+      if( params.size() > 0 )
+         first = params[0].as_string();
+      if( params.size() > 1 )
+         count = params[0].as<uint32_t>();
+      return fc::variant(_client->get_chain()->get_names( first, count ) );
     }
 
     static rpc_server::method_data get_delegates_metadata{"get_delegates", nullptr,

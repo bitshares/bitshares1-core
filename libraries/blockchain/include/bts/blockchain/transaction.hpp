@@ -86,7 +86,6 @@ namespace bts { namespace blockchain {
          virtual void update_delegate_votes();
          
          virtual void evaluate_withdraw( const withdraw_operation& op );
-         virtual void evaluate_first_deposit( const first_deposit_operation& op );
          virtual void evaluate_deposit( const deposit_operation& op );
          virtual void evaluate_reserve_name( const reserve_name_operation& op );
          virtual void evaluate_update_name( const update_name_operation& op );

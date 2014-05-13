@@ -52,7 +52,8 @@ namespace bts { namespace wallet {
    {
       next_record_number,
       last_contact_index,
-      default_transaction_fee
+      default_transaction_fee,
+      last_scanned_block_number
    };
 
    /** Used to store key/value property pairs.

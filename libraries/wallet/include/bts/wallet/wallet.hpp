@@ -18,14 +18,18 @@ namespace bts { namespace wallet {
          wallet( const chain_database_ptr& chain );
          ~wallet();
 
-         std::string get_current_user()const;
-         void set_data_directory( const fc::path& data_dir );
-         fc::path get_wallet_filename_for_user( const std::string& username )const;
-         void open( const std::string& username, const std::string& passphrase );
+         void        set_data_directory( const fc::path& data_dir );
+         void        get_data_directory()const;
+         fc::path    get_wallet_filename_for_user( const std::string& username )const;
 
-         void open( const fc::path& file, const std::string& password );
-         bool is_open()const;
-         bool close();
+         std::string get_wallet_name()const;
+         void        open_named_wallet( const std::string& wallet_name );
+         void        create_named_wallet( const std::string& wallet_name, const std::string& key_password = "password" );
+         void        open( const fc::path& file );
+         void        backup_wallet( const fc::path& file );
+
+         bool        is_open()const;
+         bool        close();
 
          bool unlock( const std::string& password,
                       const fc::microseconds& tiemout = fc::seconds(30) );
@@ -43,6 +47,7 @@ namespace bts { namespace wallet {
          void scan_block( const full_block& );
          void scan_chain( uint32_t block_num,
                             scan_progress_callback cb = scan_progress_callback() );
+         uint32_t    get_last_scanned_block_number()const;
 
          fc::time_point_sec next_block_production_time()const;
          

@@ -18,7 +18,7 @@ namespace bts { namespace wallet {
       class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
-            wallet_impl():_last_contact_index(-1)
+            wallet_impl()
             {
                // this effectively sets the maximum transaction size to 10KB without
                // custom code.  We will set this initial fee high while the network
@@ -62,7 +62,7 @@ namespace bts { namespace wallet {
             bool           _is_open;
             fc::time_point _relock_time;
             fc::path       _data_dir;
-            std::string    _current_user;
+            std::string    _wallet_name;
 
             /** meta_record_property_enum is the key */
             std::unordered_map<int,wallet_meta_record>                          _meta;
@@ -79,7 +79,6 @@ namespace bts { namespace wallet {
                                                                                 
             /** lookup contact state */                                         
             std::unordered_map<uint32_t,wallet_contact_record>                  _contacts;
-            int32_t                                                             _last_contact_index;
                                                                                 
             /** registered accounts */                                             
             std::unordered_map<account_id_type,wallet_account_record>           _accounts;
@@ -125,6 +124,34 @@ namespace bts { namespace wallet {
                meta_itr->second.value = next_index;
                _wallet_db.store( meta_itr->second.index, meta_itr->second );
                return next_index;
+            }
+
+            uint32_t get_last_scanned_block_number()
+            {
+               auto meta_itr = _meta.find( last_scanned_block_number );
+               if( meta_itr == _meta.end() )
+               {
+                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, 0 ); 
+                  _meta[last_scanned_block_number] = rec;
+                  _wallet_db.store( rec.index, rec );
+                  return 0;
+               }
+               return meta_itr->second.value.as_int64();
+            }
+            void set_last_scanned_block_number( uint32_t num )
+            {
+               auto meta_itr = _meta.find( last_scanned_block_number );
+               if( meta_itr == _meta.end() )
+               {
+                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, int64_t(num) ); 
+                  _meta[last_scanned_block_number] = rec;
+                  _wallet_db.store( rec.index, rec );
+               }
+               else
+               {
+                  meta_itr->second.value = num;
+                  _wallet_db.store( meta_itr->second.index, meta_itr->second );
+               }
             }
 
             /** contact indexes are tracked independently from record indexes because
@@ -337,11 +364,15 @@ namespace bts { namespace wallet {
             {
                auto account_itr = _accounts.find( op.account_id );
                if( account_itr != _accounts.end() )
+               {
+                  auto account_rec = _blockchain->get_account_record(op.account_id);
+                  if( !!account_rec ) scan_account( *account_rec );
                   return true;
+               }
                return false;
             }
             bool is_my_address( const address& a ) { return self->is_my_address( a ); }
-            bool scan_first_deposit( const first_deposit_operation& op )
+            bool scan_deposit( const deposit_operation& op )
             {
                switch( (withdraw_condition_types) op.condition.condition )
                {
@@ -373,10 +404,6 @@ namespace bts { namespace wallet {
                return false;
             }
 
-            bool scan_deposit( const deposit_operation& op )
-            {
-               return _accounts.find( op.account_id ) != _accounts.end();
-            }
 
             bool scan_reserve_name( const reserve_name_operation& op )
             {
@@ -413,12 +440,17 @@ namespace bts { namespace wallet {
                      case withdraw_op_type:
                         mine |= scan_withdraw( op.as<withdraw_operation>() );
                         break;
-                     case first_deposit_op_type:
-                        mine |= scan_first_deposit( op.as<first_deposit_operation>() );
-                        break;
                      case deposit_op_type:
-                        mine |= scan_deposit( op.as<deposit_operation>() );
+                     {
+                        auto dop = op.as<deposit_operation>();
+                        if( scan_deposit( dop ) )
+                        {
+                           auto account_rec = _blockchain->get_account_record(dop.account_id());
+                           if( !!account_rec ) scan_account( *account_rec );
+                           mine = true;
+                        }
                         break;
+                     }
                      case reserve_name_op_type:
                         mine |= scan_reserve_name( op.as<reserve_name_operation>() );
                         break;
@@ -443,6 +475,7 @@ namespace bts { namespace wallet {
                    store_transaction( trx );
                 }
             }
+
             void store_transaction( const signed_transaction& trx )
             {
                auto trx_id = trx.id();
@@ -543,13 +576,35 @@ namespace bts { namespace wallet {
    wallet::~wallet(){}
 
 
-   void wallet::open( const std::string& username, const std::string& passphrase )
-   {
-      my->_current_user = username;
-      open( my->_data_dir / username, passphrase );
-   }
-   void wallet::open( const fc::path& wallet_dir, const std::string& password )
+   void wallet::open_named_wallet( const std::string& wallet_name )
    { try {
+      try {
+         close();
+         open( my->_data_dir / wallet_name );
+         my->_wallet_name = wallet_name;
+      } catch ( ... ) { my->_wallet_name = ""; throw; }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) )
+   }
+
+   void wallet::create_named_wallet( const std::string& wallet_name, const std::string& password )
+   { try {
+         auto filename = my->_data_dir / wallet_name;
+         FC_ASSERT( !fc::exists( filename ), "Wallet ${wallet_dir} already exists.", ("wallet_dir",filename) )
+         my->_wallet_db.open( filename, true );
+         if( !my->_master_key )
+         {
+            my->initialize_wallet( password );
+         }
+         close();
+         open_named_wallet( wallet_name );
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet with name ${name}", ("name",wallet_name) ) }
+
+   void wallet::open( const fc::path& wallet_dir )
+   { try {
+      FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}", ("wallet_dir",wallet_dir) )
+
+      std::cout << "Opening wallet " << wallet_dir.generic_string() << "\n";
+
       my->_wallet_db.open( wallet_dir, true );
 
       auto record_itr = my->_wallet_db.begin();
@@ -570,8 +625,8 @@ namespace bts { namespace wallet {
                my->_contacts[cr.index] = cr;
                my->_contact_name_index[cr.name] = cr.index;
 
-               if( my->_last_contact_index < cr.index )
-                  my->_last_contact_index = cr.index;
+             //  if( my->get_last_contact_index() < cr.index )
+             //     my->_last_contact_index = cr.index;
                break;
             }
             case transaction_record_type: 
@@ -625,12 +680,10 @@ namespace bts { namespace wallet {
          }
          ++record_itr;
       }
-      if( !my->_master_key )
-      {
-         wlog( "No master key record found, initializing new wallet" );
-         my->initialize_wallet(password);
-      }
+      FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
       my->_current_fee = my->get_default_fee();
+      scan_chain( my->get_last_scanned_block_number() );
+
       my->_is_open = true;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
@@ -640,9 +693,9 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password = fc::sha512();
    }
-   std::string wallet::get_current_user()const
+   std::string wallet::get_wallet_name()const
    {
-      return my->_current_user;
+      return my->_wallet_name;
    }
    bool wallet::is_locked()const { return !is_unlocked(); }
    bool wallet::is_unlocked()const
@@ -652,8 +705,20 @@ namespace bts { namespace wallet {
 
    bool wallet::close()
    { try {
-      if( !my->_is_open ) return false;
       my->_wallet_db.close();
+      my->_wallet_password = fc::sha512();
+      my->_master_key.reset();
+      my->_contacts.clear();
+      my->_accounts.clear();
+      my->_names.clear();
+      my->_assets.clear();
+      my->_transactions.clear();
+      my->_receive_keys.clear();
+      my->_extra_receive_keys.clear();
+      my->_contact_name_index.clear();
+      my->_meta.clear();
+      my->_wallet_name = "";
+      my->_relock_time = fc::time_point();
       my->_is_open = false;
       return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -681,7 +746,7 @@ namespace bts { namespace wallet {
         FC_ASSERT( is_unlocked() );
 
         wallet_contact_record wcr;
-        wcr.index             = ++my->_last_contact_index;
+        wcr.index             = my->get_next_contact_index(); //++my->_last_contact_index;
         wcr.name              = name;
         wcr.extended_send_key = contact_pub_key;
         wlog( "creating contact '${name}'", ("name",wcr) );
@@ -1012,6 +1077,7 @@ namespace bts { namespace wallet {
           auto blk = my->_blockchain->get_block( i );
           scan_block( blk );
           cb( i, head_block_num, 0, 0 );
+          my->set_last_scanned_block_number( i );
        }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
