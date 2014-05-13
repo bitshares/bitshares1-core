@@ -69,8 +69,15 @@ namespace bts { namespace wallet {
 
             chain_database_ptr                                                  _blockchain;
 
-            /** map record id to encrypted record data */
+            /** map record id to encrypted record data , this db should only be written to via
+             * my->store_record()  
+             **/
             bts::db::level_map< uint32_t, wallet_record >                       _wallet_db;
+            template<typename T>
+            void store_record( const T& record )
+            {
+               _wallet_db.store( record.index, wallet_record(record) );
+            }
                                                                                 
             /** the password required to decrypt the wallet records */          
             fc::sha512                                                          _wallet_password;
@@ -117,12 +124,13 @@ namespace bts { namespace wallet {
                if( meta_itr == _meta.end() )
                {
                   _meta[next_record_number] = wallet_meta_record( 0, next_record_number, 1 );
-                  _wallet_db.store( 0, _meta[next_record_number] );
+                  store_record( _meta[next_record_number] );
                   return 1;
                }
                auto next_index = meta_itr->second.value.as_int64() + 1;
-               meta_itr->second.value = next_index;
-               _wallet_db.store( meta_itr->second.index, meta_itr->second );
+               _meta[next_record_number].value = next_index;
+               FC_ASSERT( _meta[next_record_number].index == 0 );
+               store_record( _meta[next_record_number] );
                return next_index;
             }
 
@@ -133,7 +141,7 @@ namespace bts { namespace wallet {
                {
                   wallet_meta_record rec( get_new_index(), last_scanned_block_number, -1 ); 
                   _meta[last_scanned_block_number] = rec;
-                  _wallet_db.store( rec.index, rec );
+                  store_record( rec );
                   return -1;
                }
                return meta_itr->second.value.as_int64();
@@ -145,12 +153,12 @@ namespace bts { namespace wallet {
                {
                   wallet_meta_record rec( get_new_index(), last_scanned_block_number, int64_t(num) ); 
                   _meta[last_scanned_block_number] = rec;
-                  _wallet_db.store( rec.index, rec );
+                  store_record( rec );
                }
                else
                {
                   meta_itr->second.value = num;
-                  _wallet_db.store( meta_itr->second.index, meta_itr->second );
+                  store_record( meta_itr->second );
                }
             }
 
@@ -165,12 +173,12 @@ namespace bts { namespace wallet {
                 {
                    auto new_index = get_new_index();
                    _meta[last_contact_index] = wallet_meta_record( new_index, last_contact_index, 1 );
-                   _wallet_db.store( new_index, _meta[last_contact_index] );
+                   store_record( _meta[last_contact_index] );
                    return 1;
                 }
                 auto next_index = meta_itr->second.value.as_int64() + 1;
                 meta_itr->second.value = next_index;
-                _wallet_db.store( meta_itr->second.index, meta_itr->second );
+                store_record(meta_itr->second );
                 return next_index;
             }
 
@@ -183,7 +191,7 @@ namespace bts { namespace wallet {
                    _meta[default_transaction_fee] = wallet_meta_record( new_index, 
                                                                         default_transaction_fee, 
                                                                         fc::variant(asset( 1000*100, 0)) );
-                   _wallet_db.store( new_index, _meta[last_contact_index] );
+                   store_record( _meta[default_transaction_fee] );
                    return _meta[default_transaction_fee].value.as<asset>();
                 }
                 return meta_itr->second.value.as<asset>();
@@ -196,7 +204,7 @@ namespace bts { namespace wallet {
                 {
                    auto new_index = get_new_index();
                    _meta[last_contact_index] = wallet_meta_record( new_index, last_contact_index, 0 );
-                   _wallet_db.store( new_index, _meta[last_contact_index] );
+                   store_record( _meta[last_contact_index] );
                    return 0;
                 }
                 return meta_itr->second.value.as_int64();
@@ -217,7 +225,7 @@ namespace bts { namespace wallet {
                _master_key->encrypted_key = fc::aes_encrypt( _wallet_password, fc::raw::pack(exp) );
                _master_key->checksum = fc::sha512::hash( _wallet_password );
 
-               _wallet_db.store( _master_key->index, wallet_record( *_master_key ) );
+               store_record( *_master_key  );
             }
 
             /** the key index that the account belongs to */
@@ -235,7 +243,7 @@ namespace bts { namespace wallet {
                {
                   itr->second = wallet_account_record( itr->second.index, account );
                }
-               _wallet_db.store( itr->second.index, itr->second );
+               store_record( itr->second );
             }
 
             void index_name( const hkey_index& idx, const name_record& name )
@@ -250,7 +258,7 @@ namespace bts { namespace wallet {
                    _names[name.id] = wallet_name_record( get_new_index(), name );
                    itr = _names.find( name.id );
                 }
-                _wallet_db.store( itr->second.index, itr->second );
+                store_record( itr->second );
             }
 
             void index_asset( const asset_record& a )
@@ -265,7 +273,7 @@ namespace bts { namespace wallet {
                    _assets[a.id] = wallet_asset_record( get_new_index(), a );
                    itr = _assets.find( a.id );
                 }
-                _wallet_db.store( itr->second.index, itr->second );
+                store_record( itr->second );
             }
 
 
@@ -489,7 +497,7 @@ namespace bts { namespace wallet {
                   _transactions[trx_id] = wallet_transaction_record( get_new_index(), trx );
                   trx_rec_itr = _transactions.find( trx_id );
                }   
-               _wallet_db.store( trx_rec_itr->second.index, trx_rec_itr->second );
+               store_record( trx_rec_itr->second );
             }
 
             void withdraw_to_transaction( signed_transaction& trx, 
@@ -612,7 +620,7 @@ namespace bts { namespace wallet {
       while( record_itr.valid() )
       {
          auto record = record_itr.value();
-         wlog( "wallet record: ${r}:", ("r",record) );
+         wlog( "${k}] wallet record: ${r}:", ("r",record)("k",record_itr.key()) );
          try {
             switch( (wallet_record_type)record.type )
             {
@@ -625,8 +633,7 @@ namespace bts { namespace wallet {
                case contact_record_type:
                {
                   auto cr = record.as<wallet_contact_record>();
-                  FC_ASSERT( cr.index == record_itr.key() );
-                  my->_contacts[cr.index] = cr;
+                  my->_contacts[cr.contact_num] = cr;
                   my->_contact_name_index[cr.name] = cr.index;
 
                 //  if( my->get_last_contact_index() < cr.index )
@@ -759,18 +766,19 @@ namespace bts { namespace wallet {
         FC_ASSERT( is_unlocked() );
 
         wallet_contact_record wcr;
-        wcr.index             = my->get_next_contact_index(); //++my->_last_contact_index;
+        wcr.index             = my->get_new_index(); 
+        wcr.contact_num       = my->get_next_contact_index(); //++my->_last_contact_index;
         wcr.name              = name;
         wcr.extended_send_key = contact_pub_key;
         wlog( "creating contact '${name}'", ("name",wcr) );
 
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
-        wcr.extended_recv_key = master_key.child( wcr.index );
+        wcr.extended_recv_key = master_key.child( wcr.contact_num );
 
-        my->_contact_name_index[name] = wcr.index;
-        my->_contacts[wcr.index] = wcr;
-        my->_wallet_db.store( wcr.index, wallet_record(wcr) );
+        my->_contact_name_index[name] = wcr.contact_num;
+        my->_contacts[wcr.contact_num] = wcr;
+        my->store_record( wcr );
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create contact", ("name",name)("ext_pub_key", contact_pub_key) ) }
 
@@ -783,7 +791,7 @@ namespace bts { namespace wallet {
         FC_ASSERT( current_wcr != my->_contacts.end() );
         current_wcr->second.extended_send_key = contact_pub_key;
 
-        my->_wallet_db.store( current_wcr->second.index, wallet_record(current_wcr->second) );
+        my->store_record( current_wcr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create contact", ("name",name)("ext_pub_key", contact_pub_key) ) }
 
    std::vector<std::string> wallet::get_contacts()const
@@ -828,7 +836,7 @@ namespace bts { namespace wallet {
       my->_receive_keys[ address(pts_address(key,false,0) ) ] = hkey_index( contact_index, -1, key_num );
       my->_receive_keys[ address(pts_address(key,true,0) )  ] = hkey_index( contact_index, -1, key_num );
 
-      my->_wallet_db.store( key_num, pkr );
+      my->store_record( pkr ); 
    }
 
    void wallet::scan_state()
@@ -881,7 +889,7 @@ namespace bts { namespace wallet {
          auto hindex  = contact.get_next_receive_key_index( 0 );
          wlog( "hindex: ${h}", ("h",hindex) );
          my->_contacts[ contact_name_itr->second ] = contact;
-         my->_wallet_db.store( contact.index, contact );
+         my->store_record( contact ); 
 
          auto priv_key = my->get_private_key( hindex );
          auto pub_key  = priv_key.get_public_key();

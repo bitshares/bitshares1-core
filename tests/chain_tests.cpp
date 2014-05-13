@@ -24,6 +24,25 @@ const char* test_keys = R"([
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
 ])"; 
 
+BOOST_AUTO_TEST_CASE( wallet_test )
+{
+      fc::temp_directory dir; 
+
+      chain_database_ptr blockchain = std::make_shared<chain_database>();
+      blockchain->open( dir.path() );
+
+      wallet  my_wallet( blockchain );
+      my_wallet.set_data_directory( dir.path() );
+      my_wallet.create_named_wallet(  "my_wallet", "password" );
+
+      my_wallet.close();
+      my_wallet.open_named_wallet( "my_wallet", "password" );
+      my_wallet.unlock( "password" );
+      my_wallet.import_private_key( fc::variant("dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f").as<fc::ecc::private_key>() );
+      my_wallet.close();
+      my_wallet.open_named_wallet( "my_wallet", "password" );
+}
+
 
 BOOST_AUTO_TEST_CASE( genesis_block_test )
 {

@@ -3,6 +3,8 @@
 #include <bts/blockchain/extended_address.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/json.hpp>
+#include <fc/io/raw_variant.hpp>
+#include <fc/log/logger.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
@@ -25,16 +27,17 @@ namespace bts { namespace wallet {
 
        template<typename RecordType>
        wallet_record( const RecordType& rec )
-       :type( RecordType::type )
+       :type( RecordType::type ),json_data(rec)
        {
-          json_data = fc::json::to_string( rec );
+         // json_data = (rfc::json::to_string( rec );
        }
 
        template<typename RecordType>
-       RecordType as()const;
+       RecordType as()const;// { return json_data.as<RecordType>(); }
 
        fc::enum_type<uint8_t,wallet_record_type>   type;
-       std::string                                 json_data;
+       //std::string                                 json_data;
+       fc::variant                                 json_data;
    };
 
 
@@ -80,6 +83,7 @@ namespace bts { namespace wallet {
        static const uint32_t type;
      
        int32_t               index;
+       int32_t               contact_num;
        std::string           name;
 
        hkey_index get_next_receive_key_index( uint32_t trx_num = 0 );
@@ -209,6 +213,7 @@ FC_REFLECT( bts::wallet::wallet_record, (type)(json_data) )
 FC_REFLECT( bts::wallet::hkey_index, (contact_num)(trx_num)(address_num) )
 FC_REFLECT( bts::wallet::wallet_contact_record,
             (index)
+            (contact_num)
             (name)
             (extended_send_key)
             (extended_recv_key)
@@ -241,7 +246,8 @@ namespace bts { namespace wallet {
                      ("type",type)
                      ("WithdrawType",RecordType::type) );
        
-          fc::variant v = fc::json::from_string(json_data);
-          return v.as<RecordType>();
+          return json_data.as<RecordType>();
+          //fc::variant v = fc::json::from_string(json_data);
+          //return v.as<RecordType>();
        }
 } }
