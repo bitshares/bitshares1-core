@@ -426,12 +426,21 @@ namespace bts { namespace client {
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
     }
 
-    fc::uint160_t client::get_node_id() const
+    bts::net::node_id_t client::get_node_id() const
     {
       if (my->_p2p_node)
         return my->_p2p_node->get_node_id();      
-      return fc::uint160_t();
+      return bts::net::node_id_t();
     }
+
+    void client::set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+    {
+      if (my->_p2p_node)
+        my->_p2p_node->set_allowed_peers(allowed_peers);      
+      else
+        FC_THROW_EXCEPTION(invalid_operation_exception, "set_allowed_peers only valid in p2p mode");
+    }
+
 
     void client::set_advanced_node_parameters(const fc::variant_object& params)
     {

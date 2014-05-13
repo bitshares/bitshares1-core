@@ -112,3 +112,9 @@
 
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE      (63)
 #define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE (1024*4)
+
+/**
+ * If defined, this disables the requirement that a valid transaction must not
+ * result in a delegate having more than 2% of the total vote
+ */
+//#define DISABLE_DELEGATE_MAX_VOTE_CHECK 1

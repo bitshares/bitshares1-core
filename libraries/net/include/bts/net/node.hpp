@@ -18,6 +18,8 @@ namespace bts { namespace net {
     fc::uint160_t originating_peer;
   };
 
+  typedef fc::uint160_t node_id_t;
+
    /**
     *  @class node_delegate
     *  @brief used by node reports status to client or fetch data from client
@@ -154,7 +156,8 @@ namespace bts { namespace net {
         void set_advanced_node_parameters(const fc::variant_object& params);
         message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
         message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
-        fc::uint160_t get_node_id() const;
+        node_id_t get_node_id() const;
+        void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
       private:
         std::unique_ptr<detail::node_impl> my;
    };

@@ -13,6 +13,7 @@ namespace bts { namespace blockchain {
 
         chain_database* _db;
    };
+   typedef std::shared_ptr<pow_validator> pow_validator_ptr;
 
    class sim_pow_validator : public pow_validator
    {
@@ -25,7 +26,7 @@ namespace bts { namespace blockchain {
       private:
         fc::time_point   _time;
    };
+   typedef std::shared_ptr<sim_pow_validator> sim_pow_validator_ptr;
 
-   typedef std::shared_ptr<pow_validator> pow_validator_ptr;
 
 } } // bts::blockchain

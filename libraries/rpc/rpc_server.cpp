@@ -59,7 +59,9 @@ namespace bts { namespace rpc {
              (addnode)\
              (stop)\
              (_get_transaction_propagation_data)\
-             (_get_block_propagation_data)
+             (_get_block_propagation_data)\
+             (_set_allowed_peers)
+             
 
   namespace detail
   {
@@ -1455,6 +1457,25 @@ in our test network.
     fc::variant rpc_server_impl::_get_block_propagation_data(const fc::variants& params)
     {
       return fc::variant(_client->get_block_propagation_data(params[0].as<block_id_type>()));
+    }
+    static rpc_server::method_data _set_allowed_peers_metadata{"_set_allowed_peers", nullptr,
+            /* description */ "Sets the list of peers this node is allowed to connect to",
+            /* returns: */    "null",
+            /* params:          name              type                      required */
+                              {{"allowed_peers",  "std::vector<bts::net::node_id_t>", true}},
+          /* prerequisites */ rpc_server::json_authenticated,
+R"(
+_set_allowed_peers <allowed_peers> <denied_peers>
+
+Sets the list of peers this node is allowed to connect to
+
+This function sets the list of peers we're allowed to connect to.  It is used during
+testing to force network splits or other weird topologies.
+)" };
+    fc::variant rpc_server_impl::_set_allowed_peers(const fc::variants& params)
+    {
+      _client->set_allowed_peers(params[0].as<std::vector<bts::net::node_id_t> >());
+      return fc::variant();
     }
   } // detail
 

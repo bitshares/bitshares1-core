@@ -30,7 +30,7 @@ FC_REFLECT( bts::net::genesis_block_config, (names)(balances) )
 
 namespace bts { namespace net {
 
-  bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file);
+  bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file, const pow_validator_ptr& pow_validator = pow_validator_ptr());
 
   /**
    * @brief defines the set of callbacks that a server provides.

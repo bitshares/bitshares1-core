@@ -55,7 +55,7 @@ public:
   /** This is called when the node has new information about the synchronization status
    * In particular, 
    *   after a call to sync_from():
-   *     the node_delegate will get a call to sync_status() with count_of_unsynchronized_items=0 if
+   *     the client will get a call to sync_status() with count_of_unsynchronized_items=0 if
    *     the node is already synchronized, or with count_of_unsynchronized_items > 0 if the node
    *     is out of sync.  If the node is out of sync, the node should store and track its 
    *     own _count_of_unsynchronized_items, decrementing it when it pushes a new block
@@ -65,11 +65,11 @@ public:
    *     During a long sync, it is likely that the node will discover blocks generated during
    *     the sync, and will call sync_status() to update the client's count. 
    *   during normal operation:
-   *     The delegate may get a sync_status call during normal operation to notify the
+   *     The client may get a sync_status call during normal operation to notify the
    *     client that it has become aout of sync.  This can happen after being disconnected
    *     from some or all peers (either we were disconnected, or there was a net split that
    *     has now reunified).  Just like the case where the sync was initiated by the client,
-   *     the delegate can now expect the next count_of_unsynchronized_items to be the missing
+   *     the client can now expect the next count_of_unsynchronized_items to be the missing
    *     blocks required to resynch.
    *     
    *  @param item_type the type of the item we're synchronizing, will be the same as item passed to the sync_from() call
@@ -85,7 +85,7 @@ public:
 }; // end class node_delegate
 
 // peer data is stored as metadata of the connection
-struct peer_data
+struct peer_connection
 {
   // synch stuff
   deque<item_hash_t>  ids_of_items_to_get;           // id of items in the blockchain that this peer has told us about
@@ -93,92 +93,94 @@ struct peer_data
   bool peer_needs_sync_items_from_us;
   bool we_need_sync_items_from_peer;
   optional<tuple<item_id, time> > item_ids_requested_from_peer; /// we check this to detect a timed-out request and in busy()
+  map<item_id, time> sync_items_requested_from_peer;
 
   // non-synch stuff
   set<item_id> inventory_peer_advertised_to_us;
   set<item_id> inventory_advertised_to_peer;
 
   map<item_id, time> items_requested_from_peer;  /// fetch from another peer if this peer disconnects
+
   bool busy() { return !items_requested_from_peer.empty() || item_ids_requested_from_peer; }
   bool idle() { return !busy(); }
 
-  enum negotiation_states
+  enum connection_state
   {
-    disconnected,
+    disconnected, 
+    just_connected, // if inbound
+    secure_connection_established, // ecdh complete
+    hello_sent, // if outbound
+    hello_reply_sent, // if inbound
+    connection_rejected_sent, // if inbound
     connected,
-    hello_sent,
-    hello_received,
-    hello_reply_sent,
-    hello_reply_received,
-
+    connection_rejected // if outbound
+  };
 };
-
 class node
 {
-  set<connection> connections; // fully established peers
-  set<connection> negotiating_peers; // peers we're trying to connect to or are still handshaking with
+  set<peer_connection> _active_connections; // fully established peers
+  set<peer_connection> _handshaking_connections; // peers we're trying to connect to or are still handshaking with
 
   /** messages we've received and validated, but have not yet advertised to peers */
   set<item_id> _new_inventory;
 private:
-  queue<item_id> _items_to_fetch;
+  queue<item_id> _items_to_fetch; /// list of items we know another peer has and we want
 
   // syncrhonization state data
-  bool _synchronizing;
-  item_id _last_block_in_our_chain; /// id of the last block on blockchain (updated each time we receive a valid block)
-  set<block_message> _received_sync_items; // items waiting to be processed once we get their predecessors
-  uint32_t _total_number_of_unfetched_items;
+  circular_buffer<item_hash_t> _most_recent_blocks_accepted; /// id of the last few blocks on blockchain (updated each time we receive a valid block)
+  list<block_message> _received_sync_items; // items waiting to be processed once we get their predecessors
+  uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
   // end syncrhonization state data
 
-  set<item_hash_t> _active_requests; // requests sent out to peers already
-
-
-  fetch_next_batch_of_item_ids_from_peer(peer* , item_id last_item_id_seen)
+  fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, item_id last_item_id_seen)
   {
     // send a fetch_blockchain_item_ids_message for the next batch of item_ids after last_item_id_seen
-    // set peer_data->item_ids_requested_from_peer = make_tuple(last_item_id_seen, now());
+    // set peer->item_ids_requested_from_peer = make_tuple(last_item_id_seen, now());
   }
 
-  request_item_from_peer(peer* peer_to_request_from, const item_id& item_to_request) 
-  {
-    peer_to_request_from->send(fetch_item_message(item_to_request));
-    _active_requests.insert(item_id.item_hash);
-    peer_data[peer_to_request_from]->items_requested_from_peer[item_id] = now();
-  }
-
-  fetch_requested_items_task()
+  fetch_items_loop()
   {
     // loops forever (or smarter triggering mechanism)
     // for each item in _items_to_fetch
     //   if there is a peer who isn't fetching anything for us *and* they have advertised the item we're looking for
     //      send them a fetch_item_message to request the item
     //      move it to the items_requested_from_peer list for that peer, and timestamp the request
-    //      insert it into _active_requests
+  }
+  start_synchronizing_with_peer()
+  {
+    // set peer's we_need_sync_items_from_peer to true
+    // send a fetch_item_ids_message for the first batch of item ids after the last block hash 
+    //                  in our _most_recent_blocks_accepted buffer (the last block in our chain)
+    // set that peer's item_ids_requested_from_peer
   }
   start_synchronizing()
   {
     // for each connection
-    //   set peer's in_sync to false
-    //   send a fetch_item_ids_message for the first LIMIT item after _last_block_in_our_chain
-    //   set that peer's item_ids_requested_from_peer
-    // start up the request_blocks_during_sync_loop() task
+    //   call start_synchronizing_with_peer with that peer
   }
-  void request_blocks_during_sync_loop()
+  void fetch_sync_items_loop()
   {
     loop forever:
       wait until we get/valdiate a block, or get a bunch of item_ids
       for each peer:
-        if !peer->busy():
+        if peer->idle():
           for (unsigned i = 0; i < peer->items_to_get.size(); ++i)
           {
-            if (peer->items_to_get[i] not in active_requests_set AND
-                peer->items_to_get[i] not in received_item_set)
+            if (peer->items_to_get[i] not in _active_sync_requests AND
+                peer->items_to_get[i] not in _received_sync_items)
             {
-              request_item_from_peer(peer, items_to_get[i]);
+              request_sync_item_from_peer(peer, items_to_get[i]);
               break;
             }
           }
   }
+
+  // check if this block is the next block in the blockchain, apply it if it is
+  // this pseudo-code is out-of-date.  Right now, in addition to the 
+  // basic algorithm below, we process the list of _received_sync_items to
+  // push all possible blocks to the blockchain.  We also restart synchronization
+  // with other peers to inform them that we have a block they might want.
+  // 
   void process_block_during_sync(peer* originating_peer, block_message new_block_message)
   {
     bool potential_first_block = false;
@@ -205,77 +207,60 @@ private:
       _received_sync_items.insert(new_block_message)
   }
   
-  on_trx_message()
+  process_block_during_normal_operation(peer* originating_peer, block_message new_block_message)
   {
+    // the only reason we're getting a block is if we requested it from a peer's inventory
+    if not in originating_peer->items_requested_from_peer:
+      originating_peer->disconnect(peer_sent_us_bad_data);
+      return;
+    remove from originating peer's items_requested_from_peer
+    try
+      _node_delegate->handle_message(new_block_message);
+      broadcast the message, which adds it to _new_inventory.insert(new_block_message->block_id) and then advertise_new_inventory_task will take it from there
+      add to the end of _most_recent_blocks_accepted
+      remove the block from all peers' inventory_peer_advertised_to_us
+    catch:
+      originating_peer->disconnect(peer_sent_us_bad_data);
   }
-  on_block_message(peer* originating_peer, block_message new_block_message)
-  {
-    if (originating_peer->we_need_sync_items_from_peer)
-      process_block_during_sync(originating_peer, new_block_message);
-    else
-    {
-      // the only reason we're getting a block is if we requested it from a peer's inventory
-      if not in originating_peer->items_requested_from_peer:
-        originating_peer->disconnect(peer_sent_us_bad_data);
-        return;
-      for each peer:
-        remove from that peer's items_requested_from_peer // probably never happens
-      try
-        _node_delegate->handle_message(new_block_message);
-        _new_inventory.insert(new_block_message->block_id) // advertise_new_inventory_task will take it from here
-        _last_block_in_our_chain = new_block_message.block_id
-      catch:
-        originating_peer->disconnect(peer_sent_us_bad_data);
-    }
-  }
+
+  process_ordinary_message(peer* originating_peer, message new_message)
+    if not in originating_peer->items_requested_from_peer:
+      originating_peer->disconnect(peer_sent_us_bad_data);
+      return;
+    remove from originating peer's items_requested_from_peer
+    try
+      _node_delegate->handle_message(new_message);
+      broadcast the message, which adds it to _new_inventory.insert(new_message) and then advertise_new_inventory_task will take it from there
+      remove the message from all peers' inventory_peer_advertised_to_us
+    catch:
+      originating_peer->disconnect(peer_sent_us_bad_data);
 
   /** the entry point where we start processing any message received from a peer */
   void on_message(peer* originating_peer, const message& received_message)
   {
     message_hash = hash(received_message);
-    if (received_message.type != item_ids_inventory_message::type)
-    {
-      if (not in _active_requests)
-      {
-        originating_peer->disconnect(peer_sent_us_bad_data);
-        return;
-      }
-      else
-      {
-        remove from _active_requests
-        remove from originating_peer's items_requested_from_peer
-      }
-    }
 
     switch (received_message.type)
     {
     case block_message::type:
-      on_block_message(originating_peer, received_message.as<block_message>());
+      if (we're synchronizing)
+        process_block_during_sync(originating_peer, received_message.as<block_message>());
+      else
+        process_block_during_normal_operation(originating_peer, received_message.as<block_message>());
       break;
     case item_ids_inventory_message::type:
       on_item_ids_inventory_message(received_message.as<>());
       break;
+    // etc....
 
     case trx_message::type: /* FALL THROUGH */
-    case signature_message::type: /* FALL THROUGH */
     default:
-      {
-        assert(!originating_peer->we_need_sync_items_from_peer);      
-        try
-        {
-          _node_delegate->handle_message(received_message);
-          _new_inventory.push_back(received_message);
-        }
-        catch (...)
-        {
-          originating_peer->disconnect(peer_sent_us_bad_data);
-          return;
-        }
-      }
+      process_ordinary_message(originating_peer, received_message);
     }
   }
   timeout_requested_items_task()
   {
+    // TODO: does not exist.  might be nice to have.
     // loop over each connction/peer
     //   if any items_requested_from_peer is older than our timeout value
     //     peer->disconnect(peer_time_out)
@@ -295,22 +280,22 @@ private:
     //           they exit sync? 
     // clear new_inventory
   }
-  on_connection_disconnected(connection&) delegate for each connection
+
+  // called by a peer_connection when a peer goes away
+  on_connection_closed(peer_connection&)
   {
-    // move any items_requested_from_peer back to our _items_to_fetch list, so we will ask another peer
-    // remove the connection from our `connections` list
+    // move any items_requested_from_peer back to our _items_to_fetch list, so we will ask another peer // TODO sounds like a good idea, lets do it
+    // remove the connection from our any _*_connections list
     // _total_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers()
   }
-  on_connection_established(connection&) delegate for each connection
+  new_peer_just_added(peer_connection& peer)
   {
-    // peer->peer_needs_sync_items_from_us = true
-    // peer->we_need_sync_items_from_peer = true
-    // fetch_next_batch_of_item_ids_from_peer(peer, _last_block_in_our_chain)
+    // start_synchronizing_with_peer(peer)
+    // notify our client that the number of connections has changed
   }
 
   /** triggered during a peer's sync, when we receive a fetch_blockchain_item_ids_message from the 
     * remote peer.
-    * int total_remaining_items;
     * vector<item_hash_t> items_to_send_peer = node_delegate->get_item_ids(last_item_seen,total_remaining_items) to get the data
     * if (items_to_send_peer.empty())
     *   originating_peer->peer_needs_sync_items_from_us = false;
@@ -377,7 +362,7 @@ private:
   void connect_to_peers_task()
   {
     // while ((number of active peers  plus
-    //         number of connections we're trying to establish < our target value) and
+    //         number of connections we're trying to establish < _desired_number_of_connections) and
     //        we still know of more peers we could try connecting to)
     //   pick a peer from the potential_peer_db
     //     initiate_connection(ep)
@@ -482,5 +467,9 @@ struct potential_peer_data
 level_db<potential_peer_data> potential_peer_db;
 
 @endcode
+
+todo: keep track of what percentage of transactions each peer sees as a separate 
+      transaction before it sees it in a block.
+
 
 */
