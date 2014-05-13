@@ -131,10 +131,10 @@ namespace bts { namespace wallet {
                auto meta_itr = _meta.find( last_scanned_block_number );
                if( meta_itr == _meta.end() )
                {
-                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, 0 ); 
+                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, -1 ); 
                   _meta[last_scanned_block_number] = rec;
                   _wallet_db.store( rec.index, rec );
-                  return 0;
+                  return -1;
                }
                return meta_itr->second.value.as_int64();
             }
@@ -597,6 +597,7 @@ namespace bts { namespace wallet {
          }
          close();
          open_named_wallet( wallet_name );
+         unlock( password );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet with name ${name}", ("name",wallet_name) ) }
 
    void wallet::open( const fc::path& wallet_dir )
@@ -1072,12 +1073,15 @@ namespace bts { namespace wallet {
    void wallet::scan_chain( uint32_t block_num, scan_progress_callback cb  )
    { try {
        uint32_t head_block_num = my->_blockchain->get_head_block_num();
-       for( uint32_t i = block_num; i <= head_block_num; ++i )
+       if( head_block_num != uint32_t(-1) )
        {
-          auto blk = my->_blockchain->get_block( i );
-          scan_block( blk );
-          cb( i, head_block_num, 0, 0 );
-          my->set_last_scanned_block_number( i );
+          for( uint32_t i = block_num; i <= head_block_num; ++i )
+          {
+             auto blk = my->_blockchain->get_block( i );
+             scan_block( blk );
+             cb( i, head_block_num, 0, 0 );
+             my->set_last_scanned_block_number( i );
+          }
        }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 

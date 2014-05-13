@@ -7,7 +7,6 @@ namespace bts{ namespace wallet {
 
   const uint32_t master_key_record::type           =   master_key_record_type; 
   const uint32_t private_key_record::type          =   private_key_record_type; 
-                                                       
   const uint32_t wallet_name_record::type          =   name_record_type; 
   const uint32_t wallet_asset_record::type         =   asset_record_type; 
   const uint32_t wallet_account_record::type       =   account_record_type; 

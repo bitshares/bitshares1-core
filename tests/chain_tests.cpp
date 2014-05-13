@@ -55,10 +55,12 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
 
       wallet  my_wallet( blockchain );
-      my_wallet.open( dir.path() / "my_wallet", "password" );
+      my_wallet.set_data_directory( dir.path() );
+      my_wallet.create_named_wallet(  "my_wallet", "password" );
 
       wallet  your_wallet( blockchain2 );
-      your_wallet.open( dir2.path() / "your_wallet", "password" );
+      your_wallet.set_data_directory( dir2.path() );
+      your_wallet.create_named_wallet(  "your_wallet", "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )

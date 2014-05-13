@@ -190,6 +190,7 @@ FC_REFLECT_ENUM( bts::wallet::meta_record_property_enum,
                     (next_record_number)
                     (last_contact_index)
                     (default_transaction_fee)
+                    (last_scanned_block_number)
                 )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type, 

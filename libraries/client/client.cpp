@@ -60,6 +60,19 @@ namespace bts { namespace client {
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_trustee_loop_complete.canceled() )
          {
+            auto now = fc::time_point::now();
+            auto next_block_time = _wallet->next_block_production_time();
+            if( (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
+            {
+               fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
+               continue;
+            }
+            else
+            {
+               fc::usleep( (next_block_time - now) );
+               // produce block, sign and broadcast
+            }
+
             /*
            signed_transactions pending_trxs;
            pending_trxs = get_pending_transactions();
