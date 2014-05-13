@@ -18,10 +18,6 @@ namespace bts { namespace wallet {
          wallet( const chain_database_ptr& chain );
          ~wallet();
 
-         void create( const std::string& username, 
-                      const std::string& passphrase, 
-                      const std::string& keypassphrase );
-
          std::string get_current_user()const;
          void set_data_directory( const fc::path& data_dir );
          fc::path get_wallet_filename_for_user( const std::string& username )const;

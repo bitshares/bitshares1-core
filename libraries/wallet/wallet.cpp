@@ -25,6 +25,7 @@ namespace bts { namespace wallet {
                // is of lower value to prevent initial spam attacks.   We also
                // want to subsidize the delegates earlly on.
                _current_fee = asset( 1000*100, 0 );
+               _data_dir = ".";
             }
 
             virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
@@ -60,6 +61,8 @@ namespace bts { namespace wallet {
 
             bool           _is_open;
             fc::time_point _relock_time;
+            fc::path       _data_dir;
+            std::string    _current_user;
 
             /** meta_record_property_enum is the key */
             std::unordered_map<int,wallet_meta_record>                          _meta;
@@ -540,6 +543,11 @@ namespace bts { namespace wallet {
    wallet::~wallet(){}
 
 
+   void wallet::open( const std::string& username, const std::string& passphrase )
+   {
+      my->_current_user = username;
+      open( my->_data_dir / username, passphrase );
+   }
    void wallet::open( const fc::path& wallet_dir, const std::string& password )
    { try {
       my->_wallet_db.open( wallet_dir, true );
@@ -632,7 +640,11 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password = fc::sha512();
    }
-
+   std::string wallet::get_current_user()const
+   {
+      return my->_current_user;
+   }
+   bool wallet::is_locked()const { return !is_unlocked(); }
    bool wallet::is_unlocked()const
    {
       return my->_wallet_password != fc::sha512();
@@ -990,5 +1002,43 @@ namespace bts { namespace wallet {
       auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
       import_private_key(key, contact_name);
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import wif private key" ) }
+
+
+   void wallet::scan_chain( uint32_t block_num, scan_progress_callback cb  )
+   { try {
+       uint32_t head_block_num = my->_blockchain->get_head_block_num();
+       for( uint32_t i = block_num; i <= head_block_num; ++i )
+       {
+          auto blk = my->_blockchain->get_block( i );
+          scan_block( blk );
+          cb( i, head_block_num, 0, 0 );
+       }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::scan_block( const full_block& blk )
+   {
+      for( auto trx : blk.user_transactions )
+         my->scan_transaction( trx );
+   }
+
+   /**
+    *  Sets the directory where wallets will be created when using username / password
+    */
+   void wallet::set_data_directory( const fc::path& data_dir )
+   {
+      my->_data_dir = data_dir;
+   }
+   void  wallet::add_sending_address( const address&, const std::string& label )
+   {
+      FC_ASSERT( !"add_sending_address is not implemented yet" );
+   }
+   void  wallet::add_sending_address( const address&, int32_t contact_index  )
+   {
+      FC_ASSERT( !"add_sending_address is not implemented yet" );
+   }
+   std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions()const
+   {
+      return my->_transactions;
+   }
 
 } } // bts::wallet

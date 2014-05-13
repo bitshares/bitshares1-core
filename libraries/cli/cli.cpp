@@ -667,6 +667,7 @@ namespace bts { namespace cli {
 
     void cli_impl::create_wallet_if_missing()
     {
+       /*
       std::string user = "default";
       auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user(user);
       if( !fc::exists( wallet_dat ) )
@@ -728,6 +729,7 @@ namespace bts { namespace cli {
         _client->get_wallet()->create( user, pass1, keypass1 );
         std::cout << "Wallet created.\n";
       }
+      */
 
     }
   } // end namespace detail

@@ -978,5 +978,34 @@ namespace bts { namespace blockchain {
    {
       my->_observer = observer;
    }
+   bool chain_database::is_known_block( const block_id_type& block_id )const
+   {
+      auto itr = my->_block_id_to_block.find( block_id );
+      return itr.valid();
+   }
+   uint32_t chain_database::get_block_num( const block_id_type& block_id )const
+   {
+      auto itr = my->_block_id_to_block.find( block_id );
+      return itr.value().block_num;
+   }
+    uint32_t         chain_database::get_head_block_num()const
+    {
+       return my->_head_block_header.block_num;
+    }
+    block_id_type      chain_database::get_head_block_id()const
+    {
+       return my->_head_block_id;
+    }
+    std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )const
+    {
+       auto itr = my->_name_index.find(first);
+       std::vector<name_record> names;
+       while( itr.valid() && names.size() < count )
+       {
+          names.push_back( *get_name_record( itr.value() ) );
+          ++itr;
+       }
+       return names;
+    }
 
 } } // namespace bts::blockchain

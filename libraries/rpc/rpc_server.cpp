@@ -22,7 +22,6 @@ namespace bts { namespace rpc {
              (help)\
              (getinfo)\
              (open_wallet)\
-             (create_wallet)\
              (current_wallet)\
              (close_wallet)\
              (walletlock)\
@@ -585,44 +584,6 @@ Examples:
       }
     }
 
-    static rpc_server::method_data create_wallet_metadata{"create_wallet", nullptr,
-                                       /* description */ "Create a wallet with the given passphrases",
-                                       /* returns: */    "bool",
-                                       /* params:          name                   type      required */
-                                                         {
-                                                          {"username",     "string", true},
-                                                          {"wallet_pass",   "string", true},
-                                                          {"spending_pass", "string", true}
-                                                         },
-                                     /* prerequisites */ rpc_server::json_authenticated,
-									 R"(
-									 )" };
-    fc::variant rpc_server_impl::create_wallet(const fc::variants& params)
-    {
-      std::string username = "default";
-      std::string passphrase;
-      std::string keypassword;
-
-      if( !params[0].is_null() && !params[0].as_string().empty() )
-        username = params[0].as_string();
-      if( !params[1].is_null() )
-        passphrase = params[1].as_string();
-      if( !params[2].is_null() )
-        keypassword = params[2].as_string();
-
-      try
-      {
-        _client->get_wallet()->create( username,
-                                       passphrase,
-                                       keypassword );
-        return fc::variant(true);
-      }
-      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
-      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
-                  //       or some other filesystem error then it should be properly reported.
-        throw rpc_wallet_passphrase_incorrect_exception();
-      }
-    }
 
     static rpc_server::method_data current_wallet_metadata{"current_wallet", nullptr,
                                         /* description */ "Returns the username passed to open_wallet",
