@@ -9,6 +9,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 
+#include <iostream>
+
 namespace bts { namespace client {
 
     namespace detail
@@ -332,42 +334,35 @@ namespace bts { namespace client {
 
     bts::net::message_propagation_data client::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
-      if (my->_p2p_node)
         return my->_p2p_node->get_transaction_propagation_data(transaction_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
     bts::net::message_propagation_data client::get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
     {
-      if (my->_p2p_node)
         return my->_p2p_node->get_block_propagation_data(block_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
     }
 
     fc::uint160_t client::get_node_id() const
     {
-      if (my->_p2p_node)
-        return my->_p2p_node->get_node_id();      
-      return fc::uint160_t();
+      return my->_p2p_node->get_node_id();      
     }
 
     void client::set_advanced_node_parameters(const fc::variant_object& params)
     {
-      if (my->_p2p_node)
         my->_p2p_node->set_advanced_node_parameters(params);
     }
 
     void client::listen_on_port(uint16_t port_to_listen)
     {
-      if (my->_p2p_node)
         my->_p2p_node->listen_on_port(port_to_listen);
     }
 
     void client::configure(const fc::path& configuration_directory)
     {
       my->_data_dir = configuration_directory;
-      if (my->_p2p_node)
-        my->_p2p_node->load_configuration( my->_data_dir );
+      my->_p2p_node->load_configuration( my->_data_dir );
     }
 
     fc::path client::get_data_dir()const
@@ -377,13 +372,11 @@ namespace bts { namespace client {
     void client::connect_to_peer(const std::string& remote_endpoint)
 
     {
-      if (my->_p2p_node)
+       std::cout << "Attempting to conenct to peer " << remote_endpoint << "\n";
         my->_p2p_node->connect_to(fc::ip::endpoint::from_string(remote_endpoint.c_str()));
     }
     void client::connect_to_p2p_network()
     {
-      if (!my->_p2p_node)
-        return;
       bts::net::item_id head_item_id;
       head_item_id.item_type = bts::client::block_message_type;
       uint32_t last_block_num = my->_chain_db->get_head_block_num();
