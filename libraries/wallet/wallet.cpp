@@ -496,7 +496,7 @@ namespace bts { namespace wallet {
       my->_wallet_key_password  = key_password;
       my->_is_open = false;
 
-      for( uint32_t i = 1; i < 101; ++i )
+      for (uint32_t i = 1; i < BTS_BLOCKCHAIN_NUM_DELEGATES + 1; ++i)
       {
         my->_data.trusted_delegates.insert(i);
       }
