@@ -31,7 +31,6 @@ namespace bts {
       FC_ASSERT( base58str.substr( 0, strlen(BTS_ADDRESS_PREFIX) ) == BTS_ADDRESS_PREFIX );
       std::vector<char> v = fc::from_base58( base58str.substr( strlen(BTS_ADDRESS_PREFIX) ) );
       FC_ASSERT( v.size() > 4, "all accountes must have a 4 byte checksum" );
-      FC_ASSERT(v.size() <= sizeof(fc::ripemd160) + 4, "all accountes are less than 24 bytes");
       auto checksum = fc::ripemd160::hash( v.data(), v.size() - 4 );
       FC_ASSERT( memcmp( v.data()+21, (char*)checksum._hash, 4 ) == 0, "account checksum mismatch" );
       return true;
@@ -47,7 +46,7 @@ namespace bts {
         fc::array<char,25> bin_addr;
         memcpy( (char*)&bin_addr, (char*)&addr, sizeof(addr)+1 );
         bin_addr.data[20] = 88; // magic number 
-        auto checksum = fc::ripemd160::hash( (char*)&addr, sizeof(addr) );
+        auto checksum = fc::ripemd160::hash( (char*)&bin_addr, sizeof(bin_addr)-4 );
         memcpy( ((char*)&bin_addr)+21, (char*)&checksum._hash[0], 4 );
         return BTS_ADDRESS_PREFIX + fc::to_base58( bin_addr.data, sizeof(bin_addr) );
    }

@@ -784,15 +784,16 @@ Examples:
         R"(
      )" };
     fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
-    {
+    { try {
        bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
+       ilog( "destination: ${d}", ("d",destination_address) );
        auto amount = params[1].as<int64_t>();
        std::string comment;
        if (params.size() >= 3)
          comment = params[2].as_string();
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
        return fc::variant(_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",

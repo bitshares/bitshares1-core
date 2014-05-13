@@ -24,6 +24,21 @@ const char* test_keys = R"([
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
 ])"; 
 
+BOOST_AUTO_TEST_CASE( account_serialization_test )
+{ 
+   try {
+   account a( fc::sha512::hash("hello",5) );
+   fc::variant t( a );
+   account b =  t.as<account>();
+   FC_ASSERT( a == b );
+   } 
+   catch ( fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string() ) );
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE( wallet_test )
 {
       fc::temp_directory dir; 

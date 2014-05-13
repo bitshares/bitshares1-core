@@ -140,7 +140,7 @@ namespace bts { namespace cli {
             }
 
             fc::variant execute_command_and_prompt_for_passphrases(const std::string& command, const fc::variants& arguments)
-            {
+            { try {
               for (;;)
               {
                 // try to execute the method.  If the method needs the wallet to be
@@ -175,10 +175,10 @@ namespace bts { namespace cli {
                   }
                 }
               }
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
 
             fc::variant interactive_sendtoaddress(const std::string& command, const fc::variants& arguments)
-            {
+            { try {
               // validate arguments
               FC_ASSERT(arguments.size() >= 2 && arguments.size() <= 4);
 
@@ -210,7 +210,7 @@ namespace bts { namespace cli {
               }
 
               return fc::variant(false);
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command)("args",arguments) ) }
 
             fc::variant interactive_rescan(const std::string& command, const fc::variants& arguments)
             {
