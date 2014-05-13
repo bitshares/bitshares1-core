@@ -1414,7 +1414,9 @@ Stop BitShares server.
 )" };
     fc::variant rpc_server_impl::stop(const fc::variants& params)
     {
-      _client->stop();
+      // shutdown the server.  add a little delay to give the response to the "stop" method call a chance
+      // to make it to the caller
+      fc::async([=]() { fc::usleep(fc::milliseconds(10)); _self->close(); });
       return fc::variant();
     }
 
@@ -1512,19 +1514,34 @@ testing to force network splits or other weird topologies.
 
   rpc_server::~rpc_server()
   {
-     try {
-         my->_tcp_serv.close();
-         if( my->_accept_loop_complete.valid() )
-         {
-            my->_accept_loop_complete.cancel();
-            my->_accept_loop_complete.wait();
-         }
-     }
-     catch ( const fc::canceled_exception& ){}
-     catch ( const fc::exception& e )
-     {
-        wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
-     }
+    try 
+    {
+      close();
+      wait();
+    }
+    catch ( const fc::exception& e )
+    {
+      wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
+    }
+  }
+
+  void rpc_server::close()
+  {
+    my->_tcp_serv.close();
+    if( my->_accept_loop_complete.valid() )
+      my->_accept_loop_complete.cancel();
+  }
+
+  void rpc_server::wait()
+  {
+    try
+    {
+      if( my->_accept_loop_complete.valid() )
+        my->_accept_loop_complete.wait();
+    }
+    catch (const fc::canceled_exception&)
+    {
+    }
   }
 
   client_ptr rpc_server::get_client()const

@@ -609,7 +609,8 @@ namespace bts { namespace cli {
                     }
                     catch ( const fc::canceled_exception& )
                     {
-                      return;
+                      // probably the user executed "quit"
+                      break;
                     }
                     catch ( const fc::exception& e )
                     {
@@ -619,6 +620,9 @@ namespace bts { namespace cli {
                 }
                 line = _self->get_line();
               }
+              // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
+              // Tell the RPC server to close, which will allow the process to exit.
+              _rpc_server->close();
             }
 
             // Parse the given line into a command and arguments, returning them in the form our
@@ -781,10 +785,10 @@ namespace bts { namespace cli {
       // client()->get_chain()->dump_delegates( count );
    }
 
-   void cli::wait()
-   {
-       my->_cin_complete.wait();
-   }
+  void cli::wait()
+  {
+    my->_rpc_server->wait();
+  }
 
    void cli::quit()
    {

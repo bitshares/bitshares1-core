@@ -68,6 +68,8 @@ namespace bts { namespace rpc {
     client_ptr  get_client()const;
     void        set_client( const client_ptr& c );
     void        configure( const config& cfg );
+    void        close(); // shut down the RPC server
+    void        wait(); // wait until the RPC server is shut down (via the above close(), or by processing a "stop" RPC call)
 
     /// used to invoke json methods from the cli without going over the network
     fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);
