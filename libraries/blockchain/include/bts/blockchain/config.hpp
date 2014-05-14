@@ -3,10 +3,8 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION 1
-#define BTS_TRANSACTION_VERSION                     1
-#define BTS_NET_PROTOCOL_VERSION                    1
-#define BTS_WALLET_VERSION                          1
+#define BTS_BLOCKCHAIN_VERSION 100
+#define BTS_WALLET_VERSION 100
 
 /**
  *  The address prepended to string representation of
@@ -61,6 +59,9 @@
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                 (10)
 
+/** @deprecated use BTS_BLOCKCHAIN_NUM_DELEGATES */
+#define BTS_BLOCKCHAIN_DELEGATES                 BTS_BLOCKCHAIN_NUM_DELEGATES
+
 /**
  * A BIP is one 1/2^15 of the share supply at any given time.  
  */
@@ -76,16 +77,6 @@
  *  defines the min fee in milli-shares per byte
  */
 #define BTS_BLOCKCHAIN_MIN_FEE                   1000 
-/**
- *  Calculate fee in millishares per byte so that there is enough precision for the fee adjustment
- *  algorithm to operate when the BTS_BLOCKCHAIN_MIN_FEE is 1 share per byte.
- *
- *  @param size Size in bytes
- *  @param rate Shares per byte
- * 
- */
-#define BTS_BLOCKCHAIN_FEE_RATE_FACTOR              1000
-#define BTS_BLOCKCHAIN_CALCULATE_FEE( size, rate )  ((size * rate)/BTS_BLOCKCHAIN_FEE_RATE_FACTOR)
 
 /**
  *  the minimum mining reward paid to delegates, may result in some inflation 
@@ -112,9 +103,3 @@
 
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE      (63)
 #define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE (1024*4)
-
-/**
- * If defined, this disables the requirement that a valid transaction must not
- * result in a delegate having more than 2% of the total vote
- */
-//#define DISABLE_DELEGATE_MAX_VOTE_CHECK 1

@@ -1,0 +1,62 @@
+/**
+  
+  Given the following tables:
+     
+block_db         =>  block_id  to  full_block
+   - indexes every block whether or not it is linked into the official chain
+
+undo_db          =>  block_id  to   undo_data
+   - tracks the data required to undo changes caused by a given block
+
+current_chain_db    =>  block_num to   block_id   
+   - list of block ids that comprise the current set of applied blocks
+
+block_num_index_db   =>  block_num  to vector<block_id> 
+   - track all canidates for a particular block number
+
+struct fork_state
+  - vector<block_id>    next blocks
+  - is_linked           does this block link all the way to genesis
+  - optional<is_valid>  if known, indicate whether it was found to be valid or invalid        
+  - is_included         indicates if the block can be found in current_chain_db
+
+  bool invalid()   { is_valid  && !*is_valid; }
+  bool valid()     { is_valid  && *is_valid;  }
+  bool can_link()  { is_linked && !invalid()  }
+
+fork_db          => block_id to  fork_state 
+   - track the information required to track the status of various forks
+
+
+  The algorithm for processing a new received block is as follows:
+
+  - store & index block 
+     - place into block_db
+     - place into block_num_index_db 
+     - place into fork_db
+        if block.prev doesn't exist in fork_db then add it to fork_db so
+           that we can eventually follow fork_db[block.prev]->next
+           - mark fork_state as unlinked in this case
+
+  if block.prev == current_head_block 
+     extend_chain(block) 
+  else if fork_db[block.id].can_link() and this block number is greater than current head block's block_num
+     try to switch to fork block.id
+     if fail switch back to current fork
+
+  on switch fork
+     traverse block.prev until fork_db[block.prev].is_included is found and create a list of
+     blocks that need to be pushed forward.
+
+     pop blocks from chain until head block is the last included block in the fork (found above)
+
+     for each block in traverse history extend chain
+       
+  on extend chain
+     validate block & transactions
+     if fails mark the fork state as invalid 
+       - mark all blocks after it as invalid as well
+     on success 
+       - mark block as valid
+
+*/

@@ -30,7 +30,7 @@ namespace bts { namespace net {
  *  For now, when creating a genesis block we initialize the genesis block to register
  *  and vote evenly for the top BTS_BLOCKCHAIN_NUM_DELEGATES delegates.
  */
-bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file, const pow_validator_ptr& pow_validator)
+bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file)
 { try {
     FC_ASSERT( fc::exists(genesis_json_file) );
     auto config = fc::json::from_file( genesis_json_file ).as<genesis_block_config>();
@@ -193,7 +193,7 @@ bts::blockchain::trx_block create_genesis_block(fc::path genesis_json_file, cons
     b.version       = BTS_BLOCKCHAIN_VERSION;
     b.block_num     = 0;
     b.prev          = bts::blockchain::block_id_type();
-    b.timestamp     = pow_validator ? pow_validator->get_time() : fc::time_point::now();
+    b.timestamp     = fc::time_point::now();
     b.next_fee      = bts::blockchain::block_header::min_fee();
     b.total_shares  = total;
 

@@ -17,10 +17,6 @@
 namespace bts { namespace blockchain {
 
 
-  uint64_t asset::get_rounded_amount()const
-  {
-     return amount;
-  }
 
   asset::operator std::string()const
   {
@@ -29,7 +25,7 @@ namespace bts { namespace blockchain {
 
   asset& asset::operator += ( const asset& o )
   {
-     FC_ASSERT( unit == o.unit );
+     FC_ASSERT( asset_id == o.asset_id );
 
      auto old = *this;
      amount += o.amount;
@@ -47,12 +43,12 @@ namespace bts { namespace blockchain {
       fc::bigint bi(amount);
       bi *= fix6464;
       bi >>= 64;
-      return asset( fc::uint128(bi).high_bits(), unit );
+      return asset( fc::uint128(bi).high_bits(), asset_id );
   }
 
   asset& asset::operator -= ( const asset& o )
   {
-     FC_ASSERT( unit == o.unit );
+     FC_ASSERT( asset_id == o.asset_id );
      auto old = *this;;
      amount -= o.amount;
      if( amount > old.amount ) 
@@ -77,17 +73,17 @@ namespace bts { namespace blockchain {
   price::price( const std::string& s )
   {
      std::stringstream ss(s);
-     std::string quote, base, units;
+     std::string quote, base, asset_ids;
      double a;
-     ss >> a >> units; 
-     quote = units.substr(0,3);
-     base = units.substr(4,3);
+     ss >> a >> asset_ids; 
+     quote = asset_ids.substr(0,3);
+     base = asset_ids.substr(4,3);
      ratio      = fc::uint128( uint64_t(a), uint64_t(-1) * (a - uint64_t(a)) ); 
-     quote_unit = fc::variant(quote).as<asset::unit_type>();
-     base_unit  = fc::variant(base).as<asset::unit_type>();
+     quote_asset_id = fc::variant(quote).as<asset_id_type>();
+     base_asset_id  = fc::variant(base).as<asset_id_type>();
   }
 
-  price::price( double a, asset::unit_type q, asset::unit_type b )
+  price::price( double a, asset_id_type q, asset_id_type b )
   {
      FC_ASSERT( q > b, "${quote} > ${base}", ("quote",q)("base",b) );
 
@@ -95,8 +91,8 @@ namespace bts { namespace blockchain {
      double fract_part = a - high_bits;
      uint64_t low_bits = uint64_t(-1)*fract_part;
      ratio = fc::uint128( high_bits, low_bits );
-     base_unit = b;
-     quote_unit = q;
+     base_asset_id = b;
+     quote_asset_id = q;
   }
 
   price::operator double()const
@@ -122,8 +118,8 @@ namespace bts { namespace blockchain {
      s += ".";
      std::string frac(fraction);
      s += frac.substr(1,frac.size()-2);
-     s += " " + fc::to_string(quote_unit);
-     s += "/" + fc::to_string(base_unit); 
+     s += " " + fc::to_string(int64_t(quote_asset_id.value));
+     s += "/" + fc::to_string(int64_t(base_asset_id.value)); 
      return s;
   }
 
@@ -141,11 +137,11 @@ namespace bts { namespace blockchain {
         ilog( "${a} / ${b}", ("a",a)("b",b) );
         price p;
         auto l = a; auto r = b;
-        if( l.unit < r.unit ) { std::swap(l,r); }
+        if( l.asset_id < r.asset_id ) { std::swap(l,r); }
         ilog( "${a} / ${b}", ("a",l)("b",r) );
 
-        p.base_unit = r.unit;
-        p.quote_unit = l.unit;
+        p.base_asset_id = r.asset_id;
+        p.quote_asset_id = l.asset_id;
 
         fc::bigint bl = l.amount;
         fc::bigint br = r.amount;
@@ -167,7 +163,7 @@ namespace bts { namespace blockchain {
   asset operator * ( const asset& a, const price& p )
   {
     try {
-        if( a.unit == p.base_unit )
+        if( a.asset_id == p.base_asset_id )
         {
             fc::bigint ba( a.amount ); // 64.64
             fc::bigint r( p.ratio ); // 64.64
@@ -184,12 +180,12 @@ namespace bts { namespace blockchain {
 
             asset rtn;
             rtn.amount = amnt;
-            rtn.unit = p.quote_unit;
+            rtn.asset_id = p.quote_asset_id;
 
             ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
             return rtn;
         }
-        else if( a.unit == p.quote_unit )
+        else if( a.asset_id == p.quote_asset_id )
         {
             fc::bigint amt( a.amount ); // 64.64
             amt <<= 64;  // 64.128
@@ -208,8 +204,8 @@ namespace bts { namespace blockchain {
             }
           //  result += 5000000000; // TODO: evaluate this rounding factor..
             asset r;
-            r.amount = result;
-            r.unit   = p.base_unit;
+            r.amount    = result;
+            r.asset_id  = p.base_asset_id;
             ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
             return r;
         }

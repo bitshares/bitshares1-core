@@ -9,20 +9,9 @@
     (transfer_domain) \
     (update_domain_record) \
     (lookup_domain_record) \
-    (list_active_domain_auctions) \
-    (dns_show_test)
+    (name_show) \
+    (list_active_domain_auctions)
 
-
-namespace bts { namespace dns { namespace p2p {
-
-struct p2p_record
-{
-    std::string       name;
-    std::vector<char> value;
-};
-
-}}}; // bts::dns::p2p
-FC_REFLECT(bts::dns::p2p::p2p_record, (name)(value));
 namespace bts { namespace dns { namespace p2p {
 
 using namespace bts::rpc;
@@ -44,7 +33,7 @@ class p2p_rpc_server : public bts::rpc::rpc_server
 
         dns_wallet_ptr get_dns_wallet();
 };
+
 typedef std::shared_ptr<p2p_rpc_server> p2p_rpc_server_ptr;
 
 } } } // bts::dns::p2p
-

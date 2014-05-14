@@ -33,3 +33,5 @@ tests/bts_xt_client_tests
 tests/simple_net_test_client
 
 tests/dns/p2p_tests
+tests/chain_database_tests
+programs/utils/bts_create_genesis

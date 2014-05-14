@@ -1,0 +1,77 @@
+const char* genesis_json = R"({
+  "supply": 0,
+  "balances": [[
+      "PsZpGepfuzrp3P55pNBgxsPtZVph536EY6",
+      1000
+    ],[
+      "PvSk4k1mLbVvLTa4pbfBT2Sde3NjTFBNSM",
+      1000
+    ],[
+      "PhGU4eWLTAnhqvvWMKt2Zd7kHgduxebvAq",
+      1000
+    ],[
+      "PcQTDACVu8Yi8AUdVqAfeeyqbvd9dSzPWT",
+      1000
+    ],[
+      "PdyZ1wBAHoKnSKzaTBnZ8gNnikiKkd2gCU",
+      1000
+    ],[
+      "Pcu6RTuuK9dTYrjVavLLs138D2kK4jERSL",
+      1000
+    ],[
+      "PYL3ZQtri1h5aUxHWKqcaDZa5HMycMwDXS",
+      1000
+    ],[
+      "PeHgRBRwj6gKJfkT8sqFAhY9VnrpP55jam",
+      1000
+    ],[
+      "PtQiY3HbmFsXnp4TgDcyRbBvdaxB9ZusLK",
+      1000
+    ],[
+      "Pu6PWLJ5zaPRCB2C8HzWbA74vUfT79KCdx",
+      1000
+    ]
+  ],
+  "names": [{
+      "name": "delegate-0",
+      "is_delegate": true,
+      "owner": "02d23407bf3f0d907141262c6edd13ca205314be0e38ec448ccc724d03dfad5c20"
+    },{
+      "name": "delegate-1",
+      "is_delegate": true,
+      "owner": "029b43d1eccee1ec52f6efb59875ba408e7cb7323da047002e28099a386a0c6171"
+    },{
+      "name": "delegate-2",
+      "is_delegate": true,
+      "owner": "02de19170e5d822f7d52f2e0e8bef706289d4e161a478bb69a37ff99f2486721bf"
+    },{
+      "name": "delegate-3",
+      "is_delegate": true,
+      "owner": "03aa827b446bda642b5838987c303e3771448ac12ecc5d84421efb7aa173682345"
+    },{
+      "name": "delegate-4",
+      "is_delegate": true,
+      "owner": "03ba7245a2cb4cc66a649fc77c556241754cdc607a53d38ec7d50207337a64a802"
+    },{
+      "name": "delegate-5",
+      "is_delegate": true,
+      "owner": "02d820ac0c7f014adafdeeab61fb1c6a67b4489f5a0515c5588d95d7987f1d141d"
+    },{
+      "name": "delegate-6",
+      "is_delegate": true,
+      "owner": "03d932f2b456499d5e2a2ed46505031b5088d669cf44828f9d7249ac2bea8671c6"
+    },{
+      "name": "delegate-7",
+      "is_delegate": true,
+      "owner": "03c83ac3e7b10ad7d7e1e580bdef04c1fdadddfd9a1a2ea122cc9f2f739f0df34d"
+    },{
+      "name": "delegate-8",
+      "is_delegate": true,
+      "owner": "0278a227eeee412f6b83dae87e2288ee7135a831345fd3d42776482914c90614cc"
+    },{
+      "name": "delegate-9",
+      "is_delegate": true,
+      "owner": "030f916545f6fb0ddf2043da5535824e8dd257659bba3793d31fa9d4d5b7c3365c"
+    }
+  ]
+})";

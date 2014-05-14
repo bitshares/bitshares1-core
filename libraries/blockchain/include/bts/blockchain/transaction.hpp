@@ -1,231 +1,198 @@
 #pragma once
+#include <bts/blockchain/types.hpp>
+#include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/error_codes.hpp>
+#include <fc/optional.hpp>
+#include <fc/reflect/variant.hpp>
+#include <fc/io/raw.hpp>
 
-#include <bts/blockchain/address.hpp>
-#include <bts/blockchain/asset.hpp>
-#include <bts/blockchain/config.hpp>
-#include <bts/blockchain/output_reference.hpp>
-#include <bts/blockchain/outputs.hpp>
-#include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/small_hash.hpp>
-
-#include <fc/crypto/elliptic.hpp>
-#include <fc/crypto/sha224.hpp>
-#include <fc/exception/exception.hpp>
-#include <fc/io/varint.hpp>
+#include <unordered_set>
 
 namespace bts { namespace blockchain {
 
-/**
- *  @class trx_input
- *  @brief references an unspent output and provides data required to spend it.
- *
- *  Defines the source of an input used
- *  as part of a transaction.  If must first
- *  reference an existing unspent output and
- *  then provide the input data required to
- *  cause the claim function to evaluate true.
- */
-struct trx_input
-{
-    trx_input(){}
-    trx_input( const output_reference& src )
-    :output_ref(src)
-    { }
+   class chain_interface;
+   typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
-    template<typename InputType>
-    trx_input( const InputType& t, const output_reference& src )
-    :output_ref(src)
-    {
-       input_data = fc::raw::pack(t);
-    }
-
-    template<typename InputType>
-    InputType as()const
-    {
-       return fc::raw::unpack<InputType>(input_data);
-    }
-
-    output_reference   output_ref;
-    std::vector<char>  input_data;
-};
-
-
-/**
- *  @class trx_output
- *  @brief specifices an output balance and the conditions by which it may be claimed
- *
- *  Base of all trx outputs, derived classes will define the extra
- *  data associated with the claim_func.  The goal is to enable the
- *  output types to be 'fixed size' and thus each output type would
- *  have its own 'memory pool' in the chain state data structure. This
- *  has the added benefit of conserving space, separating bids/asks/
- *  escrow/and normal transfers into different memory segments and
- *  should give better memory performance.
- */
-struct trx_output
-{
-    template<typename ClaimType>
-    trx_output( const ClaimType& t, const asset& a )
-    :amount(a)
-    {
-       claim_func = ClaimType::type;
-       claim_data = fc::raw::pack(t);
-    }
-
-    template<typename ClaimType>
-    ClaimType as()const
-    {
-       FC_ASSERT( claim_func == ClaimType::type, "", ("claim_func",claim_func)("ClaimType",ClaimType::type) );
-       return fc::raw::unpack<ClaimType>(claim_data);
-    }
-
-    trx_output(){}
-
-    asset                                       amount;
-    claim_type                                  claim_func;
-    std::vector<char>                           claim_data;
-};
-
-/**
- *  @class trx_num
- *  @brief References a transaction by its location in the blockchain
- *
- *  The location in the blockchain is given by the block number and index of
- *  the transaction.
- */
-struct trx_num
-{
-    /**
-     *  -1 block_num is used to identifiy default initialization.
-     */
-    static const uint32_t invalid_block_num  = uint32_t(-1);
-    static const uint16_t invalid_trx_idx    = uint16_t(-1);
-    static const uint8_t  invalid_output_num = uint8_t(-1);
-
-    trx_num(uint32_t b = invalid_block_num, uint16_t t = invalid_trx_idx)
-    :block_num(b),trx_idx(t){}
-
-    uint32_t block_num;
-    uint16_t trx_idx;
-
-    friend bool operator < ( const trx_num& a, const trx_num& b )
-    {
-      return a.block_num == b.block_num ?
-             a.trx_idx   <  b.trx_idx   :
-             a.block_num <  b.block_num ;
-    }
-    friend bool operator == ( const trx_num& a, const trx_num& b )
-    {
-      return a.block_num == b.block_num && a.trx_idx == b.trx_idx;
-    }
-};
-
-
-
-/**
- *  @class meta_trx_output
- *  @brief extra data about each output, such as where it was spent
- *
- */
-struct meta_trx_output
-{
-   meta_trx_output()
-   :input_num(trx_num::invalid_output_num){}
-   trx_num   trx_id;
-   uint8_t   input_num;
-
-   bool is_spent()const
-   {
-     return trx_id.block_num != trx_num::invalid_block_num;
-   }
-};
-
-
-/**
- *  @class meta_trx_input
- *
- *  Caches output information used by inputs while
- *  evaluating a transaction.
- */
-struct meta_trx_input
-{
-   meta_trx_input()
-   :output_num(-1){}
-
-   trx_num           source;
-   uint32_t          output_num;
-   fc::signed_int    delegate_id;
-   trx_output        output;
-   meta_trx_output   meta_output;
-   std::vector<char> data;
-};
-
-
-/**
- *  @class transaction
- *  @brief maps inputs to outputs.
- *
- */
-struct transaction
-{
-   transaction():version(BTS_TRANSACTION_VERSION),vote(0),stake(0){}
-   fc::sha256                   digest()const;
-
-   uint8_t                      version;
-   int32_t                      vote;           ///< delegate_id outputs of this transaction are voting for
-   uint32_t                     stake;          ///< used for proof of stake, last 8 bytes of block.id()
-   fc::time_point_sec           valid_until;    ///< trx is only valid until a given time
-   std::vector<trx_input>       inputs;
-   std::vector<trx_output>      outputs;
-
-};
-/**
- *  @class signed_transaction
- *  @brief a transaction with signatures required by the inputs
- */
-struct signed_transaction : public transaction
-{
-    std::unordered_set<address>      get_signed_addresses()const;
-    std::unordered_set<pts_address>  get_signed_pts_addresses()const;
-    transaction_id_type              id()const;
-    void                             sign( const fc::ecc::private_key& k );
-    size_t                           size()const;
-
-    std::set<fc::ecc::compact_signature> sigs;
-};
-
-typedef std::vector<signed_transaction> signed_transactions;
-
-/**
- *  @class meta_trx
- *  @brief addes meta information about all outputs of a signed transaction
- */
-struct meta_trx : public signed_transaction
-{
-   meta_trx(){}
-   meta_trx( const signed_transaction& t )
-   :signed_transaction(t), meta_outputs(t.outputs.size()){}
-
-   /** @note the order of these outputs is the same as the order of the
-    * signed_transaction::outputs
+   /**
+    *  A transaction is a set of operations that are
+    *  performed atomicly and must be internally consistant.
+    *
+    *  Every transaction votes for 
     */
-   std::vector<meta_trx_output> meta_outputs; // tracks where the output was spent
-};
+   struct transaction
+   {
+      transaction(){}
+
+      digest_type                      digest()const;
+
+      fc::optional<fc::time_point_sec> expiration;
+      fc::optional<name_id_type>       delegate_id; // delegate being voted for in required payouts
+      std::vector<operation>           operations; 
+
+      void withdraw( const account_id_type& account, share_type amount );
+      void deposit( const address& addr, const asset& amount, name_id_type delegate_id );
+      void reserve_name( const std::string& name, const std::string& json_data, const public_key_type& master, const public_key_type& active, bool as_delegate = false );
+      void update_name( name_id_type name_id, const fc::optional<std::string>& json_data, const fc::optional<public_key_type>& active, bool as_delegate = false );
+   };
+
+   struct signed_transaction : public transaction
+   {
+      transaction_id_type                     id()const;
+      size_t                                  data_size()const;
+      void                                    sign( const fc::ecc::private_key& signer );
+
+      std::vector<fc::ecc::compact_signature> signatures;
+   };
+   typedef std::vector<signed_transaction> signed_transactions;
+   typedef fc::optional<signed_transaction> osigned_transaction;
+
+   /**
+    *  While evaluating a transaction there is a lot of intermediate
+    *  state that must be tracked.  Any shares withdrawn from the
+    *  database must be stored in the transaction state until they
+    *  are sent back to the database as either new balances or
+    *  as fees collected.
+    *
+    *  Some outputs such as markets, options, etc require certain
+    *  payments to be made.  So payments made are tracked and
+    *  compared against payments required.
+    *
+    */
+   class transaction_evaluation_state
+   {
+      public:
+         transaction_evaluation_state( const chain_interface_ptr& blockchain );
+         transaction_evaluation_state(){};
+
+         virtual ~transaction_evaluation_state();
+         virtual share_type get_fees( asset_id_type id = 0)const;
+
+         virtual void reset();
+         
+         virtual void evaluate( const signed_transaction& trx );
+         virtual void evaluate_operation( const operation& op );
+
+         /** perform any final operations based upon the current state of 
+          * the operation such as updating fees paid etc.
+          */
+         virtual void post_evaluate();
+         /** can be specalized to handle many different forms of
+          * fee payment.
+          */
+         virtual void validate_required_fee();
+         /**
+          * apply collected vote changes 
+          */
+         virtual void update_delegate_votes();
+         
+         virtual void evaluate_withdraw( const withdraw_operation& op );
+         virtual void evaluate_deposit( const deposit_operation& op );
+         virtual void evaluate_reserve_name( const reserve_name_operation& op );
+         virtual void evaluate_update_name( const update_name_operation& op );
+         virtual void evaluate_create_asset( const create_asset_operation& op );
+         virtual void evaluate_update_asset( const update_asset_operation& op );
+         virtual void evaluate_issue_asset( const issue_asset_operation& op );
+         
+         virtual void fail( bts_error_code error_code, const fc::variant& data );
+         
+         bool check_signature( const address& a )const;
+         void add_required_signature( const address& a );
+         
+         // steps performed as the transaction is validated
+         
+        
+         /**
+          *  subtracts amount from a withdraw_with_signature account with the
+          *  owner_key and amount.asset_id and the delegate_id of the transaction.
+          */
+         void add_required_deposit( const address& owner_key, const asset& amount );
+         
+         /** contains address funds were deposited into for use in
+          * incrementing required_deposits balance
+          */
+         void sub_balance( const account_id_type& addr, const asset& amount );
+         void add_balance( const asset& amount );
+         
+         /** any time a balance is deposited increment the vote for the delegate,
+          * if delegate_id then it is a vote against abs(delegate_id)
+          */
+         void add_vote( name_id_type delegate_id, share_type amount );
+         void sub_vote( name_id_type delegate_id, share_type amount );
+         
+         signed_transaction                               trx;
+         std::unordered_set<address>                      signed_keys;
+         std::unordered_set<address>                      required_keys;
+         
+         // increases with funds are withdrawn, decreases when funds are deposited or fees paid
+         uint32_t                                         validation_error_code;
+         fc::variant                                      validation_error_data;
+         
+         
+         /** every time a deposit is made this balance is increased
+          *  every time a deposit is required this balance is decreased
+          *
+          *  This balance cannot be negative without an error.
+          */
+         std::unordered_map<account_id_type, asset>       required_deposits;
+         std::unordered_map<account_id_type, asset>       provided_deposits;
+
+         // track deposits and withdraws by asset type
+         std::unordered_map<asset_id_type, asset>         deposits;
+         std::unordered_map<asset_id_type, asset>         withdraws;
+         
+         /**
+          *  As operation withdraw funds, input balance grows...
+          *  As operations consume funds (deposit) input balance decreases
+          *
+          *  Any left-over input balance can be seen as fees
+          *
+          *  @note - this value should always equal the sum of deposits-withdraws 
+          *  and is maintained for the purpose of seralization.
+          */
+         std::unordered_map<asset_id_type, share_type>    balance;
 
 
-} }  // namespace bts::blockchain
+         struct vote_state
+         {
+            vote_state():votes_for(0),votes_against(0){}
+         
+            int64_t votes_for;
+            int64_t votes_against;
+         };
+         /**
+          *  Tracks the votes for or against each delegate based upon 
+          *  the deposits and withdraws to addresses.
+          */
+         std::unordered_map<name_id_type, vote_state>     net_delegate_votes;
+      protected:
+         chain_interface_ptr                              _current_state;
+   };
 
-namespace fc {
-   void to_variant( const bts::blockchain::trx_output& var,  variant& vo );
-   void from_variant( const variant& var,  bts::blockchain::trx_output& vo );
-};
+   typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
+
+   struct transaction_location
+   {
+      transaction_location( uint32_t block_num = 0, uint32_t trx_num = 0 )
+      :block_num(0),trx_num(0){}
+
+      uint32_t block_num;
+      uint32_t trx_num;
+   };
+
+   typedef fc::optional<transaction_location> otransaction_location;
 
 
-FC_REFLECT( bts::blockchain::trx_input, (output_ref)(input_data) )
-FC_REFLECT( bts::blockchain::trx_output, (amount)(claim_func)(claim_data) )
-FC_REFLECT( bts::blockchain::transaction, (version)(stake)(vote)(valid_until)(inputs)(outputs) )
-FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (sigs) );
-FC_REFLECT( bts::blockchain::meta_trx_output, (trx_id)(input_num) )
-FC_REFLECT( bts::blockchain::meta_trx_input, (source)(output_num)(delegate_id)(output)(meta_output)(data) )
-FC_REFLECT_DERIVED( bts::blockchain::meta_trx, (bts::blockchain::signed_transaction), (meta_outputs) );
+} } // bts::blockchain 
 
+FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_id)(operations) )
+FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (signatures) )
+FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for)(votes_against) )
+FC_REFLECT( bts::blockchain::transaction_evaluation_state, 
+           (trx)(signed_keys)(required_keys)
+           (validation_error_code)
+           (validation_error_data)
+           (required_deposits)
+           (provided_deposits)
+           (deposits)(withdraws)(balance)(net_delegate_votes)(balance) )
+
+FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )

@@ -88,19 +88,15 @@ fc::variant p2p_rpc_server::lookup_domain_record(const fc::variants& params)
     return get_dns_wallet()->lookup(domain_name, get_client()->get_pending_transactions());
 }
 
-static rpc_server::method_data dns_show_test_metadata { "dns_show_test", nullptr,
+static rpc_server::method_data name_show_metadata { "name_show", nullptr,
 /* description: */  "Lookup a domain name's record",
 /* returns: */      "string",
 /* params:           name            type      required */
-                  {{"dns_show_test",  "string",  true}},
+                  {{"domain_name",  "string",  true}},
 /* prerequisites: */ rpc_server::json_authenticated };
-fc::variant p2p_rpc_server::dns_show_test(const fc::variants& params)
+fc::variant p2p_rpc_server::name_show(const fc::variants& params)
 {
-    struct p2p_record rec;
-    rec.name = params[0].as_string();
-    std::string str_val = "{\"ip\":\"192.168.1.1\"}";
-    rec.value = std::vector<char>(str_val.begin(), str_val.end());
-    return fc::variant(rec);
+    return "{\"value\":{\"ip\":\"192.168.1.1\"}}";
 }
 
 
@@ -149,4 +145,3 @@ dns_wallet_ptr p2p_rpc_server::get_dns_wallet()
 }
 
 } } } // bts::dns::p2p
-
