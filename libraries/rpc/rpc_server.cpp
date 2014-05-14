@@ -527,7 +527,7 @@ Examples:
     )" };
     fc::variant rpc_server_impl::getblockhash(const fc::variants& params)
     {
-      return fc::variant(_client->get_chain()->get_block( params[0].as_int64() ).id());
+      return fc::variant(_client->get_chain()->get_block( (uint32_t)params[0].as_int64() ).id());
     }
 
 
