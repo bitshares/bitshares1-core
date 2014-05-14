@@ -360,6 +360,7 @@ namespace bts { namespace wallet {
                   if( self->is_my_address( address( name.owner_key ) ) || self->is_my_address( address( name.active_key) ) )
                   {
                      _names[name.id] = wallet_name_record( get_new_index(), name );
+                     store_record( _names[name.id] );
                   }
                   else
                   {
