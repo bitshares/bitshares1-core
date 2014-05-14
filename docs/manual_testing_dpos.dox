@@ -1,0 +1,96 @@
+/** @defgroup dpos_manual_testing DPOS Manual Testing
+
+  In this test we will start two clients from, import the private key from one of
+  the initial delegates into one client, and then send funds from one client to
+  another client.
+
+  The genesis block is hard-coded into the clients, so all clients start up knowing
+  the initial state.  To access your balance you must first import a key from
+  the genesis block.
+  
+  Blocks will start being produced automatically once a wallet imports a private
+  key belonging to one of the known delegates.
+
+ 
+  @code
+cd programs/bts_xt
+./bts_xt_client --port 5678 --data-dir test_clienta
+>>> wallet_create walleta masterpassa    
+     true
+>>> walletpassphrase masterpassa 90000 
+     null
+>>> import_private_key dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f
+     true
+>>> rescan_state
+     .....
+     true
+>>> getbalance
+     8000000000000
+  @endcode
+
+     After rescanning the initial state your wallet should display the initial balance and
+     then start producing blocks about once every 50 seconds.  If you wait a minute and
+     then call getinfo you should see the number of blocks reported growing.
+
+  @code
+>>> getinfo 
+    {
+     "balance": 8000000000000,
+     "version": 100,
+     "protocolversion": 100,
+     "walletversion": 100,
+     "blocks": 2,
+     "connections": 0,
+     "unlocked_until": 0,
+     "_node_id": "6713545fb5cd8f80f085ab8c93172d7083659e36"
+    }
+  @endcode
+
+
+Start a second client:
+
+@code
+./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678 
+
+>>> getinfo
+{
+     "balance": 0,
+     "version": 100,
+     "protocolversion": 100,
+     "walletversion": 100,
+     "blocks": 5,
+     "connections": 1,
+     "unlocked_until": 0,
+     "_node_id": "fc597abee28d1162a5d124b29c5518cc8f8a16a6"
+}
+
+>>> wallet_create walletb masterpassb
+   Opening wallet test_clientb/walletb
+   true
+
+>>> getnewaddress
+   spending passphrase: 
+   XTSEzNZZ6MkMoTydz3dwM1vTE9ZjBiQirMSD
+@endcode
+
+Back in test_clienta  
+
+@code
+>>> sendtoaddress XTSEzNZZ6MkMoTydz3dwM1vTE9ZjBiQirMSD  87654321
+About to broadcast transaction:
+
+Broadcast this transaction? (yes/no)
+   yes
+   Transaction broadcasted (a621c1cbf1b2d7e90cc2f708fbd03907e3055ef2)
+>>> getbalance
+   7999912245679
+@endcode 
+
+Back in test_clientb
+@code
+>>> getbalance
+   87654321
+@endcode
+
+*/
+
