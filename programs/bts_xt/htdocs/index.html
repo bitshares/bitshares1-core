@@ -37,75 +37,118 @@
 		  font: 20pt bold 'Vollkorn';
 		  color: #bbb;
 		}
+		@font-face {
+			font-family: 'digi';
+			src: url('img/DS-DIGII.TTF');
+		}
+
+		.digitalclock{
+			font-family: 'digi';
+			font-size: 200%;
+		}
 	</style>
 
 	<script>
-
 		function displayMsg(msg) {
-			//$( "#status" ).text(msg);
+		    alert(msg);
+		}
+		var locked=true;
+
+		function lock() {
+			clearInterval(counter);
+            $('#pwd > :first-child').attr("src", "img/locked.png");
+            document.getElementById("timer").innerHTML = '';
+            locked=true;
 		}
 
-		displayMsg('abc');
 		function passwordPrompt() {
-			checkPassword();
+			if (locked) {
+		    	checkPassword();
+		    } else {
+		    	lock();
+		    }
 		}
 
 		function closeDialog() {
-			$( "#dialog" ).dialog( "close" );
+		    $("#dialog").dialog("close");
 		}
 
-	    function passwordOK() {
-	      sendPassword();
-	    }
+		function passwordOK() {
+		    sendPassword();
+		}
 
 		function checkPassword() {
-			$( "#dialog" ).dialog( "open" );
-			coverLayer.show();
+		    $("#dialog").dialog("open");
+		    coverLayer.show();
 		}
 
 		function sendPassword() {
-              $.jsonRPC.request('walletpassphrase', {
-                  params : [$('#passwordInput').val(), 60],
-                  success : function(data) {
-                      console.log( data.result );
-                      closeDialog();
-                      $("span#unlock_message").text( data.result ); 
-                  },
-                  error : function(data) {
-                      console.log( data.error );
-                      $("#dialog").dialog("widget").effect("shake", { times: 5 }, 100);
-                      $("span#unlock_message").text( data.error.message ); 
-                  }
-              });
-          }
+		    var lockTimeout = 30;
+		    var passval=$('#passwordInput').val();
+		    $('#passwordInput').val('');
+		    $.jsonRPC.request('walletpassphrase', {
+		        params: [passval, lockTimeout],
+		        success: function (data) {
+		            console.log(data.result);
+		            closeDialog();
+		            //$("span#unlock_message").text( data.result );
+		            var count = lockTimeout;
 
-		function createAddress () {
-                  // todo validate passwords match and have all required lengths/etc.
-                  $.jsonRPC.request('getnewaddress', {
-                      params : [$("#recvlabel").val()],
-                      success : function(data) {
-                          console.log( data.result );
-                          update_recv_addresses();
-                      },
-                      error : function(data) {
-                      	alert('error');
-                          console.log( data.error );
-                          displayMsg( data.error.message ); 
-                      }
-                  });
-            }
-	
+		            counter = setInterval(timer, 1000);
+		            $('#pwd > :first-child').attr("src", "img/unlocked.png");
+		            function timer() {
+		                
+		                if (count <= 0) {
+		                    lock();
+		                    return;
+		                }
+		                if (count>9) {
+		                	document.getElementById("timer").innerHTML = '0:' + count;
+		                } else {
+		                	document.getElementById("timer").innerHTML = '0:0' + count;
+		                }
+		                count = count - 1;
+		            }
+		            timer();
+		            
+		            locked = false;
+		        },
+		        error: function (data) {
+		            console.log(data.error);
+		            $("#dialog").dialog("widget").effect("shake", {
+		                times: 5
+		            }, 100);
+		            //$("span#unlock_message").text( data.error.message ); 
+		        }
+		    });
+		}
+
+		function createAddress() {
+		    // todo validate passwords match and have all required lengths/etc.
+		    $.jsonRPC.request('getnewaddress', {
+		        params: [$("#recvlabel").val()],
+		        success: function (data) {
+		            console.log(data.result);
+		            update_recv_addresses();
+		        },
+		        error: function (data) {
+		            console.log(data.error);
+		            displayMsg(data.error.message);
+		        }
+		    });
+		}
+
 		$(function () {
-			angular.bootstrap(document.getElementById("ngContacts"),['contactsApp']);
-			angular.bootstrap(document.getElementById("ngReceive"),['myApp']);
-			
-			$('#passwordInput').keyup(function (e) {
-			    if (e.keyCode === 13) {
-			       passwordOK();
-			    }
-			  });
+		    angular.bootstrap(document.getElementById("ngContacts"), ['contactsApp']);
+		    angular.bootstrap(document.getElementById("ngReceive"), ['myApp']);
 
-			$("#tabs").tabs();
+		    $('#passwordInput').keyup(function (e) {
+		        if (e.keyCode === 13) {
+		            passwordOK();
+		        }
+		    });
+
+		    $("#tabs").tabs();
 
 		    $("#dialog").dialog({
 		        autoOpen: false,
@@ -118,7 +161,9 @@
 		            effect: "explode",
 		            duration: 600
 		        },
-		        beforeClose: function( event, ui ) {coverLayer.hide();}
+		        beforeClose: function (event, ui) {
+		            coverLayer.hide();
+		        }
 		    });
 
 		    //RPC requests
@@ -132,11 +177,11 @@
 		    }).hide();
 
 		    $.jsonRPC.setup({
-		        endPoint: 'http://bitshares.org:9989/rpc',
+		        endPoint: '/rpc',
 		        namespace: ''
 		    });
 
-		    $.jsonRPC.request('currentwallet', {
+		    $.jsonRPC.request('current_wallet', {
 		        params: [],
 		        success: function (data) {
 		            console.log(data.result);
@@ -148,6 +193,7 @@
 		            console.log('getbalance error');
 		            console.log(data.error);
 		            $("span#username").text(data.error.message);
+		            displayMsg(data.error.message);
 		        }
 		    });
 
@@ -161,6 +207,7 @@
 		            console.log('getbalance error');
 		            console.log(data.error);
 		            $("span#balance").text(data.error.message);
+		            displayMsg(data.error.message);
 		        }
 		    });
 
@@ -175,72 +222,88 @@
 		                console.log('getbalance error');
 		                console.log(data.error);
 		                $("span#trx_history").text(data.error.message);
+		                displayMsg(data.error.message);
 		            }
 		        });
 		    };
 		    update_transaction_history();
 
 		    update_recv_addresses = function () {
-		        $.jsonRPC.request('listrecvaddresses', {
+		        $.jsonRPC.request('list_receive_addresses', {
 		            params: [],
 		            success: function (data) {
 		                console.log(data.result);
 		                setTableData(data.result);
-		                
+
 		            },
 		            error: function (data) {
 		                console.log('getbalance error');
 		                console.log(data.error);
-		                displayMsg( data.error.message ); 
+		                displayMsg(data.error.message);
 		            }
 		        });
 		    };
 		    update_recv_addresses();
 
-		    var update_send_addresses = function() {
-		    	$.jsonRPC.request('list_send_addresses', {
-                   params : [],
-                   success : function(data) {
-                       console.log( data.result );
-                       setContactsData(data.result);
-                   },
-                   error : function(data) {
-                       console.log(  'getbalance error' );
-                       console.log(  data.error );
-                       displayMsg( data.error.message ); 
-                   }
-               }); };
-               update_send_addresses();
+		    var update_send_addresses = function () {
+		        $.jsonRPC.request('list_send_addresses', {
+		            params: [],
+		            success: function (data) {
+		                console.log(data.result);
+		                setContactsData(data.result);
+		            },
+		            error: function (data) {
+		                console.log('getbalance error');
+		                console.log(data.error);
+		                displayMsg(data.error.message);
+		            }
+		        });
+		    };
+		    update_send_addresses();
 
-               add_send_address = function(address, label) {
-                  // todo validate passwords match and have all required lengths/etc.
-                  $.jsonRPC.request('add_send_address', {
-                      params : [address, label],
-                      success : function(data) {
-                          console.log( data.result );
-                          update_send_addresses();
-                      },
-                      error : function(data) {
-                          console.log( data.error );
-                          displayMsg( data.error.message ); 
-                      }
-                  });
-              };
+		    add_send_address = function (address, label) {
+		        // todo validate passwords match and have all required lengths/etc.
+		        $.jsonRPC.request('add_send_address', {
+		            params: [address, label],
+		            success: function (data) {
+		                console.log(data.result);
+		                update_send_addresses();
+		            },
+		            error: function (data) {
+		                console.log(data.error);
+		                displayMsg(data.error.message);
+		            }
+		        });
+		    };
+
+		    set_receive_address_memo = function (address, label) {
+		    	alert(address +  ' ' + label);
+		        // todo validate passwords match and have all required lengths/etc.
+		        $.jsonRPC.request('set_receive_address_memo', {
+		            params: [address, label],
+		            success: function (data) {
+		                console.log(data.result);
+		                alert(data.result);
+		                update_recv_addresses();
+		            },
+		            error: function (data) {
+		                console.log(data.error);
+		                displayMsg(data.error.message);
+		            }
+		        });
+		    };
 		});
 	</script>
 </head>
 <body>
 	<div style='position:left; background-color: rgb(236,236,236); vertical-align:middle; padding-bottom: 10px'>
-		<a href='http://bitshares.org' target="_blank">
-			<img src='img/bitsharesTransparentLow.png' style='vertical-align: sub; margin-right:20px'>
-		</a>
-		<span id='username' style='font-size:24px;'>
-		username
-		</span>
-		Unloock:
-		<span id='unlock_message'></span>
-		<button class='basicButton' id='pwd' onclick='passwordPrompt();'>Enter Password</button>
+		<a href='http://bitshares.org' target="_blank" style='margin-right:20px;'><img src='img/bitsharesTransparentLow.png'></a>
+
+		<span id='username' style='font-size:24px;'>username</span>
 		<button class='basicButton'>Logout</button>
+		
+		<span style='float:right'><span id="timer" class='digitalclock'></span> <button id='pwd' onclick='passwordPrompt();'><img style='width:32px;height:24px;' src='img/locked.png'></button></span>
+		
 		<div id='status'></div>
 	</div>
 	
@@ -262,28 +325,27 @@
 		</div>
 
 		<div id="tabs-2">
-			<input id='recvlabel' style='width:400px; margin-right:10px'>
-			<button onclick='createAddress();' class='basicButton'>Create Address</button>
-			<br><br>
+			
 			<div id='ngReceive' ng-controller="MyCtrl">
+				<input id='recvlabel' placeholder='Label' style='width:400px; margin-right:10px'>
+				<button onclick='createAddress();' class='basicButton'>Create Address</button>
+				<input type="text" placeholder='Filter' style='margin-left:90px' ng-model="filterOptions.filterText">
+				<br>
+				<br>
 				<div class="gridStyle" ng-grid="gridOptions"></div>
-				<br>
-				<br>
-				<strong>Filter:</strong>
-				<input type="text" ng-model="filterOptions.filterText">
 		    </div>
 		</div>
 
 		<div id="tabs-3">
 		<div id="ngContacts" ng-controller="MyCtrl">
-
+				<input id='sendlabel' placeholder='Label' style='width:200px; margin-right:2px'>
+				<input id='sendaddress' placeholder='Address' style='width:400px; margin-right:4px'>
+				<button class='basicButton' onclick='add_send_address($("#sendaddress").val(), $("#sendlabel").val());'>Add</button>
+				<input type="text" placeholder='Filter...'  ng-model="filterOptions.filterText" style='width:150px; margin-left:50px'>
+				<br>
+				<br>
 				<div class="gridStyle" ng-grid="gridOptions"></div>
-				<br>
-				<br>
-				<input type="text" placeholder='Filter...' ng-model="filterOptions.filterText">
 		    </div>
-
-
 		    <br>
 		</div>
 
@@ -297,7 +359,7 @@
 				<br><br>
 				<output id="list"></output>
 				<br><br>
-				Password:  <input type="password"> <button class='basicButton'>Import</button>
+				Password:  <input type="password" autocomplete="off"> <button class='basicButton'>Import</button>
 			</div>
 		</div>
 
@@ -307,7 +369,7 @@
 	</div>
 
 	<div id="dialog" title="Enter password">
-		<input type="password" id='passwordInput'><br><br>
+		<input type="password" autocomplete="off" id='passwordInput'><br><br>
 		<button class='basicButton' onclick='passwordOK()'>OK & Send</button><button class='basicButton' onclick='closeDialog()'>Cancel</button>
 	</div>
 </body>

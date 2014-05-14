@@ -12,10 +12,11 @@ contacts.controller('MyCtrl', function ($scope) {
                 'Label': data[i][1]
             });
         }
+        /*
         newData.unshift({
                 'Address': "",
                 'Label': "Type new address here -->"
-            });
+            });*/
         $scope.myData = newData;
 
         
@@ -27,15 +28,21 @@ contacts.controller('MyCtrl', function ($scope) {
     setContactsData([]);
 
     $scope.gridOptions = {
-        enableRowSelection: false,
+        enableRowSelection: true,
         enableCellSelection: true,
         enableCellEdit: true,
         data: 'myData',
         filterOptions: $scope.filterOptions,
         columnDefs: [{
-            field: 'Label'
+            field: 'Label',
+            enableCellEdit: true
         }, {
-            field: 'Address'
+            field: 'Address',
+            enableCellEdit: false
+        }, {
+        	displayName: 'Delete',
+        	width: 80,
+        	cellTemplate: '<input type="button" style="color:red" onclick="alert(\'You clicked  {{row.entity}} \')" value="X">'
         }]
     };
 

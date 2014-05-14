@@ -5,14 +5,18 @@ app.controller('MyCtrl', function ($scope) {
     };
 
     setTableData = function(data) {
+        /*
         var newData = [];
         for (var i = 0; i < data.length; i++) {
             newData.push({
                 'Address': data[i][0],
                 'Label': data[i][1]
             });
-        }
-        $scope.myData = newData;
+        }*/
+
+        //alert(JSON.stringify(data));
+        
+        $scope.myData = data;
 
         
         if (!$scope.$$phase) {
@@ -23,16 +27,18 @@ app.controller('MyCtrl', function ($scope) {
     setTableData([]);
 
     $scope.gridOptions = {
-        enableRowSelection: false,
-        enableCellSelection: true,
+        enableRowSelection: true,
+        enableCellSelection: false,
         data: 'myData',
         filterOptions: $scope.filterOptions,
         columnDefs: [{
-            field: 'Label',
-            enableCellEdit: true
+            field: 'memo',
+            enableCellEdit: true,
+            displayName: 'Label'
         }, {
-            field: 'Address',
-            enableCellEdit: false
+            field: 'addr',
+            enableCellEdit: false,
+            displayName: 'Address'
         }]
     };
 
@@ -49,7 +55,7 @@ app.controller('MyCtrl', function ($scope) {
         if (!evt.targetScope.row) {
 	        evt.targetScope.row = [];
 	    }
-	    alert(JSON.stringify(evt.targetScope.row.entity));
+        set_receive_address_memo(evt.targetScope.row.entity.addr, evt.targetScope.row.entity.memo);
     });
 
 });
