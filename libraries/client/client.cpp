@@ -172,6 +172,9 @@ namespace bts { namespace client {
          }
        }
 
+       /**
+        *  Get the hash of all blocks after from_id
+        */
        std::vector<bts::net::item_hash_t> client_impl::get_item_ids(const bts::net::item_id& from_id,
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit /* = 2000 */)
@@ -185,7 +188,7 @@ namespace bts { namespace client {
          catch (fc::key_not_found_exception&)
          {
            if (from_id.item_hash == bts::net::item_hash_t())
-             last_seen_block_num = (uint32_t)-1;
+             last_seen_block_num = 0;
            else
            {
              remaining_item_count = 0;
@@ -206,7 +209,8 @@ namespace bts { namespace client {
            }
            catch (fc::key_not_found_exception&)
            {
-             assert(false && "I assume this can never happen");
+             ilog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
+             assert( !"I assume this can never happen");
            }
            hashes_to_return.push_back(header.id());
          }

@@ -1125,9 +1125,12 @@ namespace bts { namespace net {
           return;
         }
 
-        std::deque<item_hash_t> item_hashes_received(blockchain_item_ids_inventory_message_received.item_hashes_available.begin(), 
-                                                     blockchain_item_ids_inventory_message_received.item_hashes_available.end());
-        originating_peer->number_of_unfetched_item_ids = blockchain_item_ids_inventory_message_received.total_remaining_item_count;
+        std::deque<item_hash_t> item_hashes_received(
+                                  blockchain_item_ids_inventory_message_received.item_hashes_available.begin(), 
+                                  blockchain_item_ids_inventory_message_received.item_hashes_available.end());
+        originating_peer->number_of_unfetched_item_ids = 
+                                  blockchain_item_ids_inventory_message_received.total_remaining_item_count;
+
         // flush any items this peer sent us that we've already received and processed from another peer
         if (item_hashes_received.size() &&
             originating_peer->ids_of_items_to_get.empty())

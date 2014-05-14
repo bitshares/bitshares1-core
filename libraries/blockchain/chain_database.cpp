@@ -178,14 +178,15 @@ namespace bts { namespace blockchain {
        *  Place the block in the block tree, the block tree contains all blocks
        *  and tracks whether they are valid, linked, and current.
        */
-      block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id, const full_block& block_data )
+      block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id, 
+                                                            const full_block& block_data )
       {
-         std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
-         std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id );
-         parallel_blocks.push_back( block_id );
-
-         _block_id_to_block.store( block_id, block_data );
-         _fork_number_db.store( block_data.block_num, parallel_blocks );      
+          std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
+          std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id );
+          parallel_blocks.push_back( block_id );
+        
+          _block_id_to_block.store( block_id, block_data );
+          _fork_number_db.store( block_data.block_num, parallel_blocks );      
 
           block_fork_data prev_fork_data;
 
@@ -375,6 +376,7 @@ namespace bts { namespace blockchain {
 
             clear_pending( block_data );
 
+            _block_num_to_id.store( block_data.block_num, block_id );
             if( _observer ) _observer->block_applied( summary );
          } 
          catch ( const fc::exception& e )
@@ -987,6 +989,8 @@ namespace bts { namespace blockchain {
    }
    uint32_t chain_database::get_block_num( const block_id_type& block_id )const
    { try {
+      if( block_id == block_id_type() ) 
+         return 0;
       auto itr = my->_block_id_to_block.find( block_id );
       FC_ASSERT( itr.valid() );
       return itr.value().block_num;
