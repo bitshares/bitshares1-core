@@ -642,9 +642,10 @@ namespace bts { namespace wallet {
      auto found = my->_data.receive_addresses.find(receive_address(addr));
      if (found != my->_data.receive_addresses.end())
      {
-       auto changed_address = *found;
+       receive_address changed_address = *found;
        changed_address.memo = memo;
-       my->_data.receive_addresses.insert(changed_address);
+       auto old_pos = my->_data.receive_addresses.erase(found);
+       my->_data.receive_addresses.insert(old_pos, changed_address);
        save();
      }
      else
