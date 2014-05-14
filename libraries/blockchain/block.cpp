@@ -1,5 +1,6 @@
 #include <bts/blockchain/block.hpp>
 #include <bts/blockchain/config.hpp>
+#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -18,14 +19,14 @@ namespace bts { namespace blockchain {
    }
 
    bool signed_block_header::validate_signee( const public_key_type& expected_signee )const
-   {
+   { 
       return fc::ecc::public_key( signee, digest() ) == expected_signee;
    }
 
    void signed_block_header::sign( const fc::ecc::private_key& signer )
-   {
+   { try {
       signee = signer.sign_compact( digest() );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    size_t full_block::block_size()const
    {

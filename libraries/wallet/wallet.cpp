@@ -110,7 +110,7 @@ namespace bts { namespace wallet {
                return std::string();
             }
 
-            /** used when hkey_index == (X,Y,-N) to lookup foreign private keys, where
+            /** used when hkey_index == (X,-1,N) to lookup foreign private keys, where
              * N is the key into _extra_receive_keys
              **/
             std::unordered_map<int32_t, private_key_record >                   _extra_receive_keys;
@@ -531,6 +531,7 @@ namespace bts { namespace wallet {
             fc::ecc::private_key get_private_key( const hkey_index& index )
             { try {
                 //if( index.address_num < 0 )
+                elog( "${index}", ("index",index) );
                 if( index.trx_num == -1 )
                 {
                     auto priv_key_rec_itr = _extra_receive_keys.find( index.address_num );
@@ -550,12 +551,24 @@ namespace bts { namespace wallet {
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("index",index) ) }
 
+            bool check_address( const fc::ecc::public_key& k, const address& addr )
+            { 
+                if( address(k) == addr ) return true;
+                if( address(pts_address(k,false,0) )  == addr ) return true;  
+                if( address(pts_address(k,false,56) ) == addr ) return true;  
+                if( address(pts_address(k,true,0) )   == addr ) return true;  
+                if( address(pts_address(k,true,56) )  == addr ) return true;  
+                return false;
+            }
+
             fc::ecc::private_key get_private_key( const address& pub_key_addr )
             { try {
-
                 auto key_index_itr = _receive_keys.find( pub_key_addr );
                 FC_ASSERT( key_index_itr != _receive_keys.end() );
-                return get_private_key( key_index_itr->second );
+                auto priv_key = get_private_key( key_index_itr->second );
+                FC_ASSERT( check_address( priv_key.get_public_key(), pub_key_addr), "",
+                           ("pub_key",priv_key.get_public_key())("addr",pub_key_addr));
+                return priv_key;
 
             } FC_RETHROW_EXCEPTIONS( warn, "", ("address",pub_key_addr) ) }
 
@@ -668,18 +681,19 @@ namespace bts { namespace wallet {
                case private_key_record_type:
                {
                   auto pkr = record.as<private_key_record>();
-                  my->_extra_receive_keys[pkr.index] = pkr;
+                  my->_extra_receive_keys[pkr.extra_key_index] = pkr;
                   auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
+                  elog( "public key: ${key}", ("key",pubkey) );
                   my->_receive_keys[ address( pubkey ) ] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+                     hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   my->_receive_keys[ address(pts_address(pubkey,false,56) )] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+                     hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+                     hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+                     hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] = 
-                     hkey_index( pkr.contact_index, 0, pkr.index );
+                     hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   break;
                }
                case meta_record_type:
@@ -808,7 +822,9 @@ namespace bts { namespace wallet {
        auto contact_itr = my->_contact_name_index.find( contact_name );
        if( contact_itr != my->_contact_name_index.end() )
        {
-          import_private_key( priv_key, contact_itr->second );
+          auto contact_record_itr = my->_contacts.find( contact_itr->second );
+          FC_ASSERT( contact_record_itr != my->_contacts.end() );
+          import_private_key( priv_key, contact_record_itr->second.contact_num );
        }
        else
        {
@@ -829,6 +845,7 @@ namespace bts { namespace wallet {
       int32_t key_num = my->_extra_receive_keys.size();
       auto record_id = my->get_new_index();
       auto pkr = private_key_record( record_id, contact_index, key_num, priv_key, my->_wallet_password );
+      elog( "contact_index: ${i}", ("i",contact_index) );
       my->_extra_receive_keys[key_num] = pkr;
       my->_receive_keys[pub_address] = hkey_index( contact_index, -1, key_num );
       my->_receive_keys[ address(pts_address(key,false,56) )] = hkey_index( contact_index, -1, key_num );
@@ -1016,8 +1033,12 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = my->get_private_key( delegate_pub_key );
+      FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
+
+      ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
 
       header.sign(delegate_key);
+      FC_ASSERT( header.validate_signee( delegate_pub_key ) );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 

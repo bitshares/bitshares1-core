@@ -65,7 +65,7 @@ namespace bts { namespace client {
             auto next_block_time = _wallet->next_block_production_time();
             ilog( "next block time: ${b}  interval: ${i} seconds", 
                   ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
-            if( next_block_time < now && 
+            if( next_block_time < now || 
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
                fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );

@@ -312,7 +312,9 @@ namespace bts { namespace blockchain {
             digest_block digest_data(block_data);
             FC_ASSERT( digest_data.validate_digest() );
             FC_ASSERT( digest_data.validate_unique() );
-            FC_ASSERT( block_data.validate_signee( self->get_signing_delegate_key(block_data.timestamp) ) );
+            FC_ASSERT( block_data.validate_signee( self->get_signing_delegate_key(block_data.timestamp) ),
+                       "", ("signing_delegate_key", self->get_signing_delegate_key(block_data.timestamp))
+                           ("signing_delegate_id", self->get_signing_delegate_id( block_data.timestamp)) );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
@@ -984,14 +986,17 @@ namespace bts { namespace blockchain {
       return itr.valid();
    }
    uint32_t chain_database::get_block_num( const block_id_type& block_id )const
-   {
+   { try {
       auto itr = my->_block_id_to_block.find( block_id );
+      FC_ASSERT( itr.valid() );
       return itr.value().block_num;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to find block ${block_id}", ("block_id", block_id) ) }
+
     uint32_t         chain_database::get_head_block_num()const
     {
        return my->_head_block_header.block_num;
     }
+
     block_id_type      chain_database::get_head_block_id()const
     {
        return my->_head_block_id;

@@ -24,6 +24,25 @@ const char* test_keys = R"([
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
 ])"; 
 
+BOOST_AUTO_TEST_CASE( block_signing )
+{
+   try {
+      fc::ecc::private_key signer = fc::ecc::private_key::generate();
+      auto pub_key = signer.get_public_key();
+      ilog( "pub_key: ${pub}", ("pub",pub_key) );
+      full_block blk;
+
+      signed_block_header& header = blk;
+      header.sign( signer );
+      FC_ASSERT( blk.validate_signee( pub_key ) );
+   } 
+   catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string() ) );
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE( account_serialization_test )
 { 
    try {
@@ -91,16 +110,22 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       wallet  my_wallet( blockchain );
       my_wallet.set_data_directory( dir.path() );
       my_wallet.create_named_wallet(  "my_wallet", "password" );
+      my_wallet.unlock( "password" );
 
       wallet  your_wallet( blockchain2 );
       your_wallet.set_data_directory( dir2.path() );
       your_wallet.create_named_wallet(  "your_wallet", "password" );
+      your_wallet.unlock( "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
       {
          my_wallet.import_private_key( key );
       }
+      my_wallet.scan_state();
+      my_wallet.close();
+      my_wallet.open_named_wallet( "my_wallet", "password" );
+      my_wallet.unlock( "password" );
       my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
