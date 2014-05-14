@@ -571,7 +571,9 @@ namespace bts { namespace net {
           {
             ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
             if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
-                ((iter->last_connection_disposition != last_connection_failed && iter->last_connection_disposition != last_connection_rejected) ||
+                ((iter->last_connection_disposition != last_connection_failed && 
+                  iter->last_connection_disposition != last_connection_rejected &&
+                  iter->last_connection_disposition != last_connection_handshaking_failed) ||
                  iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
             {
               connect_to(iter->endpoint);
@@ -818,7 +820,7 @@ namespace bts { namespace net {
     {
       if (_node_id == node_id)
       {
-        ilog("is_already_connected_to_id returning true because the peer us");
+        ilog("is_already_connected_to_id returning true because the peer is us");
         return true;
       }
       for (const peer_connection_ptr active_peer : _active_connections)
@@ -1114,8 +1116,16 @@ namespace bts { namespace net {
       if (originating_peer->direction == peer_connection_direction::inbound &&
           _handshaking_connections.find(originating_peer->shared_from_this()) != _handshaking_connections.end())
       {
+        // handshaking is done, move the connection to fully active status and start synchronizing
         ilog("peer ${endpoint} which was handshaking with us has started synchronizing with us, start syncing with it", 
              ("endpoint", originating_peer->get_remote_endpoint()));
+        
+        // mark the connection as successful in the database
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
+        updated_peer_record.last_connection_disposition = last_connection_succeeded;
+        _potential_peer_db.update_entry(updated_peer_record);
+
+        // transition it to our active list
         _active_connections.insert(originating_peer->shared_from_this());
         _handshaking_connections.erase(originating_peer->shared_from_this());
         new_peer_just_added(originating_peer->shared_from_this());
@@ -1733,8 +1743,8 @@ namespace bts { namespace net {
       {
         new_peer->connect_to(remote_endpoint, _node_configuration.listen_endpoint);  // blocks until the connection is established and secure connection is negotiated
 
-        // connection succeeded.  record that in our database
-        updated_peer_record.last_connection_disposition = last_connection_succeeded;
+        // connection succeeded, we've started handshaking.  record that in our database
+        updated_peer_record.last_connection_disposition = last_connection_handshaking_failed;
         updated_peer_record.number_of_successful_connection_attempts++;
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry(updated_peer_record);
@@ -1870,7 +1880,7 @@ namespace bts { namespace net {
     void node_impl::dump_node_status()
     {
       ilog("----------------- PEER STATUS UPDATE --------------------");
-      ilog(" number of peers: ${active} active, ${handshaking}, ${closing} closing", 
+      ilog(" number of peers: ${active} active, ${handshaking}, ${closing} closing.  attempting to maintain ${desired} - ${maximum} peers", 
            ("active", _active_connections.size())("handshaking", _handshaking_connections.size())("closing",_closing_connections.size())
            ("desired", _desired_number_of_connections)("maximum", _maximum_number_of_connections));
       for (const peer_connection_ptr& peer : _active_connections)

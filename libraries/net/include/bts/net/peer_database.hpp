@@ -14,6 +14,7 @@ namespace bts { namespace net {
     never_attempted_to_connect,
     last_connection_failed,
     last_connection_rejected,
+    last_connection_handshaking_failed,
     last_connection_succeeded
   };
 
@@ -82,5 +83,5 @@ namespace bts { namespace net {
 
 } } // end namespace bts::net
 
-FC_REFLECT_ENUM(bts::net::potential_peer_last_connection_disposition, (never_attempted_to_connect)(last_connection_failed)(last_connection_rejected)(last_connection_succeeded))
+FC_REFLECT_ENUM(bts::net::potential_peer_last_connection_disposition, (never_attempted_to_connect)(last_connection_failed)(last_connection_rejected)(last_connection_handshaking_failed)(last_connection_succeeded))
 FC_REFLECT(bts::net::potential_peer_record, (endpoint)(last_seen_time)(last_connection_disposition)(last_connection_attempt_time)(number_of_successful_connection_attempts)(number_of_failed_connection_attempts))
