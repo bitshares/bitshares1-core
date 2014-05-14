@@ -234,7 +234,7 @@ void simple_net_test_miner::run()
     for (int i = 0; i < 410; ++i)
       generate_signed_block();
 
-  srand(time(NULL));
+  srand((unsigned)time(NULL));
   for (;;)
   {
     // sleep for 10-20 seconds

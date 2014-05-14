@@ -60,6 +60,23 @@ namespace bts { namespace net {
          virtual message get_item( const item_id& id ) = 0;
 
          /**
+          * Returns a synopsis of the blockchain used for syncing.  
+          * This consists of a list of selected item hashes from our current preferred
+          * blockchain, exponentially falling off into the past.  Horrible explanation.
+          * 
+          * If the blockchain is empty, it will return the empty list.
+          * If the blockchain has one block, it will return a list containing just that block.
+          * If it contains more than one block:
+          *   the first element in the list will be the hash of the genesis block
+          *   the second element will be the hash of an item at the half way point in the blockchain
+          *   the third will be ~3/4 of the way through the block chain
+          *   the fourth will be at ~7/8...
+          *     &c.
+          *   the last item in the list will be the hash of the most recent block on our preferred chain
+          */
+         //virtual std::vector<item_hash_t> get_blockchain_synopsis() = 0;
+
+         /**
           *  Call this after the call to handle_message succeeds.
           *
           *  @param item_type the type of the item we're synchronizing, will be the same as item passed to the sync_from() call

@@ -1,6 +1,7 @@
 #include <bts/blockchain/block.hpp>
 #include <bts/blockchain/config.hpp>
 #include <fc/log/logger.hpp>
+#include <algorithm>
 
 namespace bts { namespace blockchain {
 

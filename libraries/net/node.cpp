@@ -1075,6 +1075,11 @@ namespace bts { namespace net {
         disconnect_from_peer(originating_peer);
       else
       {
+        // mark the connection as successful in the database
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
+        updated_peer_record.last_connection_disposition = last_connection_succeeded;
+        _potential_peer_db.update_entry(updated_peer_record);
+
         _active_connections.insert(originating_peer->shared_from_this());
         _handshaking_connections.erase(originating_peer->shared_from_this());
         new_peer_just_added(originating_peer->shared_from_this());

@@ -589,7 +589,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
       
     void operator()(std::ostream& out, int v) const {
       fc::microseconds this_duration = _propagation_data[v].received_time - _propagation_data[_initial_node].received_time;
-      int color = ((7 * this_duration.count()) / _max_duration.count()) + 1; // map to colors 1 - 8 out of 9, 9 is too dark
+      int color = (int)((7 * this_duration.count()) / _max_duration.count()) + 1; // map to colors 1 - 8 out of 9, 9 is too dark
       out << "[label=<" << v << "<br/>" << this_duration.count() / 1000 << "ms>, fillcolor=" << color;
       if (v == _initial_node)
         out << ", shape=doublecircle";
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   const uint32_t number_of_transfers_to_each_recipient = 10;
   const uint32_t amount_of_each_transfer = 10;
   const uint32_t total_amount_to_transfer = amount_of_each_transfer * number_of_transfers_to_each_recipient * number_of_recipients;
-  const uint32_t initial_balance_for_each_node =  std::max<uint64_t>(100000000, total_amount_to_transfer * 2); // allow for fees;
+  const uint64_t initial_balance_for_each_node =  std::max<uint64_t>(100000000, total_amount_to_transfer * 2); // allow for fees;
 
 
   client_processes.resize(number_of_recipients + 1);
@@ -1039,7 +1039,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("-----------------------------------------------------");
   for (unsigned i = 0; i < rx_tx_bytes.size(); ++i)
     BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
-  uint32_t run_time_in_seconds = (test_end_time - test_start_time).count() / fc::seconds(1).count();
+  uint32_t run_time_in_seconds = (uint32_t)(test_end_time - test_start_time).count() / fc::seconds(1).count();
   BOOST_TEST_MESSAGE("Test ran for " << run_time_in_seconds << " seconds");
   BOOST_TEST_MESSAGE("Total number of transactions: " << total_number_of_transactions << ", presumably in about " <<
                      (run_time_in_seconds / 30) << " blocks");

@@ -6,6 +6,8 @@
 
 #include <fc/filesystem.hpp>
 
+#include <functional>
+
 namespace bts { namespace blockchain {
 
 

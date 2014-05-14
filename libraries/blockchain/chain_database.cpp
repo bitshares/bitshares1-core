@@ -379,7 +379,7 @@ namespace bts { namespace blockchain {
             _block_num_to_id.store( block_data.block_num, block_id );
             if( _observer ) _observer->block_applied( summary );
          } 
-         catch ( const fc::exception& e )
+         catch ( const fc::exception& )
          {
             mark_invalid( block_id );
             throw;
