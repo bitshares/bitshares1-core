@@ -22,10 +22,10 @@ namespace bts { namespace wallet {
          void        get_data_directory()const;
          fc::path    get_wallet_filename_for_user( const std::string& username )const;
 
-         std::string get_wallet_name()const;
-         void        open_named_wallet( const std::string& wallet_name, const std::string& password = "password" );
-         void        create_named_wallet( const std::string& wallet_name, const std::string& key_password = "password" );
-         void        open( const fc::path& file, const std::string& password  = "password");
+         std::string get_name()const;
+         void        open( const std::string& wallet_name, const std::string& password = "password" );
+         void        create( const std::string& wallet_name, const std::string& key_password = "password" );
+         void        open_file( const fc::path& file, const std::string& password  = "password");
          void        backup_wallet( const fc::path& file );
 
          bool        is_open()const;

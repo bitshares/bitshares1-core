@@ -21,11 +21,11 @@ namespace bts { namespace rpc {
 #define RPC_METHOD_LIST\
              (help)\
              (getinfo)\
-             (open_wallet)\
-             (create_named_wallet)\
-             (open_named_wallet)\
-             (current_wallet)\
-             (close_wallet)\
+             (wallet_open_file)\
+             (wallet_create)\
+             (wallet_open)\
+             (wallet_get_name)\
+             (wallet_close)\
              (walletlock)\
              (walletpassphrase)\
              (getnewaddress)\
@@ -551,7 +551,7 @@ Examples:
     }
 
 
-    static rpc_server::method_data open_wallet_metadata{"open_wallet", nullptr,
+    static rpc_server::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
                                      /* description */ "Opens the wallet at the given path.",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
@@ -561,11 +561,11 @@ Examples:
 								   R"(
 Wallets exist in the wallet data directory
 								   )"};
-    fc::variant rpc_server_impl::open_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_open_file(const fc::variants& params)
     {
       try
       {
-         _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
+         _client->get_wallet()->open_file( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -581,7 +581,7 @@ Wallets exist in the wallet data directory
     }
 
 
-    static rpc_server::method_data open_named_wallet_metadata{"open_named_wallet", nullptr,
+    static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
@@ -591,11 +591,11 @@ Wallets exist in the wallet data directory
 								   R"(
 Wallets exist in the wallet data directory
 								   )"};
-    fc::variant rpc_server_impl::open_named_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_open(const fc::variants& params)
     {
       try
       {
-        _client->get_wallet()->open_named_wallet( params[0].as_string(), params[1].as_string() );
+        _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
       }
       catch( const fc::exception& e )
@@ -610,7 +610,7 @@ Wallets exist in the wallet data directory
       }
     }
 
-    static rpc_server::method_data create_named_wallet_metadata{"create_named_wallet", nullptr,
+    static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
@@ -620,36 +620,36 @@ Wallets exist in the wallet data directory
 								   R"(
 Wallets exist in the wallet data directory
 								   )"};
-    fc::variant rpc_server_impl::create_named_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
-        _client->get_wallet()->create_named_wallet( params[0].as_string(), params[1].as_string() );
+        _client->get_wallet()->create( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
 
-    static rpc_server::method_data current_wallet_metadata{"current_wallet", nullptr,
-                                        /* description */ "Returns the wallet name passed to open_named_wallet",
+    static rpc_server::method_data wallet_get_name_metadata{"wallet_get_name", nullptr,
+                                        /* description */ "Returns the wallet name passed to wallet_open",
                                         /* returns: */    "string",
                                         /* params:     */ {},
                                         /* prerequisites */ rpc_server::no_prerequisites,
 									  R"(
 									  )" };
-    fc::variant rpc_server_impl::current_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_get_name(const fc::variants& params)
     {
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
-       return fc::variant(_client->get_wallet()->get_wallet_name());
+       return fc::variant(_client->get_wallet()->get_name());
     }
 
-    static rpc_server::method_data close_wallet_metadata{"close_wallet", nullptr,
+    static rpc_server::method_data wallet_close_metadata{"wallet_close", nullptr,
                                       /* description */ "Closes the curent wallet if one is open.",
                                       /* returns: */    "bool",
                                       /* params:     */ {},
                                       /* prerequisites */ rpc_server::no_prerequisites,
 									R"(
 									)" };
-    fc::variant rpc_server_impl::close_wallet(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
        return fc::variant( _client->get_wallet()->close() );
     }

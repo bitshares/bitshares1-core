@@ -598,17 +598,17 @@ namespace bts { namespace wallet {
    wallet::~wallet(){}
 
 
-   void wallet::open_named_wallet( const std::string& wallet_name, const std::string& password )
+   void wallet::open( const std::string& wallet_name, const std::string& password )
    { try {
       try {
          close();
-         open( my->_data_dir / wallet_name, password );
+         open_file( my->_data_dir / wallet_name, password );
          my->_wallet_name = wallet_name;
       } catch ( ... ) { my->_wallet_name = ""; throw; }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) )
    }
 
-   void wallet::create_named_wallet( const std::string& wallet_name, const std::string& password )
+   void wallet::create( const std::string& wallet_name, const std::string& password )
    { try {
          auto filename = my->_data_dir / wallet_name;
          FC_ASSERT( !fc::exists( filename ), "Wallet ${wallet_dir} already exists.", ("wallet_dir",filename) )
@@ -618,10 +618,10 @@ namespace bts { namespace wallet {
             my->initialize_wallet( password );
          }
          close();
-         open_named_wallet( wallet_name, password );
+         open( wallet_name, password );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet with name ${name}", ("name",wallet_name) ) }
 
-   void wallet::open( const fc::path& wallet_dir, const std::string& password )
+   void wallet::open_file( const fc::path& wallet_dir, const std::string& password )
    { try {
       FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}  ${password}", ("wallet_dir",wallet_dir)("password",password) )
 
@@ -727,7 +727,7 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password = fc::sha512();
    }
-   std::string wallet::get_wallet_name()const
+   std::string wallet::get_name()const
    {
       return my->_wallet_name;
    }
