@@ -214,7 +214,10 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
 { try {
   std::cout << "Loading blockchain from " << ( datadir / "chain" ).generic_string()  << "\n";
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
-  chain->open( datadir / "chain" );
+  fc::optional<fc::path> genesis_file;
+  if (option_variables.count("genesis-json"))
+    genesis_file = option_variables["genesis-json"].as<std::string>();
+  chain->open( datadir / "chain", genesis_file );
   return chain;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 

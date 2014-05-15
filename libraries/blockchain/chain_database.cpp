@@ -87,7 +87,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr),_observer(nullptr),_last_asset_id(0),_last_name_id(0){}
 
-            void                       initialize_genesis();
+            void                       initialize_genesis(fc::optional<fc::path> genesis_file = fc::optional<fc::path>());
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       clear_pending(  const full_block& blk );
@@ -474,7 +474,7 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir )
+   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
    { try {
       fc::create_directories( data_dir );
 
@@ -529,7 +529,7 @@ namespace bts { namespace blockchain {
       }
 
       if( last_block_num == uint32_t(-1) )
-         my->initialize_genesis();
+         my->initialize_genesis(genesis_file);
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
@@ -557,7 +557,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
       uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES;
+      unsigned  delegate_pos = (unsigned)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
       auto sorted_delegates = get_active_delegates();
 
       FC_ASSERT( delegate_pos < sorted_delegates.size() );
@@ -926,10 +926,15 @@ namespace bts { namespace blockchain {
       return next_block;
    }
 
-   void detail::chain_database_impl::initialize_genesis()
+   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    {
       #include "genesis.json"
-      auto config = fc::json::from_string( genesis_json ).as<genesis_block_config>();
+
+      genesis_block_config config;
+      if (genesis_file)
+        config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+      else
+        config = fc::json::from_string( genesis_json ).as<genesis_block_config>();
 
       double total_unscaled = 0;
       for( auto item : config.balances ) total_unscaled += item.second;
@@ -961,7 +966,7 @@ namespace bts { namespace blockchain {
       self->store_asset_record( base_asset );
 
       fc::time_point_sec timestamp = fc::time_point::now();
-      uint64_t i = 1;
+      int32_t i = 1;
       for( auto name : config.names )
       {
          name_record rec;

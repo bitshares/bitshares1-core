@@ -110,19 +110,20 @@ namespace bts { namespace blockchain {
    }
    int64_t  pending_chain_state::get_fee_rate()const
    {
-      if( _prev_state ) return _prev_state->get_fee_rate();
-      FC_ASSERT( !"No current fee rate set" );
+      if( _prev_state ) 
+        return _prev_state->get_fee_rate();
+      FC_ASSERT( false, "No current fee rate set" );
    }
    int64_t  pending_chain_state::get_delegate_pay_rate()const
    {
       if( _prev_state ) return _prev_state->get_delegate_pay_rate();
-      FC_ASSERT( !"No current delegate_pay rate set" );
+      FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
    fc::time_point_sec  pending_chain_state::timestamp()const
    {
       if( _prev_state ) return _prev_state->timestamp();
-      FC_ASSERT( !"No current timestamp set" );
+      FC_ASSERT( false, "No current timestamp set" );
    }
 
    obalance_record      pending_chain_state::get_balance_record( const balance_id_type& balance_id )const

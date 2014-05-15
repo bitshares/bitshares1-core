@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          chain_database();
          virtual ~chain_database() override;
 
-         void open( const fc::path& data_dir );
+         void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() );
          void close();
 
          void set_observer( chain_observer* observer );
