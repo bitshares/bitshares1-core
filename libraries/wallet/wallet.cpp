@@ -28,6 +28,8 @@ namespace bts { namespace wallet {
                _data_dir = ".";
             }
 
+            virtual ~wallet_impl() override {}
+
             virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
             {
                for( auto account : applied_changes->accounts )

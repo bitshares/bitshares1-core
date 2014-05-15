@@ -9,7 +9,7 @@
 namespace bts { namespace blockchain {
     /**
      *  Given an extended public key you can calculate the public key of all
-     *  children keys, but not the coresponding private keys.  
+     *  children keys, but not the coresponding private keys.
      *
      *  @note this only works for extended private keys that use public derivation
      */
@@ -17,14 +17,14 @@ namespace bts { namespace blockchain {
     {
        public:
           extended_public_key();
-          ~extended_public_key();
-    
+          virtual ~extended_public_key();
+
           extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code );
-    
+
           extended_public_key child( uint32_t c )const;
-    
+
           operator fc::ecc::public_key()const { return pub_key; }
-    
+
           fc::ecc::public_key pub_key;
           fc::sha256          chain_code;
 
@@ -46,7 +46,7 @@ namespace bts { namespace blockchain {
               return !(a==b);
           }
     };
-    
+
     class extended_private_key
     {
        public:
@@ -58,19 +58,19 @@ namespace bts { namespace blockchain {
           extended_private_key( const fc::sha512& seed );
           extended_private_key( const fc::sha256& key, const fc::sha256& chain_code );
           extended_private_key();
-    
+
           /** @param pub_derivation - if true, then extended_public_key can be used
            *      to calculate child keys, otherwise the extended_private_key is
            *      required to calculate all children.
            */
           extended_private_key child( uint32_t c, derivation_type derivation = private_derivation )const;
-    
+
           operator fc::ecc::private_key()const;
           fc::ecc::public_key get_public_key()const;
 
-          operator extended_public_key()const 
+          operator extended_public_key()const
           { return extended_public_key( fc::ecc::private_key::regenerate(priv_key).get_public_key(), chain_code); }
-         
+
           fc::sha256          priv_key;
           fc::sha256          chain_code;
     };
@@ -80,12 +80,12 @@ namespace bts { namespace blockchain {
    /**
     *  @brief encapsulates an encoded, checksumed public key in
     *  binary form.   It can be converted to base58 for display
-    *  or input purposes and can also be constructed from an ecc 
+    *  or input purposes and can also be constructed from an ecc
     *  public key.
     *
     *  An valid extended_address is 20 bytes with the following form:
     *
-    *  First 3-bits are 0, followed by bits to 3-127 of sha256(pub_key), followed 
+    *  First 3-bits are 0, followed by bits to 3-127 of sha256(pub_key), followed
     *  a 32 bit checksum calculated as the first 32 bits of the sha256 of
     *  the first 128 bits of the extended_address.
     *
@@ -121,8 +121,8 @@ FC_REFLECT( bts::blockchain::extended_public_key,  (pub_key)(chain_code)  )
 FC_REFLECT( bts::blockchain::extended_private_key, (priv_key)(chain_code) )
 FC_REFLECT( bts::blockchain::extended_address, (addr) )
 
-namespace fc 
-{ 
+namespace fc
+{
    void to_variant( const bts::blockchain::extended_address& var,  fc::variant& vo );
    void from_variant( const fc::variant& var,  bts::blockchain::extended_address& vo );
 }
@@ -130,10 +130,10 @@ namespace fc
 namespace std
 {
    template<>
-   struct hash<bts::blockchain::extended_address> 
+   struct hash<bts::blockchain::extended_address>
    {
        public:
-         size_t operator()(const bts::blockchain::extended_address &a) const 
+         size_t operator()(const bts::blockchain::extended_address &a) const
          {
             size_t s;
             fc::sha1::encoder enc;

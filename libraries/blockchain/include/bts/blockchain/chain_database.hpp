@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
    {
       public:
          chain_database();
-         ~chain_database();
+         virtual ~chain_database() override;
 
          void open( const fc::path& data_dir );
          void close();
@@ -50,35 +50,35 @@ namespace bts { namespace blockchain {
          std::vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                          is_known_transaction( const transaction_id_type& trx_id );
 
-         /** produce a block for the given timeslot, the block is not signed because that is the 
-          * role of the wallet.  
+         /** produce a block for the given timeslot, the block is not signed because that is the
+          * role of the wallet.
           */
-         full_block generate_block( fc::time_point_sec timestamp );
+         full_block                    generate_block( fc::time_point_sec timestamp );
 
-         bool                  is_known_block( const block_id_type& block_id )const;
+         bool                          is_known_block( const block_id_type& block_id )const;
 
-         fc::ecc::public_key   get_signing_delegate_key( fc::time_point_sec )const;
-         name_id_type          get_signing_delegate_id( fc::time_point_sec )const;
-         uint32_t              get_block_num( const block_id_type& )const;
-         signed_block_header   get_block_header( const block_id_type& )const;
-         signed_block_header   get_block_header( uint32_t block_num )const;
-         full_block            get_block( const block_id_type& )const;
-         full_block            get_block( uint32_t block_num )const;
-         signed_block_header   get_head_block()const;
-         uint32_t              get_head_block_num()const;
-         block_id_type         get_head_block_id()const;
-         osigned_transaction   get_transaction( const transaction_id_type& trx_id )const;
-         otransaction_location get_transaction_location( const transaction_id_type& trx_id )const;
+         fc::ecc::public_key           get_signing_delegate_key( fc::time_point_sec )const;
+         name_id_type                  get_signing_delegate_id( fc::time_point_sec )const;
+         uint32_t                      get_block_num( const block_id_type& )const;
+         signed_block_header           get_block_header( const block_id_type& )const;
+         signed_block_header           get_block_header( uint32_t block_num )const;
+         full_block                    get_block( const block_id_type& )const;
+         full_block                    get_block( uint32_t block_num )const;
+         signed_block_header           get_head_block()const;
+         uint32_t                      get_head_block_num()const;
+         block_id_type                 get_head_block_id()const;
+         osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
+         virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
          std::vector<name_record> get_names( const std::string& first, uint32_t count )const;
 
-         /** should perform any chain reorganization required 
-          *  
+         /** should perform any chain reorganization required
+          *
           *  @return the pending chain state generated as a result of pushing the block,
           *  this state can be used by wallets to scan for changes without the wallets
           *  having to process raw transactions.
           **/
-         virtual void  push_block( const full_block& block_data );
+         virtual void push_block( const full_block& block_data );
 
 
          /**
@@ -88,11 +88,11 @@ namespace bts { namespace blockchain {
 
 
          /** return the timestamp from the head block */
-         virtual fc::time_point_sec   timestamp()const;
+         virtual fc::time_point_sec   timestamp()const override;
 
          /** return the current fee rate in millishares */
-         virtual int64_t              get_fee_rate()const;
-         virtual int64_t              get_delegate_pay_rate()const;
+         virtual int64_t              get_fee_rate()const override;
+         virtual int64_t              get_delegate_pay_rate()const override;
          std::vector<name_id_type>    get_active_delegates()const;
          std::vector<name_id_type>    get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
          std::vector<name_record>     get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
@@ -101,28 +101,28 @@ namespace bts { namespace blockchain {
          virtual void                 remove_account_record( const account_id_type& id )const;
          virtual void                 remove_name_record( name_id_type id )const;
 
-         void    scan_assets( const std::function<void( const asset_record& )>& callback );
-         void    scan_accounts( const std::function<void( const account_record& )>& callback );
-         void    scan_names( const std::function<void( const name_record& )>& callback );
+         void                         scan_assets( const std::function<void( const asset_record& )>& callback );
+         void                         scan_accounts( const std::function<void( const account_record& )>& callback );
+         void                         scan_names( const std::function<void( const name_record& )>& callback );
 
-         virtual oasset_record        get_asset_record( asset_id_type id )const;
-         virtual oaccount_record      get_account_record( const account_id_type& id )const;
-         virtual oname_record         get_name_record( name_id_type id )const;
-                                                                                                 
-         virtual oasset_record        get_asset_record( const std::string& symbol )const;
-         virtual oname_record         get_name_record( const std::string& name )const;
-                                                                                                 
-         virtual void                 store_asset_record( const asset_record& r );
-         virtual void                 store_account_record( const account_record& r );
-         virtual void                 store_name_record( const name_record& r );
-         virtual void                 store_transaction_location( const transaction_id_type&,  
-                                                                  const transaction_location& loc );
+         virtual oasset_record        get_asset_record( asset_id_type id )const override;
+         virtual oaccount_record      get_account_record( const account_id_type& id )const override;
+         virtual oname_record         get_name_record( name_id_type id )const override;
 
-         virtual asset_id_type        last_asset_id()const;
-         virtual asset_id_type        new_asset_id();
-                                      
-         virtual name_id_type         last_name_id()const;
-         virtual name_id_type         new_name_id();
+         virtual oasset_record        get_asset_record( const std::string& symbol )const override;
+         virtual oname_record         get_name_record( const std::string& name )const override;
+
+         virtual void                 store_asset_record( const asset_record& r ) override;
+         virtual void                 store_account_record( const account_record& r ) override;
+         virtual void                 store_name_record( const name_record& r ) override;
+         virtual void                 store_transaction_location( const transaction_id_type&,
+                                                                  const transaction_location& loc ) override;
+
+         virtual asset_id_type        last_asset_id()const override;
+         virtual asset_id_type        new_asset_id() override;
+
+         virtual name_id_type         last_name_id()const override;
+         virtual name_id_type         new_name_id() override;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;
