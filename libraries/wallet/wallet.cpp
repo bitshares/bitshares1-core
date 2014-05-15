@@ -13,7 +13,7 @@
 
 namespace bts { namespace wallet {
 
-   namespace detail 
+   namespace detail
    {
       class wallet_impl : public bts::blockchain::chain_observer
       {
@@ -28,11 +28,13 @@ namespace bts { namespace wallet {
                _data_dir = ".";
             }
 
+            virtual ~wallet_impl() override {}
+
             virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
             {
                for( auto account : applied_changes->accounts )
                {
-                  scan_account( account.second );         
+                  scan_account( account.second );
                }
                for( auto current_asset : applied_changes->assets )
                {
@@ -70,7 +72,7 @@ namespace bts { namespace wallet {
             chain_database_ptr                                                  _blockchain;
 
             /** map record id to encrypted record data , this db should only be written to via
-             * my->store_record()  
+             * my->store_record()
              **/
             bts::db::level_map< uint32_t, wallet_record >                       _wallet_db;
             template<typename T>
@@ -78,22 +80,22 @@ namespace bts { namespace wallet {
             {
                _wallet_db.store( record.index, wallet_record(record) );
             }
-                                                                                
-            /** the password required to decrypt the wallet records */          
+
+            /** the password required to decrypt the wallet records */
             fc::sha512                                                          _wallet_password;
-                                                                                
+
             fc::optional<master_key_record>                                     _master_key;
-                                                                                
-            /** lookup contact state */                                         
+
+            /** lookup contact state */
             std::unordered_map<uint32_t,wallet_contact_record>                  _contacts;
-                                                                                
-            /** registered accounts */                                             
+
+            /** registered accounts */
             std::unordered_map<account_id_type,wallet_account_record>           _accounts;
-                                                                                
-            /** registered names */                                             
+
+            /** registered names */
             std::unordered_map<name_id_type,wallet_name_record>                 _names;
-                                                                                
-            /** registered assets */                                            
+
+            /** registered assets */
             std::unordered_map<asset_id_type,wallet_asset_record>               _assets;
 
             /** all transactions to or from this wallet */
@@ -139,7 +141,7 @@ namespace bts { namespace wallet {
                auto meta_itr = _meta.find( last_scanned_block_number );
                if( meta_itr == _meta.end() )
                {
-                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, -1 ); 
+                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, -1 );
                   _meta[last_scanned_block_number] = rec;
                   store_record( rec );
                   return -1;
@@ -151,7 +153,7 @@ namespace bts { namespace wallet {
                auto meta_itr = _meta.find( last_scanned_block_number );
                if( meta_itr == _meta.end() )
                {
-                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, int64_t(num) ); 
+                  wallet_meta_record rec( get_new_index(), last_scanned_block_number, int64_t(num) );
                   _meta[last_scanned_block_number] = rec;
                   store_record( rec );
                }
@@ -163,7 +165,7 @@ namespace bts { namespace wallet {
             }
 
             /** contact indexes are tracked independently from record indexes because
-             * the goal is to focus them early in the hierarchial wallet number 
+             * the goal is to focus them early in the hierarchial wallet number
              * sequence to make recovery more feasible.
              */
             int32_t get_next_contact_index()
@@ -188,8 +190,8 @@ namespace bts { namespace wallet {
                 if( meta_itr == _meta.end() )
                 {
                    auto new_index = get_new_index();
-                   _meta[default_transaction_fee] = wallet_meta_record( new_index, 
-                                                                        default_transaction_fee, 
+                   _meta[default_transaction_fee] = wallet_meta_record( new_index,
+                                                                        default_transaction_fee,
                                                                         fc::variant(asset( 1000*100, 0)) );
                    store_record( _meta[default_transaction_fee] );
                    return _meta[default_transaction_fee].value.as<asset>();
@@ -219,7 +221,7 @@ namespace bts { namespace wallet {
                auto chain_code = fc::ecc::private_key::generate();
 
                extended_private_key exp( key.get_secret(), chain_code.get_secret() );
-              
+
                _master_key = master_key_record();
                _master_key->index = get_new_index();
                _master_key->encrypted_key = fc::aes_encrypt( _wallet_password, fc::raw::pack(exp) );
@@ -497,11 +499,11 @@ namespace bts { namespace wallet {
                {
                   _transactions[trx_id] = wallet_transaction_record( get_new_index(), trx );
                   trx_rec_itr = _transactions.find( trx_id );
-               }   
+               }
                store_record( trx_rec_itr->second );
             }
 
-            void withdraw_to_transaction( signed_transaction& trx, 
+            void withdraw_to_transaction( signed_transaction& trx,
                                           const asset& amount, std::unordered_set<address>& required_sigs )
             { try {
                 asset total_in( 0, amount.asset_id );
@@ -517,7 +519,7 @@ namespace bts { namespace wallet {
                          auto withdraw_amount = std::min( record.second.balance, total_left.amount );
                          record.second.balance -= withdraw_amount;
 
-                         ilog( "withdraw amount ${a} ${total_left}", 
+                         ilog( "withdraw amount ${a} ${total_left}",
                                ("a",withdraw_amount)("total_left",total_left) );
                          trx.withdraw( record.first, withdraw_amount );
                          total_left.amount -= withdraw_amount;
@@ -553,12 +555,12 @@ namespace bts { namespace wallet {
             } FC_RETHROW_EXCEPTIONS( warn, "", ("index",index) ) }
 
             bool check_address( const fc::ecc::public_key& k, const address& addr )
-            { 
+            {
                 if( address(k) == addr ) return true;
-                if( address(pts_address(k,false,0) )  == addr ) return true;  
-                if( address(pts_address(k,false,56) ) == addr ) return true;  
-                if( address(pts_address(k,true,0) )   == addr ) return true;  
-                if( address(pts_address(k,true,56) )  == addr ) return true;  
+                if( address(pts_address(k,false,0) )  == addr ) return true;
+                if( address(pts_address(k,false,56) ) == addr ) return true;
+                if( address(pts_address(k,true,0) )   == addr ) return true;
+                if( address(pts_address(k,true,56) )  == addr ) return true;
                 return false;
             }
 
@@ -654,7 +656,7 @@ namespace bts { namespace wallet {
                 //     my->_last_contact_index = cr.index;
                   break;
                }
-               case transaction_record_type: 
+               case transaction_record_type:
                {
                   auto wtr    = record.as<wallet_transaction_record>();
                   auto trx_id = wtr.trx.id();
@@ -685,15 +687,15 @@ namespace bts { namespace wallet {
                   my->_extra_receive_keys[pkr.extra_key_index] = pkr;
                   auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
                   elog( "public key: ${key}", ("key",pubkey) );
-                  my->_receive_keys[ address( pubkey ) ] = 
+                  my->_receive_keys[ address( pubkey ) ] =
                      hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,false,56) )] = 
+                  my->_receive_keys[ address(pts_address(pubkey,false,56) )] =
                      hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] = 
+                  my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] =
                      hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] = 
+                  my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] =
                      hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] = 
+                  my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] =
                      hkey_index( pkr.contact_index, -1, pkr.extra_key_index );
                   break;
                }
@@ -704,7 +706,7 @@ namespace bts { namespace wallet {
                   break;
                }
             }
-         } 
+         }
          catch ( const fc::exception& e )
          {
             elog( "error loading wallet record: ${e}", ("e",e.to_detail_string() ) );
@@ -763,7 +765,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( !!my->_master_key );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
-      if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) ) 
+      if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) )
       {
          my->_wallet_password = fc::sha512();
          return false;
@@ -773,7 +775,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
-   wallet_contact_record wallet::create_contact( const std::string& name, 
+   wallet_contact_record wallet::create_contact( const std::string& name,
                                                  const extended_public_key& contact_pub_key )
    { try {
         auto current_itr = my->_contact_name_index.find( name );
@@ -781,7 +783,7 @@ namespace bts { namespace wallet {
         FC_ASSERT( is_unlocked() );
 
         wallet_contact_record wcr;
-        wcr.index             = my->get_new_index(); 
+        wcr.index             = my->get_new_index();
         wcr.contact_num       = my->get_next_contact_index(); //++my->_last_contact_index;
         wcr.name              = name;
         wcr.extended_send_key = contact_pub_key;
@@ -797,7 +799,7 @@ namespace bts { namespace wallet {
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create contact", ("name",name)("ext_pub_key", contact_pub_key) ) }
 
-   void wallet::set_contact_extended_send_key( const std::string& name, 
+   void wallet::set_contact_extended_send_key( const std::string& name,
                                                const extended_public_key& contact_pub_key )
    { try {
         auto current_itr = my->_contact_name_index.find(name);
@@ -854,7 +856,7 @@ namespace bts { namespace wallet {
       my->_receive_keys[ address(pts_address(key,false,0) ) ] = hkey_index( contact_index, -1, key_num );
       my->_receive_keys[ address(pts_address(key,true,0) )  ] = hkey_index( contact_index, -1, key_num );
 
-      my->store_record( pkr ); 
+      my->store_record( pkr );
    }
 
    void wallet::scan_state()
@@ -907,7 +909,7 @@ namespace bts { namespace wallet {
          auto hindex  = contact.get_next_receive_key_index( 0 );
          wlog( "hindex: ${h}", ("h",hindex) );
          my->_contacts[ contact_name_itr->second ] = contact;
-         my->store_record( contact ); 
+         my->store_record( contact );
 
          auto priv_key = my->get_private_key( hindex );
          auto pub_key  = priv_key.get_public_key();
@@ -941,7 +943,7 @@ namespace bts { namespace wallet {
         my->withdraw_to_transaction( trx, my->_current_fee, required_sigs );
      }
 
-     name_id_type delegate_id = rand()%BTS_BLOCKCHAIN_DELEGATES + 1;
+     name_id_type delegate_id = rand()%BTS_BLOCKCHAIN_NUM_DELEGATES + 1;
      trx.deposit( owner, amount, delegate_id );
      my->sign_transaction( trx, required_sigs );
 
@@ -949,9 +951,9 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("amount",amount)("owner",owner) ) }
 
 
-   signed_transaction wallet::update_name( const std::string& name, 
-                                           fc::optional<fc::variant> json_data, 
-                                           fc::optional<public_key_type> active, 
+   signed_transaction wallet::update_name( const std::string& name,
+                                           fc::optional<fc::variant> json_data,
+                                           fc::optional<public_key_type> active,
                                            bool as_delegate )
    { try {
       auto name_rec = my->_blockchain->get_name_record( name );
@@ -962,7 +964,7 @@ namespace bts { namespace wallet {
 
       asset total_fees = my->_current_fee;
 
-      if( !!active && *active != name_rec->active_key ) 
+      if( !!active && *active != name_rec->active_key )
          required_sigs.insert( name_rec->owner_key );
       else
          required_sigs.insert( name_rec->active_key );
@@ -1044,7 +1046,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    /**
-    *  If this wallet is a delegate, calculate the time that it should produce the next 
+    *  If this wallet is a delegate, calculate the time that it should produce the next
     *  block.
     *
     *  @see @ref dpos_block_producer
@@ -1053,7 +1055,7 @@ namespace bts { namespace wallet {
    {
       fc::time_point_sec now = fc::time_point::now();
       int64_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      int64_t round_start = (interval_number / BTS_BLOCKCHAIN_DELEGATES) * BTS_BLOCKCHAIN_DELEGATES;
+      int64_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
 
       fc::time_point_sec next_time;
 
@@ -1065,7 +1067,7 @@ namespace bts { namespace wallet {
          {
              if( (round_start + i) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC < now.sec_since_epoch() )
              {
-                fc::time_point_sec tmp((round_start + i + BTS_BLOCKCHAIN_DELEGATES) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+                fc::time_point_sec tmp((round_start + i + BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
                 if( tmp < next_time || next_time == fc::time_point_sec() )
                    next_time = tmp;
              }

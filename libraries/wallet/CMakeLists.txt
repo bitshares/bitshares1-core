@@ -5,10 +5,9 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin_import/include" )
 
 file(GLOB HEADERS "include/bts/wallet/*.hpp")
 
-add_library( bts_wallet 
+add_library( bts_wallet
              wallet.cpp
              wallet_db.cpp
-             extended_address.cpp
              ${HEADERS}
            )
 

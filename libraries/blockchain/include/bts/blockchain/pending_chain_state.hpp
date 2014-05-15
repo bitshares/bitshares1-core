@@ -7,54 +7,54 @@ namespace bts { namespace blockchain {
    {
       public:
          pending_chain_state( chain_interface_ptr prev_state );
-         virtual ~pending_chain_state();
+         virtual ~pending_chain_state() override;
 
-         fc::time_point_sec           timestamp()const;
-         int64_t                      get_fee_rate()const;
-         int64_t                      get_delegate_pay_rate()const;
+         virtual fc::time_point_sec    timestamp()const override;
+         virtual int64_t               get_fee_rate()const override;
+         virtual int64_t               get_delegate_pay_rate()const override;
 
-         virtual oasset_record         get_asset_record( asset_id_type id )const;
-         virtual oaccount_record       get_account_record( const account_id_type& id )const;
-         virtual oname_record          get_name_record( name_id_type id )const;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& )const;
-                                      
-         virtual oasset_record        get_asset_record( const std::string& symbol )const;
-         virtual oname_record         get_name_record( const std::string& name )const;
-                                     
-         virtual void                 store_asset_record( const asset_record& r );
-         virtual void                 store_account_record( const account_record& r );
-         virtual void                 store_name_record( const name_record& r );
-         virtual void                 store_transaction_location( const transaction_id_type&,  
-                                                                  const transaction_location& loc );
-                                      
+         virtual oasset_record         get_asset_record( asset_id_type id )const override;
+         virtual oaccount_record       get_account_record( const account_id_type& id )const override;
+         virtual oname_record          get_name_record( name_id_type id )const override;
+         virtual otransaction_location get_transaction_location( const transaction_id_type& )const override;
 
-         virtual asset_id_type        last_asset_id()const;
-         virtual asset_id_type        new_asset_id();
-                                      
-         virtual name_id_type         last_name_id()const;
-         virtual name_id_type         new_name_id();
+         virtual oasset_record         get_asset_record( const std::string& symbol )const override;
+         virtual oname_record          get_name_record( const std::string& name )const override;
+
+         virtual void                  store_asset_record( const asset_record& r ) override;
+         virtual void                  store_account_record( const account_record& r ) override;
+         virtual void                  store_name_record( const name_record& r ) override;
+         virtual void                  store_transaction_location( const transaction_id_type&,
+                                                                  const transaction_location& loc ) override;
+
+
+         virtual asset_id_type         last_asset_id()const override;
+         virtual asset_id_type         new_asset_id() override;
+
+         virtual name_id_type          last_name_id()const override;
+         virtual name_id_type          new_name_id() override;
 
          /**
           *  Based upon the current state of the database, calculate any updates that
-          *  should be executed in a deterministic manner.  
+          *  should be executed in a deterministic manner.
           */
-         virtual void apply_determinsitic_updates();
+         virtual void                  apply_deterministic_updates() override;
 
 
          /** polymorphically allcoate a new state */
-         virtual chain_interface_ptr create( const chain_interface_ptr& prev_state )const;
+         virtual chain_interface_ptr   create( const chain_interface_ptr& prev_state )const;
          /** apply changes from this pending state to the previous state */
-         virtual void                apply_changes()const;
+         virtual void                  apply_changes()const;
 
          /** populate undo state with everything that would be necessary to revert this
           * pending state to the previous state.
           */
-         virtual void                get_undo_state( const chain_interface_ptr& undo_state )const;
+         virtual void                  get_undo_state( const chain_interface_ptr& undo_state )const;
 
          /** load the state from a variant */
-         virtual void                    from_variant( const fc::variant& v );
+         virtual void                  from_variant( const fc::variant& v );
          /** convert the state to a variant */
-         virtual fc::variant             to_variant()const;
+         virtual fc::variant           to_variant()const;
 
          std::unordered_map< asset_id_type,       asset_record>         assets;
          std::unordered_map< name_id_type,        name_record>          names;

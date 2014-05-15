@@ -32,26 +32,26 @@ class lotto_db : public bts::blockchain::chain_database
     public:
         lotto_db();
         ~lotto_db();
-    
+
         void             open( const fc::path& dir, bool create );
         void             close();
 
-        uint64_t get_jackpot_for_ticket( uint64_t ticket_block_num, 
-                                         fc::sha256& winning_number, 
+        uint64_t get_jackpot_for_ticket( uint64_t ticket_block_num,
+                                         fc::sha256& winning_number,
                                          uint64_t& global_odds );
 
         /**
          * Performs global validation of a block to make sure that no two transactions conflict. In
          * the case of the lotto only one transaction can claim the jackpot.
          */
-        virtual void validate( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+        virtual void validate( const trx_block& blk, const signed_transactions& deterministic_trxs );
 
-        /** 
+        /**
          *  Called after a block has been validated and appends
          *  it to the block chain storing all relevant transactions and updating the
          *  winning database.
          */
-        virtual void store( const trx_block& blk, const signed_transactions& determinsitc_trxs );
+        virtual void store( const trx_block& blk, const signed_transactions& deterministic_trxs );
 
         /**
          * When a block is popped from the chain, this method implements the necessary code

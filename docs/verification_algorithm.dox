@@ -14,7 +14,7 @@
   -# blocks with no transactions are valid, so the number of transactions is ignored
 
   -# validate that all inputs to included transactions and deterministic transactions are unique
-  -# validate that the merkle root is the combination of all determinsitic and user transactions
+  -# validate that the merkle root is the combination of all deterministic and user transactions
 
       - This has the effect of validating all deterministic transactions
 
