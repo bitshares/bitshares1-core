@@ -948,12 +948,11 @@ namespace bts { namespace wallet {
         my->cache_deterministic_keys( account, 1, 0 );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
 
-   std::vector<std::string> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
+   std::map<std::string,extended_address> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
    {
-      std::vector<std::string> cons;
-      cons.reserve( my->_account_name_index.size() );
+      std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons.push_back( item.first );
+         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
       return cons;
    }
    wallet_account_record    wallet::get_account( const std::string& account_name )const
@@ -964,12 +963,11 @@ namespace bts { namespace wallet {
       return my->get_account( itr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   std::vector<std::string> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
+   std::map<std::string,extended_address> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
    {
-      std::vector<std::string> cons;
-      cons.reserve( my->_account_name_index.size() );
+      std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons.push_back( item.first );
+         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
       return cons;
    }
 
