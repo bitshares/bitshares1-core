@@ -34,6 +34,42 @@ namespace bts { namespace blockchain {
       void reserve_name( const std::string& name, const std::string& json_data, const public_key_type& master, const public_key_type& active, bool as_delegate = false );
       void update_name( name_id_type name_id, const fc::optional<std::string>& json_data, const fc::optional<public_key_type>& active, bool as_delegate = false );
    };
+   struct transaction_summary_details
+   {
+      /**
+       *  Bitcoin compatibility 
+       */
+      ///@{ 
+        std::string        account;
+        std::string        category;
+        std::string        address; 
+        share_type         amount; 
+      ///@}
+   };
+
+   struct transaction_summary
+   {
+      transaction_summary():amount(0),confirmations(0),blockindex(0){}
+
+      /**
+       *  Bitcoin compatibility 
+       */
+      ///@{ 
+      share_type                  amount;
+      uint32_t                    confirmations;
+      block_id_type               blockhash;
+      uint32_t                    blockindex;
+      fc::time_point_sec          blocktime;
+      transaction_id_type         txid;
+      fc::time_point_sec          time;
+      fc::time_point_sec          timereceived;
+      transaction_summary_details details;
+      ///@}
+
+      std::vector<asset>          fees;
+      std::vector<asset>          amounts;
+   };
+
 
    struct signed_transaction : public transaction
    {
@@ -196,3 +232,6 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (deposits)(withdraws)(balance)(net_delegate_votes)(balance) )
 
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
+FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount) )
+FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts) )
+
