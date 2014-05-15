@@ -88,64 +88,79 @@ namespace bts { namespace blockchain {
    {
       otransaction_location loc;
       auto tran_itr = unique_transactions.find( trx_id );
-      if( tran_itr != unique_transactions.end() ) return tran_itr->second;
-      if( _prev_state ) return _prev_state->get_transaction_location( trx_id );
+      if( tran_itr != unique_transactions.end() ) 
+        return tran_itr->second;
+      if( _prev_state ) 
+        return _prev_state->get_transaction_location( trx_id );
       return loc;
    }
 
    oasset_record        pending_chain_state::get_asset_record( asset_id_type asset_id )const
    {
-       auto itr = assets.find( asset_id );
-       if( itr != assets.end() ) return itr->second;
-       else if( _prev_state ) return _prev_state->get_asset_record( asset_id );
-       return oasset_record();
+      auto itr = assets.find( asset_id );
+      if( itr != assets.end() ) 
+        return itr->second;
+      else if( _prev_state ) 
+        return _prev_state->get_asset_record( asset_id );
+      return oasset_record();
    }
 
    oasset_record         pending_chain_state::get_asset_record( const std::string& symbol )const
    {
       auto itr = symbol_id_index.find( symbol );
-      if( itr != symbol_id_index.end() ) return get_asset_record( itr->second );
-      else if( _prev_state ) return _prev_state->get_asset_record( symbol );
+      if( itr != symbol_id_index.end() ) 
+        return get_asset_record( itr->second );
+      else if( _prev_state ) 
+        return _prev_state->get_asset_record( symbol );
       return oasset_record();
    }
    int64_t  pending_chain_state::get_fee_rate()const
    {
-      if( _prev_state ) return _prev_state->get_fee_rate();
-      FC_ASSERT( !"No current fee rate set" );
+      if( _prev_state ) 
+        return _prev_state->get_fee_rate();
+      FC_ASSERT( false, "No current fee rate set" );
    }
    int64_t  pending_chain_state::get_delegate_pay_rate()const
    {
-      if( _prev_state ) return _prev_state->get_delegate_pay_rate();
-      FC_ASSERT( !"No current delegate_pay rate set" );
+      if( _prev_state ) 
+        return _prev_state->get_delegate_pay_rate();
+      FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
    fc::time_point_sec  pending_chain_state::timestamp()const
    {
-      if( _prev_state ) return _prev_state->timestamp();
-      FC_ASSERT( !"No current timestamp set" );
+      if( _prev_state ) 
+        return _prev_state->timestamp();
+      FC_ASSERT( false, "No current timestamp set" );
    }
 
    obalance_record      pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
    {
-       auto itr = balances.find( balance_id );
-       if( itr != balances.end() ) return itr->second;
-       else if( _prev_state ) return _prev_state->get_balance_record( balance_id );
-       return obalance_record();
+      auto itr = balances.find( balance_id );
+      if( itr != balances.end() ) 
+        return itr->second;
+      else if( _prev_state ) 
+        return _prev_state->get_balance_record( balance_id );
+      return obalance_record();
    }
 
    oname_record         pending_chain_state::get_name_record( name_id_type name_id )const
    {
-       auto itr = names.find( name_id );
-       if( itr != names.end() ) return itr->second;
-       else if( _prev_state ) return _prev_state->get_name_record( name_id );
-       return oname_record();
+      auto itr = names.find( name_id );
+      if( itr != names.end() ) 
+        return itr->second;
+      else if( _prev_state ) 
+        return _prev_state->get_name_record( name_id );
+      return oname_record();
    }
 
    oname_record         pending_chain_state::get_name_record( const std::string& name )const
    {
       auto itr = name_id_index.find( name );
-      if( itr != name_id_index.end() ) return get_name_record( itr->second );
-      else if( _prev_state ) return _prev_state->get_name_record( name );
+      if( itr != name_id_index.end() ) 
+        return get_name_record( itr->second );
+      else if( _prev_state ) 
+        return _prev_state->get_name_record( name );
       return oname_record();
    }
 
@@ -167,12 +182,14 @@ namespace bts { namespace blockchain {
 
    asset_id_type pending_chain_state::last_asset_id()const
    {
-      if( _prev_state ) return _prev_state->last_asset_id() + new_asset_ids;
+      if( _prev_state ) 
+        return _prev_state->last_asset_id() + new_asset_ids;
       return new_asset_ids;
    }
    name_id_type pending_chain_state::last_name_id()const
    {
-      if( _prev_state ) return _prev_state->last_name_id() + new_name_ids;
+      if( _prev_state ) 
+        return _prev_state->last_name_id() + new_name_ids;
       return new_name_ids;
    }
 

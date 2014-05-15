@@ -34,8 +34,8 @@ namespace bts { namespace rpc {
       bool rescan(uint32_t block_num);
       bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
       bool import_private_key(const fc::sha256& hash, const std::string& label);
-      bool open_wallet(const std::string& wallet_username, const std::string& wallet_passphrase);
-      bool createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase);
+      bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
+      bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
       fc::optional<std::string> currentwallet();
       bool closewallet();
       uint32_t getconnectioncount();
@@ -77,7 +77,7 @@ namespace bts { namespace rpc {
 
     bool rpc_client_impl::walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
     {
-      uint32_t timeout_seconds = timeout.count() / fc::seconds(1).count();
+      uint32_t timeout_seconds = (uint32_t)(timeout.count() / fc::seconds(1).count());
       return _json_connection->call<bool>("walletpassphrase", passphrase, fc::variant(timeout_seconds));
     }
 
@@ -131,13 +131,13 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bool>("import_private_key", (std::string)hash, label);
     }
-    bool rpc_client_impl::open_wallet(const std::string& wallet_username, const std::string& wallet_passphrase)
+    bool rpc_client_impl::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
-      return _json_connection->call<bool>("open_wallet", wallet_username, wallet_passphrase);
+      return _json_connection->call<bool>("wallet_open", wallet_name, wallet_passphrase);
     }
-    bool rpc_client_impl::createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase)
+    bool rpc_client_impl::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
-      return _json_connection->call<bool>("createwallet", wallet_username, wallet_passphrase, spending_passphrase);
+      return _json_connection->call<bool>("wallet_create", wallet_name, wallet_passphrase);
     }
     fc::optional<std::string> rpc_client_impl::currentwallet()
     {
@@ -257,14 +257,13 @@ namespace bts { namespace rpc {
   {
     return my->import_private_key(hash, label);
   }
-
-  bool rpc_client::open_wallet(const std::string& wallet_username, const std::string& wallet_passphrase)
+  bool rpc_client::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
   {
-    return my->open_wallet(wallet_username, wallet_passphrase);
+    return my->wallet_open(wallet_name, wallet_passphrase);
   }
-  bool rpc_client::createwallet(const std::string& wallet_username, const std::string& wallet_passphrase, const std::string& spending_passphrase)
+  bool rpc_client::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
   {
-    return my->createwallet(wallet_username, wallet_passphrase, spending_passphrase);
+    return my->wallet_create(wallet_name, wallet_passphrase);
   }
   fc::optional<std::string> rpc_client::currentwallet()
   {

@@ -41,6 +41,7 @@ namespace bts { namespace client {
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
+            virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
             /// @}
@@ -217,6 +218,21 @@ namespace bts { namespace client {
          remaining_item_count -= items_to_get_this_iteration;
          return hashes_to_return;
        }
+
+      std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis()
+      {
+        std::vector<bts::net::item_hash_t> synopsis;
+        uint32_t high_block_num = _chain_db->get_head_block_num();
+        uint32_t low_block_num = 1;
+        do
+        {
+          synopsis.push_back(_chain_db->get_block(low_block_num).id());
+          low_block_num += ((high_block_num - low_block_num + 2) / 2);
+        }
+        while (low_block_num <= high_block_num);
+
+        return synopsis;
+      }
 
        bts::net::message client_impl::get_item(const bts::net::item_id& id)
        {
@@ -401,7 +417,7 @@ namespace bts { namespace client {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
     transaction_id_type client::register_delegate( const std::string& name, const fc::variant& data )
     { try {
-             FC_ASSERT( !"Not Implemented" );
+             FC_ASSERT( false, "Not Implemented" );
         //auto trx = get_wallet()->register_delegate( name, data );
         //broadcast_transaction( trx );
        // return trx.id();

@@ -32,28 +32,23 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
-#include <bts/net/chain_server.hpp>
-
+#include <bts/blockchain/genesis_config.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Parse the command line for configuration options here ///////////////////////
 struct bts_xt_client_test_config
 {
   static fc::path bts_client_exe;
-  static fc::path bts_server_exe;
   static fc::path config_directory;
   static uint16_t base_rpc_port;
   static uint16_t base_p2p_port;
   static uint16_t base_http_port;
-  static bool test_client_server;
 
   bts_xt_client_test_config()
   {
     // parse command-line options
     boost::program_options::options_description option_config("Allowed options");
     option_config.add_options()("bts-client-exe", boost::program_options::value<std::string>(), "full path to the executable to test")
-                               ("bts-server-exe", boost::program_options::value<std::string>(), "full path to the server executable for testing client-server mode")
-                               ("client-server", "test client-server mode instead of p2p")
                                ("extra-help", "display this help message");
 
 
@@ -81,12 +76,6 @@ struct bts_xt_client_test_config
     if (option_variables.count("bts-client-exe"))
       bts_client_exe = option_variables["bts-client-exe"].as<std::string>().c_str();
 
-    if (option_variables.count("bts-server-exe"))
-      bts_server_exe = option_variables["bts-server-exe"].as<std::string>().c_str();
-
-    if (option_variables.count("client-server"))
-      test_client_server = true;
-
     std::cout << "Testing " << bts_client_exe.string() << "\n";
     std::cout << "Using config directory " << config_directory.string() << "\n";
     fc::create_directories(config_directory);
@@ -95,16 +84,15 @@ struct bts_xt_client_test_config
   }
 };
 fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
-fc::path bts_xt_client_test_config::bts_server_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_server.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port  = 20100;
 uint16_t bts_xt_client_test_config::base_p2p_port  = 21100;
 uint16_t bts_xt_client_test_config::base_http_port = 22100;
-bool bts_xt_client_test_config::test_client_server = false;
 
 #define RPC_USERNAME "test"
 #define RPC_PASSWORD "test"
-#define WALLET_PASPHRASE "testtest"
+#define WALLET_PASSPHRASE "testtest"
+#define WALLET_NAME "default"
 #define INITIAL_BALANCE 100000000
 
 BOOST_GLOBAL_FIXTURE(bts_xt_client_test_config);
@@ -181,42 +169,6 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
     });
 }
 
-struct bts_server_process : managed_process
-{
-  void launch(const bts::net::genesis_block_config& genesis_block, const fc::ecc::private_key& trustee_key);
-};
-typedef std::shared_ptr<bts_server_process> bts_server_process_ptr;
-
-void bts_server_process::launch(const bts::net::genesis_block_config& genesis_block,
-                                const fc::ecc::private_key& trustee_key)
-{
-  process = std::make_shared<fc::process>();
-
-  std::vector<std::string> options;
-  options.push_back("--trustee-address");
-  options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
-
-  fc::path server_config_dir = bts_xt_client_test_config::config_directory / "BitSharesX_Server";
-  fc::remove_all(server_config_dir);
-  fc::create_directories(server_config_dir);
-
-  fc::json::save_to_file(genesis_block, server_config_dir / "genesis.json", true);
-
-  process->exec(bts_xt_client_test_config::bts_server_exe, options, server_config_dir);
-
-  {
-#ifdef _MSC_VER
-    std::ofstream launch_script((server_config_dir / "launch.bat").string());
-#else
-    std::ofstream launch_script((server_config_dir / "launch.sh").string());;
-#endif
-    launch_script << bts_xt_client_test_config::bts_server_exe.string() << " " << boost::algorithm::join(options, " ") << "\n";
-  }
-
-
-  log_stdout_stderr_to_file(server_config_dir / "stdouterr.txt");
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////
 
 struct bts_client_process : managed_process
@@ -231,16 +183,12 @@ struct bts_client_process : managed_process
 
   bts_client_process() : initial_balance(0) {}
   void launch(uint32_t process_number,
-              const fc::ecc::private_key& trustee_key,
-              bool act_as_trustee,
-              fc::optional<bts::net::genesis_block_config> genesis_block);
+              fc::optional<bts::blockchain::genesis_block_config> genesis_block);
 };
 typedef std::shared_ptr<bts_client_process> bts_client_process_ptr;
 
 void bts_client_process::launch(uint32_t process_number,
-                                const fc::ecc::private_key& trustee_key,
-                                bool act_as_trustee,
-                                fc::optional<bts::net::genesis_block_config> genesis_block)
+                                fc::optional<bts::blockchain::genesis_block_config> genesis_block)
 {
   process = std::make_shared<fc::process>();
   std::vector<std::string> options;
@@ -251,6 +199,7 @@ void bts_client_process::launch(uint32_t process_number,
   fc::remove_all(numbered_config_dir);
   fc::create_directories(numbered_config_dir);
 
+#if 0
   // create a wallet in that directory
   // we could (and probably should) make bts_xt_client create the wallet,
   // but if we ask it to create the wallet
@@ -259,8 +208,9 @@ void bts_client_process::launch(uint32_t process_number,
   {
     bts::wallet::wallet_ptr wallet = std::make_shared<bts::wallet::wallet>();
     wallet->set_data_directory(numbered_config_dir);
-    wallet->create("default", "", WALLET_PASPHRASE);
+    wallet->create("default", WALLET_PASSPHRASE);
   }
+#endif
 
   options.push_back("--data-dir");
   options.push_back(numbered_config_dir.string());
@@ -272,21 +222,9 @@ void bts_client_process::launch(uint32_t process_number,
   options.push_back(boost::lexical_cast<std::string>(rpc_port));
   options.push_back("--httpport");
   options.push_back(boost::lexical_cast<std::string>(http_port));
-  options.push_back("--trustee-address");
-  options.push_back(bts::blockchain::address(trustee_key.get_public_key()));
-  if (act_as_trustee)
-  {
-    options.push_back("--trustee-private-key");
-    options.push_back(trustee_key.get_secret());
-  }
-  if (!bts_xt_client_test_config::test_client_server)
-  {
-    options.push_back("--p2p");
-    options.push_back("--port");
-    options.push_back(boost::lexical_cast<std::string>(p2p_port));
-    /* options.push_back("--connect-to");
-    options.push_back(std::string("127.0.0.1:") + boost::lexical_cast<std::string>(bts_xt_client_test_config::base_p2p_port)); */
-  }
+  options.push_back("--port");
+  options.push_back(boost::lexical_cast<std::string>(p2p_port));
+
   if (genesis_block)
   {
     fc::path genesis_json(numbered_config_dir / "genesis.json");
@@ -312,12 +250,10 @@ void bts_client_process::launch(uint32_t process_number,
 
 struct bts_client_launcher_fixture
 {
-  bts_server_process_ptr server_process;
   std::vector<bts_client_process> client_processes;
+  std::vector<fc::ecc::private_key> delegate_keys;
 
-  bts::net::genesis_block_config genesis_block;
-  fc::ecc::private_key trustee_key = fc::ecc::private_key::generate();
-
+  bts::blockchain::genesis_block_config genesis_block;
   uint32_t _peer_connection_retry_timeout;
   uint32_t _desired_number_of_connections;
   uint32_t _maximum_number_of_connections;
@@ -336,7 +272,6 @@ struct bts_client_launcher_fixture
   //const uint32_t test_process_count = 10;
 
   void create_trustee_and_genesis_block();
-  void launch_server();
   void launch_clients();
   void establish_rpc_connections();
   void trigger_network_connections();
@@ -353,19 +288,22 @@ void bts_client_launcher_fixture::create_trustee_and_genesis_block()
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].private_key = fc::ecc::private_key::generate();
+    assert(client_processes[i].initial_balance == 0 || client_processes[i].initial_balance >= 100000000);
     genesis_block.balances.push_back(std::make_pair(bts::blockchain::pts_address(client_processes[i].private_key.get_public_key()),
-                                                    client_processes[i].initial_balance / 100000000));
+                                                    (double)(client_processes[i].initial_balance / 100000000)));
   }
 
-  BOOST_TEST_MESSAGE("Generating trustee keypair");
-  trustee_key = fc::ecc::private_key::generate();
-}
-
-void bts_client_launcher_fixture::launch_server()
-{
-  BOOST_TEST_MESSAGE("Launching bts_xt_server processe");
-  server_process = std::make_shared<bts_server_process>();
-  server_process->launch(genesis_block, trustee_key);
+  for (unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i)
+  {
+    bts::blockchain::name_config delegate_config;
+    delegate_config.is_delegate = true;
+    std::ostringstream delegate_name;
+    delegate_name << "delegate-" << i;
+    delegate_config.name = delegate_name.str();
+    delegate_keys.push_back(fc::ecc::private_key::generate());
+    delegate_config.owner = delegate_keys.back().get_public_key().serialize();
+    genesis_block.names.push_back(delegate_config);
+  }
 }
 
 void bts_client_launcher_fixture::launch_clients()
@@ -376,10 +314,10 @@ void bts_client_launcher_fixture::launch_clients()
     client_processes[i].rpc_port = bts_xt_client_test_config::base_rpc_port + i;
     client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
     client_processes[i].http_port = bts_xt_client_test_config::base_http_port + i;
-    fc::optional<bts::net::genesis_block_config> optional_genesis_block;
+    fc::optional<bts::blockchain::genesis_block_config> optional_genesis_block;
 #if 1
     // simulate the condition where some clients start without a genesis block shipped to them
-    if (i == 0 && !bts_xt_client_test_config::test_client_server)
+    if (i == 0)
       optional_genesis_block = genesis_block;
 #else
     // simulate the condition where all clients and all servers start with a genesis block
@@ -387,8 +325,7 @@ void bts_client_launcher_fixture::launch_clients()
     // client will generate a different genesis block
     optional_genesis_block = genesis_block;
 #endif
-    client_processes[i].launch(i, trustee_key, i == 0,
-                               optional_genesis_block);
+    client_processes[i].launch(i, optional_genesis_block);
   }
 }
 
@@ -415,20 +352,13 @@ void bts_client_launcher_fixture::trigger_network_connections()
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    if (bts_xt_client_test_config::test_client_server)
-    {
-      //client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
-    }
-    else //test p2p
-    {
-      fc::mutable_variant_object parameters;
-      parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
-      parameters["desired_number_of_connections"] = _desired_number_of_connections;
-      parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
-      client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
-      client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
-      fc::usleep(fc::milliseconds(250));
-    }
+    fc::mutable_variant_object parameters;
+    parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
+    parameters["desired_number_of_connections"] = _desired_number_of_connections;
+    parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
+    client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
+    client_processes[i].rpc_client->addnode(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
+    fc::usleep(fc::milliseconds(250));
   }
 }
 
@@ -685,16 +615,9 @@ BOOST_AUTO_TEST_CASE(sleep_test)
 BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
   client_processes.resize(1);
-
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-
   create_trustee_and_genesis_block();
-
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
-
   launch_clients();
-
   establish_rpc_connections();
   trigger_network_connections();
 
@@ -709,7 +632,9 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing open_wallet() call");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->open_wallet();
+    // should throw a "can't find wallet" type exception
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE), fc::exception);
+    client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
   }
 
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
@@ -723,51 +648,43 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     BOOST_CHECK_THROW(client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   BOOST_TEST_MESSAGE("Testing receive address generation");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    std::unordered_set<bts::wallet::receive_address> initial_addresses = client_processes[i].rpc_client->list_receive_addresses();
+    std::unordered_map<bts::blockchain::address, std::string> initial_addresses = client_processes[i].rpc_client->list_receive_addresses();
     BOOST_CHECK(initial_addresses.empty());
     std::string addressMemo("address_test_account");
     bts::blockchain::address new_address = client_processes[i].rpc_client->getnewaddress(addressMemo);
     BOOST_CHECK(initial_addresses.find(new_address) == initial_addresses.end());
-    std::unordered_set<bts::wallet::receive_address> final_addresses = client_processes[i].rpc_client->list_receive_addresses();
+    std::unordered_map<bts::blockchain::address, std::string> final_addresses = client_processes[i].rpc_client->list_receive_addresses();
     BOOST_CHECK(final_addresses.size() == initial_addresses.size() + 1);
     for (auto value : initial_addresses)
     {
-      BOOST_CHECK(final_addresses.find(value) != final_addresses.end());
+      BOOST_CHECK(final_addresses.find(value.first) != final_addresses.end());
     }
-    BOOST_CHECK(final_addresses.find(new_address) != final_addresses.end());
-    BOOST_CHECK(final_addresses.find(new_address)->memo == addressMemo);
+    BOOST_REQUIRE(final_addresses.find(new_address) != final_addresses.end());
+    BOOST_CHECK(final_addresses.find(new_address)->second == addressMemo);
   }
 }
 
 BOOST_AUTO_TEST_CASE(unlocking_test)
 {
   client_processes.resize(1);
-
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-
   create_trustee_and_genesis_block();
-
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
-
   launch_clients();
-
   establish_rpc_connections();
   trigger_network_connections();
 
-
-  client_processes[0].rpc_client->open_wallet();
+  client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
 
   BOOST_TEST_MESSAGE("Testing getnewaddress() while wallet is locked");
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
   BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(1));
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(1));
   BOOST_TEST_MESSAGE("Testing getnewaddress() with wallet unlocked locked");
   BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
   fc::usleep(fc::seconds(2));
@@ -775,8 +692,8 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
 
   BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(4));
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::seconds(2));
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(4));
+  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing getnewaddress immediately after both unlocks");
   BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
   fc::usleep(fc::seconds(3));
@@ -796,9 +713,6 @@ BOOST_AUTO_TEST_CASE(transfer_test)
 
   create_trustee_and_genesis_block();
 
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
-
   launch_clients();
 
   establish_rpc_connections();
@@ -808,8 +722,8 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -857,9 +771,6 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
   create_trustee_and_genesis_block();
 
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
-
   launch_clients();
 
   establish_rpc_connections();
@@ -869,8 +780,8 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -948,9 +859,6 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
 
   create_trustee_and_genesis_block();
 
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
-
   launch_clients();
 
 
@@ -964,8 +872,8 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -1039,7 +947,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("-----------------------------------------------------");
   for (unsigned i = 0; i < rx_tx_bytes.size(); ++i)
     BOOST_TEST_MESSAGE(i << "\t" << rx_tx_bytes[i].second << "\t" << rx_tx_bytes[i].first);
-  uint32_t run_time_in_seconds = (uint32_t)(test_end_time - test_start_time).count() / fc::seconds(1).count();
+  uint32_t run_time_in_seconds = (uint32_t)((test_end_time - test_start_time).count() / fc::seconds(1).count());
   BOOST_TEST_MESSAGE("Test ran for " << run_time_in_seconds << " seconds");
   BOOST_TEST_MESSAGE("Total number of transactions: " << total_number_of_transactions << ", presumably in about " <<
                      (run_time_in_seconds / 30) << " blocks");
@@ -1057,8 +965,6 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
 
   create_trustee_and_genesis_block();
 
-  if (bts_xt_client_test_config::test_client_server)
-    launch_server();
 
   launch_clients();
 
@@ -1076,8 +982,8 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->open_wallet();
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
