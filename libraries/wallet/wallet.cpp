@@ -688,6 +688,7 @@ namespace bts { namespace wallet {
 
    void wallet::create( const std::string& wallet_name, const std::string& password )
    { try {
+         close();
          auto filename = my->_data_dir / wallet_name;
          FC_ASSERT( !fc::exists( filename ), "Wallet ${wallet_dir} already exists.", ("wallet_dir",filename) )
          my->_wallet_db.open( filename, true );
@@ -793,6 +794,7 @@ namespace bts { namespace wallet {
          ++record_itr;
       }
       FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
+      unlock( password );
       my->_priority_fee = my->get_default_fee();
       scan_chain( my->get_last_scanned_block_number() );
 
