@@ -162,16 +162,26 @@ namespace bts { namespace blockchain {
          if( itr.valid() ) return itr.value();
          return current_blocks;
       }
+
       void  chain_database_impl::clear_pending(  const full_block& blk )
       {
-         for( auto trx: blk.user_transactions )
+         std::unordered_set<transaction_id_type> confirmed_trx_ids;
+
+         for( auto trx : blk.user_transactions )
          {
             auto id = trx.id();
+            confirmed_trx_ids.insert( id );
             _pending_transactions.remove( id );
          }
-         // TODO... only clear the real ones...
-         elog( "ERROR... calling clear here will cause all unprocessed transactions to be lost, please fix ASAP" );
-         _pending_fee_index.clear();
+
+         auto temp_pending_fee_index( _pending_fee_index );
+         for( auto pair : temp_pending_fee_index )
+         {
+            auto fee_index = pair.first;
+
+            if( confirmed_trx_ids.count( fee_index._trx ) > 0 )
+               _pending_fee_index.erase( fee_index );
+         }
       }
 
       /**
