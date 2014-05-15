@@ -897,7 +897,7 @@ namespace bts { namespace wallet {
         my->cache_deterministic_keys( account, 1, 0 );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
 
-   std::vector<std::string> wallet::get_receive_accounts( uint32_t start, uint32_t count )const
+   std::vector<std::string> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
    {
       std::vector<std::string> cons;
       cons.reserve( my->_account_name_index.size() );
@@ -905,7 +905,8 @@ namespace bts { namespace wallet {
          cons.push_back( item.first );
       return cons;
    }
-   std::vector<std::string> wallet::get_sending_accounts( uint32_t start, uint32_t count )const
+
+   std::vector<std::string> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
    {
       std::vector<std::string> cons;
       cons.reserve( my->_account_name_index.size() );
@@ -1281,7 +1282,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
-   void wallet::import_wif_key( const std::string& wif, 
+   void wallet::import_wif_private_key( const std::string& wif, 
                                 const std::string& account_name, 
                                 const std::string& invoice_memo )
    { try {
@@ -1320,17 +1321,14 @@ namespace bts { namespace wallet {
    {
       my->_data_dir = data_dir;
    }
-   void  wallet::add_sending_address( const address&,
-                                      const std::string& account_name, 
-                                      int32_t invoice_number, 
-                                      const std::string& invoice_memo )
-   {
-      FC_ASSERT( !"add_sending_address is not implemented yet" );
-   }
 
    std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name )const
    {
       return my->_transactions;
+   }
+   fc::time_point wallet::unlocked_until()const
+   {
+      return my->_relock_time;
    }
 
 } } // bts::wallet
