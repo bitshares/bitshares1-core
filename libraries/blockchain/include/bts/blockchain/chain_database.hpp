@@ -101,28 +101,28 @@ namespace bts { namespace blockchain {
          virtual void                 remove_balance_record( const balance_id_type& id )const;
          virtual void                 remove_name_record( name_id_type id )const;
 
-         void    scan_assets( const std::function<void( const asset_record& )>& callback );
-         void    scan_balances( const std::function<void( const balance_record& )>& callback );
-         void    scan_names( const std::function<void( const name_record& )>& callback );
+         void                         scan_assets( const std::function<void( const asset_record& )>& callback );
+         void                         scan_balances( const std::function<void( const balance_record& )>& callback );
+         void                         scan_names( const std::function<void( const name_record& )>& callback );
 
-         virtual oasset_record        get_asset_record( asset_id_type id )const;
-         virtual obalance_record      get_balance_record( const balance_id_type& id )const;
-         virtual oname_record         get_name_record( name_id_type id )const;
-                                                                                                 
-         virtual oasset_record        get_asset_record( const std::string& symbol )const;
-         virtual oname_record         get_name_record( const std::string& name )const;
-                                                                                                 
-         virtual void                 store_asset_record( const asset_record& r );
-         virtual void                 store_balance_record( const balance_record& r );
-         virtual void                 store_name_record( const name_record& r );
-         virtual void                 store_transaction_location( const transaction_id_type&,  
-                                                                  const transaction_location& loc );
+         virtual oasset_record        get_asset_record( asset_id_type id )const override;
+         virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
+         virtual oname_record         get_name_record( name_id_type id )const override;
 
-         virtual asset_id_type        last_asset_id()const;
-         virtual asset_id_type        new_asset_id();
-                                      
-         virtual name_id_type         last_name_id()const;
-         virtual name_id_type         new_name_id();
+         virtual oasset_record        get_asset_record( const std::string& symbol )const override;
+         virtual oname_record         get_name_record( const std::string& name )const override;
+
+         virtual void                 store_asset_record( const asset_record& r ) override;
+         virtual void                 store_balance_record( const balance_record& r ) override;
+         virtual void                 store_name_record( const name_record& r ) override;
+         virtual void                 store_transaction_location( const transaction_id_type&,
+                                                                  const transaction_location& loc ) override;
+
+         virtual asset_id_type        last_asset_id()const override;
+         virtual asset_id_type        new_asset_id() override;
+
+         virtual name_id_type         last_name_id()const override;
+         virtual name_id_type         new_name_id() override;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;
