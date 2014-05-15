@@ -1346,7 +1346,11 @@ namespace bts { namespace wallet {
    { try {
       auto wif_bytes = fc::from_base58(wif);
       auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
-      import_private_key(key, account_name, invoice_memo);
+      auto check = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() -4 );
+      if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() -4, 4 ) )
+         import_private_key(key, account_name, invoice_memo);
+      else
+         FC_ASSERT( !"Invalid Private Key Format" );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import wif private key" ) }
 
 
