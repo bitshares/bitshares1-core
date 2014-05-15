@@ -425,11 +425,11 @@ namespace bts { namespace blockchain {
    }
    std::vector<name_id_type> chain_database::get_active_delegates()const
    {
-      return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_DELEGATES );
+      return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
 
    /**
-    *  @return the top BTS_BLOCKCHAIN_DELEGATES by vote
+    *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */
    std::vector<name_id_type> chain_database::get_delegates_by_vote(uint32_t first, uint32_t count )const
    { try {
@@ -447,7 +447,7 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    /**
-    *  @return the top BTS_BLOCKCHAIN_DELEGATES by vote
+    *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */
    std::vector<name_record> chain_database::get_delegate_records_by_vote(uint32_t first, uint32_t count )const
    { try {
@@ -547,7 +547,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
       uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_DELEGATES;
+      uint64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES;
       auto sorted_delegates = get_active_delegates();
 
       FC_ASSERT( delegate_pos < sorted_delegates.size() );
