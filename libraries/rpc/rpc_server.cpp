@@ -619,9 +619,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
-                                     /* params:          name                 type      required */
-                                                       {{"wallet_name",   "string", true},
-                                                        {"password", "string", true} },
+                                     /* params:          name           type      required */
+                                                       {{"wallet_name", "string", true},
+                                                        {"password",    "string", true} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -682,8 +682,8 @@ Wallets exist in the wallet data directory
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
           /* returns: */    "void",
           /* params:          name                   type      required */
-                            {{"spending_pass", "string", true},
-                            {"timeout",             "int",    true} },
+                            {{"spending_pass",       "string", true},
+                             {"timeout",             "int",    true} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
 Stores the wallet decryption key in memory for 'timeout' seconds.

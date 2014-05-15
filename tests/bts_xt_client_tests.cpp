@@ -636,7 +636,9 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing open_wallet() call");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    // should throw a "can't find wallet" type exception
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE), fc::exception);
+    client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
   }
 
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");

@@ -417,7 +417,7 @@ namespace bts { namespace client {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
     transaction_id_type client::register_delegate( const std::string& name, const fc::variant& data )
     { try {
-             FC_ASSERT( !"Not Implemented" );
+             FC_ASSERT( false, "Not Implemented" );
         //auto trx = get_wallet()->register_delegate( name, data );
         //broadcast_transaction( trx );
        // return trx.id();

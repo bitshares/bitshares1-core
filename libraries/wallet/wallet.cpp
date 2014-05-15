@@ -825,7 +825,7 @@ namespace bts { namespace wallet {
       return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   bool wallet::unlock( const std::string& password, const fc::microseconds& timeout )
+   void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
       FC_ASSERT( password.size() > 0 );
       FC_ASSERT( !!my->_master_key );
@@ -835,10 +835,9 @@ namespace bts { namespace wallet {
       if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) )
       {
          my->_wallet_password = fc::sha512();
-         return false;
+         FC_THROW("Incorrect passphrase");
       }
       my->_relock_time = fc::time_point::now() + timeout;
-      return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::change_password( const std::string& new_password )
