@@ -138,7 +138,7 @@ namespace bts { namespace blockchain {
       data.resize( data.size() + 4 );
       memcpy( data.data() + data.size() - 4, (char*)&checksum, sizeof(checksum) );
 
-      return fc::to_base58( data.data(), data.size() );
+      return BTS_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
    }
 
    extended_address::operator extended_public_key()const

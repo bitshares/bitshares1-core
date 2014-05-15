@@ -731,7 +731,7 @@ As json rpc call
     fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
     {
        auto receive_account_record = _client->get_wallet()->create_receive_account( params[0].as_string() );
-       return fc::variant(receive_account_record.extended_key);
+       return fc::variant(extended_address(receive_account_record.extended_key));
     }
 
     static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
@@ -745,7 +745,7 @@ As json rpc call
      )"};
     fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
     {
-       _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_public_key>() );
+       _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
        return fc::variant();
     }
 
