@@ -615,13 +615,9 @@ BOOST_AUTO_TEST_CASE(sleep_test)
 BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
   client_processes.resize(1);
-
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-
   create_trustee_and_genesis_block();
-
   launch_clients();
-
   establish_rpc_connections();
   trigger_network_connections();
 
@@ -677,18 +673,13 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 BOOST_AUTO_TEST_CASE(unlocking_test)
 {
   client_processes.resize(1);
-
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-
   create_trustee_and_genesis_block();
-
   launch_clients();
-
   establish_rpc_connections();
   trigger_network_connections();
 
-
-  client_processes[0].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+  client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
 
   BOOST_TEST_MESSAGE("Testing getnewaddress() while wallet is locked");
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);

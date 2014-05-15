@@ -5,6 +5,9 @@
 #include <fc/crypto/base58.hpp>
 #include <bts/import_bitcoin_wallet.hpp>
 
+#include <fc/thread/future.hpp>
+#include <fc/thread/thread.hpp>
+
 #include <iostream>
 
 #define EXTRA_PRIVATE_KEY_BASE (100*1000*1000ll)
@@ -132,6 +135,7 @@ namespace bts { namespace wallet {
 
             bool           _is_open;
             fc::time_point _relock_time;
+            fc::future<void> _wallet_relocker_done;
             fc::path       _data_dir;
             std::string    _wallet_name;
             fc::path       _wallet_filename;
@@ -803,6 +807,7 @@ namespace bts { namespace wallet {
    fc::path    wallet::get_filename()const { return my->_wallet_filename;                 }
    bool wallet::is_locked()const           { return !is_unlocked();                       }
    bool wallet::is_unlocked()const         { return my->_wallet_password != fc::sha512(); }
+   fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
 
    bool wallet::close()
    { try {
@@ -825,6 +830,10 @@ namespace bts { namespace wallet {
       return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   /**
+    * TODO
+    * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
+    */
    void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
       FC_ASSERT( password.size() > 0 );
@@ -837,7 +846,50 @@ namespace bts { namespace wallet {
          my->_wallet_password = fc::sha512();
          FC_THROW("Incorrect passphrase");
       }
-      my->_relock_time = fc::time_point::now() + timeout;
+      fc::time_point requested_relocking_time = fc::time_point::now() + timeout;
+      my->_relock_time = std::max(my->_relock_time, requested_relocking_time);
+      if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
+      {
+        my->_wallet_relocker_done = fc::async([this](){
+          for (;;)
+          {
+            if (fc::time_point::now() > my->_relock_time)
+            {
+              lock();
+              return;
+            }
+            fc::usleep(fc::seconds(1));
+          }
+        });
+      }
+#if 0
+      // change the above code to this version once task cancellation is fixed in fc
+      // if we're currently unlocked and have a timer counting down,
+      // kill it and starrt a new one
+      if (my->_wallet_relocker_done.valid() && !my->_wallet_relocker_done.ready())
+      {
+        my->_wallet_relocker_done.cancel();
+        try
+        {
+          my->_wallet_relocker_done.wait();
+        }
+        catch (fc::canceled_exception&)
+        {
+        }
+      }
+
+      // now schedule a function call to relock the wallet when the specified interval
+      // elapses (unless we were already unlocked for a longer interval)
+      fc::time_point desired_relocking_time = fc::time_point::now() + duration;
+      if (desired_relocking_time > my->_wallet_relock_time)
+        my->_wallet_relock_time = desired_relocking_time;
+      my->_wallet_relocker_done = fc::async([this](){
+        fc::time_point sleep_start_time = fc::time_point::now();
+        if (my->_wallet_relock_time > sleep_start_time)
+          fc::usleep(my->_wallet_relock_time - sleep_start_time);
+        lock_wallet();
+      });
+#endif
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::change_password( const std::string& new_password )
