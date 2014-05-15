@@ -28,6 +28,8 @@ namespace bts { namespace rpc {
              (wallet_close)\
              (walletlock)\
              (walletpassphrase)\
+             (wallet_create_receive_account) \
+             (wallet_create_sending_account) \
              (getnewaddress)\
              (add_send_address)\
              (_create_sendtoaddress_transaction)\
@@ -717,6 +719,37 @@ As json rpc call
          throw rpc_wallet_passphrase_incorrect_exception();
        }
     }
+
+    static rpc_server::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
+            /* description */ "Add new account for receiving payments",
+            /* returns: */    "extended_address",
+            /* params:          name       type       required */
+                              {{"account_name", "string", true} },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+    R"(
+     )"};
+    fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
+    {
+       auto receive_account_record = _client->get_wallet()->create_receive_account( params[0].as_string() );
+       return fc::variant(receive_account_record.extended_key);
+    }
+
+    static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
+            /* description */ "Add new account for sending payments",
+            /* returns: */    "null",
+            /* params:          name       type       required */
+                              {{"account_name", "string", true} ,
+                               {"account_key", "extended_address", true} },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+    R"(
+     )"};
+    fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
+    {
+       _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_public_key>() );
+       return fc::variant();
+    }
+
+
 
     static rpc_server::method_data add_send_address_metadata{"add_send_address", nullptr,
             /* description */ "Add new address for sending payments",
