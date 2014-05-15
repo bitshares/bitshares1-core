@@ -94,6 +94,8 @@ namespace bts { namespace wallet {
        std::string           name;
 
        address_index get_next_key_index( uint32_t invoice_number = 0 );
+       int32_t       get_next_invoice_index();
+       public_key_type get_key( int32_t invoice_number, int32_t payment_number )const;
 
        /**
         *  For receive accounts this can be generated using account_number, for sending accounts

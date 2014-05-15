@@ -109,13 +109,9 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          my_wallet.import_private_key( key );
       }
       my_wallet.scan_state();
-      ilog( "." );
       my_wallet.close();
-      ilog( "." );
       my_wallet.open( "my_wallet", "password" );
-      ilog( "." );
       my_wallet.unlock( "password" );
-      ilog( "." );
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
@@ -124,7 +120,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
       ilog( "." );
       share_type total_sent = 0;
-      for( uint32_t i = 0; i < 8; ++i )
+      for( uint32_t i = 10; i < 18; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
          ilog( "next block production time: ${t}", ("t",next_block_time) );
@@ -137,20 +133,24 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
          full_block next_block = blockchain->generate_block( next_block_time );
          my_wallet.sign_block( next_block );
+         ilog( "\n\n\n                   MY_WALLET   PUSH_BLOCK" );
          blockchain->push_block( next_block );
+         ilog( "\n\n\n                   YOUR_WALLET   PUSH_BLOCK" );
          blockchain2->push_block( next_block );
 
          ilog( "my balance: ${my}   your balance: ${your}",
                ("my",my_wallet.get_balance("*",0))
                ("your",your_wallet.get_balance("*",0)) );
+
+         ilog( "\n\n" );
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
          fc::usleep( fc::microseconds(1200000) );
 
-         for( uint64_t t = 0; t < 1; ++t )
+         for( uint64_t t = 1; t <= 2; ++t )
          {
-            std::string your_account_name = "my-"+fc::to_string(t);
+            std::string your_account_name = "my-"+fc::to_string(i*t);
             auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
             my_wallet.create_sending_account( your_account_name, your_account );
             auto amnt = rand()%30000;

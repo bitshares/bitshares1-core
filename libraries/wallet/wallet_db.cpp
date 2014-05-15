@@ -27,6 +27,21 @@ namespace bts{ namespace wallet {
          return address_index( account_number, invoice_number, ++invoice_itr->second );
       }
   }
+  int32_t wallet_account_record::get_next_invoice_index()
+  {
+      auto last_itr = last_payment_index.rbegin();
+      if( last_itr == last_payment_index.rend() || last_itr->first < 0 )
+      {
+         last_payment_index[1] = 0;
+         return 1;
+      }
+      last_payment_index[last_itr->first + 1] = 0;
+      return last_itr->first + 1;
+  }
+  public_key_type wallet_account_record::get_key( int32_t invoice_number, int32_t payment_number )const
+  {
+     return fc::ecc::public_key(extended_key.child( invoice_number ).child( payment_number ));
+  }
 
 
   extended_private_key    master_key_record::get_extended_private_key( const fc::sha512& password )const

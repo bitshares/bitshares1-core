@@ -29,6 +29,42 @@ namespace bts { namespace wallet {
             }
 
             virtual ~wallet_impl() override {}
+            void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
+            {
+               if( invoice_number < 0 ) 
+                  return;
+               if( account.account_number >= 0 )
+               {
+                     uint32_t last = payment_number + 2;
+                     for( uint32_t i = 0; i <= last; ++i )
+                     {
+                        ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        _receive_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
+                     }
+               }
+               else
+               {
+                     uint32_t last = payment_number + 2;
+                     for( uint32_t i = 0; i <= last; ++i )
+                     {
+                        ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        _sending_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
+                     }
+               }
+            }
+            void cache_deterministic_keys( const wallet_account_record& account )
+            {
+                for( auto item : account.last_payment_index )
+                {
+                   cache_deterministic_keys( account, item.first, item.second );
+                }
+                auto itr = account.last_payment_index.rbegin();
+                if( itr != account.last_payment_index.rend() )
+                {
+                   for( uint32_t i = 1; i <= 3; ++i )
+                    cache_deterministic_keys( account, itr->first + i, 0 );
+                }
+            }
 
             virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
             {
@@ -45,6 +81,14 @@ namespace bts { namespace wallet {
                   scan_name( name.second );
                }
             }
+            wallet_account_record get_account( const std::string& account_name )
+            { try {
+               auto account_name_itr = _account_name_index.find(account_name);
+               if( account_name_itr != _account_name_index.end() )
+                  return get_account( account_name_itr->second );
+               FC_ASSERT( !"Unable to find account", "", ("account_name",account_name) );
+            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
             wallet_account_record get_account( int32_t account_number )
             { try {
                auto itr = _accounts.find( account_number );
@@ -57,8 +101,14 @@ namespace bts { namespace wallet {
                                                        int32_t& last_sending_payment_index, 
                                                        address& payment_address )
             {
-               FC_ASSERT( !"Not implemented... TODO" );
-               // TODO... 
+               auto account_rec           = get_account( to_account_name );
+               sending_invoice_index      = account_rec.get_next_invoice_index();
+               last_sending_payment_index = account_rec.last_payment_index[sending_invoice_index];
+
+               public_key_type pub_key = account_rec.get_key( sending_invoice_index, last_sending_payment_index );
+               payment_address = pub_key;
+
+               cache_deterministic_keys( account_rec, sending_invoice_index, last_sending_payment_index );
             }
 
             /**
@@ -254,7 +304,6 @@ namespace bts { namespace wallet {
             /** the key index that the account belongs to */
             void index_account( const address_index& idx, const balance_record& balance )
             {
-               ilog( "index account ${a} ${idx}", ("a",balance)("idx",idx) );
                auto id  = balance.id();
                auto itr = _balances.find( id );
                if( itr == _balances.end() )
@@ -266,6 +315,7 @@ namespace bts { namespace wallet {
                {
                   itr->second = wallet_balance_record( itr->second.index, balance );
                }
+               ilog( "index account ${wallet_name}   ${a} ${idx}\n\n  ${record}", ("wallet_name",_wallet_name)("a",balance)("idx",idx)("record",itr->second) );
                store_record( itr->second );
             }
 
@@ -464,6 +514,7 @@ namespace bts { namespace wallet {
 
             void scan_transaction( const signed_transaction& trx )
             {
+               ilog( "scan transaction ${wallet}  - ${trx}", ("wallet",_wallet_name)("trx",trx) );
                 bool mine = false;
                 for( auto op : trx.operations )
                 {
@@ -674,6 +725,7 @@ namespace bts { namespace wallet {
                   my->_accounts[cr.account_number] = cr;
                   my->_account_name_index[cr.name] = cr.index;
 
+                  my->cache_deterministic_keys( cr );
                 //  if( my->get_last_account_number() < cr.index )
                 //     my->_last_account_number = cr.index;
                   break;
@@ -808,15 +860,18 @@ namespace bts { namespace wallet {
         wcr.index             = my->get_new_index(); 
         wcr.account_number    = my->get_next_account_number();
         wcr.name              = account_name;
-        wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
         wcr.extended_key = master_key.child( wcr.account_number );
+        wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
         my->_account_name_index[account_name] = wcr.account_number;
         my->_accounts[wcr.account_number] = wcr;
         my->store_record( wcr );
+
+        my->cache_deterministic_keys( wcr, 0, 0 );
+        my->cache_deterministic_keys( wcr, 1, 0 );
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("account_name",account_name) ) }
 
@@ -830,14 +885,16 @@ namespace bts { namespace wallet {
         account.index             =  my->get_new_index(); 
         account.account_number    = -my->get_next_account_number();
         account.name              =  account_name;
-        wlog( "creating account '${account_name}'", ("account_name",account) );
 
         account.extended_key = account_pub_key;
+        wlog( "creating account '${account_name}'", ("account_name",account) );
 
         my->_account_name_index[account_name] = account.account_number;
         my->_accounts[account.account_number] = account;
 
         my->store_record( account );
+        my->cache_deterministic_keys( account, 0, 0 );
+        my->cache_deterministic_keys( account, 1, 0 );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
 
    std::vector<std::string> wallet::get_receive_accounts( uint32_t start, uint32_t count )const
@@ -1132,7 +1189,12 @@ namespace bts { namespace wallet {
    bool wallet::is_receive_address( const address& addr )const
    {
       auto itr = my->_receive_keys.find( addr );
-      return itr != my->_receive_keys.end();
+      if( itr != my->_receive_keys.end() )
+      {
+         my->cache_deterministic_keys( my->get_account( itr->second.account_number ), itr->second.invoice_number, itr->second.payment_number );
+         return true;
+      }
+      return false;
    }
 
    bool wallet::is_sending_address( const address& addr )const
@@ -1246,6 +1308,7 @@ namespace bts { namespace wallet {
 
    void wallet::scan_block( const full_block& blk )
    {
+      ilog( "scan block by wallet ${wallet_name}", ("wallet_name",my->_wallet_name) );
       for( auto trx : blk.user_transactions )
          my->scan_transaction( trx );
    }
