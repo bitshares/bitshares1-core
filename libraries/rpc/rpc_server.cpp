@@ -34,6 +34,7 @@ namespace bts { namespace rpc {
              (wallet_import_bitcoin)\
              (wallet_list_sending_accounts)\
              (wallet_list_receive_accounts)\
+             (wallet_get_account)\
              (_create_sendtoaddress_transaction)\
              (_send_transaction)\
              (wallet_transfer)\
@@ -872,6 +873,22 @@ As json rpc call
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
+    static rpc_server::method_data wallet_get_account_metadata{"wallet_get_account", nullptr,
+            /* description */ "Lists all foreign addresses and their labels associated with this wallet",
+            /* returns: */    "account_record",
+            /* params:     */ { {"account_name", "string", true}
+                                 },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_get_account(const fc::variants& params)
+    {  try {
+      auto account_record = _client->get_wallet()->get_account(params[0].as_string());
+      fc::mutable_variant_object result;
+      result["name"] = account_record.name;
+      result["extended_address"] = extended_address( account_record.extended_key );
+      return fc::variant( std::move(result) );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
     static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,

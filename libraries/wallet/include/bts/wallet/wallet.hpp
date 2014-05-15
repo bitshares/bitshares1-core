@@ -117,6 +117,8 @@ namespace bts { namespace wallet {
 
          std::vector<std::string> list_receive_accounts( uint32_t start = 0, uint32_t count = -1 )const;
          std::vector<std::string> list_sending_accounts( uint32_t start = 0, uint32_t count = -1 )const;
+         wallet_account_record    get_account( const std::string& account_name )const;
+         
 
 
          void import_bitcoin_wallet( const fc::path& wallet_dat, 

@@ -728,11 +728,9 @@ namespace bts { namespace wallet {
                {
                   auto cr = record.as<wallet_account_record>();
                   my->_accounts[cr.account_number] = cr;
-                  my->_account_name_index[cr.name] = cr.index;
+                  my->_account_name_index[cr.name] = cr.account_number;
 
                   my->cache_deterministic_keys( cr );
-                //  if( my->get_last_account_number() < cr.index )
-                //     my->_last_account_number = cr.index;
                   break;
                }
                case transaction_record_type:
@@ -803,12 +801,12 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
-   bool wallet::is_open()const             { return my->_is_open;                         }
-   void wallet::lock()                     { my->_wallet_password = fc::sha512();         }
-   std::string wallet::get_name()const     { return my->_wallet_name;                     }
-   fc::path    wallet::get_filename()const { return my->_wallet_filename;                 }
-   bool wallet::is_locked()const           { return !is_unlocked();                       }
-   bool wallet::is_unlocked()const         { return my->_wallet_password != fc::sha512(); }
+   bool wallet::is_open()const                   { return my->_is_open;                         }
+   void wallet::lock()                           { my->_wallet_password = fc::sha512(); my->_relock_time = fc::time_point();   }
+   std::string wallet::get_name()const           { return my->_wallet_name;                     }
+   fc::path    wallet::get_filename()const       { return my->_wallet_filename;                 }
+   bool wallet::is_locked()const                 { return !is_unlocked();                       }
+   bool wallet::is_unlocked()const               { return my->_wallet_password != fc::sha512(); }
    fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
 
    bool wallet::close()
@@ -958,6 +956,13 @@ namespace bts { namespace wallet {
          cons.push_back( item.first );
       return cons;
    }
+   wallet_account_record    wallet::get_account( const std::string& account_name )const
+   { try {
+      auto itr = my->_account_name_index.find( account_name );
+      if( itr == my->_account_name_index.end() )
+         FC_ASSERT( false, "invalid account name '${account_name}'", ("account_name",account_name) );
+      return my->get_account( itr->second );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    std::vector<std::string> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
    {
