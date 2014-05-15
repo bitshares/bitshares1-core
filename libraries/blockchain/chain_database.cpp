@@ -491,7 +491,7 @@ namespace bts { namespace blockchain {
       uint32_t       last_block_num = -1;
       block_id_type  last_block_id;
       my->_block_num_to_id.last( last_block_num, last_block_id );
-      if( last_block_num != -1 )
+      if( last_block_num != uint32_t(-1) )
       {
          my->_head_block_header = get_block( last_block_id );
          my->_head_block_id = last_block_id;
@@ -518,7 +518,7 @@ namespace bts { namespace blockchain {
          ++pending_itr;
       }
 
-      if( last_block_num == -1 )
+      if( last_block_num == uint32_t(-1) )
          my->initialize_genesis();
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
@@ -546,8 +546,8 @@ namespace bts { namespace blockchain {
    { try {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
-      int64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      int64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_DELEGATES;
+      uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint64_t  delegate_pos = interval_number % BTS_BLOCKCHAIN_DELEGATES;
       auto sorted_delegates = get_active_delegates();
 
       FC_ASSERT( delegate_pos < sorted_delegates.size() );

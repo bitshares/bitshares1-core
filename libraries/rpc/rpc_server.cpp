@@ -104,8 +104,8 @@ namespace bts { namespace rpc {
          {
              fc::time_point begin_time = fc::time_point::now();
              fc_ilog( fc::logger::get("rpc"), "Started ${path} ${method} at ${time}", ("path",r.path)("method",r.method)("time",begin_time));
-             fc::http::reply::status_code status = fc::http::reply::OK; 
-             
+             fc::http::reply::status_code status = fc::http::reply::OK;
+
              s.add_header( "Connection", "close" );
 
              try {
@@ -137,12 +137,12 @@ namespace bts { namespace rpc {
                 fc::string path = r.path;
                 auto pos = path.find( '?' );
                 if( pos != std::string::npos ) path.resize(pos);
-    
+
                 pos = path.find( ".." );
                 FC_ASSERT( pos == std::string::npos );
-                
+
                 if( path == "/" ) path = "/index.html";
-                 
+
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
                 if( fc::exists( filename ) )
                 {
@@ -162,7 +162,7 @@ namespace bts { namespace rpc {
                 {
                     status = handle_http_rpc( r, s );
                 }
-                else 
+                else
                 {
                     fc_ilog( fc::logger::get("rpc"), "Not found ${path} (${file})", ("path",r.path)("file",filename));
                     filename = _config.htdocs / "404.html";
@@ -176,7 +176,7 @@ namespace bts { namespace rpc {
                     s.write( (const char*)mr.get_address(), mr.get_size() );
                     status = fc::http::reply::NotFound;
                 }
-             } 
+             }
              catch ( const fc::exception& e )
              {
                     std::string message = "Internal Server Error\n";
@@ -188,8 +188,8 @@ namespace bts { namespace rpc {
                     s.write( message.c_str(), message.size() );
                     elog( "${e}", ("e",e.to_detail_string() ) );
                     status = fc::http::reply::InternalServerError;
-                 
-             } 
+
+             }
              catch ( ... )
              {
                     std::string message = "Invalid RPC Request\n";
@@ -200,7 +200,7 @@ namespace bts { namespace rpc {
                     s.write( message.c_str(), message.size() );
                     status = fc::http::reply::BadRequest;
              }
-             
+
              fc::time_point end_time = fc::time_point::now();
              fc_ilog( fc::logger::get("rpc"), "Completed ${path} ${status} in ${ms}ms", ("path",r.path)("status",(int)status)("ms",(end_time - begin_time).count()/1000));
          }
@@ -585,7 +585,7 @@ Wallets exist in the wallet data directory
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
                                      /* params:          name                 type      required */
-                                                       {{"wallet_name",   "string", true}, 
+                                                       {{"wallet_name",   "string", true},
                                                         {"password",   "string", true} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
@@ -965,7 +965,7 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::get_transaction_history(const fc::variants& params)
     {
-      unsigned count = 0;
+      unsigned count = 0; // TODO implement count
       if (params.size() == 1)
           count = params[0].as<unsigned>();
 
