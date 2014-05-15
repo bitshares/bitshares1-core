@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/transaction.hpp>
@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
       asset                      get_balance( asset_id_type id )const;
 
       share_type                 balance;
-      withdraw_condition         condition; 
+      withdraw_condition         condition;
       fc::time_point_sec         last_update;
    };
    typedef fc::optional<account_record> oaccount_record;
@@ -81,36 +81,36 @@ namespace bts { namespace blockchain {
          virtual int64_t               get_delegate_pay_rate()const = 0;
          virtual share_type            get_delegate_registration_fee()const;
          virtual share_type            get_asset_registration_fee()const;
-                                       
+
          virtual oasset_record         get_asset_record( asset_id_type id )const                    = 0;
          virtual oaccount_record       get_account_record( const account_id_type& id )const         = 0;
          virtual oname_record          get_name_record( name_id_type id )const                      = 0;
          virtual otransaction_location get_transaction_location( const transaction_id_type& )const  = 0;
-                                                                                                 
+
          virtual oasset_record         get_asset_record( const std::string& symbol )const          = 0;
          virtual oname_record          get_name_record( const std::string& name )const             = 0;
-                                                                                                  
+
          virtual void                  store_asset_record( const asset_record& r )                 = 0;
          virtual void                  store_account_record( const account_record& r )             = 0;
          virtual void                  store_name_record( const name_record& r )                   = 0;
-         virtual void                  store_transaction_location( const transaction_id_type&,  
+         virtual void                  store_transaction_location( const transaction_id_type&,
                                                                    const transaction_location& loc ) = 0;
-                                       
-         virtual void                  apply_determinsitic_updates(){}
-                                       
+
+         virtual void                  apply_deterministic_updates(){}
+
          virtual asset_id_type         last_asset_id()const = 0;
          virtual asset_id_type         new_asset_id() = 0;
-                                       
+
          virtual name_id_type          last_name_id()const = 0;
          virtual name_id_type          new_name_id() = 0;
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
-} } // bts::blockchain 
+} } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::account_record, (balance)(condition)(last_update) )
 FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees) )
-FC_REFLECT( bts::blockchain::name_record, 
+FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(votes_for)(votes_against)(is_delegate)(last_update)(delegate_pay_balance)
           )
 

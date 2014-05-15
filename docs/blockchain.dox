@@ -3,16 +3,16 @@
   @brief Provides abstraction for dealing with TaPOS blockchains.
 
   The blockchain library provides an abstraction for implementing your own custom DACs build on top of
-  a Delegated Proof-of-Stake blockchain.  
+  a Delegated Proof-of-Stake blockchain.
 
-  This library is designed to be extended by adding new output claim types and custom transaction 
+  This library is designed to be extended by adding new output claim types and custom transaction
   validation logic on top of the basic transactions that are used in all DACs to transfer ownership
-  of shares among multiple users. 
+  of shares among multiple users.
 
   The basic premise behind the design is that there are three types of transactions in
   every block:
 
-  -# Determinstic Transactions - these are transactions that occur automatically every block based 
+  -# Deterministic Transactions - these are transactions that occur automatically every block based
      upon the state of the blockchain after the prior block.  Examples of deterministic transactions
      include:
 
@@ -25,21 +25,21 @@
 
   A blockchain has two modes of operation, one for testing and the other for live
   operation.   When testing the proof-of-work and timing requirements must be simulated
-  so that thousands of blocks can be built and processed rapidly.  
+  so that thousands of blocks can be built and processed rapidly.
 
 
-  @section bts_blockchain_timing Blockchain Timining 
+  @section bts_blockchain_timing Blockchain Timining
 
-  The block will be produced by the a delegate which is selected accoding to the block time and delegate rank.  
+  The block will be produced by the a delegate which is selected accoding to the block time and delegate rank.
   Assuming all DELEGATES[NUM_DELEGATES] are sorted by NET_VOTES then the delegate that has authority to sign
-  the next block is:  DELEGATES[ (SEC_SINCE_GENESIS/BLOCK_INTERVAL) % MAX_DELEGATES ]. 
+  the next block is:  DELEGATES[ (SEC_SINCE_GENESIS/BLOCK_INTERVAL) % MAX_DELEGATES ].
 
 
   @section bts_blockchain_fees Blockchain Fees
 
   To maintain decentralization, blockchains are designed to support a level of bandwidth that the
   average home user can sustain without impacting their regular browsing experience or filling
-  up the user's hard drive with large databases of data.  
+  up the user's hard drive with large databases of data.
 
   We have determined that 100 GB is the maximum that most home users would be willing to
   tolerate on the disk drives.  100GB becomes almost 200GB when you factor in blockchain
@@ -48,9 +48,9 @@
   Transaction fees are adjusted on a block-by-block basis to balance out supply and demand.  Using a 24
   hour 'moving average' fees are adjusted up or down in an attempt to maintain 100GB of storage per
   year.  This turns into an average of 3.4 killobytes per second in base bandwidth, and probably
-  closer to 10 killobytes per second when you factor in protocol overhead.  
+  closer to 10 killobytes per second when you factor in protocol overhead.
 
-  Every block has a @ref BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE which is calculated as @ref BTS_BLOCKCHAIN_MAX_SIZE / @ref BTS_BLOCKCHAIN_BLOCKS_PER_YEAR, 
+  Every block has a @ref BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE which is calculated as @ref BTS_BLOCKCHAIN_MAX_SIZE / @ref BTS_BLOCKCHAIN_BLOCKS_PER_YEAR,
   and a @ref BTS_BLOCKCHAIN_MAX_BLOCK_SIZE  which is generally 2x the target block size.  This keeps all blocks within
   a sane size while the fee is catching up to demand.
 
@@ -66,7 +66,7 @@
   algorithm to operate when the @ref BTS_BLOCKCHAIN_MIN_FEE is 1 share per byte.  (A share is like a satoshi)
 
 
-  @subsection bts_blockchain_fee_estimation Wallet Fee Estimation 
+  @subsection bts_blockchain_fee_estimation Wallet Fee Estimation
 
   When a wallet produces a transaction it must include the minimum fee or the transaction will not be accepted.  To prevent
 a race condition between when a transaction is produced and when it gets included in the blockchain, the wallet should include
@@ -74,9 +74,9 @@ a margin of a couple percent above the minimum required fee.
 
   @subsection bts_blockchain_delegate_registration_fee Delegate Registration Fee
 
-  Delegates are charged an additional fee upon registering equal to 1 blocks worth of transaction fees or what ever value is specified by 
+  Delegates are charged an additional fee upon registering equal to 1 blocks worth of transaction fees or what ever value is specified by
   @ref BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE.  The goal of this fee is to require a delegate to produce 10 blocks successfuly to
-  break even.    @see @ref dpos_delegate_registration 
+  break even.    @see @ref dpos_delegate_registration
 
 
 

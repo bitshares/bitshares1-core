@@ -14,9 +14,9 @@ namespace bts { namespace blockchain {
 
    /**
     *  Based upon the current state of the database, calculate any updates that
-    *  should be executed in a deterministic manner.  
+    *  should be executed in a deterministic manner.
     */
-   void pending_chain_state::apply_determinsitic_updates()
+   void pending_chain_state::apply_deterministic_updates()
    {
       /** nothing to do for now... charge 5% inactivity fee? */
       /** execute order matching */
@@ -34,7 +34,7 @@ namespace bts { namespace blockchain {
       for( auto record : assets )    _prev_state->store_asset_record( record.second );
       for( auto record : names )     _prev_state->store_name_record( record.second );
       for( auto record : accounts ) _prev_state->store_account_record( record.second );
-      for( auto record : unique_transactions ) 
+      for( auto record : unique_transactions )
          _prev_state->store_transaction_location( record.first, record.second );
    }
 
@@ -51,13 +51,13 @@ namespace bts { namespace blockchain {
          if( !!prev_asset ) undo_state->store_asset_record( *prev_asset );
       }
 
-      for( auto record : names ) 
+      for( auto record : names )
       {
          auto prev_name = _prev_state->get_name_record( record.first );
          if( !!prev_name ) undo_state->store_name_record( *prev_name );
       }
 
-      for( auto record : accounts ) 
+      for( auto record : accounts )
       {
          auto prev_address = _prev_state->get_account_record( record.first );
          if( !!prev_address ) undo_state->store_account_record( *prev_address );
@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
       return v;
    }
 
-   void pending_chain_state::store_transaction_location( const transaction_id_type& id, 
+   void pending_chain_state::store_transaction_location( const transaction_id_type& id,
                                                          const transaction_location& loc )
    {
       unique_transactions[id] = loc;
@@ -190,4 +190,4 @@ namespace bts { namespace blockchain {
       return last + new_name_ids;
    }
 
-} } // bts::blockchain 
+} } // bts::blockchain
