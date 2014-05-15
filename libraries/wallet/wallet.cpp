@@ -688,6 +688,7 @@ namespace bts { namespace wallet {
 
    void wallet::create( const std::string& wallet_name, const std::string& password )
    { try {
+         close();
          auto filename = my->_data_dir / wallet_name;
          FC_ASSERT( !fc::exists( filename ), "Wallet ${wallet_dir} already exists.", ("wallet_dir",filename) )
          my->_wallet_db.open( filename, true );
@@ -727,11 +728,9 @@ namespace bts { namespace wallet {
                {
                   auto cr = record.as<wallet_account_record>();
                   my->_accounts[cr.account_number] = cr;
-                  my->_account_name_index[cr.name] = cr.index;
+                  my->_account_name_index[cr.name] = cr.account_number;
 
                   my->cache_deterministic_keys( cr );
-                //  if( my->get_last_account_number() < cr.index )
-                //     my->_last_account_number = cr.index;
                   break;
                }
                case transaction_record_type:
@@ -793,6 +792,7 @@ namespace bts { namespace wallet {
          ++record_itr;
       }
       FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
+      unlock( password );
       my->_priority_fee = my->get_default_fee();
       scan_chain( my->get_last_scanned_block_number() );
 
@@ -801,12 +801,12 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
-   bool wallet::is_open()const             { return my->_is_open;                         }
-   void wallet::lock()                     { my->_wallet_password = fc::sha512();         }
-   std::string wallet::get_name()const     { return my->_wallet_name;                     }
-   fc::path    wallet::get_filename()const { return my->_wallet_filename;                 }
-   bool wallet::is_locked()const           { return !is_unlocked();                       }
-   bool wallet::is_unlocked()const         { return my->_wallet_password != fc::sha512(); }
+   bool wallet::is_open()const                   { return my->_is_open;                         }
+   void wallet::lock()                           { my->_wallet_password = fc::sha512(); my->_relock_time = fc::time_point();   }
+   std::string wallet::get_name()const           { return my->_wallet_name;                     }
+   fc::path    wallet::get_filename()const       { return my->_wallet_filename;                 }
+   bool wallet::is_locked()const                 { return !is_unlocked();                       }
+   bool wallet::is_unlocked()const               { return my->_wallet_password != fc::sha512(); }
    fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
 
    bool wallet::close()
@@ -948,7 +948,7 @@ namespace bts { namespace wallet {
         my->cache_deterministic_keys( account, 1, 0 );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
 
-   std::vector<std::string> wallet::get_receive_accounts( uint32_t start, uint32_t count )const
+   std::vector<std::string> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
    {
       std::vector<std::string> cons;
       cons.reserve( my->_account_name_index.size() );
@@ -956,7 +956,15 @@ namespace bts { namespace wallet {
          cons.push_back( item.first );
       return cons;
    }
-   std::vector<std::string> wallet::get_sending_accounts( uint32_t start, uint32_t count )const
+   wallet_account_record    wallet::get_account( const std::string& account_name )const
+   { try {
+      auto itr = my->_account_name_index.find( account_name );
+      if( itr == my->_account_name_index.end() )
+         FC_ASSERT( false, "invalid account name '${account_name}'", ("account_name",account_name) );
+      return my->get_account( itr->second );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+   std::vector<std::string> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
    {
       std::vector<std::string> cons;
       cons.reserve( my->_account_name_index.size() );
@@ -1332,8 +1340,8 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
-   void wallet::import_wif_key( const std::string& wif,
-                                const std::string& account_name,
+   void wallet::import_wif_private_key( const std::string& wif, 
+                                const std::string& account_name, 
                                 const std::string& invoice_memo )
    { try {
       auto wif_bytes = fc::from_base58(wif);
@@ -1370,13 +1378,6 @@ namespace bts { namespace wallet {
    void wallet::set_data_directory( const fc::path& data_dir )
    {
       my->_data_dir = data_dir;
-   }
-   void  wallet::add_sending_address( const address&,
-                                      const std::string& account_name,
-                                      int32_t invoice_number,
-                                      const std::string& invoice_memo )
-   {
-      FC_ASSERT( !"add_sending_address is not implemented yet" );
    }
 
    std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name )const
