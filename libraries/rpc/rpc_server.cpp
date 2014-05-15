@@ -59,7 +59,8 @@ namespace bts { namespace rpc {
              (network_add_node)\
              (stop)\
              (_get_transaction_propagation_data)\
-             (_get_block_propagation_data)
+             (_get_block_propagation_data)\
+             (_list_json_commands)
 
   namespace detail
   {
@@ -1445,6 +1446,24 @@ in our test network.
     {
       return fc::variant(_client->get_block_propagation_data(params[0].as<block_id_type>()));
     }
+
+    static rpc_server::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
+        /* description */ "Lists commands.",
+        /* returns: */    "vector<string>",
+        /* params:     */ {},
+      /* prerequisites */ rpc_server::no_prerequisites,
+      R"(
+Result:
+"commands" (array of strings) The names of all supported json commands
+       )"};
+    fc::variant rpc_server_impl::_list_json_commands(const fc::variants& params)
+    {
+      std::vector<std::string> commands;
+      for (const method_map_type::value_type& method_data_pair : _method_map)
+        commands.push_back(method_data_pair.first);
+      return fc::variant(commands);
+    }
+
   } // detail
 
   bool rpc_server::config::is_valid() const
