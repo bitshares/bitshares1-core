@@ -36,11 +36,9 @@ namespace bts { namespace cli {
             fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
+            std::set<std::string>       _json_command_list;
 
-            cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
-              _client(client),
-              _rpc_server(rpc_server)
-            {}
+            cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server );
 
             void create_wallet_if_missing();
 
@@ -632,7 +630,26 @@ namespace bts { namespace cli {
                 command = line_to_parse;
               }
             }
+#ifdef HAVE_READLINE
+            char* json_command_completion_generator(const char* text, int state);
+            char* json_argument_completion_generator(const char* text, int state);
+#endif
       };
+
+#ifdef HAVE_READLINE
+    static cli_impl* cli_impl_instance = NULL;
+    extern "C" char** json_completion_function(const char* text, int start, int end);
+#endif
+
+	  cli_impl::cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
+	    _client(client),
+	    _rpc_server(rpc_server)
+	  {
+#ifdef HAVE_READLINE
+      cli_impl_instance = this;
+      rl_attempted_completion_function = &json_completion_function;
+#endif
+    }
 
     void cli_impl::create_wallet_if_missing()
     {
@@ -701,6 +718,55 @@ namespace bts { namespace cli {
       */
 
     }
+
+#ifdef HAVE_READLINE
+    // implement json command completion (for function names only)
+    char* cli_impl::json_command_completion_generator(const char* text, int state)
+    {
+      static bool first = true;
+      if (first)
+      {
+        first = false;
+        fc::variant result = execute_command_and_prompt_for_passphrases("_list_json_commands", fc::variants());
+        std::vector<std::string> _unsorted_json_commands = result.as<std::vector<std::string> >();
+        _json_command_list.insert(_unsorted_json_commands.begin(), _unsorted_json_commands.end());
+      }
+
+      static std::set<std::string>::iterator iter;
+      if (state == 0)
+        iter = _json_command_list.lower_bound(text);
+      else
+        ++iter;
+      if (iter != _json_command_list.end() &&
+          iter->compare(0, strlen(text), text) == 0)
+        return strdup(iter->c_str());
+
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    char* cli_impl::json_argument_completion_generator(const char* text, int state)
+    {
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    extern "C" char* json_command_completion_generator_function(const char* text, int state)
+    {
+      return cli_impl_instance->json_command_completion_generator(text, state);
+    }
+    extern "C" char* json_argument_completion_generator_function(const char* text, int state)
+    {
+      return cli_impl_instance->json_argument_completion_generator(text, state);
+    }
+    extern "C" char** json_completion_function(const char* text, int start, int end)
+    {
+      if (start == 0)
+        return rl_completion_matches(text, &json_command_completion_generator_function);
+      else
+        return rl_completion_matches(text, &json_argument_completion_generator_function);
+    }
+
+#endif
+
   } // end namespace detail
 
   cli::cli( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server )
