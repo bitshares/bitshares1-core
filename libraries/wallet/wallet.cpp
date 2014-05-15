@@ -86,7 +86,7 @@ namespace bts { namespace wallet {
                auto account_name_itr = _account_name_index.find(account_name);
                if( account_name_itr != _account_name_index.end() )
                   return get_account( account_name_itr->second );
-               FC_ASSERT( !"Unable to find account", "", ("account_name",account_name) );
+               FC_ASSERT( false, "Unable to find account \"${account_name}\"", ("account_name",account_name) );
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             wallet_account_record get_account( int32_t account_number )
@@ -200,7 +200,7 @@ namespace bts { namespace wallet {
                   store_record( _meta[next_record_number] );
                   return 1;
                }
-               auto next_index = meta_itr->second.value.as_int64() + 1;
+               int32_t next_index = meta_itr->second.value.as<int32_t>() + 1;
                _meta[next_record_number].value = next_index;
                FC_ASSERT( _meta[next_record_number].index == 0 );
                store_record( _meta[next_record_number] );
@@ -217,7 +217,7 @@ namespace bts { namespace wallet {
                   store_record( rec );
                   return -1;
                }
-               return meta_itr->second.value.as_int64();
+               return meta_itr->second.value.as<uint32_t>();
             }
             void set_last_scanned_block_number( uint32_t num )
             {
@@ -249,7 +249,7 @@ namespace bts { namespace wallet {
                    store_record( _meta[last_account_number] );
                    return 1;
                 }
-                auto next_index = meta_itr->second.value.as_int64() + 1;
+                int32_t next_index = meta_itr->second.value.as<int32_t>() + 1;
                 meta_itr->second.value = next_index;
                 store_record(meta_itr->second );
                 return next_index;
@@ -280,7 +280,7 @@ namespace bts { namespace wallet {
                    store_record( _meta[last_account_number] );
                    return 0;
                 }
-                return meta_itr->second.value.as_int64();
+                return meta_itr->second.value.as<int32_t>();
             }
 
             void initialize_wallet( const std::string& password )
@@ -1226,13 +1226,13 @@ namespace bts { namespace wallet {
    fc::time_point_sec wallet::next_block_production_time()const
    {
       fc::time_point_sec now = fc::time_point::now();
-      int64_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      int64_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
+      uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
 
       fc::time_point_sec next_time;
 
       auto sorted_delegates = my->_blockchain->get_delegates_by_vote();
-      for( uint32_t i = 0; i < sorted_delegates.size(); ++i )
+      for( unsigned i = 0; i < sorted_delegates.size(); ++i )
       {
          auto name_itr = my->_names.find( sorted_delegates[i] );
          if( name_itr != my->_names.end() )
