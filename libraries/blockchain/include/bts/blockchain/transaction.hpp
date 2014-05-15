@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
       fc::optional<name_id_type>       delegate_id; // delegate being voted for in required payouts
       std::vector<operation>           operations; 
 
-      void withdraw( const account_id_type& account, share_type amount );
+      void withdraw( const balance_id_type& account, share_type amount );
       void deposit( const address& addr, const asset& amount, name_id_type delegate_id );
       void reserve_name( const std::string& name, const std::string& json_data, const public_key_type& master, const public_key_type& active, bool as_delegate = false );
       void update_name( name_id_type name_id, const fc::optional<std::string>& json_data, const fc::optional<public_key_type>& active, bool as_delegate = false );
@@ -149,7 +149,7 @@ namespace bts { namespace blockchain {
          /** contains address funds were deposited into for use in
           * incrementing required_deposits balance
           */
-         void sub_balance( const account_id_type& addr, const asset& amount );
+         void sub_balance( const balance_id_type& addr, const asset& amount );
          void add_balance( const asset& amount );
          
          /** any time a balance is deposited increment the vote for the delegate,
@@ -172,8 +172,8 @@ namespace bts { namespace blockchain {
           *
           *  This balance cannot be negative without an error.
           */
-         std::unordered_map<account_id_type, asset>       required_deposits;
-         std::unordered_map<account_id_type, asset>       provided_deposits;
+         std::unordered_map<balance_id_type, asset>       required_deposits;
+         std::unordered_map<balance_id_type, asset>       provided_deposits;
 
          // track deposits and withdraws by asset type
          std::unordered_map<asset_id_type, asset>         deposits;

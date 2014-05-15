@@ -7,11 +7,9 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
    const uint8_t withdraw_option::type            = withdraw_option_type;
 
-   account_id_type withdraw_condition::get_account()const
+   balance_id_type withdraw_condition::get_address()const
    {
-      fc::sha512::encoder enc;
-      fc::raw::pack( enc, *this );
-      return account( enc.result() );
+      return address( *this );
    }
 } } // bts::blockchain
 

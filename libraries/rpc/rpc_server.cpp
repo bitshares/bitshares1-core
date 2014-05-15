@@ -792,7 +792,8 @@ Examples:
        if (params.size() >= 3)
          comment = params[2].as_string();
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
-       return fc::variant(_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
+       FC_ASSERT( !"not implemented" );
+       return fc::variant(); //_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
@@ -847,9 +848,10 @@ Examples:
       if (params.size() >= 3)
         comment = params[2].as_string();
       // TODO: we're currently ignoring optional 4, [to-comment]
-      bts::blockchain::signed_transaction trx = _client->get_wallet()->send_to_address( asset(amount,0), destination_address, comment);
-      _client->broadcast_transaction(trx);
-      return fc::variant( trx.id() );
+      FC_ASSERT( !"Not Implemented" );
+    //  bts::blockchain::signed_transaction trx = _client->get_wallet()->send_to_address( asset(amount,0), destination_address, comment);
+    //  _client->broadcast_transaction(trx);
+      return fc::variant();// trx.id() );
     }
 
     static rpc_server::method_data list_receive_addresses_metadata{"list_receive_addresses", nullptr,
@@ -896,7 +898,9 @@ Examples:
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
             /* params:          name     type     required */
-                              {{"asset", "unit",  false}},
+                              {{"account_name", "string",  false},
+                               {"minconf",      "int",    false},
+                               {"asset",        "int",    false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
 TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
@@ -933,10 +937,13 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::getbalance(const fc::variants& params)
     {
-      bts::blockchain::asset_id_type unit = 0;
-      if (params.size() == 1)
-        unit = params[0].as<bts::blockchain::asset_id_type>();
-      return fc::variant( _client->get_wallet()->get_balance( unit ) );
+      bts::blockchain::asset_id_type asset_id = 0;
+      std::string account_name = "*";
+      if (params.size() > 0 )
+        account_name = params[0].as_string();
+      if (params.size() == 3)
+        asset_id = params[2].as<bts::blockchain::asset_id_type>();
+      return fc::variant( _client->get_wallet()->get_balance( account_name, asset_id ) );
     }
 
     static rpc_server::method_data set_receive_address_memo_metadata{"set_receive_address_memo", nullptr,

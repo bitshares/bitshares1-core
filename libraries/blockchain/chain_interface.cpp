@@ -3,13 +3,13 @@
 #include <sstream>
 
 namespace bts{ namespace blockchain {
-   account_record::account_record( const address& owner, const asset& balance_arg, name_id_type delegate_id )
+   balance_record::balance_record( const address& owner, const asset& balance_arg, name_id_type delegate_id )
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
    /** returns 0 if asset id is not condition.asset_id */
-   asset     account_record::get_balance( asset_id_type id )const
+   asset     balance_record::get_balance( asset_id_type id )const
    {
       if( id != condition.asset_id ) return asset( 0, id );
       return asset( balance, id );

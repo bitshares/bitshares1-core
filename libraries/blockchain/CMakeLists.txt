@@ -6,7 +6,6 @@ file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 add_library( bts_blockchain
              extended_address.cpp
              address.cpp
-             account.cpp
              pts_address.cpp
              asset.cpp
              operations.cpp

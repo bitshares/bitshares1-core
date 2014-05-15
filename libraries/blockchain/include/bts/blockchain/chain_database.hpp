@@ -98,22 +98,22 @@ namespace bts { namespace blockchain {
          std::vector<name_record>     get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
 
          virtual void                 remove_asset_record( asset_id_type id )const;
-         virtual void                 remove_account_record( const account_id_type& id )const;
+         virtual void                 remove_balance_record( const balance_id_type& id )const;
          virtual void                 remove_name_record( name_id_type id )const;
 
          void    scan_assets( const std::function<void( const asset_record& )>& callback );
-         void    scan_accounts( const std::function<void( const account_record& )>& callback );
+         void    scan_balances( const std::function<void( const balance_record& )>& callback );
          void    scan_names( const std::function<void( const name_record& )>& callback );
 
          virtual oasset_record        get_asset_record( asset_id_type id )const;
-         virtual oaccount_record      get_account_record( const account_id_type& id )const;
+         virtual obalance_record      get_balance_record( const balance_id_type& id )const;
          virtual oname_record         get_name_record( name_id_type id )const;
                                                                                                  
          virtual oasset_record        get_asset_record( const std::string& symbol )const;
          virtual oname_record         get_name_record( const std::string& name )const;
                                                                                                  
          virtual void                 store_asset_record( const asset_record& r );
-         virtual void                 store_account_record( const account_record& r );
+         virtual void                 store_balance_record( const balance_record& r );
          virtual void                 store_name_record( const name_record& r );
          virtual void                 store_transaction_location( const transaction_id_type&,  
                                                                   const transaction_location& loc );

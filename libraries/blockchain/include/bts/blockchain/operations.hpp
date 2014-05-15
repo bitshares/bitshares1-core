@@ -73,11 +73,11 @@ namespace bts { namespace blockchain {
 
        withdraw_operation():amount(0){}
 
-       withdraw_operation( const account_id_type& id, share_type amount_arg )
-          :account_id(id),amount(amount_arg){}
+       withdraw_operation( const balance_id_type& id, share_type amount_arg )
+          :balance_id(id),amount(amount_arg){}
 
        /** the account to withdraw from */
-       account_id_type    account_id;
+       balance_id_type    balance_id;
        /** that amount to withdraw from the account*/
        share_type         amount;
        /** any data required by the claim_condition */
@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
    {
        static const operation_type_enum type; 
        /** owner is just the hash of the condition */
-       account_id_type                account_id()const;
+       balance_id_type                balance_id()const;
 
        deposit_operation():amount(0){}
        deposit_operation( const address& owner, const asset& amnt, name_id_type delegate_id );
@@ -172,7 +172,7 @@ namespace bts { namespace blockchain {
        static const operation_type_enum type; 
 
        asset_id_type    asset_id;
-       account_id_type  account_id;
+       balance_id_type  balance_id;
        share_type       amount;
    };
 
@@ -217,11 +217,11 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
-FC_REFLECT( bts::blockchain::withdraw_operation, (account_id)(amount)(claim_input_data) )
+FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_name_id)(maximum_share_supply) )
 FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_name_id) )
-FC_REFLECT( bts::blockchain::issue_asset_operation, (asset_id)(account_id)(amount) )
+FC_REFLECT( bts::blockchain::issue_asset_operation, (asset_id)(balance_id)(amount) )
 FC_REFLECT( bts::blockchain::reserve_name_operation, (name)(json_data)(owner_key)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::update_name_operation, (name_id)(json_data)(active_key)(is_delegate) )
 
