@@ -43,20 +43,6 @@ BOOST_AUTO_TEST_CASE( block_signing )
    }
 }
 
-BOOST_AUTO_TEST_CASE( account_serialization_test )
-{ 
-   try {
-   account a( fc::sha512::hash("hello",5) );
-   fc::variant t( a );
-   account b =  t.as<account>();
-   FC_ASSERT( a == b );
-   } 
-   catch ( fc::exception& e )
-   {
-      elog( "${e}", ("e",e.to_detail_string() ) );
-      throw;
-   }
-}
 
 BOOST_AUTO_TEST_CASE( wallet_test )
 {
@@ -123,15 +109,20 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          my_wallet.import_private_key( key );
       }
       my_wallet.scan_state();
+      ilog( "." );
       my_wallet.close();
+      ilog( "." );
       my_wallet.open( "my_wallet", "password" );
+      ilog( "." );
       my_wallet.unlock( "password" );
+      ilog( "." );
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance(0))
-               ("your",your_wallet.get_balance(0)) );
+               ("my",my_wallet.get_balance("*",0))
+               ("your",your_wallet.get_balance("*",0)) );
 
+      ilog( "." );
       share_type total_sent = 0;
       for( uint32_t i = 0; i < 8; ++i )
       {
@@ -150,22 +141,27 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          blockchain2->push_block( next_block );
 
          ilog( "my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance(0))
-               ("your",your_wallet.get_balance(0)) );
-         FC_ASSERT( total_sent == your_wallet.get_balance(0).amount, "",
-                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance(0).amount));
+               ("my",my_wallet.get_balance("*",0))
+               ("your",your_wallet.get_balance("*",0)) );
+         FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
+                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
          fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 0; t < 1; ++t )
          {
-            auto your_address = your_wallet.get_new_address("my-"+fc::to_string(t));
+            std::string your_account_name = "my-"+fc::to_string(t);
+            auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
+            my_wallet.create_sending_account( your_account_name, your_account );
             auto amnt = rand()%30000;
-            auto trx = my_wallet.send_to_address( asset( amnt ), your_address );
-            blockchain->store_pending_transaction( trx );
-            blockchain2->store_pending_transaction( trx );
+            auto invoice_sum = my_wallet.transfer( your_account_name, asset( amnt ) );
+            for( auto trx : invoice_sum.payments )
+            {
+               blockchain->store_pending_transaction( trx.second );
+               blockchain2->store_pending_transaction( trx.second );
+               ilog( "trx: ${trx}", ("trx",trx.second) );
+            }
             total_sent += amnt;
-            ilog( "trx: ${trx}", ("trx",trx) );
          }
 
       }

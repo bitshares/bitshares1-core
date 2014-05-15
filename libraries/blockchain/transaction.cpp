@@ -182,22 +182,24 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
    {
       FC_ASSERT( !!trx.delegate_id );
-      account_id_type account_id = withdraw_condition( withdraw_with_signature( owner_key ), amount.asset_id, *trx.delegate_id ).get_account();
+      balance_id_type balance_id = withdraw_condition( 
+                                       withdraw_with_signature( owner_key ), 
+                                       amount.asset_id, *trx.delegate_id ).get_address();
 
-      auto itr = required_deposits.find( account_id );
+      auto itr = required_deposits.find( balance_id );
       if( itr == required_deposits.end() )
       {
-         required_deposits[account_id] = amount;
+         required_deposits[balance_id] = amount;
       }
       else
       {
-         required_deposits[account_id] += amount;
+         required_deposits[balance_id] += amount;
       }
    }
 
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
-      oaccount_record arec = _current_state->get_account_record( op.account_id );
+      obalance_record arec = _current_state->get_balance_record( op.balance_id );
       if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
 
       switch( (withdraw_condition_types)arec->condition.condition )
@@ -261,7 +263,7 @@ namespace bts { namespace blockchain {
          sub_vote( arec->condition.delegate_id, op.amount );
 
       wlog( "store after withdraw ${r}", ("r",*arec) );
-      _current_state->store_account_record( *arec );
+      _current_state->store_balance_record( *arec );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::fail( bts_error_code error_code, const fc::variant& data )
@@ -272,25 +274,25 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_deposit( const deposit_operation& op )
    { try {
-       auto deposit_account_id = op.account_id();
+       auto deposit_balance_id = op.balance_id();
        auto delegate_record = _current_state->get_name_record( op.condition.delegate_id );
        if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
        if( !delegate_record->is_delegate ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
 
-       auto cur_record = _current_state->get_account_record( deposit_account_id );
+       auto cur_record = _current_state->get_balance_record( deposit_balance_id );
        if( !cur_record )
        {
-          cur_record = account_record( op.condition );
+          cur_record = balance_record( op.condition );
        }
        cur_record->last_update   = _current_state->timestamp();
        cur_record->balance       += op.amount;
 
-       sub_balance( deposit_account_id, asset(op.amount, cur_record->condition.asset_id) );
+       sub_balance( deposit_balance_id, asset(op.amount, cur_record->condition.asset_id) );
        
        if( cur_record->condition.asset_id == 0 ) 
           add_vote( cur_record->condition.delegate_id, op.amount );
 
-       _current_state->store_account_record( *cur_record );
+       _current_state->store_balance_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
 
@@ -315,12 +317,12 @@ namespace bts { namespace blockchain {
    /**
     *  
     */
-   void transaction_evaluation_state::sub_balance( const account_id_type& account_id, const asset& amount )
+   void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
    {
-      auto provided_deposit_itr = provided_deposits.find( account_id );
+      auto provided_deposit_itr = provided_deposits.find( balance_id );
       if( provided_deposit_itr == provided_deposits.end() )
       {
-         provided_deposits[account_id] = amount;
+         provided_deposits[balance_id] = amount;
       }
       else
       {
@@ -386,7 +388,7 @@ namespace bts { namespace blockchain {
       if( op.is_delegate )
       {
          // pay fee
-         sub_balance( account_id_type(), asset(_current_state->get_delegate_registration_fee()) );
+         sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
       }
 
       _current_state->store_name_record( new_record );
@@ -424,7 +426,7 @@ namespace bts { namespace blockchain {
 
       add_required_signature(issuer_name_record->active_key);
 
-      sub_balance( account_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
+      sub_balance( balance_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
 
       // TODO: verify that the json_data is properly formatted
       asset_record new_record;
@@ -489,7 +491,7 @@ namespace bts { namespace blockchain {
 
 
 
-   void transaction::withdraw( const account_id_type& account, share_type amount )
+   void transaction::withdraw( const balance_id_type& account, share_type amount )
    {
       operations.push_back( withdraw_operation( account, amount ) );
    }

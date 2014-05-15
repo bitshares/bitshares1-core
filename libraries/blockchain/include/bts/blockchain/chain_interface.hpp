@@ -8,16 +8,16 @@ namespace bts { namespace blockchain {
 
    /**
     */
-   struct account_record
+   struct balance_record
    {
-      account_record():balance(0){}
-      account_record( const withdraw_condition& c )
+      balance_record():balance(0){}
+      balance_record( const withdraw_condition& c )
       :balance(0),condition(c){}
 
-      account_record( const address& owner, const asset& balance, name_id_type delegate_id );
+      balance_record( const address& owner, const asset& balance, name_id_type delegate_id );
 
       /** condition.get_address() */
-      account_id_type            id()const { return condition.get_account(); }
+      balance_id_type            id()const { return condition.get_address(); }
       /** returns 0 if asset id is not condition.asset_id */
       asset                      get_balance( asset_id_type id )const;
 
@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
       withdraw_condition         condition;
       fc::time_point_sec         last_update;
    };
-   typedef fc::optional<account_record> oaccount_record;
+   typedef fc::optional<balance_record> obalance_record;
 
    struct asset_record
    {
@@ -83,7 +83,7 @@ namespace bts { namespace blockchain {
          virtual share_type            get_asset_registration_fee()const;
 
          virtual oasset_record         get_asset_record( asset_id_type id )const                    = 0;
-         virtual oaccount_record       get_account_record( const account_id_type& id )const         = 0;
+         virtual obalance_record       get_balance_record( const balance_id_type& id )const         = 0;
          virtual oname_record          get_name_record( name_id_type id )const                      = 0;
          virtual otransaction_location get_transaction_location( const transaction_id_type& )const  = 0;
 
@@ -91,7 +91,7 @@ namespace bts { namespace blockchain {
          virtual oname_record          get_name_record( const std::string& name )const             = 0;
 
          virtual void                  store_asset_record( const asset_record& r )                 = 0;
-         virtual void                  store_account_record( const account_record& r )             = 0;
+         virtual void                  store_balance_record( const balance_record& r )             = 0;
          virtual void                  store_name_record( const name_record& r )                   = 0;
          virtual void                  store_transaction_location( const transaction_id_type&,
                                                                    const transaction_location& loc ) = 0;
@@ -108,7 +108,7 @@ namespace bts { namespace blockchain {
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::account_record, (balance)(condition)(last_update) )
+FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(last_update) )
 FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees) )
 FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(votes_for)(votes_against)(is_delegate)(last_update)(delegate_pay_balance)

@@ -11,9 +11,9 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_name_operation::type   = update_name_op_type;
 
 
-   account_id_type  deposit_operation::account_id()const
+   balance_id_type  deposit_operation::balance_id()const
    {
-      return condition.get_account();
+      return condition.get_address();
    }
 
    deposit_operation::deposit_operation( const address& owner, 

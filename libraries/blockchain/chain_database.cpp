@@ -138,7 +138,7 @@ namespace bts { namespace blockchain {
 
 
             bts::db::level_map< asset_id_type, asset_record >                    _assets;
-            bts::db::level_map< account_id_type, account_record >                _accounts;
+            bts::db::level_map< balance_id_type, balance_record >                _balances;
             bts::db::level_map< name_id_type, name_record >                      _names;
 
             bts::db::level_map< std::string, name_id_type >                      _name_index;
@@ -479,7 +479,7 @@ namespace bts { namespace blockchain {
       my->_block_id_to_block.open( data_dir / "block_id_to_block", true );
       my->_assets.open( data_dir / "assets", true );
       my->_names.open( data_dir / "names", true );
-      my->_accounts.open( data_dir / "accounts", true );
+      my->_balances.open( data_dir / "balances", true );
 
       my->_name_index.open( data_dir / "name_index", true );
       my->_symbol_index.open( data_dir / "symbol_index", true );
@@ -533,7 +533,7 @@ namespace bts { namespace blockchain {
       my->_block_id_to_block.close();
       my->_assets.close();
       my->_names.close();
-      my->_accounts.close();
+      my->_balances.close();
 
       my->_name_index.close();
       my->_symbol_index.close();
@@ -666,12 +666,12 @@ namespace bts { namespace blockchain {
       return oasset_record();
    }
 
-   oaccount_record      chain_database::get_account_record( const account_id_type& account_id )const
+   obalance_record      chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
-      auto itr = my->_accounts.find( account_id );
+      auto itr = my->_balances.find( balance_id );
       if( itr.valid() )
          return itr.value();
-      return oaccount_record();
+      return obalance_record();
    }
 
    oname_record         chain_database::get_name_record( name_id_type name_id )const
@@ -695,15 +695,15 @@ namespace bts { namespace blockchain {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
 
-   void      chain_database::remove_account_record( const account_id_type& account_id )const
+   void      chain_database::remove_balance_record( const balance_id_type& balance_id )const
    { try {
       try {
-         my->_accounts.remove( account_id );
+         my->_balances.remove( balance_id );
       } catch ( const fc::exception& e )
       {
          wlog( "caught exception ${e}", ("e", e.to_detail_string() ) );
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_id",account_id) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("balance_id",balance_id) ) }
 
    void      chain_database::remove_name_record( name_id_type name_id )const
    { try {
@@ -745,9 +745,9 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
-   void chain_database::store_account_record( const account_record& r )
+   void chain_database::store_balance_record( const balance_record& r )
    { try {
-       my->_accounts.store( r.id(), r );
+       my->_balances.store( r.id(), r );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
@@ -819,13 +819,13 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void    chain_database::scan_accounts( const std::function<void( const account_record& )>& callback )
+   void    chain_database::scan_balances( const std::function<void( const balance_record& )>& callback )
    {
-        auto account_itr = my->_accounts.begin();
-        while( account_itr.valid() )
+        auto balances = my->_balances.begin();
+        while( balances.valid() )
         {
-           callback( account_itr.value() );
-           ++account_itr;
+           callback( balances.value() );
+           ++balances;
         }
    }
    void    chain_database::scan_names( const std::function<void( const name_record& )>& callback )
@@ -971,9 +971,9 @@ namespace bts { namespace blockchain {
       {
          for( uint32_t delegate_id = 1; delegate_id <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++delegate_id )
          {
-            account_record initial_balance( item.first,
+            balance_record initial_balance( item.first,
                                             asset( share_type( item.second * scale_factor), 0 ), delegate_id );
-            self->store_account_record( initial_balance );
+            self->store_balance_record( initial_balance );
          }
       }
    }

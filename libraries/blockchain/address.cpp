@@ -9,6 +9,9 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/pts_address.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
+
+#include <fc/io/raw.hpp>
 
 namespace bts {
   namespace blockchain {
@@ -20,13 +23,21 @@ namespace bts {
       std::vector<char> v = fc::from_base58( base58str.substr( strlen(BTS_ADDRESS_PREFIX) ) );
       memcpy( (char*)addr._hash, v.data(), std::min<size_t>( v.size()-4, sizeof(addr) ) );
    }
+   address::address( const withdraw_condition& condition )
+   {
+  //    uint32_t address_type = 1;
+      fc::sha512::encoder enc;
+      fc::raw::pack( enc, condition );
+  //    enc.write( (char*)&address_type, sizeof(address_type) );
+      addr = fc::ripemd160::hash( enc.result() );
+   }
 
    /**
     *  Validates checksum and length of base58 address
     *
     *  @return true if successful, throws an exception with reason if invalid.
     */
-   bool address::is_valid(const std::string& base58str )
+   bool address::is_valid( const std::string& base58str )
    { try {
       FC_ASSERT( base58str.size() > strlen(BTS_ADDRESS_PREFIX) ); // could probably increase from 10 to some min length
       FC_ASSERT( base58str.substr( 0, strlen(BTS_ADDRESS_PREFIX) ) == BTS_ADDRESS_PREFIX );

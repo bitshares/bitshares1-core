@@ -7,32 +7,32 @@ namespace bts { namespace blockchain {
    {
       public:
          pending_chain_state( chain_interface_ptr prev_state );
-         virtual ~pending_chain_state() override;
+         virtual ~pending_chain_state();
 
-         virtual fc::time_point_sec    timestamp()const override;
-         virtual int64_t               get_fee_rate()const override;
-         virtual int64_t               get_delegate_pay_rate()const override;
+         fc::time_point_sec           timestamp()const;
+         int64_t                      get_fee_rate()const;
+         int64_t                      get_delegate_pay_rate()const;
 
-         virtual oasset_record         get_asset_record( asset_id_type id )const override;
-         virtual oaccount_record       get_account_record( const account_id_type& id )const override;
-         virtual oname_record          get_name_record( name_id_type id )const override;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& )const override;
+         virtual oasset_record         get_asset_record( asset_id_type id )const;
+         virtual obalance_record       get_balance_record( const balance_id_type& id )const;
+         virtual oname_record          get_name_record( name_id_type id )const;
+         virtual otransaction_location get_transaction_location( const transaction_id_type& )const;
+                                      
+         virtual oasset_record        get_asset_record( const std::string& symbol )const;
+         virtual oname_record         get_name_record( const std::string& name )const;
+                                     
+         virtual void                 store_asset_record( const asset_record& r );
+         virtual void                 store_balance_record( const balance_record& r );
+         virtual void                 store_name_record( const name_record& r );
+         virtual void                 store_transaction_location( const transaction_id_type&,  
+                                                                  const transaction_location& loc );
+                                      
 
-         virtual oasset_record         get_asset_record( const std::string& symbol )const override;
-         virtual oname_record          get_name_record( const std::string& name )const override;
-
-         virtual void                  store_asset_record( const asset_record& r ) override;
-         virtual void                  store_account_record( const account_record& r ) override;
-         virtual void                  store_name_record( const name_record& r ) override;
-         virtual void                  store_transaction_location( const transaction_id_type&,
-                                                                  const transaction_location& loc ) override;
-
-
-         virtual asset_id_type         last_asset_id()const override;
-         virtual asset_id_type         new_asset_id() override;
-
-         virtual name_id_type          last_name_id()const override;
-         virtual name_id_type          new_name_id() override;
+         virtual asset_id_type        last_asset_id()const;
+         virtual asset_id_type        new_asset_id();
+                                      
+         virtual name_id_type         last_name_id()const;
+         virtual name_id_type         new_name_id();
 
          /**
           *  Based upon the current state of the database, calculate any updates that
@@ -58,14 +58,14 @@ namespace bts { namespace blockchain {
 
          std::unordered_map< asset_id_type,       asset_record>         assets;
          std::unordered_map< name_id_type,        name_record>          names;
-         std::unordered_map< account_id_type,     account_record>       accounts;
+         std::unordered_map< balance_id_type,     balance_record>       balances;
          std::unordered_map< std::string,         name_id_type>         name_id_index;
          std::unordered_map< std::string,         asset_id_type>        symbol_id_index;
          std::unordered_map< transaction_id_type, transaction_location> unique_transactions;
 
          asset_id_type                            new_asset_ids;
          asset_id_type                            new_name_ids;
-         std::vector<account_id_type>             new_accounts;
+         std::vector<balance_id_type>             new_balances;
 
          chain_interface_ptr _prev_state;
    };
@@ -75,5 +75,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-            (assets)(names)(accounts)(name_id_index)(symbol_id_index)(unique_transactions)
-            (new_asset_ids)(new_name_ids)(new_accounts) )
+            (assets)(names)(balances)(name_id_index)(symbol_id_index)(unique_transactions)
+            (new_asset_ids)(new_name_ids)(new_balances) )

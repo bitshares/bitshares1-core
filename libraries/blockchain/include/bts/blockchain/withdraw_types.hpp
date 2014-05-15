@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          return fc::raw::unpack<WithdrawType>(data);
       }
 
-      account_id_type get_account()const;
+      balance_id_type get_address()const;
 
       asset_id_type     asset_id;
       name_id_type      delegate_id;

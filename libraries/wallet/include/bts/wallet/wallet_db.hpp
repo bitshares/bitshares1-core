@@ -12,11 +12,11 @@ namespace bts { namespace wallet {
    enum wallet_record_type
    {
       master_key_record_type     = 0,
-      contact_record_type        = 1,
+      account_record_type        = 1,
       transaction_record_type    = 2,
       name_record_type           = 3,
       asset_record_type          = 4,
-      account_record_type        = 5,
+      balance_record_type        = 5,
       private_key_record_type    = 6,
       meta_record_type           = 7
    };
@@ -41,20 +41,20 @@ namespace bts { namespace wallet {
    };
 
 
-   struct hkey_index
+   struct address_index
    {
-      hkey_index( int32_t c = 0, int32_t t = 0, int32_t a = 0)
-         :contact_num(c),trx_num(t),address_num(a){}
+      address_index( int32_t c = 0, int32_t i = 0, int32_t p = 0)
+         :account_number(c),invoice_number(i),payment_number(p){}
 
-      int32_t contact_num;
-      int32_t trx_num;
-      int32_t address_num;
+      int32_t account_number;
+      int32_t invoice_number;
+      int32_t payment_number;
    };
 
    enum meta_record_property_enum
    {
       next_record_number,
-      last_contact_index,
+      last_account_number,
       default_transaction_fee,
       last_scanned_block_number
    };
@@ -75,33 +75,39 @@ namespace bts { namespace wallet {
        fc::variant                                       value;
    };
 
+   typedef int32_t invoice_index_type;
+   typedef int32_t payment_index_type;
+
    /**
     *  Contacts are tracked by the hash of their receive key
     */
-   struct wallet_contact_record
+   struct wallet_account_record
    {
        static const uint32_t type;
      
        int32_t               index;
-       int32_t               contact_num;
+       /**
+        *  Negitive account numbers are sending accounts for which we cannot generate
+        *  private keys.
+        */
+       int32_t               account_number;
        std::string           name;
 
-       hkey_index get_next_receive_key_index( uint32_t trx_num = 0 );
-       hkey_index get_next_send_key_index( uint32_t trx_num = 0 );
+       address_index get_next_key_index( uint32_t invoice_number = 0 );
 
-       /** helps facilitate key generation for transactions to/from this contact, 
-        * this is provided by the remote user so we can send them transactions
+       /**
+        *  For receive accounts this can be generated using account_number, for sending accounts
+        *  this must be provided by the 3rd party.
         */
-       extended_public_key                                                      extended_send_key;
+       extended_public_key                                                      extended_key;
 
-       /** used for receiving funds form this contact, local wallet should have the private key*/
-       extended_public_key                                                      extended_recv_key;
+       /**
+        *  return the last address generated for each invoice 
+        */
+       std::map< invoice_index_type, payment_index_type >                       last_payment_index;
 
-       std::map< uint32_t/*trx_num*/,uint32_t/*addr num*/ >                     last_send_hkey_index;
-       std::map<uint32_t/*trx_num*/,uint32_t/*addr num*/ >                      last_recv_hkey_index;
-
-       /** accounts with balances received from this contact sorted by asset_id */
-       std::unordered_map< asset_id_type, std::unordered_set<account_id_type> > accounts;
+       /** balances in the chain database */
+       std::unordered_map< asset_id_type, std::unordered_set<address> >         balances;
        std::unordered_set<transaction_id_type>                                  transaction_history;
    };
 
@@ -143,14 +149,14 @@ namespace bts { namespace wallet {
 
    };
 
-   struct wallet_account_record : public account_record
+   struct wallet_balance_record : public balance_record
    {
        static const uint32_t type;
 
-       wallet_account_record( int32_t idx, const account_record& rec )
-       :account_record( rec ), index( idx ){}
+       wallet_balance_record( int32_t idx, const balance_record& rec )
+       :balance_record( rec ), index( idx ){}
 
-       wallet_account_record():index(0){}
+       wallet_balance_record():index(0){}
 
        int32_t               index;
    };
@@ -173,7 +179,7 @@ namespace bts { namespace wallet {
    {
        static const uint32_t          type;
 
-       private_key_record():index(0),contact_index(0),extra_key_index(0){}
+       private_key_record():index(0),account_number(0),extra_key_index(0){}
        private_key_record( int32_t index, 
                            int32_t contact_idx, 
                            int32_t extra_index,
@@ -183,7 +189,7 @@ namespace bts { namespace wallet {
        fc::ecc::private_key get_private_key( const fc::sha512& password )const;
 
        int32_t                        index;
-       int32_t                        contact_index;
+       int32_t                        account_number;
        int32_t                        extra_key_index;
        std::vector<char>              encrypted_key;
    };
@@ -192,16 +198,16 @@ namespace bts { namespace wallet {
 
 FC_REFLECT_ENUM( bts::wallet::meta_record_property_enum,
                     (next_record_number)
-                    (last_contact_index)
+                    (last_account_number)
                     (default_transaction_fee)
                     (last_scanned_block_number)
                 )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type, 
                    (master_key_record_type)
-                   (contact_record_type)
-                   (transaction_record_type)
                    (account_record_type)
+                   (transaction_record_type)
+                   (balance_record_type)
                    (name_record_type)
                    (private_key_record_type)
                    (asset_record_type)
@@ -210,16 +216,14 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type,
 
 FC_REFLECT( bts::wallet::wallet_meta_record, (index)(key)(value) )
 FC_REFLECT( bts::wallet::wallet_record, (type)(json_data) )
-FC_REFLECT( bts::wallet::hkey_index, (contact_num)(trx_num)(address_num) )
-FC_REFLECT( bts::wallet::wallet_contact_record,
+FC_REFLECT( bts::wallet::address_index, (account_number)(invoice_number)(payment_number) )
+FC_REFLECT( bts::wallet::wallet_account_record,
             (index)
-            (contact_num)
+            (account_number)
             (name)
-            (extended_send_key)
-            (extended_recv_key)
-            (last_send_hkey_index)
-            (last_recv_hkey_index)
-            (accounts)
+            (extended_key)
+            (last_payment_index)
+            (balances)
             (transaction_history)
           )
 
@@ -232,11 +236,11 @@ FC_REFLECT( bts::wallet::wallet_transaction_record,
             (transmit_count)
           )
 
-FC_REFLECT_DERIVED( bts::wallet::wallet_asset_record, (bts::wallet::asset_record), (index) )
-FC_REFLECT_DERIVED( bts::wallet::wallet_account_record, (bts::wallet::account_record), (index) )
-FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::wallet::name_record), (index) )
+FC_REFLECT_DERIVED( bts::wallet::wallet_asset_record, (bts::blockchain::asset_record), (index) )
+FC_REFLECT_DERIVED( bts::wallet::wallet_balance_record, (bts::blockchain::balance_record), (index) )
+FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::blockchain::name_record), (index) )
 FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
-FC_REFLECT( bts::wallet::private_key_record,  (index)(contact_index)(extra_key_index)(encrypted_key) )
+FC_REFLECT( bts::wallet::private_key_record,  (index)(account_number)(extra_key_index)(encrypted_key) )
 
 namespace bts { namespace wallet {
        template<typename RecordType>

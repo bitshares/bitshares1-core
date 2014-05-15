@@ -11,6 +11,8 @@ namespace fc { namespace ecc {
 
 namespace bts { namespace blockchain {
 
+   struct withdraw_condition;
+
    /**
     *  @brief a 160 bit hash of a public key
     *
@@ -29,6 +31,7 @@ namespace bts { namespace blockchain {
        address( const fc::ecc::public_key& pub ); ///< converts to binary
        address( const fc::ecc::public_key_data& pub ); ///< converts to binary
        address( const pts_address& pub ); ///< converts to binary
+       address( const withdraw_condition& condition );
 
        static bool is_valid(const std::string& base58str );
        operator    std::string()const; ///< converts to base58 + checksum
