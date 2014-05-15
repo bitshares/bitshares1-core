@@ -149,12 +149,13 @@ namespace bts { namespace rpc {
                 if( fc::exists( filename ) )
                 {
                     FC_ASSERT( !fc::is_directory( filename ) );
-                    uint64_t file_size = fc::file_size( filename );
+                    uint64_t file_size_64 = fc::file_size( filename );
+                    FC_ASSERT(file_size_64 <= std::numeric_limits<size_t>::max());
+                    size_t file_size = (size_t)file_size_64;
                     FC_ASSERT( file_size != 0 );
-                    FC_ASSERT(file_size <= std::numeric_limits<size_t>::max());
 
                     fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
-                    fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
+                    fc::mapped_region mr( fm, fc::read_only, 0, file_size );
                     fc_ilog( fc::logger::get("rpc"), "Processing ${path}, size: ${size}", ("path",r.path)("size",file_size));
                     s.set_status( fc::http::reply::OK );
                     s.set_length( file_size );
@@ -169,10 +170,13 @@ namespace bts { namespace rpc {
                     fc_ilog( fc::logger::get("rpc"), "Not found ${path} (${file})", ("path",r.path)("file",filename));
                     filename = _config.htdocs / "404.html";
                     FC_ASSERT( !fc::is_directory( filename ) );
-                    auto file_size = fc::file_size( filename );
+                    uint64_t file_size_64 = fc::file_size( filename );
+                    FC_ASSERT(file_size_64 <= std::numeric_limits<size_t>::max());
+                    size_t file_size = (size_t)file_size_64;
                     FC_ASSERT( file_size != 0 );
+
                     fc::file_mapping fm( filename.generic_string().c_str(), fc::read_only );
-                    fc::mapped_region mr( fm, fc::read_only, 0, fc::file_size( filename ) );
+                    fc::mapped_region mr( fm, fc::read_only, 0, file_size );
                     s.set_status( fc::http::reply::NotFound );
                     s.set_length( file_size );
                     s.write( (const char*)mr.get_address(), mr.get_size() );
@@ -586,9 +590,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
-                                     /* params:          name                 type      required */
-                                                       {{"wallet_name",   "string", true},
-                                                        {"password",   "string", true} },
+                                     /* params:          name           type      required */
+                                                       {{"wallet_name", "string", true},
+                                                        {"password",    "string", true} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -1334,7 +1338,7 @@ Returns up to count reserved names that follow first alphabetically.
       if( params.size() > 0 )
          first = params[0].as_string();
       if( params.size() > 1 )
-         count = params[0].as<uint32_t>();
+         count = params[1].as<uint32_t>();
       return fc::variant(_client->get_chain()->get_names( first, count ) );
     }
 
@@ -1357,11 +1361,13 @@ Arguments:
 
     fc::variant rpc_server_impl::get_delegates(const fc::variants& params)
     {
-       int first = 0;
-       int count = 0;
-       if( params.size() > 0 ) first = params[0].as_int64();
-       if( params.size() > 1 ) first = params[1].as_int64();
-      return fc::variant(_client->get_chain()->get_delegates_by_vote(first,count) );
+      uint32_t first = 0;
+      uint32_t count = 0;
+      if( params.size() > 0 ) 
+        first = params[0].as<uint32_t>();
+      if( params.size() > 1 ) 
+        count = params[1].as<uint32_t>();
+      return fc::variant(_client->get_chain()->get_delegates_by_vote(first, count) );
     }
 
     static rpc_server::method_data getconnectioncount_metadata{"getconnectioncount", nullptr,

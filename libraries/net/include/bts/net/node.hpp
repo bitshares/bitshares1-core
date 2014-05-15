@@ -74,7 +74,7 @@ namespace bts { namespace net {
           *     &c.
           *   the last item in the list will be the hash of the most recent block on our preferred chain
           */
-         //virtual std::vector<item_hash_t> get_blockchain_synopsis() = 0;
+         virtual std::vector<item_hash_t> get_blockchain_synopsis() = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.
