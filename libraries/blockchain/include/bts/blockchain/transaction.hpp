@@ -45,6 +45,7 @@ namespace bts { namespace blockchain {
         std::string        address; 
         share_type         amount; 
       ///@}
+        asset_id_type      asset_id;
    };
 
    struct transaction_summary
@@ -55,19 +56,21 @@ namespace bts { namespace blockchain {
        *  Bitcoin compatibility 
        */
       ///@{ 
-      share_type                  amount;
-      uint32_t                    confirmations;
-      block_id_type               blockhash;
-      uint32_t                    blockindex;
-      fc::time_point_sec          blocktime;
-      transaction_id_type         txid;
-      fc::time_point_sec          time;
-      fc::time_point_sec          timereceived;
-      transaction_summary_details details;
+      share_type                                 amount;
+      uint32_t                                   confirmations;
+      block_id_type                              blockhash;
+      uint32_t                                   blockindex;
+      fc::time_point_sec                         blocktime;
+      transaction_id_type                        txid;
+      fc::time_point_sec                         time;
+      fc::time_point_sec                         timereceived;
+      std::vector<transaction_summary_details>   details;
+      std::vector<char>                          hex;
       ///@}
 
-      std::vector<asset>          fees;
-      std::vector<asset>          amounts;
+      std::vector<asset>                         fees;
+      std::vector<asset>                         amounts;
+      fc::variant                                json_data;
    };
 
 
@@ -232,6 +235,6 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (deposits)(withdraws)(balance)(net_delegate_votes)(balance) )
 
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
-FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount) )
-FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts) )
+FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount)(asset_id) )
+FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(json_data) )
 
