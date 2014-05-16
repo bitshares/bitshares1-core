@@ -25,6 +25,7 @@ programs/dns/p2p_server
 programs/kids/kids
 
 programs/utils/bts_create_key
+programs/utils/key_to_wif
 
 tests/blockchain_tests
 

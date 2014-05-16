@@ -175,8 +175,7 @@ namespace bts { namespace blockchain {
             _pending_transactions.remove( id );
          }
 
-         auto temp_pending_fee_index( _pending_fee_index );
-         for( auto pair : temp_pending_fee_index )
+         for( auto pair : _pending_fee_index )
          {
             auto fee_index = pair.first;
 
@@ -308,10 +307,10 @@ namespace bts { namespace blockchain {
       void chain_database_impl::verify_header( const full_block& block_data )
       { try {
             // validate preliminaries:
-            FC_ASSERT( block_data.block_num == _head_block_header.block_num+ 1 );
-            FC_ASSERT( block_data.previous  == _head_block_id   );
+            FC_ASSERT( block_data.block_num == _head_block_header.block_num + 1 );
+            FC_ASSERT( block_data.previous  == _head_block_id );
             FC_ASSERT( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
-            FC_ASSERT( block_data.timestamp >  _head_block_header.timestamp, "",
+            FC_ASSERT( block_data.timestamp > _head_block_header.timestamp, "",
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
             fc::time_point_sec now = fc::time_point::now();
             FC_ASSERT( block_data.timestamp <=  now,
@@ -337,21 +336,35 @@ namespace bts { namespace blockchain {
       }
 
       /**
-       *  A block should be produced every BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC, if we do not have
-       *  a block for any multiple of this interval beteen block_data and the current head block then
+       *  A block should be produced every BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC. If we do not have
+       *  a block for any multiple of this interval between block_data and the current head block then
        *  we need to lookup the delegates that should have produced a block at that interval and then
        *  increment their missed block count.
        *
-       *  Then we need to increment the produced_block count for the delegate that produced block_data
+       *  Then we need to increment the produced_block count for the delegate that produced block_data.
        *
-       *  You can find the delegate that should sign via get_signing_delegate_id( timestamp )
+       *  Note that the header of block_data has already been verified by the caller and that updates
+       *  are applied to pending_state.
        */
-      void chain_database_impl::update_delegate_production_info( const full_block& block_data, 
+      void chain_database_impl::update_delegate_production_info( const full_block& block_data,
                                                                  const pending_chain_state_ptr& pending_state )
       {
-         // Apply these updates to pending_state
-         // TODO: increment the blocks_produced for this delegate
-         // TODO: increment the blocks_missed for all missed time slots
+          auto timestamp = _head_block_header.timestamp;
+          do
+          {
+              timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+              auto delegate_id = self->get_signing_delegate_id( timestamp );
+              auto delegate_rec = pending_state->get_name_record( delegate_id );
+
+              if( timestamp != block_data.timestamp )
+                  delegate_rec->delegate_info->blocks_missed += 1;
+              else
+                  delegate_rec->delegate_info->blocks_produced += 1;
+
+              pending_state->store_name_record( *delegate_rec );
+          }
+          while( timestamp != block_data.timestamp );
       }
 
       /**
@@ -367,12 +380,12 @@ namespace bts { namespace blockchain {
             block_summary summary;
             summary.block_data = block_data;
 
-            // create a pending state to track changes that would apply as we evaluate the block
+            /* Create a pending state to track changes that would apply as we evaluate the block */
             pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(self->shared_from_this());
             summary.applied_changes = pending_state;
 
-            /** increment the blocks produced or missed for all delegates, this mus tbe done
-             * before applying transactions because it depends upon the current order 
+            /** Increment the blocks produced or missed for all delegates. This must be done
+             *  before applying transactions because it depends upon the current order.
              **/
             update_delegate_production_info( block_data, pending_state );
 
@@ -399,7 +412,7 @@ namespace bts { namespace blockchain {
             // TODO: verify that apply changes can be called any number of
             // times without changing the database other than the first
             // attempt.
-           // ilog( "apply changes\n${s}", ("s",fc::json::to_pretty_string( *pending_state) ) );
+            // ilog( "apply changes\n${s}", ("s",fc::json::to_pretty_string( *pending_state) ) );
             pending_state->apply_changes();
 
             mark_included( block_id, true );
@@ -577,8 +590,7 @@ namespace bts { namespace blockchain {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-
-   name_id_type          chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
+   name_id_type chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
    { try {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
@@ -590,14 +602,12 @@ namespace bts { namespace blockchain {
       return  sorted_delegates[delegate_pos];
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec",sec) ) }
 
-   fc::ecc::public_key  chain_database::get_signing_delegate_key( fc::time_point_sec sec )const
+   fc::ecc::public_key chain_database::get_signing_delegate_key( fc::time_point_sec sec )const
    { try {
       auto delegate_record = get_name_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
       return delegate_record->active_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec", sec) ) }
-
-
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
    { try {
