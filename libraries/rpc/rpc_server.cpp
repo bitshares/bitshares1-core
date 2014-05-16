@@ -384,7 +384,7 @@ namespace bts { namespace rpc {
               modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
             }
             else if (parameter.classification == rpc_server::optional_positional)
-            {
+            { 
               if (arguments_from_caller.size() > next_argument_index)
                 // the caller provided this optional argument
                 modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
@@ -961,9 +961,9 @@ As json rpc call
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
             /* params:          name                  type      classification                   default_value */
-                              {{"account_name",       "string", rpc_server::optional_positional, fc::variant("*")},
-                               {"minconf",            "int",    rpc_server::optional_positional, 0},
-                               {"asset",              "int",    rpc_server::optional_positional, 0}},
+                              {{"account_name",       "string", rpc_server::optional_positional, fc::ovariant(fc::variant("*"))},
+                               {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)},
+                               {"asset",              "int",    rpc_server::optional_positional, fc::variant(0)}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
 TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
@@ -1660,6 +1660,7 @@ Result:
     bool encountered_default_argument = false;
     bool encountered_optional_argument = false;
     bool encountered_named_argument = false;
+
     for (const rpc_server::parameter_data& parameter : method.parameters)
     {
       switch (parameter.classification)

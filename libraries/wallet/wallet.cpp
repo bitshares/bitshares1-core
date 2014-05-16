@@ -20,7 +20,8 @@ namespace bts { namespace wallet {
       class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
-            wallet_impl()
+            wallet_impl() :
+              _is_open(false)
             {
                // this effectively sets the maximum transaction size to 10KB without
                // custom code.  We will set this initial fee high while the network

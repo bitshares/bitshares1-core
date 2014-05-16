@@ -55,6 +55,27 @@ namespace bts { namespace rpc {
       std::string type;
       parameter_classification classification;
       fc::ovariant default_value;
+      parameter_data(const parameter_data& rhs) :
+        name(rhs.name),
+        type(rhs.type),
+        classification(rhs.classification),
+        default_value(rhs.default_value)
+      {}
+      parameter_data(const parameter_data&& rhs) :
+        name(std::move(rhs.name)),
+        type(std::move(rhs.type)),
+        classification(std::move(rhs.classification)),
+        default_value(std::move(rhs.default_value))
+      {}
+      parameter_data(std::string name,
+                     std::string type,
+                     parameter_classification classification,
+                     fc::ovariant default_value) :
+        name(name),
+        type(type),
+        classification(classification),
+        default_value(default_value)
+      {}
     };
 
     typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
