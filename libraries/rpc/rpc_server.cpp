@@ -55,6 +55,9 @@ namespace bts { namespace rpc {
              (blockchain_get_delegates)\
              (wallet_reserve_name)\
              (wallet_register_delegate)\
+             (wallet_set_delegate_trust_status)\
+             (wallet_get_delegate_trust_status)\
+             (wallet_list_delegate_trust_status)\
              (blockchain_get_names)\
              (network_get_peer_info)\
              (_set_advanced_node_parameters)\
@@ -220,7 +223,7 @@ namespace bts { namespace rpc {
                    method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
                    auto params_log = fc::json::to_string(rpc_call["params"]);
-                   if(method_name.find_first_of("wallet") != std::string::npos || method_name.find_first_of("priv") != std::string::npos)
+                   if(method_name.find("wallet") != std::string::npos || method_name.find("priv") != std::string::npos)
                        params_log = "***";
                    fc_ilog( fc::logger::get("rpc"), "Processing ${path} ${method} (${params})", ("path",r.path)("method",method_name)("params",params_log));
 
@@ -242,11 +245,11 @@ namespace bts { namespace rpc {
                           s.set_status( status );
                           result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
                       }
-                      ilog( "${e}", ("e",result) );
+                      //ilog( "${e}", ("e",result) );
                       auto reply = fc::json::to_string( result );
                       s.set_length( reply.size() );
                       s.write( reply.c_str(), reply.size() );
-                      auto reply_log = reply.size() > 100 ? reply.substr(0,99) + ".." :  reply;
+                      auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
                       fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
                       return status;
                    }
@@ -845,7 +848,7 @@ As json rpc call
                                {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
-                               {"asset_id",             "int",      rpc_server::optional_named,      0}},
+                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0) }},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )" };
@@ -1056,7 +1059,50 @@ As a json rpc call
        return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
     }
 
-    static rpc_server::method_data blockchain_get_transaction_metadata{"blockchain_get_transaction", nullptr,
+    static rpc_server::method_data wallet_set_delegate_trust_status_metadata{ "wallet_set_delegate_trust_status", nullptr,
+      /* description */ "Sets the trust level for a delegate",
+      /* returns: */    "bool",
+      /* params:          name          type       classification                   default_value */
+      { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() },
+      { "trust_level", "integer", rpc_server::required_positional, fc::ovariant() } },
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+      R"(
+returns false if delegate is not recognized
+     )" };
+    fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
+    {
+      _client->set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      return fc::variant();
+    }
+
+    static rpc_server::method_data wallet_get_delegate_trust_status_metadata{ "wallet_get_delegate_trust_status", nullptr,
+      /* description */ "Gets the trust level for a delegate",
+      /* returns: */    "delegate_trust_status",
+      /* params:          name          type       classification                   default_value */
+      { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() } },
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+      R"(
+returns false if delegate is not recognized
+     )" };
+    fc::variant rpc_server_impl::wallet_get_delegate_trust_status(const fc::variants& params)
+    {
+      return fc::variant(_client->get_delegate_trust_status(params[0].as_string()));
+    }
+
+    static rpc_server::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
+      /* description */ "List the trust status for delegates",
+      /* returns: */    "map<delegate_name,delegate_trust_status>",
+      /* params:          name          type       classification                   default_value */
+      { },
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+      R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
+    {
+      return fc::variant(_client->list_delegate_trust_status());
+    }
+
+    static rpc_server::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
             /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
             /* params:          name              type              classification                   default_value */

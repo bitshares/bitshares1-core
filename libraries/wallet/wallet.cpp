@@ -179,6 +179,9 @@ namespace bts { namespace wallet {
             std::unordered_map<address, address_index>                             _receive_keys;
             std::unordered_map<address, address_index>                             _sending_keys;
 
+            /** stores the user's trust level for delegates */
+            std::map<std::string, delegate_trust_status> _delegate_trust_status_map;
+
             std::string get_address_label( const address_index& idx )
             {
                auto account_itr = _accounts.find( idx.account_number );
@@ -1266,6 +1269,23 @@ namespace bts { namespace wallet {
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
+
+
+   //functions for reporting delegate trust status
+   void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
+   {
+     my->_delegate_trust_status_map[delegate_name] = delegate_trust_status{ trust_level };
+   }
+
+   delegate_trust_status wallet::get_delegate_trust_status( const std::string& delegate_name ) const
+   {
+     return my->_delegate_trust_status_map[delegate_name];
+   }
+
+   std::map<std::string, delegate_trust_status> wallet::list_delegate_trust_status() const
+   {
+     return my->_delegate_trust_status_map;
+   }
 
    bool wallet::is_receive_address( const address& addr )const
    {
