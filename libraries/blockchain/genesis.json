@@ -1,5 +1,6 @@
 const char* genesis_json = R"({
   "supply": 0,
+  "timestamp" : "20140501T000000",
   "balances": [[
       "PsZpGepfuzrp3P55pNBgxsPtZVph536EY6",
       1000

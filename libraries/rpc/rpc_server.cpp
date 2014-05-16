@@ -91,7 +91,7 @@ namespace bts { namespace rpc {
            help_string = method_data.name + " ";
            for (const rpc_server::parameter_data& parameter : method_data.parameters)
            {
-             if (parameter.required)
+             if (parameter.classification == rpc_server::required_positional)
                help_string += std::string("<") + parameter.name + std::string("> ");
              else
                help_string += std::string("[") + parameter.name + std::string("] ");
@@ -357,31 +357,68 @@ namespace bts { namespace rpc {
         }
 
         fc::variant dispatch_authenticated_method(const rpc_server::method_data& method_data,
-                                                  const fc::variants& arguments)
+                                                  const fc::variants& arguments_from_caller)
         {
-          // ilog( "arguments: ${params}", ("params",arguments) );
+          ilog("method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",arguments_from_caller));
           if (method_data.prerequisites & rpc_server::wallet_open)
             check_wallet_is_open();
           if (method_data.prerequisites & rpc_server::wallet_unlocked)
             check_wallet_unlocked();
           if (method_data.prerequisites & rpc_server::connected_to_network)
             check_connected_to_network();
-          if (arguments.size() > method_data.parameters.size())
-            FC_THROW_EXCEPTION(exception, "too many arguments (expected at most ${count})",
-                                          ("count", method_data.parameters.size()));
-          uint32_t required_argument_count = 0;
+          
+          fc::variants modified_positional_arguments;
+          fc::mutable_variant_object modified_named_arguments;
+
+          bool has_named_parameters = false;
+          unsigned next_argument_index = 0;
           for (const rpc_server::parameter_data& parameter : method_data.parameters)
           {
-            if (parameter.required)
-              ++required_argument_count;
-            else
-              break;
+            if (parameter.classification == rpc_server::required_positional)
+            {
+              if (arguments_from_caller.size() < next_argument_index + 1)
+                FC_THROW_EXCEPTION(exception, "missing required parameter ${parameter_name}", ("argument_name", parameter.name));
+              modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
+            }
+            else if (parameter.classification == rpc_server::optional_positional)
+            {
+              if (arguments_from_caller.size() > next_argument_index)
+                // the caller provided this optional argument
+                modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
+              else if (parameter.default_value)
+                // we have a default value for this paramter, use it
+                modified_positional_arguments.push_back(*parameter.default_value);
+              else
+                // missing optional parameter with no default value, stop processing
+                break;
+            }
+            else if (parameter.classification == rpc_server::optional_named)
+            {
+              has_named_parameters = true;
+              if (arguments_from_caller.size() > next_argument_index)
+              {
+                // user provided a map of named arguments.  If the user gave a value for this argument,
+                // take it, else use our default value
+                fc::variant_object named_parameters_from_caller = arguments_from_caller[next_argument_index].get_object();
+                if (named_parameters_from_caller.contains(parameter.name.c_str()))
+                  modified_named_arguments[parameter.name.c_str()] = named_parameters_from_caller[parameter.name.c_str()];
+                else if (parameter.default_value)
+                  modified_named_arguments[parameter.name.c_str()] = *parameter.default_value;
+              }
+              else if (parameter.default_value)
+              {
+                // caller didn't provide any map of named parameters, just use our default values
+                modified_named_arguments[parameter.name.c_str()] = *parameter.default_value;
+              }
+            }
           }
-          if (arguments.size() < required_argument_count)
-            FC_THROW_EXCEPTION(exception, "too few arguments (expected at least ${count})", ("count", required_argument_count));
 
-          auto result = method_data.method(arguments);
+          if (has_named_parameters)
+            modified_positional_arguments.push_back(modified_named_arguments);
 
+          ilog("After processing: method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",modified_positional_arguments));
+
+          fc::variant result = method_data.method(modified_positional_arguments);
 
           return result;
         }
@@ -451,7 +488,8 @@ namespace bts { namespace rpc {
     static rpc_server::method_data help_metadata{"help", nullptr,
         /* description */ "Lists commands or detailed help for specified command.",
         /* returns: */    "bool",
-        /* params:     */{ { "command", "string", false } },
+        /* params:          name       type      classification                   default value */
+                         {{ "command", "string", rpc_server::optional_positional, fc::ovariant() } },
       /* prerequisites */ rpc_server::no_prerequisites,
       R"(
 Arguments:
@@ -524,8 +562,8 @@ Result:
     static rpc_server::method_data blockchain_get_blockhash_metadata{"blockchain_get_blockhash", nullptr,
                                      /* description */ "Returns hash of block in best-block-chain at index provided..",
                                      /* returns: */    "block_id_type",
-                                     /* params:          name                 type      required */
-                                                       { {"block_num", "int", true} },
+                                     /* params:          name         type   classification                   default value */
+                                                       {{"block_num", "int", rpc_server::required_positional, fc::ovariant()} },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
 Arguments:
@@ -547,8 +585,7 @@ Examples:
     static rpc_server::method_data blockchain_get_blockcount_metadata{"blockchain_get_blockcount", nullptr,
                                      /* description */ "Returns the number of blocks in the longest block chain.",
                                      /* returns: */    "int",
-                                     /* params:          name                 type      required */
-                                                       { },
+                                     /* params:  */    { },
                                    /* prerequisites */ rpc_server::no_prerequisites,
          R"(
 Result:
@@ -567,9 +604,9 @@ Examples:
     static rpc_server::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
                                      /* description */ "Opens the wallet at the given path.",
                                      /* returns: */    "bool",
-                                     /* params:          name                 type      required */
-                                                       {{"wallet_name",   "path", true},
-                                                        {"password",      "string", true} },
+                                     /* params:          name             type      classification                   default value */
+                                                       {{"wallet_file",   "path",   rpc_server::required_positional, fc::ovariant()},
+                                                        {"password",      "string", rpc_server::required_positional, fc::ovariant()} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -597,9 +634,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
-                                     /* params:          name           type      required */
-                                                       {{"wallet_name", "string", true},
-                                                        {"password",    "string", true} },
+                                     /* params:          name             type      classification                   default value */
+                                                       {{"wallet_name",   "string", rpc_server::required_positional, fc::ovariant()},
+                                                        {"password",      "string", rpc_server::required_positional, fc::ovariant()} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -626,9 +663,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
                                      /* description */ "Opens the wallet of the given name",
                                      /* returns: */    "bool",
-                                     /* params:          name           type      required */
-                                                       {{"wallet_name", "string", true},
-                                                        {"password",    "string", true} },
+                                     /* params:          name             type      classification                   default value */
+                                                       {{"wallet_name",   "string", rpc_server::required_positional, fc::ovariant()},
+                                                        {"password",      "string", rpc_server::required_positional, fc::ovariant()} },
                                    /* prerequisites */ rpc_server::json_authenticated,
 								   R"(
 Wallets exist in the wallet data directory
@@ -688,9 +725,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
           /* returns: */    "void",
-          /* params:          name                   type      required */
-                            {{"spending_pass",       "string", true},
-                             {"timeout",             "int",    true} },
+          /* params:          name             type      classification                   default value */
+                            {{"spending_pass", "string", rpc_server::required_positional, fc::ovariant()},
+                             {"timeout",       "int",    rpc_server::required_positional, fc::ovariant()} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
 Stores the wallet decryption key in memory for 'timeout' seconds.
@@ -719,7 +756,7 @@ As json rpc call
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
        std::string passphrase = params[0].as_string();
-       uint32_t timeout_sec = (uint32_t)params[1].as_uint64();
+       uint32_t timeout_sec = params[1].as<uint32_t>();
        try
        {
          _client->get_wallet()->unlock(passphrase, fc::seconds(timeout_sec));
@@ -734,8 +771,8 @@ As json rpc call
     static rpc_server::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
             /* description */ "Add new account for receiving payments",
             /* returns: */    "extended_address",
-            /* params:          name       type       required */
-                              {{"account_name", "string", true} },
+            /* params:          name             type      classification                   default value */
+                              {{"account_name", "string",  rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
      )"};
@@ -748,9 +785,9 @@ As json rpc call
     static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
             /* description */ "Add new account for sending payments",
             /* returns: */    "null",
-            /* params:          name       type       required */
-                              {{"account_name", "string", true} ,
-                               {"account_key", "extended_address", true} },
+            /* params:          name             type                classification                   default value */
+                              {{"account_name",  "string",           rpc_server::required_positional, fc::ovariant()},
+                               {"account_key",   "extended_address", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
      )"};
@@ -766,11 +803,11 @@ As json rpc call
     static rpc_server::method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", nullptr,
           /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
           /* returns: */    "signed_transaction",
-          /* params:          name          type       required */
-                            {{"to_address", "address", true},
-                              {"amount",     "int64",   true},
-                              {"comment",    "string",  false},
-                              {"to_comment", "string",  false}},
+          /* params:          name             type        classification                   default value */
+                            {{"to_address",    "address",  rpc_server::required_positional, fc::ovariant()},
+                             {"amount",        "int64",    rpc_server::required_positional, fc::ovariant()},
+                             {"comment",       "string",   rpc_server::optional_positional, fc::variant("")},
+                             {"to_comment",    "string",   rpc_server::optional_positional, fc::variant("")}},
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
         R"(
      )" };
@@ -779,19 +816,17 @@ As json rpc call
        bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
        ilog( "destination: ${d}", ("d",destination_address) );
        auto amount = params[1].as<int64_t>();
-       std::string comment;
-       if (params.size() >= 3)
-         comment = params[2].as_string();
+       std::string comment = params[2].as_string();
        // TODO: we're currently ignoring optional parameter 4, [to-comment]
-       FC_ASSERT( !"not implemented" );
+       FC_ASSERT(false, "not implemented");
        return fc::variant(); //_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
-            /* params:          name                  type                   required */
-                              {{"signed_transaction", "signed_transaction",  true}},
+            /* params:          name                  type                   classification                   default_value */
+                              {{"signed_transaction", "signed_transaction",  rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network,
           R"(
      )" };
@@ -805,13 +840,12 @@ As json rpc call
     static rpc_server::method_data wallet_transfer_metadata{"wallet_transfer", nullptr,
             /* description */ "Sends given amount to the given address, assumes shares in DAC",
             /* returns: */    "invoice_summary",
-            /* params:          name          type       required */
-                              { {"amount",                 "int64",  true  },
-                                {"sending_account_name",   "string", true  },
-                                {"opt.invoice_memo",       "string", false },
-                                {"opt.from_account",       "string", false },
-                                {"opt.asset_id",           "int",    false }
-                              },
+            /* params:          name                    type        classification                   default value */
+                              {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
+                               {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")},
+                               {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
+                               {"asset_id",             "int",      rpc_server::optional_named,      0}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )" };
@@ -819,20 +853,11 @@ As json rpc call
     {
        auto          amount     = params[0].as_int64();
        std::string   to_account = params[1].as_string();
-       asset_id_type asset_id   = 0;
-       std::string from_account = "*";
-       std::string invoice_memo = "";
-       if( params.size() == 3 )
-       {
-        auto        optional_params = params[0].get_object();
-        if( optional_params.contains( "invoice_memo" ) )
-           invoice_memo = optional_params["invoice_memo"].as_string();
-        if( optional_params.contains( "from_account" ) )
-           from_account = optional_params["from_account"].as_string();
-        if( optional_params.contains( "asset_id" ) )
-           asset_id = optional_params["asset_id"].as_int64();
-       }
-       auto summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
+       fc::variant_object named_params = params[2].get_object();
+       asset_id_type asset_id = named_params["asset_id"].as<asset_id_type>();
+       std::string from_account = named_params["from_account"].as_string();
+       std::string invoice_memo = named_params["invoice_memo"].as_string();
+       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
        for( auto trx : summary.payments )
           _client->broadcast_transaction( trx.second );
        return fc::variant(summary);
@@ -842,18 +867,16 @@ As json rpc call
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
-            /* params:     */ { {"start", "int", false},
-                                {"count", "int", false} },
+            /* params:          name     type    classification                   default value */
+                              {{"start", "int",  rpc_server::optional_positional, 0},
+                               {"count", "int",  rpc_server::optional_positional, -1}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_sending_accounts(const fc::variants& params)
     {  try {
-      int32_t start = 0;
-      uint32_t count = -1;
-      if( params.size() > 0 ) start = params[0].as_int64();
-      if( params.size() > 1 ) count = params[1].as_int64();
-
+      int32_t start = params[0].as<int32_t>();
+      uint32_t count = params[1].as<uint32_t>();
       auto accounts = _client->get_wallet()->list_sending_accounts(start,count);
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
@@ -861,16 +884,14 @@ As json rpc call
     static rpc_server::method_data wallet_list_reserved_names_metadata{"wallet_list_reserved_names", nullptr,
             /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
             /* returns: */    "vector<name_record>",
-            /* params:     */ { {"account_name", "string", false},
-                              },
+            /* params:          name            type       classification                   default value */
+                              {{"account_name", "string",  rpc_server::optional_positional, fc::variant("*")}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_reserved_names(const fc::variants& params)
     {  try {
-      std::string account_name = "*";
-      if( params.size() > 0 ) account_name = params[0].as_string();
-
+      std::string account_name = params[0].as_string();
       auto names = _client->get_wallet()->names(account_name); 
       std::vector<name_record> name_records;
       name_records.reserve(names.size());
@@ -882,9 +903,9 @@ As json rpc call
     static rpc_server::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
             /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
             /* returns: */    "vector<name_record>",
-            /* params:     */ { {"current_account_name", "string", true},
-                                {"new_account_name", "string", true},
-                              },
+            /* params:          name                    type       classification                   default value */
+                              {{"current_account_name", "string",  rpc_server::required_positional, fc::ovariant()},
+                               {"new_account_name",     "string",  rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
              Note: new_account_name must be unique or this call will throw an exception.
@@ -901,18 +922,16 @@ As json rpc call
     static rpc_server::method_data wallet_list_receive_accounts_metadata{"wallet_list_receive_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
-            /* params:     */ { {"start", "int", false},
-                                {"count", "int", false} },
+            /* params:          name     type    classification                   default value */
+                              {{"start", "int",  rpc_server::optional_positional, 0},
+                               {"count", "int",  rpc_server::optional_positional, -1}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_receive_accounts(const fc::variants& params)
     {  try {
-      int32_t start = 0;
-      uint32_t count = -1;
-      if( params.size() > 0 ) start = params[0].as_int64();
-      if( params.size() > 1 ) count = params[1].as_int64();
-
+      int32_t start = params[0].as<int32_t>();
+      uint32_t count = params[1].as<uint32_t>();
       auto accounts = _client->get_wallet()->list_receive_accounts(start,count);
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
@@ -920,8 +939,8 @@ As json rpc call
     static rpc_server::method_data wallet_get_account_metadata{"wallet_get_account", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "account_record",
-            /* params:     */ { {"account_name", "string", true}
-                                 },
+            /* params:          name                  type                   classification                   default_value */
+                              {{"account_name",       "string",              rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
@@ -938,10 +957,10 @@ As json rpc call
     static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
-            /* params:          name     type     required */
-                              {{"account_name", "string",  false},
-                               {"minconf",      "int",    false},
-                               {"asset",        "int",    false}},
+            /* params:          name                  type      classification                   default_value */
+                              {{"account_name",       "string", rpc_server::optional_positional, fc::variant("*")},
+                               {"minconf",            "int",    rpc_server::optional_positional, 0},
+                               {"asset",              "int",    rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
 TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
@@ -978,12 +997,8 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
-      bts::blockchain::asset_id_type asset_id = 0;
-      std::string account_name = "*";
-      if (params.size() > 0 )
-        account_name = params[0].as_string();
-      if (params.size() == 3)
-        asset_id = params[2].as<bts::blockchain::asset_id_type>();
+      std::string account_name = params[0].as_string();;
+      bts::blockchain::asset_id_type asset_id = params[2].as<asset_id_type>();
       return fc::variant( _client->get_wallet()->get_balance( account_name, asset_id ) );
     }
 
@@ -991,25 +1006,22 @@ As a json rpc call
     static rpc_server::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet.",
             /* returns: */    "std::vector<transaction_state>",
-            /* params:          name     type     required */
-                              {{"count", "unsigned",  false}},
+            /* params:          name     type      classification                   default_value */
+                              {{"count", "int",    rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_get_transaction_history(const fc::variants& params)
     {
-      unsigned count = 0; // TODO implement count
-      if (params.size() == 1)
-          count = params[0].as<unsigned>();
-
+      unsigned count = params[0].as<unsigned>(); // TODO implement count
       return fc::variant( _client->get_wallet()->transactions() );
     }
 
     static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
-            /* params:          name              type               required */
-                             {{"name",          "string",            true}},
+            /* params:          name          type      classification                   default_value */
+                              {{"name",       "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
@@ -1020,9 +1032,9 @@ As a json rpc call
     static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
-            /* params:          name              type               required */
-                             {{"name",          "string",            true},
-                              {"data",          "variant",           true}},
+            /* params:          name          type       classification                   default_value */
+                              {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
+                               {"data",       "variant", rpc_server::required_positional, fc::ovariant()}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
      )" };
@@ -1033,9 +1045,9 @@ As a json rpc call
     static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
             /* description */ "Registeres a delegate to be voted upon by shareholders.",
             /* returns: */    "name_record",
-            /* params:          name              type               required */
-                             {{"name",          "string",            true},
-                              {"data",          "variant",           true}},
+            /* params:          name          type       classification                   default_value */
+                              {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
+                               {"data",       "variant", rpc_server::required_positional, fc::ovariant()}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
      )" };
@@ -1047,8 +1059,8 @@ As a json rpc call
     static rpc_server::method_data blockchain_get_transaction_metadata{"blockchain_get_transaction", nullptr,
             /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
-            /* params:          name              type               required */
-                              {{"transaction_id", "transaction_id",  true}},
+            /* params:          name              type              classification                   default_value */
+                              {{"transaction_id", "transaction_id", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
 Arguments:
@@ -1088,8 +1100,8 @@ bExamples
     static rpc_server::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
             /* description */ "Retrieves the block header for the given block hash",
             /* returns: */    "block_header",
-            /* params:          name              type        required */
-                              {{"block_hash",   "block_id_type", true}},
+            /* params:          name              type             classification                   default_value */
+                              {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
 blockchain_get_block "hash" ( verbose )
@@ -1136,8 +1148,8 @@ Examples:
     static rpc_server::method_data blockchain_get_block_by_number_metadata{"blockchain_get_block_by_number", nullptr,
                                    /* description */ "Retrieves the block header for the given block number",
                                    /* returns: */    "block_header",
-                                   /* params:          name              type        required */
-                                                     {{"block_number",   "int32", true}},
+                                   /* params:          name              type     classification                   default_value */
+                                                     {{"block_number",   "int32", rpc_server::required_positional, fc::ovariant()}},
                                  /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::blockchain_get_block_by_number(const fc::variants& params)
     { try {
@@ -1147,8 +1159,8 @@ Examples:
     static rpc_server::method_data validate_address_metadata{"validate_address", nullptr,
             /* description */ "Return information about given BitShares address.",
             /* returns: */    "bool",
-            /* params:          name              type       required */
-                              {{"address",        "address", true}},
+            /* params:          name              type       classification                   default_value */
+                              {{"address",        "address", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
 TODO: bitcoin supports all below info
@@ -1185,17 +1197,15 @@ Examples:
     static rpc_server::method_data wallet_rescan_blockchain_metadata{"wallet_rescan_blockchain", nullptr,
             /* description */ "Rescan the block chain from the given block",
             /* returns: */    "bool",
-            /* params:          name              type    required */
-                              {{"starting_block", "bool", false}},
+            /* params:          name              type   classification                   default_value */
+                              {{"starting_block", "int", rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_rescan_blockchain(const fc::variants& params)
     {
-      uint32_t block_num = 0;
-      if (params.size() == 1)
-        block_num = (uint32_t)params[0].as_int64();
-      _client->get_wallet()->scan_chain( block_num);
+      uint32_t block_num = params[0].as<uint32_t>();;
+      _client->get_wallet()->scan_chain(block_num);
       return fc::variant(true);
     }
 
@@ -1216,9 +1226,9 @@ Examples:
     static rpc_server::method_data wallet_import_bitcoin_metadata{"wallet_import_bitcoin", nullptr,
             /* description */ "Import a BTC/PTS wallet",
             /* returns: */    "bool",
-            /* params:          name               type       required */
-                              {{"filename", "string",  true},
-                              {"password", "string",  false}},
+            /* params:          name        type      classification                   default_value */
+                              {{"filename", "path",   rpc_server::required_positional, fc::ovariant()},
+                               {"password", "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
@@ -1235,10 +1245,10 @@ Examples:
     static rpc_server::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
             /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
             /* returns: */    "bool",
-            /* params:          name           type            required */
-                              {{"key",             "private_key",  true},
-                                {"account_name",   "string",       false},
-                                {"wallet_rescan_blockchain",         "bool",         false}},
+            /* params:          name                        type           classification                   default_value */
+                              {{"key",                      "private_key", rpc_server::required_positional, fc::ovariant()},
+                               {"account_name",             "string",      rpc_server::optional_positional, fc::variant("default")},
+                               {"wallet_rescan_blockchain", "bool",        rpc_server::optional_positional, false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
 wallet_import_private_key "bitcoinprivkey" ( "account" wallet_rescan_blockchain "address_label")
@@ -1268,12 +1278,10 @@ As a json rpc call
     fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
     {
       auto wif   =  params[0].as_string();
-      auto label =  params[1].as_string();
-      bool wallet_rescan_blockchain = false;
-      if (params.size() == 3 && params[2].as_bool())
-        wallet_rescan_blockchain = true;
+      std::string account_name = params[1].as_string();
+      bool wallet_rescan_blockchain = params[2].as_bool();
 
-      _client->get_wallet()->import_wif_private_key(wif, label);
+      _client->get_wallet()->import_wif_private_key(wif, account_name);
 
       if (wallet_rescan_blockchain)
           _client->get_wallet()->scan_chain(0);
@@ -1284,8 +1292,9 @@ As a json rpc call
     static rpc_server::method_data blockchain_get_names_metadata{"blockchain_get_names", nullptr,
             /* description */ "Returns the list of reserved names sorted alphabetically",
             /* returns: */    "vector<name_record>",
-            /* params:     */ { {"first", "string", false},
-                                {"count", "int", false} },
+            /* params:          name     type      classification                   default value */
+                              {{"first", "string", rpc_server::optional_positional, fc::variant("")},
+                               {"count", "int",    rpc_server::optional_positional, -1}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
 blockchain_get_names (first, count)
@@ -1294,20 +1303,17 @@ Returns up to count reserved names that follow first alphabetically.
              )" };
     fc::variant rpc_server_impl::blockchain_get_names(const fc::variants& params)
     {
-      std::string first;
-      uint32_t count = uint32_t(-1);
-      if( params.size() > 0 )
-         first = params[0].as_string();
-      if( params.size() > 1 )
-         count = params[1].as<uint32_t>();
+      std::string first = params[0].as_string();
+      uint32_t count = params[1].as<uint32_t>();
       return fc::variant(_client->get_chain()->get_names( first, count ) );
     }
 
     static rpc_server::method_data blockchain_get_delegates_metadata{"blockchain_get_delegates", nullptr,
             /* description */ "Returns the list of delegates sorted by vote",
             /* returns: */    "vector<name_record>",
-            /* params:     */ { {"first", "int", false},
-                                {"count", "int", false} },
+            /* params:          name     type      classification                   default value */
+                              {{"first", "int",    rpc_server::optional_positional, 0},
+                               {"count", "int",    rpc_server::optional_positional, -1}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
 blockchain_get_delegates (start, count)
@@ -1322,12 +1328,8 @@ Arguments:
 
     fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
     {
-      uint32_t first = 0;
-      uint32_t count = -1;
-      if( params.size() > 0 ) 
-        first = params[0].as<uint32_t>();
-      if( params.size() > 1 ) 
-        count = params[1].as<uint32_t>();
+      uint32_t first = params[0].as<uint32_t>();;
+      uint32_t count = params[1].as<uint32_t>();
       auto delegates = _client->get_chain()->get_delegates_by_vote(first, count);
       std::vector<name_record> delegate_records;
       delegate_records.reserve( delegates.size() );
@@ -1400,7 +1402,8 @@ Examples:
     static rpc_server::method_data _set_advanced_node_parameters_metadata{"_set_advanced_node_parameters", nullptr,
             /* description */ "Sets advanced node parameters, used for setting up automated tests",
             /* returns: */    "null",
-            /* params:     */ { {"params", "jsonobject", true} },
+            /* params:          name      type         classification                   default value */
+                              {{"params", "jsonobject",rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
   R"(
 Result:
@@ -1415,9 +1418,9 @@ null
     static rpc_server::method_data network_add_node_metadata{"network_add_node", nullptr,
             /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
             /* returns: */    "null",
-            /* params:          name            type            required */
-                              {{"node",         "string",       true},
-                               {"command",      "string",       true}},
+            /* params:          name      type       classification                   default value */
+                              {{"node",   "string",  rpc_server::required_positional, fc::ovariant()},
+                               {"command","string",  rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
 network_add_node "node" "add|remove|onetry"
@@ -1458,8 +1461,8 @@ Stop BitShares server.
     static rpc_server::method_data _get_transaction_propagation_data_metadata{"_get_transaction_propagation_data", nullptr,
             /* description */ "Returns the time the transaction was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
-            /* params:          name              type               required */
-                              {{"transaction_id", "transaction_id",  true}},
+            /* params:          name              type             classification                   default value */
+                              {{"transaction_id", "transaction_id",rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
 _get_transaction_propagation_data <transaction_id>
@@ -1478,8 +1481,8 @@ in our test network.
     static rpc_server::method_data _get_block_propagation_data_metadata{"_get_block_propagation_data", nullptr,
             /* description */ "Returns the time the block was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
-            /* params:          name              type        required */
-                              {{"block_hash",   "block_id_type", true}},
+            /* params:          name              type             classification                   default value */
+                              {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
 _get_block_propagation_data <block_hash>
@@ -1606,8 +1609,42 @@ Result:
     FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
   }
 
+  void rpc_server::validate_method_data(method_data method)
+  {
+    bool encountered_default_argument = false;
+    bool encountered_optional_argument = false;
+    bool encountered_named_argument = false;
+    for (const rpc_server::parameter_data& parameter : method.parameters)
+    {
+      switch (parameter.classification)
+      {
+      case rpc_server::required_positional:
+        // can't have any required arguments after an optional argument
+        assert(!encountered_optional_argument);
+        // required arguments can't have a default value
+        assert(!parameter.default_value);
+        break;
+      case rpc_server::optional_positional:
+        // can't have any positional optional arguments after a named argument
+        assert(!encountered_named_argument);
+        // if previous arguments have a default value, this one must too
+        if (encountered_default_argument)
+          assert(parameter.default_value);
+        encountered_optional_argument = true;
+        if (parameter.default_value)
+          encountered_default_argument = true;
+        break;
+      case rpc_server::optional_named:
+        encountered_optional_argument = true;
+        encountered_named_argument = true;
+        break;
+      }
+    }
+  }
+
   void rpc_server::register_method(method_data data)
   {
+    validate_method_data(data);
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 

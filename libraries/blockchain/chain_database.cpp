@@ -111,6 +111,7 @@ namespace bts { namespace blockchain {
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
 
+            void update_delegate_production_info( const full_block& block_data, const pending_chain_state_ptr& pending_state );
 
             chain_database*                                           self;
             chain_observer*                                           _observer;
@@ -281,7 +282,8 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_name_record( self->get_signing_delegate_id( time_slot ) );
             FC_ASSERT( !!delegate_record );
-            delegate_record->delegate_pay_balance += amount;
+            FC_ASSERT( delegate_record->is_delegate() );
+            delegate_record->delegate_info->pay_balance += amount;
             pending_state->store_name_record( *delegate_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }
 
@@ -335,6 +337,24 @@ namespace bts { namespace blockchain {
       }
 
       /**
+       *  A block should be produced every BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC, if we do not have
+       *  a block for any multiple of this interval beteen block_data and the current head block then
+       *  we need to lookup the delegates that should have produced a block at that interval and then
+       *  increment their missed block count.
+       *
+       *  Then we need to increment the produced_block count for the delegate that produced block_data
+       *
+       *  You can find the delegate that should sign via get_signing_delegate_id( timestamp )
+       */
+      void chain_database_impl::update_delegate_production_info( const full_block& block_data, 
+                                                                 const pending_chain_state_ptr& pending_state )
+      {
+         // Apply these updates to pending_state
+         // TODO: increment the blocks_produced for this delegate
+         // TODO: increment the blocks_missed for all missed time slots
+      }
+
+      /**
        *  Performs all of the block validation steps and throws if error.
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
@@ -351,12 +371,18 @@ namespace bts { namespace blockchain {
             pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(self->shared_from_this());
             summary.applied_changes = pending_state;
 
+            /** increment the blocks produced or missed for all delegates, this mus tbe done
+             * before applying transactions because it depends upon the current order 
+             **/
+            update_delegate_production_info( block_data, pending_state );
+
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);
 
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
+
 
             save_undo_state( block_id, pending_state );
 
@@ -651,7 +677,7 @@ namespace bts { namespace blockchain {
 
 
    /** return the timestamp from the head block */
-   fc::time_point_sec   chain_database::timestamp()const
+   fc::time_point_sec   chain_database::now()const
    {
       return my->_head_block_header.timestamp;
    }
@@ -766,7 +792,7 @@ namespace bts { namespace blockchain {
        auto old_rec = get_name_record( r.id );
        my->_names.store( r.id, r );
 
-       if( old_rec )
+       if( old_rec && old_rec->is_delegate() )
        {
           my->_delegate_vote_index.remove( vote_del( old_rec->net_votes(), r.id ) );
        }
@@ -775,7 +801,8 @@ namespace bts { namespace blockchain {
           my->_name_index.store( r.name, r.id );
        }
 
-       my->_delegate_vote_index.store( vote_del( r.net_votes(), r.id ),  0 );
+       if( r.is_delegate() )
+          my->_delegate_vote_index.store( vote_del( r.net_votes(), r.id ),  0 );
 
        if( r.id > my->_last_name_id ) my->_last_name_id = r.id;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
@@ -965,19 +992,22 @@ namespace bts { namespace blockchain {
       base_asset.collected_fees = 0;
       self->store_asset_record( base_asset );
 
-      fc::time_point_sec timestamp = fc::time_point::now();
+      fc::time_point_sec timestamp = config.timestamp;
       int32_t i = 1;
       for( auto name : config.names )
       {
          name_record rec;
-         rec.id          = i;
-         rec.name        = name.name;
-         rec.owner_key   = name.owner;
-         rec.active_key  = name.owner;
-         rec.last_update = timestamp;
-         rec.is_delegate = name.is_delegate;
+         rec.id                = i;
+         rec.name              = name.name;
+         rec.owner_key         = name.owner;
+         rec.active_key        = name.owner;
+         rec.registration_date = timestamp;
+         rec.last_update       = timestamp;
          if( name.is_delegate )
-            rec.votes_for   = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
+         {
+            rec.delegate_info = delegate_stats();
+            rec.delegate_info->votes_for  = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
+         }
          self->store_name_record( rec );
          ++i;
       }

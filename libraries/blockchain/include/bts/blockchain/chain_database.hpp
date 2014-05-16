@@ -88,7 +88,7 @@ namespace bts { namespace blockchain {
 
 
          /** return the timestamp from the head block */
-         virtual fc::time_point_sec   timestamp()const override;
+         virtual fc::time_point_sec   now()const override;
 
          /** return the current fee rate in millishares */
          virtual int64_t              get_fee_rate()const override;
