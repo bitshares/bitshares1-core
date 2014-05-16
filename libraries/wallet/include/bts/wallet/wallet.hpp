@@ -65,7 +65,7 @@ namespace bts { namespace wallet {
           */
          ///@{
          void           unlock( const std::string& password,
-                                const fc::microseconds& tiemout = fc::seconds(30) );
+                                const fc::microseconds& timeout = fc::seconds(60*60*24) );
          fc::time_point unlocked_until()const;
 
          void           lock();

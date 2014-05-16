@@ -1106,38 +1106,10 @@ returns false if delegate is not recognized
             /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
             /* params:          name              type              classification                   default_value */
-                              {{"transaction_id", "transaction_id", rpc_server::required_positional, fc::ovariant()}},
+                              {{"transaction_id", "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-Arguments:
-1. "transaction_id" (string, required) The transaction id
-
-Result:
-{
-"amount" : xx, (numeric) The transaction amount in BTS
-"confirmations" : n, (numeric) The number of confirmations
-"blockhash" : "hash", (string) The block hash
-"blockindex" : xx, (numeric) The block index
-"blocktime" : ttt, (numeric) The time in seconds since epoch (1 Jan 1970 GMT)
-"txid" : "transactionid", (string) The transaction id, see also https://???.info/tx/[transactionid]
-"time" : ttt, (numeric) The transaction time in seconds since epoch (1 Jan 1970 GMT)
-"timereceived" : ttt, (numeric) The time received in seconds since epoch (1 Jan 1970 GMT)
-"details" : [
-{
-"account" : "accountname", (string) The account name involved in the transaction, can be "" for the default account.
-"address" : "bitsharesaddress", (string) The BitShares address involved in the transaction
-"category" : "send|receive", (string) The category, either 'send' or 'receive'
-"amount" : xx (numeric) The amount in BTS
-}
-,...
-],
-"hex" : "data" (string) Raw data for transaction
-}
-
-bExamples
-> bitshares-cli blockchain_get_transaction "1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_transaction", "params": ["1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )" };
+          )" };
     fc::variant rpc_server_impl::blockchain_get_transaction(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->get_transaction( params[0].as<transaction_id_type>() )  );

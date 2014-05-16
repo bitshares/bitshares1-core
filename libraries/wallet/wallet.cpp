@@ -676,7 +676,7 @@ namespace bts { namespace wallet {
       chain_db->set_observer( my.get() );
    }
 
-   wallet::~wallet(){}
+   wallet::~wallet(){ try { close(); }catch( ... ){} }
 
 
    void wallet::open( const std::string& wallet_name, const std::string& password )
@@ -814,6 +814,11 @@ namespace bts { namespace wallet {
 
    bool wallet::close()
    { try {
+      if( my->_wallet_relocker_done.valid() )
+      {
+         my->_wallet_relocker_done.cancel();
+         my->_wallet_relocker_done.wait();
+      }
       my->_wallet_db.close();
       my->_wallet_password = fc::sha512();
       my->_master_key.reset();
@@ -854,14 +859,14 @@ namespace bts { namespace wallet {
       if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
       {
         my->_wallet_relocker_done = fc::async([this](){
-          for (;;)
+          while( !my->_wallet_relocker_done.canceled() )
           {
             if (fc::time_point::now() > my->_relock_time)
             {
               lock();
               return;
             }
-            fc::usleep(fc::seconds(1));
+            fc::usleep(fc::microseconds(200000));
           }
         });
       }

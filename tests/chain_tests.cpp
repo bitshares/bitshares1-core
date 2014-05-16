@@ -96,12 +96,12 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       wallet  my_wallet( blockchain );
       my_wallet.set_data_directory( dir.path() );
       my_wallet.create(  "my_wallet", "password" );
-      my_wallet.unlock( "password" );
+      my_wallet.unlock( "password", fc::seconds( 10000000 ) );
 
       wallet  your_wallet( blockchain2 );
       your_wallet.set_data_directory( dir2.path() );
       your_wallet.create(  "your_wallet", "password" );
-      your_wallet.unlock( "password" );
+      your_wallet.unlock( "password", fc::seconds( 10000000 ) );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       my_wallet.scan_state();
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
-      my_wallet.unlock( "password" );
+      my_wallet.unlock( "password", fc::seconds( 1000000 ) );
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
