@@ -1272,12 +1272,12 @@ namespace bts { namespace wallet {
 
 
    //functions for reporting delegate trust status
-   void wallet::set_delegate_trust_status(std::string delegate_name, uint32_t trust_level)
+   void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
    {
      my->_delegate_trust_status_map[delegate_name] = delegate_trust_status{ trust_level };
    }
 
-   delegate_trust_status wallet::get_delegate_trust_status(std::string delegate_name) const
+   delegate_trust_status wallet::get_delegate_trust_status( const std::string& delegate_name ) const
    {
      return my->_delegate_trust_status_map[delegate_name];
    }
