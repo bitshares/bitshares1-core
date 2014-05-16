@@ -13,7 +13,7 @@ int main( int argc, char** argv )
    auto secret = k.get_secret();
 
    std::vector<char> data;
-   data.push_back( 0x80 );
+   data.push_back( (char)0x80 );
    data.resize( 1 + sizeof(secret) );
    memcpy( &data[1], (char*)&secret, sizeof(secret) );
    auto digest = fc::sha256::hash( data.data(), data.size() );

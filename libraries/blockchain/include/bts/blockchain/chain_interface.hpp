@@ -6,6 +6,27 @@
 namespace bts { namespace blockchain {
    typedef fc::optional<signed_transaction> osigned_transaction;
 
+   struct delegate_stats
+   {
+      delegate_stats()
+      :votes_for(0),
+       votes_against(0),
+       blocks_produced(0),
+       blocks_missed(0),
+       pay_balance(0){}
+
+      share_type   votes_for;
+      share_type   votes_against;
+      uint32_t     blocks_produced;
+      uint32_t     blocks_missed;
+      /**
+       *  Delegate pay is held in escrow and may be siezed 
+       *  and returned to the shareholders if they are fired
+       *  for provable cause.
+       */
+      share_type   pay_balance;
+   };
+
    /**
     */
    struct balance_record
@@ -41,7 +62,8 @@ namespace bts { namespace blockchain {
       std::string         description;
       std::string         json_data;
       name_id_type        issuer_name_id;
-      fc::time_point_sec  creation_date;
+      fc::time_point_sec  registration_date;
+      fc::time_point_sec  last_update;
       share_type          current_share_supply;
       share_type          maximum_share_supply;
       share_type          collected_fees;
@@ -51,25 +73,54 @@ namespace bts { namespace blockchain {
    struct name_record
    {
       name_record()
-      :id(0),votes_for(0),votes_against(0),is_delegate(false),delegate_pay_balance(0),delegate_blocks_missed(0){}
+      :id(0){}
 
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
-      int64_t net_votes()const { return votes_for - votes_against; }
 
-      name_id_type        id;
-      std::string         name;
-      std::string         json_data;
-      public_key_type     owner_key;
-      public_key_type     active_key;
-      share_type          votes_for;
-      share_type          votes_against;
-      bool                is_delegate;
-      fc::time_point_sec  registration_date;
-      fc::time_point_sec  last_update;
-      share_type          delegate_pay_balance;
-      uint32_t            delegate_blocks_missed;
+      share_type delegate_pay_balance()const
+      { // TODO: move to cpp
+         FC_ASSERT( is_delegate() );
+         return delegate_info->pay_balance;
+      }
+      bool    is_delegate()const { return !!delegate_info; }
+      int64_t net_votes()const 
+      {  // TODO: move to cpp
+         FC_ASSERT( is_delegate() );
+         return delegate_info->votes_for - delegate_info->votes_against; 
+      }
+      void adjust_votes_for( share_type delta )
+      {
+         FC_ASSERT( is_delegate() );
+         delegate_info->votes_for += delta;
+      }
+      void adjust_votes_against( share_type delta )
+      {
+         FC_ASSERT( is_delegate() );
+         delegate_info->votes_against += delta;
+      }
+      share_type votes_for()const 
+      {
+         FC_ASSERT( is_delegate() );
+         return delegate_info->votes_for;
+      }
+      share_type votes_against()const 
+      {
+         FC_ASSERT( is_delegate() );
+         return delegate_info->votes_against;
+      }
+      bool is_retracted()const { return active_key == public_key_type(); }
+
+      name_id_type                 id;
+      std::string                  name;
+      std::string                  json_data;
+      public_key_type              owner_key;
+      public_key_type              active_key;
+      fc::time_point_sec           registration_date;
+      fc::time_point_sec           last_update;
+      fc::optional<delegate_stats> delegate_info;
    };
+
    typedef fc::optional<name_record> oname_record;
 
 
@@ -78,7 +129,7 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec   timestamp()const = 0;
+         virtual fc::time_point_sec    now()const = 0;
 
          /** return the current fee rate in millishares */
          virtual int64_t               get_fee_rate()const = 0;
@@ -113,8 +164,8 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(last_update) )
-FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees)(creation_date) )
+FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
 FC_REFLECT( bts::blockchain::name_record,
-            (id)(name)(json_data)(owner_key)(active_key)(votes_for)(votes_against)(is_delegate)(registration_date)(last_update)(delegate_pay_balance)(delegate_blocks_missed)
+            (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
-
+FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )

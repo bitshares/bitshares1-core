@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
          pending_chain_state( chain_interface_ptr prev_state );
          virtual ~pending_chain_state() override;
 
-         virtual fc::time_point_sec     timestamp()const override;
+         virtual fc::time_point_sec     now()const override;
          virtual int64_t                get_fee_rate()const override;
          virtual int64_t                get_delegate_pay_rate()const override;
 

@@ -1221,10 +1221,10 @@ namespace bts { namespace wallet {
          total_fees += asset( (json_str.size() * current_fee_rate)/1000, 0 );
          ojson_str = json_str;
       }
-      if( !as_delegate && name_rec->is_delegate )
+      if( !as_delegate && name_rec->is_delegate() )
          FC_ASSERT( !"You cannot unregister as a delegate" );
 
-      if( !name_rec->is_delegate && as_delegate )
+      if( !name_rec->is_delegate() && as_delegate )
       {
         total_fees += asset( (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE*current_fee_rate)/1000, 0 );
       }

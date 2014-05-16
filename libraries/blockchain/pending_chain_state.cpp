@@ -127,10 +127,10 @@ namespace bts { namespace blockchain {
       FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
-   fc::time_point_sec  pending_chain_state::timestamp()const
+   fc::time_point_sec  pending_chain_state::now()const
    {
       if( _prev_state ) 
-        return _prev_state->timestamp();
+        return _prev_state->now();
       FC_ASSERT( false, "No current timestamp set" );
    }
 
