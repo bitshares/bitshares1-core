@@ -317,7 +317,7 @@ namespace bts { namespace cli {
                 }
                 catch (const fc::eof_exception& e)
                 {
-                  if (!method_data.parameters[i].required)
+                  if (!method_data.parameters[i].classification == bts::rpc::rpc_server::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",

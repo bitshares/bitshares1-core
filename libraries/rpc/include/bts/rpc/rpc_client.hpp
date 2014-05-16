@@ -28,7 +28,10 @@ namespace bts { namespace rpc {
 
     bool login(const std::string& username, const std::string& password);
     bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
-    bts::blockchain::address getnewaddress(const std::string& account = "");
+    bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name);
+    void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
+    std::vector<std::string> wallet_list_receive_accounts(int32_t start = 0, uint32_t count = -1);
+    
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
     std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
@@ -38,7 +41,7 @@ namespace bts { namespace rpc {
     bool validateaddress(bts::blockchain::address address);
     bool rescan(uint32_t block_num = 0);
     bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
-    bool import_private_key(const fc::sha256& hash, const std::string& label);
+    bool wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name = "default", bool rescan_blockchain = false);
     bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
     bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
     fc::optional<std::string> wallet_get_name();
