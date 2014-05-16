@@ -810,8 +810,8 @@ namespace bts { namespace cli {
            std::cerr << std::setw(6)  << i               << "  "
                      << std::setw(6)  << delegates[i].id   << "  "
                      << std::setw(18) << delegates[i].name          << "  "
-                     << std::setw(18) << delegates[i].votes_for     << "  "
-                     << std::setw(18) << delegates[i].votes_against << "  \n";
+                     << std::setw(18) << delegates[i].delegate_info->votes_for     << "  "
+                     << std::setw(18) << delegates[i].delegate_info->votes_against << "  \n";
            ++i;
            if( i == count ) break;
         }

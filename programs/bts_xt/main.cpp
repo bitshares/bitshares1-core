@@ -128,7 +128,7 @@ int main( int argc, char** argv )
    catch ( const fc::exception& e )
    {
       std::cerr << "------------ error --------------\n" 
-                << e.to_string() << "\n";
+                << e.to_detail_string() << "\n";
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
    return 0;
