@@ -845,7 +845,7 @@ As json rpc call
                                {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
-                               {"asset_id",             "int",      rpc_server::optional_named,      0}},
+                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0) }},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )" };
