@@ -387,7 +387,7 @@ namespace bts { namespace blockchain {
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current order.
              **/
-            update_delegate_production_info( block_data, pending_state );
+            //update_delegate_production_info( block_data, pending_state );
 
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);
