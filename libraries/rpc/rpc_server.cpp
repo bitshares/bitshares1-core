@@ -362,14 +362,14 @@ namespace bts { namespace rpc {
         fc::variant dispatch_authenticated_method(const rpc_server::method_data& method_data,
                                                   const fc::variants& arguments_from_caller)
         {
-          ilog("method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",arguments_from_caller));
+          //ilog("method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",arguments_from_caller));
           if (method_data.prerequisites & rpc_server::wallet_open)
             check_wallet_is_open();
           if (method_data.prerequisites & rpc_server::wallet_unlocked)
             check_wallet_unlocked();
           if (method_data.prerequisites & rpc_server::connected_to_network)
             check_connected_to_network();
-          
+
           fc::variants modified_positional_arguments;
           fc::mutable_variant_object modified_named_arguments;
 
@@ -384,7 +384,7 @@ namespace bts { namespace rpc {
               modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
             }
             else if (parameter.classification == rpc_server::optional_positional)
-            {
+            { 
               if (arguments_from_caller.size() > next_argument_index)
                 // the caller provided this optional argument
                 modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
@@ -419,7 +419,7 @@ namespace bts { namespace rpc {
           if (has_named_parameters)
             modified_positional_arguments.push_back(modified_named_arguments);
 
-          ilog("After processing: method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",modified_positional_arguments));
+          //ilog("After processing: method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",modified_positional_arguments));
 
           fc::variant result = method_data.method(modified_positional_arguments);
 
@@ -895,7 +895,7 @@ As json rpc call
     fc::variant rpc_server_impl::wallet_list_reserved_names(const fc::variants& params)
     {  try {
       std::string account_name = params[0].as_string();
-      auto names = _client->get_wallet()->names(account_name); 
+      auto names = _client->get_wallet()->names(account_name);
       std::vector<name_record> name_records;
       name_records.reserve(names.size());
       for( auto name : names )
@@ -917,7 +917,7 @@ As json rpc call
     {  try {
       std::string current_account_name = params[0].as_string();
       std::string new_account_name = params[1].as_string();
-      _client->get_wallet()->rename_account(current_account_name, new_account_name); 
+      _client->get_wallet()->rename_account(current_account_name, new_account_name);
       return fc::variant( true );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
@@ -961,9 +961,9 @@ As json rpc call
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
             /* params:          name                  type      classification                   default_value */
-                              {{"account_name",       "string", rpc_server::optional_positional, fc::variant("*")},
-                               {"minconf",            "int",    rpc_server::optional_positional, 0},
-                               {"asset",              "int",    rpc_server::optional_positional, 0}},
+                              {{"account_name",       "string", rpc_server::optional_positional, fc::ovariant(fc::variant("*"))},
+                               {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)},
+                               {"asset",              "int",    rpc_server::optional_positional, fc::variant(0)}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
 TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
@@ -1632,6 +1632,7 @@ Result:
     bool encountered_default_argument = false;
     bool encountered_optional_argument = false;
     bool encountered_named_argument = false;
+
     for (const rpc_server::parameter_data& parameter : method.parameters)
     {
       switch (parameter.classification)
