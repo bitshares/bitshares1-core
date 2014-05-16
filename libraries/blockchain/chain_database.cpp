@@ -1022,7 +1022,7 @@ namespace bts { namespace blockchain {
     }
     std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )const
     {
-       auto itr = my->_name_index.find(first);
+       auto itr = my->_name_index.lower_bound(first);
        std::vector<name_record> names;
        while( itr.valid() && names.size() < count )
        {

@@ -926,6 +926,30 @@ namespace bts { namespace wallet {
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("account_name",account_name) ) }
 
+   void wallet::rename_account( const std::string& current_account_name, 
+                                const std::string& new_account_name )
+   { try {
+        FC_ASSERT( current_account_name != new_account_name );
+        FC_ASSERT( new_account_name != "*" );
+
+        auto current_index_itr = my->_account_name_index.find(current_account_name);
+        if( current_index_itr == my->_account_name_index.end() )
+           FC_ASSERT( false, "Invalid account name '${name}'", ("name",current_account_name) );
+
+        auto new_index_itr = my->_account_name_index.find(new_account_name);
+        if( new_index_itr != my->_account_name_index.end() )
+           FC_ASSERT( false, "Account name '${name}' already in use", ("name",new_account_name) );
+
+       my->_accounts[current_index_itr->second].name = new_account_name;
+       my->store_record( my->_accounts[current_index_itr->second] );
+
+       my->_account_name_index[ new_account_name ] = current_index_itr->second;
+       my->_account_name_index.erase( current_index_itr ); 
+
+   } FC_RETHROW_EXCEPTIONS( warn, "Error renaming account", 
+                            ("current_account_name",current_account_name)
+                            ("new_account_name",new_account_name) ) }
+
    void wallet::create_sending_account( const std::string& account_name,
                                         const extended_public_key& account_pub_key )
    { try {
@@ -1385,6 +1409,14 @@ namespace bts { namespace wallet {
    std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name )const
    {
       return my->_transactions;
+   }
+
+   /**
+    * @todo actually filter based upon account_name and use "*" to represetn all accounts
+    */
+   std::unordered_map<name_id_type, wallet_name_record>  wallet::names( const std::string& account_name  )const
+   {
+      return my->_names;
    }
 
 } } // bts::wallet

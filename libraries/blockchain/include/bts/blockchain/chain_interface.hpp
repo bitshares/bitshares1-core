@@ -33,6 +33,7 @@ namespace bts { namespace blockchain {
       :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
+      static bool is_valid_json( const std::string& str );
 
       asset_id_type       id;
       std::string         symbol;
@@ -40,6 +41,7 @@ namespace bts { namespace blockchain {
       std::string         description;
       std::string         json_data;
       name_id_type        issuer_name_id;
+      fc::time_point_sec  creation_date;
       share_type          current_share_supply;
       share_type          maximum_share_supply;
       share_type          collected_fees;
@@ -49,7 +51,7 @@ namespace bts { namespace blockchain {
    struct name_record
    {
       name_record()
-      :id(0),votes_for(0),votes_against(0),is_delegate(false),delegate_pay_balance(0){}
+      :id(0),votes_for(0),votes_against(0),is_delegate(false),delegate_pay_balance(0),delegate_blocks_missed(0){}
 
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
@@ -63,8 +65,10 @@ namespace bts { namespace blockchain {
       share_type          votes_for;
       share_type          votes_against;
       bool                is_delegate;
+      fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
       share_type          delegate_pay_balance;
+      uint32_t            delegate_blocks_missed;
    };
    typedef fc::optional<name_record> oname_record;
 
@@ -109,8 +113,8 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(last_update) )
-FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees) )
+FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees)(creation_date) )
 FC_REFLECT( bts::blockchain::name_record,
-            (id)(name)(json_data)(owner_key)(active_key)(votes_for)(votes_against)(is_delegate)(last_update)(delegate_pay_balance)
+            (id)(name)(json_data)(owner_key)(active_key)(votes_for)(votes_against)(is_delegate)(registration_date)(last_update)(delegate_pay_balance)(delegate_blocks_missed)
           )
 

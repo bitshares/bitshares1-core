@@ -114,6 +114,8 @@ namespace bts { namespace wallet {
          ///@{
          wallet_account_record    create_receive_account( const std::string& account_name );
          void                     create_sending_account( const std::string& account_name, const extended_public_key& );
+         void                     rename_account( const std::string& current_account_name, 
+                                                  const std::string& new_account_name );
 
          std::map<std::string,extended_address> list_receive_accounts( uint32_t start = 0, uint32_t count = -1 )const;
          std::map<std::string,extended_address> list_sending_accounts( uint32_t start = 0, uint32_t count = -1 )const;

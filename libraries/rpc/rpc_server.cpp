@@ -34,7 +34,9 @@ namespace bts { namespace rpc {
              (wallet_import_bitcoin)\
              (wallet_list_sending_accounts)\
              (wallet_list_receive_accounts)\
+             (wallet_list_reserved_names)\
              (wallet_get_account)\
+             (wallet_rename_account)\
              (_create_sendtoaddress_transaction)\
              (_send_transaction)\
              (wallet_transfer)\
@@ -839,7 +841,7 @@ As json rpc call
 
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
-            /* returns: */    "vector<string>",
+            /* returns: */    "map<string,extended_address>",
             /* params:     */ { {"start", "int", false},
                                 {"count", "int", false} },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -856,10 +858,49 @@ As json rpc call
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
+    static rpc_server::method_data wallet_list_reserved_names_metadata{"wallet_list_reserved_names", nullptr,
+            /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
+            /* returns: */    "vector<name_record>",
+            /* params:     */ { {"account_name", "string", false},
+                              },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_list_reserved_names(const fc::variants& params)
+    {  try {
+      std::string account_name = "*";
+      if( params.size() > 0 ) account_name = params[0].as_string();
+
+      auto names = _client->get_wallet()->names(account_name); 
+      std::vector<name_record> name_records;
+      name_records.reserve(names.size());
+      for( auto name : names )
+         name_records.push_back( name_record( name.second ) );
+      return fc::variant( name_records );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
+
+    static rpc_server::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
+            /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
+            /* returns: */    "vector<name_record>",
+            /* params:     */ { {"current_account_name", "string", true},
+                                {"new_account_name", "string", true},
+                              },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+             Note: new_account_name must be unique or this call will throw an exception.
+     )" };
+    fc::variant rpc_server_impl::wallet_rename_account(const fc::variants& params)
+    {  try {
+      std::string current_account_name = params[0].as_string();
+      std::string new_account_name = params[1].as_string();
+      _client->get_wallet()->rename_account(current_account_name, new_account_name); 
+      return fc::variant( true );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
+
 
     static rpc_server::method_data wallet_list_receive_accounts_metadata{"wallet_list_receive_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
-            /* returns: */    "vector<string>",
+            /* returns: */    "map<string,extended_address>",
             /* params:     */ { {"start", "int", false},
                                 {"count", "int", false} },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -1281,7 +1322,7 @@ Arguments:
     fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
     {
       uint32_t first = 0;
-      uint32_t count = 100;
+      uint32_t count = -1;
       if( params.size() > 0 ) 
         first = params[0].as<uint32_t>();
       if( params.size() > 1 ) 
