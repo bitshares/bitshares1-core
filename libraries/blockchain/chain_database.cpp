@@ -174,8 +174,7 @@ namespace bts { namespace blockchain {
             _pending_transactions.remove( id );
          }
 
-         auto temp_pending_fee_index( _pending_fee_index );
-         for( auto pair : temp_pending_fee_index )
+         for( auto pair : _pending_fee_index )
          {
             auto fee_index = pair.first;
 
