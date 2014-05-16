@@ -22,7 +22,7 @@ namespace bts { namespace rpc {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
       bool login(const std::string& username, const std::string& password);
-      bool walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout);
+      bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
       bts::blockchain::address getnewaddress(const std::string& account);
       bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                          const std::string& comment, const std::string& comment_to);
@@ -36,8 +36,9 @@ namespace bts { namespace rpc {
       bool import_private_key(const fc::sha256& hash, const std::string& label);
       bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
       bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
-      fc::optional<std::string> currentwallet();
-      bool closewallet();
+      fc::optional<std::string> wallet_get_name();
+      bool wallet_close();
+      void wallet_lock();
       uint32_t getconnectioncount();
       fc::variants getpeerinfo();
       fc::variant_object getinfo();
@@ -75,10 +76,10 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("login", username, password);
     }
 
-    bool rpc_client_impl::walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
+    bool rpc_client_impl::wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout)
     {
       uint32_t timeout_seconds = (uint32_t)(timeout.count() / fc::seconds(1).count());
-      return _json_connection->call<bool>("walletpassphrase", passphrase, fc::variant(timeout_seconds));
+      return _json_connection->call<bool>("wallet_unlock", passphrase, fc::variant(timeout_seconds));
     }
 
     bts::blockchain::address rpc_client_impl::getnewaddress(const std::string& account)
@@ -139,14 +140,18 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bool>("wallet_create", wallet_name, wallet_passphrase);
     }
-    fc::optional<std::string> rpc_client_impl::currentwallet()
+    fc::optional<std::string> rpc_client_impl::wallet_get_name()
     {
-      fc::variant result = _json_connection->async_call("currentwallet").wait();
+      fc::variant result = _json_connection->async_call("wallet_get_name").wait();
       return result.is_null() ? fc::optional<std::string>() : result.as_string();
     }
-    bool rpc_client_impl::closewallet()
+    bool rpc_client_impl::wallet_close()
     {
-      return _json_connection->call<bool>("closewallet");
+      return _json_connection->call<bool>("wallet_close");
+    }
+    void rpc_client_impl::wallet_lock()
+    {
+      _json_connection->async_call("wallet_lock").wait();
     }
     uint32_t rpc_client_impl::getconnectioncount()
     {
@@ -202,9 +207,9 @@ namespace bts { namespace rpc {
     return my->login(username, password);
   }
   
-  bool rpc_client::walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
+  bool rpc_client::wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout)
   {
-    return my->walletpassphrase(passphrase, timeout);
+    return my->wallet_unlock(passphrase, timeout);
   }
 
   bts::blockchain::address rpc_client::getnewaddress(const std::string& account)
@@ -265,13 +270,17 @@ namespace bts { namespace rpc {
   {
     return my->wallet_create(wallet_name, wallet_passphrase);
   }
-  fc::optional<std::string> rpc_client::currentwallet()
+  fc::optional<std::string> rpc_client::wallet_get_name()
   {
-    return my->currentwallet();
+    return my->wallet_get_name();
   }
-  bool rpc_client::closewallet()
+  bool rpc_client::wallet_close()
   {
-    return my->closewallet();
+    return my->wallet_close();
+  }
+  void rpc_client::wallet_lock()
+  {
+    my->wallet_lock();
   }
   uint32_t rpc_client::getconnectioncount()
   {

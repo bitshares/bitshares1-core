@@ -647,8 +647,8 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->walletpassphrase("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_unlock("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   BOOST_TEST_MESSAGE("Testing receive address generation");
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   BOOST_TEST_MESSAGE("Testing getnewaddress() while wallet is locked");
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
   BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(1));
+  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(1));
   BOOST_TEST_MESSAGE("Testing getnewaddress() with wallet unlocked locked");
   BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
   fc::usleep(fc::seconds(2));
@@ -692,8 +692,8 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   BOOST_CHECK_THROW(client_processes[0].rpc_client->getnewaddress(), fc::exception);
 
   BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(4));
-  client_processes[0].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::seconds(2));
+  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(4));
+  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing getnewaddress immediately after both unlocks");
   BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->getnewaddress());
   fc::usleep(fc::seconds(3));
@@ -723,7 +723,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -781,7 +781,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -873,7 +873,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();
@@ -983,7 +983,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
   }
 
   import_initial_balances();

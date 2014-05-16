@@ -27,7 +27,7 @@ namespace bts { namespace rpc {
     void connect_to(const fc::ip::endpoint& remote_endpoint);
 
     bool login(const std::string& username, const std::string& password);
-    bool walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout);
+    bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
     bts::blockchain::address getnewaddress(const std::string& account = "");
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
@@ -41,8 +41,9 @@ namespace bts { namespace rpc {
     bool import_private_key(const fc::sha256& hash, const std::string& label);
     bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
     bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
-    fc::optional<std::string> currentwallet();
-    bool closewallet();
+    fc::optional<std::string> wallet_get_name();
+    bool wallet_close();
+    void wallet_lock();
     uint32_t getconnectioncount();
     fc::variants getpeerinfo();
     fc::variant_object getinfo();
