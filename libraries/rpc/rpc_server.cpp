@@ -526,7 +526,15 @@ Result:
         }
         else
         {
-          throw; //TODO figure out how to format an error msg here
+          // no exact matches for the command they requested.  
+          // If they give us a prefix, give them the list of commands that start
+          // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
+          for (itr = _method_map.lower_bound(command);
+               itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
+               ++itr)
+            help_string += make_short_description(itr->second);
+          if (help_string.empty())
+            throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
         }
       }
 
