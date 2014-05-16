@@ -1062,9 +1062,9 @@ As a json rpc call
     static rpc_server::method_data wallet_set_delegate_trust_status_metadata{ "wallet_set_delegate_trust_status", nullptr,
       /* description */ "Sets the trust level for a delegate",
       /* returns: */    "bool",
-      /* params:          name              type               required */
-      { { "delegate_name", "string", true },
-        { "trust_level", "integer", true } },
+      /* params:          name          type       classification                   default_value */
+      { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() },
+      { "trust_level", "integer", rpc_server::required_positional, fc::ovariant() } },
       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
       R"(
 returns false if delegate is not recognized
@@ -1078,8 +1078,8 @@ returns false if delegate is not recognized
     static rpc_server::method_data wallet_get_delegate_trust_status_metadata{ "wallet_get_delegate_trust_status", nullptr,
       /* description */ "Gets the trust level for a delegate",
       /* returns: */    "delegate_trust_status",
-      /* params:          name              type               required */
-      { { "delegate_name", "string", true } },
+      /* params:          name          type       classification                   default_value */
+      { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() } },
       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
       R"(
 returns false if delegate is not recognized
@@ -1092,7 +1092,7 @@ returns false if delegate is not recognized
     static rpc_server::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
       /* description */ "List the trust status for delegates",
       /* returns: */    "map<delegate_name,delegate_trust_status>",
-      /* params:          name              type               required */
+      /* params:          name          type       classification                   default_value */
       { },
       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
       R"(
