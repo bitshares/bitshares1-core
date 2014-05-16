@@ -12,6 +12,12 @@ namespace bts { namespace wallet {
    /** takes 4 parameters, current block, last block, current trx, last trx */
    typedef std::function<void(uint32_t,uint32_t,uint32_t,uint32_t)> scan_progress_callback;
 
+   struct delegate_trust_status
+   {
+     int32_t user_trust_level;
+     //cached_master_key; //not yet implemented, eventually this can be a security check
+   };
+
    /**
     * When transferring a balance from one individual to another it must be
     * divided up into many smaller transactions to maximize privacy.  A group
@@ -183,6 +189,11 @@ namespace bts { namespace wallet {
                                          bool as_delegate = false, 
                                          wallet_flag flag = sign_and_broadcast );
 
+         void                                         set_delegate_trust_status(std::string delegate_name, uint32_t trust_level);
+         delegate_trust_status                        get_delegate_trust_status(std::string delegate_name) const;
+         std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
+
+
          ///@} Transaction Generation Methods
 
          bool                                       is_sending_address( const address& a )const;
@@ -220,3 +231,4 @@ namespace bts { namespace wallet {
 
 FC_REFLECT_ENUM( bts::wallet::wallet::wallet_flag, (do_not_broadcast)(do_not_sign)(sign_and_broadcast) )
 FC_REFLECT( bts::wallet::invoice_summary, (payments)(from_account)(to_account)(sending_invoice_index)(last_sending_payment_index) )
+FC_REFLECT( bts::wallet::delegate_trust_status, (user_trust_level) )

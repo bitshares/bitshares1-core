@@ -423,6 +423,24 @@ namespace bts { namespace client {
        // return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
 
+    void client::set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
+    {
+      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
+      get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+    }
+
+    wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
+    {
+      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
+      return get_wallet()->get_delegate_trust_status(delegate_name);
+    }
+
+    std::map<std::string,wallet::delegate_trust_status> client::list_delegate_trust_status() const
+    {
+      return get_wallet()->list_delegate_trust_status();
+    }
+
+
     fc::sha256 client_notification::digest()const
     {
       fc::sha256::encoder enc;
