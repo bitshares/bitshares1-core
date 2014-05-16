@@ -1,6 +1,7 @@
 #pragma once
 #include <fc/crypto/elliptic.hpp>
 #include <bts/blockchain/pts_address.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
