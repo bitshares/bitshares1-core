@@ -223,7 +223,7 @@ namespace bts { namespace rpc {
                    method_name = rpc_call["method"].as_string();
                    auto params = rpc_call["params"].get_array();
                    auto params_log = fc::json::to_string(rpc_call["params"]);
-                   if(method_name.find_first_of("wallet") != std::string::npos || method_name.find_first_of("priv") != std::string::npos)
+                   if(method_name.find("wallet") != std::string::npos || method_name.find("priv") != std::string::npos)
                        params_log = "***";
                    fc_ilog( fc::logger::get("rpc"), "Processing ${path} ${method} (${params})", ("path",r.path)("method",method_name)("params",params_log));
 
@@ -245,11 +245,11 @@ namespace bts { namespace rpc {
                           s.set_status( status );
                           result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() );
                       }
-                      ilog( "${e}", ("e",result) );
+                      //ilog( "${e}", ("e",result) );
                       auto reply = fc::json::to_string( result );
                       s.set_length( reply.size() );
                       s.write( reply.c_str(), reply.size() );
-                      auto reply_log = reply.size() > 100 ? reply.substr(0,99) + ".." :  reply;
+                      auto reply_log = reply.size() > 253 ? reply.substr(0,253) + ".." :  reply;
                       fc_ilog( fc::logger::get("rpc"), "Result ${path} ${method}: ${reply}", ("path",r.path)("method",method_name)("reply",reply_log));
                       return status;
                    }
