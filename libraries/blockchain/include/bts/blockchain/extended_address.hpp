@@ -9,7 +9,7 @@
 namespace bts { namespace blockchain {
     /**
      *  Given an extended public key you can calculate the public key of all
-     *  children keys, but not the coresponding private keys.
+     *  children keys, but not the corresponding private keys.
      *
      *  @note this only works for extended private keys that use public derivation
      */
