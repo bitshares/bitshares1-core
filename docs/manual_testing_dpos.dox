@@ -7,47 +7,47 @@
   The genesis block is hard-coded into the clients, so all clients start up knowing
   the initial state.  To access your balance you must first import a key from
   the genesis block.
-  
+
   Blocks will start being produced automatically once a wallet imports a private
   key belonging to one of the known delegates.
 
- 
+
   @code
 cd programs/bts_xt
 ./bts_xt_client --port 5678 --data-dir test_clienta
->>> wallet_create walleta masterpassa    
+>>> wallet_create walleta masterpassa
      true
->>> wallet_unlock masterpassa 90000 
+>>> wallet_unlock masterpassa 90000
      null
   @endcode
 
-  Once you have unlocked you wallet you can begin importing private keys from the
-  default / test delegates.  They are provided here for your conveinence. 
+  Once you have unlocked your wallet you can begin importing private keys from the
+  default / test delegates.  They are provided here for your conveinence.
 
   @code
-     delegate-0:  5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn
-     delegate-1:  5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91
-     delegate-2:  JQkfPrz2UkAL8WgiL4gZpovi3Ac9BJpgNwsKZ2KfYCaBafdJWS
-     delegate-3:  KYq5uTRNf61vKaGW9seVucdF26Ea7oppB2phdLvWiGWrnPNtL2
-     delegate-4:  J1HuUepoWuP41HtKSXdBQpoaCeXBZMp9r7SfEaV6AhrwNBDL6b
-     delegate-5:  Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3
-     delegate-6:  JLyiiSH28VWyGCeY934dbwS8Vwsx1jjmopnzbu9DPjrTdww4fx
-     delegate-7:  JYdhKVnc15VHq2zvfXfNGfjQTRmuZSaL1L8pVYryLVCox8UFoC
-     delegate-8:  JtMPXt5frPzS1ErigA2xEfTucnRMNwaEGnFoyhHSqRq6yevC4e
-     delegate-9: Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
-  @endcode 
+     delegate-0: 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn
+     delegate-1: 5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91
+     delegate-2: 5JQkfPrz2UkAL8WgiL4gZpovi3Ac9BJpgNwsKZ2KfYCaBafdJWS
+     delegate-3: 5KYq5uTRNf61vKaGW9seVucdF26Ea7oppB2phdLvWiGWrnPNtL2
+     delegate-4: 5J1HuUepoWuP41HtKSXdBQpoaCeXBZMp9r7SfEaV6AhrwNBDL6b
+     delegate-5: 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3
+     delegate-6: 5JLyiiSH28VWyGCeY934dbwS8Vwsx1jjmopnzbu9DPjrTdww4fx
+     delegate-7: 5JYdhKVnc15VHq2zvfXfNGfjQTRmuZSaL1L8pVYryLVCox8UFoC
+     delegate-8: 5JtMPXt5frPzS1ErigA2xEfTucnRMNwaEGnFoyhHSqRq6yevC4e
+     delegate-9: 5Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
+  @endcode
 
   To import a private key you should also specify an account.  In this case
   we give the account name "delegate-1", but it could be anything. Delegates
   produce blocks only on their time slot.  The default interval is 5 seconds,
   and the default number of delegates (for testing) is 10, so if you import
-  a single delegate one block will be produced every 50 seconds.  If you 
-  import two, then it will be every 25 seconds (on average). 
+  a single delegate one block will be produced every 50 seconds.  If you
+  import two, then it will be every 25 seconds (on average).
 
   @code
->>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-1" 
+>>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-0"
      true
->>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-5" 
+>>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-5"
      true
 >>> wallet_rescan_blockchain_state
      .....
@@ -61,7 +61,7 @@ cd programs/bts_xt
      then call getinfo you should see the number of blocks reported growing.
 
   @code
->>> get_info 
+>>> get_info
     {
      "balance": 8000000000000,
      "version": 100,
@@ -100,14 +100,14 @@ You can get a list of all names known to the blockchain with:
 Start a second client:
 
 @code
-./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678 
+./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678
 
    Logging to file test_clientb/default.log
    Logging RPC to file test_clientb/rpc.log
    Creating default config file test_clientb/config.json
    Loading blockchain from test_clientb/chain
    Not starting rpc server, use --server to enable the rpc interface
-   Attempting to conenct to peer 127.0.0.1:5678
+   Attempting to connect to peer 127.0.0.1:5678
 
    >>> get_info
    {
@@ -126,13 +126,13 @@ Start a second client:
    Opening wallet test_clientb/walletb
    true
 
->>> wallet_unlock masterpass 90000
+>>> wallet_unlock masterpassb 90000
    null
 >>> wallet_create_receive_account "from_walleta"
    "XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4"
 @endcode
 
-Back in test_clienta  
+Back in test_clienta
 
 @code
 >>> wallet_create_sending_account "to_walletb" XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4
@@ -179,12 +179,12 @@ Back in test_clienta
    }
 >>> wallet_get_balance
    15999999845679
-@endcode 
+@endcode
 
 Back in test_clientb
 @code
 >>> wallet_get_balance
-   54321 
+   54321
 @endcode
 
 */
