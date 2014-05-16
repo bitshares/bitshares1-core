@@ -1286,7 +1286,12 @@ Arguments:
         first = params[0].as<uint32_t>();
       if( params.size() > 1 ) 
         count = params[1].as<uint32_t>();
-      return fc::variant(_client->get_chain()->get_delegates_by_vote(first, count) );
+      auto delegates = _client->get_chain()->get_delegates_by_vote(first, count);
+      std::vector<name_record> delegate_records;
+      delegate_records.reserve( delegates.size() );
+      for( auto delegate_id : delegates )
+         delegate_records.push_back( *_client->get_chain()->get_name_record( delegate_id ) );
+      return fc::variant(delegate_records);
     }
 
     static rpc_server::method_data network_get_connection_count_metadata{"network_get_connection_count", nullptr,
