@@ -806,9 +806,9 @@ As json rpc call
             /* params:          name          type       required */
                               { {"amount",                 "int64",  true  },
                                 {"sending_account_name",   "string", true  },
-                                {"invoice_memo",           "string", false },
-                                {"from_account",           "string", false },
-                                {"asset_id",               "int",    false }
+                                {"opt.invoice_memo",       "string", false },
+                                {"opt.from_account",       "string", false },
+                                {"opt.asset_id",           "int",    false }
                               },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
@@ -831,6 +831,8 @@ As json rpc call
            asset_id = optional_params["asset_id"].as_int64();
        }
        auto summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
+       for( auto trx : summary.payments )
+          _client->broadcast_transaction( trx.second );
        return fc::variant(summary);
     }
 
@@ -1264,7 +1266,7 @@ Returns up to count reserved names that follow first alphabetically.
             /* returns: */    "vector<name_record>",
             /* params:     */ { {"first", "int", false},
                                 {"count", "int", false} },
-          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          /* prerequisites */ rpc_server::json_authenticated,
           R"(
 blockchain_get_delegates (start, count)
 
@@ -1279,7 +1281,7 @@ Arguments:
     fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
     {
       uint32_t first = 0;
-      uint32_t count = 0;
+      uint32_t count = 100;
       if( params.size() > 0 ) 
         first = params[0].as<uint32_t>();
       if( params.size() > 1 ) 
