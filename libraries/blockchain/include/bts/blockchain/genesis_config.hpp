@@ -1,6 +1,7 @@
 #pragma once
 #include <fc/crypto/elliptic.hpp>
 #include <bts/blockchain/pts_address.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -16,6 +17,7 @@ namespace bts { namespace blockchain {
      genesis_block_config():supply(0) {}
 
      double                                                         supply;
+     fc::time_point_sec                                             timestamp;
      std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
      std::vector< name_config >                                     names;
   };
@@ -23,4 +25,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::name_config, (name)(is_delegate)(owner) )
-FC_REFLECT( bts::blockchain::genesis_block_config, (supply)(balances)(names) )
+FC_REFLECT( bts::blockchain::genesis_block_config, (supply)(timestamp)(balances)(names) )
