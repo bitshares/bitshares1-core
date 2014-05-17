@@ -277,7 +277,7 @@ namespace bts { namespace blockchain {
                ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
               // TODO:  capture the evaluation state with a callback for wallets...
               // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
-              
+
                transaction_location trx_loc( block_num, trx_num );
                ilog( "store trx location: ${loc}", ("loc",trx_loc) );
                pending_state->store_transaction_location( trx.id(), trx_loc );
@@ -358,6 +358,12 @@ namespace bts { namespace blockchain {
                                                                  const pending_chain_state_ptr& pending_state )
       {
           auto timestamp = _head_block_header.timestamp;
+          if( _head_block_header.block_num == 0 )
+          {
+              timestamp = block_data.timestamp;
+              timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+          }
+
           do
           {
               timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -395,7 +401,7 @@ namespace bts { namespace blockchain {
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current order.
              **/
-            //update_delegate_production_info( block_data, pending_state );
+            update_delegate_production_info( block_data, pending_state );
 
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);

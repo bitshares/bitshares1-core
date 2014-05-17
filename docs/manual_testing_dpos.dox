@@ -25,16 +25,16 @@ cd programs/bts_xt
   default / test delegates.  They are provided here for your conveinence.
 
   @code
-     delegate-0: 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn
-     delegate-1: 5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91
-     delegate-2: 5JQkfPrz2UkAL8WgiL4gZpovi3Ac9BJpgNwsKZ2KfYCaBafdJWS
-     delegate-3: 5KYq5uTRNf61vKaGW9seVucdF26Ea7oppB2phdLvWiGWrnPNtL2
-     delegate-4: 5J1HuUepoWuP41HtKSXdBQpoaCeXBZMp9r7SfEaV6AhrwNBDL6b
-     delegate-5: 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3
-     delegate-6: 5JLyiiSH28VWyGCeY934dbwS8Vwsx1jjmopnzbu9DPjrTdww4fx
-     delegate-7: 5JYdhKVnc15VHq2zvfXfNGfjQTRmuZSaL1L8pVYryLVCox8UFoC
-     delegate-8: 5JtMPXt5frPzS1ErigA2xEfTucnRMNwaEGnFoyhHSqRq6yevC4e
-     delegate-9: 5Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
+     delegate-1:  5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn
+     delegate-2:  5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91
+     delegate-3:  5JQkfPrz2UkAL8WgiL4gZpovi3Ac9BJpgNwsKZ2KfYCaBafdJWS
+     delegate-4:  5KYq5uTRNf61vKaGW9seVucdF26Ea7oppB2phdLvWiGWrnPNtL2
+     delegate-5:  5J1HuUepoWuP41HtKSXdBQpoaCeXBZMp9r7SfEaV6AhrwNBDL6b
+     delegate-6:  5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3
+     delegate-7:  5JLyiiSH28VWyGCeY934dbwS8Vwsx1jjmopnzbu9DPjrTdww4fx
+     delegate-8:  5JYdhKVnc15VHq2zvfXfNGfjQTRmuZSaL1L8pVYryLVCox8UFoC
+     delegate-9:  5JtMPXt5frPzS1ErigA2xEfTucnRMNwaEGnFoyhHSqRq6yevC4e
+     delegate-10: 5Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
   @endcode
 
   To import a private key you should also specify an account.  In this case
@@ -45,9 +45,9 @@ cd programs/bts_xt
   import two, then it will be every 25 seconds (on average).
 
   @code
->>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-0"
+>>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-1"
      true
->>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-5"
+>>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-6"
      true
 >>> wallet_rescan_blockchain_state
      .....
@@ -58,7 +58,7 @@ cd programs/bts_xt
 
      After rescanning the initial state your wallet should display the initial balance and
      then start producing blocks about once every 50 seconds.  If you wait a minute and
-     then call getinfo you should see the number of blocks reported growing.
+     then call get_info you should see the number of blocks reported growing.
 
   @code
 >>> get_info
