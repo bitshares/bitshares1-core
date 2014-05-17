@@ -120,27 +120,27 @@ namespace bts { namespace wallet {
          ///@{
          wallet_account_record    create_receive_account( const std::string& account_name );
          void                     create_sending_account( const std::string& account_name, const extended_public_key& );
-         void                     rename_account( const std::string& current_account_name, 
+         void                     rename_account( const std::string& current_account_name,
                                                   const std::string& new_account_name );
 
          std::map<std::string,extended_address> list_receive_accounts( uint32_t start = 0, uint32_t count = -1 )const;
          std::map<std::string,extended_address> list_sending_accounts( uint32_t start = 0, uint32_t count = -1 )const;
          wallet_account_record    get_account( const std::string& account_name )const;
-         
 
 
-         void import_bitcoin_wallet( const fc::path& wallet_dat, 
+
+         void import_bitcoin_wallet( const fc::path& wallet_dat,
                                      const std::string& wallet_dat_passphrase,
-                                     const std::string& account_name = "*", 
+                                     const std::string& account_name = "*",
                                      const std::string& invoice_memo = "" );
 
          void import_private_key( const private_key_type& key,
-                                  const std::string& account_name = "*", 
+                                  const std::string& account_name = "*",
                                   const std::string& invoice_memo = "" );
 
          void import_wif_private_key( const std::string& wif_key,
-                                  const std::string& account_name = "*", 
-                                  const std::string& invoice_memo = "" );
+                                      const std::string& account_name = "*",
+                                      const std::string& invoice_memo = "" );
          ///@}
 
          /**
@@ -154,39 +154,39 @@ namespace bts { namespace wallet {
             do_not_sign           = 2
          };
 
-         invoice_summary          transfer( const std::string& to_account_name, 
-                                            const asset& amount, 
-                                            const std::string& invoice_memo = "",
+         invoice_summary          transfer( const std::string& to_account_name,
+                                            const asset& amount,
                                             const std::string& from_account_name = "*",
+                                            const std::string& invoice_memo = "",
                                             wallet_flag options = sign_and_broadcast );
 
-         signed_transaction       create_asset( const std::string& symbol, 
+         signed_transaction       create_asset( const std::string& symbol,
                                                 const std::string& asset_name,
-                                                const std::string& description, 
+                                                const std::string& description,
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
                                                 share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
                                                 const std::string& account_name = "*",
                                                 wallet_flag options = sign_and_broadcast );
 
-         signed_transaction       issue_asset( const std::string& symbol, 
-                                               share_type amount, 
+         signed_transaction       issue_asset( const std::string& symbol,
+                                               share_type amount,
                                                const std::string& account_name );
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         signed_transaction reserve_name( const std::string& name, 
-                                          const fc::variant& json_data, 
+         signed_transaction reserve_name( const std::string& name,
+                                          const fc::variant& json_data,
                                           bool as_delegate = false,
                                           const std::string& account_name = "*",
                                           wallet_flag flag = sign_and_broadcast );
 
-         signed_transaction update_name( const std::string& name, 
-                                         fc::optional<fc::variant> json_data, 
-                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(), 
-                                         bool as_delegate = false, 
+         signed_transaction update_name( const std::string& name,
+                                         fc::optional<fc::variant> json_data,
+                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(),
+                                         bool as_delegate = false,
                                          wallet_flag flag = sign_and_broadcast );
 
          void                                         set_delegate_trust_status(const std::string& delegate_name, fc::optional<int32_t> trust_level);

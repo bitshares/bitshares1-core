@@ -384,7 +384,7 @@ namespace bts { namespace rpc {
               modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
             }
             else if (parameter.classification == rpc_server::optional_positional)
-            { 
+            {
               if (arguments_from_caller.size() > next_argument_index)
                 // the caller provided this optional argument
                 modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
@@ -526,7 +526,7 @@ Result:
         }
         else
         {
-          // no exact matches for the command they requested.  
+          // no exact matches for the command they requested.
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
           for (itr = _method_map.lower_bound(command);
@@ -854,9 +854,9 @@ As json rpc call
             /* params:          name                    type        classification                   default value */
                               {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
                                {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
-                               {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")},
+                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0)},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
-                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0) }},
+                               {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )" };
@@ -866,8 +866,8 @@ As json rpc call
        std::string   to_account = params[1].as_string();
        fc::variant_object named_params = params[2].get_object();
        asset_id_type asset_id = named_params["asset_id"].as<asset_id_type>();
-       std::string from_account = named_params["from_account"].as_string();
-       std::string invoice_memo = named_params["invoice_memo"].as_string();
+       std::string   from_account = named_params["from_account"].as_string();
+       std::string   invoice_memo = named_params["invoice_memo"].as_string();
        bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
        for( auto trx : summary.payments )
           _client->broadcast_transaction( trx.second );
