@@ -1075,7 +1075,7 @@ namespace bts { namespace blockchain {
        return my->_head_block_id;
     }
     std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )const
-    {
+    { try {
        auto itr = my->_name_index.lower_bound(first);
        std::vector<name_record> names;
        while( itr.valid() && names.size() < count )
@@ -1084,6 +1084,6 @@ namespace bts { namespace blockchain {
           ++itr;
        }
        return names;
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
 
 } } // namespace bts::blockchain
