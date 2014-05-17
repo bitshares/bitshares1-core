@@ -110,8 +110,10 @@ namespace bts { namespace blockchain {
             void                       clear_redo_state( const block_id_type& id );
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
+            void                       recursive_mark_as_linked( const std::vector<block_id_type>& ids );
 
-            void update_delegate_production_info( const full_block& block_data, const pending_chain_state_ptr& pending_state );
+            void update_delegate_production_info( const full_block& block_data, 
+                                                  const pending_chain_state_ptr& pending_state );
 
             chain_database*                                           self;
             chain_observer*                                           _observer;
@@ -185,24 +187,58 @@ namespace bts { namespace blockchain {
          }
       }
 
+      void chain_database_impl::recursive_mark_as_linked( const std::vector<block_id_type>& ids )
+      {
+         std::vector<block_id_type> next_ids = ids;
+         while( next_ids.size() )
+         {
+            std::vector<block_id_type> pending;
+            for( auto item : next_ids )
+            {
+                block_fork_data record = _fork_db.fetch( item );
+                record.is_linked = true;
+                pending.insert( pending.end(), record.next_blocks.begin(), record.next_blocks.end() );
+                _fork_db.store( item, record );
+            }
+            next_ids = pending;
+         }
+      }
+
       /**
        *  Place the block in the block tree, the block tree contains all blocks
        *  and tracks whether they are valid, linked, and current.
+       *
+       *  There are several options for this block:
+       *
+       *  1) It extends an existing block
+       *      - a valid chain
+       *      - an invalid chain
+       *      - an unlinked chain
+       *  2) It is free floating and doesn't link to anything we have
+       *      - create two entries into the database
+       *          - one for this block
+       *          - placeholder for previous
+       *      - mark both as unlinked
+       *  3) It it provides the missing link between a the genesis block and existing chain
+       *      - all next blocks need to be updated to change state to 'linked'
        */
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
-      {
+      { try {
+          // first of all store this block at the given block number
+          _block_id_to_block.store( block_id, block_data );
+
+          // update the parallel block list
           std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
           std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id );
           parallel_blocks.push_back( block_id );
-
-          _block_id_to_block.store( block_id, block_data );
           _fork_number_db.store( block_data.block_num, parallel_blocks );
 
-          block_fork_data prev_fork_data;
 
+          // now find how it links in.
+          block_fork_data prev_fork_data;
           auto prev_itr = _fork_db.find( block_data.previous );
-          if( prev_itr.valid() )
+          if( prev_itr.valid() ) // we already know about its previous
           {
              prev_fork_data = prev_itr.value();
              prev_fork_data.next_blocks.push_back(block_id);
@@ -210,10 +246,10 @@ namespace bts { namespace blockchain {
           }
           else
           {
-             // create it...
+             // create it... we do not know about the previous block so
+             // we must create it and assume it is not linked...
              prev_fork_data.next_blocks.push_back(block_id);
              prev_fork_data.is_linked = false;
-
              _fork_db.store( block_data.previous, prev_fork_data );
           }
 
@@ -222,14 +258,20 @@ namespace bts { namespace blockchain {
           if( cur_itr.valid() )
           {
              current_fork = cur_itr.value();
+             if( !current_fork.is_linked && prev_fork_data.is_linked )
+             {
+                // we found the missing link
+                current_fork.is_linked = true;
+                recursive_mark_as_linked( current_fork.next_blocks );
+             }
           }
           else
           {
-             // create it, store it..
-             // current_fork =..
+             current_fork.is_linked = prev_fork_data.is_linked;
+             _fork_db.store( block_id, current_fork );
           }
           return current_fork;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
       void chain_database_impl::mark_invalid( const block_id_type& block_id )
       {
@@ -446,20 +488,49 @@ namespace bts { namespace blockchain {
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
+      /**
+       * Traverse the previous links of all blocks in fork until we find one that is_included
+       *
+       * The last item in the result will be the only block id that is already included in
+       * the blockchain.  
+       */
       std::vector<block_id_type> chain_database_impl::get_fork_history( const block_id_type& id )
-      {
-         // traverse the previous links of all blocks in fork until we find one that is_included
-         // return every block id in the path
-         return std::vector<block_id_type>();
-      }
+      { try {
+         std::vector<block_id_type> history;
+         history.push_back( id );
+
+         block_id_type next_id = id;
+         while( true )
+         {
+            auto header = self->get_block_header( next_id );
+            history.push_back( header.previous );
+            if( header.previous == block_id_type() )
+               return history;
+            auto prev_fork_data = _fork_db.fetch( header.previous );
+
+            /// this shouldn't happen if the database invariants are properly maintained 
+            FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
+            if( prev_fork_data.is_included )
+               return history;
+            next_id = header.previous;
+         }
+         return history;
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",id) ) }
 
       void  chain_database_impl::pop_block()
-      {
-         // fetch the undo state for the head block
-         // apply it
-         // update the block_num_to_block_id index
+      { try {
          // update the is_included flag on the fork data
-      }
+         auto fork_data = _fork_db.fetch( _head_block_id );
+         fork_data.is_included = false;
+         _fork_db.store( _head_block_id, fork_data );
+         // update the block_num_to_block_id index
+         _block_num_to_id.remove( _head_block_header.block_num );
+
+         // fetch the undo state for the head block
+         auto undo_state = _undo_state.fetch( _head_block_id );
+         undo_state.set_prev_state( self->shared_from_this() );
+         undo_state.apply_changes();
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
 
@@ -804,7 +875,14 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       my->_balances.store( r.id(), r );
+       if( r.balance == 0 )
+       {
+          my->_balances.remove( r.id() );
+       }
+       else
+       {
+          my->_balances.store( r.id(), r );
+       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 

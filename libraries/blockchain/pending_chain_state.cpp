@@ -8,10 +8,12 @@ namespace bts { namespace blockchain {
    {
    }
 
-
-   pending_chain_state::~pending_chain_state()
+   void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
+      _prev_state = prev_state;
    }
+
+   pending_chain_state::~pending_chain_state(){}
 
    /**
     *  Based upon the current state of the database, calculate any updates that

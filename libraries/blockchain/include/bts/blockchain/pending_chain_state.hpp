@@ -6,7 +6,10 @@ namespace bts { namespace blockchain {
    class pending_chain_state : public chain_interface
    {
       public:
-         pending_chain_state( chain_interface_ptr prev_state );
+         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
+
+         void set_prev_state( chain_interface_ptr prev_state );
+
          virtual ~pending_chain_state() override;
 
          virtual fc::time_point_sec     now()const override;
