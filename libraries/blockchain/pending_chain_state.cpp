@@ -1,5 +1,6 @@
 #include <bts/blockchain/pending_chain_state.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
@@ -81,6 +82,7 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_transaction_location( const transaction_id_type& id,
                                                          const transaction_location& loc )
    {
+      ilog( "store trx location: ${id} ${loc}", ("id",id)("loc",loc) );
       unique_transactions[id] = loc;
    }
 

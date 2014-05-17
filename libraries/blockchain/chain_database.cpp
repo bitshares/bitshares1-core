@@ -174,7 +174,11 @@ namespace bts { namespace blockchain {
             confirmed_trx_ids.insert( id );
             _pending_transactions.remove( id );
          }
-
+         // TODO: fix this section
+         _pending_fee_index.clear();
+        /*  This crashes... because modifying _pending_fee_index while
+         *  iterating over it is an error...
+         *
          for( auto pair : _pending_fee_index )
          {
             auto fee_index = pair.first;
@@ -182,6 +186,7 @@ namespace bts { namespace blockchain {
             if( confirmed_trx_ids.count( fee_index._trx ) > 0 )
                _pending_fee_index.erase( fee_index );
          }
+         */
       }
 
       /**
@@ -260,6 +265,7 @@ namespace bts { namespace blockchain {
                                                     const std::vector<signed_transaction>& user_transactions,
                                                     const pending_chain_state_ptr& pending_state )
       {
+         ilog( "apply transactions ${block_num}", ("block_num",block_num) );
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
@@ -394,6 +400,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);
 
+            ilog( "block data: ${block_data}", ("block_data",block_data) );
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );

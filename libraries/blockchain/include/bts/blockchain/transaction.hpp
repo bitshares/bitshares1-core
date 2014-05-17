@@ -212,7 +212,7 @@ namespace bts { namespace blockchain {
    struct transaction_location
    {
       transaction_location( uint32_t block_num = 0, uint32_t trx_num = 0 )
-      :block_num(0),trx_num(0){}
+      :block_num(block_num),trx_num(trx_num){}
 
       uint32_t block_num;
       uint32_t trx_num;
