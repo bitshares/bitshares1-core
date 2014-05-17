@@ -489,7 +489,7 @@ namespace bts { namespace rpc {
     }
 
     static rpc_server::method_data help_metadata{"help", nullptr,
-        /* description */ "Lists commands or detailed help for specified command.",
+        /* description */ "Lists commands or detailed help for specified command",
         /* returns: */    "bool",
         /* params:          name       type      classification                   default value */
                          {{ "command", "string", rpc_server::optional_positional, fc::ovariant() } },
@@ -571,7 +571,7 @@ Result:
     }
 
     static rpc_server::method_data blockchain_get_blockhash_metadata{"blockchain_get_blockhash", nullptr,
-                                     /* description */ "Returns hash of block in best-block-chain at index provided..",
+                                     /* description */ "Returns hash of block in best-block-chain at index provided",
                                      /* returns: */    "block_id_type",
                                      /* params:          name         type   classification                   default value */
                                                        {{"block_num", "int", rpc_server::required_positional, fc::ovariant()} },
@@ -594,7 +594,7 @@ Examples:
 
 
     static rpc_server::method_data blockchain_get_blockcount_metadata{"blockchain_get_blockcount", nullptr,
-                                     /* description */ "Returns the number of blocks in the longest block chain.",
+                                     /* description */ "Returns the number of blocks in the longest block chain",
                                      /* returns: */    "int",
                                      /* params:  */    { },
                                    /* prerequisites */ rpc_server::no_prerequisites,
@@ -613,7 +613,7 @@ Examples:
 
 
     static rpc_server::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
-                                     /* description */ "Opens the wallet at the given path.",
+                                     /* description */ "Opens the wallet at the given path",
                                      /* returns: */    "bool",
                                      /* params:          name             type      classification                   default value */
                                                        {{"wallet_file",   "path",   rpc_server::required_positional, fc::ovariant()},
@@ -704,7 +704,7 @@ Wallets exist in the wallet data directory
     }
 
     static rpc_server::method_data wallet_close_metadata{"wallet_close", nullptr,
-                                      /* description */ "Closes the curent wallet if one is open.",
+                                      /* description */ "Closes the curent wallet if one is open",
                                       /* returns: */    "bool",
                                       /* params:     */ {},
                                       /* prerequisites */ rpc_server::no_prerequisites,
@@ -808,9 +808,6 @@ As json rpc call
        return fc::variant();
     }
 
-
-
-
     static rpc_server::method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", nullptr,
           /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
           /* returns: */    "signed_transaction",
@@ -874,7 +871,6 @@ As json rpc call
        return fc::variant(summary);
     }
 
-
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
@@ -893,7 +889,7 @@ As json rpc call
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data wallet_list_reserved_names_metadata{"wallet_list_reserved_names", nullptr,
-            /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
+            /* description */ "Lists all reserved names controlled by this wallet, filtered by account",
             /* returns: */    "vector<name_record>",
             /* params:          name            type       classification                   default value */
                               {{"account_name", "string",  rpc_server::optional_positional, fc::variant("*")}},
@@ -912,7 +908,7 @@ As json rpc call
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
-            /* description */ "Lists all reserved names controlled by this wallet, filtered by account.",
+            /* description */ "Lists all reserved names controlled by this wallet, filtered by account",
             /* returns: */    "vector<name_record>",
             /* params:          name                    type       classification                   default value */
                               {{"current_account_name", "string",  rpc_server::required_positional, fc::ovariant()},
@@ -1013,19 +1009,18 @@ As a json rpc call
       return fc::variant( _client->get_wallet()->get_balance( account_name, asset_id ) );
     }
 
-
     static rpc_server::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
-            /* description */ "Retrieves all transactions into or out of this wallet.",
-            /* returns: */    "std::vector<transaction_state>",
+            /* description */ "Retrieves all transactions into or out of this wallet",
+            /* returns: */    "std::vector<wallet_transaction_record>",
             /* params:          name     type      classification                   default_value */
-                              {{"count", "int",    rpc_server::optional_positional, 0}},
+                              {{"count", "unsigned",    rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_get_transaction_history(const fc::variants& params)
     {
-      unsigned count = params[0].as<unsigned>(); // TODO implement count
-      return fc::variant( _client->get_wallet()->transactions() );
+      unsigned count = params[0].as<unsigned>();
+      return fc::variant( _client->get_wallet()->get_transactions( count ) );
     }
 
     static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
@@ -1041,7 +1036,7 @@ As a json rpc call
       return fc::variant( _client->get_chain()->get_name_record(params[0].as_string()) );
     }
     static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
-            /* description */ "Retrieves the name record",
+            /* description */ "Reserves the name record",
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
@@ -1054,7 +1049,7 @@ As a json rpc call
        return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
     }
     static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
-            /* description */ "Registeres a delegate to be voted upon by shareholders.",
+            /* description */ "Registeres a delegate to be voted upon by shareholders",
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
@@ -1183,7 +1178,7 @@ Examples:
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data validate_address_metadata{"validate_address", nullptr,
-            /* description */ "Return information about given BitShares address.",
+            /* description */ "Return information about given BitShares address",
             /* returns: */    "bool",
             /* params:          name              type       classification                   default_value */
                               {{"address",        "address", rpc_server::required_positional, fc::ovariant()}},
@@ -1265,7 +1260,6 @@ Examples:
       _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_password );
       return fc::variant(true);
     }
-
 
     // TODO: get account argument
     static rpc_server::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
@@ -1365,7 +1359,7 @@ Arguments:
     }
 
     static rpc_server::method_data network_get_connection_count_metadata{"network_get_connection_count", nullptr,
-            /* description */ "Returns the number of connections to other nodes.",
+            /* description */ "Returns the number of connections to other nodes",
             /* returns: */    "bool",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated,
@@ -1384,7 +1378,7 @@ Examples:
     }
 
     static rpc_server::method_data network_get_peer_info_metadata{"network_get_peer_info", nullptr,
-            /* description */ "Returns data about each connected node.",
+            /* description */ "Returns data about each connected node",
             /* returns: */    "vector<jsonobject>",
             /* params:     */ {},
           /* prerequisites */ rpc_server::json_authenticated,
@@ -1526,7 +1520,7 @@ in our test network.
     }
 
     static rpc_server::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
-        /* description */ "Lists commands.",
+        /* description */ "Lists commands",
         /* returns: */    "vector<string>",
         /* params:     */ {},
       /* prerequisites */ rpc_server::no_prerequisites,

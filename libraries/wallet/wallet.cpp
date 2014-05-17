@@ -56,6 +56,7 @@ namespace bts { namespace wallet {
                      }
                }
             }
+
             void cache_deterministic_keys( const wallet_account_record& account )
             {
                 for( auto item : account.last_payment_index )
@@ -85,6 +86,7 @@ namespace bts { namespace wallet {
                   scan_name( name.second );
                }
             }
+
             wallet_account_record get_account( const std::string& account_name )
             { try {
                auto account_name_itr = _account_name_index.find(account_name);
@@ -131,16 +133,16 @@ namespace bts { namespace wallet {
                                      int32_t account_number,
                                      const std::string& invoice_memo );
 
-            wallet* self;
+            wallet*                                                             self;
 
-            asset _priority_fee;
+            asset                                                               _priority_fee;
 
-            bool           _is_open;
-            fc::time_point _relock_time;
-            fc::future<void> _wallet_relocker_done;
-            fc::path       _data_dir;
-            std::string    _wallet_name;
-            fc::path       _wallet_filename;
+            bool                                                                _is_open;
+            fc::time_point                                                      _relock_time;
+            fc::future<void>                                                    _wallet_relocker_done;
+            fc::path                                                            _data_dir;
+            std::string                                                         _wallet_name;
+            fc::path                                                            _wallet_filename;
 
             /** meta_record_property_enum is the key */
             std::unordered_map<int,wallet_meta_record>                          _meta;
@@ -178,8 +180,8 @@ namespace bts { namespace wallet {
             std::unordered_map<transaction_id_type,wallet_transaction_record>   _transactions;
 
             /** caches all addresses and where in the hierarchial tree they can be found */
-            std::unordered_map<address, address_index>                             _receive_keys;
-            std::unordered_map<address, address_index>                             _sending_keys;
+            std::unordered_map<address, address_index>                          _receive_keys;
+            std::unordered_map<address, address_index>                          _sending_keys;
 
             /** stores the user's trust level for delegates */
             std::map<std::string, delegate_trust_status> _delegate_trust_status_map;
@@ -195,10 +197,9 @@ namespace bts { namespace wallet {
             /** used when address_index == (X,-1,N) to lookup foreign private keys, where
              * N is the key into _extra_receive_keys
              **/
-            std::unordered_map<int32_t, private_key_record >                   _extra_receive_keys;
+            std::unordered_map<int32_t, private_key_record >                    _extra_receive_keys;
 
-            std::unordered_map<std::string, uint32_t>                          _account_name_index;
-
+            std::unordered_map<std::string, uint32_t>                           _account_name_index;
 
             int32_t get_new_index()
             {
@@ -358,10 +359,9 @@ namespace bts { namespace wallet {
                 store_record( itr->second );
             }
 
-
             void scan_balance( const balance_record& account )
             {
-                switch( (withdraw_condition_types)account.condition.condition )
+                switch( (withdraw_condition_types)account.condition.type )
                 {
                    case withdraw_signature_type:
                    {
@@ -462,10 +462,15 @@ namespace bts { namespace wallet {
                }
                return false;
             }
-            bool is_receive_address( const address& a ) { return self->is_receive_address( a ); }
+
+            bool is_receive_address( const address& a ) 
+            { 
+               return self->is_receive_address( a ); 
+            }
+
             bool scan_deposit( const deposit_operation& op )
             {
-               switch( (withdraw_condition_types) op.condition.condition )
+               switch( (withdraw_condition_types) op.condition.type )
                {
                   case withdraw_signature_type:
                      return self->is_receive_address( op.condition.as<withdraw_with_signature>().owner );
@@ -578,12 +583,20 @@ namespace bts { namespace wallet {
                }
                else
                {
-                  _transactions[trx_id] = wallet_transaction_record( get_new_index(), trx );
+                  auto rec = wallet_transaction_record( get_new_index(), trx );
+                  auto loc = _blockchain->get_transaction_location( trx_id );
+                  if( loc ) 
+                  {
+                      rec.location = *loc;
+                      rec.received = _blockchain->get_block_header( loc->block_num ).timestamp;
+                  }
+                  _transactions[trx_id] = rec;
                   trx_rec_itr = _transactions.find( trx_id );
                }
                store_record( trx_rec_itr->second );
             }
 
+            // TODO: optimize input balance collection
             void withdraw_to_transaction( signed_transaction& trx,
                                           const asset& amount, std::unordered_set<address>& required_sigs )
             { try {
@@ -915,13 +928,11 @@ namespace bts { namespace wallet {
    { try {
         auto current_itr = my->_account_name_index.find( account_name );
         FC_ASSERT( current_itr == my->_account_name_index.end() );
-        FC_ASSERT( is_unlocked() );
 
         wallet_account_record wcr;
         wcr.index             = my->get_new_index();
         wcr.account_number    = my->get_next_account_number();
         wcr.name              = account_name;
-
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
         wcr.extended_key = master_key.child( wcr.account_number );
@@ -929,8 +940,8 @@ namespace bts { namespace wallet {
 
         my->_account_name_index[account_name] = wcr.account_number;
         my->_accounts[wcr.account_number] = wcr;
-        my->store_record( wcr );
 
+        my->store_record( wcr );
         my->cache_deterministic_keys( wcr, 0, 0 );
         my->cache_deterministic_keys( wcr, 1, 0 );
         return wcr;
@@ -966,20 +977,20 @@ namespace bts { namespace wallet {
         auto current_itr = my->_account_name_index.find(account_name);
         FC_ASSERT( current_itr == my->_account_name_index.end() );
 
-        wallet_account_record account;
-        account.index             =  my->get_new_index();
-        account.account_number    = -my->get_next_account_number();
-        account.name              =  account_name;
+        wallet_account_record wcr;
+        wcr.index             =  my->get_new_index();
+        wcr.account_number    = -my->get_next_account_number();
+        wcr.name              =  account_name;
 
-        account.extended_key = account_pub_key;
-        wlog( "creating account '${account_name}'", ("account_name",account) );
+        wcr.extended_key = account_pub_key;
+        wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
-        my->_account_name_index[account_name] = account.account_number;
-        my->_accounts[account.account_number] = account;
+        my->_account_name_index[account_name] = wcr.account_number;
+        my->_accounts[wcr.account_number] = wcr;
 
-        my->store_record( account );
-        my->cache_deterministic_keys( account, 0, 0 );
-        my->cache_deterministic_keys( account, 1, 0 );
+        my->store_record( wcr );
+        my->cache_deterministic_keys( wcr, 0, 0 );
+        my->cache_deterministic_keys( wcr, 1, 0 );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
 
    std::map<std::string,extended_address> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
@@ -1138,7 +1149,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-
+   // TODO: save memo
    invoice_summary  wallet::transfer( const std::string& to_account_name,
                                       const asset& amount,
                                       const std::string& from_account_name,
@@ -1159,6 +1170,7 @@ namespace bts { namespace wallet {
       else
       {
          // TODO: limit to from_account_name
+         // TODO: optimize fee calculation
          my->withdraw_to_transaction( trx, amount, required_sigs );
          my->withdraw_to_transaction( trx, my->_priority_fee, required_sigs );
       }
@@ -1391,7 +1403,6 @@ namespace bts { namespace wallet {
          FC_ASSERT( !"Invalid Private Key Format" );
    } FC_RETHROW_EXCEPTIONS( warn, "unable to import wif private key" ) }
 
-
    void wallet::scan_chain( uint32_t block_num, scan_progress_callback cb  )
    { try {
        uint32_t head_block_num = my->_blockchain->get_head_block_num();
@@ -1422,17 +1433,72 @@ namespace bts { namespace wallet {
       my->_data_dir = data_dir;
    }
 
+   /**
+    * TODO
+    * @todo actually filter based upon account_name and use "*" to represent all accounts
+    */
+   std::vector<wallet_transaction_record> wallet::get_transactions( unsigned count )const
+   {
+       std::vector<wallet_transaction_record> trx_records;
+       trx_records.reserve(my->_transactions.size());
+
+       for( auto item : my->_transactions )
+           trx_records.push_back( item.second );
+
+       /* Sort from oldest to newest */
+       auto comp = [](const wallet_transaction_record& a, const wallet_transaction_record& b)->bool
+       {
+           if (a.location.block_num == b.location.block_num) return a.location.trx_num < b.location.trx_num;
+           return a.location.block_num < b.location.block_num;
+       };
+       std::sort(trx_records.begin(), trx_records.end(), comp);
+
+       if (count > 0 && count < trx_records.size())
+       return std::vector<wallet_transaction_record>(trx_records.end() - count, trx_records.end());
+
+       return trx_records;
+   }
+
+   fc::optional<address> wallet::get_owning_address( const balance_id_type& id )const
+   {
+       auto itr = my->_balances.find( id );
+       if( itr == my->_balances.end() )
+           return fc::optional<address>();
+
+       auto condition = itr->second.condition;
+       if( withdraw_condition_types(condition.type) != withdraw_signature_type )
+           return fc::optional<address>();
+
+       return fc::optional<address>(condition.as<withdraw_with_signature>().owner);
+   }
+
+   fc::optional<wallet_account_record> wallet::get_account_record( const address& addr)const
+   {
+       auto itr = my->_receive_keys.find( addr );
+       if( itr == my->_receive_keys.end() )
+       {
+           itr = my->_sending_keys.find( addr );
+           if( itr == my->_sending_keys.end() )
+               return fc::optional<wallet_account_record>();
+       }
+
+       if( my->_accounts.count( itr->second.account_number ) <= 0 )
+           return fc::optional<wallet_account_record>();
+
+       return fc::optional<wallet_account_record>( my->_accounts[itr->second.account_number] );
+   }
+
    std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name )const
    {
-      return my->_transactions;
+       return my->_transactions;
    }
 
    /**
-    * @todo actually filter based upon account_name and use "*" to represetn all accounts
+    *  @todo actually filter based upon account_name and use "*" to represetn all accounts
     */
    std::unordered_map<name_id_type, wallet_name_record>  wallet::names( const std::string& account_name  )const
    {
-      return my->_names;
+       return my->_names;
    }
 
 } } // bts::wallet

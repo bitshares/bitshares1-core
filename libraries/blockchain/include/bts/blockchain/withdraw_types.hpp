@@ -23,12 +23,12 @@ namespace bts { namespace blockchain {
     */
    struct withdraw_condition
    {
-      withdraw_condition():asset_id(0),delegate_id(0),condition(0){}
+      withdraw_condition():asset_id(0),delegate_id(0),type(withdraw_null_type){}
 
       template<typename WithdrawType>
       withdraw_condition( const WithdrawType& t, asset_id_type asset_id_arg = 0, name_id_type delegate_id_arg = 0 )
       {
-         condition = WithdrawType::type;
+         type = WithdrawType::type;
          asset_id = asset_id_arg;
          delegate_id = delegate_id_arg;
          data = fc::raw::pack( t );
@@ -37,16 +37,16 @@ namespace bts { namespace blockchain {
       template<typename WithdrawType>
       WithdrawType as()const
       {
-         FC_ASSERT( condition == WithdrawType::type, "", ("condition",condition)("WithdrawType",WithdrawType::type) );
+         FC_ASSERT( type == WithdrawType::type, "", ("type",type)("WithdrawType",WithdrawType::type) );
          return fc::raw::unpack<WithdrawType>(data);
       }
 
       balance_id_type get_address()const;
 
-      asset_id_type     asset_id;
-      name_id_type      delegate_id;
-      fc::enum_type<uint8_t,withdraw_condition_types>           condition;
-      std::vector<char> data;
+      asset_id_type                                     asset_id;
+      name_id_type                                      delegate_id;
+      fc::enum_type<uint8_t,withdraw_condition_types>   type;
+      std::vector<char>                                 data;
    };
 
    struct withdraw_with_signature 
@@ -102,7 +102,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_password_type)
         (withdraw_option_type) )
 
-FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(condition)(data) )
+FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
 FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(password_hash) )
