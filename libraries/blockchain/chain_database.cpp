@@ -174,19 +174,15 @@ namespace bts { namespace blockchain {
             confirmed_trx_ids.insert( id );
             _pending_transactions.remove( id );
          }
-         // TODO: fix this section
-         _pending_fee_index.clear();
-        /*  This crashes... because modifying _pending_fee_index while
-         *  iterating over it is an error...
-         *
-         for( auto pair : _pending_fee_index )
+
+         auto temp_pending_fee_index( _pending_fee_index );
+         for( auto pair : temp_pending_fee_index )
          {
             auto fee_index = pair.first;
 
             if( confirmed_trx_ids.count( fee_index._trx ) > 0 )
                _pending_fee_index.erase( fee_index );
          }
-         */
       }
 
       /**
