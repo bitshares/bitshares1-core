@@ -96,7 +96,7 @@ namespace bts { namespace cli {
                     _rpc_server->direct_invoke_method("wallet_create", arguments);
                     arguments = {passphrase, 60 * 5}; // default to five minute timeout
                     _rpc_server->direct_invoke_method("wallet_unlock", arguments);
-                  } 
+                  }
                   else if (choice == "2")
                   {
                     std::cout << "Enter the name of the wallet to open, or hit enter to open the wallet named \"default\"\n";
@@ -356,7 +356,7 @@ namespace bts { namespace cli {
                 }
                 catch (const fc::eof_exception& e)
                 {
-                  if (!method_data.parameters[i].classification == bts::rpc::rpc_server::required_positional)
+                  if (method_data.parameters[i].classification != bts::rpc::rpc_server::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
@@ -367,6 +367,9 @@ namespace bts { namespace cli {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
+
+                if (method_data.parameters[i].classification == bts::rpc::rpc_server::optional_named)
+                  break;
               }
               return arguments;
             }
@@ -834,7 +837,7 @@ namespace bts { namespace cli {
 
    void cli::list_delegates( uint32_t count )
    {
-        std::vector<name_record> delegates = 
+        std::vector<name_record> delegates =
            my->_client->get_chain()->get_delegate_records_by_vote( 0, count);
 
         std::cerr<<"Delegate Ranking\n";

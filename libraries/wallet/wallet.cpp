@@ -126,6 +126,7 @@ namespace bts { namespace wallet {
                   scan_transaction( trx );
                }
             }
+
             void import_private_key( const private_key_type& priv_key,
                                      int32_t account_number,
                                      const std::string& invoice_memo );
@@ -935,7 +936,7 @@ namespace bts { namespace wallet {
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("account_name",account_name) ) }
 
-   void wallet::rename_account( const std::string& current_account_name, 
+   void wallet::rename_account( const std::string& current_account_name,
                                 const std::string& new_account_name )
    { try {
         FC_ASSERT( current_account_name != new_account_name );
@@ -953,9 +954,9 @@ namespace bts { namespace wallet {
        my->store_record( my->_accounts[current_index_itr->second] );
 
        my->_account_name_index[ new_account_name ] = current_index_itr->second;
-       my->_account_name_index.erase( current_index_itr ); 
+       my->_account_name_index.erase( current_index_itr );
 
-   } FC_RETHROW_EXCEPTIONS( warn, "Error renaming account", 
+   } FC_RETHROW_EXCEPTIONS( warn, "Error renaming account",
                             ("current_account_name",current_account_name)
                             ("new_account_name",new_account_name) ) }
 
@@ -1140,8 +1141,8 @@ namespace bts { namespace wallet {
 
    invoice_summary  wallet::transfer( const std::string& to_account_name,
                                       const asset& amount,
-                                      const std::string& invoice_memo,
                                       const std::string& from_account_name,
+                                      const std::string& invoice_memo,
                                       wallet_flag options )
    { try {
       FC_ASSERT( is_unlocked() );
@@ -1162,14 +1163,14 @@ namespace bts { namespace wallet {
          my->withdraw_to_transaction( trx, my->_priority_fee, required_sigs );
       }
 
+      // TODO: implement wallet voting algorithm
       name_id_type delegate_id = rand()%BTS_BLOCKCHAIN_NUM_DELEGATES + 1;
 
+      // get next payment_address for to_account_name
       int32_t sending_invoice_index;
       int32_t last_sending_payment_index;
       address payment_address;
       my->get_new_payment_address_from_account( to_account_name, sending_invoice_index, last_sending_payment_index, payment_address );
-
-      // get next payment_address for to_account_name
 
       trx.deposit( payment_address, amount, delegate_id );
       my->sign_transaction( trx, required_sigs );
@@ -1177,25 +1178,14 @@ namespace bts { namespace wallet {
       result.payments[trx.id()]         = trx;
       result.from_account               = from_account_name;
       result.to_account                 = to_account_name;
-      result.sending_invoice_index      =
-      result.last_sending_payment_index = 0;
+      result.sending_invoice_index      = sending_invoice_index;
+      result.last_sending_payment_index = last_sending_payment_index;
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("to_account",to_account_name)
                                   ("amount",amount)
                                   ("invoice_memo",invoice_memo)
                                   ("from_account",from_account_name)
                                   ("options",options) ) }
-
-   /*
-   signed_transaction wallet::send_to_address( const asset& amount,
-                                               const address& owner,
-                                               const std::string& invoice_memo )
-   { try {
-
-     return trx;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("amount",amount)("owner",owner) ) }
-   */
-
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,
@@ -1388,9 +1378,9 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
-   void wallet::import_wif_private_key( const std::string& wif, 
-                                const std::string& account_name, 
-                                const std::string& invoice_memo )
+   void wallet::import_wif_private_key( const std::string& wif,
+                                        const std::string& account_name,
+                                        const std::string& invoice_memo )
    { try {
       auto wif_bytes = fc::from_base58(wif);
       auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
