@@ -203,7 +203,7 @@ namespace bts { namespace blockchain {
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
       if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
 
-      switch( (withdraw_condition_types)arec->condition.condition )
+      switch( (withdraw_condition_types)arec->condition.type )
       {
          case withdraw_signature_type:  
          {

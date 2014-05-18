@@ -45,6 +45,7 @@ namespace bts { namespace rpc {
     enum parameter_classification
     {
       required_positional,
+      required_positional_hidden, /* Hide in help e.g. interactive password entry */
       optional_positional,
       optional_named
     };

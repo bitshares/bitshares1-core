@@ -20,9 +20,9 @@ namespace fc {
       fc::mutable_variant_object obj;
       obj["asset_id"] = var.asset_id;
       obj["delegate_id"] = var.delegate_id;
-      obj["condition"] =  var.condition;
+      obj["type"] =  var.type;
 
-      switch( (withdraw_condition_types) var.condition )
+      switch( (withdraw_condition_types) var.type )
       {
          case withdraw_signature_type:
             obj["data"] = fc::raw::unpack<withdraw_with_signature>( var.data );
@@ -49,9 +49,9 @@ namespace fc {
       auto obj = var.get_object();
       from_variant( obj["asset_id"], vo.asset_id );
       from_variant( obj["delegate_id"], vo.delegate_id );
-      from_variant( obj["condition"], vo.condition );
+      from_variant( obj["type"], vo.type );
 
-      switch( (withdraw_condition_types) vo.condition )
+      switch( (withdraw_condition_types) vo.type )
       {
          case withdraw_signature_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_with_signature>() );
