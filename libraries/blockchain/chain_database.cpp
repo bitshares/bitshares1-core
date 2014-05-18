@@ -285,22 +285,28 @@ namespace bts { namespace blockchain {
          // fetch the fork data for block_id, mark it as invalid and
          // then mark every item after it as invalid as well.
       }
-      void chain_database_impl::mark_included( const block_id_type& block_id, bool state )
-      {
-         // fetch the fork data for block_id, mark it as invalid and
-         // then mark every item after it as invalid as well.
-      }
+      void chain_database_impl::mark_included( const block_id_type& block_id, bool included )
+      { try {
+         auto fork_data = _fork_db.fetch( block_id );
+         if( fork_data.is_included != included )
+         {
+            fork_data.is_included = included;
+            _fork_db.store( block_id, fork_data );
+         }
+         // fetch the fork data for block_id, mark it as included and
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("included",included) ) }
 
       void chain_database_impl::switch_to_fork( const block_id_type& block_id )
       { try {
          ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          std::vector<block_id_type> history = get_fork_history( block_id );
          FC_ASSERT( history.size() > 0 );
-         while( history.front() != _head_block_id )
+         while( history.back() != _head_block_id )
          {
+            ilog( "    pop ${id}", ("id",_head_block_id) );
             pop_block();
          }
-         for( uint32_t i = 1; i < history.size(); ++i )
+         for( int32_t i = history.size()-2; i >= 0 ; --i )
          {
             extend_chain( self->get_block( history[i] ) );
          }
@@ -511,7 +517,7 @@ namespace bts { namespace blockchain {
          while( true )
          {
             auto header = self->get_block_header( next_id );
-            ilog( "header: ${h}", ("h",header) );
+            //ilog( "header: ${h}", ("h",header) );
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
             {
@@ -535,17 +541,24 @@ namespace bts { namespace blockchain {
 
       void  chain_database_impl::pop_block()
       { try {
+         FC_ASSERT( _head_block_header.block_num > 0 );
+
          // update the is_included flag on the fork data
-         auto fork_data = _fork_db.fetch( _head_block_id );
-         fork_data.is_included = false;
-         _fork_db.store( _head_block_id, fork_data );
+         mark_included( _head_block_id, false );
+
          // update the block_num_to_block_id index
          _block_num_to_id.remove( _head_block_header.block_num );
+
+         auto previous_block_id = _head_block_header.previous;
 
          // fetch the undo state for the head block
          auto undo_state = _undo_state.fetch( _head_block_id );
          undo_state.set_prev_state( self->shared_from_this() );
          undo_state.apply_changes();
+
+         _head_block_id = previous_block_id;
+         _head_block_header = self->get_block_header( _head_block_id );
+
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail

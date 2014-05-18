@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
 
 
     // produce blocks for 30 seconds...
-    for( uint32_t i = 0; i < 10; ++i )
+    for( uint32_t i = 0; i < 20; ++i )
     {
        auto now = fc::time_point::now();
        std::cerr << "now: "<< std::string( now ) << "\n";
@@ -258,7 +258,9 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
        try {
           auto b = your_chain->get_block( i );
           my_chain->push_block(b);
-          std::cerr << "push block: " << b.block_num << "    my length: " << my_chain->get_head_block_num() << "\n";
+          std::cerr << "push block: " << b.block_num 
+                    << "    my length: " << my_chain->get_head_block_num() 
+                    << "  your_length: " << your_length << " \n";
        } 
        catch ( const fc::exception& e ) 
        {
