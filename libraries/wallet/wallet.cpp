@@ -722,8 +722,6 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}  ${password}", ("wallet_dir",wallet_dir)("password",password) )
 
-      std::cout << "Opening wallet " << wallet_dir.generic_string() << "\n";
-
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
       my->_wallet_db.open( wallet_dir, true );
       my->_wallet_filename = wallet_dir;
@@ -817,6 +815,7 @@ namespace bts { namespace wallet {
       my->_is_open = true;
       lock();
 
+      std::cout << "Opened wallet " << wallet_dir.generic_string() << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
 
    bool wallet::is_open()const                   { return my->_is_open;                         }
