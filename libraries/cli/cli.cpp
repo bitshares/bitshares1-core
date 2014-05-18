@@ -425,11 +425,25 @@ namespace bts { namespace cli {
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
-              if (command == "sendtoaddress")
+              std::string cmd = command;
+              try
+              {
+                // command could be alias, so get the real name of the method.
+                auto method_data = _rpc_server->get_method_data(command);
+                cmd = method_data.name;
+              }
+              catch (fc::key_not_found_exception&)
+              {
+              }
+              catch (...)
+              {
+              }
+              
+              if (cmd == "sendtoaddress")
               {
                 // sendtoaddress does its own output formatting
               }
-              else if(command == "list_receive_addresses")
+              else if(cmd == "list_receive_addresses")
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
@@ -438,16 +452,16 @@ namespace bts { namespace cli {
                   std::cout << std::setw( 33 ) << std::left << std::string(item.first) << " : " << item.second << "\n";
                 std::cout << std::right;
               }
-              else if (command == "help")
+              else if (cmd == "help")
               {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
               }
-              else if (command == "rescan")
+              else if (cmd == "rescan")
               {
                 std::cout << "\ndone scanning block chain\n";
               }
-              else if (command == "get_transaction_history")
+              else if (cmd == "get_transaction_history")
               {
                  std::cout << "temporarially disabled\n";
                 // auto trx_history = result.as<std::vector<transaction_state>>();
@@ -460,7 +474,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
+                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(cmd);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")
