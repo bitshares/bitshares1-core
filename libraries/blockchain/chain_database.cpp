@@ -225,6 +225,9 @@ namespace bts { namespace blockchain {
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
       { try {
+          ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
+                ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
+
           // first of all store this block at the given block number
           _block_id_to_block.store( block_id, block_data );
 
@@ -240,16 +243,18 @@ namespace bts { namespace blockchain {
           auto prev_itr = _fork_db.find( block_data.previous );
           if( prev_itr.valid() ) // we already know about its previous
           {
+             ilog( "           we already know about its previous" );
              prev_fork_data = prev_itr.value();
              prev_fork_data.next_blocks.push_back(block_id);
              _fork_db.store( prev_itr.key(), prev_fork_data );
           }
           else
           {
+             ilog( "           we don't know about its previous" );
              // create it... we do not know about the previous block so
              // we must create it and assume it is not linked...
              prev_fork_data.next_blocks.push_back(block_id);
-             prev_fork_data.is_linked = false;
+             prev_fork_data.is_linked = block_data.previous == block_id_type(); //false;
              _fork_db.store( block_data.previous, prev_fork_data );
           }
 
@@ -258,6 +263,7 @@ namespace bts { namespace blockchain {
           if( cur_itr.valid() )
           {
              current_fork = cur_itr.value();
+             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
              if( !current_fork.is_linked && prev_fork_data.is_linked )
              {
                 // we found the missing link
@@ -268,6 +274,7 @@ namespace bts { namespace blockchain {
           else
           {
              current_fork.is_linked = prev_fork_data.is_linked;
+             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
              _fork_db.store( block_id, current_fork );
           }
           return current_fork;
@@ -286,6 +293,7 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::switch_to_fork( const block_id_type& block_id )
       { try {
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          std::vector<block_id_type> history = get_fork_history( block_id );
          FC_ASSERT( history.size() > 0 );
          while( history.front() != _head_block_id )
@@ -495,6 +503,7 @@ namespace bts { namespace blockchain {
        */
       std::vector<block_id_type> chain_database_impl::get_fork_history( const block_id_type& id )
       { try {
+         ilog( "" );
          std::vector<block_id_type> history;
          history.push_back( id );
 
@@ -502,17 +511,25 @@ namespace bts { namespace blockchain {
          while( true )
          {
             auto header = self->get_block_header( next_id );
+            ilog( "header: ${h}", ("h",header) );
             history.push_back( header.previous );
             if( header.previous == block_id_type() )
+            {
+               ilog( "return: ${h}", ("h",history) );
                return history;
+            }
             auto prev_fork_data = _fork_db.fetch( header.previous );
 
             /// this shouldn't happen if the database invariants are properly maintained 
             FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
             if( prev_fork_data.is_included )
+            {
+               ilog( "return: ${h}", ("h",history) );
                return history;
+            }
             next_id = header.previous;
          }
+         ilog( "${h}", ("h",history) );
          return history;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",id) ) }
 

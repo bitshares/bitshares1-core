@@ -182,6 +182,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
 BOOST_AUTO_TEST_CASE( basic_fork_test )
 {
+   try {
     // the purpose of this test is to validate the fork handling
     // when two alternative forks are produced and then merged.
 
@@ -218,7 +219,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
 
 
     // produce blocks for 30 seconds...
-    for( uint32_t i = 0; i < 30; ++i )
+    for( uint32_t i = 0; i < 10; ++i )
     {
        auto now = fc::time_point::now();
        std::cerr << "now: "<< std::string( now ) << "\n";
@@ -263,6 +264,11 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
           std::cerr << "    exception: " << e.to_string() << "\n";
        }
     }
-    
-
+    FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
+  } 
+   catch ( const fc::exception& e )
+  {
+     elog( "${e}", ("e",e.to_detail_string() ) );
+     throw;
+  }
 }
