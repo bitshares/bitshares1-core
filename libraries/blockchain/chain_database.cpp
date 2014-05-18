@@ -202,6 +202,7 @@ namespace bts { namespace blockchain {
                 block_fork_data record = _fork_db.fetch( item );
                 record.is_linked = true;
                 pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
+                //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
                 _fork_db.store( item, record );
             }
             next_ids = pending;
@@ -218,6 +219,7 @@ namespace bts { namespace blockchain {
                 block_fork_data record = _fork_db.fetch( item );
                 record.is_valid = false;
                 pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
+                //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
                 _fork_db.store( item, record );
             }
             next_ids = pending;
@@ -245,8 +247,8 @@ namespace bts { namespace blockchain {
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
       { try {
-          ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
-                ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
+          //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
+           //     ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
 
           // first of all store this block at the given block number
           _block_id_to_block.store( block_id, block_data );
@@ -263,18 +265,20 @@ namespace bts { namespace blockchain {
           auto prev_itr = _fork_db.find( block_data.previous );
           if( prev_itr.valid() ) // we already know about its previous
           {
-             ilog( "           we already know about its previous" );
+             ilog( "           we already know about its previous: ${p}", ("p",block_data.previous) );
              prev_fork_data = prev_itr.value();
              prev_fork_data.next_blocks.insert(block_id);
+             //ilog( "              ${id} = ${record}", ("id",prev_itr.key())("record",prev_fork_data) );
              _fork_db.store( prev_itr.key(), prev_fork_data );
           }
           else
           {
-             ilog( "           we don't know about its previous" );
+             ilog( "           we don't know about its previous: ${p}", ("p",block_data.previous) );
              // create it... we do not know about the previous block so
              // we must create it and assume it is not linked...
              prev_fork_data.next_blocks.insert(block_id);
              prev_fork_data.is_linked = block_data.previous == block_id_type(); //false;
+             //ilog( "              ${id} = ${record}", ("id",block_data.previous)("record",prev_fork_data) );
              _fork_db.store( block_data.previous, prev_fork_data );
           }
 
@@ -294,7 +298,7 @@ namespace bts { namespace blockchain {
           else
           {
              current_fork.is_linked = prev_fork_data.is_linked;
-             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
+             //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
              _fork_db.store( block_id, current_fork );
           }
           return current_fork;
@@ -312,11 +316,16 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::mark_included( const block_id_type& block_id, bool included )
       { try {
+         //ilog( "included: ${block_id} = ${state}", ("block_id",block_id)("state",included) );
          auto fork_data = _fork_db.fetch( block_id );
-         if( fork_data.is_included != included )
+       //  if( fork_data.is_included != included )
          {
             fork_data.is_included = included;
-            if( included ) fork_data.is_valid  = true;
+            if( included )
+            {
+               fork_data.is_valid  = true;
+            }
+            //ilog( "store: ${id} => ${data}", ("id",block_id)("data",fork_data) );
             _fork_db.store( block_id, fork_data );
          }
          // fetch the fork data for block_id, mark it as included and
@@ -334,6 +343,7 @@ namespace bts { namespace blockchain {
          }
          for( int32_t i = history.size()-2; i >= 0 ; --i )
          {
+            ilog( "    extend ${i}", ("i",history[i]) );
             extend_chain( self->get_block( history[i] ) );
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
@@ -1179,6 +1189,11 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
       }
+      block_fork_data gen_fork;
+      gen_fork.is_valid = true;
+      gen_fork.is_included = true;
+      gen_fork.is_linked = true;
+      _fork_db.store( block_id_type(), gen_fork );
    }
 
    void chain_database::set_observer( chain_observer* observer )
@@ -1223,14 +1238,16 @@ namespace bts { namespace blockchain {
     void chain_database::export_fork_graph( const fc::path& filename )const
     {
        std::ofstream out( filename.generic_string().c_str() );
-       out << "digraph G {\n"; 
+       out << "digraph G { \n"; 
+       out << "rankdir=RL;\n";
           auto fork_itr = my->_fork_db.begin();
           while( fork_itr.valid() )
           {
              auto fork_data = fork_itr.value();
+             //ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
              for( auto next : fork_data.next_blocks )
              {
-                out << '"' << std::string ( next ).substr(0,5) <<"\" "
+                out << '"' << std::string ( fork_itr.key() ).substr(0,5) <<"\" "
                     << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled];\n";
                 out << '"' << std::string ( next ).substr(0,5) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,5) << "\";\n";
             }
