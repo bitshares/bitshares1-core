@@ -267,6 +267,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
           std::cerr << "    exception: " << e.to_string() << "\n";
        }
     }
+    my_chain->export_fork_graph( "fork_graph.dot" );
     FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
   } 
    catch ( const fc::exception& e )
