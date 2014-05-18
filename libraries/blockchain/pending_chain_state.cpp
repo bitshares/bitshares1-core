@@ -8,10 +8,12 @@ namespace bts { namespace blockchain {
    {
    }
 
-
-   pending_chain_state::~pending_chain_state()
+   void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
+      _prev_state = prev_state;
    }
+
+   pending_chain_state::~pending_chain_state(){}
 
    /**
     *  Based upon the current state of the database, calculate any updates that
@@ -82,7 +84,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_transaction_location( const transaction_id_type& id,
                                                          const transaction_location& loc )
    {
-      ilog( "store trx location: ${id} ${loc}", ("id",id)("loc",loc) );
       unique_transactions[id] = loc;
    }
 

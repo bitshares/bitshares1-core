@@ -81,6 +81,9 @@ namespace bts { namespace rpc {
 
          typedef std::map<std::string, rpc_server::method_data> method_map_type;
          method_map_type _method_map;
+        
+         /** the map of alias and method name */
+         std::map<std::string, std::string>     _alias_map;
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
@@ -229,14 +232,14 @@ namespace bts { namespace rpc {
                        params_log = "***";
                    fc_ilog( fc::logger::get("rpc"), "Processing ${path} ${method} (${params})", ("path",r.path)("method",method_name)("params",params_log));
 
-                   auto call_itr = _method_map.find( method_name );
-                   if( call_itr != _method_map.end() )
+                   auto call_itr = _alias_map.find( method_name );
+                   if( call_itr != _alias_map.end() )
                    {
                       fc::mutable_variant_object  result;
                       result["id"]     =  rpc_call["id"];
                       try
                       {
-                         result["result"] = dispatch_authenticated_method(call_itr->second, params);
+                         result["result"] = dispatch_authenticated_method(_method_map[call_itr->second], params);
                          auto reply = fc::json::to_string( result );
                          status = fc::http::reply::OK;
                          s.set_status( status );
@@ -345,8 +348,13 @@ namespace bts { namespace rpc {
             con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
             for (const method_map_type::value_type& method : _method_map)
             {
-              con->add_method(method.first, boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
-                                                        this, capture_con, method.second, _1));
+              auto bind_method = boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
+                                                        this, capture_con, method.second, _1);
+              con->add_method(method.first, bind_method);
+              for ( auto alias : method.second.aliases )
+              {
+                  con->add_method(alias, bind_method);
+              }
             }
          } // register methods
 
@@ -431,10 +439,10 @@ namespace bts { namespace rpc {
         fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
         {
           // ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
-          auto iter = _method_map.find(method_name);
-          if (iter == _method_map.end())
+          auto iter = _alias_map.find(method_name);
+          if (iter == _alias_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
-          return dispatch_authenticated_method(iter->second, arguments);
+          return dispatch_authenticated_method(_method_map[iter->second], arguments);
         }
 
         void check_connected_to_network()
@@ -501,7 +509,8 @@ Arguments:
 
 Result:
 "text" (string) The help text
-       )"};
+       )",
+        /*aliases*/ { "h" }};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
       std::string help_string;
@@ -524,16 +533,37 @@ Result:
           rpc_server::method_data method_data = itr->second;
           help_string = make_short_description(method_data);
           help_string += method_data.detailed_description;
+          if (method_data.aliases.size() > 0)
+          {
+            help_string += std::string("\naliases: ");
+            for (auto alias : method_data.aliases)
+            {
+              help_string += alias;
+            }
+          }
         }
         else
         {
           // no exact matches for the command they requested.
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
+          std::vector<std::string> match_commands;
           for (itr = _method_map.lower_bound(command);
                itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
                ++itr)
-            help_string += make_short_description(itr->second);
+            match_commands.push_back(itr->first);
+          // If they give us a alias(or its prefix), give them the list of real command names, eliminating duplication
+          for (auto alias_itr = _alias_map.lower_bound(command);
+                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command.size(), command) == 0;
+                  ++alias_itr)
+          {
+            if (std::find(match_commands.begin(), match_commands.end(), alias_itr->second) == match_commands.end())
+            {
+              match_commands.push_back(alias_itr->second);
+            }
+          }
+          for (auto c : match_commands)
+            help_string += make_short_description(_method_map[c]);
           if (help_string.empty())
             throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
         }
@@ -1594,10 +1624,10 @@ Result:
      my->_client = c;
   }
 
-  void rpc_server::configure( const rpc_server::config& cfg )
+  bool rpc_server::configure( const rpc_server::config& cfg )
   {
     if (!cfg.is_valid())
-      return;
+      return false;
     try
     {
       my->_config = cfg;
@@ -1611,6 +1641,7 @@ Result:
       my->_httpd.listen(cfg.httpd_endpoint);
       my->_httpd.on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
 
+      return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
   }
 
@@ -1621,9 +1652,9 @@ Result:
 
   const rpc_server::method_data& rpc_server::get_method_data(const std::string& method_name)
   {
-    auto iter = my->_method_map.find(method_name);
-    if (iter != my->_method_map.end())
-      return iter->second;
+    auto iter = my->_alias_map.find(method_name);
+    if (iter != my->_alias_map.end())
+      return my->_method_map[iter->second];
     FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
   }
 
@@ -1668,6 +1699,13 @@ Result:
   void rpc_server::register_method(method_data data)
   {
     validate_method_data(data);
+    FC_ASSERT(my->_alias_map.find(data.name) == my->_alias_map.end(), "attempting to register an exsiting method name ${m}", ("m", data.name));
+    my->_alias_map[data.name] = data.name;
+    for ( auto alias : data.aliases )
+    {
+        FC_ASSERT(my->_alias_map.find(alias) == my->_alias_map.end(), "attempting to register an exsiting method name ${m}", ("m", alias));
+        my->_alias_map[alias] = data.name;
+    }
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 
