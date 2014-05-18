@@ -76,6 +76,9 @@ namespace bts { namespace rpc {
 
          typedef std::map<std::string, rpc_server::method_data> method_map_type;
          method_map_type _method_map;
+        
+         /** the map of alias and method name */
+         std::map<std::string, std::string>     _alias_map;
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
@@ -222,14 +225,14 @@ namespace bts { namespace rpc {
                        params_log = "***";
                    fc_ilog( fc::logger::get("rpc"), "Processing ${path} ${method} (${params})", ("path",r.path)("method",method_name)("params",params_log));
 
-                   auto call_itr = _method_map.find( method_name );
-                   if( call_itr != _method_map.end() )
+                   auto call_itr = _alias_map.find( method_name );
+                   if( call_itr != _alias_map.end() )
                    {
                       fc::mutable_variant_object  result;
                       result["id"]     =  rpc_call["id"];
                       try
                       {
-                         result["result"] = dispatch_authenticated_method(call_itr->second, params);
+                         result["result"] = dispatch_authenticated_method(_method_map[call_itr->second], params);
                          auto reply = fc::json::to_string( result );
                          status = fc::http::reply::OK;
                          s.set_status( status );
@@ -338,8 +341,13 @@ namespace bts { namespace rpc {
             con->add_method("login", boost::bind(&rpc_server_impl::login, this, capture_con, _1));
             for (const method_map_type::value_type& method : _method_map)
             {
-              con->add_method(method.first, boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
-                                                        this, capture_con, method.second, _1));
+              auto bind_method = boost::bind(&rpc_server_impl::dispatch_method_from_json_connection,
+                                                        this, capture_con, method.second, _1);
+              con->add_method(method.first, bind_method);
+              for ( auto alias : method.second.aliases )
+              {
+                  con->add_method(alias, bind_method);
+              }
             }
          } // register methods
 
@@ -388,10 +396,10 @@ namespace bts { namespace rpc {
         fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
         {
           // ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
-          auto iter = _method_map.find(method_name);
-          if (iter == _method_map.end())
+          auto iter = _alias_map.find(method_name);
+          if (iter == _alias_map.end())
             FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
-          return dispatch_authenticated_method(iter->second, arguments);
+          return dispatch_authenticated_method(_method_map[iter->second], arguments);
         }
 
         void check_connected_to_network()
@@ -457,7 +465,8 @@ Arguments:
 
 Result:
 "text" (string) The help text
-       )"};
+       )",
+        /*aliases*/ { "h" }};
     fc::variant rpc_server_impl::help(const fc::variants& params)
     {
       std::string help_string;
@@ -1558,14 +1567,21 @@ Result:
 
   const rpc_server::method_data& rpc_server::get_method_data(const std::string& method_name)
   {
-    auto iter = my->_method_map.find(method_name);
-    if (iter != my->_method_map.end())
-      return iter->second;
+    auto iter = my->_alias_map.find(method_name);
+    if (iter != my->_alias_map.end())
+      return my->_method_map[iter->second];
     FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
   }
 
   void rpc_server::register_method(method_data data)
   {
+    FC_ASSERT(my->_alias_map.find(data.name) == my->_alias_map.end(), "attempting to register an exsiting method name ${m}", ("m", data.name));
+    my->_alias_map[data.name] = data.name;
+    for ( auto alias : data.aliases )
+    {
+        FC_ASSERT(my->_alias_map.find(alias) == my->_alias_map.end(), "attempting to register an exsiting method name ${m}", ("m", alias));
+        my->_alias_map[alias] = data.name;
+    }
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 

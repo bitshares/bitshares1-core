@@ -60,6 +60,7 @@ namespace bts { namespace rpc {
       std::vector<parameter_data> parameters;
       uint32_t                    prerequisites;
       std::string                 detailed_description;
+      std::vector<std::string>    aliases;
     };
 
     rpc_server();
