@@ -1602,10 +1602,10 @@ Result:
      my->_client = c;
   }
 
-  void rpc_server::configure( const rpc_server::config& cfg )
+  bool rpc_server::configure( const rpc_server::config& cfg )
   {
     if (!cfg.is_valid())
-      return;
+      return false;
     try
     {
       my->_config = cfg;
@@ -1619,6 +1619,7 @@ Result:
       my->_httpd.listen(cfg.httpd_endpoint);
       my->_httpd.on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
 
+      return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
   }
 
