@@ -532,16 +532,37 @@ Result:
           rpc_server::method_data method_data = itr->second;
           help_string = make_short_description(method_data);
           help_string += method_data.detailed_description;
+          if (method_data.aliases.size() > 0)
+          {
+            help_string += std::string("\naliases: ");
+            for (auto alias : method_data.aliases)
+            {
+              help_string += alias;
+            }
+          }
         }
         else
         {
           // no exact matches for the command they requested.
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
+          std::vector<std::string> match_commands;
           for (itr = _method_map.lower_bound(command);
                itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
                ++itr)
-            help_string += make_short_description(itr->second);
+            match_commands.push_back(itr->first);
+          // If they give us a alias(or its prefix), give them the list of real command names, eliminating duplication
+          for (auto alias_itr = _alias_map.lower_bound(command);
+                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command.size(), command) == 0;
+                  ++alias_itr)
+          {
+            if (std::find(match_commands.begin(), match_commands.end(), alias_itr->second) == match_commands.end())
+            {
+              match_commands.push_back(alias_itr->second);
+            }
+          }
+          for (auto c : match_commands)d 
+            help_string += make_short_description(_method_map[c]);
           if (help_string.empty())
             throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
         }
