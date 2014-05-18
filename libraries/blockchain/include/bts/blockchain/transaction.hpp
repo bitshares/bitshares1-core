@@ -26,14 +26,34 @@ namespace bts { namespace blockchain {
       digest_type                      digest()const;
 
       fc::optional<fc::time_point_sec> expiration;
+      /**
+       *  Some transactions such as bids/asks/options require a payout
+       *  as a condition of claiming the funds.  Ie: to claim a bid, you 
+       *  must pay the bidder the proper amount.  When making this payout
+       *  the system needs to know which delegate_id to use. 
+       */
       fc::optional<name_id_type>       delegate_id; // delegate being voted for in required payouts
       std::vector<operation>           operations; 
 
-      void withdraw( const balance_id_type& account, share_type amount );
-      void deposit( const address& addr, const asset& amount, name_id_type delegate_id );
-      void reserve_name( const std::string& name, const std::string& json_data, const public_key_type& master, const public_key_type& active, bool as_delegate = false );
-      void update_name( name_id_type name_id, const fc::optional<std::string>& json_data, const fc::optional<public_key_type>& active, bool as_delegate = false );
-   };
+      void withdraw( const balance_id_type& account, 
+                     share_type amount );
+
+      void deposit( const address& addr, 
+                    const asset& amount, 
+                    name_id_type delegate_id );
+
+      void reserve_name( const std::string& name, 
+                         const std::string& json_data, 
+                         const public_key_type& master, 
+                         const public_key_type& active, 
+                         bool as_delegate = false );
+
+      void update_name( name_id_type name_id, 
+                        const fc::optional<std::string>& json_data, 
+                        const fc::optional<public_key_type>& active, 
+                        bool as_delegate = false );
+   }; // transaction
+
    struct transaction_summary_details
    {
       /**
@@ -71,7 +91,7 @@ namespace bts { namespace blockchain {
       std::vector<asset>                         fees;
       std::vector<asset>                         amounts;
       fc::variant                                json_data;
-   };
+   }; // transaction_summary
 
 
    struct signed_transaction : public transaction
@@ -212,7 +232,7 @@ namespace bts { namespace blockchain {
    struct transaction_location
    {
       transaction_location( uint32_t block_num = 0, uint32_t trx_num = 0 )
-      :block_num(0),trx_num(0){}
+      :block_num(block_num),trx_num(trx_num){}
 
       uint32_t block_num;
       uint32_t trx_num;

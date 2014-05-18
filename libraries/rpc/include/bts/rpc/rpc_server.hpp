@@ -42,11 +42,40 @@ namespace bts { namespace rpc {
       connected_to_network = 8,
     };
 
+    enum parameter_classification
+    {
+      required_positional,
+      optional_positional,
+      optional_named
+    };
+
     struct parameter_data
     {
       std::string name;
       std::string type;
-      bool        required;
+      parameter_classification classification;
+      fc::ovariant default_value;
+      parameter_data(const parameter_data& rhs) :
+        name(rhs.name),
+        type(rhs.type),
+        classification(rhs.classification),
+        default_value(rhs.default_value)
+      {}
+      parameter_data(const parameter_data&& rhs) :
+        name(std::move(rhs.name)),
+        type(std::move(rhs.type)),
+        classification(std::move(rhs.classification)),
+        default_value(std::move(rhs.default_value))
+      {}
+      parameter_data(std::string name,
+                     std::string type,
+                     parameter_classification classification,
+                     fc::ovariant default_value) :
+        name(name),
+        type(type),
+        classification(classification),
+        default_value(default_value)
+      {}
     };
 
     typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
@@ -85,6 +114,7 @@ namespace bts { namespace rpc {
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
+    void validate_method_data(method_data method);
     void register_method(method_data method);
 
   private:

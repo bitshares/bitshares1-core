@@ -1,0 +1,30 @@
+@font-face {
+	font-family: 'Open Sans';
+	src: url('/webfonts/opensans-regular.eot');
+	src: url('/webfonts/opensans-regular.eot?#iefix') format('embedded-opentype'), url('/webfonts/opensans-regular.woff') format('woff'), url('/webfonts/opensans-regular.ttf') format('truetype'), url('/webfonts/opensans-regular.svg#open_sansregular') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+.navbar-brand {
+	padding: 10px 0 0 15px;
+}
+
+body {
+	max-width: 1024px;
+}
+
+.main-content {
+	border-top: none;
+	padding-top: 0;
+}
+
+.navbar-default.navbar-main {
+	border-bottom: none;
+}
+
+h3, .header .header-title {
+	margin-top: 0;
+	padding-top: 0;
+}
+

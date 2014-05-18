@@ -12,26 +12,11 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 
-programs/bts_xt/bts_xt
 programs/bts_xt/bts_xt_client
-programs/bts_xt/bts_xt_server
-programs/bts_xt/log.txt
 
-programs/dns/chain
-programs/dns/log.txt
-programs/dns/p2p_client
-programs/dns/p2p_server
-
-programs/kids/kids
-
+programs/utils/bts_create_genesis
 programs/utils/bts_create_key
-
-tests/blockchain_tests
+programs/utils/key_to_wif
 
 tests/bts_xt_client_tests
-
-tests/simple_net_test_client
-
-tests/dns/p2p_tests
 tests/chain_database_tests
-programs/utils/bts_create_genesis

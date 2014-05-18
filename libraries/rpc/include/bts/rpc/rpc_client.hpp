@@ -27,8 +27,14 @@ namespace bts { namespace rpc {
     void connect_to(const fc::ip::endpoint& remote_endpoint);
 
     bool login(const std::string& username, const std::string& password);
-    bool walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout);
-    bts::blockchain::address getnewaddress(const std::string& account = "");
+    bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
+    bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name);
+    void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
+    std::vector<std::string> wallet_list_receive_accounts(int32_t start = 0, uint32_t count = -1);
+    bts::wallet::invoice_summary wallet_transfer(int64_t amount, const std::string& sending_account_name,
+                                                 const std::string& invoice_memo = "",
+                                                 const std::string& from_account = "*",
+                                                 uint32_t asset_id = 0);
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
     std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
@@ -36,13 +42,14 @@ namespace bts { namespace rpc {
     bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
     bts::blockchain::signed_block_header getblock(uint32_t block_num);
     bool validateaddress(bts::blockchain::address address);
-    bool rescan(uint32_t block_num = 0);
+    bool wallet_rescan_blockchain(uint32_t block_num = 0);
     bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
-    bool import_private_key(const fc::sha256& hash, const std::string& label);
+    bool wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name = "default", bool rescan_blockchain = false);
     bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
     bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
-    fc::optional<std::string> currentwallet();
-    bool closewallet();
+    fc::optional<std::string> wallet_get_name();
+    bool wallet_close();
+    void wallet_lock();
     uint32_t getconnectioncount();
     fc::variants getpeerinfo();
     fc::variant_object getinfo();
@@ -50,7 +57,7 @@ namespace bts { namespace rpc {
     bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
     bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
 
-    void addnode(const fc::ip::endpoint& node, const std::string& command);
+    void network_add_node(const fc::ip::endpoint& node, const std::string& command);
     void stop();
   private:
     std::unique_ptr<detail::rpc_client_impl> my;

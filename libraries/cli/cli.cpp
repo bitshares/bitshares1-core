@@ -77,7 +77,46 @@ namespace bts { namespace cli {
             {
               if( !_client->get_wallet()->is_open() )
               {
-                  _rpc_server->direct_invoke_method("open_wallet", fc::variants());
+                  std::cout << "You must have a wallet open to execute this command.\n";
+                  std::cout << "Would you like to:\n";
+                  std::cout << " 1. Create a new wallet and open it\n";
+                  std::cout << " 2. Open an existing wallet\n";
+                  std::cout << " 3. Don't execute the command and return to the command prompt\n";
+                  std::string choice = _self->get_line("Choose [1/2/3]: ");
+                  boost::trim(choice);
+                  if (choice == "1")
+                  {
+                    std::cout << "Enter the name of the wallet to create, or hit enter to name your wallet \"default\"\n";
+                    std::string wallet_name = _self->get_line("wallet name [default]: ");
+                    boost::trim(wallet_name);
+                    if (wallet_name.empty())
+                      wallet_name = "default";
+                    std::string passphrase = _self->get_line("spending passphrase: ", true);
+                    fc::variants arguments{wallet_name, passphrase};
+                    _rpc_server->direct_invoke_method("wallet_create", arguments);
+                    arguments = {passphrase, 60 * 5}; // default to five minute timeout
+                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
+                  }
+                  else if (choice == "2")
+                  {
+                    std::cout << "Enter the name of the wallet to open, or hit enter to open the wallet named \"default\"\n";
+                    std::string wallet_name = _self->get_line("wallet name [default]: ");
+                    boost::trim(wallet_name);
+                    if (wallet_name.empty())
+                      wallet_name = "default";
+                    std::string passphrase = _self->get_line("spending passphrase: ", true);
+                    fc::variants arguments{wallet_name, passphrase};
+                    _rpc_server->direct_invoke_method("wallet_open", arguments);
+                    arguments = {passphrase, 60 * 5}; // default to five minute timeout
+                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
+                  }
+                  else if (choice == "3")
+                    FC_THROW_EXCEPTION(canceled_exception, "");
+                  else
+                  {
+                    std::cout << "Wrong answer!\n";
+                    FC_THROW_EXCEPTION(canceled_exception, "");
+                  }
               }
             }
 
@@ -93,7 +132,7 @@ namespace bts { namespace cli {
                   try
                   {
                     fc::variants arguments{passphrase, 60 * 5}; // default to five minute timeout
-                    _rpc_server->direct_invoke_method("walletpassphrase", arguments);
+                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
                     return;
                   }
                   catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
@@ -317,7 +356,7 @@ namespace bts { namespace cli {
                 }
                 catch (const fc::eof_exception& e)
                 {
-                  if (!method_data.parameters[i].required)
+                  if (method_data.parameters[i].classification != bts::rpc::rpc_server::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
@@ -328,6 +367,9 @@ namespace bts { namespace cli {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
+
+                if (method_data.parameters[i].classification == bts::rpc::rpc_server::optional_named)
+                  break;
               }
               return arguments;
             }
@@ -795,7 +837,7 @@ namespace bts { namespace cli {
 
    void cli::list_delegates( uint32_t count )
    {
-        std::vector<name_record> delegates = 
+        std::vector<name_record> delegates =
            my->_client->get_chain()->get_delegate_records_by_vote( 0, count);
 
         std::cerr<<"Delegate Ranking\n";
@@ -810,8 +852,8 @@ namespace bts { namespace cli {
            std::cerr << std::setw(6)  << i               << "  "
                      << std::setw(6)  << delegates[i].id   << "  "
                      << std::setw(18) << delegates[i].name          << "  "
-                     << std::setw(18) << delegates[i].votes_for     << "  "
-                     << std::setw(18) << delegates[i].votes_against << "  \n";
+                     << std::setw(18) << delegates[i].delegate_info->votes_for     << "  "
+                     << std::setw(18) << delegates[i].delegate_info->votes_against << "  \n";
            ++i;
            if( i == count ) break;
         }

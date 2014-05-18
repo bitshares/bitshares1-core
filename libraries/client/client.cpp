@@ -64,9 +64,9 @@ namespace bts { namespace client {
          {
             auto now = fc::time_point::now();
             auto next_block_time = _wallet->next_block_production_time();
-            ilog( "next block time: ${b}  interval: ${i} seconds", 
+            ilog( "next block time: ${b}  interval: ${i} seconds",
                   ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
-            if( next_block_time < now || 
+            if( next_block_time < now ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
                fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
@@ -83,9 +83,9 @@ namespace bts { namespace client {
                      _wallet->sign_block( next_block );
 
                      on_new_block(next_block);
-                     _p2p_node->broadcast(block_message(next_block.id(), next_block, 
+                     _p2p_node->broadcast(block_message(next_block.id(), next_block,
                                                         next_block.signee ));
-                  } 
+                  }
                   catch ( const fc::exception& e )
                   {
                      wlog( "${e}", ("e",e.to_detail_string() ) );
@@ -118,7 +118,7 @@ namespace bts { namespace client {
        {
          try
          {
-           ilog("Received a new block from the server, current head block is ${num}, block is ${block}", 
+           ilog("Received a new block from the server, current head block is ${num}, block is ${block}",
                 ("num", _chain_db->get_head_block_num())("block", block));
 
            _chain_db->push_block(block);
@@ -344,7 +344,7 @@ namespace bts { namespace client {
       if (my->_p2p_node)
       {
         if (command == "add")
-          my->_p2p_node->add_node(node);          
+          my->_p2p_node->add_node(node);
       }
     }
 
@@ -366,7 +366,7 @@ namespace bts { namespace client {
 
     fc::uint160_t client::get_node_id() const
     {
-      return my->_p2p_node->get_node_id();      
+      return my->_p2p_node->get_node_id();
     }
 
     void client::set_advanced_node_parameters(const fc::variant_object& params)
@@ -392,7 +392,7 @@ namespace bts { namespace client {
     void client::connect_to_peer(const std::string& remote_endpoint)
 
     {
-       std::cout << "Attempting to conenct to peer " << remote_endpoint << "\n";
+       std::cout << "Attempting to connect to peer " << remote_endpoint << "\n";
         my->_p2p_node->connect_to(fc::ip::endpoint::from_string(remote_endpoint.c_str()));
     }
     void client::connect_to_p2p_network()
@@ -422,6 +422,24 @@ namespace bts { namespace client {
         //broadcast_transaction( trx );
        // return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
+
+    void client::set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
+    {
+      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
+      get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+    }
+
+    wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
+    {
+      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
+      return get_wallet()->get_delegate_trust_status(delegate_name);
+    }
+
+    std::map<std::string,wallet::delegate_trust_status> client::list_delegate_trust_status() const
+    {
+      return get_wallet()->list_delegate_trust_status();
+    }
+
 
     fc::sha256 client_notification::digest()const
     {

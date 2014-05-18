@@ -9,6 +9,7 @@
 
 namespace bts { namespace blockchain {
 
+   static const fc::microseconds one_year = fc::seconds( 60*60*24*365 );
 
    digest_type transaction::digest()const
    {
@@ -131,9 +132,9 @@ namespace bts { namespace blockchain {
       {
          auto del_rec = _current_state->get_name_record( del_vote.first );
          FC_ASSERT( !!del_rec );
-         del_rec->votes_for += del_vote.second.votes_for;
-         del_rec->votes_against += del_vote.second.votes_against;
-         if( del_rec->votes_for > max_votes || del_rec->votes_against > max_votes )
+         del_rec->adjust_votes_for( del_vote.second.votes_for );
+         del_rec->adjust_votes_against( del_vote.second.votes_against );
+         if( del_rec->votes_for() > max_votes || del_rec->votes_against() > max_votes )
             fail( BTS_DELEGATE_MAX_VOTE_LIMIT, fc::variant() );
          _current_state->store_name_record( *del_rec );
       }
@@ -238,7 +239,7 @@ namespace bts { namespace blockchain {
          {
             auto option = arec->condition.as<withdraw_option>();
 
-            if( _current_state->timestamp() > option.date )
+            if( _current_state->now() > option.date )
             {
                add_required_signature( option.optionor );
             }
@@ -257,12 +258,12 @@ namespace bts { namespace blockchain {
       // update delegate vote on withdrawn account..
 
       arec->balance -= op.amount;
+      arec->last_update = _current_state->now();
       add_balance( asset(op.amount, arec->condition.asset_id) );
 
       if( arec->condition.asset_id == 0 ) 
          sub_vote( arec->condition.delegate_id, op.amount );
 
-      wlog( "store after withdraw ${r}", ("r",*arec) );
       _current_state->store_balance_record( *arec );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
@@ -277,14 +278,14 @@ namespace bts { namespace blockchain {
        auto deposit_balance_id = op.balance_id();
        auto delegate_record = _current_state->get_name_record( op.condition.delegate_id );
        if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-       if( !delegate_record->is_delegate ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
+       if( !delegate_record->is_delegate() ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
 
        auto cur_record = _current_state->get_balance_record( deposit_balance_id );
        if( !cur_record )
        {
           cur_record = balance_record( op.condition );
        }
-       cur_record->last_update   = _current_state->timestamp();
+       cur_record->last_update   = _current_state->now();
        cur_record->balance       += op.amount;
 
        sub_balance( deposit_balance_id, asset(op.amount, cur_record->condition.asset_id) );
@@ -372,15 +373,18 @@ namespace bts { namespace blockchain {
       FC_ASSERT( op.json_data.size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
 
       auto cur_record = _current_state->get_name_record( op.name );
-      if( cur_record ) fail( BTS_NAME_ALREADY_REGISTERED, fc::variant(op) );
+      if( cur_record && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
+         fail( BTS_NAME_ALREADY_REGISTERED, fc::variant(op) );
 
       name_record new_record;
-      new_record.id         = _current_state->new_name_id();
-      new_record.name       = op.name;
-      new_record.json_data  = op.json_data;
-      new_record.owner_key  = op.owner_key;
-      new_record.active_key = op.active_key;
-      new_record.is_delegate = op.is_delegate;
+      new_record.id            = _current_state->new_name_id();
+      new_record.name          = op.name;
+      new_record.json_data     = op.json_data;
+      new_record.owner_key     = op.owner_key;
+      new_record.active_key    = op.active_key;
+      new_record.last_update   = _current_state->now();
+      new_record.registration_date = _current_state->now();
+      new_record.delegate_info = delegate_stats();
 
       cur_record = _current_state->get_name_record( new_record.id );
       FC_ASSERT( !cur_record );
@@ -399,6 +403,8 @@ namespace bts { namespace blockchain {
    { try {
       auto cur_record = _current_state->get_name_record( op.name_id );
       if( !cur_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+      if( cur_record->is_retracted() ) fail( BTS_NAME_RETRACTED, fc::variant(op) );
+
       if( !!op.active_key && *op.active_key != cur_record->active_key )
          add_required_signature( cur_record->owner_key );
       else
@@ -410,6 +416,8 @@ namespace bts { namespace blockchain {
          FC_ASSERT( op.json_data->size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
          cur_record->json_data  = *op.json_data;
       }
+
+      cur_record->last_update   = _current_state->now();
 
       if( !!op.active_key )
          cur_record->active_key = *op.active_key;
@@ -439,6 +447,7 @@ namespace bts { namespace blockchain {
       new_record.current_share_supply  = 0;
       new_record.maximum_share_supply  = op.maximum_share_supply;
       new_record.collected_fees        = 0;
+      new_record.registration_date     = _current_state->now();
 
       _current_state->store_asset_record( new_record );
 
@@ -463,6 +472,7 @@ namespace bts { namespace blockchain {
       cur_record->description    = op.description;
       cur_record->json_data      = op.json_data;
       cur_record->issuer_name_id = op.issuer_name_id;
+      cur_record->last_update    = _current_state->now();
 
       _current_state->store_asset_record( *cur_record );
 

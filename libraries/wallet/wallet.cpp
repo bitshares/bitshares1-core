@@ -20,7 +20,8 @@ namespace bts { namespace wallet {
       class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
-            wallet_impl()
+            wallet_impl() :
+              _is_open(false)
             {
                // this effectively sets the maximum transaction size to 10KB without
                // custom code.  We will set this initial fee high while the network
@@ -41,7 +42,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        //ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _receive_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -50,7 +51,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        //ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _sending_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -125,6 +126,7 @@ namespace bts { namespace wallet {
                   scan_transaction( trx );
                }
             }
+
             void import_private_key( const private_key_type& priv_key,
                                      int32_t account_number,
                                      const std::string& invoice_memo );
@@ -178,6 +180,9 @@ namespace bts { namespace wallet {
             /** caches all addresses and where in the hierarchial tree they can be found */
             std::unordered_map<address, address_index>                             _receive_keys;
             std::unordered_map<address, address_index>                             _sending_keys;
+
+            /** stores the user's trust level for delegates */
+            std::map<std::string, delegate_trust_status> _delegate_trust_status_map;
 
             std::string get_address_label( const address_index& idx )
             {
@@ -319,7 +324,6 @@ namespace bts { namespace wallet {
                {
                   itr->second = wallet_balance_record( itr->second.index, balance );
                }
-               ilog( "index account ${wallet_name}   ${a} ${idx}\n\n  ${record}", ("wallet_name",_wallet_name)("a",balance)("idx",idx)("record",itr->second) );
                store_record( itr->second );
             }
 
@@ -441,7 +445,7 @@ namespace bts { namespace wallet {
                   }
                   else
                   {
-                    wlog( "not our name ${r}", ("r",name) );
+                    //wlog( "not our name ${r}", ("r",name) );
                   }
                }
             }
@@ -518,7 +522,7 @@ namespace bts { namespace wallet {
 
             void scan_transaction( const signed_transaction& trx )
             {
-               ilog( "scan transaction ${wallet}  - ${trx}", ("wallet",_wallet_name)("trx",trx) );
+               //ilog( "scan transaction ${wallet}  - ${trx}", ("wallet",_wallet_name)("trx",trx) );
                 bool mine = false;
                 for( auto op : trx.operations )
                 {
@@ -595,8 +599,8 @@ namespace bts { namespace wallet {
                          auto withdraw_amount = std::min( record.second.balance, total_left.amount );
                          record.second.balance -= withdraw_amount;
 
-                         ilog( "withdraw amount ${a} ${total_left}",
-                               ("a",withdraw_amount)("total_left",total_left) );
+                         //ilog( "withdraw amount ${a} ${total_left}",
+                          //     ("a",withdraw_amount)("total_left",total_left) );
                          trx.withdraw( record.first, withdraw_amount );
                          total_left.amount -= withdraw_amount;
 
@@ -609,8 +613,6 @@ namespace bts { namespace wallet {
 
             fc::ecc::private_key get_private_key( const address_index& index )
             { try {
-                //if( index.address_num < 0 )
-                elog( "${index}", ("index",index) );
                 if( index.invoice_number < 0 )
                 {
                     auto priv_key_rec_itr = _extra_receive_keys.find( index.payment_number );
@@ -673,7 +675,7 @@ namespace bts { namespace wallet {
       chain_db->set_observer( my.get() );
    }
 
-   wallet::~wallet(){}
+   wallet::~wallet(){ try { close(); }catch( ... ){} }
 
 
    void wallet::open( const std::string& wallet_name, const std::string& password )
@@ -714,7 +716,6 @@ namespace bts { namespace wallet {
       while( record_itr.valid() )
       {
          auto record = record_itr.value();
-         wlog( "${k}] wallet record: ${r}:", ("r",record)("k",record_itr.key()) );
          try {
             switch( (wallet_record_type)record.type )
             {
@@ -811,6 +812,11 @@ namespace bts { namespace wallet {
 
    bool wallet::close()
    { try {
+      if( my->_wallet_relocker_done.valid() )
+      {
+         my->_wallet_relocker_done.cancel();
+         my->_wallet_relocker_done.wait();
+      }
       my->_wallet_db.close();
       my->_wallet_password = fc::sha512();
       my->_master_key.reset();
@@ -851,14 +857,14 @@ namespace bts { namespace wallet {
       if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
       {
         my->_wallet_relocker_done = fc::async([this](){
-          for (;;)
+          while( !my->_wallet_relocker_done.canceled() )
           {
             if (fc::time_point::now() > my->_relock_time)
             {
               lock();
               return;
             }
-            fc::usleep(fc::seconds(1));
+            fc::usleep(fc::microseconds(200000));
           }
         });
       }
@@ -915,7 +921,6 @@ namespace bts { namespace wallet {
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
         wcr.extended_key = master_key.child( wcr.account_number );
-        wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
         my->_account_name_index[account_name] = wcr.account_number;
         my->_accounts[wcr.account_number] = wcr;
@@ -925,6 +930,30 @@ namespace bts { namespace wallet {
         my->cache_deterministic_keys( wcr, 1, 0 );
         return wcr;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("account_name",account_name) ) }
+
+   void wallet::rename_account( const std::string& current_account_name,
+                                const std::string& new_account_name )
+   { try {
+        FC_ASSERT( current_account_name != new_account_name );
+        FC_ASSERT( new_account_name != "*" );
+
+        auto current_index_itr = my->_account_name_index.find(current_account_name);
+        if( current_index_itr == my->_account_name_index.end() )
+           FC_ASSERT( false, "Invalid account name '${name}'", ("name",current_account_name) );
+
+        auto new_index_itr = my->_account_name_index.find(new_account_name);
+        if( new_index_itr != my->_account_name_index.end() )
+           FC_ASSERT( false, "Account name '${name}' already in use", ("name",new_account_name) );
+
+       my->_accounts[current_index_itr->second].name = new_account_name;
+       my->store_record( my->_accounts[current_index_itr->second] );
+
+       my->_account_name_index[ new_account_name ] = current_index_itr->second;
+       my->_account_name_index.erase( current_index_itr );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "Error renaming account",
+                            ("current_account_name",current_account_name)
+                            ("new_account_name",new_account_name) ) }
 
    void wallet::create_sending_account( const std::string& account_name,
                                         const extended_public_key& account_pub_key )
@@ -938,7 +967,7 @@ namespace bts { namespace wallet {
         account.name              =  account_name;
 
         account.extended_key = account_pub_key;
-        wlog( "creating account '${account_name}'", ("account_name",account) );
+        //wlog( "creating account '${account_name}'", ("account_name",account) );
 
         my->_account_name_index[account_name] = account.account_number;
         my->_accounts[account.account_number] = account;
@@ -1035,7 +1064,7 @@ namespace bts { namespace wallet {
    { try {
       my->_blockchain->scan_balances( [=]( const balance_record& rec )
       {
-          std::cout << std::string(rec.id()) << "  " << rec.balance << "\n";
+          // std::cout << std::string(rec.id()) << "  " << rec.balance << "\n";
           my->scan_balance( rec );
       });
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1107,8 +1136,8 @@ namespace bts { namespace wallet {
 
    invoice_summary  wallet::transfer( const std::string& to_account_name,
                                       const asset& amount,
-                                      const std::string& invoice_memo,
                                       const std::string& from_account_name,
+                                      const std::string& invoice_memo,
                                       wallet_flag options )
    { try {
       FC_ASSERT( is_unlocked() );
@@ -1129,14 +1158,14 @@ namespace bts { namespace wallet {
          my->withdraw_to_transaction( trx, my->_priority_fee, required_sigs );
       }
 
+      // TODO: implement wallet voting algorithm
       name_id_type delegate_id = rand()%BTS_BLOCKCHAIN_NUM_DELEGATES + 1;
 
+      // get next payment_address for to_account_name
       int32_t sending_invoice_index;
       int32_t last_sending_payment_index;
       address payment_address;
       my->get_new_payment_address_from_account( to_account_name, sending_invoice_index, last_sending_payment_index, payment_address );
-
-      // get next payment_address for to_account_name
 
       trx.deposit( payment_address, amount, delegate_id );
       my->sign_transaction( trx, required_sigs );
@@ -1144,25 +1173,14 @@ namespace bts { namespace wallet {
       result.payments[trx.id()]         = trx;
       result.from_account               = from_account_name;
       result.to_account                 = to_account_name;
-      result.sending_invoice_index      =
-      result.last_sending_payment_index = 0;
+      result.sending_invoice_index      = sending_invoice_index;
+      result.last_sending_payment_index = last_sending_payment_index;
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("to_account",to_account_name)
                                   ("amount",amount)
                                   ("invoice_memo",invoice_memo)
                                   ("from_account",from_account_name)
                                   ("options",options) ) }
-
-   /*
-   signed_transaction wallet::send_to_address( const asset& amount,
-                                               const address& owner,
-                                               const std::string& invoice_memo )
-   { try {
-
-     return trx;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("amount",amount)("owner",owner) ) }
-   */
-
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,
@@ -1194,10 +1212,10 @@ namespace bts { namespace wallet {
          total_fees += asset( (json_str.size() * current_fee_rate)/1000, 0 );
          ojson_str = json_str;
       }
-      if( !as_delegate && name_rec->is_delegate )
+      if( !as_delegate && name_rec->is_delegate() )
          FC_ASSERT( !"You cannot unregister as a delegate" );
 
-      if( !name_rec->is_delegate && as_delegate )
+      if( !name_rec->is_delegate() && as_delegate )
       {
         total_fees += asset( (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE*current_fee_rate)/1000, 0 );
       }
@@ -1243,6 +1261,23 @@ namespace bts { namespace wallet {
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
 
+
+   //functions for reporting delegate trust status
+   void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
+   {
+     my->_delegate_trust_status_map[delegate_name] = delegate_trust_status{ trust_level };
+   }
+
+   delegate_trust_status wallet::get_delegate_trust_status( const std::string& delegate_name ) const
+   {
+     return my->_delegate_trust_status_map[delegate_name];
+   }
+
+   std::map<std::string, delegate_trust_status> wallet::list_delegate_trust_status() const
+   {
+     return my->_delegate_trust_status_map;
+   }
+
    bool wallet::is_receive_address( const address& addr )const
    {
       auto itr = my->_receive_keys.find( addr );
@@ -1267,7 +1302,7 @@ namespace bts { namespace wallet {
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
+      //ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
@@ -1338,9 +1373,9 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to import bitcoin wallet ${wallet_dat}", ("wallet_dat",wallet_dat) ) }
 
-   void wallet::import_wif_private_key( const std::string& wif, 
-                                const std::string& account_name, 
-                                const std::string& invoice_memo )
+   void wallet::import_wif_private_key( const std::string& wif,
+                                        const std::string& account_name,
+                                        const std::string& invoice_memo )
    { try {
       auto wif_bytes = fc::from_base58(wif);
       auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
@@ -1369,7 +1404,7 @@ namespace bts { namespace wallet {
 
    void wallet::scan_block( const full_block& blk )
    {
-      ilog( "scan block by wallet ${wallet_name}", ("wallet_name",my->_wallet_name) );
+      //ilog( "scan block by wallet ${wallet_name}", ("wallet_name",my->_wallet_name) );
       for( auto trx : blk.user_transactions )
          my->scan_transaction( trx );
    }
@@ -1385,6 +1420,14 @@ namespace bts { namespace wallet {
    std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name )const
    {
       return my->_transactions;
+   }
+
+   /**
+    * @todo actually filter based upon account_name and use "*" to represetn all accounts
+    */
+   std::unordered_map<name_id_type, wallet_name_record>  wallet::names( const std::string& account_name  )const
+   {
+      return my->_names;
    }
 
 } } // bts::wallet

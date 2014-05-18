@@ -7,90 +7,183 @@
   The genesis block is hard-coded into the clients, so all clients start up knowing
   the initial state.  To access your balance you must first import a key from
   the genesis block.
-  
+
   Blocks will start being produced automatically once a wallet imports a private
   key belonging to one of the known delegates.
 
- 
-  @code
+
+@code
 cd programs/bts_xt
+
 ./bts_xt_client --port 5678 --data-dir test_clienta
->>> wallet_create walleta masterpassa    
-     true
->>> walletpassphrase masterpassa 90000 
-     null
->>> import_private_key dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f
-     true
->>> rescan_state
-     .....
-     true
->>> getbalance
-     8000000000000
-  @endcode
+
+>>> wallet_create walleta masterpassa
+true
+
+>>> wallet_unlock masterpassa 90000
+null
+@endcode
+
+  Once you have unlocked your wallet you can begin importing private keys from the
+  default / test delegates.  They are provided here for your conveinence.
+
+@code
+delegate-1:  5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn
+delegate-2:  5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91
+delegate-3:  5JQkfPrz2UkAL8WgiL4gZpovi3Ac9BJpgNwsKZ2KfYCaBafdJWS
+delegate-4:  5KYq5uTRNf61vKaGW9seVucdF26Ea7oppB2phdLvWiGWrnPNtL2
+delegate-5:  5J1HuUepoWuP41HtKSXdBQpoaCeXBZMp9r7SfEaV6AhrwNBDL6b
+delegate-6:  5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3
+delegate-7:  5JLyiiSH28VWyGCeY934dbwS8Vwsx1jjmopnzbu9DPjrTdww4fx
+delegate-8:  5JYdhKVnc15VHq2zvfXfNGfjQTRmuZSaL1L8pVYryLVCox8UFoC
+delegate-9:  5JtMPXt5frPzS1ErigA2xEfTucnRMNwaEGnFoyhHSqRq6yevC4e
+delegate-10: 5Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
+@endcode
+
+  To import a private key you should also specify an account.  In this case
+  we give the account name "delegate-1", but it could be anything. Delegates
+  produce blocks only on their time slot.  The default interval is 5 seconds,
+  and the default number of delegates (for testing) is 10, so if you import
+  a single delegate one block will be produced every 50 seconds.  If you
+  import two, then it will be every 25 seconds (on average).
+
+@code
+>>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-1"
+true
+
+>>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-6"
+true
+
+>>> wallet_rescan_blockchain_state
+...
+true
+
+>>> wallet_get_balance
+16000000000000
+@endcode
 
      After rescanning the initial state your wallet should display the initial balance and
      then start producing blocks about once every 50 seconds.  If you wait a minute and
-     then call getinfo you should see the number of blocks reported growing.
+     then call get_info you should see the number of blocks reported growing.
 
-  @code
->>> getinfo 
-    {
-     "balance": 8000000000000,
-     "version": 100,
-     "protocolversion": 100,
-     "walletversion": 100,
-     "blocks": 2,
-     "connections": 0,
-     "unlocked_until": 0,
-     "_node_id": "6713545fb5cd8f80f085ab8c93172d7083659e36"
-    }
-  @endcode
+@code
+>>> get_info
+{
+ "balance": 8000000000000,
+ "version": 100,
+ "protocolversion": 100,
+ "walletversion": 100,
+ "blocks": 2,
+ "connections": 0,
+ "unlocked_until": 0,
+ "_node_id": "6713545fb5cd8f80f085ab8c93172d7083659e36"
+}
+@endcode
 
+You can get a list of all names known to the blockchain with:
+@code
+>>> blockchain_get_names
+[{
+   "id": 1,
+   "name": "delegate-0",
+   "json_data": "",
+   "owner_key": "02d23407bf3f0d907141262c6edd13ca205314be0e38ec448ccc724d03dfad5c20",
+   "active_key": "02d23407bf3f0d907141262c6edd13ca205314be0e38ec448ccc724d03dfad5c20",
+   "delegate_info": {
+     "votes_for": 8000000000000,
+     "votes_against": 0,
+     "blocks_produced": 0,
+     "blocks_missed": 0,
+     "pay_balance": 0
+   },
+   "registration_date": "20140501T000000",
+   "last_update": "20140501T000000"
+ },
+...
+]
+@endcode
 
 Start a second client:
 
 @code
-./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678 
+./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678
 
->>> getinfo
+>>> get_info
 {
-     "balance": 0,
-     "version": 100,
-     "protocolversion": 100,
-     "walletversion": 100,
-     "blocks": 5,
-     "connections": 1,
-     "unlocked_until": 0,
-     "_node_id": "fc597abee28d1162a5d124b29c5518cc8f8a16a6"
+ "balance": 0,
+ "unlocked_until": "19700101T000000",
+ "version": 100,
+ "protocolversion": 100,
+ "walletversion": 100,
+ "blocks": 16,
+ "connections": 1,
+ "_node_id": "a684223babe523e3e49e574ac46d5ac956bbf5e9"
 }
 
 >>> wallet_create walletb masterpassb
-   Opening wallet test_clientb/walletb
-   true
+true
 
->>> getnewaddress
-   spending passphrase: 
-   XTSEzNZZ6MkMoTydz3dwM1vTE9ZjBiQirMSD
+>>> wallet_unlock masterpassb 90000
+null
+
+>>> wallet_create_receive_account "from_walleta"
+"XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4"
 @endcode
 
-Back in test_clienta  
+Back in test_clienta
 
 @code
->>> sendtoaddress XTSEzNZZ6MkMoTydz3dwM1vTE9ZjBiQirMSD  87654321
-About to broadcast transaction:
+>>> wallet_create_sending_account "to_walletb" XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4
+null
 
-Broadcast this transaction? (yes/no)
-   yes
-   Transaction broadcasted (a621c1cbf1b2d7e90cc2f708fbd03907e3055ef2)
->>> getbalance
-   7999912245679
-@endcode 
+>>> wallet_transfer 54321 "to_walletb"
+{
+ "payments": [[
+     "a2417ebd1ad643615d676ddc56a8c9ff0d4f6022",{
+       "expiration": null,
+       "delegate_id": null,
+       "operations": [{
+           "type": "withdraw_op_type",
+           "data": {
+             "balance_id": "XTSKh6JP6QzMmeUmmK1T16gxgadrJ547ocGT",
+             "amount": 154321,
+             "claim_input_data": ""
+           }
+         },{
+           "type": "deposit_op_type",
+           "data": {
+             "amount": 54321,
+             "condition": {
+               "asset_id": 0,
+               "delegate_id": 8,
+               "condition": "withdraw_signature_type",
+               "data": {
+                 "owner": "XTSAg5YxD9reTXr5iQWBZEJrLzzMxMxvnFhy"
+               }
+             }
+           }
+         }
+       ],
+       "signatures": [
+         "2028da68efe2696ab7895e86c1b35affbb7cd1b71d8f33124fe81ad785ace3ed55226e0e622098b9c45f8660801b4b929556102c3da549d887c5da99262b5c6275"
+       ]
+     }
+   ]
+ ],
+ "from_account": "",
+ "to_account": "to_wallet_a",
+ "sending_invoice_index": 0,
+ "last_sending_payment_index": 0
+}
+
+>>> wallet_get_balance
+15999999845679
+@endcode
 
 Back in test_clientb
 @code
->>> getbalance
-   87654321
+>>> wallet_get_balance
+54321
 @endcode
 
 */
-

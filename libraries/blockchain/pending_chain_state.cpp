@@ -1,5 +1,6 @@
 #include <bts/blockchain/pending_chain_state.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
@@ -7,10 +8,12 @@ namespace bts { namespace blockchain {
    {
    }
 
-
-   pending_chain_state::~pending_chain_state()
+   void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
+      _prev_state = prev_state;
    }
+
+   pending_chain_state::~pending_chain_state(){}
 
    /**
     *  Based upon the current state of the database, calculate any updates that
@@ -127,10 +130,10 @@ namespace bts { namespace blockchain {
       FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
-   fc::time_point_sec  pending_chain_state::timestamp()const
+   fc::time_point_sec  pending_chain_state::now()const
    {
       if( _prev_state ) 
-        return _prev_state->timestamp();
+        return _prev_state->now();
       FC_ASSERT( false, "No current timestamp set" );
    }
 
