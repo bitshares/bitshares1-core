@@ -7,6 +7,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
+#include <iostream>
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
