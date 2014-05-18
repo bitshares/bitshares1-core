@@ -84,7 +84,6 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_transaction_location( const transaction_id_type& id,
                                                          const transaction_location& loc )
    {
-      ilog( "store trx location: ${id} ${loc}", ("id",id)("loc",loc) );
       unique_transactions[id] = loc;
    }
 

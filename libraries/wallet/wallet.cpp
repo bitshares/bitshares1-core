@@ -42,7 +42,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        //ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _receive_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -51,7 +51,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                        //ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _sending_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -324,7 +324,6 @@ namespace bts { namespace wallet {
                {
                   itr->second = wallet_balance_record( itr->second.index, balance );
                }
-               ilog( "index account ${wallet_name}   ${a} ${idx}\n\n  ${record}", ("wallet_name",_wallet_name)("a",balance)("idx",idx)("record",itr->second) );
                store_record( itr->second );
             }
 
@@ -446,7 +445,7 @@ namespace bts { namespace wallet {
                   }
                   else
                   {
-                    wlog( "not our name ${r}", ("r",name) );
+                    //wlog( "not our name ${r}", ("r",name) );
                   }
                }
             }
@@ -523,7 +522,7 @@ namespace bts { namespace wallet {
 
             void scan_transaction( const signed_transaction& trx )
             {
-               ilog( "scan transaction ${wallet}  - ${trx}", ("wallet",_wallet_name)("trx",trx) );
+               //ilog( "scan transaction ${wallet}  - ${trx}", ("wallet",_wallet_name)("trx",trx) );
                 bool mine = false;
                 for( auto op : trx.operations )
                 {
@@ -600,8 +599,8 @@ namespace bts { namespace wallet {
                          auto withdraw_amount = std::min( record.second.balance, total_left.amount );
                          record.second.balance -= withdraw_amount;
 
-                         ilog( "withdraw amount ${a} ${total_left}",
-                               ("a",withdraw_amount)("total_left",total_left) );
+                         //ilog( "withdraw amount ${a} ${total_left}",
+                          //     ("a",withdraw_amount)("total_left",total_left) );
                          trx.withdraw( record.first, withdraw_amount );
                          total_left.amount -= withdraw_amount;
 
@@ -614,8 +613,6 @@ namespace bts { namespace wallet {
 
             fc::ecc::private_key get_private_key( const address_index& index )
             { try {
-                //if( index.address_num < 0 )
-                elog( "${index}", ("index",index) );
                 if( index.invoice_number < 0 )
                 {
                     auto priv_key_rec_itr = _extra_receive_keys.find( index.payment_number );
@@ -719,7 +716,6 @@ namespace bts { namespace wallet {
       while( record_itr.valid() )
       {
          auto record = record_itr.value();
-         wlog( "${k}] wallet record: ${r}:", ("r",record)("k",record_itr.key()) );
          try {
             switch( (wallet_record_type)record.type )
             {
@@ -925,7 +921,6 @@ namespace bts { namespace wallet {
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
         wcr.extended_key = master_key.child( wcr.account_number );
-        wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
         my->_account_name_index[account_name] = wcr.account_number;
         my->_accounts[wcr.account_number] = wcr;
@@ -972,7 +967,7 @@ namespace bts { namespace wallet {
         account.name              =  account_name;
 
         account.extended_key = account_pub_key;
-        wlog( "creating account '${account_name}'", ("account_name",account) );
+        //wlog( "creating account '${account_name}'", ("account_name",account) );
 
         my->_account_name_index[account_name] = account.account_number;
         my->_accounts[account.account_number] = account;
@@ -1069,7 +1064,7 @@ namespace bts { namespace wallet {
    { try {
       my->_blockchain->scan_balances( [=]( const balance_record& rec )
       {
-          std::cout << std::string(rec.id()) << "  " << rec.balance << "\n";
+          // std::cout << std::string(rec.id()) << "  " << rec.balance << "\n";
           my->scan_balance( rec );
       });
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1307,7 +1302,7 @@ namespace bts { namespace wallet {
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
+      //ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
@@ -1409,7 +1404,7 @@ namespace bts { namespace wallet {
 
    void wallet::scan_block( const full_block& blk )
    {
-      ilog( "scan block by wallet ${wallet_name}", ("wallet_name",my->_wallet_name) );
+      //ilog( "scan block by wallet ${wallet_name}", ("wallet_name",my->_wallet_name) );
       for( auto trx : blk.user_transactions )
          my->scan_transaction( trx );
    }

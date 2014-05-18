@@ -303,7 +303,7 @@ namespace bts { namespace blockchain {
                                                     const std::vector<signed_transaction>& user_transactions,
                                                     const pending_chain_state_ptr& pending_state )
       {
-         ilog( "apply transactions ${block_num}", ("block_num",block_num) );
+         //ilog( "apply transactions ${block_num}", ("block_num",block_num) );
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
@@ -312,12 +312,12 @@ namespace bts { namespace blockchain {
                transaction_evaluation_state_ptr trx_eval_state =
                       std::make_shared<transaction_evaluation_state>(pending_state);
                trx_eval_state->evaluate( trx );
-               ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
+               //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
               // TODO:  capture the evaluation state with a callback for wallets...
               // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
 
                transaction_location trx_loc( block_num, trx_num );
-               ilog( "store trx location: ${loc}", ("loc",trx_loc) );
+               //ilog( "store trx location: ${loc}", ("loc",trx_loc) );
                pending_state->store_transaction_location( trx.id(), trx_loc );
                ++trx_num;
             }
@@ -424,7 +424,6 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
-         ilog( "extend chain..." );
          auto block_id = block_data.id();
          try {
             verify_header( block_data );
@@ -444,7 +443,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);
 
-            ilog( "block data: ${block_data}", ("block_data",block_data) );
+            //ilog( "block data: ${block_data}", ("block_data",block_data) );
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
@@ -746,7 +745,7 @@ namespace bts { namespace blockchain {
 
       block_fork_data fork = my->store_and_index( block_id, block_data );
 
-      ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
+      //ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
@@ -1049,8 +1048,8 @@ namespace bts { namespace blockchain {
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
-      elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
-            ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
+    //  elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
+    //        ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
       return next_block;
    }

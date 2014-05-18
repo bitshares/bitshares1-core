@@ -264,7 +264,6 @@ namespace bts { namespace blockchain {
       if( arec->condition.asset_id == 0 ) 
          sub_vote( arec->condition.delegate_id, op.amount );
 
-      wlog( "store after withdraw ${r}", ("r",*arec) );
       _current_state->store_balance_record( *arec );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
