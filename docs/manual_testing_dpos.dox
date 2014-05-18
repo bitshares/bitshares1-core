@@ -17,10 +17,13 @@ cd programs/bts_xt
 
 ./bts_xt_client --port 5678 --data-dir test_clienta
 
->>> wallet_create walleta masterpassa
+>>> wallet_create walleta
+passphrase:
+passphrase (verify):
 true
 
->>> wallet_unlock masterpassa 90000
+>>> wallet_unlock 90000
+passphrase:
 null
 @endcode
 
@@ -120,10 +123,13 @@ Start a second client:
  "_node_id": "a684223babe523e3e49e574ac46d5ac956bbf5e9"
 }
 
->>> wallet_create walletb masterpassb
+>>> wallet_create walletb
+passphrase:
+passphrase (verify):
 true
 
->>> wallet_unlock masterpassb 90000
+>>> wallet_unlock 90000
+passphrase:
 null
 
 >>> wallet_create_receive_account "from_walleta"
