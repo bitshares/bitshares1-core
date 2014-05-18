@@ -3,6 +3,7 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
@@ -222,8 +223,8 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     // produce blocks for 30 seconds...
     for( uint32_t i = 0; i < 20; ++i )
     {
-       auto now = fc::time_point::now();
-       std::cerr << "now: "<< std::string( now ) << "\n";
+       auto now = bts::blockchain::now(); //fc::time_point::now();
+       std::cerr << "now: "<< std::string( fc::time_point(now) ) << "\n";
        auto my_next_block_time = my_wallet.next_block_production_time();
        if( my_next_block_time == now )
        {
@@ -244,7 +245,8 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
        }
        auto sleep_time_sec =  BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
        std::cerr << "sleeping " << sleep_time_sec << "s \n";
-       fc::usleep( fc::seconds( sleep_time_sec ) );
+       bts::blockchain::advance_time(sleep_time_sec);
+      // fc::usleep( fc::seconds( sleep_time_sec ) );
     }
 
     // we now have two chains of different lengths

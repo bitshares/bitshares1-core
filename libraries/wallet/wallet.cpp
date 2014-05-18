@@ -1,5 +1,6 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/base58.hpp>
@@ -859,7 +860,7 @@ namespace bts { namespace wallet {
         my->_wallet_relocker_done = fc::async([this](){
           while( !my->_wallet_relocker_done.canceled() )
           {
-            if (fc::time_point::now() > my->_relock_time)
+            if (bts::blockchain::now() > my->_relock_time)
             {
               lock();
               return;
@@ -1317,7 +1318,7 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    {
-      fc::time_point_sec now = fc::time_point::now();
+      fc::time_point_sec now = bts::blockchain::now(); //fc::time_point::now();
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       uint32_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
 

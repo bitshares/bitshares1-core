@@ -1,6 +1,7 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/time.hpp>
 
 #include <bts/db/level_pod_map.hpp>
 #include <bts/db/level_map.hpp>
@@ -397,7 +398,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
             FC_ASSERT( block_data.timestamp > _head_block_header.timestamp, "",
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
-            fc::time_point_sec now = fc::time_point::now();
+            fc::time_point_sec now = bts::blockchain::now();
             FC_ASSERT( block_data.timestamp <=  now,
                        "${t} < ${now}", ("t",block_data.timestamp)("now",now));
 
@@ -1228,7 +1229,11 @@ namespace bts { namespace blockchain {
           {
              auto fork_data = fork_itr.value();
              for( auto next : fork_data.next_blocks )
-                out << '"' << std::string ( next ).substr(0,8) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,8) << "\";\n";
+             {
+                out << '"' << std::string ( next ).substr(0,5) <<"\" "
+                    << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled];\n";
+                out << '"' << std::string ( next ).substr(0,5) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,5) << "\";\n";
+            }
              ++fork_itr;
           }
        out << "}"; 
