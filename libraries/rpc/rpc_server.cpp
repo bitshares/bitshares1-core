@@ -561,7 +561,7 @@ Result:
               match_commands.push_back(alias_itr->second);
             }
           }
-          for (auto c : match_commands)d 
+          for (auto c : match_commands)
             help_string += make_short_description(_method_map[c]);
           if (help_string.empty())
             throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
