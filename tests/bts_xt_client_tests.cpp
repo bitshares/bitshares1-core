@@ -293,11 +293,11 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
     client_processes[i].private_key = fc::ecc::private_key::generate();
 
     genesis_block.balances.push_back(std::make_pair(bts::blockchain::pts_address(client_processes[i].private_key.get_public_key()),
-                                                    client_processes[i].initial_balance));
+                                                    (double)client_processes[i].initial_balance));
     initial_shares_requested += client_processes[i].initial_balance;
   }
 
-  double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
+  double scale_factor = (double)BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance *= (int64_t)scale_factor;
 
@@ -407,8 +407,8 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
         boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, _directed_graph);
       }
     }
-    BOOST_CHECK(peers_info.size() >= _desired_number_of_connections);
-    BOOST_CHECK(peers_info.size() <= _maximum_number_of_connections);
+    BOOST_CHECK_GE(peers_info.size(), _desired_number_of_connections);
+    BOOST_CHECK_LE(peers_info.size(), _maximum_number_of_connections);
   }
 
   unsigned number_of_partitions = 0;
@@ -496,9 +496,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 void bts_client_launcher_fixture::get_node_ids()
 {
   for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
     BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->getinfo()["_node_id"].as<fc::uint160_t>());
-  }
 }
 
 void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts::net::message_propagation_data>& propagation_data, int initial_node, const fc::path& output_file)

@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          auto wait_until_time = my_wallet.next_block_production_time();
          auto sleep_time = wait_until_time - bts::blockchain::now(); //fc::time_point::now();
          ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
-         bts::blockchain::advance_time(sleep_time.count()/1000000);
+         bts::blockchain::advance_time((uint32_t)(sleep_time.count() / 1000000));
          //fc::usleep( sleep_time );
 
 
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
           your_chain->push_block( your_block );
           if( i < 5 ) my_chain->push_block( your_block );
        }
-       auto sleep_time_sec =  BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+       uint32_t sleep_time_sec = (uint32_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
        std::cerr << "sleeping " << sleep_time_sec << "s \n";
        bts::blockchain::advance_time(sleep_time_sec);
       // fc::usleep( fc::seconds( sleep_time_sec ) );
