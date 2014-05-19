@@ -960,8 +960,12 @@ namespace bts { namespace wallet {
 
    wallet_account_record wallet::create_receive_account( const std::string& account_name )
    { try {
+        if (is_locked())
+          FC_THROW("wallet must be unlocked to create receive account");
+
         auto current_itr = my->_account_name_index.find( account_name );
-        FC_ASSERT( current_itr == my->_account_name_index.end() );
+        if (current_itr != my->_account_name_index.end())
+          FC_THROW_EXCEPTION(invalid_arg_exception, "Account name '${name}' already in use", ("name", account_name));
 
         wallet_account_record wcr;
         wcr.index             = my->get_new_index();
@@ -988,11 +992,11 @@ namespace bts { namespace wallet {
 
         auto current_index_itr = my->_account_name_index.find(current_account_name);
         if( current_index_itr == my->_account_name_index.end() )
-           FC_ASSERT( false, "Invalid account name '${name}'", ("name",current_account_name) );
+           FC_THROW_EXCEPTION( invalid_arg_exception, "Invalid account name '${name}'", ("name",current_account_name) );
 
         auto new_index_itr = my->_account_name_index.find(new_account_name);
         if( new_index_itr != my->_account_name_index.end() )
-           FC_ASSERT( false, "Account name '${name}' already in use", ("name",new_account_name) );
+           FC_THROW_EXCEPTION( invalid_arg_exception, "Account name '${name}' already in use", ("name",new_account_name) );
 
        my->_accounts[current_index_itr->second].name = new_account_name;
        my->store_record( my->_accounts[current_index_itr->second] );
@@ -1008,7 +1012,8 @@ namespace bts { namespace wallet {
                                         const extended_public_key& account_pub_key )
    { try {
         auto current_itr = my->_account_name_index.find(account_name);
-        FC_ASSERT( current_itr == my->_account_name_index.end() );
+        if (current_itr != my->_account_name_index.end())
+           FC_THROW_EXCEPTION( invalid_arg_exception, "Account name '${name}' already in use", ("name",account_name) );
 
         wallet_account_record wcr;
         wcr.index             =  my->get_new_index();
@@ -1037,7 +1042,7 @@ namespace bts { namespace wallet {
    { try {
       auto itr = my->_account_name_index.find( account_name );
       if( itr == my->_account_name_index.end() )
-         FC_ASSERT( false, "invalid account name '${account_name}'", ("account_name",account_name) );
+         FC_THROW_EXCEPTION( invalid_arg_exception, "Invalid account name '${name}'", ("name",account_name) );
       return my->get_account( itr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
@@ -1438,17 +1443,19 @@ namespace bts { namespace wallet {
 
    void wallet::scan_chain( uint32_t block_num, scan_progress_callback cb  )
    { try {
-       uint32_t head_block_num = my->_blockchain->get_head_block_num();
-       if( head_block_num != uint32_t(-1) )
-       {
-          for( uint32_t i = block_num; i <= head_block_num; ++i )
-          {
-             auto blk = my->_blockchain->get_block( i );
-             scan_block( blk );
-             cb( i, head_block_num, 0, 0 );
-             my->set_last_scanned_block_number( i );
-          }
-       }
+        uint32_t head_block_num = my->_blockchain->get_head_block_num();
+        if (block_num == 0)
+        {
+          scan_state();
+          block_num = 1; // continue the scan from the first block, if it exists
+        }
+        for( uint32_t i = block_num; i <= head_block_num; ++i )
+        {
+            auto blk = my->_blockchain->get_block( i );
+            scan_block( blk );
+            cb( i, head_block_num, 0, 0 );
+            my->set_last_scanned_block_number( i );
+        }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::scan_block( const full_block& blk )

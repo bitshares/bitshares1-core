@@ -803,9 +803,9 @@ Wallets exist in the wallet data directory
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
           /* returns: */    "void",
-          /* params:          name             type      classification                          default value */
-                            {{"timeout",       "unsigned",    rpc_server::required_positional,        fc::ovariant()},
-                             {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
+          /* params:          name             type        classification                          default value */
+                            {{"timeout",       "unsigned", rpc_server::required_positional,        fc::ovariant()},
+                             {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
 Stores the wallet decryption key in memory for 'timeout' seconds.
