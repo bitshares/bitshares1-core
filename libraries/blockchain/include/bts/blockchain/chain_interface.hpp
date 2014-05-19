@@ -27,6 +27,34 @@ namespace bts { namespace blockchain {
       share_type   pay_balance;
    };
 
+   struct proposal_record
+   {
+      proposal_id_type      id;
+      name_id_type          submitting_delegate_id; // the delegate_id of the submitter
+      fc::time_point_sec    submission_date;
+      std::string           subject;
+      std::string           body;
+      std::string           proposal_type; // alert, bug fix, feature upgrade, property change, etc
+      fc::variant           data;  // data that is unique to the proposal
+   };
+   typedef fc::optional<proposal_record> oproposal_record;
+   
+   struct proposal_vote
+   {
+      enum vote_type 
+      {
+          no  = 0,
+          yes = 1,
+          undefined = 2
+      };
+
+      proposal_vote_id_type             id;
+      fc::time_point_sec                timestamp;
+      fc::enum_type<uint8_t,vote_type>  vote;
+   };
+   typedef fc::optional<proposal_vote> oproposal_vote;
+
+
    /**
     */
    struct balance_record
@@ -125,8 +153,9 @@ namespace bts { namespace blockchain {
 
    enum chain_property_enum
    {
-      last_asset_id = 0,
-      last_name_id  = 1
+      last_asset_id    = 0,
+      last_name_id     = 1,
+      last_proposal_id = 2
    };
    typedef uint32_t chain_property_type;
 
@@ -147,13 +176,19 @@ namespace bts { namespace blockchain {
          virtual void                  set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value ) = 0;
 
-         virtual oasset_record         get_asset_record( asset_id_type id )const                    = 0;
-         virtual obalance_record       get_balance_record( const balance_id_type& id )const         = 0;
-         virtual oname_record          get_name_record( name_id_type id )const                      = 0;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& )const  = 0;
-
-         virtual oasset_record         get_asset_record( const std::string& symbol )const          = 0;
-         virtual oname_record          get_name_record( const std::string& name )const             = 0;
+         virtual oasset_record         get_asset_record( asset_id_type id )const                           = 0;
+         virtual obalance_record       get_balance_record( const balance_id_type& id )const                = 0;
+         virtual oname_record          get_name_record( name_id_type id )const                             = 0;
+         virtual otransaction_location get_transaction_location( const transaction_id_type& )const         = 0;
+                                                                                                          
+         virtual oasset_record         get_asset_record( const std::string& symbol )const                 = 0;
+         virtual oname_record          get_name_record( const std::string& name )const                    = 0;
+                                                                                                          
+         virtual void                  store_proposal_record( const proposal_record& r )                  = 0;
+         virtual oproposal_record      get_proposal_record( proposal_id_type id )const                    = 0;
+                                                                                                          
+         virtual void                  store_proposal_vote( const proposal_vote& r )                      = 0;
+         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const          = 0;
 
          virtual void                  store_asset_record( const asset_record& r )                 = 0;
          virtual void                  store_balance_record( const balance_record& r )             = 0;
@@ -168,6 +203,9 @@ namespace bts { namespace blockchain {
 
          virtual name_id_type          last_name_id()const;
          virtual name_id_type          new_name_id();
+
+         virtual proposal_id_type      last_proposal_id()const;
+         virtual proposal_id_type      new_proposal_id();
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
@@ -179,4 +217,8 @@ FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id) )
+FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
+FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
+FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )
+

@@ -64,6 +64,17 @@ namespace bts { namespace blockchain {
          if( !!prev_name ) undo_state->store_name_record( *prev_name );
       }
 
+      for( auto record : proposals )
+      {
+         auto prev_proposal = _prev_state->get_proposal_record( record.first );
+         if( !!prev_proposal ) undo_state->store_proposal_record( *prev_proposal );
+      }
+      for( auto record : proposal_votes )
+      {
+         auto prev_proposal_vote = _prev_state->get_proposal_vote( record.first );
+         if( !!prev_proposal_vote ) undo_state->store_proposal_vote( *prev_proposal_vote );
+      }
+
       for( auto record : balances ) 
       {
          auto prev_address = _prev_state->get_balance_record( record.first );
@@ -204,6 +215,32 @@ namespace bts { namespace blockchain {
                                                      const fc::variant& property_value )
    {
       properties[property_id] = property_value;
+   }
+
+   void                  pending_chain_state::store_proposal_record( const proposal_record& r )
+   {
+      proposals[r.id] = r;
+   }
+
+   oproposal_record      pending_chain_state::get_proposal_record( proposal_id_type id )const
+   {
+      auto rec_itr = proposals.find(id);
+      if( rec_itr != proposals.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_proposal_record( id );
+      return oproposal_record();
+   }
+                                                                                                          
+   void                  pending_chain_state::store_proposal_vote( const proposal_vote& r )
+   {
+      proposal_votes[r.id] = r;
+   }
+
+   oproposal_vote        pending_chain_state::get_proposal_vote( proposal_vote_id_type id )const
+   {
+      auto rec_itr = proposal_votes.find(id);
+      if( rec_itr != proposal_votes.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_proposal_vote( id );
+      return oproposal_vote();
    }
 
 } } // bts::blockchain

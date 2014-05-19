@@ -68,5 +68,17 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
+   proposal_id_type   chain_interface::last_proposal_id()const
+   {
+       return get_property( chain_property_enum::last_proposal_id ).as<proposal_id_type>();
+   }
+
+   proposal_id_type   chain_interface::new_proposal_id()
+   {
+      auto next_id = last_proposal_id() + 1;
+      set_property( chain_property_enum::last_proposal_id, next_id );
+      return next_id;
+   }
+
 } }  // bts::blockchain
 

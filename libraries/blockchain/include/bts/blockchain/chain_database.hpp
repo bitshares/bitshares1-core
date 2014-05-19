@@ -71,7 +71,8 @@ namespace bts { namespace blockchain {
          osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
-         std::vector<name_record> get_names( const std::string& first, uint32_t count )const;
+         std::vector<name_record > get_names( const std::string& first, uint32_t count )const;
+         std::vector<asset_record> get_assets( const std::string& first_symbol, uint32_t count )const;
 
          /** should perform any chain reorganization required
           *
@@ -123,6 +124,11 @@ namespace bts { namespace blockchain {
          virtual void                 store_transaction_location( const transaction_id_type&,
                                                                   const transaction_location& loc ) override;
 
+         virtual void                  store_proposal_record( const proposal_record& r );
+         virtual oproposal_record      get_proposal_record( proposal_id_type id )const;
+                                                                                                          
+         virtual void                  store_proposal_vote( const proposal_vote& r );
+         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;

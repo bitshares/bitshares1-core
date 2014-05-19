@@ -126,6 +126,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t, std::vector<block_id_type> > _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>         _fork_db;
             bts::db::level_map<uint32_t, fc::variant >                _properties_db;
+            bts::db::level_map<proposal_id_type, proposal_record >    _proposals_db;
+            bts::db::level_map<proposal_vote_id_type, proposal_vote > _proposal_votes_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>     _undo_state;
@@ -667,6 +669,8 @@ namespace bts { namespace blockchain {
       my->_fork_number_db.open( data_dir / "fork_number_db", true );
       my->_fork_db.open( data_dir / "fork_db", true );
       my->_properties_db.open( data_dir / "properties", true );
+      my->_proposals_db.open( data_dir / "proposals", true );
+      my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
       my->_undo_state.open( data_dir / "undo_state", true );
       my->_redo_state.open( data_dir / "redo_state", true );
 
@@ -727,6 +731,8 @@ namespace bts { namespace blockchain {
       my->_pending_transactions.close();
       my->_processed_transaction_ids.close();
       my->_properties_db.close();
+      my->_proposals_db.close();
+      my->_proposal_votes_db.close();
       my->_block_num_to_id.close();
 
       my->_block_num_to_id.close();
@@ -859,7 +865,9 @@ namespace bts { namespace blockchain {
    {
       auto itr = my->_assets.find( id );
       if( itr.valid() )
-         return itr.value();
+      {
+         return itr.value(); 
+      }
       return oasset_record();
    }
 
@@ -921,7 +929,11 @@ namespace bts { namespace blockchain {
    { try {
        auto symbol_id_itr = my->_symbol_index.find( symbol );
        if( symbol_id_itr.valid() )
+       {
           return get_asset_record( symbol_id_itr.value() );
+       }
+       else
+          wlog( "    unable to find '${symbol}'", ("symbol",symbol) );
        return oasset_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
 
@@ -1218,6 +1230,19 @@ namespace bts { namespace blockchain {
        return names;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
 
+
+    std::vector<asset_record> chain_database::get_assets( const std::string& first_symbol, uint32_t count )const
+    { try {
+       auto itr = my->_symbol_index.lower_bound(first_symbol);
+       std::vector<asset_record> assets;
+       while( itr.valid() && assets.size() < count )
+       {
+          assets.push_back( *get_asset_record( itr.value() ) );
+          ++itr;
+       }
+       return assets;
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first_symbol",first_symbol)("count",count) )  }
+
     void chain_database::export_fork_graph( const fc::path& filename )const
     {
        std::ofstream out( filename.generic_string().c_str() );
@@ -1247,7 +1272,36 @@ namespace bts { namespace blockchain {
    void  chain_database::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
-      my->_properties_db.store( property_id, property_value );
+      if( property_value.is_null() )
+         my->_properties_db.remove( property_id );
+      else
+         my->_properties_db.store( property_id, property_value );
    }
+   void              chain_database::store_proposal_record( const proposal_record& r )
+   {
+      my->_proposals_db.store( r.id, r );
+   }
+   oproposal_record  chain_database::get_proposal_record( proposal_id_type id )const
+   {
+      auto itr = my->_proposals_db.find(id);
+      if( itr.valid() ) return itr.value();
+      return oproposal_record();
+   }
+                                                                                            
+   void              chain_database::store_proposal_vote( const proposal_vote& r )
+   {
+      if( r.vote == proposal_vote::undefined )
+         my->_proposal_votes_db.remove( r.id );
+      else
+         my->_proposal_votes_db.store( r.id, r );
+   }
+
+   oproposal_vote    chain_database::get_proposal_vote( proposal_vote_id_type id )const
+   {
+      auto itr = my->_proposal_votes_db.find(id);
+      if( itr.valid() ) return itr.value();
+      return oproposal_vote();
+   }
+
 
 } } // namespace bts::blockchain

@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
-         bts::blockchain::advance_time(1); //sleep_time.count()/1000000);
+         bts::blockchain::advance_time(1); 
          //fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 1; t <= 2; ++t )

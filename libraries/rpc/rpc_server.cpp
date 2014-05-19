@@ -28,7 +28,10 @@ namespace bts { namespace rpc {
              (blockchain_get_transaction)\
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
-             (blockchain_get_name_record)\
+             (blockchain_get_name)\
+             (blockchain_get_asset)\
+             (blockchain_get_asset_by_id)\
+             (blockchain_get_assets)\
              (blockchain_get_delegates)\
              (blockchain_get_names)\
              (network_get_connection_count)\
@@ -1087,18 +1090,50 @@ As a json rpc call
       return fc::variant( _client->get_wallet()->get_transactions( count ) );
     }
 
-    static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
+    static rpc_server::method_data blockchain_get_name_metadata{"blockchain_get_name", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
-                              {{"name",       "string", rpc_server::required_positional, fc::ovariant()}},
+                              {{"name",       "name_record", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
-    fc::variant rpc_server_impl::blockchain_get_name_record(const fc::variants& params)
+    fc::variant rpc_server_impl::blockchain_get_name(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->get_name_record(params[0].as_string()) );
     }
+
+    static rpc_server::method_data blockchain_get_asset_metadata{"blockchain_get_asset", nullptr,
+            /* description */ "Retrieves the asset record by the ticker symbol",
+            /* returns: */    "asset_record",
+            /* params:          asset          type      classification                   default_value */
+                              {{"symbol",       "string", rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::blockchain_get_asset(const fc::variants& params)
+    {
+      oasset_record rec = _client->get_chain()->get_asset_record(params[0].as_string());
+      if( !!rec )
+         return fc::variant( *rec );
+      return fc::variant();
+    }
+    static rpc_server::method_data blockchain_get_asset_by_id_metadata{"blockchain_get_asset_by_id", nullptr,
+            /* description */ "Retrieves the asset record by the ticker symbol",
+            /* returns: */    "asset_record",
+            /* params:          asset          type      classification                   default_value */
+                              {{"asset_id",       "int", rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::blockchain_get_asset_by_id(const fc::variants& params)
+    {
+      oasset_record rec = _client->get_chain()->get_asset_record(params[0].as_int64());
+      if( !!rec )
+         return fc::variant( *rec );
+      return fc::variant();
+    }
+
     static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
             /* description */ "Reserves the name record",
             /* returns: */    "name_record",
@@ -1391,6 +1426,28 @@ Returns up to count reserved names that follow first alphabetically.
       uint32_t count = params[1].as<uint32_t>();
       return fc::variant(_client->get_chain()->get_names( first, count ) );
     }
+
+
+
+    static rpc_server::method_data blockchain_get_assets_metadata{"blockchain_get_assets", nullptr,
+            /* description */ "Returns the list of reserved assets sorted alphabetically",
+            /* returns: */    "vector<asset_record>",
+            /* params:          name     type      classification                   default value */
+                              {{"first_symbol", "string", rpc_server::optional_positional, fc::variant("")},
+                               {"count", "int",    rpc_server::optional_positional, -1}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+blockchain_get_assets (first, count)
+
+Returns up to count reserved assets that follow first alphabetically.
+             )" };
+    fc::variant rpc_server_impl::blockchain_get_assets(const fc::variants& params)
+    {
+      std::string first = params[0].as_string();
+      uint32_t count = params[1].as<uint32_t>();
+      return fc::variant(_client->get_chain()->get_assets( first, count ) );
+    }
+
 
     static rpc_server::method_data blockchain_get_delegates_metadata{"blockchain_get_delegates", nullptr,
             /* description */ "Returns the list of delegates sorted by vote",

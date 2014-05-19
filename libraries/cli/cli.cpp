@@ -467,9 +467,11 @@ namespace bts { namespace cli {
               }
               catch (fc::key_not_found_exception&)
               {
+                 elog( " KEY NOT FOUND " );
               }
               catch (...)
               {
+                 elog( " unexpected exception " );
               }
               
               if (cmd == "sendtoaddress")
@@ -518,9 +520,12 @@ namespace bts { namespace cli {
                 }
                 catch (fc::key_not_found_exception&)
                 {
+                 elog( " KEY NOT FOUND " );
+                   std::cout << "key not found \n";
                 }
                 catch (...)
                 {
+                   std::cout << "unexpected exception \n";
                 }
               }
             }
