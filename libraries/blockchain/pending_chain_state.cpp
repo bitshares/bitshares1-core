@@ -38,6 +38,8 @@ namespace bts { namespace blockchain {
       for( auto record : assets )    _prev_state->store_asset_record( record.second );
       for( auto record : names )     _prev_state->store_name_record( record.second );
       for( auto record : balances ) _prev_state->store_balance_record( record.second );
+      for( auto record : proposals ) _prev_state->store_proposal_record( record.second );
+      for( auto record : proposal_votes ) _prev_state->store_proposal_vote( record.second );
       for( auto record : unique_transactions ) 
          _prev_state->store_transaction_location( record.first, record.second );
    }
@@ -56,35 +58,34 @@ namespace bts { namespace blockchain {
       {
          auto prev_asset = _prev_state->get_asset_record( record.first );
          if( !!prev_asset ) undo_state->store_asset_record( *prev_asset );
+         else undo_state->store_asset_record( record.second.make_null() );
       }
 
       for( auto record : names )
       {
          auto prev_name = _prev_state->get_name_record( record.first );
          if( !!prev_name ) undo_state->store_name_record( *prev_name );
+         else undo_state->store_name_record( record.second.make_null() );
       }
 
       for( auto record : proposals )
       {
          auto prev_proposal = _prev_state->get_proposal_record( record.first );
          if( !!prev_proposal ) undo_state->store_proposal_record( *prev_proposal );
+         else undo_state->store_proposal_record( record.second.make_null() );
       }
       for( auto record : proposal_votes )
       {
          auto prev_proposal_vote = _prev_state->get_proposal_vote( record.first );
          if( !!prev_proposal_vote ) undo_state->store_proposal_vote( *prev_proposal_vote );
+         else { undo_state->store_proposal_vote( record.second.make_null() ); }
       }
 
       for( auto record : balances ) 
       {
          auto prev_address = _prev_state->get_balance_record( record.first );
          if( !!prev_address ) undo_state->store_balance_record( *prev_address );
-         else
-         {
-            auto tmp = record.second;
-            tmp.balance = 0; // balance of 0 are removed.
-            undo_state->store_balance_record( tmp );
-         }
+         else undo_state->store_balance_record( record.second.make_null() );
       }
 
    }

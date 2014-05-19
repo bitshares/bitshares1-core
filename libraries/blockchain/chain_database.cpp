@@ -948,14 +948,22 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_asset_record( const asset_record& r )
    { try {
-       my->_assets.store( r.id, r );
-       my->_symbol_index.store( r.symbol, r.id );
+       if( r.is_null() )
+       {
+          my->_assets.remove( r.id );
+          my->_symbol_index.remove( r.symbol );
+       }
+       else
+       {
+          my->_assets.store( r.id, r );
+          my->_symbol_index.store( r.symbol, r.id );
+       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       if( r.balance == 0 )
+       if( r.is_null() )
        {
           my->_balances.remove( r.id() );
        }
@@ -969,18 +977,23 @@ namespace bts { namespace blockchain {
    void chain_database::store_name_record( const name_record& r )
    { try {
        auto old_rec = get_name_record( r.id );
-       my->_names.store( r.id, r );
+       if( r.is_null() )
+       {
+          my->_names.remove( r.id );
+          my->_name_index.remove( r.name );
+       }
+       else
+       {
+          my->_names.store( r.id, r );
+          my->_name_index.store( r.name, r.id );
+       }
 
        if( old_rec && old_rec->is_delegate() )
        {
           my->_delegate_vote_index.remove( vote_del( old_rec->net_votes(), r.id ) );
        }
-       else // this is a new record...
-       {
-          my->_name_index.store( r.name, r.id );
-       }
 
-       if( r.is_delegate() )
+       if( r.is_delegate() && !r.is_null() )
           my->_delegate_vote_index.store( vote_del( r.net_votes(), r.id ),  0 );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
@@ -1279,7 +1292,14 @@ namespace bts { namespace blockchain {
    }
    void              chain_database::store_proposal_record( const proposal_record& r )
    {
-      my->_proposals_db.store( r.id, r );
+      if( r.is_null() )
+      {
+         my->_proposals_db.remove( r.id );
+      }
+      else
+      {
+         my->_proposals_db.store( r.id, r );
+      }
    }
    oproposal_record  chain_database::get_proposal_record( proposal_id_type id )const
    {
@@ -1290,7 +1310,7 @@ namespace bts { namespace blockchain {
                                                                                             
    void              chain_database::store_proposal_vote( const proposal_vote& r )
    {
-      if( r.vote == proposal_vote::undefined )
+      if( r.is_null() )
          my->_proposal_votes_db.remove( r.id );
       else
          my->_proposal_votes_db.store( r.id, r );

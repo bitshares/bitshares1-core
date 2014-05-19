@@ -29,6 +29,9 @@ namespace bts { namespace blockchain {
 
    struct proposal_record
    {
+      bool is_null()const { return submitting_delegate_id == -1; }
+      proposal_record make_null()const    { proposal_record cpy(*this); cpy.submitting_delegate_id = -1; return cpy; }
+
       proposal_id_type      id;
       name_id_type          submitting_delegate_id; // the delegate_id of the submitter
       fc::time_point_sec    submission_date;
@@ -47,6 +50,8 @@ namespace bts { namespace blockchain {
           yes = 1,
           undefined = 2
       };
+      bool is_null()const { return vote == undefined; }
+      proposal_vote make_null()const { proposal_vote cpy(*this); cpy.vote = undefined; return cpy; }
 
       proposal_vote_id_type             id;
       fc::time_point_sec                timestamp;
@@ -69,6 +74,8 @@ namespace bts { namespace blockchain {
       balance_id_type            id()const { return condition.get_address(); }
       /** returns 0 if asset id is not condition.asset_id */
       asset                      get_balance( asset_id_type id )const;
+      bool                       is_null()const    { return balance == 0; }
+      balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
 
       share_type                 balance;
       withdraw_condition         condition;
@@ -83,6 +90,9 @@ namespace bts { namespace blockchain {
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
       static bool is_valid_json( const std::string& str );
+
+      bool is_null()const           { return issuer_name_id == -1; }
+      asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
 
       asset_id_type       id;
       std::string         symbol;
@@ -105,6 +115,9 @@ namespace bts { namespace blockchain {
 
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
+
+      bool is_null()const { return owner_key == public_key_type(); }
+      name_record make_null()const    { name_record cpy(*this); cpy.owner_key = public_key_type(); return cpy;      }
 
       share_type delegate_pay_balance()const
       { // TODO: move to cpp
