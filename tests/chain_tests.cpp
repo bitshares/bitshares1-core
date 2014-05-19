@@ -112,6 +112,9 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
       my_wallet.unlock( "password", fc::seconds( 1000000 ) );
+
+      auto result = blockchain->get_names( "", 1000 );
+
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
