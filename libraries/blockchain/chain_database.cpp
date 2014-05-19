@@ -1128,6 +1128,7 @@ namespace bts { namespace blockchain {
 
    void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    {
+      std::cout << "Initializing Genesis State\n";
       #include "genesis.json"
 
       genesis_block_config config;
