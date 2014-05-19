@@ -288,11 +288,13 @@ namespace bts { namespace blockchain {
           {
              current_fork = cur_itr.value();
              ilog( "          current_fork: ${fork}", ("fork",current_fork) );
+             ilog( "          prev_fork: ${prev_fork}", ("prev_fork",prev_fork_data) );
              if( !current_fork.is_linked && prev_fork_data.is_linked )
              {
                 // we found the missing link
                 current_fork.is_linked = true;
                 recursive_mark_as_linked( current_fork.next_blocks );
+                _fork_db.store( block_id, current_fork );
              }
           }
           else
@@ -1244,11 +1246,12 @@ namespace bts { namespace blockchain {
           while( fork_itr.valid() )
           {
              auto fork_data = fork_itr.value();
-             //ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
+             ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
              for( auto next : fork_data.next_blocks )
              {
                 out << '"' << std::string ( fork_itr.key() ).substr(0,5) <<"\" "
-                    << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled];\n";
+                    << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
+                    << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
                 out << '"' << std::string ( next ).substr(0,5) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,5) << "\";\n";
             }
              ++fork_itr;

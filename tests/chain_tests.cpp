@@ -135,16 +135,15 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
          full_block next_block = blockchain->generate_block( next_block_time );
          my_wallet.sign_block( next_block );
-         ilog( "\n\n\n                   MY_WALLET   PUSH_BLOCK" );
+         ilog( "                MY_WALLET   PUSH_BLOCK" );
          blockchain->push_block( next_block );
-         ilog( "\n\n\n                   YOUR_WALLET   PUSH_BLOCK" );
+         ilog( "                YOUR_WALLET   PUSH_BLOCK" );
          blockchain2->push_block( next_block );
 
          ilog( "my balance: ${my}   your balance: ${your}",
                ("my",my_wallet.get_balance("*",0))
                ("your",your_wallet.get_balance("*",0)) );
 
-         ilog( "\n\n" );
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
@@ -255,7 +254,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     std::cerr << "synchronizing chains\n";
     uint32_t your_length = your_chain->get_head_block_num();
     std::cerr << "your length: "<<your_length << "\n";
-    for( uint32_t i = 1; i <= your_length; ++i )
+    for( uint32_t i = your_length-1; i > 0 ; --i )
     {
        try {
           auto b = your_chain->get_block( i );
@@ -269,6 +268,12 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
           std::cerr << "    exception: " << e.to_string() << "\n";
        }
     }
+       auto b = your_chain->get_block( your_length );
+       my_chain->push_block(b);
+       std::cerr << "push block: " << b.block_num 
+                 << "    my length: " << my_chain->get_head_block_num() 
+                 << "  your_length: " << your_length << " \n";
+
     my_chain->export_fork_graph( "fork_graph.dot" );
     FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
   } 
