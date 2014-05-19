@@ -505,7 +505,7 @@ namespace bts { namespace blockchain {
 
             save_undo_state( block_id, pending_state );
 
-            // in case we crash durring apply changes... remember what we
+            // in case we crash during apply changes... remember what we
             // were in the process of applying...
             //
             // TODO: what if we crash in the middle of save_redo_state?
@@ -687,7 +687,7 @@ namespace bts { namespace blockchain {
       my->_symbol_index.open( data_dir / "symbol_index", true );
       my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
 
-      // TODO: check to see if we crashed durring the last write
+      // TODO: check to see if we crashed during the last write
       //   if so, then apply the last undo operation stored.
 
       uint32_t       last_block_num = -1;

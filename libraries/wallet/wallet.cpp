@@ -151,7 +151,7 @@ namespace bts { namespace wallet {
             chain_database_ptr                                                  _blockchain;
 
             /** map record id to encrypted record data , this db should only be written to via
-             * my->store_record()
+             *  my->store_record()
              **/
             bts::db::level_map< uint32_t, wallet_record >                       _wallet_db;
             template<typename T>
@@ -185,15 +185,7 @@ namespace bts { namespace wallet {
             std::unordered_map<address, address_index>                          _sending_keys;
 
             /** stores the user's trust level for delegates */
-            std::map<std::string, delegate_trust_status> _delegate_trust_status_map;
-
-            std::string get_address_label( const address_index& idx )
-            {
-               auto account_itr = _accounts.find( idx.account_number );
-               if( account_itr != _accounts.end() )
-                  return account_itr->second.name;
-               return std::string();
-            }
+            std::map<std::string, delegate_trust_status>                        _delegate_trust_status_map;
 
             /** used when address_index == (X,-1,N) to lookup foreign private keys, where
              * N is the key into _extra_receive_keys
@@ -246,6 +238,14 @@ namespace bts { namespace wallet {
                }
             }
 
+            std::string get_address_label( const address_index& idx )
+            {
+               auto account_itr = _accounts.find( idx.account_number );
+               if( account_itr != _accounts.end() )
+                  return account_itr->second.name;
+               return std::string();
+            }
+
             /** account indexes are tracked independently from record indexes because
              * the goal is to focus them early in the hierarchial wallet number
              * sequence to make recovery more feasible.
@@ -266,7 +266,7 @@ namespace bts { namespace wallet {
                 return next_index;
             }
 
-            asset  get_default_fee()
+            asset get_default_fee()
             {
                 auto meta_itr = _meta.find( default_transaction_fee );
                 if( meta_itr == _meta.end() )
@@ -297,7 +297,7 @@ namespace bts { namespace wallet {
             void initialize_wallet( const std::string& password )
             {
                _wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-               FC_ASSERT( password.size() > 0 , "No wallet password specified" );
+               FC_ASSERT( !password.empty() , "No wallet password specified" );
 
                auto key = fc::ecc::private_key::generate();
                auto chain_code = fc::ecc::private_key::generate();
@@ -500,7 +500,6 @@ namespace bts { namespace wallet {
                return false;
             }
 
-
             bool scan_reserve_name( const reserve_name_operation& op )
             {
                if( is_receive_address( op.owner_key ) ) return true;
@@ -667,7 +666,6 @@ namespace bts { namespace wallet {
 
             } FC_RETHROW_EXCEPTIONS( warn, "", ("address",pub_key_addr) ) }
 
-
             void sign_transaction( signed_transaction& trx, const std::unordered_set<address>& required_sigs )
             { try {
                 for( auto item : required_sigs )
@@ -676,6 +674,88 @@ namespace bts { namespace wallet {
                    trx.sign( priv_key );
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
+
+            void load_records(const std::string& password)
+            {
+              for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
+              {
+                 auto record = record_itr.value();
+                 switch( (wallet_record_type)record.type )
+                 {
+                    case master_key_record_type:
+                    {
+                       _master_key = record.as<master_key_record>();
+                       self->unlock( password );
+                       break;
+                    }
+                    case account_record_type:
+                    {
+                       auto cr = record.as<wallet_account_record>();
+                       _accounts[cr.account_number] = cr;
+                       _account_name_index[cr.name] = cr.account_number;
+
+                       cache_deterministic_keys( cr );
+                       break;
+                    }
+                    case transaction_record_type:
+                    {
+                       auto wtr    = record.as<wallet_transaction_record>();
+                       auto trx_id = wtr.trx.id();
+                       _transactions[trx_id] = wtr;
+                       break;
+                    }
+                    case name_record_type:
+                    {
+                       auto wnr = record.as<wallet_name_record>();
+                       _names[wnr.id] = wnr;
+                       break;
+                    }
+                    case asset_record_type:
+                    {
+                       auto wnr = record.as<wallet_asset_record>();
+                       _assets[wnr.id] = wnr;
+                       break;
+                    }
+                    case balance_record_type:
+                    {
+                       auto war = record.as<wallet_balance_record>();
+                       _balances[war.id()] = war;
+                       break;
+                    }
+                    case private_key_record_type:
+                    {
+                       auto pkr = record.as<private_key_record>();
+                       _extra_receive_keys[pkr.extra_key_index] = pkr;
+                       auto pubkey = pkr.get_private_key(_wallet_password).get_public_key();
+                       elog( "public key: ${key}", ("key",pubkey) );
+                       _receive_keys[ address( pubkey ) ] =
+                          address_index( pkr.account_number, -1, pkr.extra_key_index );
+                       _receive_keys[ address(pts_address(pubkey,false,56) )] =
+                          address_index( pkr.account_number, -1, pkr.extra_key_index );
+                       _receive_keys[ address(pts_address(pubkey,true,56) ) ] =
+                          address_index( pkr.account_number, -1, pkr.extra_key_index );
+                       _receive_keys[ address(pts_address(pubkey,false,0) ) ] =
+                          address_index( pkr.account_number, -1, pkr.extra_key_index );
+                       _receive_keys[ address(pts_address(pubkey,true,0) )  ] =
+                          address_index( pkr.account_number, -1, pkr.extra_key_index );
+                       break;
+                    }
+                    case meta_record_type:
+                    {
+                       auto metar = record.as<wallet_meta_record>();
+                       _meta[metar.key] = metar;
+                       break;
+                    }
+                    default:
+                    {
+                       FC_ASSERT( false, "Wallet database contains unknown record type ${type}", ("type",record.type) );
+                       break;
+                    }
+                 }
+              }
+
+              self->lock();
+            }
 
       }; // wallet_impl
 
@@ -689,139 +769,57 @@ namespace bts { namespace wallet {
       chain_db->set_observer( my.get() );
    }
 
-   wallet::~wallet(){ try { close(); }catch( ... ){} }
-
-
-   void wallet::open( const std::string& wallet_name, const std::string& password )
-   { try {
-      try {
-         close();
-         open_file( my->_data_dir / wallet_name, password );
-         my->_wallet_name = wallet_name;
-      } catch ( ... ) { my->_wallet_name = ""; throw; }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) )
+   wallet::~wallet()
+   { 
+      try 
+      { 
+        close(); 
+      }
+      catch( ... )
+      {
+      } 
    }
 
    void wallet::create( const std::string& wallet_name, const std::string& password )
    { try {
-         close();
-         auto filename = my->_data_dir / wallet_name;
-         FC_ASSERT( !fc::exists( filename ), "Wallet ${wallet_dir} already exists.", ("wallet_dir",filename) )
-         my->_wallet_db.open( filename, true );
-         if( !my->_master_key )
-         {
-            my->initialize_wallet( password );
-         }
-         close();
-         open( wallet_name, password );
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet with name ${name}", ("name",wallet_name) ) }
+      FC_ASSERT( !wallet_name.empty() );
+      FC_ASSERT( !password.empty() );
+      auto wallet_filename = my->_data_dir / wallet_name;
+      FC_ASSERT( !fc::exists( wallet_filename ), "Wallet ${wallet_filename} already exists.", ("wallet_filename",wallet_filename) )
+      close();
 
-   void wallet::open_file( const fc::path& wallet_dir, const std::string& password )
+      my->_wallet_db.open( wallet_filename, true );
+      my->initialize_wallet( password );
+      open( wallet_name, password );
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet ${wallet_name}", ("wallet_name",wallet_name) ) }
+
+   void wallet::open( const std::string& wallet_name, const std::string& password )
    { try {
-      FC_ASSERT( fc::exists( wallet_dir ), "Unable to open ${wallet_dir}  ${password}", ("wallet_dir",wallet_dir)("password",password) )
+      FC_ASSERT( !wallet_name.empty() );
+      FC_ASSERT( !password.empty() );
 
-      my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      my->_wallet_db.open( wallet_dir, true );
-      my->_wallet_filename = wallet_dir;
+      open_file( my->_data_dir / wallet_name, password );
+      my->_wallet_name = wallet_name;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
 
-      auto record_itr = my->_wallet_db.begin();
-      while( record_itr.valid() )
-      {
-         auto record = record_itr.value();
-         try {
-            switch( (wallet_record_type)record.type )
-            {
-               case master_key_record_type:
-               {
-                  my->_master_key = record.as<master_key_record>();
-                  unlock( password );
-                  break;
-               }
-               case account_record_type:
-               {
-                  auto cr = record.as<wallet_account_record>();
-                  my->_accounts[cr.account_number] = cr;
-                  my->_account_name_index[cr.name] = cr.account_number;
+   void wallet::open_file( const fc::path& wallet_filename, const std::string& password )
+   { try {
+      FC_ASSERT( !password.empty() );
+      FC_ASSERT( fc::exists( wallet_filename ), "Unable to open ${wallet_filename}", ("wallet_filename",wallet_filename) );
+      close();
 
-                  my->cache_deterministic_keys( cr );
-                  break;
-               }
-               case transaction_record_type:
-               {
-                  auto wtr    = record.as<wallet_transaction_record>();
-                  auto trx_id = wtr.trx.id();
-                  my->_transactions[trx_id] = wtr;
-                  break;
-               }
-               case name_record_type:
-               {
-                  auto wnr = record.as<wallet_name_record>();
-                  my->_names[wnr.id] = wnr;
-                  break;
-               }
-               case asset_record_type:
-               {
-                  auto wnr = record.as<wallet_asset_record>();
-                  my->_assets[wnr.id] = wnr;
-                  break;
-               }
-               case balance_record_type:
-               {
-                  auto war = record.as<wallet_balance_record>();
-                  my->_balances[war.id()] = war;
-                  break;
-               }
-               case private_key_record_type:
-               {
-                  auto pkr = record.as<private_key_record>();
-                  my->_extra_receive_keys[pkr.extra_key_index] = pkr;
-                  auto pubkey = pkr.get_private_key(my->_wallet_password).get_public_key();
-                  elog( "public key: ${key}", ("key",pubkey) );
-                  my->_receive_keys[ address( pubkey ) ] =
-                     address_index( pkr.account_number, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,false,56) )] =
-                     address_index( pkr.account_number, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,true,56) ) ] =
-                     address_index( pkr.account_number, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,false,0) ) ] =
-                     address_index( pkr.account_number, -1, pkr.extra_key_index );
-                  my->_receive_keys[ address(pts_address(pubkey,true,0) )  ] =
-                     address_index( pkr.account_number, -1, pkr.extra_key_index );
-                  break;
-               }
-               case meta_record_type:
-               {
-                  auto metar = record.as<wallet_meta_record>();
-                  my->_meta[metar.key] = metar;
-                  break;
-               }
-            }
-         }
-         catch ( const fc::exception& e )
-         {
-            elog( "error loading wallet record: ${e}", ("e",e.to_detail_string() ) );
-            // TODO: log errors and report them to user...
-         }
-         ++record_itr;
-      }
+      my->_wallet_db.open( wallet_filename, true );
+      my->load_records( password );
+
       FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
-      unlock( password );
+      my->_wallet_filename = wallet_filename;
+
       my->_priority_fee = my->get_default_fee();
       scan_chain( my->get_last_scanned_block_number() );
 
       my->_is_open = true;
-      lock();
-
-      std::cout << "Opened wallet " << wallet_dir.generic_string() << "\n";
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_dir) ) }
-
-   bool wallet::is_open()const                   { return my->_is_open;                         }
-   void wallet::lock()                           { my->_wallet_password = fc::sha512(); my->_relock_time = fc::time_point();   }
-   std::string wallet::get_name()const           { return my->_wallet_name;                     }
-   fc::path    wallet::get_filename()const       { return my->_wallet_filename;                 }
-   bool wallet::is_locked()const                 { return !is_unlocked();                       }
-   bool wallet::is_unlocked()const               { return my->_wallet_password != fc::sha512(); }
-   fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
+      std::cout << "Opened wallet " << wallet_filename.generic_string() << "\n";
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_filename) ) }
 
    bool wallet::close()
    { try {
@@ -830,24 +828,64 @@ namespace bts { namespace wallet {
          my->_wallet_relocker_done.cancel();
          my->_wallet_relocker_done.wait();
       }
+      my->_relock_time = fc::time_point();
+
+      my->_wallet_name = "";
+      my->_wallet_filename = fc::path();
+
+      my->_meta.clear();
       my->_wallet_db.close();
+
       my->_wallet_password = fc::sha512();
       my->_master_key.reset();
+
       my->_accounts.clear();
       my->_balances.clear();
       my->_names.clear();
       my->_assets.clear();
       my->_transactions.clear();
       my->_receive_keys.clear();
+      my->_sending_keys.clear();
+      my->_delegate_trust_status_map.clear();
       my->_extra_receive_keys.clear();
       my->_account_name_index.clear();
-      my->_meta.clear();
-      my->_wallet_name = "";
-      my->_wallet_filename = fc::path();
-      my->_relock_time = fc::time_point();
+
       my->_is_open = false;
       return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::export_to_json( const fc::path& path )
+   {
+       FC_ASSERT( is_unlocked() );
+       std::map< uint32_t, wallet_record > db_map;
+
+       for( auto iter = my->_wallet_db.begin(); iter.valid(); ++iter )
+           db_map[ iter.key() ] = iter.value();
+
+       fc::json::save_to_file( db_map, path, true );
+   }
+
+   void wallet::create_from_json( const fc::path& path, const std::string& name, const std::string& passphrase )
+   {
+       FC_ASSERT( fc::exists( path ) );
+       auto db_map = fc::json::from_file< std::map< uint32_t, wallet_record > >( path );
+
+       create( name, passphrase );
+
+       for( auto item : db_map )
+           my->_wallet_db.store( item.first, item.second );
+
+       my->load_records( passphrase );
+   }
+
+   bool wallet::is_open()const                   { return my->_is_open;                         }
+   std::string wallet::get_name()const           { return my->_wallet_name;                     }
+   fc::path    wallet::get_filename()const       { return my->_wallet_filename;                 }
+
+   void wallet::lock()                           { my->_wallet_password = fc::sha512(); my->_relock_time = fc::time_point();   }
+   bool wallet::is_unlocked()const               { return my->_wallet_password != fc::sha512(); }
+   bool wallet::is_locked()const                 { return !is_unlocked();                       }
+   fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
 
    /**
     * TODO
@@ -855,7 +893,7 @@ namespace bts { namespace wallet {
     */
    void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
-      FC_ASSERT( password.size() > 0 );
+      FC_ASSERT( !password.empty() );
       FC_ASSERT( !!my->_master_key );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
@@ -1391,8 +1429,8 @@ namespace bts { namespace wallet {
    { try {
       auto wif_bytes = fc::from_base58(wif);
       auto key = fc::variant(std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4)).as<fc::ecc::private_key>();
-      auto check = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() -4 );
-      if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() -4, 4 ) )
+      auto check = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() - 4 );
+      if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
          import_private_key(key, account_name, invoice_memo);
       else
          FC_ASSERT( !"Invalid Private Key Format" );

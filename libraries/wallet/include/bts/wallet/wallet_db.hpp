@@ -40,7 +40,6 @@ namespace bts { namespace wallet {
        fc::variant                                 json_data;
    };
 
-
    struct address_index
    {
       address_index( int32_t c = 0, int32_t i = 0, int32_t p = 0)
