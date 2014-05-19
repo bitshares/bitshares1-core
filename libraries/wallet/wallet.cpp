@@ -691,7 +691,7 @@ namespace bts { namespace wallet {
                     case master_key_record_type:
                     {
                        _master_key = record.as<master_key_record>();
-                       self->unlock( password );
+                       self->unlock( fc::seconds( 60 * 5 ), password );
                        break;
                     }
                     case account_record_type:
@@ -897,8 +897,9 @@ namespace bts { namespace wallet {
     * TODO
     * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
     */
-   void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
+   void wallet::unlock( const fc::microseconds& timeout, const std::string& password )
    { try {
+      FC_ASSERT( timeout.count() > 0 );
       FC_ASSERT( !password.empty() );
       FC_ASSERT( !!my->_master_key );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
