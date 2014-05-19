@@ -533,6 +533,8 @@ namespace bts { namespace wallet {
                 {
                    switch( (operation_type_enum)op.type  )
                    {
+                     case null_op_type:
+                        break;
                      case withdraw_op_type:
                         mine |= scan_withdraw( op.as<withdraw_operation>() );
                         break;
@@ -562,7 +564,11 @@ namespace bts { namespace wallet {
                      case issue_asset_op_type:
                         mine |= scan_issue_asset( op.as<issue_asset_operation>() );
                         break;
-                     case null_op_type:
+                     case fire_delegate_op_type:
+                        // TODO
+                        break;
+                     default:
+                        FC_ASSERT( false, "Transaction ${t} contains unknown operation type ${o}", ("t",trx)("o",op.type) );
                         break;
                    }
                 }
