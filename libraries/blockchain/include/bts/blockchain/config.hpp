@@ -15,7 +15,7 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                (17)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                (7)
 
 /**
  * Defines the number of seconds that should elapse between blocks
