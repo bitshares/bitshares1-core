@@ -59,27 +59,20 @@
 }).call(this);
 
 (function() {
-  angular.module("app").controller("CreateWalletController", function($scope, $modal, $log, RpcService, ErrorService) {
+  angular.module("app").controller("CreateWalletController", function($scope, $modal, $log, RpcService, ErrorService, Wallet) {
     return $scope.submitForm = function(isValid) {
-      if (!isValid) {
-        ErrorService.setError("Please fill up the form below");
-        return;
+      if (true || isValid) {
+        return Wallet.create($scope.wallet_password, $scope.spending_password);
+      } else {
+        return ErrorService.set("Please fill up the form below");
       }
-      return RpcService.request('create_wallet', ['default', $scope.wallet_password, $scope.spending_password]).then(function(response) {
-        if (response.result === true) {
-          return window.location.href = "/";
-        } else {
-          console.log("Error in create_wallet", result);
-          return ErrorService.setError("Cannot create wallet, the wallet may already exist");
-        }
-      });
     };
   });
 
 }).call(this);
 
 (function() {
-  angular.module("app").controller("HomeController", function($scope, $modal, $log, RpcService) {
+  angular.module("app").controller("HomeController", function($scope, $modal, $log, RpcService, Wallet) {
     var format_amount, fromat_address, load_transactions;
     $scope.transactions = [];
     $scope.balance = 0.0;
@@ -109,32 +102,30 @@
       return first_asset[1];
     };
     load_transactions = function() {
-      return RpcService.request("get_transaction_history").then(function(response) {
-        var count;
-        $scope.transactions.splice(0, $scope.transactions.length);
-        count = 0;
-        return angular.forEach(response.result, function(val) {
-          count += 1;
-          if (count < 10) {
-            return $scope.transactions.push({
-              block_num: val.block_num,
-              trx_num: val.trx_num,
-              time: val.confirm_time,
-              amount: format_amount(val.delta_balance),
-              from: fromat_address(val.from),
-              to: fromat_address(val.to),
-              memo: val.memo
-            });
-          }
+      return RpcService.request("wallet_rescan_blockchain_state").then(function(response) {
+        return RpcService.request("get_transaction_history").then(function(response) {
+          var count;
+          $scope.transactions.splice(0, $scope.transactions.length);
+          count = 0;
+          return angular.forEach(response.result, function(val) {
+            count += 1;
+            if (count < 10) {
+              return $scope.transactions.push({
+                block_num: val.block_num,
+                trx_num: val.trx_num,
+                time: val.confirm_time,
+                amount: format_amount(val.delta_balance),
+                from: fromat_address(val.from),
+                to: fromat_address(val.to),
+                memo: val.memo
+              });
+            }
+          });
         });
       });
     };
-    return RpcService.request("rescan_state").then(function(response) {
-      return RpcService.request('getbalance').then(function(response) {
-        console.log("balance: ", response.result.amount);
-        $scope.balance = response.result.amount;
-        return load_transactions();
-      });
+    return Wallet.get_balance().then(function(balance) {
+      return $scope.balance = balance;
     });
   });
 
@@ -446,14 +437,15 @@
   servicesModule.factory("ErrorService", function(InfoBarService) {
     return {
       errorMessage: null,
-      setError: function(msg) {
+      set: function(msg) {
         this.errorMessage = msg;
         if (msg) {
           return InfoBarService.message = null;
         }
       },
       clear: function() {
-        return this.errorMessage = null;
+        this.errorMessage = null;
+        return InfoBarService.message = null;
       }
     };
   });
@@ -489,7 +481,7 @@
           return x === method;
         })).length > 0;
         if (!promise && !method_in_dont_report_list) {
-          ErrorService.setError("" + (error_msg.substring(0, 512)) + " (" + response.status + ")");
+          ErrorService.set("" + (error_msg.substring(0, 512)) + " (" + response.status + ")");
         }
         return (promise ? promise : $q.reject(response));
       }
@@ -526,12 +518,12 @@
     var RpcService;
     return RpcService = {
       request: function(method, params) {
-        var http_params, promise, reqparams;
+        var http_params, reqparams;
         reqparams = {
           method: method,
           params: params || []
         };
-        ErrorService.setError("");
+        ErrorService.clear();
         http_params = {
           method: "POST",
           cache: false,
@@ -542,13 +534,60 @@
           }
         };
         angular.extend(http_params.data, reqparams);
-        promise = $http(http_params).then(function(response) {
+        return $http(http_params).then(function(response) {
           console.log("RpcService <" + http_params.data.method + "> response:", response);
           return response.data || response;
         });
-        return promise;
       }
     };
   });
+
+}).call(this);
+
+(function() {
+  var Wallet;
+
+  Wallet = (function() {
+    function Wallet(q, rpc, error_service) {
+      this.q = q;
+      this.rpc = rpc;
+      this.error_service = error_service;
+      console.log("---- Wallet Constructor ----");
+      this.wallet_name = "";
+    }
+
+    Wallet.prototype.create = function(wallet_password, spending_password) {
+      var _this = this;
+      return this.rpc.request('wallet_create', ['default', wallet_password]).then(function(response) {
+        var error;
+        if (response.result === true) {
+          return window.location.href = "/";
+        } else {
+          error = "Cannot create wallet, the wallet may already exist";
+          _this.error_service.set(error);
+          return _this.q.reject(error);
+        }
+      });
+    };
+
+    Wallet.prototype.get_balance = function() {
+      return this.rpc.request('wallet_get_balance').then(function(response) {
+        return response.result.amount;
+      });
+    };
+
+    Wallet.prototype.get_wallet_name = function() {
+      var _this = this;
+      return this.rpc.request('wallet_get_name').then(function(response) {
+        _this.wallet_name = response.result;
+        return console.log("---- current wallet name: ", response.result);
+      });
+    };
+
+    return Wallet;
+
+  })();
+
+  angular.module("app").service("Wallet", ["$q", "RpcService", "ErrorService", Wallet]);
 
 }).call(this);
