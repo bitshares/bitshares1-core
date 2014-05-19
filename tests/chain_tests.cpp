@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     my_chain->export_fork_graph( "fork_graph.dot" );
     FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
   } 
-   catch ( const fc::exception& e )
+  catch ( const fc::exception& e )
   {
      elog( "${e}", ("e",e.to_detail_string() ) );
      throw;

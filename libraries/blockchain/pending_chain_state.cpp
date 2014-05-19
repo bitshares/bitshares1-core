@@ -4,7 +4,7 @@
 
 namespace bts { namespace blockchain {
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
-   :new_asset_ids(0),new_name_ids(0),_prev_state( prev_state )
+   :_prev_state( prev_state )
    {
    }
 
@@ -34,6 +34,7 @@ namespace bts { namespace blockchain {
    void  pending_chain_state::apply_changes()const
    {
       if( !_prev_state ) return;
+      for( auto item   : properties ) _prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( auto record : assets )    _prev_state->store_asset_record( record.second );
       for( auto record : names )     _prev_state->store_name_record( record.second );
       for( auto record : balances ) _prev_state->store_balance_record( record.second );
@@ -45,8 +46,11 @@ namespace bts { namespace blockchain {
    {
       auto undo_state = std::dynamic_pointer_cast<pending_chain_state>(undo_state_arg);
       FC_ASSERT( _prev_state );
-      undo_state->new_asset_ids   = new_asset_ids;
-      undo_state->new_name_ids    = new_name_ids;
+      for( auto item : properties )
+      {
+         auto previous_value = _prev_state->get_property( (chain_property_enum)item.first );
+         undo_state->set_property( (chain_property_enum)item.first, previous_value );
+      }
 
       for( auto record : assets )
       {
@@ -64,8 +68,14 @@ namespace bts { namespace blockchain {
       {
          auto prev_address = _prev_state->get_balance_record( record.first );
          if( !!prev_address ) undo_state->store_balance_record( *prev_address );
-         else undo_state->new_balances.push_back( record.first );
+         else
+         {
+            auto tmp = record.second;
+            tmp.balance = 0; // balance of 0 are removed.
+            undo_state->store_balance_record( tmp );
+         }
       }
+
    }
    /** load the state from a variant */
    void                    pending_chain_state::from_variant( const fc::variant& v )
@@ -183,31 +193,17 @@ namespace bts { namespace blockchain {
       name_id_index[r.name] = r.id;
    }
 
-   asset_id_type pending_chain_state::last_asset_id()const
+   fc::variant  pending_chain_state::get_property( chain_property_enum property_id )const
    {
-      if( _prev_state ) 
-        return _prev_state->last_asset_id() + new_asset_ids;
-      return new_asset_ids;
+      auto property_itr = properties.find( property_id );
+      if( property_itr != properties.end()  ) return property_itr->second;
+      if( _prev_state ) return _prev_state->get_property( property_id );
+      return fc::variant();
    }
-   name_id_type pending_chain_state::last_name_id()const
+   void  pending_chain_state::set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value )
    {
-      if( _prev_state ) 
-        return _prev_state->last_name_id() + new_name_ids;
-      return new_name_ids;
-   }
-
-   asset_id_type  pending_chain_state::new_asset_id()
-   {
-      auto last = _prev_state->last_asset_id();
-      new_asset_ids++;
-      return last + new_asset_ids;
-   }
-
-   name_id_type  pending_chain_state::new_name_id()
-   {
-      auto last = _prev_state->last_name_id();
-      new_name_ids++;
-      return last + new_name_ids;
+      properties[property_id] = property_value;
    }
 
 } } // bts::blockchain

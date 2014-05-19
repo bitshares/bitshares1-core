@@ -106,6 +106,10 @@ namespace bts { namespace blockchain {
          void                         scan_balances( const std::function<void( const balance_record& )>& callback );
          void                         scan_names( const std::function<void( const name_record& )>& callback );
 
+         virtual fc::variant           get_property( chain_property_enum property_id )const;
+         virtual void                  set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value );
+
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
          virtual oname_record         get_name_record( name_id_type id )const override;

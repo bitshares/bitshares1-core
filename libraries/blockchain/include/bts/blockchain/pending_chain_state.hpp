@@ -30,12 +30,10 @@ namespace bts { namespace blockchain {
          virtual void                   store_transaction_location( const transaction_id_type&,
                                                                   const transaction_location& loc ) override;
 
-         virtual asset_id_type          last_asset_id()const override;
-         virtual asset_id_type          new_asset_id() override;
 
-         virtual name_id_type           last_name_id()const override;
-         virtual name_id_type           new_name_id() override;
-
+         virtual fc::variant           get_property( chain_property_enum property_id )const;
+         virtual void                  set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value );
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -63,10 +61,7 @@ namespace bts { namespace blockchain {
          std::unordered_map< std::string,         name_id_type>         name_id_index;
          std::unordered_map< std::string,         asset_id_type>        symbol_id_index;
          std::unordered_map< transaction_id_type, transaction_location> unique_transactions;
-
-         asset_id_type                                                  new_asset_ids;
-         asset_id_type                                                  new_name_ids;
-         std::vector<balance_id_type>                                   new_balances;
+         std::unordered_map< chain_property_type, fc::variant>          properties; 
 
          chain_interface_ptr                                            _prev_state;
    };
@@ -77,4 +72,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(names)(balances)(name_id_index)(symbol_id_index)(unique_transactions)
-            (new_asset_ids)(new_name_ids)(new_balances) )
+            (properties) )

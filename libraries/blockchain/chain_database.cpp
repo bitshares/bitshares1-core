@@ -7,6 +7,7 @@
 #include <bts/db/level_map.hpp>
 
 #include <fc/io/json.hpp>
+#include <fc/io/raw_variant.hpp>
 
 #include <fc/log/logger.hpp>
 #include <fstream>
@@ -124,6 +125,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> > _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>         _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                _properties_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>     _undo_state;
@@ -669,6 +671,7 @@ namespace bts { namespace blockchain {
 
       my->_fork_number_db.open( data_dir / "fork_number_db", true );
       my->_fork_db.open( data_dir / "fork_db", true );
+      my->_properties_db.open( data_dir / "properties", true );
       my->_undo_state.open( data_dir / "undo_state", true );
       my->_redo_state.open( data_dir / "redo_state", true );
 
@@ -724,8 +727,13 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_fork_db.close();
+      my->_fork_number_db.close();
+      my->_undo_state.close();
+      my->_redo_state.close();
       my->_pending_transactions.close();
       my->_processed_transaction_ids.close();
+      my->_properties_db.close();
       my->_block_num_to_id.close();
 
       my->_block_num_to_id.close();
@@ -1258,5 +1266,15 @@ namespace bts { namespace blockchain {
           }
        out << "}"; 
     }
+   fc::variant  chain_database::get_property( chain_property_enum property_id )const
+   { try {
+      return my->_properties_db.fetch( property_id );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
+
+   void  chain_database::set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value )
+   {
+      my->_properties_db.store( property_id, property_value );
+   }
 
 } } // namespace bts::blockchain
