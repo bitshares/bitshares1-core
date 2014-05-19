@@ -4,6 +4,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../db/include" )
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
+             time.cpp
              extended_address.cpp
              address.cpp
              pts_address.cpp

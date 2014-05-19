@@ -49,6 +49,7 @@ namespace bts { namespace blockchain {
          transaction_evaluation_state_ptr              store_pending_transaction( const signed_transaction& trx );
          std::vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                          is_known_transaction( const transaction_id_type& trx_id );
+         void export_fork_graph( const fc::path& filename )const;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -104,6 +105,10 @@ namespace bts { namespace blockchain {
          void                         scan_assets( const std::function<void( const asset_record& )>& callback );
          void                         scan_balances( const std::function<void( const balance_record& )>& callback );
          void                         scan_names( const std::function<void( const name_record& )>& callback );
+
+         virtual fc::variant           get_property( chain_property_enum property_id )const;
+         virtual void                  set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value );
 
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;

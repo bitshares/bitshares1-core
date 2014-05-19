@@ -18,7 +18,7 @@ Building BitShares Toolkit on OS X 10.9
     tar -xjvf boost_1_54_0.tar.bz
     cd boost_1_54_0
     ./bootstrap
-    sudo ./b2 toolset=clang cxxflags="-stdlib=libc++ std=c++11" linkflags="-stdlib=libc++" link=static install
+    sudo ./b2 toolset=clang cxxflags="-stdlib=libc++ -std=c++11" linkflags="-stdlib=libc++" link=static install
 
 4) Download OpenSSL  https://www.openssl.org/source/
 

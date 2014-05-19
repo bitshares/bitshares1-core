@@ -1,5 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/config.hpp>
+#include <fc/io/json.hpp>
 #include <sstream>
 
 namespace bts{ namespace blockchain {
@@ -40,9 +41,31 @@ namespace bts{ namespace blockchain {
    }
    bool name_record::is_valid_json( const std::string& str )
    {
-      std::stringstream ss(str);
-      // TODO: validate this!
-      return true;
+      return fc::json::is_valid( str );
+   }
+
+   asset_id_type chain_interface::last_asset_id()const
+   {
+       return get_property( chain_property_enum::last_asset_id ).as<asset_id_type>();
+   }
+
+   asset_id_type  chain_interface::new_asset_id()
+   {
+      auto next_id = last_asset_id() + 1;
+      set_property( chain_property_enum::last_asset_id, next_id );
+      return next_id;
+   }
+
+   name_id_type   chain_interface::last_name_id()const
+   {
+       return get_property( chain_property_enum::last_name_id ).as<name_id_type>();
+   }
+
+   name_id_type   chain_interface::new_name_id()
+   {
+      auto next_id = last_name_id() + 1;
+      set_property( chain_property_enum::last_name_id, next_id );
+      return next_id;
    }
 
 } }  // bts::blockchain

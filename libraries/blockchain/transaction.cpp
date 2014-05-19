@@ -203,7 +203,7 @@ namespace bts { namespace blockchain {
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
       if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
 
-      switch( (withdraw_condition_types)arec->condition.condition )
+      switch( (withdraw_condition_types)arec->condition.type )
       {
          case withdraw_signature_type:  
          {
@@ -264,7 +264,6 @@ namespace bts { namespace blockchain {
       if( arec->condition.asset_id == 0 ) 
          sub_vote( arec->condition.delegate_id, op.amount );
 
-      wlog( "store after withdraw ${r}", ("r",*arec) );
       _current_state->store_balance_record( *arec );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 

@@ -123,6 +123,12 @@ namespace bts { namespace blockchain {
 
    typedef fc::optional<name_record> oname_record;
 
+   enum chain_property_enum
+   {
+      last_asset_id = 0,
+      last_name_id  = 1
+   };
+   typedef uint32_t chain_property_type;
 
    class chain_interface
    {
@@ -136,6 +142,10 @@ namespace bts { namespace blockchain {
          virtual int64_t               get_delegate_pay_rate()const = 0;
          virtual share_type            get_delegate_registration_fee()const;
          virtual share_type            get_asset_registration_fee()const;
+
+         virtual fc::variant           get_property( chain_property_enum property_id )const = 0;
+         virtual void                  set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value ) = 0;
 
          virtual oasset_record         get_asset_record( asset_id_type id )const                    = 0;
          virtual obalance_record       get_balance_record( const balance_id_type& id )const         = 0;
@@ -153,11 +163,11 @@ namespace bts { namespace blockchain {
 
          virtual void                  apply_deterministic_updates(){}
 
-         virtual asset_id_type         last_asset_id()const = 0;
-         virtual asset_id_type         new_asset_id() = 0;
+         virtual asset_id_type         last_asset_id()const;
+         virtual asset_id_type         new_asset_id(); 
 
-         virtual name_id_type          last_name_id()const = 0;
-         virtual name_id_type          new_name_id() = 0;
+         virtual name_id_type          last_name_id()const;
+         virtual name_id_type          new_name_id();
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
@@ -169,3 +179,4 @@ FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id) )

@@ -45,6 +45,7 @@ namespace bts { namespace rpc {
     enum parameter_classification
     {
       required_positional,
+      required_positional_hidden, /* Hide in help e.g. interactive password entry */
       optional_positional,
       optional_named
     };
@@ -89,6 +90,7 @@ namespace bts { namespace rpc {
       std::vector<parameter_data> parameters;
       uint32_t                    prerequisites;
       std::string                 detailed_description;
+      std::vector<std::string>    aliases;
     };
 
     rpc_server();
@@ -96,7 +98,7 @@ namespace bts { namespace rpc {
 
     client_ptr  get_client()const;
     void        set_client( const client_ptr& c );
-    void        configure( const config& cfg );
+    bool        configure( const config& cfg );
 
     /// used to invoke json methods from the cli without going over the network
     fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);

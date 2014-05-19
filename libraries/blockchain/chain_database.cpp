@@ -1,13 +1,16 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/time.hpp>
 
 #include <bts/db/level_pod_map.hpp>
 #include <bts/db/level_map.hpp>
 
 #include <fc/io/json.hpp>
+#include <fc/io/raw_variant.hpp>
 
 #include <fc/log/logger.hpp>
+#include <fstream>
 using namespace bts::blockchain;
 
 
@@ -64,8 +67,8 @@ struct block_fork_data
       return is_linked && !invalid();
    }
 
-   std::vector<block_id_type> next_blocks; ///< IDs of all blocks that come after
-   bool                       is_linked;   ///< is linked to genesis block
+   std::unordered_set<block_id_type> next_blocks; ///< IDs of all blocks that come after
+   bool                              is_linked;   ///< is linked to genesis block
 
    /** if at any time this block was determiend to be valid or invalid then this
     * flag will be set.
@@ -110,14 +113,19 @@ namespace bts { namespace blockchain {
             void                       clear_redo_state( const block_id_type& id );
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
+            void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
+            void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
 
-            void update_delegate_production_info( const full_block& block_data, const pending_chain_state_ptr& pending_state );
+
+            void update_delegate_production_info( const full_block& block_data, 
+                                                  const pending_chain_state_ptr& pending_state );
 
             chain_database*                                           self;
             chain_observer*                                           _observer;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> > _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>         _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                _properties_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>     _undo_state;
@@ -174,50 +182,105 @@ namespace bts { namespace blockchain {
             confirmed_trx_ids.insert( id );
             _pending_transactions.remove( id );
          }
-         // TODO: fix this section
-         _pending_fee_index.clear();
-        /*  This crashes... because modifying _pending_fee_index while
-         *  iterating over it is an error...
-         *
-         for( auto pair : _pending_fee_index )
+
+         auto temp_pending_fee_index( _pending_fee_index );
+         for( auto pair : temp_pending_fee_index )
          {
             auto fee_index = pair.first;
 
             if( confirmed_trx_ids.count( fee_index._trx ) > 0 )
                _pending_fee_index.erase( fee_index );
          }
-         */
+      }
+
+      void chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
+      {
+         std::unordered_set<block_id_type> next_ids = ids;
+         while( next_ids.size() )
+         {
+            std::unordered_set<block_id_type> pending;
+            for( auto item : next_ids )
+            {
+                block_fork_data record = _fork_db.fetch( item );
+                record.is_linked = true;
+                pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
+                //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
+                _fork_db.store( item, record );
+            }
+            next_ids = pending;
+         }
+      }
+      void chain_database_impl::recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids )
+      {
+         std::unordered_set<block_id_type> next_ids = ids;
+         while( next_ids.size() )
+         {
+            std::unordered_set<block_id_type> pending;
+            for( auto item : next_ids )
+            {
+                block_fork_data record = _fork_db.fetch( item );
+                record.is_valid = false;
+                pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
+                //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
+                _fork_db.store( item, record );
+            }
+            next_ids = pending;
+         }
       }
 
       /**
        *  Place the block in the block tree, the block tree contains all blocks
        *  and tracks whether they are valid, linked, and current.
+       *
+       *  There are several options for this block:
+       *
+       *  1) It extends an existing block
+       *      - a valid chain
+       *      - an invalid chain
+       *      - an unlinked chain
+       *  2) It is free floating and doesn't link to anything we have
+       *      - create two entries into the database
+       *          - one for this block
+       *          - placeholder for previous
+       *      - mark both as unlinked
+       *  3) It it provides the missing link between a the genesis block and existing chain
+       *      - all next blocks need to be updated to change state to 'linked'
        */
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
-      {
+      { try {
+          //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
+           //     ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
+
+          // first of all store this block at the given block number
+          _block_id_to_block.store( block_id, block_data );
+
+          // update the parallel block list
           std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
           std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id );
           parallel_blocks.push_back( block_id );
-
-          _block_id_to_block.store( block_id, block_data );
           _fork_number_db.store( block_data.block_num, parallel_blocks );
 
-          block_fork_data prev_fork_data;
 
+          // now find how it links in.
+          block_fork_data prev_fork_data;
           auto prev_itr = _fork_db.find( block_data.previous );
-          if( prev_itr.valid() )
+          if( prev_itr.valid() ) // we already know about its previous
           {
+             ilog( "           we already know about its previous: ${p}", ("p",block_data.previous) );
              prev_fork_data = prev_itr.value();
-             prev_fork_data.next_blocks.push_back(block_id);
+             prev_fork_data.next_blocks.insert(block_id);
+             //ilog( "              ${id} = ${record}", ("id",prev_itr.key())("record",prev_fork_data) );
              _fork_db.store( prev_itr.key(), prev_fork_data );
           }
           else
           {
-             // create it...
-             prev_fork_data.next_blocks.push_back(block_id);
-             prev_fork_data.is_linked = false;
-
+             ilog( "           we don't know about its previous: ${p}", ("p",block_data.previous) );
+             // create it... we do not know about the previous block so
+             // we must create it and assume it is not linked...
+             prev_fork_data.next_blocks.insert(block_id);
+             prev_fork_data.is_linked = block_data.previous == block_id_type(); //false;
+             //ilog( "              ${id} = ${record}", ("id",block_data.previous)("record",prev_fork_data) );
              _fork_db.store( block_data.previous, prev_fork_data );
           }
 
@@ -226,36 +289,65 @@ namespace bts { namespace blockchain {
           if( cur_itr.valid() )
           {
              current_fork = cur_itr.value();
+             ilog( "          current_fork: ${fork}", ("fork",current_fork) );
+             ilog( "          prev_fork: ${prev_fork}", ("prev_fork",prev_fork_data) );
+             if( !current_fork.is_linked && prev_fork_data.is_linked )
+             {
+                // we found the missing link
+                current_fork.is_linked = true;
+                recursive_mark_as_linked( current_fork.next_blocks );
+                _fork_db.store( block_id, current_fork );
+             }
           }
           else
           {
-             // create it, store it..
-             // current_fork =..
+             current_fork.is_linked = prev_fork_data.is_linked;
+             //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
+             _fork_db.store( block_id, current_fork );
           }
           return current_fork;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
       void chain_database_impl::mark_invalid( const block_id_type& block_id )
       {
          // fetch the fork data for block_id, mark it as invalid and
          // then mark every item after it as invalid as well.
+         auto fork_data = _fork_db.fetch( block_id );
+         fork_data.is_valid = false;
+         _fork_db.store( block_id, fork_data );
+         recursive_mark_as_invalid( fork_data.next_blocks );
       }
-      void chain_database_impl::mark_included( const block_id_type& block_id, bool state )
-      {
-         // fetch the fork data for block_id, mark it as invalid and
-         // then mark every item after it as invalid as well.
-      }
+
+      void chain_database_impl::mark_included( const block_id_type& block_id, bool included )
+      { try {
+         //ilog( "included: ${block_id} = ${state}", ("block_id",block_id)("state",included) );
+         auto fork_data = _fork_db.fetch( block_id );
+       //  if( fork_data.is_included != included )
+         {
+            fork_data.is_included = included;
+            if( included )
+            {
+               fork_data.is_valid  = true;
+            }
+            //ilog( "store: ${id} => ${data}", ("id",block_id)("data",fork_data) );
+            _fork_db.store( block_id, fork_data );
+         }
+         // fetch the fork data for block_id, mark it as included and
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("included",included) ) }
 
       void chain_database_impl::switch_to_fork( const block_id_type& block_id )
       { try {
+         ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
          std::vector<block_id_type> history = get_fork_history( block_id );
          FC_ASSERT( history.size() > 0 );
-         while( history.front() != _head_block_id )
+         while( history.back() != _head_block_id )
          {
+            ilog( "    pop ${id}", ("id",_head_block_id) );
             pop_block();
          }
-         for( uint32_t i = 1; i < history.size(); ++i )
+         for( int32_t i = history.size()-2; i >= 0 ; --i )
          {
+            ilog( "    extend ${i}", ("i",history[i]) );
             extend_chain( self->get_block( history[i] ) );
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
@@ -265,7 +357,7 @@ namespace bts { namespace blockchain {
                                                     const std::vector<signed_transaction>& user_transactions,
                                                     const pending_chain_state_ptr& pending_state )
       {
-         ilog( "apply transactions ${block_num}", ("block_num",block_num) );
+         //ilog( "apply transactions ${block_num}", ("block_num",block_num) );
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
@@ -274,12 +366,12 @@ namespace bts { namespace blockchain {
                transaction_evaluation_state_ptr trx_eval_state =
                       std::make_shared<transaction_evaluation_state>(pending_state);
                trx_eval_state->evaluate( trx );
-               ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
+               //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
               // TODO:  capture the evaluation state with a callback for wallets...
               // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
-              
+
                transaction_location trx_loc( block_num, trx_num );
-               ilog( "store trx location: ${loc}", ("loc",trx_loc) );
+               //ilog( "store trx location: ${loc}", ("loc",trx_loc) );
                pending_state->store_transaction_location( trx.id(), trx_loc );
                ++trx_num;
             }
@@ -320,7 +412,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC == 0 );
             FC_ASSERT( block_data.timestamp > _head_block_header.timestamp, "",
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
-            fc::time_point_sec now = fc::time_point::now();
+            fc::time_point_sec now = bts::blockchain::now();
             FC_ASSERT( block_data.timestamp <=  now,
                        "${t} < ${now}", ("t",block_data.timestamp)("now",now));
 
@@ -358,6 +450,12 @@ namespace bts { namespace blockchain {
                                                                  const pending_chain_state_ptr& pending_state )
       {
           auto timestamp = _head_block_header.timestamp;
+          if( _head_block_header.block_num == 0 )
+          {
+              timestamp = block_data.timestamp;
+              timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+          }
+
           do
           {
               timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -380,7 +478,6 @@ namespace bts { namespace blockchain {
        */
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
-         ilog( "extend chain..." );
          auto block_id = block_data.id();
          try {
             verify_header( block_data );
@@ -395,12 +492,12 @@ namespace bts { namespace blockchain {
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current order.
              **/
-            //update_delegate_production_info( block_data, pending_state );
+            update_delegate_production_info( block_data, pending_state );
 
             // apply any deterministic operations such as market operations before we preterb indexes
             //apply_deterministic_updates(pending_state);
 
-            ilog( "block data: ${block_data}", ("block_data",block_data) );
+            //ilog( "block data: ${block_data}", ("block_data",block_data) );
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
@@ -408,7 +505,7 @@ namespace bts { namespace blockchain {
 
             save_undo_state( block_id, pending_state );
 
-            // in case we crash durring apply changes... remember what we
+            // in case we crash during apply changes... remember what we
             // were in the process of applying...
             //
             // TODO: what if we crash in the middle of save_redo_state?
@@ -437,27 +534,73 @@ namespace bts { namespace blockchain {
             _block_num_to_id.store( block_data.block_num, block_id );
             if( _observer ) _observer->block_applied( summary );
          }
-         catch ( const fc::exception& )
+         catch ( const fc::exception& e )
          {
+            wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
             mark_invalid( block_id );
             throw;
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
+      /**
+       * Traverse the previous links of all blocks in fork until we find one that is_included
+       *
+       * The last item in the result will be the only block id that is already included in
+       * the blockchain.  
+       */
       std::vector<block_id_type> chain_database_impl::get_fork_history( const block_id_type& id )
-      {
-         // traverse the previous links of all blocks in fork until we find one that is_included
-         // return every block id in the path
-         return std::vector<block_id_type>();
-      }
+      { try {
+         ilog( "" );
+         std::vector<block_id_type> history;
+         history.push_back( id );
+
+         block_id_type next_id = id;
+         while( true )
+         {
+            auto header = self->get_block_header( next_id );
+            //ilog( "header: ${h}", ("h",header) );
+            history.push_back( header.previous );
+            if( header.previous == block_id_type() )
+            {
+               ilog( "return: ${h}", ("h",history) );
+               return history;
+            }
+            auto prev_fork_data = _fork_db.fetch( header.previous );
+
+            /// this shouldn't happen if the database invariants are properly maintained 
+            FC_ASSERT( prev_fork_data.is_linked, "we hit a dead end, this fork isn't really linked!" );
+            if( prev_fork_data.is_included )
+            {
+               ilog( "return: ${h}", ("h",history) );
+               return history;
+            }
+            next_id = header.previous;
+         }
+         ilog( "${h}", ("h",history) );
+         return history;
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",id) ) }
 
       void  chain_database_impl::pop_block()
-      {
-         // fetch the undo state for the head block
-         // apply it
-         // update the block_num_to_block_id index
+      { try {
+         FC_ASSERT( _head_block_header.block_num > 0 );
+
          // update the is_included flag on the fork data
-      }
+         mark_included( _head_block_id, false );
+
+         // update the block_num_to_block_id index
+         _block_num_to_id.remove( _head_block_header.block_num );
+
+         auto previous_block_id = _head_block_header.previous;
+
+         // fetch the undo state for the head block
+         auto undo_state = _undo_state.fetch( _head_block_id );
+         undo_state.set_prev_state( self->shared_from_this() );
+         undo_state.apply_changes();
+
+         _head_block_id = previous_block_id;
+         _head_block_header = self->get_block_header( _head_block_id );
+
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
 
@@ -528,6 +671,7 @@ namespace bts { namespace blockchain {
 
       my->_fork_number_db.open( data_dir / "fork_number_db", true );
       my->_fork_db.open( data_dir / "fork_db", true );
+      my->_properties_db.open( data_dir / "properties", true );
       my->_undo_state.open( data_dir / "undo_state", true );
       my->_redo_state.open( data_dir / "redo_state", true );
 
@@ -543,7 +687,7 @@ namespace bts { namespace blockchain {
       my->_symbol_index.open( data_dir / "symbol_index", true );
       my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
 
-      // TODO: check to see if we crashed durring the last write
+      // TODO: check to see if we crashed during the last write
       //   if so, then apply the last undo operation stored.
 
       uint32_t       last_block_num = -1;
@@ -583,8 +727,13 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_fork_db.close();
+      my->_fork_number_db.close();
+      my->_undo_state.close();
+      my->_redo_state.close();
       my->_pending_transactions.close();
       my->_processed_transaction_ids.close();
+      my->_properties_db.close();
       my->_block_num_to_id.close();
 
       my->_block_num_to_id.close();
@@ -673,7 +822,7 @@ namespace bts { namespace blockchain {
 
       block_fork_data fork = my->store_and_index( block_id, block_data );
 
-      ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
+      //ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
@@ -802,7 +951,14 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       my->_balances.store( r.id(), r );
+       if( r.balance == 0 )
+       {
+          my->_balances.remove( r.id() );
+       }
+       else
+       {
+          my->_balances.store( r.id(), r );
+       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
@@ -969,8 +1125,8 @@ namespace bts { namespace blockchain {
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
-      elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
-            ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
+    //  elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
+    //        ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
       return next_block;
    }
@@ -1043,6 +1199,11 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
       }
+      block_fork_data gen_fork;
+      gen_fork.is_valid = true;
+      gen_fork.is_included = true;
+      gen_fork.is_linked = true;
+      _fork_db.store( block_id_type(), gen_fork );
    }
 
    void chain_database::set_observer( chain_observer* observer )
@@ -1073,7 +1234,7 @@ namespace bts { namespace blockchain {
        return my->_head_block_id;
     }
     std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )const
-    {
+    { try {
        auto itr = my->_name_index.lower_bound(first);
        std::vector<name_record> names;
        while( itr.valid() && names.size() < count )
@@ -1082,6 +1243,38 @@ namespace bts { namespace blockchain {
           ++itr;
        }
        return names;
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
+
+    void chain_database::export_fork_graph( const fc::path& filename )const
+    {
+       std::ofstream out( filename.generic_string().c_str() );
+       out << "digraph G { \n"; 
+       out << "rankdir=RL;\n";
+          auto fork_itr = my->_fork_db.begin();
+          while( fork_itr.valid() )
+          {
+             auto fork_data = fork_itr.value();
+             ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
+             for( auto next : fork_data.next_blocks )
+             {
+                out << '"' << std::string ( fork_itr.key() ).substr(0,5) <<"\" "
+                    << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
+                    << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
+                out << '"' << std::string ( next ).substr(0,5) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,5) << "\";\n";
+            }
+             ++fork_itr;
+          }
+       out << "}"; 
     }
+   fc::variant  chain_database::get_property( chain_property_enum property_id )const
+   { try {
+      return my->_properties_db.fetch( property_id );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
+
+   void  chain_database::set_property( chain_property_enum property_id, 
+                                                     const fc::variant& property_value )
+   {
+      my->_properties_db.store( property_id, property_value );
+   }
 
 } } // namespace bts::blockchain

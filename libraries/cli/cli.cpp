@@ -1,26 +1,26 @@
 #include <bts/cli/cli.hpp>
 #include <bts/rpc/rpc_server.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/io/sstream.hpp>
-#include <fc/io/buffered_iostream.hpp>
 
+#include <fc/io/buffered_iostream.hpp>
+#include <fc/io/console.hpp>
+#include <fc/io/json.hpp>
+#include <fc/io/sstream.hpp>
+#include <fc/log/logger.hpp>
+#include <fc/reflect/variant.hpp>
+#include <fc/thread/thread.hpp>
+
+#include <boost/algorithm/string/trim.hpp>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
-#include <boost/algorithm/string/trim.hpp>
-
-#include <fc/reflect/variant.hpp>
-#include <fc/io/json.hpp>
-
-#include <fc/log/logger.hpp>
-#include <fc/io/console.hpp>
 
 #ifndef WIN32
-# define HAVE_READLINE 1
+#define HAVE_READLINE
 #endif
+
 #ifdef HAVE_READLINE
-# include <readline/readline.h>
-# include <readline/history.h>
+#include <readline/history.h>
+#include <readline/readline.h>
 #endif
 
 namespace bts { namespace cli {
@@ -73,112 +73,104 @@ namespace bts { namespace cli {
                   return line;
             }
 
+            fc::variant execute_command_with_passphrase_query( const std::string& command, const fc::variants& arguments,
+                                                               const std::string& query_string, std::string& passphrase,
+                                                               bool verify = false )
+            {
+                auto new_arguments = arguments;
+                new_arguments.push_back( fc::variant( passphrase ) );
+
+                while( true )
+                {
+                    passphrase = _self->get_line( query_string + ": ", true );
+                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "");
+
+                    if( verify )
+                    {
+                        if( passphrase != _self->get_line( query_string + " (verify): ", true ) )
+                        {
+                            std::cout << "Passphrases do not match, try again\n";
+                            continue;
+                        }
+                    }
+
+                    new_arguments.back() = fc::variant( passphrase );
+
+                    try
+                    {
+                        return _rpc_server->direct_invoke_method( command, new_arguments );
+                    }
+                    catch( ... )
+                    {
+                        std::cout << "Incorrect passphrase, try again\n";
+                    }
+                }
+
+                return fc::variant( false );
+            }
+
+            fc::variant execute_wallet_command_with_passphrase_query(const std::string& command, const fc::variants& arguments,
+                                                                     const std::string& query_string, bool verify = false)
+            {
+                std::string passphrase;
+                auto result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
+                if( !result.as_bool() ) return result;
+
+                if( _client->get_wallet()->is_locked() )
+                {
+                    fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
+                    _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
+                    std::cout << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
+                }
+
+                return result;
+            }
+
             void interactive_open_wallet()
             {
-              if( !_client->get_wallet()->is_open() )
+              if( _client->get_wallet()->is_open() )
+                  return;
+
+              std::cout << "A wallet must be open to execute this command. You can:\n";
+              std::cout << "(o) Open an existing wallet\n";
+              std::cout << "(c) Create a new wallet\n";
+              std::cout << "(q) Abort command\n";
+
+              std::string choice = _self->get_line("Choose [o/c/q]: ");
+              boost::trim(choice);
+
+              if (choice == "c")
               {
-                  std::cout << "You must have a wallet open to execute this command.\n";
-                  std::cout << "Would you like to:\n";
-                  std::cout << " 1. Create a new wallet and open it\n";
-                  std::cout << " 2. Open an existing wallet\n";
-                  std::cout << " 3. Don't execute the command and return to the command prompt\n";
-                  std::string choice = _self->get_line("Choose [1/2/3]: ");
-                  boost::trim(choice);
-                  if (choice == "1")
-                  {
-                    std::cout << "Enter the name of the wallet to create, or hit enter to name your wallet \"default\"\n";
-                    std::string wallet_name = _self->get_line("wallet name [default]: ");
-                    boost::trim(wallet_name);
-                    if (wallet_name.empty())
-                      wallet_name = "default";
-                    std::string passphrase = _self->get_line("spending passphrase: ", true);
-                    fc::variants arguments{wallet_name, passphrase};
-                    _rpc_server->direct_invoke_method("wallet_create", arguments);
-                    arguments = {passphrase, 60 * 5}; // default to five minute timeout
-                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
-                  } 
-                  else if (choice == "2")
-                  {
-                    std::cout << "Enter the name of the wallet to open, or hit enter to open the wallet named \"default\"\n";
-                    std::string wallet_name = _self->get_line("wallet name [default]: ");
-                    boost::trim(wallet_name);
-                    if (wallet_name.empty())
-                      wallet_name = "default";
-                    std::string passphrase = _self->get_line("spending passphrase: ", true);
-                    fc::variants arguments{wallet_name, passphrase};
-                    _rpc_server->direct_invoke_method("wallet_open", arguments);
-                    arguments = {passphrase, 60 * 5}; // default to five minute timeout
-                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
-                  }
-                  else if (choice == "3")
-                    FC_THROW_EXCEPTION(canceled_exception, "");
-                  else
-                  {
-                    std::cout << "Wrong answer!\n";
-                    FC_THROW_EXCEPTION(canceled_exception, "");
-                  }
-              }
-            }
+                std::string wallet_name = _self->get_line("new wallet name [default]: ");
+                boost::trim(wallet_name);
+                if (wallet_name.empty()) wallet_name = "default";
 
-            void interactive_unlock_wallet()
-            {
-              if( _client->get_wallet()->is_locked() )
+                fc::variants arguments { wallet_name };
+                execute_interactive_command( "wallet_create", arguments );
+              }
+              else if (choice == "o")
               {
-                while (1)
-                {
-                  std::string passphrase = _self->get_line("spending passphrase: ", true);
-                  if (passphrase.empty())
-                    FC_THROW_EXCEPTION(canceled_exception, "User gave up entering spending passphrase");
-                  try
-                  {
-                    fc::variants arguments{passphrase, 60 * 5}; // default to five minute timeout
-                    _rpc_server->direct_invoke_method("wallet_unlock", arguments);
-                    return;
-                  }
-                  catch (bts::rpc::rpc_wallet_passphrase_incorrect_exception&)
-                  {
-                    std::cout << "Invalid passphrase, try again\n";
-                  }
-                }
+                std::string wallet_name = _self->get_line("existing wallet name [default]: ");
+                boost::trim(wallet_name);
+                if (wallet_name.empty()) wallet_name = "default";
+
+                fc::variants arguments { wallet_name };
+                execute_interactive_command( "wallet_open", arguments );
               }
-            }
-
-            fc::variant interactive_import_wallet(const fc::variants& arguments)
-            {
-                try
-                {
-                  std::pair<fc::path, std::string> argument_pair(arguments[0].as<fc::path>(), "");
-                  fc::variants new_arguments;
-                  new_arguments.push_back(fc::variant(argument_pair));
-                  return execute_command_and_prompt_for_passphrases("import_wallet", new_arguments);
-                }
-                catch (...)
-                {
-                }
-
-                while (1)
-                {
-                  std::string passphrase = _self->get_line("imported wallet passphrase: ", true);
-                  if (passphrase.empty())
-                      return fc::variant(false);
-
-                  try
-                  {
-                    std::pair<fc::path, std::string> argument_pair(arguments[0].as<fc::path>(), passphrase);
-                    fc::variants new_arguments;
-                    new_arguments.push_back(fc::variant(argument_pair));
-                    return execute_command_and_prompt_for_passphrases("import_wallet", new_arguments);
-                  }
-                  catch (...)
-                  {
-                    std::cout << "Invalid passphrase, try again\n";
-                  }
-                }
+              else if (choice == "q")
+              {
+                FC_THROW_EXCEPTION(canceled_exception, "");
+              }
+              else
+              {
+                std::cout << "Wrong answer!\n";
+                FC_THROW_EXCEPTION(canceled_exception, "");
+              }
             }
 
             fc::variant execute_command_and_prompt_for_passphrases(const std::string& command, const fc::variants& arguments)
             { try {
-              for (;;)
+              while (true)
               {
                 // try to execute the method.  If the method needs the wallet to be
                 // unlocked, it will throw an exception, and we'll attempt to
@@ -193,7 +185,7 @@ namespace bts { namespace cli {
                   {
                     interactive_open_wallet();
                   }
-                  catch (fc::canceled_exception&)
+                  catch (fc::canceled_exception& e)
                   {
                     std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -203,9 +195,10 @@ namespace bts { namespace cli {
                 {
                   try
                   {
-                    interactive_unlock_wallet();
+                    fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                    execute_wallet_command_with_passphrase_query( "wallet_unlock", arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception&)
+                  catch (fc::canceled_exception& e)
                   {
                     std::cout << "Failed to unlock wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -356,7 +349,7 @@ namespace bts { namespace cli {
                 }
                 catch (const fc::eof_exception& e)
                 {
-                  if (!method_data.parameters[i].classification == bts::rpc::rpc_server::required_positional)
+                  if (method_data.parameters[i].classification != bts::rpc::rpc_server::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
@@ -367,6 +360,9 @@ namespace bts { namespace cli {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
+
+                if (method_data.parameters[i].classification == bts::rpc::rpc_server::optional_named)
+                  break;
               }
               return arguments;
             }
@@ -386,7 +382,51 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
             {
-              if (command == "sendtoaddress")
+              if (command == "wallet_create")
+              {
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if (command == "wallet_create_from_json" || command == "wallet_open" || command == "wallet_open_file"
+                       || command == "wallet_unlock")
+              {
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if (command == "wallet_import_bitcoin")
+              {
+                  try /* Try empty password first */
+                  {
+                      auto new_arguments = arguments;
+                      new_arguments.push_back( fc::variant( "" ) );
+                      return _rpc_server->direct_invoke_method( command, new_arguments );
+                  }
+                  catch( ... )
+                  {
+                  }
+
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if (command == "sendtoaddress")
               {
                 // the raw json version sends immediately, in the interactive version we want to
                 // generate the transaction, have the user confirm it, then broadcast it
@@ -405,10 +445,6 @@ namespace bts { namespace cli {
               {
                 return interactive_rescan(command, arguments);
               }
-              else if (command == "import_wallet")
-              {
-                return interactive_import_wallet(arguments);
-              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -422,11 +458,25 @@ namespace bts { namespace cli {
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
-              if (command == "sendtoaddress")
+              std::string cmd = command;
+              try
+              {
+                // command could be alias, so get the real name of the method.
+                auto method_data = _rpc_server->get_method_data(command);
+                cmd = method_data.name;
+              }
+              catch (fc::key_not_found_exception&)
+              {
+              }
+              catch (...)
+              {
+              }
+              
+              if (cmd == "sendtoaddress")
               {
                 // sendtoaddress does its own output formatting
               }
-              else if(command == "list_receive_addresses")
+              else if(cmd == "list_receive_addresses")
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
@@ -435,20 +485,19 @@ namespace bts { namespace cli {
                   std::cout << std::setw( 33 ) << std::left << std::string(item.first) << " : " << item.second << "\n";
                 std::cout << std::right;
               }
-              else if (command == "help")
+              else if (cmd == "help")
               {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
               }
-              else if (command == "rescan")
+              else if (cmd == "rescan")
               {
                 std::cout << "\ndone scanning block chain\n";
               }
-              else if (command == "get_transaction_history")
+              else if (cmd == "wallet_get_transaction_history")
               {
-                 std::cout << "temporarially disabled\n";
-                // auto trx_history = result.as<std::vector<transaction_state>>();
-                //print_transaction_history(trx_history);
+                auto trx_records = result.as<std::vector<wallet_transaction_record>>();
+                print_transaction_history(trx_records);
               }
               else
               {
@@ -457,7 +506,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
+                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(cmd);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")
@@ -475,97 +524,141 @@ namespace bts { namespace cli {
                 }
               }
             }
-#if 0
 
-            void print_transaction_history(std::vector<transaction_state>& trx_states)
+            void print_transaction_history(const std::vector<wallet_transaction_record>& trx_records)
             {
                 /* Print header */
-                std::cout << std::setw(  4 ) << "#";
-                std::cout << std::setw(  6 ) << "BLK" << ".";
+                std::cout << std::setw(  3 ) << "#";
+                std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
-                std::cout << std::setw( 21 ) << "CONFIRMED";
-                std::cout << std::setw( 13 ) << " AMOUNT";
-                std::cout << std::setw( 40 ) << "FROM";
-                std::cout << std::setw( 40 ) << "TO";
-                std::cout << std::setw(  6 ) << "FEE";
+                std::cout << std::setw( 20 ) << "TIMESTAMP";
+                std::cout << std::setw( 37 ) << "FROM";
+                std::cout << std::setw( 37 ) << "TO";
+                std::cout << std::setw( 16 ) << " AMOUNT";
+                std::cout << std::setw(  7 ) << "FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
                 std::cout << std::setw( 40 ) << "ID";
-                std::cout << "\n-----------------------------------------------------------------------------------------------";
-                std::cout <<   "-----------------------------------------------------------------------------------------------\n";
+                std::cout << "\n----------------------------------------------------------------------------------------------";
+                std::cout <<   "---------------------------------------------------------------------------------------------\n";
                 std::cout << std::right;
                 auto count = 1;
                 char timestamp_buffer[20];
-                for( auto trx_state : trx_states )
+                for( auto trx_record : trx_records )
                 {
                     /* Print index */
-                    std::cout << std::setw( 4 ) << count;
+                    std::cout << std::setw( 3 ) << count;
 
                     /* Print block and transaction numbers */
-                    std::cout << std::setw( 6 ) << trx_state.block_num << ".";
-                    std::cout << std::setw( 5 ) << std::left << trx_state.trx_num;
+                    std::cout << std::setw( 7 ) << trx_record.location.block_num << ".";
+                    std::cout << std::setw( 5 ) << std::left << trx_record.location.trx_num;
 
                     /* Print timestamp */
-                    auto timestamp = time_t(trx_state.confirm_time.sec_since_epoch());
-                    strftime(timestamp_buffer, std::extent<decltype(timestamp_buffer)>::value, "%F %X", localtime(&timestamp));
-                    std::cout << std::setw( 21 ) << timestamp_buffer;
+                    auto timestamp = time_t( trx_record.received.sec_since_epoch() );
+                    strftime( timestamp_buffer, std::extent<decltype( timestamp_buffer )>::value, "%F %X", localtime( &timestamp ) );
+                    std::cout << std::setw( 20 ) << timestamp_buffer;
+
+                    /* Print from address */
+                    share_type withdraw_amount = 0;
+                    bool sending = false;
+                    {
+                        std::stringstream ss;
+                        bool first = true;
+                        for( auto op : trx_record.trx.operations )
+                        {
+                            if( operation_type_enum( op.type ) == withdraw_op_type )
+                            {
+                                auto withdraw_op = op.as<withdraw_operation>();
+                                withdraw_amount += withdraw_op.amount;
+
+                                auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
+                                if( owner) sending |= _client->get_wallet()->is_receive_address( *owner );
+
+                                if( first )
+                                {
+                                    if( owner )
+                                    {
+                                        auto rec = _client->get_wallet()->get_account_record( *owner );
+                                        if( rec ) ss << rec->name;
+                                        else ss << std::string( withdraw_op.balance_id );
+                                    }
+                                    else
+                                    {
+                                        ss << std::string( withdraw_op.balance_id );
+                                    }
+                                }
+                                first = false;
+                            }
+                        }
+                        std::cout << std::setw( 37 ) << ss.str();
+                    }
+
+                    /* Print to address */
+                    share_type deposit_amount = 0;
+                    name_id_type vote = 0;
+                    bool receiving = false;
+                    {
+                        std::stringstream ss;
+                        bool first = true;
+                        for( auto op : trx_record.trx.operations )
+                        {
+                            if( operation_type_enum( op.type ) == deposit_op_type )
+                            {
+                                auto deposit_op = op.as<deposit_operation>();
+                                deposit_amount += deposit_op.amount;
+                                vote = deposit_op.condition.delegate_id;
+                                if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                                {
+                                    auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                                    receiving |= _client->get_wallet()->is_receive_address( condition.owner );
+
+                                    if( first )
+                                    {
+                                        auto rec = _client->get_wallet()->get_account_record( condition.owner );
+                                        if( rec ) ss << rec->name;
+                                        else ss << std::string( condition.owner );
+                                    }
+                                    first = false;
+                                }
+                            }
+                        }
+                        std::cout << std::setw( 37 ) << ss.str();
+                    }
 
                     /* Print amount */
                     {
                         std::stringstream ss;
-                        if (trx_state.delta_balance[0] > 0) ss << "+" << trx_state.delta_balance[0];
-                        else if (trx_state.delta_balance[0] < 0) ss << "-" << -trx_state.delta_balance[0];
-                        else ss << " 0";
-                        std::cout << std::setw( 13 ) << ss.str();
-                    }
-
-                    /* Print from addresses */
-                    {
-                        std::stringstream ss;
-                        auto n = 0;
-                        for (auto pair : trx_state.from)
-                        {
-                            if (n) ss << ", ";
-                            ss << pair.second;
-                            ++n;
-                            break; // TODO
-                        }
-                        std::cout << std::setw( 40 ) << ss.str();
-                    }
-
-                    /* Print to addresses */
-                    {
-                        std::stringstream ss;
-                        auto n = 0;
-                        for (auto pair : trx_state.to)
-                        {
-                            if (n) ss << ", ";
-                            ss << pair.second;
-                            ++n;
-                            break; // TODO
-                        }
-                        std::cout << std::setw( 40 ) << ss.str();
+                        share_type amount = 0;
+                        if( sending ) amount -= withdraw_amount;
+                        if( receiving ) amount += deposit_amount;
+                        if( amount > 0 ) ss << "+";
+                        else if( amount == 0 ) ss << " ";
+                        ss << amount;
+                        std::cout << std::setw( 16 ) << ss.str();
                     }
 
                     /* Print fee */
-                    std::cout << std::setw( 6 ) << trx_state.fees[0];
+                    std::cout << std::setw( 7 ) << (withdraw_amount - deposit_amount);
 
                     /* Print delegate vote */
                     {
                         std::stringstream ss;
-                        if (trx_state.trx.vote > 0) ss << "+" << _rpc_server->get_client()->get_chain()->lookup_delegate(trx_state.trx.vote)->name;
-                        else if (trx_state.trx.vote < 0) ss << "-" << _rpc_server->get_client()->get_chain()->lookup_delegate(-trx_state.trx.vote)->name;
-                        else ss << " 0";
+                        auto id = (vote > 0) ? vote : name_id_type(-vote);
+                        auto rec = _client->get_chain()->get_name_record(id);
+                        auto name = rec ? rec->name : "";
+                        if( vote > 0 ) ss << "+";
+                        else if( vote < 0 ) ss << "-";
+                        else ss << " ";
+                        ss << name;
                         std::cout << std::setw( 14 ) << ss.str();
                     }
 
                     /* Print transaction ID */
-                    std::cout << std::setw( 40 ) << std::string( trx_state.trx.id() );
+                    std::cout << std::setw( 40 ) << std::string( trx_record.trx.id() );
 
                     std::cout << std::right << "\n";
                     ++count;
                 }
             }
-#endif
 
             void process_commands()
             {
@@ -834,7 +927,7 @@ namespace bts { namespace cli {
 
    void cli::list_delegates( uint32_t count )
    {
-        std::vector<name_record> delegates = 
+        std::vector<name_record> delegates =
            my->_client->get_chain()->get_delegate_records_by_vote( 0, count);
 
         std::cerr<<"Delegate Ranking\n";

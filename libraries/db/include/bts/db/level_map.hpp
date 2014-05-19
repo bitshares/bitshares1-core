@@ -150,7 +150,9 @@ namespace bts { namespace db {
 
         iterator lower_bound( const Key& key )
         { try {
-           ldb::Slice key_slice( (char*)&key, sizeof(key) );
+           std::vector<char> kslice = fc::raw::pack( key );
+           ldb::Slice key_slice( kslice.data(), kslice.size() );
+
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->Seek( key_slice );
            if( itr.valid()  )
