@@ -26,7 +26,7 @@ namespace bts { namespace client {
       static const message_type_enum type;
 
       block_message(){}
-      block_message( const bts::blockchain::full_block& blk )
+      block_message(const bts::blockchain::full_block& blk )
       :block(blk),block_id(blk.id()){}
 
       bts::blockchain::full_block    block;

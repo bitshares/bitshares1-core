@@ -1218,9 +1218,7 @@ namespace bts { namespace blockchain {
    { try {
       if( block_id == block_id_type() )
          return 0;
-      auto itr = my->_block_id_to_block.find( block_id );
-      FC_ASSERT( itr.valid() );
-      return itr.value().block_num;
+      return my->_block_id_to_block.fetch( block_id ).block_num;
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to find block ${block_id}", ("block_id", block_id) ) }
 
     uint32_t         chain_database::get_head_block_num()const
