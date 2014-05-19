@@ -174,7 +174,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
 
 struct bts_client_process : managed_process
 {
-  uint64_t initial_balance;
+  int64_t initial_balance;
   fc::ecc::private_key private_key;
   uint16_t rpc_port;
   uint16_t p2p_port;
@@ -272,27 +272,34 @@ struct bts_client_launcher_fixture
 
   //const uint32_t test_process_count = 10;
 
-  void create_trustee_and_genesis_block();
+  void create_delegates_and_genesis_block();
   void launch_clients();
   void establish_rpc_connections();
   void trigger_network_connections();
   void import_initial_balances();
+  void register_delegates();
   int verify_network_connectivity(const fc::path& output_path);
   void get_node_ids();
   void create_propagation_graph(const std::vector<bts::net::message_propagation_data>& propagation_data, int initial_node, const fc::path& output_file);
 };
 
-void bts_client_launcher_fixture::create_trustee_and_genesis_block()
+void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 {
   // generate a genesis block giving 100bts to each account
   BOOST_TEST_MESSAGE("Generating keys for " << client_processes.size() << " clients");
+  int64_t initial_shares_requested = 0;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].private_key = fc::ecc::private_key::generate();
-    assert(client_processes[i].initial_balance == 0 || client_processes[i].initial_balance >= 100000000);
+
     genesis_block.balances.push_back(std::make_pair(bts::blockchain::pts_address(client_processes[i].private_key.get_public_key()),
-                                                    (double)(client_processes[i].initial_balance / 100000000)));
+                                                    client_processes[i].initial_balance));
+    initial_shares_requested += client_processes[i].initial_balance;
   }
+
+  double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].initial_balance *= (int64_t)scale_factor;
 
   for (unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i)
   {
@@ -316,7 +323,7 @@ void bts_client_launcher_fixture::launch_clients()
     client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
     client_processes[i].http_port = bts_xt_client_test_config::base_http_port + i;
     fc::optional<bts::blockchain::genesis_block_config> optional_genesis_block;
-#if 1
+#if 0
     // simulate the condition where some clients start without a genesis block shipped to them
     if (i == 0)
       optional_genesis_block = genesis_block;
@@ -368,9 +375,19 @@ void bts_client_launcher_fixture::import_initial_balances()
   BOOST_TEST_MESSAGE("Importing initial keys and verifying initial balances");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_import_private_key(client_processes[i].private_key, "blah", true);
+    client_processes[i].rpc_client->wallet_import_private_key(client_processes[i].private_key, "blah");
     client_processes[i].rpc_client->wallet_rescan_blockchain(0);
-    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->getbalance(0).amount, client_processes[i].initial_balance);
+    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->wallet_get_balance().amount, client_processes[i].initial_balance);
+  }
+}
+
+void bts_client_launcher_fixture::register_delegates()
+{
+  for (int i = 0; i < delegate_keys.size(); ++i)
+  {
+    int client_for_this_delegate = i % client_processes.size();
+    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(delegate_keys[i], "delegate_key");
+    client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
   }
 }
 
@@ -617,7 +634,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
   client_processes.resize(1);
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-  create_trustee_and_genesis_block();
+  create_delegates_and_genesis_block();
   launch_clients();
   establish_rpc_connections();
   trigger_network_connections();
@@ -626,7 +643,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->getbalance(0), fc::exception)
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_get_balance(), fc::exception)
   }
 #endif
 
@@ -641,15 +658,15 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    bts::blockchain::asset balance = client_processes[i].rpc_client->getbalance(0);
+    bts::blockchain::asset balance = client_processes[i].rpc_client->wallet_get_balance();
     BOOST_CHECK(balance == bts::blockchain::asset());
   }
 
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_unlock("this is not the correct wallet passphrase", fc::seconds(60)), fc::exception)
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_unlock(fc::seconds(60), "this is not the correct wallet passphrase"), fc::exception)
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   BOOST_TEST_MESSAGE("Testing receive address generation");
@@ -673,7 +690,7 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
 {
   client_processes.resize(1);
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
-  create_trustee_and_genesis_block();
+  create_delegates_and_genesis_block();
   launch_clients();
   establish_rpc_connections();
   //trigger_network_connections();
@@ -681,60 +698,60 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
 
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() while wallet is locked");
-  const std::string account_name("test_account");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_0"), fc::exception);
   BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
-  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(1));
+  client_processes[0].rpc_client->wallet_unlock(fc::seconds(1), WALLET_PASSPHRASE);
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() with wallet unlocked locked");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_1"));
   fc::usleep(fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() after wallet should have relocked");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_2"), fc::exception);
 
   BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
-  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(4));
-  client_processes[0].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::seconds(2));
+  client_processes[0].rpc_client->wallet_unlock(fc::seconds(4), WALLET_PASSPHRASE);
+  client_processes[0].rpc_client->wallet_unlock(fc::seconds(2), WALLET_PASSPHRASE);
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account immediately after both unlocks");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_3"));
   fc::usleep(fc::seconds(3));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account after the second unlock expired, but first should still be in effect");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_4"));
   fc::usleep(fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing that we correctly relock after both unlocks should have expired");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account(account_name), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_5"), fc::exception);
 }
 
 BOOST_AUTO_TEST_CASE(transfer_test)
 {
-  client_processes.resize(1);
+  client_processes.resize(20);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = INITIAL_BALANCE;
 
-  create_trustee_and_genesis_block();
+  create_delegates_and_genesis_block();
 
   launch_clients();
 
   establish_rpc_connections();
-  //trigger_network_connections();
+  trigger_network_connections();
 
 
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
+  register_delegates();
 
   BOOST_TEST_MESSAGE("Sending 1 million BTS to the next client in the list");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     uint32_t next_client_index = (i + 1) % client_processes.size();
     bts::blockchain::extended_address destination_address = client_processes[next_client_index].rpc_client->wallet_create_receive_account("circle_test");
-    bts::blockchain::asset destination_initial_balance = client_processes[next_client_index].rpc_client->getbalance(0);
-    //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->getbalance(0);
+    bts::blockchain::asset destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance();
+    //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     const uint32_t amount_to_transfer = 1000000;
     client_processes[i].rpc_client->wallet_create_sending_account("next_client", destination_address);
     client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "next_client");
@@ -742,12 +759,12 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     for (;;)
     {
       fc::usleep(fc::milliseconds(500));
-      if (client_processes[next_client_index].rpc_client->getbalance(0) == destination_initial_balance + amount_to_transfer)
+      if (client_processes[next_client_index].rpc_client->wallet_get_balance() == destination_initial_balance + amount_to_transfer)
       {
         BOOST_TEST_MESSAGE("Client " << next_client_index << " received 1MBTS from client " << i);
         break;
       }
-      if (fc::time_point::now() > transfer_time + fc::seconds(35))
+      if (fc::time_point::now() > transfer_time + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC + 5))
         BOOST_FAIL("Client did not report receiving the transfer within 35 seconds");
     }
   }
@@ -770,7 +787,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = initial_balance_for_each_node;
 
-  create_trustee_and_genesis_block();
+  create_delegates_and_genesis_block();
 
   launch_clients();
 
@@ -782,7 +799,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
@@ -816,7 +833,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
   uint64_t total_balances_recieved = 0;
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_recieved += (client_processes[i].rpc_client->getbalance(0).amount - initial_balance_for_each_node);
+    total_balances_recieved += (client_processes[i].rpc_client->wallet_get_balance().amount - initial_balance_for_each_node);
 
   BOOST_TEST_MESSAGE("Recieved " << total_balances_recieved << " in total");
   BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
@@ -858,7 +875,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = 100000000;
 
-  create_trustee_and_genesis_block();
+  create_delegates_and_genesis_block();
 
   launch_clients();
 
@@ -874,7 +891,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
@@ -964,8 +981,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance = INITIAL_BALANCE;
 
-  create_trustee_and_genesis_block();
-
+  create_delegates_and_genesis_block();
 
   launch_clients();
 
@@ -984,7 +1000,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
-    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(WALLET_PASSPHRASE, fc::microseconds::maximum()));
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();

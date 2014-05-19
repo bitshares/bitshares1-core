@@ -27,7 +27,7 @@ namespace bts { namespace rpc {
     void connect_to(const fc::ip::endpoint& remote_endpoint);
 
     bool login(const std::string& username, const std::string& password);
-    bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
+    bool wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase);
     bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name);
     void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
     std::vector<std::string> wallet_list_receive_accounts(int32_t start = 0, uint32_t count = -1);
@@ -38,7 +38,7 @@ namespace bts { namespace rpc {
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
     std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
-    bts::blockchain::asset getbalance(bts::blockchain::asset_id_type asset_type);
+    bts::blockchain::asset wallet_get_balance(const std::string& account_name = "*", int minconf = 0, int asset = 0);
     bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
     bts::blockchain::signed_block_header getblock(uint32_t block_num);
     bool validateaddress(bts::blockchain::address address);
