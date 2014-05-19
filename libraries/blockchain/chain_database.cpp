@@ -88,7 +88,7 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            chain_database_impl():self(nullptr),_observer(nullptr),_last_asset_id(0),_last_name_id(0){}
+            chain_database_impl():self(nullptr),_observer(nullptr){}
 
             void                       initialize_genesis(fc::optional<fc::path> genesis_file = fc::optional<fc::path>());
 
@@ -156,11 +156,6 @@ namespace bts { namespace blockchain {
 
             /** used to prevent duplicate processing */
             bts::db::level_pod_map< transaction_id_type, transaction_location >  _processed_transaction_ids;
-
-            asset_id_type _last_asset_id;
-            name_id_type  _last_name_id;
-
-            fc::ecc::public_key _trustee_key;
       };
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
@@ -697,8 +692,6 @@ namespace bts { namespace blockchain {
       {
          my->_head_block_header = get_block( last_block_id );
          my->_head_block_id = last_block_id;
-         my->_names.fetch( my->_last_name_id );
-         my->_assets.fetch( my->_last_asset_id );
       }
 
       //  process the pending transactions to cache by fees
@@ -945,7 +938,6 @@ namespace bts { namespace blockchain {
    { try {
        my->_assets.store( r.id, r );
        my->_symbol_index.store( r.symbol, r.id );
-       if( r.id > my->_last_asset_id ) my->_last_asset_id = r.id;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
@@ -979,7 +971,6 @@ namespace bts { namespace blockchain {
        if( r.is_delegate() )
           my->_delegate_vote_index.store( vote_del( r.net_votes(), r.id ),  0 );
 
-       if( r.id > my->_last_name_id ) my->_last_name_id = r.id;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
    void  chain_database::store_transaction_location( const transaction_id_type& trx_id,
@@ -988,27 +979,6 @@ namespace bts { namespace blockchain {
        my->_processed_transaction_ids.store( trx_id, loc );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("id", trx_id)("location",loc) ) }
 
-
-   asset_id_type        chain_database::last_asset_id()const
-   {
-      return my->_last_asset_id;
-   }
-
-   asset_id_type        chain_database::new_asset_id()
-   {
-      return ++my->_last_asset_id;
-   }
-
-
-   name_id_type         chain_database::last_name_id()const
-   {
-      return my->_last_name_id;
-   }
-
-   name_id_type         chain_database::new_name_id()
-   {
-      return ++my->_last_name_id;
-   }
 
 
    osigned_transaction chain_database::get_transaction( const transaction_id_type& trx_id )const
@@ -1204,6 +1174,9 @@ namespace bts { namespace blockchain {
       gen_fork.is_included = true;
       gen_fork.is_linked = true;
       _fork_db.store( block_id_type(), gen_fork );
+
+      self->set_property( chain_property_enum::last_asset_id, 0 );
+      self->set_property( chain_property_enum::last_name_id, uint64_t(config.names.size()) );
    }
 
    void chain_database::set_observer( chain_observer* observer )

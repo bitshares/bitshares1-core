@@ -78,6 +78,9 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       chain_database_ptr blockchain2 = std::make_shared<chain_database>();
       blockchain2->open( dir2.path() );
 
+      elog( "last asset id: ${id}", ("id",blockchain->last_asset_id() ) );
+      elog( "last name id: ${id}", ("id",blockchain->last_name_id() ) );
+
       ilog( "." );
       auto delegate_list = blockchain->get_delegates_by_vote();
       ilog( "delegates: ${delegate_list}", ("delegate_list",delegate_list) );
@@ -131,9 +134,10 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          ilog( "next block production time: ${t}", ("t",next_block_time) );
 
          auto wait_until_time = my_wallet.next_block_production_time();
-         auto sleep_time = wait_until_time - fc::time_point::now();
+         auto sleep_time = wait_until_time - bts::blockchain::now(); //fc::time_point::now();
          ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
-         fc::usleep( sleep_time );
+         bts::blockchain::advance_time(sleep_time.count()/1000000);
+         //fc::usleep( sleep_time );
 
 
          full_block next_block = blockchain->generate_block( next_block_time );
@@ -150,7 +154,8 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
-         fc::usleep( fc::microseconds(1200000) );
+         bts::blockchain::advance_time(1); //sleep_time.count()/1000000);
+         //fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 1; t <= 2; ++t )
          {

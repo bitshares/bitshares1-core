@@ -123,11 +123,6 @@ namespace bts { namespace blockchain {
          virtual void                 store_transaction_location( const transaction_id_type&,
                                                                   const transaction_location& loc ) override;
 
-         virtual asset_id_type        last_asset_id()const override;
-         virtual asset_id_type        new_asset_id() override;
-
-         virtual name_id_type         last_name_id()const override;
-         virtual name_id_type         new_name_id() override;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;
