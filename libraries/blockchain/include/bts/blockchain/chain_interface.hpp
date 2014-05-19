@@ -59,7 +59,6 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<proposal_vote> oproposal_vote;
 
-
    /**
     */
    struct balance_record

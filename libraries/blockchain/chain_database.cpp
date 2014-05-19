@@ -26,7 +26,8 @@ struct vote_del
    }
    friend bool operator < ( const vote_del& a, const vote_del& b )
    {
-      return a.votes > b.votes ? true : (a.votes == b.votes ? a.delegate_id > b.delegate_id : false);
+      if( a.votes == b.votes ) return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
+      return a.votes > b.votes; /* Reverse so that highest rank is placed first in sorted maps */
    }
 };
 FC_REFLECT( vote_del, (votes)(delegate_id) )
@@ -1148,9 +1149,6 @@ namespace bts { namespace blockchain {
                  "genesis.json does not contain enough initial delegates",
                  ("required",BTS_BLOCKCHAIN_NUM_DELEGATES)("provided",delegate_config.size()) );
 
-      // everyone will vote for every delegate initially
-      scale_factor /= BTS_BLOCKCHAIN_NUM_DELEGATES;
-
       name_record god; god.id = 0; god.name = "god";
       self->store_name_record( god );
 
@@ -1166,11 +1164,12 @@ namespace bts { namespace blockchain {
       self->store_asset_record( base_asset );
 
       fc::time_point_sec timestamp = config.timestamp;
-      int32_t i = 1;
+      std::vector<name_id_type> delegate_ids;
+      int32_t name_id = 1;
       for( auto name : config.names )
       {
          name_record rec;
-         rec.id                = i;
+         rec.id                = name_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
          rec.active_key        = name.owner;
@@ -1180,20 +1179,23 @@ namespace bts { namespace blockchain {
          {
             rec.delegate_info = delegate_stats();
             rec.delegate_info->votes_for  = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
+            delegate_ids.push_back( name_id );
          }
          self->store_name_record( rec );
-         ++i;
+         ++name_id;
       }
 
       for( auto item : config.balances )
       {
-         for( uint32_t delegate_id = 1; delegate_id <= BTS_BLOCKCHAIN_NUM_DELEGATES; ++delegate_id )
+         for( auto delegate_id : delegate_ids )
          {
             balance_record initial_balance( item.first,
-                                            asset( share_type( item.second * scale_factor), 0 ), delegate_id );
+                                            asset( share_type( (item.second * scale_factor) / delegate_ids.size() ), base_asset.id ),
+                                            delegate_id );
             self->store_balance_record( initial_balance );
          }
       }
+
       block_fork_data gen_fork;
       gen_fork.is_valid = true;
       gen_fork.is_included = true;
