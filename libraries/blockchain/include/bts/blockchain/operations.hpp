@@ -13,7 +13,8 @@ namespace bts { namespace blockchain {
       update_name_op_type   = 4,
       create_asset_op_type  = 5,
       update_asset_op_type  = 6,
-      issue_asset_op_type   = 7
+      issue_asset_op_type   = 7,
+      fire_delegate_op_type = 8
    };
 
    /**
@@ -63,6 +64,7 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,operation_type_enum> type;
       std::vector<char> data;
    };
+
 
    /** withdraws funds and moves them into the transaction
     * balance making them available for deposit

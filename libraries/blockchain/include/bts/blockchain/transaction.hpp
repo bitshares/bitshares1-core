@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
 
    class chain_interface;
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
+   struct fire_delegate_operation;
 
    /**
     *  A transaction is a set of operations that are
@@ -151,6 +152,7 @@ namespace bts { namespace blockchain {
          virtual void evaluate_create_asset( const create_asset_operation& op );
          virtual void evaluate_update_asset( const update_asset_operation& op );
          virtual void evaluate_issue_asset( const issue_asset_operation& op );
+         virtual void evaluate_fire_operation( const fire_delegate_operation& op );
          
          virtual void fail( bts_error_code error_code, const fc::variant& data );
          

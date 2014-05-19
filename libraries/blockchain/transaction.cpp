@@ -1,8 +1,9 @@
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/error_codes.hpp>
-#include <bts/blockchain/config.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <fc/log/logger.hpp>
@@ -165,11 +166,50 @@ namespace bts { namespace blockchain {
          case issue_asset_op_type:
             evaluate_issue_asset( op.as<issue_asset_operation>() );
             break;
+         case fire_delegate_op_type:
+            evaluate_fire_operation( op.as<fire_delegate_operation>() );
+            break;
          case null_op_type:
             break;
       }
    }
 
+   void transaction_evaluation_state::evaluate_fire_operation( const fire_delegate_operation& op )
+   {
+       auto delegate_record = _current_state->get_name_record( op.delegate_id );
+       FC_ASSERT( !!delegate_record && delegate_record->is_delegate() );
+       switch( (fire_delegate_operation::reason_type)op.reason )
+       {
+          case fire_delegate_operation::multiple_blocks_signed:
+          {
+             auto proof = fc::raw::unpack<multiple_block_proof>( op.data );
+             FC_ASSERT( proof.first.id() != proof.second.id() );
+             FC_ASSERT( proof.first.timestamp == proof.second.timestamp )
+             FC_ASSERT( proof.first.signee() == proof.second.signee() )
+             FC_ASSERT( proof.first.validate_signee( delegate_record->active_key ) );
+
+             // then fire the delegate
+             delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
+             _current_state->store_name_record( *delegate_record );
+             break;
+          }
+          case fire_delegate_operation::invalid_testimony:
+          {
+             auto testimony = fc::raw::unpack<signed_delegate_testimony>( op.data );
+             FC_ASSERT( testimony.signee() == delegate_record->active_key );
+             auto trx_loc = _current_state->get_transaction_location( testimony.transaction_id );
+
+             if( testimony.valid || !!trx_loc  )
+             {
+                // then fire the delegate
+                delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
+                _current_state->store_name_record( *delegate_record );
+             }
+
+             break;
+          }
+       }
+   }
    bool transaction_evaluation_state::check_signature( const address& a )const
    {
       return  signed_keys.find( a ) != signed_keys.end();
