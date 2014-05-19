@@ -753,7 +753,7 @@ Wallets exist in the wallet data directory
       /* returns: */    "bool",
       /* params:         name           type     classification                          default_value */
                       {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()}},
-      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
     )" };
     fc::variant rpc_server_impl::wallet_export_to_json(const fc::variants& params)

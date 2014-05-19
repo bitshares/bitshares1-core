@@ -393,8 +393,18 @@ namespace bts { namespace cli {
                       return fc::variant( false );
                   }
               }
-              else if (command == "wallet_create_from_json" || command == "wallet_open" || command == "wallet_open_file"
-                       || command == "wallet_unlock")
+              else if (command == "wallet_create_from_json")
+              {
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if ( command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
               {
                   try
                   {

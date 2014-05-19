@@ -862,7 +862,7 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const fc::path& path )
    {
-       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( is_open() );
        std::map< uint32_t, wallet_record > db_map;
 
        for( auto iter = my->_wallet_db.begin(); iter.valid(); ++iter )
@@ -882,6 +882,7 @@ namespace bts { namespace wallet {
            my->_wallet_db.store( item.first, item.second );
 
        my->load_records( passphrase );
+       scan_chain( my->get_last_scanned_block_number() );
    }
 
    bool wallet::is_open()const                   { return my->_is_open;                         }
