@@ -50,6 +50,7 @@ namespace bts { namespace rpc {
       void _set_advanced_node_parameters(const fc::variant_object& params);
       bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
       bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+      void _set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
 
       void network_add_node(const fc::ip::endpoint& node, const std::string& command);
       void stop();
@@ -210,6 +211,10 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bts::net::message_propagation_data>("_get_block_propagation_data", fc::variant(block_id));
     }
+    void rpc_client_impl::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+    {
+      _json_connection->async_call("_set_allowed_peers", fc::variant(allowed_peers)).wait();
+    }
     void rpc_client_impl::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
       _json_connection->async_call("network_add_node", (std::string)node, command).wait();
@@ -352,6 +357,10 @@ namespace bts { namespace rpc {
   bts::net::message_propagation_data rpc_client::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
   {
     return my->_get_block_propagation_data(block_id);
+  }
+  void rpc_client::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+  {
+    return my->_set_allowed_peers(allowed_peers);
   }
   void rpc_client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
   {
