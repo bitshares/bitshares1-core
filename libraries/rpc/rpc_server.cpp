@@ -39,6 +39,8 @@ namespace bts { namespace rpc {
              (wallet_open)\
              (wallet_get_name)\
              (wallet_close)\
+             (wallet_export_to_json)\
+             (wallet_create_from_json)\
              (wallet_lock)\
              (wallet_unlock)\
              (wallet_create_receive_account) \
@@ -706,7 +708,7 @@ Wallets exist in the wallet data directory
      /* returns: */    "bool",
      /* params:          name             type      classification                          default value */
                        {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
-                        {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
+                        {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()}},
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
 Wallets exist in the wallet data directory
@@ -718,12 +720,12 @@ Wallets exist in the wallet data directory
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data wallet_get_name_metadata{"wallet_get_name", nullptr,
-                                        /* description */ "Returns the wallet name passed to wallet_open",
-                                        /* returns: */    "string",
-                                        /* params:     */ {},
-                                        /* prerequisites */ rpc_server::no_prerequisites,
-									  R"(
-									  )" };
+        /* description */ "Returns the wallet name passed to wallet_open",
+        /* returns: */    "string",
+        /* params:     */ {},
+        /* prerequisites */ rpc_server::no_prerequisites,
+      R"(
+      )" };
     fc::variant rpc_server_impl::wallet_get_name(const fc::variants& params)
     {
        if( !_client->get_wallet()->is_open() )
@@ -732,22 +734,56 @@ Wallets exist in the wallet data directory
     }
 
     static rpc_server::method_data wallet_close_metadata{"wallet_close", nullptr,
-                                      /* description */ "Closes the curent wallet if one is open",
-                                      /* returns: */    "bool",
-                                      /* params:     */ {},
-                                      /* prerequisites */ rpc_server::no_prerequisites,
-									R"(
-									)" };
+      /* description */ "Closes the curent wallet if one is open",
+      /* returns: */    "bool",
+      /* params:     */ {},
+      /* prerequisites */ rpc_server::no_prerequisites,
+    R"(
+    )" };
     fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
        return fc::variant( _client->get_wallet()->close() );
     }
 
+    static rpc_server::method_data wallet_export_to_json_metadata{"wallet_export_to_json", nullptr,
+      /* description */ "Exports the current wallet to a JSON file",
+      /* returns: */    "bool",
+      /* params:         name           type     classification                          default_value */
+                      {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()}},
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+    R"(
+    )" };
+    fc::variant rpc_server_impl::wallet_export_to_json(const fc::variants& params)
+    {
+       auto filename = params[0].as<fc::path>();
+       _client->get_wallet()->export_to_json( filename );
+       return fc::variant( true );
+    }
+
+    static rpc_server::method_data wallet_create_from_json_metadata{"wallet_create_from_json", nullptr,
+      /* description */ "Creates a new wallet from an exported JSON file",
+      /* returns: */    "bool",
+      /* params:         name           type     classification                          default_value */
+                      {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()},
+                       {"wallet_name", "string", rpc_server::required_positional,        fc::ovariant()},
+                       {"passphrase",  "string", rpc_server::required_positional_hidden, fc::ovariant()}},
+      /* prerequisites */ rpc_server::json_authenticated,
+    R"(
+    )" };
+    fc::variant rpc_server_impl::wallet_create_from_json(const fc::variants& params)
+    {
+       auto filename = params[0].as<fc::path>();
+       auto wallet_name = params[1].as_string();
+       auto passphrase = params[2].as_string();
+       _client->get_wallet()->create_from_json( filename, wallet_name, passphrase );
+       return fc::variant( true );
+    }
+
     static rpc_server::method_data wallet_lock_metadata{"wallet_lock", nullptr,
-                                     /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
-                                     /* returns: */    "void",
-                                     /* params:     */ {},
-                                   /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
+         /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
+         /* returns: */    "void",
+         /* params:     */ {},
+       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        try
@@ -1077,7 +1113,7 @@ As a json rpc call
        return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
     }
     static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
-            /* description */ "Registeres a delegate to be voted upon by shareholders",
+            /* description */ "Registers a delegate to be voted upon by shareholders",
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},

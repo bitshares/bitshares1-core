@@ -382,11 +382,23 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create" || command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
+              if (command == "wallet_create")
               {
                   try
                   {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase", command == "wallet_create" );
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if (command == "wallet_create_from_json" || command == "wallet_open" || command == "wallet_open_file"
+                       || command == "wallet_unlock")
+              {
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
                   }
                   catch (fc::canceled_exception& e)
                   {
