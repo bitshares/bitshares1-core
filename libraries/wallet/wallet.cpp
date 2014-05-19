@@ -32,7 +32,7 @@ namespace bts { namespace wallet {
                _data_dir = ".";
             }
 
-            virtual ~wallet_impl() override {}
+            virtual ~wallet_impl()override {}
 
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
@@ -72,7 +72,7 @@ namespace bts { namespace wallet {
                 }
             }
 
-            virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
+            virtual void state_changed( const pending_chain_state_ptr& applied_changes )override
             {
                for( auto balance : applied_changes->balances )
                {
@@ -121,7 +121,7 @@ namespace bts { namespace wallet {
             /**
              *  This method is called anytime a block is applied to the chain.
              */
-            virtual void block_applied( const block_summary& summary ) override
+            virtual void block_applied( const block_summary& summary )override
             {
                state_changed( summary.applied_changes );
                for( auto trx : summary.block_data.user_transactions )

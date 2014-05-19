@@ -177,37 +177,37 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec    now()const = 0;
+         virtual fc::time_point_sec    now()const                                                       = 0;
 
          /** return the current fee rate in millishares */
-         virtual int64_t               get_fee_rate()const = 0;
-         virtual int64_t               get_delegate_pay_rate()const = 0;
+         virtual int64_t               get_fee_rate()const                                              = 0;
+         virtual int64_t               get_delegate_pay_rate()const                                     = 0;
          virtual share_type            get_delegate_registration_fee()const;
          virtual share_type            get_asset_registration_fee()const;
 
-         virtual fc::variant           get_property( chain_property_enum property_id )const = 0;
+         virtual fc::variant           get_property( chain_property_enum property_id )const             = 0;
          virtual void                  set_property( chain_property_enum property_id, 
-                                                     const fc::variant& property_value ) = 0;
+                                                     const fc::variant& property_value )                = 0;
 
-         virtual oasset_record         get_asset_record( asset_id_type id )const                           = 0;
-         virtual obalance_record       get_balance_record( const balance_id_type& id )const                = 0;
-         virtual oname_record          get_name_record( name_id_type id )const                             = 0;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& )const         = 0;
+         virtual oasset_record         get_asset_record( asset_id_type id )const                        = 0;
+         virtual obalance_record       get_balance_record( const balance_id_type& id )const             = 0;
+         virtual oname_record          get_name_record( name_id_type id )const                          = 0;
+         virtual otransaction_location get_transaction_location( const transaction_id_type& )const      = 0;
                                                                                                           
-         virtual oasset_record         get_asset_record( const std::string& symbol )const                 = 0;
-         virtual oname_record          get_name_record( const std::string& name )const                    = 0;
+         virtual oasset_record         get_asset_record( const std::string& symbol )const               = 0;
+         virtual oname_record          get_name_record( const std::string& name )const                  = 0;
                                                                                                           
-         virtual void                  store_proposal_record( const proposal_record& r )                  = 0;
-         virtual oproposal_record      get_proposal_record( proposal_id_type id )const                    = 0;
+         virtual void                  store_proposal_record( const proposal_record& r )                = 0;
+         virtual oproposal_record      get_proposal_record( proposal_id_type id )const                  = 0;
                                                                                                           
-         virtual void                  store_proposal_vote( const proposal_vote& r )                      = 0;
-         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const          = 0;
+         virtual void                  store_proposal_vote( const proposal_vote& r )                    = 0;
+         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const               = 0;
 
-         virtual void                  store_asset_record( const asset_record& r )                 = 0;
-         virtual void                  store_balance_record( const balance_record& r )             = 0;
-         virtual void                  store_name_record( const name_record& r )                   = 0;
+         virtual void                  store_asset_record( const asset_record& r )                      = 0;
+         virtual void                  store_balance_record( const balance_record& r )                  = 0;
+         virtual void                  store_name_record( const name_record& r )                        = 0;
          virtual void                  store_transaction_location( const transaction_id_type&,
-                                                                   const transaction_location& loc ) = 0;
+                                                                   const transaction_location& loc )    = 0;
 
          virtual void                  apply_deterministic_updates(){}
 
