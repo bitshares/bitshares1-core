@@ -603,6 +603,7 @@ Result:
        info["blocks"]           = _client->get_chain()->get_head_block_num();
        info["connections"]      = _client->get_connection_count();
        info["_node_id"]         = _client->get_node_id();
+       info["rpc_port"]         = _config.rpc_endpoint.port();
        return fc::variant( std::move(info) );
     }
 
@@ -718,7 +719,6 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
-       ilog( "args: ${args}", ("args",params) ); // TODO:  SECURITY - REMOVE ME
         _client->get_wallet()->create( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -754,7 +754,7 @@ Wallets exist in the wallet data directory
       /* returns: */    "bool",
       /* params:         name           type     classification                          default_value */
                       {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()}},
-      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
     )" };
     fc::variant rpc_server_impl::wallet_export_to_json(const fc::variants& params)
@@ -813,8 +813,8 @@ Stores the wallet decryption key in memory for 'timeout' seconds.
 This is needed prior to performing transactions related to private keys such as sending bitcoins
 
 Arguments:
-1. "spending_pass" (string, required) The wallet spending passphrase
-2. timeout (numeric, required) The time to keep the decryption key in seconds.
+1. timeout (numeric, required) The time to keep the decryption key in seconds.
+2. "passphrase" (string, required) The wallet spending passphrase
 
 Note:
 Issuing the wallet_unlock command while the wallet is already unlocked will set a new unlock
@@ -824,13 +824,13 @@ lock the wallet with the wallet_lock command.
 Examples:
 
 unlock the wallet for 60 seconds
-> bitshares-cli wallet_unlock "my pass phrase" 60
+> bitshares-cli wallet_unlock 60 "my pass phrase"
 
 Lock the wallet again (before 60 seconds)
 > bitshares-cli wallet_lock
 
 As json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_unlock", "params": ["my pass phrase", 60] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
+> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_unlock", "params": [60, "my pass phrase"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )"};
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
@@ -838,7 +838,7 @@ As json rpc call
        std::string passphrase = params[1].as_string();
        try
        {
-         _client->get_wallet()->unlock(passphrase, fc::seconds(timeout_sec));
+         _client->get_wallet()->unlock(fc::seconds(timeout_sec), passphrase);
          return fc::variant();
        }
        catch (...)

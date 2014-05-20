@@ -32,7 +32,7 @@ namespace bts { namespace wallet {
                _data_dir = ".";
             }
 
-            virtual ~wallet_impl() override {}
+            virtual ~wallet_impl()override {}
 
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
@@ -72,7 +72,7 @@ namespace bts { namespace wallet {
                 }
             }
 
-            virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
+            virtual void state_changed( const pending_chain_state_ptr& applied_changes )override
             {
                for( auto balance : applied_changes->balances )
                {
@@ -121,7 +121,7 @@ namespace bts { namespace wallet {
             /**
              *  This method is called anytime a block is applied to the chain.
              */
-            virtual void block_applied( const block_summary& summary ) override
+            virtual void block_applied( const block_summary& summary )override
             {
                state_changed( summary.applied_changes );
                for( auto trx : summary.block_data.user_transactions )
@@ -533,6 +533,8 @@ namespace bts { namespace wallet {
                 {
                    switch( (operation_type_enum)op.type  )
                    {
+                     case null_op_type:
+                        break;
                      case withdraw_op_type:
                         mine |= scan_withdraw( op.as<withdraw_operation>() );
                         break;
@@ -562,7 +564,11 @@ namespace bts { namespace wallet {
                      case issue_asset_op_type:
                         mine |= scan_issue_asset( op.as<issue_asset_operation>() );
                         break;
-                     case null_op_type:
+                     case fire_delegate_op_type:
+                        // TODO
+                        break;
+                     default:
+                        FC_ASSERT( false, "Transaction ${t} contains unknown operation type ${o}", ("t",trx)("o",op.type) );
                         break;
                    }
                 }
@@ -685,7 +691,7 @@ namespace bts { namespace wallet {
                     case master_key_record_type:
                     {
                        _master_key = record.as<master_key_record>();
-                       self->unlock( password );
+                       self->unlock( fc::seconds( 60 * 5 ), password );
                        break;
                     }
                     case account_record_type:
@@ -788,9 +794,18 @@ namespace bts { namespace wallet {
       FC_ASSERT( !fc::exists( wallet_filename ), "Wallet ${wallet_filename} already exists.", ("wallet_filename",wallet_filename) )
       close();
 
-      my->_wallet_db.open( wallet_filename, true );
-      my->initialize_wallet( password );
-      open( wallet_name, password );
+      try
+      {
+          my->_wallet_db.open( wallet_filename, true );
+          my->initialize_wallet( password );
+          open( wallet_name, password );
+      }
+      catch( ... )
+      {
+          close();
+          fc::remove_all( wallet_filename );
+          throw;
+      }
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet ${wallet_name}", ("wallet_name",wallet_name) ) }
 
    void wallet::open( const std::string& wallet_name, const std::string& password )
@@ -798,8 +813,16 @@ namespace bts { namespace wallet {
       FC_ASSERT( !wallet_name.empty() );
       FC_ASSERT( !password.empty() );
 
-      open_file( my->_data_dir / wallet_name, password );
-      my->_wallet_name = wallet_name;
+      try
+      {
+          open_file( my->_data_dir / wallet_name, password );
+          my->_wallet_name = wallet_name;
+      }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
 
    void wallet::open_file( const fc::path& wallet_filename, const std::string& password )
@@ -808,17 +831,25 @@ namespace bts { namespace wallet {
       FC_ASSERT( fc::exists( wallet_filename ), "Unable to open ${wallet_filename}", ("wallet_filename",wallet_filename) );
       close();
 
-      my->_wallet_db.open( wallet_filename, true );
-      my->load_records( password );
+      try
+      {
+          my->_wallet_db.open( wallet_filename, true );
+          my->load_records( password );
 
-      FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
-      my->_wallet_filename = wallet_filename;
+          FC_ASSERT( !!my->_master_key, "No master key found in wallet" )
+          my->_wallet_filename = wallet_filename;
 
-      my->_priority_fee = my->get_default_fee();
-      scan_chain( my->get_last_scanned_block_number() );
+          my->_priority_fee = my->get_default_fee();
+          scan_chain( my->get_last_scanned_block_number() );
 
-      my->_is_open = true;
-      std::cout << "Opened wallet " << wallet_filename.generic_string() << "\n";
+          my->_is_open = true;
+          std::cout << "Opened wallet " << wallet_filename.generic_string() << "\n";
+      }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_filename) ) }
 
    bool wallet::close()
@@ -856,7 +887,7 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const fc::path& path )
    {
-       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( is_open() );
        std::map< uint32_t, wallet_record > db_map;
 
        for( auto iter = my->_wallet_db.begin(); iter.valid(); ++iter )
@@ -872,10 +903,20 @@ namespace bts { namespace wallet {
 
        create( name, passphrase );
 
-       for( auto item : db_map )
-           my->_wallet_db.store( item.first, item.second );
+       try
+       {
+           for( auto item : db_map )
+               my->_wallet_db.store( item.first, item.second );
 
-       my->load_records( passphrase );
+           my->load_records( passphrase );
+           scan_chain( my->get_last_scanned_block_number() );
+       }
+       catch( ... )
+       {
+          close();
+          fc::remove_all( my->_data_dir / name );
+          throw;
+       }
    }
 
    bool wallet::is_open()const                   { return my->_is_open;                         }
@@ -891,8 +932,9 @@ namespace bts { namespace wallet {
     * TODO
     * @todo remove sleep/wait loop for duration and use scheduled notifications to relock
     */
-   void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
+   void wallet::unlock( const fc::microseconds& timeout, const std::string& password )
    { try {
+      FC_ASSERT( timeout.count() > 0 );
       FC_ASSERT( !password.empty() );
       FC_ASSERT( !!my->_master_key );
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );

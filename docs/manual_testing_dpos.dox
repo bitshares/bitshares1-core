@@ -54,7 +54,7 @@ delegate-10: 5Jv7kbL3BzBJeD9WHkmPJNTDGbghDEGReQ96VnDanuztdWk6XFe
 >>> wallet_import_private_key 5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn "delegate-1"
 true
 
->>> wallet_import_private_key 5Jedc76iNGgC4bgm8yVjPfjNL56eCoDYyd8sSKTzgxkcayRCUV3 "delegate-6"
+>>> wallet_import_private_key 5JndPJKncAggKuJjv7z9WywZQZgFbSkxgziqHEGfm2UbWEcWa91 "delegate-2"
 true
 
 >>> wallet_rescan_blockchain_state

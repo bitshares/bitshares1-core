@@ -383,7 +383,7 @@ void bts_client_launcher_fixture::import_initial_balances()
 
 void bts_client_launcher_fixture::register_delegates()
 {
-  for (int i = 0; i < delegate_keys.size(); ++i)
+  for (unsigned i = 0; i < delegate_keys.size(); ++i)
   {
     int client_for_this_delegate = i % client_processes.size();
     client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(delegate_keys[i], "delegate_key");

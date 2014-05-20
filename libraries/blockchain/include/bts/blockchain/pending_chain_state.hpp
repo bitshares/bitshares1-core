@@ -10,7 +10,7 @@ namespace bts { namespace blockchain {
 
          void set_prev_state( chain_interface_ptr prev_state );
 
-         virtual ~pending_chain_state() override;
+         virtual ~pending_chain_state()override;
 
          virtual fc::time_point_sec     now()const override;
          virtual int64_t                get_fee_rate()const override;
@@ -24,27 +24,27 @@ namespace bts { namespace blockchain {
          virtual oasset_record          get_asset_record( const std::string& symbol )const override;
          virtual oname_record           get_name_record( const std::string& name )const override;
 
-         virtual void                  store_proposal_record( const proposal_record& r );
-         virtual oproposal_record      get_proposal_record( proposal_id_type id )const;
+         virtual void                   store_proposal_record( const proposal_record& r )override;
+         virtual oproposal_record       get_proposal_record( proposal_id_type id )const override;
                                                                                                           
-         virtual void                  store_proposal_vote( const proposal_vote& r );
-         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const;
+         virtual void                   store_proposal_vote( const proposal_vote& r )override;
+         virtual oproposal_vote         get_proposal_vote( proposal_vote_id_type id )const override;
 
-         virtual void                   store_asset_record( const asset_record& r ) override;
-         virtual void                   store_balance_record( const balance_record& r ) override;
-         virtual void                   store_name_record( const name_record& r ) override;
+         virtual void                   store_asset_record( const asset_record& r )override;
+         virtual void                   store_balance_record( const balance_record& r )override;
+         virtual void                   store_name_record( const name_record& r )override;
          virtual void                   store_transaction_location( const transaction_id_type&,
-                                                                  const transaction_location& loc ) override;
+                                                                    const transaction_location& loc )override;
 
 
-         virtual fc::variant           get_property( chain_property_enum property_id )const;
-         virtual void                  set_property( chain_property_enum property_id, 
-                                                     const fc::variant& property_value );
+         virtual fc::variant            get_property( chain_property_enum property_id )const override;
+         virtual void                   set_property( chain_property_enum property_id, 
+                                                      const fc::variant& property_value )override;
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
           */
-         virtual void                   apply_deterministic_updates() override;
+         virtual void                   apply_deterministic_updates()override;
 
          /** polymorphically allcoate a new state */
          virtual chain_interface_ptr    create( const chain_interface_ptr& prev_state )const;

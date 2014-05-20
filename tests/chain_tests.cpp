@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE( wallet_test )
 
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
-      my_wallet.unlock( "password" );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
       my_wallet.import_private_key( fc::variant("dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f").as<fc::ecc::private_key>() );
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
@@ -101,12 +101,12 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       wallet  my_wallet( blockchain );
       my_wallet.set_data_directory( dir.path() );
       my_wallet.create(  "my_wallet", "password" );
-      my_wallet.unlock( "password", fc::seconds( 10000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       wallet  your_wallet( blockchain2 );
       your_wallet.set_data_directory( dir2.path() );
       your_wallet.create(  "your_wallet", "password" );
-      your_wallet.unlock( "password", fc::seconds( 10000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       my_wallet.scan_state();
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
-      my_wallet.unlock( "password", fc::seconds( 1000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       auto result = blockchain->get_names( "", 1000 );
 
@@ -207,12 +207,12 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     wallet  my_wallet( my_chain );
     my_wallet.set_data_directory( my_dir.path() );
     my_wallet.create(  "my_wallet", "password" );
-    my_wallet.unlock( "password", fc::seconds( 10000000 ) );
+    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
     wallet  your_wallet( your_chain );
     your_wallet.set_data_directory( your_dir.path() );
     your_wallet.create(  "your_wallet", "password" );
-    your_wallet.unlock( "password", fc::seconds( 10000000 ) );
+    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
 
     auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();

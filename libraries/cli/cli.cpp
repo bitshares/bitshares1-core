@@ -73,12 +73,13 @@ namespace bts { namespace cli {
                   return line;
             }
 
-            /** assumes last argument is password */
+            /** assumes last argument is passphrase */
             fc::variant execute_command_with_passphrase_query( const std::string& command, const fc::variants& arguments,
                                                                const std::string& query_string, std::string& passphrase,
                                                                bool verify = false )
             {
                 auto new_arguments = arguments;
+                new_arguments.push_back( fc::variant( passphrase ) );
 
                 while( true )
                 {
@@ -102,8 +103,7 @@ namespace bts { namespace cli {
                     }
                     catch( const fc::exception& e )
                     {
-                        std::cout << e.to_string() << "\n";
-                        wlog( "${e}", ("e",e.to_detail_string() ) );
+                        wlog( "${e}", ("e",e.to_string() ) );
                         std::cout << "Incorrect passphrase, try again\n";
                     }
                 }
@@ -396,8 +396,18 @@ namespace bts { namespace cli {
                       return fc::variant( false );
                   }
               }
-              else if (command == "wallet_create_from_json" || command == "wallet_open" || command == "wallet_open_file"
-                       || command == "wallet_unlock")
+              else if (command == "wallet_create_from_json")
+              {
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
+                  }
+                  catch (fc::canceled_exception& e)
+                  {
+                      return fc::variant( false );
+                  }
+              }
+              else if ( command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
               {
                   try
                   {
