@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE( wallet_test )
       fc::temp_directory dir; 
 
       chain_database_ptr blockchain = std::make_shared<chain_database>();
-      blockchain->open( dir.path() );
+      blockchain->open( dir.path(), "genesis.dat" );
 
       wallet  my_wallet( blockchain );
       my_wallet.set_data_directory( dir.path() );
@@ -73,10 +73,10 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       fc::temp_directory dir; 
 
       chain_database_ptr blockchain = std::make_shared<chain_database>();
-      blockchain->open( dir.path() );
+      blockchain->open( dir.path(), "genesis.dat" );
 
       chain_database_ptr blockchain2 = std::make_shared<chain_database>();
-      blockchain2->open( dir2.path() );
+      blockchain2->open( dir2.path(), "genesis.dat" );
 
       elog( "last asset id: ${id}", ("id",blockchain->last_asset_id() ) );
       elog( "last name id: ${id}", ("id",blockchain->last_name_id() ) );
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       wallet  your_wallet( blockchain2 );
       your_wallet.set_data_directory( dir2.path() );
       your_wallet.create(  "your_wallet", "password" );
-      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+      your_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         fc::temp_directory dir;
 
         chain_database_ptr blockchain = std::make_shared<chain_database>();
-        blockchain->open( dir.path() );
+        blockchain->open( dir.path(), "genesis.dat" );
 
         elog( "last name id: ${id}", ("id", blockchain->last_name_id()) );
 
@@ -208,11 +208,11 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
             ilog( "${i}] ${delegate}", ("i", i) ("delegate", name_rec) );
         }
         blockchain->scan_names([=]( const name_record& a ) {
-            ilog( "\nname: ${a}", ("a", fc::json::to_pretty_string(a)) );
+  //          ilog( "\nname: ${a}", ("a", fc::json::to_pretty_string(a)) );
         });
 
         blockchain->scan_assets([=]( const asset_record& a ) {
-            ilog( "\nasset: ${a}", ("a", fc::json::to_pretty_string(a)) );
+  //          ilog( "\nasset: ${a}", ("a", fc::json::to_pretty_string(a)) );
         });
 
 
@@ -327,10 +327,10 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     fc::temp_directory your_dir; 
 
     chain_database_ptr my_chain = std::make_shared<chain_database>();
-    my_chain->open( my_dir.path() );
+    my_chain->open( my_dir.path(), "genesis.dat" );
 
     chain_database_ptr your_chain = std::make_shared<chain_database>();
-    your_chain->open( your_dir.path() );
+    your_chain->open( your_dir.path(), "genesis.dat" );
 
     wallet  my_wallet( my_chain );
     my_wallet.set_data_directory( my_dir.path() );
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     wallet  your_wallet( your_chain );
     your_wallet.set_data_directory( your_dir.path() );
     your_wallet.create(  "your_wallet", "password" );
-    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+    your_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
 
     auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
