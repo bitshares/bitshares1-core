@@ -718,7 +718,6 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
-       ilog( "args: ${args}", ("args",params) ); // TODO:  SECURITY - REMOVE ME
         _client->get_wallet()->create( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
