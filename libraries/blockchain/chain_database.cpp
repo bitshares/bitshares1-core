@@ -3,16 +3,17 @@
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/db/level_pod_map.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/db/level_pod_map.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
-
 #include <fc/log/logger.hpp>
-#include <fstream>
-using namespace bts::blockchain;
 
+#include <fstream>
+#include <iostream>
+
+using namespace bts::blockchain;
 
 struct vote_del
 {
