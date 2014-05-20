@@ -348,7 +348,7 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 void bts_client_launcher_fixture::create_unsynchronized_wallets()
 {
   const uint32_t initial_block_count = 400; // generate this many blocks
-  bts::blockchain::advance_time(-1 * (initial_block_count + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+  bts::blockchain::advance_time(-1 * int32_t((initial_block_count + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
 
   // create a blockchain
   genesis_block.timestamp = bts::blockchain::now();
