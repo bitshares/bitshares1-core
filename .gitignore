@@ -16,6 +16,7 @@ programs/bts_xt/bts_xt_client
 
 programs/utils/bts_create_genesis
 programs/utils/bts_create_key
+programs/utils/bts_genesis_to_bin
 programs/utils/key_to_wif
 
 tests/bts_xt_client_tests

@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         ilog( "my balance: ${my}", ("my", my_wallet.get_balance("*", 0)) );
 
         ilog(".");
-        share_type total_sent = 0;
+        //share_type total_sent = 0;
 
         std::string name_prefix = "test-name";
         for ( uint32_t i = 0; i < 10; ++i )
