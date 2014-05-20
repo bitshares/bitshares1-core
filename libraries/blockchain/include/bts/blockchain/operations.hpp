@@ -1,20 +1,23 @@
 #pragma once 
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
    enum operation_type_enum
    {
-      null_op_type          = 0,
-      withdraw_op_type      = 1,
-      deposit_op_type       = 2,
-      reserve_name_op_type  = 3,
-      update_name_op_type   = 4,
-      create_asset_op_type  = 5,
-      update_asset_op_type  = 6,
-      issue_asset_op_type   = 7,
-      fire_delegate_op_type = 8
+      null_op_type              = 0,
+      withdraw_op_type          = 1,
+      deposit_op_type           = 2,
+      reserve_name_op_type      = 3,
+      update_name_op_type       = 4,
+      create_asset_op_type      = 5,
+      update_asset_op_type      = 6,
+      issue_asset_op_type       = 7,
+      fire_delegate_op_type     = 8,
+      submit_proposal_op_type   = 9,
+      vote_proposal_op_type     = 10
    };
 
    /**
@@ -76,7 +79,7 @@ namespace bts { namespace blockchain {
        withdraw_operation():amount(0){}
 
        withdraw_operation( const balance_id_type& id, share_type amount_arg )
-          :balance_id(id),amount(amount_arg){}
+          :balance_id(id),amount(amount_arg){ FC_ASSERT( amount_arg > 0 ); }
 
        /** the account to withdraw from */
        balance_id_type    balance_id;
@@ -205,6 +208,29 @@ namespace bts { namespace blockchain {
       bool                          is_delegate;
    };
 
+
+   struct submit_proposal_operation
+   {
+      static const operation_type_enum type; 
+
+      name_id_type          submitting_delegate_id; // the delegate_id of the submitter
+      fc::time_point_sec    submission_date;
+      std::string           subject;
+      std::string           body;
+      std::string           proposal_type; // alert, bug fix, feature upgrade, property change, etc
+      fc::variant           data;  // data that is unique to the proposal
+   };
+
+   struct vote_proposal_operation
+   {
+      static const operation_type_enum type; 
+
+      proposal_id_type                                 id;
+      fc::time_point_sec                               timestamp;
+      uint8_t                                          vote;
+     // fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
@@ -216,6 +242,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (reserve_name_op_type)
                  (update_name_op_type)
                  (issue_asset_op_type)
+                 (submit_proposal_op_type)
+                 (vote_proposal_op_type)
                )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
@@ -226,6 +254,8 @@ FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(descriptio
 FC_REFLECT( bts::blockchain::issue_asset_operation, (asset_id)(balance_id)(amount) )
 FC_REFLECT( bts::blockchain::reserve_name_operation, (name)(json_data)(owner_key)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::update_name_operation, (name_id)(json_data)(active_key)(is_delegate) )
+FC_REFLECT( bts::blockchain::submit_proposal_operation, (submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )
+FC_REFLECT( bts::blockchain::vote_proposal_operation, (id)(timestamp)(vote) )
 
  
 namespace fc {
