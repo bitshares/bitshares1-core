@@ -30,7 +30,7 @@ namespace bts { namespace client {
             void delegate_loop();
             signed_transactions get_pending_transactions() const;
 
-            virtual fc::sha256 get_chain_id()const 
+            virtual fc::sha256 get_chain_id()const override
             { 
                 FC_ASSERT( _chain_db != nullptr );
                 return _chain_db->chain_id(); 
@@ -50,7 +50,6 @@ namespace bts { namespace client {
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
-            virtual fc::sha256 get_chain_id()const override;
             virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
@@ -437,13 +436,13 @@ namespace bts { namespace client {
       get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
     }
 
-    wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
+    bts::wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
     {
       //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
       return get_wallet()->get_delegate_trust_status(delegate_name);
     }
 
-    std::map<std::string,wallet::delegate_trust_status> client::list_delegate_trust_status() const
+    std::map<std::string,bts::wallet::delegate_trust_status> client::list_delegate_trust_status() const
     {
       return get_wallet()->list_delegate_trust_status();
     }

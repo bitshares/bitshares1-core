@@ -47,8 +47,8 @@ namespace bts { namespace client {
          transaction_id_type register_delegate( const std::string& name, const fc::variant& data );
 
          void                            set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level);
-         wallet::delegate_trust_status   get_delegate_trust_status(const std::string& delegate_name) const;
-         std::map<std::string, wallet::delegate_trust_status> list_delegate_trust_status() const;
+         bts::wallet::delegate_trust_status   get_delegate_trust_status(const std::string& delegate_name) const;
+         std::map<std::string, bts::wallet::delegate_trust_status> list_delegate_trust_status() const;
 
          fc::path                            get_data_dir()const;
 
