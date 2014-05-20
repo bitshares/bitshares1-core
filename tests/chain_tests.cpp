@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
 
             auto name_record = blockchain->get_name_record( name_prefix + fc::to_string(i) );
             FC_ASSERT( !!name_record 
-                && fc::json::from_string( name_record->json_data).as_string() == fc::to_string(i)
+                && name_record->json_data.as_string() == fc::to_string(i)
                 && name_record->is_delegate() == ( i % 2 == 0 )
                 , "", ("name_record", *name_record)("name", name_prefix + fc::to_string(i))("json_data", fc::to_string(i)));
         }
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         for (uint32_t i = 0; i < 10; ++i)
         {
             FC_ASSERT( result[i].name == name_prefix + fc::to_string(i), "", ("name", result[i].name) );
-            FC_ASSERT( fc::json::from_string(result[i].json_data).as_string()
+            FC_ASSERT( result[i].json_data.as_string()
                 == (json_prefix + fc::to_string(i)),
                 "", ("json", result[i].json_data) );
 

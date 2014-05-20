@@ -135,7 +135,7 @@ namespace bts { namespace blockchain {
        /**
         * Other information relevant to this asset.
         */
-       std::string         json_data;
+       fc::variant         json_data;
 
        /**
         *  Assets can only be issued by individuals that
@@ -158,7 +158,7 @@ namespace bts { namespace blockchain {
        asset_id_type        asset_id;
        std::string          name;
        std::string          description;
-       std::string          json_data;
+       fc::variant          json_data;
        name_id_type         issuer_name_id;
    };
 
@@ -183,10 +183,10 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type; 
       reserve_name_operation():is_delegate(false){}
 
-      reserve_name_operation( const std::string& name, const std::string& json_data, const public_key_type& owner, const public_key_type& active, bool as_delegate = false );
+      reserve_name_operation( const std::string& name, const fc::variant& json_data, const public_key_type& owner, const public_key_type& active, bool as_delegate = false );
       
       std::string         name;
-      std::string         json_data;
+      fc::variant         json_data;
       public_key_type     owner_key;
       public_key_type     active_key;
       bool                is_delegate;
@@ -200,7 +200,7 @@ namespace bts { namespace blockchain {
 
       /** this should be 0 for creating a new name */
       name_id_type                  name_id;
-      fc::optional<std::string>     json_data;
+      fc::optional<fc::variant>     json_data;
       fc::optional<public_key_type> active_key;
       bool                          is_delegate;
    };

@@ -88,7 +88,6 @@ namespace bts { namespace blockchain {
       :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
-      static bool is_valid_json( const std::string& str );
 
       bool is_null()const           { return issuer_name_id == -1; }
       asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
@@ -97,7 +96,7 @@ namespace bts { namespace blockchain {
       std::string         symbol;
       std::string         name;
       std::string         description;
-      std::string         json_data;
+      fc::variant         json_data;
       name_id_type        issuer_name_id;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
@@ -153,7 +152,7 @@ namespace bts { namespace blockchain {
 
       name_id_type                 id;
       std::string                  name;
-      std::string                  json_data;
+      fc::variant                  json_data;
       public_key_type              owner_key;
       public_key_type              active_key;
       fc::time_point_sec           registration_date;

@@ -409,8 +409,6 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_reserve_name( const reserve_name_operation& op )
    { try {
       FC_ASSERT( name_record::is_valid_name( op.name ) );
-      FC_ASSERT( name_record::is_valid_json( op.json_data ) );
-      FC_ASSERT( op.json_data.size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
 
       auto cur_record = _current_state->get_name_record( op.name );
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
@@ -455,8 +453,6 @@ namespace bts { namespace blockchain {
 
       if( !!op.json_data )
       {
-         FC_ASSERT( name_record::is_valid_json( *op.json_data ) );
-         FC_ASSERT( op.json_data->size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
          cur_record->json_data  = *op.json_data;
       }
 
@@ -559,14 +555,14 @@ namespace bts { namespace blockchain {
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
    void transaction::reserve_name( const std::string& name, 
-                                   const std::string& json_data, 
+                                   const fc::variant& json_data, 
                                    const public_key_type& master, 
                                    const public_key_type& active, bool as_delegate  )
    {
       operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
    }
    void transaction::update_name( name_id_type name_id, 
-                                  const fc::optional<std::string>& json_data, 
+                                  const fc::optional<fc::variant>& json_data, 
                                   const fc::optional<public_key_type>& active, bool as_delegate   )
    {
       update_name_operation op;
