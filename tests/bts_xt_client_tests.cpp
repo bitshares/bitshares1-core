@@ -5,6 +5,7 @@
 #include <boost/scope_exit.hpp>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/algorithm/find.hpp>
+#include <boost/iterator/counting_iterator.hpp>
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -19,6 +20,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <random>
+#include <algorithm>
+#include <functional>
 
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
@@ -34,6 +38,7 @@
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/genesis_config.hpp>
+#include <bts/blockchain/time.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Parse the command line for configuration options here ///////////////////////
@@ -117,7 +122,16 @@ managed_process::~managed_process()
 {
   if (process)
   {
-    process->kill();
+    try
+    {
+      // see if the process has already exited
+      process->result(fc::milliseconds(10)); // strange assertions if we use microseconds(0)
+    }
+    catch (const fc::timeout_exception&)
+    {
+      // nope.  kill it
+      process->kill();
+    }
     if (stdout_reader_done.valid() && !stdout_reader_done.ready())
     {
       try
@@ -174,6 +188,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
 
 struct bts_client_process : managed_process
 {
+  uint32_t process_number;
   int64_t initial_balance;
   fc::ecc::private_key private_key;
   uint16_t rpc_port;
@@ -181,8 +196,20 @@ struct bts_client_process : managed_process
   uint16_t http_port;
   bts::rpc::rpc_client_ptr rpc_client;
   fc::uint160_t node_id;
+  fc::path config_dir;
+  bts::wallet::wallet_ptr wallet; // used during initial creation, closed after that
+  bts::blockchain::chain_database_ptr blockchain;
+
+  uint64_t expected_balance; // for use in individual tests to track the expected balance after a transfer
 
   bts_client_process() : initial_balance(0) {}
+  void set_process_number(uint32_t process_num)
+  {
+    process_number = process_num;
+    std::ostringstream numbered_config_dir_name;
+    numbered_config_dir_name << "BitSharesX_" << std::setw(3) << std::setfill('0') << process_number;
+    config_dir = bts_xt_client_test_config::config_directory / numbered_config_dir_name.str();
+  }
   void launch(uint32_t process_number,
               fc::optional<bts::blockchain::genesis_block_config> genesis_block);
 };
@@ -273,7 +300,10 @@ struct bts_client_launcher_fixture
   //const uint32_t test_process_count = 10;
 
   void create_delegates_and_genesis_block();
+  void create_unsynchronized_wallets();
+  void launch_client(uint32_t client_index);
   void launch_clients();
+  void establish_rpc_connection(uint32_t client_index);
   void establish_rpc_connections();
   void trigger_network_connections();
   void import_initial_balances();
@@ -287,13 +317,14 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 {
   // generate a genesis block giving 100bts to each account
   BOOST_TEST_MESSAGE("Generating keys for " << client_processes.size() << " clients");
+
   int64_t initial_shares_requested = 0;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].private_key = fc::ecc::private_key::generate();
 
     genesis_block.balances.push_back(std::make_pair(bts::blockchain::pts_address(client_processes[i].private_key.get_public_key()),
-                                                    client_processes[i].initial_balance));
+                                                    (double)client_processes[i].initial_balance));
     initial_shares_requested += client_processes[i].initial_balance;
   }
 
@@ -314,44 +345,102 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
   }
 }
 
+void bts_client_launcher_fixture::create_unsynchronized_wallets()
+{
+  const uint32_t initial_block_count = 400; // generate this many blocks
+  bts::blockchain::advance_time(-1 * (initial_block_count + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
+  // create a blockchain
+  genesis_block.timestamp = bts::blockchain::now();
+  fc::path genesis_json = bts_xt_client_test_config::config_directory / "genesis.json";
+  fc::json::save_to_file(genesis_block, genesis_json, true);
+
+  // create all of the wallets and leave them open
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::remove_all(client_processes[i].config_dir);
+    fc::create_directories(client_processes[i].config_dir);
+    client_processes[i].blockchain = std::make_shared<bts::blockchain::chain_database>();
+    client_processes[i].blockchain->open(client_processes[i].config_dir / "chain", genesis_json);
+    client_processes[i].wallet = std::make_shared<bts::wallet::wallet>(client_processes[i].blockchain);
+    client_processes[i].wallet->set_data_directory(client_processes[i].config_dir);
+    client_processes[i].wallet->create("default", WALLET_PASSPHRASE);
+  }
+
+  bts_client_process& first_client = client_processes[0];
+  first_client.wallet->unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE);
+  for (unsigned i = 0; i < delegate_keys.size(); ++i)
+    first_client.wallet->import_private_key(delegate_keys[i]);
+  first_client.wallet->scan_state();
+
+  uint32_t current_block_count = 0;
+  for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)
+  {
+    // generate a block
+    // the first client will always have the complete blockchain, so use it for building the blockchain.
+    // earlier clients will have progressively shorter chains
+
+    bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+    fc::time_point_sec my_next_block_time = first_client.wallet->next_block_production_time();
+    bts::blockchain::full_block next_block = first_client.blockchain->generate_block(my_next_block_time);
+    first_client.wallet->sign_block(next_block);
+
+    // push it on the clients' block chains
+    for (uint32_t i = 0; i < client_processes.size(); ++i)
+    {
+      uint32_t number_of_blocks_for_this_client = initial_block_count * (client_processes.size() - i) / client_processes.size();
+      if (current_block_count <= number_of_blocks_for_this_client)
+      {
+        client_processes[i].blockchain->push_block(next_block);
+        client_processes[i].wallet->scan_chain(client_processes[i].blockchain->get_head_block_num());
+      }
+    }
+  }
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].blockchain.reset();
+    client_processes[i].wallet.reset();
+  }
+}
+
+void bts_client_launcher_fixture::launch_client(uint32_t client_index)
+{
+  client_processes[client_index].rpc_port = bts_xt_client_test_config::base_rpc_port + client_index;
+  client_processes[client_index].p2p_port = bts_xt_client_test_config::base_p2p_port + client_index;
+  client_processes[client_index].http_port = bts_xt_client_test_config::base_http_port + client_index;
+  fc::optional<bts::blockchain::genesis_block_config> optional_genesis_block;
+  // simulate the condition where some clients start without a genesis block shipped to them
+  optional_genesis_block = genesis_block;
+  client_processes[client_index].launch(client_index, optional_genesis_block);
+}
+
 void bts_client_launcher_fixture::launch_clients()
 {
   BOOST_TEST_MESSAGE("Launching " << client_processes.size() << " bts_xt_client processes");
   for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    client_processes[i].rpc_port = bts_xt_client_test_config::base_rpc_port + i;
-    client_processes[i].p2p_port = bts_xt_client_test_config::base_p2p_port + i;
-    client_processes[i].http_port = bts_xt_client_test_config::base_http_port + i;
-    fc::optional<bts::blockchain::genesis_block_config> optional_genesis_block;
-#if 0
-    // simulate the condition where some clients start without a genesis block shipped to them
-    if (i == 0)
-      optional_genesis_block = genesis_block;
-#else
-    // simulate the condition where all clients and all servers start with a genesis block
-    // this doesn't currently work, because the initial block contains a timestamp and each
-    // client will generate a different genesis block
-    optional_genesis_block = genesis_block;
-#endif
-    client_processes[i].launch(i, optional_genesis_block);
-  }
+    launch_client(i);
+}
+
+void bts_client_launcher_fixture::establish_rpc_connection(uint32_t client_index)
+{
+  client_processes[client_index].rpc_client = std::make_shared<bts::rpc::rpc_client>();
+  client_processes[client_index].rpc_client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), client_processes[client_index].rpc_port));
+  client_processes[client_index].rpc_client->login(RPC_USERNAME, RPC_PASSWORD);
+
+  fc::mutable_variant_object parameters;
+  parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
+  parameters["desired_number_of_connections"] = _desired_number_of_connections;
+  parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
+  client_processes[client_index].rpc_client->_set_advanced_node_parameters(parameters);
 }
 
 void bts_client_launcher_fixture::establish_rpc_connections()
 {
   fc::usleep(fc::seconds(10));
 
-
   BOOST_TEST_MESSAGE("Establishing JSON-RPC connections to all processes");
   for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    client_processes[i].rpc_client = std::make_shared<bts::rpc::rpc_client>();
-    client_processes[i].rpc_client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), client_processes[i].rpc_port));
-  }
-
-  BOOST_TEST_MESSAGE("Logging in to JSON-RPC connections");
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-    client_processes[i].rpc_client->login(RPC_USERNAME, RPC_PASSWORD);
+    establish_rpc_connection(i);
 }
 
 void bts_client_launcher_fixture::trigger_network_connections()
@@ -407,8 +496,8 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
         boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, _directed_graph);
       }
     }
-    BOOST_CHECK(peers_info.size() >= _desired_number_of_connections);
-    BOOST_CHECK(peers_info.size() <= _maximum_number_of_connections);
+    BOOST_CHECK_GE(peers_info.size(), _desired_number_of_connections);
+    BOOST_CHECK_LE(peers_info.size(), _maximum_number_of_connections);
   }
 
   unsigned number_of_partitions = 0;
@@ -440,6 +529,8 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
         BOOST_TEST_MESSAGE("Partition " << i << ":" << nodes.str());
       }
     }
+    else
+      BOOST_TEST_MESSAGE("All nodes in the network are connected (there is only one partition)");
 
     DistanceMatrix distances(boost::num_vertices(_undirected_graph));
     DistanceMatrixMap distance_map(distances, _undirected_graph);
@@ -496,9 +587,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 void bts_client_launcher_fixture::get_node_ids()
 {
   for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
     BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->getinfo()["_node_id"].as<fc::uint160_t>());
-  }
 }
 
 void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts::net::message_propagation_data>& propagation_data, int initial_node, const fc::path& output_file)
@@ -633,19 +722,15 @@ BOOST_AUTO_TEST_CASE(sleep_test)
 BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 {
   client_processes.resize(1);
-  client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
+    client_processes[i].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
+  }
+
   create_delegates_and_genesis_block();
   launch_clients();
   establish_rpc_connections();
-  trigger_network_connections();
-
-#if 0
-  BOOST_TEST_MESSAGE("Testing a wallet operation without logging in");
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_get_balance(), fc::exception)
-  }
-#endif
 
   BOOST_TEST_MESSAGE("Testing open_wallet() call");
   for (unsigned i = 0; i < client_processes.size(); ++i)
@@ -725,7 +810,10 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   client_processes.resize(20);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
     client_processes[i].initial_balance = INITIAL_BALANCE;
+  }
 
   create_delegates_and_genesis_block();
 
@@ -831,12 +919,12 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   fc::usleep(fc::seconds(30));
   BOOST_TEST_MESSAGE("Collecting balances from recipients");
 
-  uint64_t total_balances_recieved = 0;
+  uint64_t total_balances_received = 0;
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_recieved += (client_processes[i].rpc_client->wallet_get_balance().amount - initial_balance_for_each_node);
+    total_balances_received += (client_processes[i].rpc_client->wallet_get_balance().amount - initial_balance_for_each_node);
 
-  BOOST_TEST_MESSAGE("Recieved " << total_balances_recieved << " in total");
-  BOOST_CHECK(total_balances_recieved == total_amount_to_transfer);
+  BOOST_TEST_MESSAGE("Received " << total_balances_received << " in total");
+  BOOST_CHECK(total_balances_received == total_amount_to_transfer);
 
   // get the total amount of data transferred
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
@@ -972,6 +1060,148 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("That's about " << (total_number_of_transactions / run_time_in_seconds) << " transactions per second");
 }
 
+BOOST_AUTO_TEST_CASE(bignum)
+{
+  // Test whether math using big numbers works in 32-bit code.  (it doesn't)  
+  bts::blockchain::asset big_asset(8000000000000000000);
+  bts::blockchain::asset big_divisor(1000000);
+  bts::blockchain::price dividend = big_asset / big_divisor;
+  BOOST_CHECK_EQUAL(dividend, 8000000000000);
+
+  BOOST_CHECK_EQUAL((bts::blockchain::asset(1000000) * fc::uint128_t(1000000, 0)).amount, 
+                    bts::blockchain::asset(1000000000000).amount);
+}
+
+BOOST_AUTO_TEST_CASE(simple_sync_test)
+{
+  /* Note: on Windows, boost::process imposes a limit of 64 child processes,
+           we should max out at 55 or less to give ourselves some wiggle room */
+  client_processes.resize(5);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
+    client_processes[i].initial_balance = INITIAL_BALANCE;
+  }
+
+  create_delegates_and_genesis_block();
+
+  create_unsynchronized_wallets();
+  launch_clients();
+  establish_rpc_connections();
+
+  // get the current block count for each client
+  std::vector<uint32_t> initial_block_counts;
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    fc::variant_object info = client_processes[i].rpc_client->getinfo();
+    initial_block_counts.push_back((uint32_t)info["blocks"].as_int64());
+    BOOST_TEST_MESSAGE("Client " << i << " has " << info["blocks"].as_int64() << " blocks");
+  }
+
+  // verify that each client has a different block count
+  std::sort(initial_block_counts.begin(), initial_block_counts.end());
+  initial_block_counts.erase(std::unique(initial_block_counts.begin(), initial_block_counts.end()),
+                             initial_block_counts.end());
+  BOOST_CHECK(initial_block_counts.size() == client_processes.size());
+  uint32_t max_initial_block_count = *std::max_element(initial_block_counts.begin(), initial_block_counts.end());
+
+  // connect up all of the nodes and allow them to begin syncing
+  trigger_network_connections();
+
+  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
+  // time (happens due to the race of starting a lot of clients at once), they will have time
+  // to retry before we start checking to see how they did
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+  int number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_sync_test" / "network_map.dot");
+  BOOST_REQUIRE_EQUAL(number_of_partitions, 1);
+
+#if 0
+  BOOST_TEST_MESSAGE("Opening and unlocking wallets");
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].rpc_client->open_wallet();
+    BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->walletpassphrase(WALLET_PASPHRASE, fc::microseconds::maximum()));
+  }
+
+  import_initial_balances();
+#endif
+
+  // when checking that the clients are in sync, check a few times.  We might 
+  // be checking while a 30-second block comes in and end up with two different
+  // block counts, even if everything is otherwise in sync.
+  bool clients_in_sync = false;
+  for (int loop = 0; loop < 5; ++loop)
+  {
+    std::vector<uint32_t> final_block_counts;
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+    {
+      fc::variant_object info = client_processes[i].rpc_client->getinfo();
+      final_block_counts.push_back((uint32_t)info["blocks"].as_int64());
+    }
+
+    // verify that all clients have the same block count
+    std::sort(final_block_counts.begin(), final_block_counts.end());
+    final_block_counts.erase(std::unique(final_block_counts.begin(), final_block_counts.end()),
+                               final_block_counts.end());
+    if (final_block_counts.size() == 1 &&
+        final_block_counts[0] >= max_initial_block_count)
+    {
+      clients_in_sync = true;
+      break;
+    }
+  }
+  BOOST_CHECK(clients_in_sync);
+}
+
+
+BOOST_AUTO_TEST_CASE(net_split_test)
+{
+  // This checks whether we can create a connected network, then force it to separate
+  // into two isolated groups
+  client_processes.resize(50);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
+    client_processes[i].initial_balance = INITIAL_BALANCE;
+  }
+
+  create_delegates_and_genesis_block();
+
+  launch_clients();
+
+  establish_rpc_connections();
+  get_node_ids();
+
+  trigger_network_connections();
+
+  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
+  // time (happens due to the race of starting a lot of clients at once), they will have time
+  // to retry before we start checking to see how they did
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+  int partition_count = verify_network_connectivity(bts_xt_client_test_config::config_directory / "net_split_test" / "pre_split_map.dot");
+  BOOST_CHECK_EQUAL(partition_count, 1);
+
+  std::vector<bts::net::node_id_t> even_node_ids;
+  std::vector<bts::net::node_id_t> odd_node_ids;
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    if (i % 2 == 0)
+      even_node_ids.push_back(client_processes[i].node_id);
+    else
+      odd_node_ids.push_back(client_processes[i].node_id);
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].rpc_client->_set_allowed_peers(i % 2 == 0 ? even_node_ids : odd_node_ids);
+
+  // wait a while for the network to stabilize and reconnect if needed
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+  partition_count = verify_network_connectivity(bts_xt_client_test_config::config_directory / "net_split_test" / "post_split_map.dot");
+  BOOST_CHECK_EQUAL(partition_count, 2);
+}
+
 BOOST_AUTO_TEST_CASE(fifty_node_test)
 {
   /* Note: on Windows, boost::process imposes a limit of 64 child processes,
@@ -1030,6 +1260,135 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   //    std::cout << "\t <-- max";
   //  std::cout << "\n";
   //}
+}
+
+BOOST_AUTO_TEST_CASE(test_with_mild_churn)
+{
+  // This checks creates 50 clients with the first being the trustee,
+  // and connects them all up in one network.
+  // Then we start sending transactions and verifying that they arrive at their
+  // destinations as they should.
+  // We also start randomly stopping clients and restarting them (although
+  // we'll leave the trustee running for simplicity).
+  client_processes.resize(50);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
+    client_processes[i].initial_balance = INITIAL_BALANCE;
+  }
+
+  create_delegates_and_genesis_block();
+
+  launch_clients();
+
+  establish_rpc_connections();
+  //get_node_ids();
+
+  trigger_network_connections();
+
+  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
+  // time (happens due to the race of starting a lot of clients at once), they will have time
+  // to retry before we start checking to see how they did
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+  int partition_count = verify_network_connectivity(bts_xt_client_test_config::config_directory / "test_with_mild_churn" / "initial_map.dot");
+  BOOST_REQUIRE(partition_count = 1);
+
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
+  import_initial_balances();
+
+  // setup is done.
+
+  const uint32_t test_duration_in_blocks = 5;
+  const uint32_t transactions_to_send_each_block = 5;
+
+  std::default_random_engine random_generator;
+  //std::uniform_int_distribution<uint32_t> node_number_distribution(1, client_processes.size() - 1);
+  //auto node_number_generator = std::bind(node_number_distribution, random_generator);
+
+  std::uniform_int_distribution<uint32_t> transaction_amount_distribution(10000, 20000);
+  auto transaction_amount_generator = std::bind(transaction_amount_distribution, random_generator);
+
+
+  for (uint32_t i = 0; i < test_duration_in_blocks; ++i)
+  {
+    std::vector<uint32_t> randomized_node_indices;
+    std::copy(boost::counting_iterator<uint32_t>(1), boost::counting_iterator<uint32_t>(client_processes.size()),
+              std::back_inserter(randomized_node_indices));
+    std::shuffle(randomized_node_indices.begin(), randomized_node_indices.end(), random_generator);
+
+    // first group are the source nodes for the transactions we'll generate
+    std::vector<uint32_t> transaction_source_indices;
+    std::copy(randomized_node_indices.begin(), randomized_node_indices.begin() + transactions_to_send_each_block,
+              std::back_inserter(transaction_source_indices));
+
+    // second group are the destination nodes for the transactions we'll generate
+    std::vector<uint32_t> transaction_destination_indices;
+    std::copy(randomized_node_indices.begin() + transactions_to_send_each_block,
+              randomized_node_indices.begin() + 2 * transactions_to_send_each_block,
+              std::back_inserter(transaction_destination_indices));
+
+    // third group are the nodes we'll disconnect
+    std::vector<uint32_t> disconnect_node_indices;
+    std::copy(randomized_node_indices.begin() + 2 * transactions_to_send_each_block,
+              randomized_node_indices.begin() + 3 * transactions_to_send_each_block,
+              std::back_inserter(disconnect_node_indices));
+
+    std::vector<uint32_t> amounts_to_transfer;
+    std::generate_n(std::back_inserter(amounts_to_transfer), transactions_to_send_each_block, transaction_amount_generator);
+
+    // get everyone's initial balance
+    for (unsigned i = 0;i < client_processes.size(); ++i)
+      client_processes[i].expected_balance = client_processes[i].rpc_client->wallet_get_balance().amount;
+
+    // disconnect a few nodes
+    for (uint32_t i : disconnect_node_indices)
+      client_processes[i].rpc_client->stop();
+
+    // initiate our transfers
+    for (unsigned i = 0; i < transactions_to_send_each_block; ++i)
+    {
+      unsigned source = transaction_source_indices[i];
+      unsigned dest = transaction_destination_indices[i];
+      std::ostringstream receive_note;
+      receive_note << "from " << source << " in block " << i;
+      bts::blockchain::extended_address receive_address = client_processes[dest].rpc_client->wallet_create_receive_account(receive_note.str());
+      std::ostringstream send_note;
+      send_note << "to " << dest << " in block " << i;
+
+      client_processes[source].rpc_client->wallet_transfer(amounts_to_transfer[i], receive_note.str(), send_note.str());
+      client_processes[dest].expected_balance += amounts_to_transfer[i];
+    }
+
+    // reconnect the nodes we disconnected
+    for (uint32_t i : disconnect_node_indices)
+      launch_client(i);
+
+    // wait for a block so we can confirm balances
+    fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+
+    // verify that the transfers succeeded
+    for (uint32_t i : transaction_destination_indices)
+    {
+      uint64_t actual_balance = client_processes[i].rpc_client->wallet_get_balance().amount;
+      BOOST_CHECK_EQUAL(client_processes[i].expected_balance, actual_balance);
+    }
+
+    for (uint32_t i : disconnect_node_indices)
+    {
+      establish_rpc_connection(i);
+      BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
+    }
+
+    std::ostringstream dot_filename;
+    dot_filename << "map_after_block_" << i << ".dot";
+    int partition_count = verify_network_connectivity(bts_xt_client_test_config::config_directory / "test_with_mild_churn" / dot_filename.str());
+    BOOST_CHECK_EQUAL(partition_count, 1);
+  }
+  for (unsigned i = 0; i < client_processes.size(); ++i)
+    client_processes[i].rpc_client->stop();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

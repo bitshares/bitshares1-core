@@ -31,7 +31,7 @@ int main( int argc, char** argv )
    keys.reserve( BTS_BLOCKCHAIN_NUM_DELEGATES );
 
    config.names.resize( BTS_BLOCKCHAIN_NUM_DELEGATES );
-   for( uint64_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
+   for( unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
       keys.push_back( fc::ecc::private_key::generate() );
       config.names[i].name = "delegate-"+fc::to_string(i);
