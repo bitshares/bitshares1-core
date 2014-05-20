@@ -1,4 +1,5 @@
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/utilities/git_revision.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -11,6 +12,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/rpc/json_connection.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/git_revision.hpp>
 
 #include <iomanip>
 #include <limits>
@@ -609,6 +611,8 @@ Result:
        info["chain_id"]         = _client->get_chain()->chain_id();
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
+       info["_fc_revision"]     = fc::git_revision_sha;
+       info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
        return fc::variant( std::move(info) );
     }
 

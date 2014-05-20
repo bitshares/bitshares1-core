@@ -7,6 +7,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin_import/include" )
 
 file(GLOB HEADERS "include/bts/client/*.hpp")
 
+
 add_library( bts_client 
              client.cpp
              messages.cpp

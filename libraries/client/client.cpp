@@ -30,12 +30,6 @@ namespace bts { namespace client {
             void delegate_loop();
             signed_transactions get_pending_transactions() const;
 
-            virtual fc::sha256 get_chain_id()const override
-            { 
-                FC_ASSERT( _chain_db != nullptr );
-                return _chain_db->chain_id(); 
-            }
-
             /* Implement chain_client_impl */
             // @{
             virtual void on_new_block(const full_block& block);
@@ -50,6 +44,11 @@ namespace bts { namespace client {
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
+            virtual fc::sha256 get_chain_id() const override
+            { 
+                FC_ASSERT( _chain_db != nullptr );
+                return _chain_db->chain_id(); 
+            }
             virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;

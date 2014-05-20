@@ -2,6 +2,7 @@
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/utilities/key_conversion.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/rpc/json_connection.hpp>
@@ -150,21 +151,9 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("import_bitcoin_wallet", wallet_filename.string(), password);
     }
 
-    static std::string key_to_wif(const fc::ecc::private_key& key)
-    {
-      fc::sha256 secret = key.get_secret();
-      const size_t size_of_data_to_hash = sizeof(secret) + 1;
-      const size_t size_of_hash_bytes = 4;
-      char data[size_of_data_to_hash + size_of_hash_bytes];
-      data[0] = (char)0x80;
-      memcpy(&data[1], (char*)&secret, sizeof(secret));
-      fc::sha256 digest = fc::sha256::hash(data, size_of_data_to_hash);
-      memcpy(data + size_of_data_to_hash, (char*)&digest, size_of_hash_bytes);
-      return fc::to_base58(data, sizeof(data));
-    }
     bool rpc_client_impl::wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name, bool rescan_blockchain)
     {
-      return _json_connection->call<bool>("wallet_import_private_key", key_to_wif(key), account_name, rescan_blockchain);
+      return _json_connection->call<bool>("wallet_import_private_key", bts::utilities::key_to_wif(key), account_name, rescan_blockchain);
     }
     bool rpc_client_impl::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
