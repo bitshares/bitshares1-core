@@ -101,6 +101,18 @@ namespace bts { namespace cli {
                     {
                         return _rpc_server->direct_invoke_method( command, new_arguments );
                     }
+                    catch (bts::rpc::rpc_wallet_open_needed_exception&)
+                    {
+                        try
+                        {
+                            interactive_open_wallet();
+                        }
+                        catch (fc::canceled_exception&)
+                        {
+                            std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
+                            return fc::variant(false);
+                        }
+                    }
                     catch( const fc::exception& e )
                     {
                         wlog( "${e}", ("e",e.to_string() ) );
@@ -188,7 +200,7 @@ namespace bts { namespace cli {
                   {
                     interactive_open_wallet();
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                     std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -201,7 +213,7 @@ namespace bts { namespace cli {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
                     execute_wallet_command_with_passphrase_query( "wallet_unlock", arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                     std::cout << "Failed to unlock wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -391,7 +403,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -402,7 +414,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -413,7 +425,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -440,7 +452,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
