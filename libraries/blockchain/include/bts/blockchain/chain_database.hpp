@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          chain_database();
          virtual ~chain_database()override;
 
-         void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() );
+         void open( const fc::path& data_dir, fc::optional<fc::path> initial_config = fc::optional<fc::path>() );
          void close();
 
          void set_observer( chain_observer* observer );
@@ -55,6 +55,12 @@ namespace bts { namespace blockchain {
           *  role of the wallet.
           */
          full_block                    generate_block( fc::time_point_sec timestamp );
+
+         /**
+          *  The chain ID is the hash of the initial_config loaded when the
+          *  database was first created.
+          */
+         digest_type                   chain_id()const;
 
          bool                          is_known_block( const block_id_type& block_id )const;
 

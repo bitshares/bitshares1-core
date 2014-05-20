@@ -7,6 +7,7 @@
 #include <fc/reflect/variant.hpp>
 
 #include <fc/log/logger.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
 

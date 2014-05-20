@@ -1,6 +1,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
    const operation_type_enum withdraw_operation::type      = withdraw_op_type;
