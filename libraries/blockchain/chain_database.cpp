@@ -93,7 +93,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr),_observer(nullptr){}
 
-            void                       initialize_genesis(fc::optional<fc::path> genesis_file = fc::optional<fc::path>());
+            void                       initialize_genesis(fc::path genesis_file);
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       clear_pending(  const full_block& blk );
@@ -665,7 +665,7 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
+   void chain_database::open( const fc::path& data_dir, fc::path genesis_file )
    { try {
       fc::create_directories( data_dir );
 
@@ -1129,32 +1129,30 @@ namespace bts { namespace blockchain {
       return next_block;
    }
 
-   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
+   void detail::chain_database_impl::initialize_genesis(fc::path genesis_file)
    {
       if( self->chain_id() != digest_type() )
       {
-         ilog( "Genesis State already Initialized" );
+         ilog( "Genesis state already initialized" );
          return;
       }
 
-      std::cout << "Initializing Genesis State\n";
-      if( !genesis_file.valid() ) FC_ASSERT( !"No genesis state specified" );
-      FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file",*genesis_file) );
-    //  #include "genesis.json"
+      std::cout << "Initializing genesis state\n";
+      FC_ASSERT( fc::exists( genesis_file ), "Genesis file '${file}' was not found.", ("file",genesis_file) );
 
       genesis_block_config config;
-      if( genesis_file->extension() == ".json" )
+      if( genesis_file.extension() == ".json" )
       {
-        config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+         config = fc::json::from_file(genesis_file).as<genesis_block_config>();
       }
-      else if( genesis_file->extension() == ".dat" )
+      else if( genesis_file.extension() == ".dat" )
       {
-         fc::ifstream in( *genesis_file );
+         fc::ifstream in( genesis_file );
          fc::raw::unpack( in, config );
       }
       else
       {
-         FC_ASSERT( !"Invalid Genesis Format", " '${format}'", ("format",genesis_file->extension() ) );
+         FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file.extension() ) );
       }
 
       fc::sha256::encoder enc;
@@ -1301,7 +1299,8 @@ namespace bts { namespace blockchain {
           }
        out << "}"; 
     }
-   fc::variant  chain_database::get_property( chain_property_enum property_id )const
+
+   fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
       return my->_properties_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
@@ -1314,7 +1313,7 @@ namespace bts { namespace blockchain {
       else
          my->_properties_db.store( property_id, property_value );
    }
-   void              chain_database::store_proposal_record( const proposal_record& r )
+   void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
       {
@@ -1325,14 +1324,15 @@ namespace bts { namespace blockchain {
          my->_proposals_db.store( r.id, r );
       }
    }
-   oproposal_record  chain_database::get_proposal_record( proposal_id_type id )const
+
+   oproposal_record chain_database::get_proposal_record( proposal_id_type id )const
    {
       auto itr = my->_proposals_db.find(id);
       if( itr.valid() ) return itr.value();
       return oproposal_record();
    }
                                                                                             
-   void              chain_database::store_proposal_vote( const proposal_vote& r )
+   void chain_database::store_proposal_vote( const proposal_vote& r )
    {
       if( r.is_null() )
          my->_proposal_votes_db.remove( r.id );
@@ -1340,14 +1340,14 @@ namespace bts { namespace blockchain {
          my->_proposal_votes_db.store( r.id, r );
    }
 
-   oproposal_vote    chain_database::get_proposal_vote( proposal_vote_id_type id )const
+   oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
    {
       auto itr = my->_proposal_votes_db.find(id);
       if( itr.valid() ) return itr.value();
       return oproposal_vote();
    }
 
-   digest_type     chain_database::chain_id()const
+   digest_type chain_database::chain_id()const
    {
       try {
         return get_property( bts::blockchain::chain_id ).as<digest_type>();

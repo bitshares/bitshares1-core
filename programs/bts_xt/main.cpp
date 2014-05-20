@@ -72,7 +72,6 @@ int main( int argc, char** argv )
      return 0;
    }
 
-
    try {
       print_banner();
       fc::path datadir = get_data_dir(option_variables);
@@ -83,9 +82,8 @@ int main( int argc, char** argv )
       auto wall  = std::make_shared<bts::wallet::wallet>(chain);
       wall->set_data_directory( datadir );
 
-      auto c = std::make_shared<bts::client::client>();
+      auto c = std::make_shared<bts::client::client>( chain );
       _global_client = c.get();
-      c->set_chain( chain );
       c->set_wallet( wall );
       c->run_delegate();
 
@@ -221,12 +219,11 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
 { try {
   std::cout << "Loading blockchain from " << ( datadir / "chain" ).generic_string()  << "\n";
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
-  fc::optional<fc::path> genesis_file;
 
-  genesis_file = option_variables["genesis-config"].as<std::string>();
-  std::cout << "Using genesis block from file \"" << genesis_file->string() << "\"\n";
-
+  fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
+  std::cout << "Using genesis block from file \"" << genesis_file.string() << "\"\n";
   chain->open( datadir / "chain", genesis_file );
+
   return chain;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 

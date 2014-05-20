@@ -3,7 +3,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/libraries/db/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/wallet/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
 
-add_executable( chain_database_tests chain_tests.cpp )
+add_executable( chain_database_tests chain_database_tests.cpp )
 target_link_libraries( chain_database_tests bts_wallet bts_blockchain bts_net bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )

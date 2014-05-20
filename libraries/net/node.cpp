@@ -3,7 +3,7 @@
 #include <deque>
 #include <unordered_set>
 #include <list>
-//#include <deque>
+#include <iostream>
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 
@@ -1790,8 +1790,7 @@ namespace bts { namespace net {
     void node_impl::set_delegate(node_delegate* del)
     {
       _delegate = del;
-      if( _delegate != nullptr )
-         _chain_id = del->get_chain_id();
+      if( _delegate != nullptr ) _chain_id = del->get_chain_id();
     }
 
     void node_impl::load_configuration(const fc::path& configuration_directory)
