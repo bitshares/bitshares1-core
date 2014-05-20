@@ -590,7 +590,7 @@ namespace bts { namespace wallet {
                {
                   auto rec = wallet_transaction_record( get_new_index(), trx );
                   auto loc = _blockchain->get_transaction_location( trx_id );
-                  if( loc ) 
+                  if( loc.valid() ) 
                   {
                       rec.location = *loc;
                       rec.received = _blockchain->get_block_header( loc->block_num ).timestamp;

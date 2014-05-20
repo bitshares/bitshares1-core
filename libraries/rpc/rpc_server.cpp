@@ -401,10 +401,10 @@ namespace bts { namespace rpc {
             }
             else if (parameter.classification == rpc_server::optional_positional)
             {
-              if (arguments_from_caller.size() > next_argument_index)
+              if( arguments_from_caller.size() > next_argument_index )
                 // the caller provided this optional argument
                 modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
-              else if (parameter.default_value)
+              else if( parameter.default_value.valid() )
                 // we have a default value for this paramter, use it
                 modified_positional_arguments.push_back(*parameter.default_value);
               else
@@ -421,10 +421,10 @@ namespace bts { namespace rpc {
                 fc::variant_object named_parameters_from_caller = arguments_from_caller[next_argument_index].get_object();
                 if (named_parameters_from_caller.contains(parameter.name.c_str()))
                   modified_named_arguments[parameter.name.c_str()] = named_parameters_from_caller[parameter.name.c_str()];
-                else if (parameter.default_value)
+                else if( parameter.default_value.valid() )
                   modified_named_arguments[parameter.name.c_str()] = *parameter.default_value;
               }
-              else if (parameter.default_value)
+              else if( parameter.default_value.valid() )
               {
                 // caller didn't provide any map of named parameters, just use our default values
                 modified_named_arguments[parameter.name.c_str()] = *parameter.default_value;
@@ -1776,7 +1776,7 @@ Result:
             if (encountered_default_argument)
               FC_ASSERT(parameter.default_value);
             encountered_optional_argument = true;
-            if (parameter.default_value)
+            if( parameter.default_value.valid() )
               encountered_default_argument = true;
             break;
           case rpc_server::optional_named:

@@ -8,6 +8,7 @@
 
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
+#include <fc/io/fstream.hpp>
 #include <fc/log/logger.hpp>
 
 #include <fstream>
@@ -894,7 +895,7 @@ namespace bts { namespace blockchain {
       try {
          auto asset_rec = get_asset_record( asset_id );
          my->_assets.remove( asset_id );
-         if( asset_rec )
+         if( asset_rec.valid() )
             my->_symbol_index.remove( asset_rec->symbol );
       } catch ( const fc::exception& e )
       {
@@ -917,7 +918,7 @@ namespace bts { namespace blockchain {
       try {
          auto name_rec = get_name_record( name_id );
          my->_names.remove( name_id );
-         if( name_rec )
+         if( name_rec.valid() )
             my->_name_index.remove( name_rec->name );
          // TODO: remove vote index as well...
       } catch ( const fc::exception& e )
@@ -990,7 +991,7 @@ namespace bts { namespace blockchain {
           my->_name_index.store( r.name, r.id );
        }
 
-       if( old_rec && old_rec->is_delegate() )
+       if( old_rec.valid() && old_rec->is_delegate() )
        {
           my->_delegate_vote_index.remove( vote_del( old_rec->net_votes(), r.id ) );
        }
@@ -1131,13 +1132,24 @@ namespace bts { namespace blockchain {
    void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    {
       std::cout << "Initializing Genesis State\n";
-      #include "genesis.json"
+      if( !genesis_file.valid() ) FC_ASSERT( !"No genesis state specified" );
+      FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file",*genesis_file) );
+    //  #include "genesis.json"
 
       genesis_block_config config;
-      if (genesis_file)
+      if( genesis_file->extension() == ".json" )
+      {
         config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+      }
+      else if( genesis_file->extension() == ".dat" )
+      {
+         fc::ifstream in( *genesis_file );
+         fc::raw::unpack( in, config );
+      }
       else
-        config = fc::json::from_string( genesis_json ).as<genesis_block_config>();
+      {
+         FC_ASSERT( !"Invalid Genesis Format", " '${format}'", ("format",genesis_file->extension() ) );
+      }
 
       double total_unscaled = 0;
       for( auto item : config.balances ) total_unscaled += item.second;
