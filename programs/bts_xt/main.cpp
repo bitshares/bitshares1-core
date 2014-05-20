@@ -5,12 +5,14 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
+#include <bts/utilities/git_revision.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/git_revision.hpp>
 
 #include <iostream>
 
@@ -47,7 +49,9 @@ int main( int argc, char** argv )
                               ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
-                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)");
+                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
+                              ("version", "print the version information for bts_xt_client");
+
 
    boost::program_options::positional_options_description positional_config;
    positional_config.add("data-dir", 1);
@@ -69,6 +73,16 @@ int main( int argc, char** argv )
    if (option_variables.count("help"))
    {
      std::cout << option_config << "\n";
+     return 0;
+   }
+
+   if (option_variables.count("version"))
+   {
+     std::cout << "bts_xt_client built on " << __DATE__ << " at " << __TIME__ << "\n";
+     std::cout << "  bitshares_toolkit revision: " << bts::utilities::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
+     std::cout << "                 fc revision: " << fc::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
      return 0;
    }
 

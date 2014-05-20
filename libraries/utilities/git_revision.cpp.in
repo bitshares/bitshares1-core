@@ -1,0 +1,12 @@
+#include <stdint.h>
+#include <bts/utilities/git_revision.hpp>
+
+#define BITSHARES_TOOLKIT_GIT_REVISION_SHA "@BITSHARES_TOOLKIT_GIT_REVISION_SHA@"
+#define BITSHARES_TOOLKIT_GIT_REVISION_UNIX_TIMESTAMP @BITSHARES_TOOLKIT_GIT_REVISION_UNIX_TIMESTAMP@
+
+namespace bts { namespace utilities {
+
+const char* const git_revision_sha = BITSHARES_TOOLKIT_GIT_REVISION_SHA;
+const uint32_t git_revision_unix_timestamp = BITSHARES_TOOLKIT_GIT_REVISION_UNIX_TIMESTAMP;
+
+} } // end namespace bts::utilities
