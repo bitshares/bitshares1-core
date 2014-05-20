@@ -424,7 +424,10 @@ namespace bts { namespace blockchain {
       new_record.active_key    = op.active_key;
       new_record.last_update   = _current_state->now();
       new_record.registration_date = _current_state->now();
-      new_record.delegate_info = delegate_stats();
+      if (op.is_delegate)
+      {
+          new_record.delegate_info = delegate_stats();
+      }
 
       cur_record = _current_state->get_name_record( new_record.id );
       FC_ASSERT( !cur_record );
@@ -461,6 +464,11 @@ namespace bts { namespace blockchain {
 
       if( !!op.active_key )
          cur_record->active_key = *op.active_key;
+
+      if ( !cur_record->is_delegate() && op.is_delegate )
+      {
+         cur_record->delegate_info = delegate_stats();
+      }
 
       _current_state->store_name_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }

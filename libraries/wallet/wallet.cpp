@@ -1351,7 +1351,7 @@ namespace bts { namespace wallet {
 
       auto owner_key  = get_new_public_key();
       auto active_key = get_new_public_key();
-      trx.reserve_name( name, json_str, owner_key, active_key );
+      trx.reserve_name( name, json_str, owner_key, active_key, as_delegate );
 
       my->sign_transaction( trx, required_sigs );
 

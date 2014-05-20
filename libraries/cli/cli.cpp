@@ -101,6 +101,18 @@ namespace bts { namespace cli {
                     {
                         return _rpc_server->direct_invoke_method( command, new_arguments );
                     }
+                    catch (bts::rpc::rpc_wallet_open_needed_exception&)
+                    {
+                        try
+                        {
+                            interactive_open_wallet();
+                        }
+                        catch (fc::canceled_exception&)
+                        {
+                            std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
+                            return fc::variant(false);
+                        }
+                    }
                     catch( const fc::exception& e )
                     {
                         wlog( "${e}", ("e",e.to_string() ) );
@@ -188,7 +200,7 @@ namespace bts { namespace cli {
                   {
                     interactive_open_wallet();
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                     std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -201,7 +213,7 @@ namespace bts { namespace cli {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
                     execute_wallet_command_with_passphrase_query( "wallet_unlock", arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                     std::cout << "Failed to unlock wallet, aborting \"" << command << "\" command\n";
                     return fc::variant(false);
@@ -391,7 +403,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -402,7 +414,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -413,7 +425,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -440,7 +452,7 @@ namespace bts { namespace cli {
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception& e)
+                  catch (fc::canceled_exception&)
                   {
                       return fc::variant( false );
                   }
@@ -477,12 +489,12 @@ namespace bts { namespace cli {
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
             {
-              std::string cmd = command;
+              std::string method_name = command;
               try
               {
                 // command could be alias, so get the real name of the method.
                 auto method_data = _rpc_server->get_method_data(command);
-                cmd = method_data.name;
+                method_name = method_data.name;
               }
               catch (fc::key_not_found_exception&)
               {
@@ -493,11 +505,11 @@ namespace bts { namespace cli {
                  elog( " unexpected exception " );
               }
               
-              if (cmd == "sendtoaddress")
+              if (method_name == "sendtoaddress")
               {
                 // sendtoaddress does its own output formatting
               }
-              else if(cmd == "list_receive_addresses")
+              else if (method_name == "list_receive_addresses")
               {
                 std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
                 std::cout << "--------------------------------------------------------------------------------\n";
@@ -506,16 +518,16 @@ namespace bts { namespace cli {
                   std::cout << std::setw( 33 ) << std::left << std::string(item.first) << " : " << item.second << "\n";
                 std::cout << std::right;
               }
-              else if (cmd == "help")
+              else if (method_name == "help")
               {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
               }
-              else if (cmd == "rescan")
+              else if (method_name == "rescan")
               {
                 std::cout << "\ndone scanning block chain\n";
               }
-              else if (cmd == "wallet_get_transaction_history")
+              else if (method_name == "wallet_get_transaction_history")
               {
                 auto trx_records = result.as<std::vector<wallet_transaction_record>>();
                 print_transaction_history(trx_records);
@@ -527,7 +539,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(cmd);
+                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(method_name);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")

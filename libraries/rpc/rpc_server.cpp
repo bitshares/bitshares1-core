@@ -540,11 +540,15 @@ Result:
           help_string += method_data.detailed_description;
           if (method_data.aliases.size() > 0)
           {
-            help_string += std::string("\naliases: ");
-            for (auto alias : method_data.aliases)
+            std::stringstream ss;
+            ss << "\naliases: ";
+            for (size_t i = 0; i < method_data.aliases.size(); ++i)
             {
-              help_string += alias;
+              if (i != 0)
+                ss << ", ";
+              ss << method_data.aliases[i];
             }
+            help_string += ss.str();
           }
         }
         else
