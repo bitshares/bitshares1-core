@@ -667,61 +667,71 @@ namespace bts { namespace blockchain {
 
    void chain_database::open( const fc::path& data_dir, fc::path genesis_file )
    { try {
-      fc::create_directories( data_dir );
-
-      my->_fork_number_db.open( data_dir / "fork_number_db", true );
-      my->_fork_db.open( data_dir / "fork_db", true );
-      my->_properties_db.open( data_dir / "properties", true );
-      my->_proposals_db.open( data_dir / "proposals", true );
-      my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
-      my->_undo_state.open( data_dir / "undo_state", true );
-      my->_redo_state.open( data_dir / "redo_state", true );
-
-      my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
-      my->_pending_transactions.open( data_dir / "pending_transactions", true );
-      my->_processed_transaction_ids.open( data_dir / "processed_transactions", true );
-      my->_block_id_to_block.open( data_dir / "block_id_to_block", true );
-      my->_assets.open( data_dir / "assets", true );
-      my->_names.open( data_dir / "names", true );
-      my->_balances.open( data_dir / "balances", true );
-
-      my->_name_index.open( data_dir / "name_index", true );
-      my->_symbol_index.open( data_dir / "symbol_index", true );
-      my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
-
-      // TODO: check to see if we crashed during the last write
-      //   if so, then apply the last undo operation stored.
-
-      uint32_t       last_block_num = -1;
-      block_id_type  last_block_id;
-      my->_block_num_to_id.last( last_block_num, last_block_id );
-      if( last_block_num != uint32_t(-1) )
+      bool is_new_data_dir = !fc::exists( data_dir );
+      try
       {
-         my->_head_block_header = get_block( last_block_id );
-         my->_head_block_id = last_block_id;
-      }
+          fc::create_directories( data_dir );
 
-      //  process the pending transactions to cache by fees
-      auto pending_itr = my->_pending_transactions.begin();
-      while( pending_itr.valid() )
+          my->_fork_number_db.open( data_dir / "fork_number_db", true );
+          my->_fork_db.open( data_dir / "fork_db", true );
+          my->_properties_db.open( data_dir / "properties", true );
+          my->_proposals_db.open( data_dir / "proposals", true );
+          my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
+          my->_undo_state.open( data_dir / "undo_state", true );
+          my->_redo_state.open( data_dir / "redo_state", true );
+
+          my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
+          my->_pending_transactions.open( data_dir / "pending_transactions", true );
+          my->_processed_transaction_ids.open( data_dir / "processed_transactions", true );
+          my->_block_id_to_block.open( data_dir / "block_id_to_block", true );
+          my->_assets.open( data_dir / "assets", true );
+          my->_names.open( data_dir / "names", true );
+          my->_balances.open( data_dir / "balances", true );
+
+          my->_name_index.open( data_dir / "name_index", true );
+          my->_symbol_index.open( data_dir / "symbol_index", true );
+          my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
+
+          // TODO: check to see if we crashed during the last write
+          //   if so, then apply the last undo operation stored.
+
+          uint32_t       last_block_num = -1;
+          block_id_type  last_block_id;
+          my->_block_num_to_id.last( last_block_num, last_block_id );
+          if( last_block_num != uint32_t(-1) )
+          {
+             my->_head_block_header = get_block( last_block_id );
+             my->_head_block_id = last_block_id;
+          }
+
+          //  process the pending transactions to cache by fees
+          auto pending_itr = my->_pending_transactions.begin();
+          while( pending_itr.valid() )
+          {
+             try {
+                auto trx = pending_itr.value();
+                auto trx_id = trx.id();
+                auto eval_state = evaluate_transaction( trx );
+                share_type fees = eval_state->get_fees();
+                my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+                my->_pending_transactions.store( trx_id, trx );
+             }
+             catch ( const fc::exception& e )
+             {
+                wlog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
+             }
+             ++pending_itr;
+          }
+
+          if( last_block_num == uint32_t(-1) )
+             my->initialize_genesis(genesis_file);
+      }
+      catch( ... )
       {
-         try {
-            auto trx = pending_itr.value();
-            auto trx_id = trx.id();
-            auto eval_state = evaluate_transaction( trx );
-            share_type fees = eval_state->get_fees();
-            my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-            my->_pending_transactions.store( trx_id, trx );
-         }
-         catch ( const fc::exception& e )
-         {
-            wlog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
-         }
-         ++pending_itr;
+          close();
+          if( is_new_data_dir ) fc::remove_all( data_dir );
+          throw;
       }
-
-      if( last_block_num == uint32_t(-1) )
-         my->initialize_genesis(genesis_file);
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
