@@ -73,12 +73,12 @@ namespace bts { namespace cli {
                   return line;
             }
 
+            /** assumes last argument is password */
             fc::variant execute_command_with_passphrase_query( const std::string& command, const fc::variants& arguments,
                                                                const std::string& query_string, std::string& passphrase,
                                                                bool verify = false )
             {
                 auto new_arguments = arguments;
-                new_arguments.push_back( fc::variant( passphrase ) );
 
                 while( true )
                 {
@@ -100,8 +100,10 @@ namespace bts { namespace cli {
                     {
                         return _rpc_server->direct_invoke_method( command, new_arguments );
                     }
-                    catch( ... )
+                    catch( const fc::exception& e )
                     {
+                        std::cout << e.to_string() << "\n";
+                        wlog( "${e}", ("e",e.to_detail_string() ) );
                         std::cout << "Incorrect passphrase, try again\n";
                     }
                 }
@@ -109,6 +111,7 @@ namespace bts { namespace cli {
                 return fc::variant( false );
             }
 
+            /** assumes last argument is passphrase */
             fc::variant execute_wallet_command_with_passphrase_query(const std::string& command, const fc::variants& arguments,
                                                                      const std::string& query_string, bool verify = false)
             {
@@ -419,12 +422,18 @@ namespace bts { namespace cli {
               {
                   try /* Try empty password first */
                   {
+                      if( !fc::exists( arguments[0].as<fc::path>() ) )
+                      {
+                         std::cout << "File not found: '"<< arguments[0].as<fc::path>().generic_string() << "'\n";
+                         return fc::variant(false);
+                      }
                       auto new_arguments = arguments;
                       new_arguments.push_back( fc::variant( "" ) );
                       return _rpc_server->direct_invoke_method( command, new_arguments );
                   }
-                  catch( ... )
+                  catch( const fc::exception& e )
                   {
+                     ilog( "failed with empty password: ${e}", ("e",e.to_detail_string() ) );
                   }
 
                   try

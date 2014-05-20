@@ -1535,7 +1535,9 @@ namespace bts { namespace net {
       auto iter = originating_peer->sync_items_requested_from_peer.find(item_id(bts::client::block_message_type, block_message_to_process.block_id));
       if (iter == originating_peer->sync_items_requested_from_peer.end())
       {
-        wlog("received a sync block I didn't ask for from peer ${endpoint}, disconnecting from peer", ("endpoint", originating_peer->get_remote_endpoint()));
+        wlog("received a sync block ${block_id} I didn't ask for from peer ${endpoint}, disconnecting from peer", 
+             ("endpoint", originating_peer->get_remote_endpoint())
+             ("block_id",block_message_to_process.block_id));
         disconnect_from_peer(originating_peer);
         return;
       }

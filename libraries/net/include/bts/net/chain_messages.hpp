@@ -4,6 +4,7 @@
 #include <bts/blockchain/transaction.hpp>
 #include <set>
 
+/*
 namespace bts { namespace net {
 
    enum chain_message_type
@@ -54,3 +55,4 @@ FC_REFLECT( bts::net::subscribe_message, (version)(last_block) )
 FC_REFLECT( bts::net::block_message, (block_data) )
 FC_REFLECT( bts::net::trx_message, (signed_trx) )
 FC_REFLECT( bts::net::trx_err_message, (signed_trx)(err) )
+*/

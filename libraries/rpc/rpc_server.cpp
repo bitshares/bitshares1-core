@@ -396,7 +396,7 @@ namespace bts { namespace rpc {
                 || parameter.classification == rpc_server::required_positional_hidden)
             {
               if (arguments_from_caller.size() < next_argument_index + 1)
-                FC_THROW_EXCEPTION(exception, "missing required parameter ${parameter_name}", ("argument_name", parameter.name));
+                FC_THROW_EXCEPTION(exception, "missing required parameter ${parameter_name}", ("parameter_name", parameter.name));
               modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
             }
             else if (parameter.classification == rpc_server::optional_positional)
@@ -718,6 +718,7 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
+       ilog( "args: ${args}", ("args",params) ); // TODO:  SECURITY - REMOVE ME
         _client->get_wallet()->create( params[0].as_string(), params[1].as_string() );
         return fc::variant(true);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1139,7 +1140,7 @@ As a json rpc call
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
-                               {"data",       "variant", rpc_server::required_positional, fc::ovariant()}},
+                               {"data",       "variant", rpc_server::optional_positional, fc::ovariant()}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
      )" };
