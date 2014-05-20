@@ -170,10 +170,60 @@ namespace bts { namespace blockchain {
          case fire_delegate_op_type:
             evaluate_fire_operation( op.as<fire_delegate_operation>() );
             break;
+         case submit_proposal_op_type:
+            evaluate_submit_proposal( op.as<submit_proposal_operation>() );
+            break;
+         case vote_proposal_op_type:
+            evaluate_vote_proposal( op.as<vote_proposal_operation>() );
+            break;
          case null_op_type:
             break;
       }
    }
+   void transaction_evaluation_state::evaluate_submit_proposal( const submit_proposal_operation& op )
+   { try {
+       ///  signed by a registered delegate
+       auto delegate_record = _current_state->get_name_record( op.submitting_delegate_id );
+       FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
+                  "A proposal may only be submitted by an active and registered delegate" );
+
+       /// signed by a current delegate
+       FC_ASSERT( _current_state->is_active_delegate(op.submitting_delegate_id), 
+                  "A proposal may only be submitted by an active delegate" );
+
+       proposal_record new_proposal;
+       new_proposal.id = _current_state->new_proposal_id();
+       new_proposal.submitting_delegate_id = op.submitting_delegate_id;
+       new_proposal.submission_date = op.submission_date;
+       new_proposal.subject = op.subject;
+       new_proposal.body = op.body;
+       new_proposal.proposal_type = op.proposal_type;
+       new_proposal.data = op.data;
+
+       add_required_signature( address( delegate_record->active_key ) );
+       _current_state->store_proposal_record( new_proposal );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
+
+   void transaction_evaluation_state::evaluate_vote_proposal( const vote_proposal_operation& op )
+   { try {
+       ///  signed by a registered delegate
+       auto delegate_record = _current_state->get_name_record( op.id.delegate_id );
+       FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
+                  "A proposal may only be voted by an active and registered delegate" );
+
+       /// signed by a current delegate
+       FC_ASSERT( _current_state->is_active_delegate(op.id.delegate_id), 
+                  "A proposal may only be submitted by an active delegate" );
+
+       add_required_signature( address( delegate_record->active_key ) );
+
+       proposal_vote new_vote;
+       new_vote.id = op.id;
+       new_vote.timestamp = op.timestamp;
+       new_vote.vote = op.vote;
+
+       _current_state->store_proposal_vote( new_vote );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::evaluate_fire_operation( const fire_delegate_operation& op )
    {

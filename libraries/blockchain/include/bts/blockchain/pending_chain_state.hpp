@@ -12,6 +12,8 @@ namespace bts { namespace blockchain {
 
          virtual ~pending_chain_state()override;
 
+         virtual std::vector<name_id_type>    get_active_delegates()const;
+
          virtual fc::time_point_sec     now()const override;
          virtual int64_t                get_fee_rate()const override;
          virtual int64_t                get_delegate_pay_rate()const override;

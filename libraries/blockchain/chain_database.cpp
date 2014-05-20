@@ -1354,7 +1354,6 @@ namespace bts { namespace blockchain {
       } 
       catch( const fc::exception& e )
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
          return digest_type();
       }
    }

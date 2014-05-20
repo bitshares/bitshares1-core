@@ -26,6 +26,13 @@ namespace bts { namespace blockchain {
    {
       proposal_id_type proposal_id;
       name_id_type     delegate_id;
+
+      proposal_vote_id_type& operator=( const proposal_vote_id_type& other )
+      {
+         proposal_id = other.proposal_id;
+         delegate_id = other.delegate_id;
+         return *this;
+      }
       friend bool operator <  ( const proposal_vote_id_type& a, const proposal_vote_id_type& b )
       {
          if( a.proposal_id == b.proposal_id )

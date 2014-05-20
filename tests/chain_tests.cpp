@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
       ilog( "." );
       share_type total_sent = 0;
-      for( uint32_t i = 10; i < 1000; ++i )
+      for( uint32_t i = 10; i < 100; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
          ilog( "next block production time: ${t}", ("t",next_block_time) );

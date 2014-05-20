@@ -225,7 +225,7 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type; 
 
-      proposal_id_type                                 id;
+      proposal_vote_id_type                            id;
       fc::time_point_sec                               timestamp;
       uint8_t                                          vote;
      // fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;

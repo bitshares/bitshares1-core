@@ -4,13 +4,15 @@
 #include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
-   const operation_type_enum withdraw_operation::type      = withdraw_op_type;
-   const operation_type_enum deposit_operation::type       = deposit_op_type;
-   const operation_type_enum create_asset_operation::type  = create_asset_op_type;
-   const operation_type_enum update_asset_operation::type  = update_asset_op_type;
-   const operation_type_enum issue_asset_operation::type   = issue_asset_op_type;
-   const operation_type_enum reserve_name_operation::type = reserve_name_op_type;
-   const operation_type_enum update_name_operation::type   = update_name_op_type;
+   const operation_type_enum withdraw_operation::type          = withdraw_op_type;
+   const operation_type_enum deposit_operation::type           = deposit_op_type;
+   const operation_type_enum create_asset_operation::type      = create_asset_op_type;
+   const operation_type_enum update_asset_operation::type      = update_asset_op_type;
+   const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
+   const operation_type_enum reserve_name_operation::type      = reserve_name_op_type;
+   const operation_type_enum update_name_operation::type       = update_name_op_type;
+   const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
+   const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
 
 
    balance_id_type  deposit_operation::balance_id()const
