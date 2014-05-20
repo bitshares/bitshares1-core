@@ -84,12 +84,18 @@ namespace bts { namespace blockchain {
 
    struct asset_record
    {
+      enum {
+         market_issued_asset = -2
+      };
+
       asset_record()
       :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
 
-      bool is_null()const           { return issuer_name_id == -1; }
+      bool is_null()const            { return issuer_name_id == -1; }
+      /** the asset is issued by the market and not by any user */
+      bool is_market_issued()const   { return issuer_name_id == market_issued_asset; }
       asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
 
       asset_id_type       id;
