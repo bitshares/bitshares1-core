@@ -5,6 +5,3 @@
 	path = vendor
 	url = https://github.com/BitShares/vendor.git
     ignore = dirty
-[submodule "programs/bts_xt/htdocs"]
-	path = programs/bts_xt/htdocs
-	url = git@github.com:BitShares/web_wallet.git
