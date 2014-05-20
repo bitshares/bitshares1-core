@@ -27,6 +27,8 @@ namespace bts { namespace client {
             void delegate_loop();
             signed_transactions get_pending_transactions() const;
 
+            virtual fc::sha256 get_chain_id()const { return _chain_db->chain_id(); }
+
             /* Implement chain_client_impl */
             // @{
             virtual void on_new_block(const full_block& block);

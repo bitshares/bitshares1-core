@@ -62,7 +62,7 @@ namespace bts { namespace net {
 
       /// data about the peer node
       /// @{
-      node_id_t    node_id;
+      node_id_t        node_id;
       uint32_t         core_protocol_version;
       std::string      user_agent;
       fc::ip::endpoint inbound_endpoint;
@@ -239,6 +239,7 @@ namespace bts { namespace net {
     {
     public:
       node_delegate*       _delegate;
+      fc::sha256           _chain_id;
 
 #define NODE_CONFIGURATION_FILENAME      "node_config.json"
 #define POTENTIAL_PEER_DATABASE_FILENAME "peers.leveldb"
@@ -922,6 +923,13 @@ namespace bts { namespace net {
     {
       bool already_connected_to_this_peer = is_already_connected_to_id(hello_message_received.node_id);
 
+      if( hello_message_received.chain_id != _chain_id )
+      {
+         wlog( "Recieved hello message from peer on a different chain: ${message}", ("message",hello_message_received) );
+         disconnect_from_peer( originating_peer );
+         return;
+      }
+
       // store off the data provided in the hello message
       originating_peer->node_id = hello_message_received.node_id;
       originating_peer->core_protocol_version = hello_message_received.core_protocol_version;
@@ -933,10 +941,10 @@ namespace bts { namespace net {
       originating_peer->user_agent = hello_message_received.user_agent;
 
       // now decide what to do with it
-      if (originating_peer->state == peer_connection::secure_connection_established && 
-          originating_peer->direction == peer_connection_direction::inbound)
+      if( originating_peer->state == peer_connection::secure_connection_established && 
+          originating_peer->direction == peer_connection_direction::inbound )
       {
-        if (!is_accepting_new_connections())
+        if( !is_accepting_new_connections() )
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
           originating_peer->state = peer_connection::connection_rejected_sent;
@@ -944,7 +952,7 @@ namespace bts { namespace net {
           ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", 
                ("peer", originating_peer->get_remote_endpoint()));
         }
-        else if (already_connected_to_this_peer)
+        else if( already_connected_to_this_peer )
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
           originating_peer->state = peer_connection::connection_rejected_sent;
@@ -952,8 +960,8 @@ namespace bts { namespace net {
           ilog("Received a hello_message from peer ${peer} that I'm already connected to, rejection", ("peer", originating_peer->get_remote_endpoint()));
         }
 #ifdef ENABLE_P2P_DEBUGGING_API
-        else if (!_allowed_peers.empty() && 
-                 _allowed_peers.find(originating_peer->node_id) == _allowed_peers.end())
+        else if( !_allowed_peers.empty() && 
+                 _allowed_peers.find(originating_peer->node_id) == _allowed_peers.end() )
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
           originating_peer->state = peer_connection::connection_rejected_sent;
@@ -967,7 +975,7 @@ namespace bts { namespace net {
           potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(originating_peer->inbound_endpoint);
           _potential_peer_db.update_entry(updated_peer_record);
 
-          hello_reply_message hello_reply(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint(), _node_id);
+          hello_reply_message hello_reply(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint(), _node_id, _chain_id);
           originating_peer->state = peer_connection::hello_reply_sent;
           originating_peer->send_message(message(hello_reply));
           ilog("Received a hello_message from peer ${peer}, sending reply to accept connection", ("peer", originating_peer->get_remote_endpoint()));
@@ -1769,7 +1777,7 @@ namespace bts { namespace net {
 
         throw except;
       }
-      hello_message hello(_user_agent_string, core_protocol_version, _node_configuration.listen_endpoint, _node_id);
+      hello_message hello(_user_agent_string, core_protocol_version, _node_configuration.listen_endpoint, _node_id, _chain_id);
       new_peer->state = peer_connection::hello_sent;
       new_peer->send_message(message(hello));
       ilog("Sent \"hello\" to remote peer ${peer}", ("peer", new_peer->get_remote_endpoint()));
@@ -1779,6 +1787,8 @@ namespace bts { namespace net {
     void node_impl::set_delegate(node_delegate* del)
     {
       _delegate = del;
+      if( _delegate != nullptr )
+         _chain_id = del->get_chain_id();
     }
 
     void node_impl::load_configuration(const fc::path& configuration_directory)
