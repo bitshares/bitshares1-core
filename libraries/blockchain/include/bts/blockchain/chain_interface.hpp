@@ -178,6 +178,9 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec    now()const                                                       = 0;
 
+         virtual std::vector<name_id_type>    get_active_delegates()const = 0;
+         bool is_active_delegate( name_id_type ) const;
+
          /** return the current fee rate in millishares */
          virtual int64_t               get_fee_rate()const                                              = 0;
          virtual int64_t               get_delegate_pay_rate()const                                     = 0;

@@ -1354,9 +1354,35 @@ namespace bts { namespace blockchain {
       } 
       catch( const fc::exception& e )
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
          return digest_type();
       }
+   }
+   std::vector<proposal_record>  chain_database::get_proposals( uint32_t first, uint32_t count )const
+   {
+      std::vector<proposal_record> results;
+      auto current_itr = my->_proposals_db.lower_bound( first );
+      uint32_t found = 0;
+      while( current_itr.valid() && found < count )
+      {
+         results.push_back( current_itr.value() );
+         ++found;
+         ++current_itr;
+      }
+      return results;
+   }
+   std::vector<proposal_vote>   chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
+   {
+      std::vector<proposal_vote> results;
+      auto current_itr = my->_proposal_votes_db.lower_bound( proposal_vote_id_type(proposal_id,0) );
+      while( current_itr.valid() )
+      {
+         if( current_itr.key().proposal_id != proposal_id )
+            return results;
+
+         results.push_back( current_itr.value() );
+         ++current_itr;
+      }
+      return results;
    }
 
 } } // namespace bts::blockchain
