@@ -13,6 +13,11 @@
 #define BTS_ADDRESS_PREFIX                          "XTS"
 
 /**
+ * The number of delegates that the blockchain is designed to support
+ */
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                (7)
+
+/**
  * Defines the number of seconds that should elapse between blocks
  */
 #define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (5ll)
@@ -33,6 +38,7 @@
  * Initial shares read from the genesis block are scaled to this number.
  */
 #define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*1000ll*1000*1000ll)
+#define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**
  *  The maximum amount that can be issued for user assets.
@@ -54,10 +60,6 @@
  */
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR              (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
-/**
- * The number of delegates that the blockchain is designed to support
- */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                (10)
 
 /**
  * A BIP is one 1/2^15 of the share supply at any given time.

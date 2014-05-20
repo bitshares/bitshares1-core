@@ -3,10 +3,12 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
+#include <iostream>
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
@@ -57,7 +59,7 @@ BOOST_AUTO_TEST_CASE( wallet_test )
 
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
-      my_wallet.unlock( "password" );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
       my_wallet.import_private_key( fc::variant("dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f").as<fc::ecc::private_key>() );
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
@@ -75,6 +77,9 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
       chain_database_ptr blockchain2 = std::make_shared<chain_database>();
       blockchain2->open( dir2.path() );
+
+      elog( "last asset id: ${id}", ("id",blockchain->last_asset_id() ) );
+      elog( "last name id: ${id}", ("id",blockchain->last_name_id() ) );
 
       ilog( "." );
       auto delegate_list = blockchain->get_delegates_by_vote();
@@ -96,12 +101,12 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       wallet  my_wallet( blockchain );
       my_wallet.set_data_directory( dir.path() );
       my_wallet.create(  "my_wallet", "password" );
-      my_wallet.unlock( "password", fc::seconds( 10000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       wallet  your_wallet( blockchain2 );
       your_wallet.set_data_directory( dir2.path() );
       your_wallet.create(  "your_wallet", "password" );
-      your_wallet.unlock( "password", fc::seconds( 10000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
 
       auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
       for( auto key: keys )
@@ -111,7 +116,10 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       my_wallet.scan_state();
       my_wallet.close();
       my_wallet.open( "my_wallet", "password" );
-      my_wallet.unlock( "password", fc::seconds( 1000000 ) );
+      my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+
+      auto result = blockchain->get_names( "", 1000 );
+
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
@@ -120,37 +128,38 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
 
       ilog( "." );
       share_type total_sent = 0;
-      for( uint32_t i = 10; i < 18; ++i )
+      for( uint32_t i = 10; i < 1000; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
          ilog( "next block production time: ${t}", ("t",next_block_time) );
 
          auto wait_until_time = my_wallet.next_block_production_time();
-         auto sleep_time = wait_until_time - fc::time_point::now();
+         auto sleep_time = wait_until_time - bts::blockchain::now(); //fc::time_point::now();
          ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
-         fc::usleep( sleep_time );
+         bts::blockchain::advance_time((uint32_t)(sleep_time.count() / 1000000));
+         //fc::usleep( sleep_time );
 
 
          full_block next_block = blockchain->generate_block( next_block_time );
          my_wallet.sign_block( next_block );
-         ilog( "\n\n\n                   MY_WALLET   PUSH_BLOCK" );
+         ilog( "                MY_WALLET   PUSH_BLOCK" );
          blockchain->push_block( next_block );
-         ilog( "\n\n\n                   YOUR_WALLET   PUSH_BLOCK" );
+         ilog( "                YOUR_WALLET   PUSH_BLOCK" );
          blockchain2->push_block( next_block );
 
          ilog( "my balance: ${my}   your balance: ${your}",
                ("my",my_wallet.get_balance("*",0))
                ("your",your_wallet.get_balance("*",0)) );
 
-         ilog( "\n\n" );
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
-         fc::usleep( fc::microseconds(1200000) );
+         bts::blockchain::advance_time(1); 
+         //fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 1; t <= 2; ++t )
          {
-            std::string your_account_name = "my-"+fc::to_string(i*t);
+            std::string your_account_name = "my-"+fc::to_string(t*1000+i);
             auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
             my_wallet.create_sending_account( your_account_name, your_account );
             auto amnt = rand()%30000;
@@ -178,4 +187,107 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       elog( "exception" );
       throw;
    }
+}
+
+BOOST_AUTO_TEST_CASE( basic_fork_test )
+{
+   try {
+    // the purpose of this test is to validate the fork handling
+    // when two alternative forks are produced and then merged.
+
+    fc::temp_directory my_dir; 
+    fc::temp_directory your_dir; 
+
+    chain_database_ptr my_chain = std::make_shared<chain_database>();
+    my_chain->open( my_dir.path() );
+
+    chain_database_ptr your_chain = std::make_shared<chain_database>();
+    your_chain->open( your_dir.path() );
+
+    wallet  my_wallet( my_chain );
+    my_wallet.set_data_directory( my_dir.path() );
+    my_wallet.create(  "my_wallet", "password" );
+    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+
+    wallet  your_wallet( your_chain );
+    your_wallet.set_data_directory( your_dir.path() );
+    your_wallet.create(  "your_wallet", "password" );
+    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+
+
+    auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
+    for( uint32_t i = 0; i < keys.size(); ++i )
+    {
+       if( i % 3 == 0 )
+          my_wallet.import_private_key( keys[i] );
+       else
+          your_wallet.import_private_key( keys[i] );
+    }
+    my_wallet.scan_state();
+    your_wallet.scan_state();
+
+
+    // produce blocks for 30 seconds...
+    for( uint32_t i = 0; i < 20; ++i )
+    {
+       auto now = bts::blockchain::now(); //fc::time_point::now();
+       std::cerr << "now: "<< std::string( fc::time_point(now) ) << "\n";
+       auto my_next_block_time = my_wallet.next_block_production_time();
+       if( my_next_block_time == now )
+       {
+          auto my_block = my_chain->generate_block( my_next_block_time );
+          std::cerr << "producing my block: "<< my_block.block_num <<"\n";
+          my_wallet.sign_block( my_block );
+          my_chain->push_block( my_block );
+          if( i < 5 ) your_chain->push_block( my_block );
+       }
+       auto your_next_block_time = your_wallet.next_block_production_time();
+       if( your_next_block_time == now )
+       {
+          auto your_block = your_chain->generate_block( your_next_block_time );
+          std::cerr << "producing your block: "<< your_block.block_num <<"\n";
+          your_wallet.sign_block( your_block );
+          your_chain->push_block( your_block );
+          if( i < 5 ) my_chain->push_block( your_block );
+       }
+       uint32_t sleep_time_sec = (uint32_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+       std::cerr << "sleeping " << sleep_time_sec << "s \n";
+       bts::blockchain::advance_time(sleep_time_sec);
+      // fc::usleep( fc::seconds( sleep_time_sec ) );
+    }
+
+    // we now have two chains of different lengths
+    // simulate the two chains syncing up by pushing the blocks in order...
+
+    std::cerr << "synchronizing chains\n";
+    uint32_t your_length = your_chain->get_head_block_num();
+    std::cerr << "your length: "<<your_length << "\n";
+    for( uint32_t i = your_length-1; i > 0 ; --i )
+    {
+       try {
+          auto b = your_chain->get_block( i );
+          my_chain->push_block(b);
+          std::cerr << "push block: " << b.block_num 
+                    << "    my length: " << my_chain->get_head_block_num() 
+                    << "  your_length: " << your_length << " \n";
+       } 
+       catch ( const fc::exception& e ) 
+       {
+          std::cerr << "    exception: " << e.to_string() << "\n";
+       }
+    }
+       auto b = your_chain->get_block( your_length );
+       my_chain->push_block(b);
+       std::cerr << "push block: " << b.block_num 
+                 << "    my length: " << my_chain->get_head_block_num() 
+                 << "  your_length: " << your_length << " \n";
+
+    my_chain->export_fork_graph( "fork_graph.dot" );
+    FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
+  } 
+  catch ( const fc::exception& e )
+  {
+     elog( "${e}", ("e",e.to_detail_string() ) );
+     throw;
+  }
 }

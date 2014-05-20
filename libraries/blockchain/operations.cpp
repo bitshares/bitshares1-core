@@ -1,4 +1,5 @@
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/fire_operation.hpp>
 #include <fc/reflect/variant.hpp>
 
 namespace bts { namespace blockchain {
@@ -60,6 +61,9 @@ namespace fc {
          case issue_asset_op_type:
             obj[ "data"] = fc::raw::unpack<issue_asset_operation>( var.data );
             break;
+         case fire_delegate_op_type:
+            obj[ "data"] = fc::raw::unpack<fire_delegate_operation>( var.data );
+            break;
          case null_op_type:
             obj[ "data"] = nullptr;
             break;
@@ -94,6 +98,9 @@ namespace fc {
             break;
          case issue_asset_op_type:
             vo.data = fc::raw::pack( obj["data"].as<issue_asset_operation>() );
+            break;
+         case fire_delegate_op_type:
+            vo.data = fc::raw::pack( obj["data"].as<fire_delegate_operation>() );
             break;
          case null_op_type:
             break;

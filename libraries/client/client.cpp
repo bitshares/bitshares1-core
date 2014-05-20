@@ -83,8 +83,7 @@ namespace bts { namespace client {
                      _wallet->sign_block( next_block );
 
                      on_new_block(next_block);
-                     _p2p_node->broadcast(block_message(next_block.id(), next_block,
-                                                        next_block.signee ));
+                     _p2p_node->broadcast(block_message( next_block ));
                   }
                   catch ( const fc::exception& e )
                   {
@@ -159,7 +158,7 @@ namespace bts { namespace client {
             case block_message_type:
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
-                ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block_id));
+                ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
                 on_new_block(block_message_to_handle.block);
                 break;
               }
@@ -239,10 +238,8 @@ namespace bts { namespace client {
          if (id.item_type == block_message_type)
          {
         //   uint32_t block_number = _chain_db->get_block_num(id.item_hash);
-           bts::client::block_message block_message_to_send;
-           block_message_to_send.block = _chain_db->get_block(id.item_hash);
-           block_message_to_send.block_id = block_message_to_send.block.id();
-           FC_ASSERT(id.item_hash == block_message_to_send.block_id);
+           bts::client::block_message block_message_to_send(_chain_db->get_block(id.item_hash));
+           FC_ASSERT(id.item_hash == block_message_to_send.block_id); //.id());
         //   block_message_to_send.signature = block_message_to_send.block.delegate_signature;
            return block_message_to_send;
          }

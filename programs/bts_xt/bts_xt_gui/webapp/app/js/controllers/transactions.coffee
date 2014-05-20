@@ -15,8 +15,8 @@ angular.module("app").controller "TransactionsController", ($scope, $location, R
     first_asset[1]
 
   $scope.load_transactions = ->
-    RpcService.request("rescan_state").then (response) ->
-      RpcService.request("get_transaction_history").then (response) ->
+    RpcService.request("wallet_rescan_blockchain_state").then (response) ->
+      RpcService.request("wallet_get_transaction_history").then (response) ->
         #console.log "--- transactions = ", response
         $scope.transactions.splice(0, $scope.transactions.length)
         angular.forEach response.result, (val) ->

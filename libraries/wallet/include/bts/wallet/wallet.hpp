@@ -48,31 +48,31 @@ namespace bts { namespace wallet {
          void           set_data_directory( const fc::path& data_dir );
          fc::path       get_data_directory()const;
 
-         void           open( const std::string& wallet_name, const std::string& password = "password" );
-         void           create( const std::string& wallet_name, const std::string& key_password = "password" );
-         void           open_file( const fc::path& file, const std::string& password  = "password");
-         void           backup_wallet( const fc::path& file );
+         void           create( const std::string& wallet_name, const std::string& password );
+         void           open( const std::string& wallet_name, const std::string& password );
+         void           open_file( const fc::path& wallet_filename, const std::string& password );
+         bool           close();
 
-         fc::path       get_filename()const;
-         std::string    get_name()const;
+         void           backup_wallet( const fc::path& file );
+         void           export_to_json( const fc::path& path );
+         void           create_from_json( const fc::path& path, const std::string& name, const std::string& passphrase );
 
          bool           is_open()const;
-         bool           close();
+         std::string    get_name()const;
+         fc::path       get_filename()const;
          ///@}
 
          /**
           *  Lock management & security
           */
          ///@{
-         void           unlock( const std::string& password,
-                                const fc::microseconds& timeout = fc::seconds(60*60*24) );
-         fc::time_point unlocked_until()const;
-
+         void           unlock( const fc::microseconds& timeout, const std::string& password );
          void           lock();
+         void           change_password( const std::string& new_password );
+
          bool           is_unlocked()const;
          bool           is_locked()const;
-
-         void change_password( const std::string& new_password );
+         fc::time_point unlocked_until()const;
          ///@}
 
          /**
@@ -120,13 +120,12 @@ namespace bts { namespace wallet {
          ///@{
          wallet_account_record    create_receive_account( const std::string& account_name );
          void                     create_sending_account( const std::string& account_name, const extended_public_key& );
+         wallet_account_record    get_account( const std::string& account_name )const;
          void                     rename_account( const std::string& current_account_name,
                                                   const std::string& new_account_name );
 
          std::map<std::string,extended_address> list_receive_accounts( uint32_t start = 0, uint32_t count = -1 )const;
          std::map<std::string,extended_address> list_sending_accounts( uint32_t start = 0, uint32_t count = -1 )const;
-         wallet_account_record    get_account( const std::string& account_name )const;
-
 
 
          void import_bitcoin_wallet( const fc::path& wallet_dat,
@@ -193,11 +192,9 @@ namespace bts { namespace wallet {
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
 
-
          ///@} Transaction Generation Methods
-
-         bool                                       is_sending_address( const address& a )const;
-         bool                                       is_receive_address( const address& a )const;
+         bool                                       is_sending_address( const address& addr )const;
+         bool                                       is_receive_address( const address& addr )const;
 
          /**
           *  Bitcoin compatiblity
@@ -212,11 +209,15 @@ namespace bts { namespace wallet {
          asset                                      get_balance( const std::string& account_name = "*", asset_id_type asset_id = 0 );
          ///@}
 
+         std::vector<wallet_transaction_record>     get_transactions( unsigned count = 0 )const;
+
+         fc::optional<address>                      get_owning_address( const balance_id_type& id )const;
+         fc::optional<wallet_account_record>        get_account_record( const address& addr)const;
+
          std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const std::string& account_name = "*" )const;
          std::unordered_map<name_id_type,       wallet_name_record>         names( const std::string& account_name = "*" )const;
-         std::unordered_map<balance_id_type,    wallet_account_record>      balances( const std::string& account_name = "*" )const;
-         std::unordered_map<asset_id_type,      wallet_asset_record>        issued_assets( const std::string& account_name = "*" )const;
-
+         std::unordered_map<balance_id_type,    wallet_balance_record>      balances( const std::string& account_name = "*" )const;
+         std::unordered_map<asset_id_type,      wallet_asset_record>        assets( const std::string& account_name = "*" )const;
 
          /** signs transaction with the specified keys for the specified addresses */
          void  sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs );

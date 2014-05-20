@@ -21,12 +21,16 @@ namespace bts { namespace blockchain {
 
    bool signed_block_header::validate_signee( const public_key_type& expected_signee )const
    { 
-      return fc::ecc::public_key( signee, digest() ) == expected_signee;
+      return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
+   }
+   public_key_type signed_block_header::signee()const
+   { 
+      return fc::ecc::public_key( delegate_signature, digest() );
    }
 
    void signed_block_header::sign( const fc::ecc::private_key& signer )
    { try {
-      signee = signer.sign_compact( digest() );
+      delegate_signature = signer.sign_compact( digest() );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    size_t full_block::block_size()const

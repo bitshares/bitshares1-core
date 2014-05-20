@@ -39,4 +39,3 @@ angular.module("app").controller "HomeController", ($scope, $modal, $log, RpcSer
     $scope.balance = balance
 
 
-

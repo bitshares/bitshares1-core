@@ -103,11 +103,17 @@ int main( int argc, char** argv )
         // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
           rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
+        else
+          rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), uint16_t(9988));
         if (option_variables.count("httpport"))
           rpc_config.httpd_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["httpport"].as<uint16_t>());
         std::cout<<"Starting json rpc server on "<< std::string( rpc_config.rpc_endpoint ) <<"\n";
         std::cout<<"Starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
-        rpc_server->configure(rpc_config);
+        bool rpc_succuss = rpc_server->configure(rpc_config);
+        if (!rpc_succuss)
+        {
+            std::cerr << "Error starting rpc server\n\n";
+        }
       }
       else
       {

@@ -23,7 +23,7 @@ namespace bts { namespace rpc {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
       bool login(const std::string& username, const std::string& password);
-      bool wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout);
+      bool wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase);
       bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name);
       void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
       std::vector<std::string> wallet_list_receive_accounts(int32_t start = 0, uint32_t count = -1);
@@ -32,7 +32,7 @@ namespace bts { namespace rpc {
                                                    const std::string& from_account = "*",
                                                    uint32_t asset_id = 0);
       std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
-      bts::blockchain::asset getbalance(bts::blockchain::asset_id_type asset_type);
+      bts::blockchain::asset wallet_get_balance(const std::string& account_name = "*", int minconf = 0, int asset = 0);
       bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
       bts::blockchain::signed_block_header getblock(uint32_t block_num);
       bool validateaddress(bts::blockchain::address address);
@@ -50,6 +50,7 @@ namespace bts { namespace rpc {
       void _set_advanced_node_parameters(const fc::variant_object& params);
       bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
       bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+      void _set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
 
       void network_add_node(const fc::ip::endpoint& node, const std::string& command);
       void stop();
@@ -81,10 +82,10 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("login", username, password);
     }
 
-    bool rpc_client_impl::wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout)
+    bool rpc_client_impl::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
     {
       uint32_t timeout_seconds = (uint32_t)(timeout.count() / fc::seconds(1).count());
-      return _json_connection->call<bool>("wallet_unlock", passphrase, fc::variant(timeout_seconds));
+      return _json_connection->call<bool>("wallet_unlock", fc::variant(timeout_seconds), passphrase);
     }
 
     bts::blockchain::extended_address rpc_client_impl::wallet_create_receive_account(const std::string& account_name)
@@ -119,9 +120,9 @@ namespace bts { namespace rpc {
       return _json_connection->call<std::unordered_map<blockchain::address,std::string> >("list_receive_addresses");
     }
 
-    bts::blockchain::asset rpc_client_impl::getbalance(bts::blockchain::asset_id_type asset_type)
+    bts::blockchain::asset rpc_client_impl::wallet_get_balance(const std::string& account_name, int minconf, int asset)
     {
-      return _json_connection->call<bts::blockchain::asset>("getbalance", fc::variant(asset_type));
+      return _json_connection->call<bts::blockchain::asset>("wallet_get_balance", account_name, minconf, asset);
     }
 
     bts::blockchain::signed_transaction rpc_client_impl::get_transaction(bts::blockchain::transaction_id_type trascaction_id)
@@ -210,6 +211,10 @@ namespace bts { namespace rpc {
     {
       return _json_connection->call<bts::net::message_propagation_data>("_get_block_propagation_data", fc::variant(block_id));
     }
+    void rpc_client_impl::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+    {
+      _json_connection->async_call("_set_allowed_peers", fc::variant(allowed_peers)).wait();
+    }
     void rpc_client_impl::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
       _json_connection->async_call("network_add_node", (std::string)node, command).wait();
@@ -240,9 +245,9 @@ namespace bts { namespace rpc {
     return my->login(username, password);
   }
   
-  bool rpc_client::wallet_unlock(const std::string& passphrase, const fc::microseconds& timeout)
+  bool rpc_client::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
   {
-    return my->wallet_unlock(passphrase, timeout);
+    return my->wallet_unlock(timeout, passphrase);
   }
 
   bts::blockchain::extended_address rpc_client::wallet_create_receive_account(const std::string& account_name)
@@ -273,9 +278,9 @@ namespace bts { namespace rpc {
     return my->list_receive_addresses();
   }
 
-  bts::blockchain::asset rpc_client::getbalance(bts::blockchain::asset_id_type asset_type)
+  bts::blockchain::asset rpc_client::wallet_get_balance(const std::string& account_name, int minconf, int asset)
   {
-    return my->getbalance(asset_type);
+    return my->wallet_get_balance(account_name, minconf, asset);
   }
 
   bts::blockchain::signed_transaction rpc_client::get_transaction(bts::blockchain::transaction_id_type trascaction_id)
@@ -352,6 +357,10 @@ namespace bts { namespace rpc {
   bts::net::message_propagation_data rpc_client::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
   {
     return my->_get_block_propagation_data(block_id);
+  }
+  void rpc_client::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+  {
+    return my->_set_allowed_peers(allowed_peers);
   }
   void rpc_client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
   {

@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
    {
       public:
          chain_database();
-         virtual ~chain_database() override;
+         virtual ~chain_database()override;
 
          void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() );
          void close();
@@ -49,6 +49,7 @@ namespace bts { namespace blockchain {
          transaction_evaluation_state_ptr              store_pending_transaction( const signed_transaction& trx );
          std::vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                          is_known_transaction( const transaction_id_type& trx_id );
+         void export_fork_graph( const fc::path& filename )const;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -70,7 +71,8 @@ namespace bts { namespace blockchain {
          osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
-         std::vector<name_record> get_names( const std::string& first, uint32_t count )const;
+         std::vector<name_record > get_names( const std::string& first, uint32_t count )const;
+         std::vector<asset_record> get_assets( const std::string& first_symbol, uint32_t count )const;
 
          /** should perform any chain reorganization required
           *
@@ -105,6 +107,10 @@ namespace bts { namespace blockchain {
          void                         scan_balances( const std::function<void( const balance_record& )>& callback );
          void                         scan_names( const std::function<void( const name_record& )>& callback );
 
+         virtual fc::variant          get_property( chain_property_enum property_id )const override;
+         virtual void                 set_property( chain_property_enum property_id, 
+                                                    const fc::variant& property_value )override;
+
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
          virtual oname_record         get_name_record( name_id_type id )const override;
@@ -112,17 +118,17 @@ namespace bts { namespace blockchain {
          virtual oasset_record        get_asset_record( const std::string& symbol )const override;
          virtual oname_record         get_name_record( const std::string& name )const override;
 
-         virtual void                 store_asset_record( const asset_record& r ) override;
-         virtual void                 store_balance_record( const balance_record& r ) override;
-         virtual void                 store_name_record( const name_record& r ) override;
+         virtual void                 store_asset_record( const asset_record& r )override;
+         virtual void                 store_balance_record( const balance_record& r )override;
+         virtual void                 store_name_record( const name_record& r )override;
          virtual void                 store_transaction_location( const transaction_id_type&,
-                                                                  const transaction_location& loc ) override;
+                                                                  const transaction_location& loc )override;
 
-         virtual asset_id_type        last_asset_id()const override;
-         virtual asset_id_type        new_asset_id() override;
-
-         virtual name_id_type         last_name_id()const override;
-         virtual name_id_type         new_name_id() override;
+         virtual void                 store_proposal_record( const proposal_record& r )override;
+         virtual oproposal_record     get_proposal_record( proposal_id_type id )const override;
+                                                                                                          
+         virtual void                 store_proposal_vote( const proposal_vote& r )override;
+         virtual oproposal_vote       get_proposal_vote( proposal_vote_id_type id )const override;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;

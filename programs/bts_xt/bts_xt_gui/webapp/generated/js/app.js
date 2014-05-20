@@ -37768,7 +37768,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
       });
     };
     unlock_wallet_request = function() {
-      return RpcService.request('walletpassphrase', [$scope.password, 60 * 1000000]).then(function(response) {
+      return RpcService.request('wallet_unlock', [1000000, $scope.password]).then(function(response) {
         $modalInstance.close("ok");
         return $scope.cur_deferred.resolve();
       }, function(reason) {
@@ -37810,7 +37810,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
     $scope.wallet_file = "";
     $scope.wallet_password = "";
     refresh_addresses = function() {
-      return RpcService.request('list_receive_addresses').then(function(response) {
+      return RpcService.request('wallet_list_receive_accounts').then(function(response) {
         $scope.addresses.splice(0, $scope.addresses.length);
         return angular.forEach(response.result, function(val) {
           return $scope.addresses.push({
@@ -37822,13 +37822,13 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
     };
     refresh_addresses();
     $scope.create_address = function() {
-      return RpcService.request('getnewaddress', [$scope.new_address_label]).then(function(response) {
+      return RpcService.request('wallet_get_account', [$scope.new_address_label]).then(function(response) {
         $scope.new_address_label = "";
         return refresh_addresses();
       });
     };
     $scope.import_key = function() {
-      return RpcService.request('import_private_key', [$scope.pk_value, $scope.pk_label]).then(function(response) {
+      return RpcService.request('wallet_import_private_key', [$scope.pk_value, $scope.pk_label]).then(function(response) {
         $scope.pk_value = "";
         $scope.pk_label = "";
         InfoBarService.message = "Your private key was successfully imported.";
@@ -37836,7 +37836,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
       });
     };
     return $scope.import_wallet = function() {
-      return RpcService.request('import_wallet', [$scope.wallet_file, $scope.wallet_password]).then(function(response) {
+      return RpcService.request('wallet_import_bitcoin', [$scope.wallet_file, $scope.wallet_password]).then(function(response) {
         $scope.wallet_file = "";
         $scope.wallet_password = "";
         InfoBarService.message = "The wallet was successfully imported.";
@@ -37919,8 +37919,8 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
       return first_asset[1];
     };
     $scope.load_transactions = function() {
-      return RpcService.request("rescan_state").then(function(response) {
-        return RpcService.request("get_transaction_history").then(function(response) {
+      return RpcService.request("wallet_rescan_blockchain_state").then(function(response) {
+        return RpcService.request("wallet_get_transaction_history").then(function(response) {
           $scope.transactions.splice(0, $scope.transactions.length);
           return angular.forEach(response.result, function(val) {
             return $scope.transactions.push({
@@ -37947,7 +37947,11 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 (function() {
   angular.module("app").controller("TransferController", function($scope, $location, $state, RpcService, InfoBarService) {
     return $scope.send = function() {
-      return RpcService.request('sendtoaddress', [$scope.payto, $scope.amount, $scope.memo]).then(function(response) {
+      return RpcService.request('wallet_transfer', [
+        $scope.amount, $scope.payto, {
+          "to_account": $scope.payto
+        }
+      ]).then(function(response) {
         $scope.payto = "";
         $scope.amount = "";
         $scope.memo = "";
