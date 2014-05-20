@@ -19,7 +19,7 @@ angular.module("app").controller "HomeController", ($scope, $modal, $log, RpcSer
   # it should be able to cache transactions and update the cache when updates detected
   # also it should sort transactions by trx_num desc
   load_transactions = ->
-    RpcService.request("get_transaction_history").then (response) ->
+    RpcService.request("wallet_get_transaction_history").then (response) ->
       $scope.transactions.splice(0, $scope.transactions.length)
       count = 0
       angular.forEach response.result, (val) ->
@@ -34,8 +34,8 @@ angular.module("app").controller "HomeController", ($scope, $modal, $log, RpcSer
             to: fromat_address(val.to)
             memo: val.memo
 
-  RpcService.request("rescan_state").then (response) ->
-    RpcService.request('getbalance').then (response) ->
+  RpcService.request("wallet_rescan_blockchain_state").then (response) ->
+    RpcService.request('wallet_get_balance').then (response) ->
       console.log "balance: ", response.result.amount
       $scope.balance = response.result.amount
       load_transactions()

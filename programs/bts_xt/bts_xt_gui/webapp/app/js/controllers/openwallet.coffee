@@ -23,7 +23,7 @@ angular.module("app").controller "OpenWalletController", ($scope, $modalInstance
       $scope.cur_deferred.reject(reason)
 
   unlock_wallet_request = ->
-    RpcService.request('walletpassphrase', [$scope.password, 60 * 1000000]).then (response) ->
+    RpcService.request('wallet_unlock', [1000000, $scope.password]).then (response) ->
       $modalInstance.close("ok")
       $scope.cur_deferred.resolve()
     ,

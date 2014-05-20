@@ -4,7 +4,7 @@ angular.module("app").controller "CreateWalletController", ($scope, $modal, $log
       ErrorService.setError "Please fill up the form below"
       return
 
-    RpcService.request('create_wallet', ['default', $scope.wallet_password, $scope.spending_password]).then (response) ->
+    RpcService.request('wallet_create', ['default', $scope.wallet_password, $scope.spending_password]).then (response) ->
       if response.result == true
         window.location.href = "/"
       else
