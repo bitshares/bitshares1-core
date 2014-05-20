@@ -24,6 +24,9 @@ namespace bts { namespace blockchain {
 
    struct proposal_vote_id_type
    {
+      proposal_vote_id_type( proposal_id_type proposal_id_arg = 0, name_id_type delegate_id_arg = 0 )
+         :proposal_id(proposal_id_arg),delegate_id(delegate_id_arg){}
+
       proposal_id_type proposal_id;
       name_id_type     delegate_id;
 
