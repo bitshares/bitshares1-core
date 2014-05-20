@@ -59,6 +59,7 @@ namespace bts { namespace rpc {
              (wallet_get_account)\
              (wallet_rename_account)\
              (wallet_transfer)\
+             (wallet_create_asset)\
              (wallet_get_balance)\
              (wallet_get_transaction_history)\
              (wallet_rescan_blockchain)\
@@ -107,9 +108,11 @@ namespace bts { namespace rpc {
            {
              if (parameter.classification == rpc_server::required_positional)
                help_string += std::string("<") + parameter.name + std::string("> ");
+             if (parameter.classification == rpc_server::optional_named)
+               help_string += std::string("{") + parameter.name + std::string("} ");
              else if (parameter.classification == rpc_server::required_positional_hidden)
                continue;
-             else
+             else 
                help_string += std::string("[") + parameter.name + std::string("] ");
            }
            sstream << help_string << "  " << method_data.description << "\n";
@@ -590,7 +593,8 @@ Result:
                                      /* returns: */    "info",
                                      /* params:          name                 type      required */
                                                        { },
-                                   /* prerequisites */ 0} ;
+                                   /* prerequisites */ 0, 
+                                    /* aliases */ { "getinfo" } } ;
     fc::variant rpc_server_impl::get_info(const fc::variants& params)
     {
        fc::mutable_variant_object info;
@@ -612,6 +616,8 @@ Result:
        info["chain_id"]         = _client->get_chain()->chain_id();
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
+       info["symbol"]           = BTS_ADDRESS_PREFIX;
+       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["_fc_revision"]     = fc::git_revision_sha;
        info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
        return fc::variant( std::move(info) );
@@ -950,6 +956,49 @@ As json rpc call
           _client->broadcast_transaction( trx.second );
        return fc::variant(summary);
     }
+
+
+    static rpc_server::method_data wallet_create_asset_metadata{"wallet_create_asset", nullptr,
+            /* description */ "Creates a new user issued asset",
+            /* returns: */    "invoice_summary",
+            /* params:          name                    type        classification                   default value */
+                              {{"symbol",               "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"name",                 "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"issuer_name",          "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
+                               {"description",          "string",   rpc_server::optional_named,      fc::variant("")},
+                               {"data",                 "json",     rpc_server::optional_named,      fc::ovariant()},
+                               {"maximum_share_supply", "int64",    rpc_server::optional_named,      fc::variant(BTS_BLOCKCHAIN_MAX_SHARES)}
+                              },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+          R"(
+          )" };
+    fc::variant rpc_server_impl::wallet_create_asset(const fc::variants& params)
+    {
+       FC_ASSERT( !"Not Yet Implemented" );
+       fc::variant_object named_params = params[3].get_object();
+       auto create_asset_trx = _client->get_wallet()->create_asset( 
+              params[0].as_string(), 
+              params[1].as_string(),
+              named_params["description"].as_string(),
+              named_params["data"],
+              params[2].as_string(),
+              named_params["max_share_supply"].as_int64(),
+              named_params["from_account"].as_string() );
+       _client->broadcast_transaction( create_asset_trx );
+       return fc::variant(create_asset_trx);
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
