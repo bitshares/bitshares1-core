@@ -241,6 +241,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
+      if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
       if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
 
@@ -316,6 +317,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_deposit( const deposit_operation& op )
    { try {
+       if( op.amount <= 0 ) fail( BTS_NEGATIVE_DEPOSIT, fc::variant(op) );
        auto deposit_balance_id = op.balance_id();
        auto delegate_record = _current_state->get_name_record( op.condition.delegate_id );
        if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
@@ -472,6 +474,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
    { try {
+      if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );
       if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
       auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
@@ -525,6 +528,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_issue_asset( const issue_asset_operation& op )
    { try {
+      FC_ASSERT( op.amount > 0, "amount: ${amount}", ("amount",op.amount) );
       auto cur_record = _current_state->get_asset_record( op.asset_id );
       if( !cur_record ) 
          fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
@@ -548,11 +552,13 @@ namespace bts { namespace blockchain {
 
    void transaction::withdraw( const balance_id_type& account, share_type amount )
    {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( withdraw_operation( account, amount ) );
    }
 
    void transaction::deposit( const address& owner, const asset& amount, name_id_type delegate_id )
    {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
    void transaction::reserve_name( const std::string& name, 

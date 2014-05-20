@@ -22,6 +22,7 @@ namespace bts { namespace blockchain {
                                                      const asset& amnt, 
                                                      name_id_type delegate_id )
    {
+      FC_ASSERT( amnt.amount > 0 );
       amount = amnt.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), amnt.asset_id, delegate_id );
    }
@@ -65,6 +66,12 @@ namespace fc {
          case fire_delegate_op_type:
             obj[ "data"] = fc::raw::unpack<fire_delegate_operation>( var.data );
             break;
+         case submit_proposal_op_type:
+            obj[ "data"] = fc::raw::unpack<submit_proposal_operation>( var.data );
+            break;
+         case vote_proposal_op_type:
+            obj[ "data"] = fc::raw::unpack<vote_proposal_operation>( var.data );
+            break;
          case null_op_type:
             obj[ "data"] = nullptr;
             break;
@@ -102,6 +109,12 @@ namespace fc {
             break;
          case fire_delegate_op_type:
             vo.data = fc::raw::pack( obj["data"].as<fire_delegate_operation>() );
+            break;
+         case submit_proposal_op_type:
+            vo.data = fc::raw::pack( obj["data"].as<submit_proposal_operation>() );
+            break;
+         case vote_proposal_op_type:
+            vo.data = fc::raw::pack( obj["data"].as<vote_proposal_operation>() );
             break;
          case null_op_type:
             break;
