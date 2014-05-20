@@ -37669,7 +37669,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
   angular.module("app").controller("CreateWalletController", function($scope, $modal, $log, RpcService, ErrorService, Wallet) {
     return $scope.submitForm = function(isValid) {
       if (true || isValid) {
-        return Wallet.create($scope.wallet_password, $scope.spending_password);
+        return Wallet.create($scope.wallet_password, $scope.spending_password).success(function() {
+          return window.location.href = "/";
+        });
       } else {
         return ErrorService.set("Please fill up the form below");
       }
@@ -38155,11 +38157,12 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
   var Wallet;
 
   Wallet = (function() {
-    function Wallet(q, rpc, error_service) {
+    function Wallet(q, log, rpc, error_service) {
       this.q = q;
+      this.log = log;
       this.rpc = rpc;
       this.error_service = error_service;
-      console.log("---- Wallet Constructor ----");
+      this.log.info("---- Wallet Constructor ----");
       this.wallet_name = "";
     }
 
@@ -38168,7 +38171,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
       return this.rpc.request('wallet_create', ['default', wallet_password]).then(function(response) {
         var error;
         if (response.result === true) {
-          return window.location.href = "/";
+          return true;
         } else {
           error = "Cannot create wallet, the wallet may already exist";
           _this.error_service.set(error);
@@ -38195,7 +38198,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
   })();
 
-  angular.module("app").service("Wallet", ["$q", "RpcService", "ErrorService", Wallet]);
+  angular.module("app").service("Wallet", ["$q", "$log", "RpcService", "ErrorService", Wallet]);
 
 }).call(this);
 

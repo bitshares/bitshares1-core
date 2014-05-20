@@ -1,13 +1,13 @@
 class Wallet
 
-  constructor: (@q, @rpc, @error_service) ->
-    console.log "---- Wallet Constructor ----"
+  constructor: (@q, @log, @rpc, @error_service) ->
+    @log.info "---- Wallet Constructor ----"
     @wallet_name = ""
 
   create: (wallet_password, spending_password) ->
     @rpc.request('wallet_create', ['default', wallet_password]).then (response) =>
       if response.result == true
-        window.location.href = "/"
+        return true
       else
         error = "Cannot create wallet, the wallet may already exist"
         @error_service.set error
@@ -23,4 +23,4 @@ class Wallet
       console.log "---- current wallet name: ", response.result
 
 
-angular.module("app").service("Wallet", ["$q", "RpcService", "ErrorService", Wallet])
+angular.module("app").service("Wallet", ["$q", "$log", "RpcService", "ErrorService", Wallet])
