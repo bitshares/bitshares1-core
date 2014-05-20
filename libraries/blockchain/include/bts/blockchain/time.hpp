@@ -4,7 +4,7 @@
 namespace bts { namespace blockchain {
 
 
-   void               advance_time( uint32_t seconds );
+   void               advance_time( int32_t seconds );
    fc::time_point_sec now();
 
 
