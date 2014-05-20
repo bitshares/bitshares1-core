@@ -924,7 +924,7 @@ As json rpc call
             /* params:          name                    type        classification                   default value */
                               {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
                                {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
-                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0)},
+                               {"asset_symbol",         "string",   rpc_server::optional_named,      fc::variant(BTS_ADDRESS_PREFIX)},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
@@ -935,10 +935,12 @@ As json rpc call
        auto          amount     = params[0].as_int64();
        std::string   to_account = params[1].as_string();
        fc::variant_object named_params = params[2].get_object();
-       asset_id_type asset_id = named_params["asset_id"].as<asset_id_type>();
+       std::string   asset_symbol = named_params["asset_symbol"].as_string();
        std::string   from_account = named_params["from_account"].as_string();
        std::string   invoice_memo = named_params["invoice_memo"].as_string();
-       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
+       auto asset_rec = _client->get_chain()->get_asset_record( asset_symbol );
+       FC_ASSERT( asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol",asset_symbol) );
+       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_rec->id ), from_account, invoice_memo );
        for( auto trx : summary.payments )
           _client->broadcast_transaction( trx.second );
        return fc::variant(summary);
