@@ -6,6 +6,7 @@
 namespace bts { namespace client {
 
     using namespace bts::blockchain;
+    using namespace bts::wallet;
 
     namespace detail { class client_impl; }
 
@@ -17,11 +18,11 @@ namespace bts { namespace client {
     class client
     {
        public:
-         client();
-         ~client();
+         client( const chain_database_ptr& chain_db );
+         virtual ~client();
 
-         void set_chain( const bts::blockchain::chain_database_ptr& chain );
-         void set_wallet( const bts::wallet::wallet_ptr& wall );
+         void set_chain( const chain_database_ptr& chain );
+         void set_wallet( const wallet_ptr& wall );
 
          /** verifies and then broadcasts the transaction */
          void broadcast_transaction( const signed_transaction& trx );
@@ -34,10 +35,10 @@ namespace bts { namespace client {
 
          void add_node( const std::string& ep );
 
-         bts::blockchain::chain_database_ptr get_chain()const;
-         bts::wallet::wallet_ptr             get_wallet()const;
-         bts::net::node_ptr                  get_node()const;
-         signed_transactions                 get_pending_transactions()const;
+         chain_database_ptr     get_chain()const;
+         wallet_ptr             get_wallet()const;
+         bts::net::node_ptr     get_node()const;
+         signed_transactions    get_pending_transactions()const;
 
          /**
           *  Reserve a name and broadcast it to the network.
@@ -58,8 +59,8 @@ namespace bts { namespace client {
          void set_advanced_node_parameters(const fc::variant_object& params);
          void addnode(const fc::ip::endpoint& node, const std::string& command);
          void stop();
-         bts::net::message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
-         bts::net::message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+         bts::net::message_propagation_data get_transaction_propagation_data(const transaction_id_type& transaction_id);
+         bts::net::message_propagation_data get_block_propagation_data(const block_id_type& block_id);
          fc::uint160_t get_node_id() const;
 
          void configure( const fc::path& configuration_directory );

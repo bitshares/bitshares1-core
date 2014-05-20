@@ -93,7 +93,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr),_observer(nullptr){}
 
-            void                       initialize_genesis(fc::optional<fc::path> genesis_file = fc::optional<fc::path>());
+            void                       initialize_genesis(fc::path genesis_file);
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       clear_pending(  const full_block& blk );
@@ -665,63 +665,73 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
+   void chain_database::open( const fc::path& data_dir, fc::path genesis_file )
    { try {
-      fc::create_directories( data_dir );
-
-      my->_fork_number_db.open( data_dir / "fork_number_db", true );
-      my->_fork_db.open( data_dir / "fork_db", true );
-      my->_properties_db.open( data_dir / "properties", true );
-      my->_proposals_db.open( data_dir / "proposals", true );
-      my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
-      my->_undo_state.open( data_dir / "undo_state", true );
-      my->_redo_state.open( data_dir / "redo_state", true );
-
-      my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
-      my->_pending_transactions.open( data_dir / "pending_transactions", true );
-      my->_processed_transaction_ids.open( data_dir / "processed_transactions", true );
-      my->_block_id_to_block.open( data_dir / "block_id_to_block", true );
-      my->_assets.open( data_dir / "assets", true );
-      my->_names.open( data_dir / "names", true );
-      my->_balances.open( data_dir / "balances", true );
-
-      my->_name_index.open( data_dir / "name_index", true );
-      my->_symbol_index.open( data_dir / "symbol_index", true );
-      my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
-
-      // TODO: check to see if we crashed during the last write
-      //   if so, then apply the last undo operation stored.
-
-      uint32_t       last_block_num = -1;
-      block_id_type  last_block_id;
-      my->_block_num_to_id.last( last_block_num, last_block_id );
-      if( last_block_num != uint32_t(-1) )
+      bool is_new_data_dir = !fc::exists( data_dir );
+      try
       {
-         my->_head_block_header = get_block( last_block_id );
-         my->_head_block_id = last_block_id;
-      }
+          fc::create_directories( data_dir );
 
-      //  process the pending transactions to cache by fees
-      auto pending_itr = my->_pending_transactions.begin();
-      while( pending_itr.valid() )
+          my->_fork_number_db.open( data_dir / "fork_number_db", true );
+          my->_fork_db.open( data_dir / "fork_db", true );
+          my->_properties_db.open( data_dir / "properties", true );
+          my->_proposals_db.open( data_dir / "proposals", true );
+          my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
+          my->_undo_state.open( data_dir / "undo_state", true );
+          my->_redo_state.open( data_dir / "redo_state", true );
+
+          my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
+          my->_pending_transactions.open( data_dir / "pending_transactions", true );
+          my->_processed_transaction_ids.open( data_dir / "processed_transactions", true );
+          my->_block_id_to_block.open( data_dir / "block_id_to_block", true );
+          my->_assets.open( data_dir / "assets", true );
+          my->_names.open( data_dir / "names", true );
+          my->_balances.open( data_dir / "balances", true );
+
+          my->_name_index.open( data_dir / "name_index", true );
+          my->_symbol_index.open( data_dir / "symbol_index", true );
+          my->_delegate_vote_index.open( data_dir / "delegate_vote_index", true );
+
+          // TODO: check to see if we crashed during the last write
+          //   if so, then apply the last undo operation stored.
+
+          uint32_t       last_block_num = -1;
+          block_id_type  last_block_id;
+          my->_block_num_to_id.last( last_block_num, last_block_id );
+          if( last_block_num != uint32_t(-1) )
+          {
+             my->_head_block_header = get_block( last_block_id );
+             my->_head_block_id = last_block_id;
+          }
+
+          //  process the pending transactions to cache by fees
+          auto pending_itr = my->_pending_transactions.begin();
+          while( pending_itr.valid() )
+          {
+             try {
+                auto trx = pending_itr.value();
+                auto trx_id = trx.id();
+                auto eval_state = evaluate_transaction( trx );
+                share_type fees = eval_state->get_fees();
+                my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+                my->_pending_transactions.store( trx_id, trx );
+             }
+             catch ( const fc::exception& e )
+             {
+                wlog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
+             }
+             ++pending_itr;
+          }
+
+          if( last_block_num == uint32_t(-1) )
+             my->initialize_genesis(genesis_file);
+      }
+      catch( ... )
       {
-         try {
-            auto trx = pending_itr.value();
-            auto trx_id = trx.id();
-            auto eval_state = evaluate_transaction( trx );
-            share_type fees = eval_state->get_fees();
-            my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-            my->_pending_transactions.store( trx_id, trx );
-         }
-         catch ( const fc::exception& e )
-         {
-            wlog( "error processing pending transaction: ${e}", ("e",e.to_detail_string() ) );
-         }
-         ++pending_itr;
+          close();
+          if( is_new_data_dir ) fc::remove_all( data_dir );
+          throw;
       }
-
-      if( last_block_num == uint32_t(-1) )
-         my->initialize_genesis(genesis_file);
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
@@ -1129,32 +1139,30 @@ namespace bts { namespace blockchain {
       return next_block;
    }
 
-   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
+   void detail::chain_database_impl::initialize_genesis(fc::path genesis_file)
    {
       if( self->chain_id() != digest_type() )
       {
-         ilog( "Genesis State already Initialized" );
+         ilog( "Genesis state already initialized" );
          return;
       }
 
-      std::cout << "Initializing Genesis State\n";
-      if( !genesis_file.valid() ) FC_ASSERT( !"No genesis state specified" );
-      FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file",*genesis_file) );
-    //  #include "genesis.json"
+      std::cout << "Initializing genesis state\n";
+      FC_ASSERT( fc::exists( genesis_file ), "Genesis file '${file}' was not found.", ("file",genesis_file) );
 
       genesis_block_config config;
-      if( genesis_file->extension() == ".json" )
+      if( genesis_file.extension() == ".json" )
       {
-        config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+         config = fc::json::from_file(genesis_file).as<genesis_block_config>();
       }
-      else if( genesis_file->extension() == ".dat" )
+      else if( genesis_file.extension() == ".dat" )
       {
-         fc::ifstream in( *genesis_file );
+         fc::ifstream in( genesis_file );
          fc::raw::unpack( in, config );
       }
       else
       {
-         FC_ASSERT( !"Invalid Genesis Format", " '${format}'", ("format",genesis_file->extension() ) );
+         FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file.extension() ) );
       }
 
       fc::sha256::encoder enc;
@@ -1301,7 +1309,8 @@ namespace bts { namespace blockchain {
           }
        out << "}"; 
     }
-   fc::variant  chain_database::get_property( chain_property_enum property_id )const
+
+   fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
       return my->_properties_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
@@ -1314,7 +1323,7 @@ namespace bts { namespace blockchain {
       else
          my->_properties_db.store( property_id, property_value );
    }
-   void              chain_database::store_proposal_record( const proposal_record& r )
+   void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
       {
@@ -1325,14 +1334,15 @@ namespace bts { namespace blockchain {
          my->_proposals_db.store( r.id, r );
       }
    }
-   oproposal_record  chain_database::get_proposal_record( proposal_id_type id )const
+
+   oproposal_record chain_database::get_proposal_record( proposal_id_type id )const
    {
       auto itr = my->_proposals_db.find(id);
       if( itr.valid() ) return itr.value();
       return oproposal_record();
    }
                                                                                             
-   void              chain_database::store_proposal_vote( const proposal_vote& r )
+   void chain_database::store_proposal_vote( const proposal_vote& r )
    {
       if( r.is_null() )
          my->_proposal_votes_db.remove( r.id );
@@ -1340,14 +1350,14 @@ namespace bts { namespace blockchain {
          my->_proposal_votes_db.store( r.id, r );
    }
 
-   oproposal_vote    chain_database::get_proposal_vote( proposal_vote_id_type id )const
+   oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
    {
       auto itr = my->_proposal_votes_db.find(id);
       if( itr.valid() ) return itr.value();
       return oproposal_vote();
    }
 
-   digest_type     chain_database::chain_id()const
+   digest_type chain_database::chain_id()const
    {
       try {
         return get_property( bts::blockchain::chain_id ).as<digest_type>();

@@ -6,3 +6,5 @@ Intentionally constructing transactions that a wallet would not build:
    - name reg without fee
    - delegate reg without fee
    - asset reg without fee
+   - invalid votes (missing or to non-delegates)
+   - vote that would give a delegate more than (1/BTS_BLOCKCHAIN_NUM_DELEGATES) fraction of the votes

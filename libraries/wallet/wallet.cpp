@@ -568,6 +568,12 @@ namespace bts { namespace wallet {
                      case fire_delegate_op_type:
                         // TODO
                         break;
+                     case submit_proposal_op_type:
+                        // TODO
+                        break;
+                     case vote_proposal_op_type:
+                        // TODO
+                        break;
                      default:
                         FC_ASSERT( false, "Transaction ${t} contains unknown operation type ${o}", ("t",trx)("o",op.type) );
                         break;
