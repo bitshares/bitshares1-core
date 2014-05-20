@@ -46,7 +46,8 @@ int main( int argc, char** argv )
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
                               ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
-                              ("genesis-json", boost::program_options::value<std::string>(), "generate a genesis block with the given json file (only for testing, only accepted when the blockchain is empty)");
+                              ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
+                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)");
 
    boost::program_options::positional_options_description positional_config;
    positional_config.add("data-dir", 1);

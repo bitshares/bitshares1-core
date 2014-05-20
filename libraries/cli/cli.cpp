@@ -595,14 +595,14 @@ namespace bts { namespace cli {
                                 withdraw_amount += withdraw_op.amount;
 
                                 auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
-                                if( owner) sending |= _client->get_wallet()->is_receive_address( *owner );
+                                if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
 
                                 if( first )
                                 {
-                                    if( owner )
+                                    if( owner.valid()  )
                                     {
                                         auto rec = _client->get_wallet()->get_account_record( *owner );
-                                        if( rec ) ss << rec->name;
+                                        if( rec.valid()  ) ss << rec->name;
                                         else ss << std::string( withdraw_op.balance_id );
                                     }
                                     else
@@ -638,7 +638,7 @@ namespace bts { namespace cli {
                                     if( first )
                                     {
                                         auto rec = _client->get_wallet()->get_account_record( condition.owner );
-                                        if( rec ) ss << rec->name;
+                                        if( rec.valid()  ) ss << rec->name;
                                         else ss << std::string( condition.owner );
                                     }
                                     first = false;
@@ -668,7 +668,7 @@ namespace bts { namespace cli {
                         std::stringstream ss;
                         auto id = (vote > 0) ? vote : name_id_type(-vote);
                         auto rec = _client->get_chain()->get_name_record(id);
-                        auto name = rec ? rec->name : "";
+                        auto name = rec.valid()  ? rec->name : "";
                         if( vote > 0 ) ss << "+";
                         else if( vote < 0 ) ss << "-";
                         else ss << " ";

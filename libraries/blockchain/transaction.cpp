@@ -413,7 +413,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( op.json_data.size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
 
       auto cur_record = _current_state->get_name_record( op.name );
-      if( cur_record && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
+      if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
          fail( BTS_NAME_ALREADY_REGISTERED, fc::variant(op) );
 
       name_record new_record;
@@ -468,7 +468,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
    { try {
       auto cur_record = _current_state->get_asset_record( op.symbol );
-      if( cur_record ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
+      if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
       auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
       if( !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 

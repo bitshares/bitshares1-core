@@ -431,7 +431,7 @@ namespace bts { namespace net {
         direction = outbound;
 
         _remote_endpoint = remote_endpoint;
-        if (local_endpoint)
+        if (local_endpoint.valid())
           _message_connection.connect_to(remote_endpoint, *local_endpoint);
         else
           _message_connection.connect_to(remote_endpoint);
@@ -501,7 +501,7 @@ namespace bts { namespace net {
 
     bool peer_connection::busy() 
     { 
-      return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer;
+      return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer.valid();
     }
 
     bool peer_connection::idle()
@@ -1160,7 +1160,7 @@ namespace bts { namespace net {
                                                              const blockchain_item_ids_inventory_message& blockchain_item_ids_inventory_message_received)
     {
       // ignore unless we asked for the data
-      if (originating_peer->item_ids_requested_from_peer)
+      if( originating_peer->item_ids_requested_from_peer.valid() )
       {
         originating_peer->item_ids_requested_from_peer.reset();
 
@@ -1872,13 +1872,13 @@ namespace bts { namespace net {
       for (const peer_connection_ptr& active_peer : _active_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(active_peer->get_remote_endpoint());
-        if (endpoint_for_this_peer && *endpoint_for_this_peer == remote_endpoint)
+        if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
           return true;
       }
       for (const peer_connection_ptr& handshaking_peer : _handshaking_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(handshaking_peer->get_remote_endpoint());
-        if (endpoint_for_this_peer && *endpoint_for_this_peer == remote_endpoint)
+        if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
           return true;
       }
       return false;
@@ -1950,10 +1950,10 @@ namespace bts { namespace net {
         peer_status this_peer_status;
         this_peer_status.version = 0; // TODO
         fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
-        if (endpoint)
+        if( endpoint.valid() )
           this_peer_status.host = *endpoint;
         fc::mutable_variant_object peer_details;
-        peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
+        peer_details["addr"] = endpoint.valid() ? (std::string)*endpoint : std::string();
         peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
         peer_details["lastsend"] = peer->get_last_message_sent_time().sec_since_epoch();
