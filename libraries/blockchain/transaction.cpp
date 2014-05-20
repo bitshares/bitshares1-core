@@ -465,6 +465,11 @@ namespace bts { namespace blockchain {
       if( !!op.active_key )
          cur_record->active_key = *op.active_key;
 
+      if ( !cur_record->is_delegate() && op.is_delegate )
+      {
+         cur_record->delegate_info = delegate_stats();
+      }
+
       _current_state->store_name_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
