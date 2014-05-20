@@ -24,7 +24,7 @@ const char* test_keys = R"([
   "602751d179b75da5432c64a3360a7309609636056c31deae37b8441230c968eb",
   "8ced7ac956e1755e87c21b1b265979c848c79b3bea3b855bb5b819d3baa72ed2",
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
-])"; 
+])";
 
 BOOST_AUTO_TEST_CASE( block_signing )
 {
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE( block_signing )
       signed_block_header& header = blk;
       header.sign( signer );
       FC_ASSERT( blk.validate_signee( pub_key ) );
-   } 
+   }
    catch ( const fc::exception& e )
    {
       elog( "${e}", ("e",e.to_detail_string() ) );
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE( block_signing )
 
 BOOST_AUTO_TEST_CASE( wallet_test )
 {
-      fc::temp_directory dir; 
+      fc::temp_directory dir;
 
       chain_database_ptr blockchain = std::make_shared<chain_database>();
       blockchain->open( dir.path(), "genesis.dat" );
@@ -66,11 +66,62 @@ BOOST_AUTO_TEST_CASE( wallet_test )
 }
 
 
+BOOST_AUTO_TEST_CASE( negative_transfer_test )
+{
+    fc::temp_directory client1Dir;
+    fc::temp_directory client2Dir;
+
+    chain_database_ptr client1Chain = std::make_shared<chain_database>();
+    chain_database_ptr client2Chain = std::make_shared<chain_database>();
+    client1Chain->open(client1Dir.path(), "genesis.dat");
+    client2Chain->open(client2Dir.path(), "genesis.dat");
+
+    wallet client1( client1Chain );
+    client1.set_data_directory( client1Dir.path() );
+    client1.create( "client1", "client1Pass" );
+    client1.unlock( fc::seconds( 10000000 ), "client1Pass" );
+    client1.import_private_key( fc::variant("dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f").as<fc::ecc::private_key>() );
+    client1.scan_state();
+    client1.close();
+    client1.open( "client1", "client1Pass" );
+    client1.unlock( fc::seconds( 10000000 ), "client1Pass" );
+
+    ilog("Balance: ${bal}", ("bal",client1.get_balance()));
+
+    wallet client2( client2Chain );
+    client2.set_data_directory( client2Dir.path() );
+    client2.create( "client2", "client2Pass" );
+    client2.unlock( fc::seconds( 20000000 ), "client2Pass" );
+
+    auto recieveAddress = client2.create_receive_account( "client2Receive" );
+    client1.create_sending_account( "sendAddress", recieveAddress.extended_key );
+
+    bool failed = false;
+    try
+    {
+        auto invoice_sum = client1.transfer( "sendAddress", asset(-500) );
+
+        for( auto trx : invoice_sum.payments )
+        {
+           client1Chain->store_pending_transaction( trx.second );
+           client2Chain->store_pending_transaction( trx.second );
+           ilog( "trx: ${trx}", ("trx",trx.second) );
+        }
+    }
+    catch ( const fc::exception& e)
+    {
+        failed = true;
+    }
+
+    BOOST_REQUIRE( failed );
+}
+
+
 BOOST_AUTO_TEST_CASE( genesis_block_test )
 {
    try {
-      fc::temp_directory dir2; 
-      fc::temp_directory dir; 
+      fc::temp_directory dir2;
+      fc::temp_directory dir;
 
       chain_database_ptr blockchain = std::make_shared<chain_database>();
       blockchain->open( dir.path(), "genesis.dat" );
@@ -154,7 +205,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
          FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
                     ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
 
-         bts::blockchain::advance_time(1); 
+         bts::blockchain::advance_time(1);
          //fc::usleep( fc::microseconds(1200000) );
 
          for( uint64_t t = 1; t <= 2; ++t )
@@ -176,7 +227,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       }
 
       blockchain->close();
-   } 
+   }
    catch ( const fc::exception& e )
    {
       elog( "${e}", ("e",e.to_detail_string() ) );
@@ -259,7 +310,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
             bts::blockchain::advance_time( 1 );
 
             auto name_record = blockchain->get_name_record( name_prefix + fc::to_string(i) );
-            FC_ASSERT( !!name_record 
+            FC_ASSERT( !!name_record
                 && name_record->json_data.as_string() == fc::to_string(i)
                 && name_record->is_delegate() == ( i % 2 == 0 )
                 , "", ("name_record", *name_record)("name", name_prefix + fc::to_string(i))("json_data", fc::to_string(i)));
@@ -290,7 +341,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
 
             bts::blockchain::advance_time(1);
         }
-        
+
         auto result = blockchain->get_names( name_prefix, 10 );
 
         for (uint32_t i = 0; i < 10; ++i)
@@ -323,8 +374,8 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     // the purpose of this test is to validate the fork handling
     // when two alternative forks are produced and then merged.
 
-    fc::temp_directory my_dir; 
-    fc::temp_directory your_dir; 
+    fc::temp_directory my_dir;
+    fc::temp_directory your_dir;
 
     chain_database_ptr my_chain = std::make_shared<chain_database>();
     my_chain->open( my_dir.path(), "genesis.dat" );
@@ -395,24 +446,24 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
        try {
           auto b = your_chain->get_block( i );
           my_chain->push_block(b);
-          std::cerr << "push block: " << b.block_num 
-                    << "    my length: " << my_chain->get_head_block_num() 
+          std::cerr << "push block: " << b.block_num
+                    << "    my length: " << my_chain->get_head_block_num()
                     << "  your_length: " << your_length << " \n";
-       } 
-       catch ( const fc::exception& e ) 
+       }
+       catch ( const fc::exception& e )
        {
           std::cerr << "    exception: " << e.to_string() << "\n";
        }
     }
        auto b = your_chain->get_block( your_length );
        my_chain->push_block(b);
-       std::cerr << "push block: " << b.block_num 
-                 << "    my length: " << my_chain->get_head_block_num() 
+       std::cerr << "push block: " << b.block_num
+                 << "    my length: " << my_chain->get_head_block_num()
                  << "  your_length: " << your_length << " \n";
 
     my_chain->export_fork_graph( "fork_graph.dot" );
     FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
-  } 
+  }
   catch ( const fc::exception& e )
   {
      elog( "${e}", ("e",e.to_detail_string() ) );
