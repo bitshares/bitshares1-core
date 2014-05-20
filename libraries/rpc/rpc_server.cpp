@@ -29,6 +29,7 @@ namespace bts { namespace rpc {
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
              (blockchain_get_name)\
+             (blockchain_get_name_by_id)\
              (blockchain_get_asset)\
              (blockchain_get_asset_by_id)\
              (blockchain_get_assets)\
@@ -1102,13 +1103,25 @@ As a json rpc call
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
-                              {{"name",       "name_record", rpc_server::required_positional, fc::ovariant()}},
+                              {{"name",       "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::blockchain_get_name(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->get_name_record(params[0].as_string()) );
+    }
+    static rpc_server::method_data blockchain_get_name_by_id_metadata{"blockchain_get_name_by_id", nullptr,
+            /* description */ "Retrieves the name record",
+            /* returns: */    "name_record",
+            /* params:          name          type      classification                   default_value */
+                              {{"name",       "int", rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::blockchain_get_name_by_id(const fc::variants& params)
+    {
+      return fc::variant( _client->get_chain()->get_name_record(params[0].as_int64()) );
     }
 
     static rpc_server::method_data blockchain_get_asset_metadata{"blockchain_get_asset", nullptr,
