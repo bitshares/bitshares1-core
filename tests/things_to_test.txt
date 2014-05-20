@@ -1,0 +1,8 @@
+Intentionally constructing transactions that a wallet would not build:
+   - withdraw negative amount
+   - deposit negative amount
+   - deposit without withdraw or issuance
+   - negative asset issuance
+   - name reg without fee
+   - delegate reg without fee
+   - asset reg without fee
