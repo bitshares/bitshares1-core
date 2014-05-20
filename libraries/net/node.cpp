@@ -926,6 +926,9 @@ namespace bts { namespace net {
       if( hello_message_received.chain_id != _chain_id )
       {
          wlog( "Recieved hello message from peer on a different chain: ${message}", ("message",hello_message_received) );
+         connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+         originating_peer->state = peer_connection::connection_rejected_sent;
+         originating_peer->send_message(message(connection_rejected));
          disconnect_from_peer( originating_peer );
          return;
       }
