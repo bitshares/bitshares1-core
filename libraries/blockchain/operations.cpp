@@ -1,15 +1,18 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
-   const operation_type_enum withdraw_operation::type      = withdraw_op_type;
-   const operation_type_enum deposit_operation::type       = deposit_op_type;
-   const operation_type_enum create_asset_operation::type  = create_asset_op_type;
-   const operation_type_enum update_asset_operation::type  = update_asset_op_type;
-   const operation_type_enum issue_asset_operation::type   = issue_asset_op_type;
-   const operation_type_enum reserve_name_operation::type = reserve_name_op_type;
-   const operation_type_enum update_name_operation::type   = update_name_op_type;
+   const operation_type_enum withdraw_operation::type          = withdraw_op_type;
+   const operation_type_enum deposit_operation::type           = deposit_op_type;
+   const operation_type_enum create_asset_operation::type      = create_asset_op_type;
+   const operation_type_enum update_asset_operation::type      = update_asset_op_type;
+   const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
+   const operation_type_enum reserve_name_operation::type      = reserve_name_op_type;
+   const operation_type_enum update_name_operation::type       = update_name_op_type;
+   const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
+   const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
 
 
    balance_id_type  deposit_operation::balance_id()const
@@ -21,12 +24,13 @@ namespace bts { namespace blockchain {
                                                      const asset& amnt, 
                                                      name_id_type delegate_id )
    {
+      FC_ASSERT( amnt.amount > 0 );
       amount = amnt.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), amnt.asset_id, delegate_id );
    }
 
    reserve_name_operation::reserve_name_operation( const std::string& n, 
-                                                   const std::string& d, 
+                                                   const fc::variant& d, 
                                                    const public_key_type& owner, 
                                                    const public_key_type& active, bool as_delegate )
    :name(n),json_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
@@ -63,6 +67,12 @@ namespace fc {
             break;
          case fire_delegate_op_type:
             obj[ "data"] = fc::raw::unpack<fire_delegate_operation>( var.data );
+            break;
+         case submit_proposal_op_type:
+            obj[ "data"] = fc::raw::unpack<submit_proposal_operation>( var.data );
+            break;
+         case vote_proposal_op_type:
+            obj[ "data"] = fc::raw::unpack<vote_proposal_operation>( var.data );
             break;
          case null_op_type:
             obj[ "data"] = nullptr;
@@ -101,6 +111,12 @@ namespace fc {
             break;
          case fire_delegate_op_type:
             vo.data = fc::raw::pack( obj["data"].as<fire_delegate_operation>() );
+            break;
+         case submit_proposal_op_type:
+            vo.data = fc::raw::pack( obj["data"].as<submit_proposal_operation>() );
+            break;
+         case vote_proposal_op_type:
+            vo.data = fc::raw::pack( obj["data"].as<vote_proposal_operation>() );
             break;
          case null_op_type:
             break;

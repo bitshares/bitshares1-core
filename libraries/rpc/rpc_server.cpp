@@ -540,11 +540,15 @@ Result:
           help_string += method_data.detailed_description;
           if (method_data.aliases.size() > 0)
           {
-            help_string += std::string("\naliases: ");
-            for (auto alias : method_data.aliases)
+            std::stringstream ss;
+            ss << "\naliases: ";
+            for (size_t i = 0; i < method_data.aliases.size(); ++i)
             {
-              help_string += alias;
+              if (i != 0)
+                ss << ", ";
+              ss << method_data.aliases[i];
             }
+            help_string += ss.str();
           }
         }
         else
@@ -602,6 +606,7 @@ Result:
        info["walletversion"]    = BTS_WALLET_VERSION;
        info["blocks"]           = _client->get_chain()->get_head_block_num();
        info["connections"]      = _client->get_connection_count();
+       info["chain_id"]         = _client->get_chain()->chain_id();
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
        return fc::variant( std::move(info) );

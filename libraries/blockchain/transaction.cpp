@@ -7,6 +7,7 @@
 #include <fc/reflect/variant.hpp>
 
 #include <fc/log/logger.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -169,10 +170,60 @@ namespace bts { namespace blockchain {
          case fire_delegate_op_type:
             evaluate_fire_operation( op.as<fire_delegate_operation>() );
             break;
+         case submit_proposal_op_type:
+            evaluate_submit_proposal( op.as<submit_proposal_operation>() );
+            break;
+         case vote_proposal_op_type:
+            evaluate_vote_proposal( op.as<vote_proposal_operation>() );
+            break;
          case null_op_type:
             break;
       }
    }
+   void transaction_evaluation_state::evaluate_submit_proposal( const submit_proposal_operation& op )
+   { try {
+       ///  signed by a registered delegate
+       auto delegate_record = _current_state->get_name_record( op.submitting_delegate_id );
+       FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
+                  "A proposal may only be submitted by an active and registered delegate" );
+
+       /// signed by a current delegate
+       FC_ASSERT( _current_state->is_active_delegate(op.submitting_delegate_id), 
+                  "A proposal may only be submitted by an active delegate" );
+
+       proposal_record new_proposal;
+       new_proposal.id = _current_state->new_proposal_id();
+       new_proposal.submitting_delegate_id = op.submitting_delegate_id;
+       new_proposal.submission_date = op.submission_date;
+       new_proposal.subject = op.subject;
+       new_proposal.body = op.body;
+       new_proposal.proposal_type = op.proposal_type;
+       new_proposal.data = op.data;
+
+       add_required_signature( address( delegate_record->active_key ) );
+       _current_state->store_proposal_record( new_proposal );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
+
+   void transaction_evaluation_state::evaluate_vote_proposal( const vote_proposal_operation& op )
+   { try {
+       ///  signed by a registered delegate
+       auto delegate_record = _current_state->get_name_record( op.id.delegate_id );
+       FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
+                  "A proposal may only be voted by an active and registered delegate" );
+
+       /// signed by a current delegate
+       FC_ASSERT( _current_state->is_active_delegate(op.id.delegate_id), 
+                  "A proposal may only be submitted by an active delegate" );
+
+       add_required_signature( address( delegate_record->active_key ) );
+
+       proposal_vote new_vote;
+       new_vote.id = op.id;
+       new_vote.timestamp = op.timestamp;
+       new_vote.vote = op.vote;
+
+       _current_state->store_proposal_vote( new_vote );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::evaluate_fire_operation( const fire_delegate_operation& op )
    {
@@ -240,6 +291,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
+      if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
       if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
 
@@ -315,6 +367,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_deposit( const deposit_operation& op )
    { try {
+       if( op.amount <= 0 ) fail( BTS_NEGATIVE_DEPOSIT, fc::variant(op) );
        auto deposit_balance_id = op.balance_id();
        auto delegate_record = _current_state->get_name_record( op.condition.delegate_id );
        if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
@@ -409,8 +462,6 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_reserve_name( const reserve_name_operation& op )
    { try {
       FC_ASSERT( name_record::is_valid_name( op.name ) );
-      FC_ASSERT( name_record::is_valid_json( op.json_data ) );
-      FC_ASSERT( op.json_data.size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
 
       auto cur_record = _current_state->get_name_record( op.name );
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
@@ -424,7 +475,10 @@ namespace bts { namespace blockchain {
       new_record.active_key    = op.active_key;
       new_record.last_update   = _current_state->now();
       new_record.registration_date = _current_state->now();
-      new_record.delegate_info = delegate_stats();
+      if (op.is_delegate)
+      {
+          new_record.delegate_info = delegate_stats();
+      }
 
       cur_record = _current_state->get_name_record( new_record.id );
       FC_ASSERT( !cur_record );
@@ -452,8 +506,6 @@ namespace bts { namespace blockchain {
 
       if( !!op.json_data )
       {
-         FC_ASSERT( name_record::is_valid_json( *op.json_data ) );
-         FC_ASSERT( op.json_data->size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
          cur_record->json_data  = *op.json_data;
       }
 
@@ -462,11 +514,17 @@ namespace bts { namespace blockchain {
       if( !!op.active_key )
          cur_record->active_key = *op.active_key;
 
+      if ( !cur_record->is_delegate() && op.is_delegate )
+      {
+         cur_record->delegate_info = delegate_stats();
+      }
+
       _current_state->store_name_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
    { try {
+      if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );
       if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
       auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
@@ -520,6 +578,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_issue_asset( const issue_asset_operation& op )
    { try {
+      FC_ASSERT( op.amount > 0, "amount: ${amount}", ("amount",op.amount) );
       auto cur_record = _current_state->get_asset_record( op.asset_id );
       if( !cur_record ) 
          fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
@@ -543,22 +602,24 @@ namespace bts { namespace blockchain {
 
    void transaction::withdraw( const balance_id_type& account, share_type amount )
    {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( withdraw_operation( account, amount ) );
    }
 
    void transaction::deposit( const address& owner, const asset& amount, name_id_type delegate_id )
    {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
    void transaction::reserve_name( const std::string& name, 
-                                   const std::string& json_data, 
+                                   const fc::variant& json_data, 
                                    const public_key_type& master, 
                                    const public_key_type& active, bool as_delegate  )
    {
       operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
    }
    void transaction::update_name( name_id_type name_id, 
-                                  const fc::optional<std::string>& json_data, 
+                                  const fc::optional<fc::variant>& json_data, 
                                   const fc::optional<public_key_type>& active, bool as_delegate   )
    {
       update_name_operation op;

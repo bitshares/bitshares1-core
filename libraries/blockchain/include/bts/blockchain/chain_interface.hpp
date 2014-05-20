@@ -88,7 +88,6 @@ namespace bts { namespace blockchain {
       :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
-      static bool is_valid_json( const std::string& str );
 
       bool is_null()const           { return issuer_name_id == -1; }
       asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
@@ -97,7 +96,7 @@ namespace bts { namespace blockchain {
       std::string         symbol;
       std::string         name;
       std::string         description;
-      std::string         json_data;
+      fc::variant         json_data;
       name_id_type        issuer_name_id;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
@@ -153,7 +152,7 @@ namespace bts { namespace blockchain {
 
       name_id_type                 id;
       std::string                  name;
-      std::string                  json_data;
+      fc::variant                  json_data;
       public_key_type              owner_key;
       public_key_type              active_key;
       fc::time_point_sec           registration_date;
@@ -167,7 +166,8 @@ namespace bts { namespace blockchain {
    {
       last_asset_id    = 0,
       last_name_id     = 1,
-      last_proposal_id = 2
+      last_proposal_id = 2,
+      chain_id         = 3 // hash of initial state
    };
    typedef uint32_t chain_property_type;
 
@@ -177,6 +177,9 @@ namespace bts { namespace blockchain {
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec    now()const                                                       = 0;
+
+         virtual std::vector<name_id_type>    get_active_delegates()const = 0;
+         bool is_active_delegate( name_id_type ) const;
 
          /** return the current fee rate in millishares */
          virtual int64_t               get_fee_rate()const                                              = 0;
@@ -229,7 +232,7 @@ FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(chain_id) )
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
 FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
 FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )

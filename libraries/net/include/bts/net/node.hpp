@@ -59,6 +59,8 @@ namespace bts { namespace net {
           */
          virtual message get_item( const item_id& id ) = 0;
 
+         virtual fc::sha256 get_chain_id()const = 0;
+
          /**
           * Returns a synopsis of the blockchain used for syncing.  
           * This consists of a list of selected item hashes from our current preferred

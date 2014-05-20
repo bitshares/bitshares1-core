@@ -1131,6 +1131,12 @@ namespace bts { namespace blockchain {
 
    void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    {
+      if( self->chain_id() != digest_type() )
+      {
+         ilog( "Genesis State already Initialized" );
+         return;
+      }
+
       std::cout << "Initializing Genesis State\n";
       if( !genesis_file.valid() ) FC_ASSERT( !"No genesis state specified" );
       FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file",*genesis_file) );
@@ -1150,6 +1156,10 @@ namespace bts { namespace blockchain {
       {
          FC_ASSERT( !"Invalid Genesis Format", " '${format}'", ("format",genesis_file->extension() ) );
       }
+
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, config );
+      self->set_property( bts::blockchain::chain_id, fc::variant(enc.result()) );
 
       double total_unscaled = 0;
       for( auto item : config.balances ) total_unscaled += item.second;
@@ -1337,5 +1347,42 @@ namespace bts { namespace blockchain {
       return oproposal_vote();
    }
 
+   digest_type     chain_database::chain_id()const
+   {
+      try {
+        return get_property( bts::blockchain::chain_id ).as<digest_type>();
+      } 
+      catch( const fc::exception& e )
+      {
+         return digest_type();
+      }
+   }
+   std::vector<proposal_record>  chain_database::get_proposals( uint32_t first, uint32_t count )const
+   {
+      std::vector<proposal_record> results;
+      auto current_itr = my->_proposals_db.lower_bound( first );
+      uint32_t found = 0;
+      while( current_itr.valid() && found < count )
+      {
+         results.push_back( current_itr.value() );
+         ++found;
+         ++current_itr;
+      }
+      return results;
+   }
+   std::vector<proposal_vote>   chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
+   {
+      std::vector<proposal_vote> results;
+      auto current_itr = my->_proposal_votes_db.lower_bound( proposal_vote_id_type(proposal_id,0) );
+      while( current_itr.valid() )
+      {
+         if( current_itr.key().proposal_id != proposal_id )
+            return results;
+
+         results.push_back( current_itr.value() );
+         ++current_itr;
+      }
+      return results;
+   }
 
 } } // namespace bts::blockchain

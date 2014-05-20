@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
          chain_database();
          virtual ~chain_database()override;
 
-         void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() );
+         void open( const fc::path& data_dir, fc::optional<fc::path> initial_config = fc::optional<fc::path>() );
          void close();
 
          void set_observer( chain_observer* observer );
@@ -55,6 +55,12 @@ namespace bts { namespace blockchain {
           *  role of the wallet.
           */
          full_block                    generate_block( fc::time_point_sec timestamp );
+
+         /**
+          *  The chain ID is the hash of the initial_config loaded when the
+          *  database was first created.
+          */
+         digest_type                   chain_id()const;
 
          bool                          is_known_block( const block_id_type& block_id )const;
 
@@ -98,6 +104,8 @@ namespace bts { namespace blockchain {
          std::vector<name_id_type>    get_active_delegates()const;
          std::vector<name_id_type>    get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
          std::vector<name_record>     get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
+         std::vector<proposal_record> get_proposals( uint32_t first=0, uint32_t count = -1)const;
+         std::vector<proposal_vote>   get_proposal_votes( proposal_id_type proposal_id ) const;
 
          virtual void                 remove_asset_record( asset_id_type id )const;
          virtual void                 remove_balance_record( const balance_id_type& id )const;

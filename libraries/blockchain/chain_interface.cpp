@@ -80,5 +80,16 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
+   bool chain_interface::is_active_delegate( name_id_type delegate_id )const
+   {
+       auto active_delegates = get_active_delegates();
+       for( auto id : active_delegates )
+       {
+          if( id == delegate_id )
+             return true;
+       }
+       return false;
+   }
+
 } }  // bts::blockchain
 

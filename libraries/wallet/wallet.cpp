@@ -6,6 +6,7 @@
 #include <fc/crypto/base58.hpp>
 #include <bts/import_bitcoin_wallet.hpp>
 
+#include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
 
@@ -923,7 +924,12 @@ namespace bts { namespace wallet {
    std::string wallet::get_name()const           { return my->_wallet_name;                     }
    fc::path    wallet::get_filename()const       { return my->_wallet_filename;                 }
 
-   void wallet::lock()                           { my->_wallet_password = fc::sha512(); my->_relock_time = fc::time_point();   }
+   void wallet::lock()                           
+   { 
+      wlog( "lock ${this}", ("this",int64_t(this)) );
+      my->_wallet_password = fc::sha512(); 
+      my->_relock_time = fc::time_point();  
+   }
    bool wallet::is_unlocked()const               { return my->_wallet_password != fc::sha512(); }
    bool wallet::is_locked()const                 { return !is_unlocked();                       }
    fc::time_point wallet::unlocked_until() const { return my->_relock_time; }
@@ -934,6 +940,7 @@ namespace bts { namespace wallet {
     */
    void wallet::unlock( const fc::microseconds& timeout, const std::string& password )
    { try {
+      wlog( "unlock: ${sec}  ${this}", ("sec",timeout.to_seconds())("this",int64_t(this)) );
       FC_ASSERT( timeout.count() > 0 );
       FC_ASSERT( !password.empty() );
       FC_ASSERT( !!my->_master_key );
@@ -945,21 +952,28 @@ namespace bts { namespace wallet {
          my->_wallet_password = fc::sha512();
          FC_THROW("Incorrect passphrase");
       }
-      fc::time_point requested_relocking_time = fc::time_point::now() + timeout;
-      my->_relock_time = std::max(my->_relock_time, requested_relocking_time);
-      if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
+      if( timeout == fc::microseconds::maximum() )
       {
-        my->_wallet_relocker_done = fc::async([this](){
-          while( !my->_wallet_relocker_done.canceled() )
-          {
-            if (bts::blockchain::now() > my->_relock_time)
-            {
-              lock();
-              return;
-            }
-            fc::usleep(fc::microseconds(200000));
-          }
-        });
+         my->_relock_time = fc::time_point::maximum();
+      }
+      else
+      {
+         fc::time_point requested_relocking_time = fc::time_point::now() + timeout;
+         my->_relock_time = std::max(my->_relock_time, requested_relocking_time);
+         if (!my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready())
+         {
+           my->_wallet_relocker_done = fc::async([this](){
+             while( !my->_wallet_relocker_done.canceled() )
+             {
+               if (bts::blockchain::now() > my->_relock_time)
+               {
+                 lock();
+                 return;
+               }
+               fc::usleep(fc::microseconds(200000));
+             }
+           });
+         }
       }
 #if 0
       // change the above code to this version once task cancellation is fixed in fc
@@ -1003,7 +1017,8 @@ namespace bts { namespace wallet {
    wallet_account_record wallet::create_receive_account( const std::string& account_name )
    { try {
         if (is_locked())
-          FC_THROW("wallet must be unlocked to create receive account");
+          FC_ASSERT(!"wallet must be unlocked to create receive account", "", 
+                    ("account_name",account_name)("this",int64_t(this))("name",get_name()) );
 
         auto current_itr = my->_account_name_index.find( account_name );
         if (current_itr != my->_account_name_index.end())
@@ -1300,14 +1315,12 @@ namespace bts { namespace wallet {
 
       auto current_fee_rate = my->_blockchain->get_fee_rate();
 
-      fc::optional<std::string> ojson_str;
-      if( !!json_data )
+
+      if( json_data.valid() )
       {
-         std::string json_str = fc::json::to_string( *json_data );
-         FC_ASSERT( json_str.size() < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
-         FC_ASSERT( name_record::is_valid_json( json_str ) );
-         total_fees += asset( (json_str.size() * current_fee_rate)/1000, 0 );
-         ojson_str = json_str;
+         size_t pack_size = fc::raw::pack_size(*json_data);
+         FC_ASSERT( pack_size < BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE );
+         total_fees += asset( (pack_size * current_fee_rate)/1000, 0 );
       }
       if( !as_delegate && name_rec->is_delegate() )
          FC_ASSERT( !"You cannot unregister as a delegate" );
@@ -1318,7 +1331,7 @@ namespace bts { namespace wallet {
       }
 
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
-      trx.update_name( name_rec->id, ojson_str, active, as_delegate );
+      trx.update_name( name_rec->id, json_data, active, as_delegate );
       my->sign_transaction( trx, required_sigs );
 
       return trx;
@@ -1344,14 +1357,14 @@ namespace bts { namespace wallet {
       {
         total_fees += asset( (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE*current_fee_rate)/1000, 0 );
       }
-      auto json_str = fc::json::to_string(json_data);
-      total_fees += asset( (json_str.size() * current_fee_rate)/1000, 0 );
+      auto data_size = fc::raw::pack_size(json_data); //fc::json::to_string(json_data);
+      total_fees += asset( (data_size * current_fee_rate)/1000, 0 );
 
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
 
       auto owner_key  = get_new_public_key();
       auto active_key = get_new_public_key();
-      trx.reserve_name( name, json_str, owner_key, active_key );
+      trx.reserve_name( name, json_data, owner_key, active_key, as_delegate );
 
       my->sign_transaction( trx, required_sigs );
 
