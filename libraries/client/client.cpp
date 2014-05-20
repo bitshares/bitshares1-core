@@ -25,6 +25,8 @@ namespace bts { namespace client {
                 _p2p_node->set_delegate(this);
             }
 
+            virtual ~client_impl()override {}
+
             void delegate_loop();
             signed_transactions get_pending_transactions() const;
 
@@ -48,6 +50,7 @@ namespace bts { namespace client {
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
+            virtual fc::sha256 get_chain_id()const override;
             virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
