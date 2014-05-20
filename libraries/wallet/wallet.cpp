@@ -1135,7 +1135,7 @@ namespace bts { namespace wallet {
       int32_t invoice_number = -1; // TODO: derive invoice number from invoice_memo
       auto record_id = get_new_index();
       auto pkr = private_key_record( record_id, account_number, payment_number, priv_key, _wallet_password );
-      elog( "account_number: ${i}", ("i",account_number) );
+      ilog( "account_number: ${i}", ("i",account_number) );
       _extra_receive_keys[payment_number] = pkr;
 
       address_index key_location( account_number, invoice_number, payment_number );
@@ -1495,7 +1495,8 @@ namespace bts { namespace wallet {
         {
             auto blk = my->_blockchain->get_block( i );
             scan_block( blk );
-            cb( i, head_block_num, 0, 0 );
+            if (cb)
+              cb( i, head_block_num, 0, 0 );
             my->set_last_scanned_block_number( i );
         }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }

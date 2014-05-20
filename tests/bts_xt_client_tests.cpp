@@ -328,7 +328,7 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
     initial_shares_requested += client_processes[i].initial_balance;
   }
 
-  double scale_factor = (double)BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
+  double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance *= (int64_t)scale_factor;
 
@@ -348,9 +348,10 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 void bts_client_launcher_fixture::create_unsynchronized_wallets()
 {
   const uint32_t initial_block_count = 400; // generate this many blocks
-  bts::blockchain::advance_time(-1 * initial_block_count * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+  bts::blockchain::advance_time(-1 * (initial_block_count + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
   // create a blockchain
+  genesis_block.timestamp = bts::blockchain::now();
   fc::path genesis_json = bts_xt_client_test_config::config_directory / "genesis.json";
   fc::json::save_to_file(genesis_block, genesis_json, true);
 
@@ -360,21 +361,25 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     fc::remove_all(client_processes[i].config_dir);
     fc::create_directories(client_processes[i].config_dir);
     client_processes[i].blockchain = std::make_shared<bts::blockchain::chain_database>();
-    client_processes[i].blockchain->open(client_processes[i].config_dir / "chain");
+    client_processes[i].blockchain->open(client_processes[i].config_dir / "chain", genesis_json);
     client_processes[i].wallet = std::make_shared<bts::wallet::wallet>(client_processes[i].blockchain);
     client_processes[i].wallet->set_data_directory(client_processes[i].config_dir);
     client_processes[i].wallet->create("default", WALLET_PASSPHRASE);
   }
 
+  bts_client_process& first_client = client_processes[0];
+  first_client.wallet->unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE);
+  for (unsigned i = 0; i < delegate_keys.size(); ++i)
+    first_client.wallet->import_private_key(delegate_keys[i]);
+  first_client.wallet->scan_state();
+
   uint32_t current_block_count = 0;
   for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)
   {
     // generate a block
-    //std::vector<signed_transaction> transactions;
-
     // the first client will always have the complete blockchain, so use it for building the blockchain.
     // earlier clients will have progressively shorter chains
-    bts_client_process& first_client = client_processes[0];
+
     bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
     fc::time_point_sec my_next_block_time = first_client.wallet->next_block_production_time();
     bts::blockchain::full_block next_block = first_client.blockchain->generate_block(my_next_block_time);
@@ -406,7 +411,7 @@ void bts_client_launcher_fixture::launch_client(uint32_t client_index)
   fc::optional<bts::blockchain::genesis_block_config> optional_genesis_block;
   // simulate the condition where some clients start without a genesis block shipped to them
   optional_genesis_block = genesis_block;
-  client_processes[client_index].launch(client_index == 0, optional_genesis_block);
+  client_processes[client_index].launch(client_index, optional_genesis_block);
 }
 
 void bts_client_launcher_fixture::launch_clients()
@@ -805,7 +810,10 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   client_processes.resize(20);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
+  {
+    client_processes[i].set_process_number(i);
     client_processes[i].initial_balance = INITIAL_BALANCE;
+  }
 
   create_delegates_and_genesis_block();
 
@@ -1052,11 +1060,23 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("That's about " << (total_number_of_transactions / run_time_in_seconds) << " transactions per second");
 }
 
+BOOST_AUTO_TEST_CASE(bignum)
+{
+  // Test whether math using big numbers works in 32-bit code.  (it doesn't)  
+  bts::blockchain::asset big_asset(8000000000000000000);
+  bts::blockchain::asset big_divisor(1000000);
+  bts::blockchain::price dividend = big_asset / big_divisor;
+  BOOST_CHECK_EQUAL(dividend, 8000000000000);
+
+  BOOST_CHECK_EQUAL((bts::blockchain::asset(1000000) * fc::uint128_t(1000000, 0)).amount, 
+                    bts::blockchain::asset(1000000000000).amount);
+}
+
 BOOST_AUTO_TEST_CASE(simple_sync_test)
 {
   /* Note: on Windows, boost::process imposes a limit of 64 child processes,
            we should max out at 55 or less to give ourselves some wiggle room */
-  client_processes.resize(10);
+  client_processes.resize(5);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
