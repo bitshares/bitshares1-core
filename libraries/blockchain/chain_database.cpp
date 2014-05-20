@@ -1131,6 +1131,12 @@ namespace bts { namespace blockchain {
 
    void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    {
+      if( self->chain_id() != digest_type() )
+      {
+         ilog( "Genesis State already Initialized" );
+         return;
+      }
+
       std::cout << "Initializing Genesis State\n";
       if( !genesis_file.valid() ) FC_ASSERT( !"No genesis state specified" );
       FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file",*genesis_file) );
@@ -1150,6 +1156,10 @@ namespace bts { namespace blockchain {
       {
          FC_ASSERT( !"Invalid Genesis Format", " '${format}'", ("format",genesis_file->extension() ) );
       }
+
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, config );
+      self->set_property( bts::blockchain::chain_id, fc::variant(enc.result()) );
 
       double total_unscaled = 0;
       for( auto item : config.balances ) total_unscaled += item.second;
@@ -1337,5 +1347,16 @@ namespace bts { namespace blockchain {
       return oproposal_vote();
    }
 
+   digest_type     chain_database::chain_id()const
+   {
+      try {
+        return get_property( bts::blockchain::chain_id ).as<digest_type>();
+      } 
+      catch( const fc::exception& e )
+      {
+         wlog( "${e}", ("e",e.to_detail_string() ) );
+         return digest_type();
+      }
+   }
 
 } } // namespace bts::blockchain

@@ -166,7 +166,8 @@ namespace bts { namespace blockchain {
    {
       last_asset_id    = 0,
       last_name_id     = 1,
-      last_proposal_id = 2
+      last_proposal_id = 2,
+      chain_id         = 3 // hash of initial state
    };
    typedef uint32_t chain_property_type;
 
@@ -228,7 +229,7 @@ FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(chain_id) )
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
 FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
 FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )
