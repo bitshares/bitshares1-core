@@ -223,7 +223,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
   fc::optional<fc::path> genesis_file;
 
-  genesis_file = option_variables["genesis-json"].as<std::string>();
+  genesis_file = option_variables["genesis-config"].as<std::string>();
   std::cout << "Using genesis block from file \"" << genesis_file->string() << "\"\n";
 
   chain->open( datadir / "chain", genesis_file );
