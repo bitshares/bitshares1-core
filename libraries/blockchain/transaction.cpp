@@ -637,5 +637,22 @@ namespace bts { namespace blockchain {
          return itr->second;
       return 0;
    }
+   void transaction::create_asset( const std::string& symbol, 
+                                   const std::string& name, 
+                                   const std::string& description,
+                                   const fc::variant& data,
+                                   name_id_type issuer_id,
+                                   share_type   max_share_supply )
+   {
+      FC_ASSERT( max_share_supply > 0 );
+      create_asset_operation op;
+      op.symbol = symbol;
+      op.name = name;
+      op.description = description;
+      op.json_data = data;
+      op.issuer_name_id = issuer_id;
+      op.maximum_share_supply = max_share_supply;
+      operations.push_back( op );
+   }
 
 } } // bts::blockchain 
