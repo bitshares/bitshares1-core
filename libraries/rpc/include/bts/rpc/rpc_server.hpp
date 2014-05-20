@@ -21,7 +21,7 @@ namespace bts { namespace rpc {
     {
       config():rpc_user("user"),
                rpc_password("password"),
-               rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9988")),
+               rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")), /* Defaults to 9988 in main.cpp */
                httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:9989")),
                htdocs("./htdocs"){}
       std::string      rpc_user;
@@ -30,7 +30,7 @@ namespace bts { namespace rpc {
       fc::ip::endpoint httpd_endpoint;
       fc::path         htdocs;
 
-      bool is_valid() const;
+      bool is_valid() const; /* Checks if rpc port is set */
     };
 
     enum method_prerequisites

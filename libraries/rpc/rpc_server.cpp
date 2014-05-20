@@ -603,6 +603,7 @@ Result:
        info["blocks"]           = _client->get_chain()->get_head_block_num();
        info["connections"]      = _client->get_connection_count();
        info["_node_id"]         = _client->get_node_id();
+       info["rpc_port"]         = _config.rpc_endpoint.port();
        return fc::variant( std::move(info) );
     }
 
