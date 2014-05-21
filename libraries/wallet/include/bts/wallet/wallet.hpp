@@ -188,6 +188,20 @@ namespace bts { namespace wallet {
                                          bool as_delegate = false,
                                          wallet_flag flag = sign_and_broadcast );
 
+         signed_transaction submit_proposal( const std::string& name,
+                                             const std::string& subject,
+                                             const std::string& body,
+                                             const std::string& proposal_type,
+                                             const fc::variant& data,
+                                             wallet_flag flag = sign_and_broadcast );
+
+         signed_transaction vote_proposal( const std::string& name, 
+                                           proposal_id_type proposal_id, 
+                                           uint8_t vote,
+                                           wallet_flag flag = sign_and_broadcast);
+
+
+
          void                                         set_delegate_trust_status(const std::string& delegate_name, fc::optional<int32_t> trust_level);
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;

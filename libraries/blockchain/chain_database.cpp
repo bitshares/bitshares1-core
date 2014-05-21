@@ -118,6 +118,8 @@ namespace bts { namespace blockchain {
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
             void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
+            void                       update_random_seed( secret_hash_type new_secret, 
+                                                          const pending_chain_state_ptr& pending_state );
 
 
             void update_delegate_production_info( const full_block& block_data, 
@@ -424,9 +426,13 @@ namespace bts { namespace blockchain {
             digest_block digest_data(block_data);
             FC_ASSERT( digest_data.validate_digest() );
             FC_ASSERT( digest_data.validate_unique() );
+
+            // signign delegate id: 
+            auto signing_delegate_id = self->get_signing_delegate_id( block_data.timestamp );
             FC_ASSERT( block_data.validate_signee( self->get_signing_delegate_key(block_data.timestamp) ),
                        "", ("signing_delegate_key", self->get_signing_delegate_key(block_data.timestamp))
-                           ("signing_delegate_id", self->get_signing_delegate_id( block_data.timestamp)) );
+                           ("signing_delegate_id", signing_delegate_id ) );
+
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
@@ -446,31 +452,64 @@ namespace bts { namespace blockchain {
        *  Note that the header of block_data has already been verified by the caller and that updates
        *  are applied to pending_state.
        */
-      void chain_database_impl::update_delegate_production_info( const full_block& block_data,
+      void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
                                                                  const pending_chain_state_ptr& pending_state )
       {
-          auto timestamp = _head_block_header.timestamp;
+          auto headblock_timestamp = _head_block_header.timestamp;
           if( _head_block_header.block_num == 0 )
           {
-              timestamp = block_data.timestamp;
-              timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+              headblock_timestamp = produced_block.timestamp;
+              headblock_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           }
+
+
+          // validate secret
+          {
+             auto delegate_id = self->get_signing_delegate_id( produced_block.timestamp );
+             auto delegate_rec = pending_state->get_name_record( delegate_id );
+
+             if( delegate_rec->delegate_info->blocks_produced > 0 )
+             {
+                 auto hash_of_previous_secret = fc::ripemd160::hash(produced_block.previous_secret); 
+                 FC_ASSERT( hash_of_previous_secret == delegate_rec->delegate_info->next_secret_hash,
+                            "",
+                            ("previous_secret",produced_block.previous_secret)
+                            ("hash_of_previous_secret",hash_of_previous_secret)
+                            ("delegate",*delegate_rec) );
+             }
+
+
+             delegate_rec->delegate_info->next_secret_hash         = produced_block.next_secret_hash;
+             delegate_rec->delegate_info->last_block_num_produced  = produced_block.block_num;
+             pending_state->store_name_record( *delegate_rec );
+          }
+          
 
           do
           {
-              timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+              headblock_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
-              auto delegate_id = self->get_signing_delegate_id( timestamp );
+              auto delegate_id = self->get_signing_delegate_id( headblock_timestamp );
               auto delegate_rec = pending_state->get_name_record( delegate_id );
 
-              if( timestamp != block_data.timestamp )
+              if( headblock_timestamp != produced_block.timestamp )
                   delegate_rec->delegate_info->blocks_missed += 1;
               else
                   delegate_rec->delegate_info->blocks_produced += 1;
 
               pending_state->store_name_record( *delegate_rec );
           }
-          while( timestamp != block_data.timestamp );
+          while( headblock_timestamp != produced_block.timestamp );
+      }
+      void chain_database_impl::update_random_seed( secret_hash_type new_secret, 
+                                                    const pending_chain_state_ptr& pending_state )
+      {
+         auto current_seed = pending_state->get_current_random_seed();
+         fc::sha512::encoder enc;
+         fc::raw::pack( enc, new_secret );
+         fc::raw::pack( enc, current_seed );
+         pending_state->set_property( last_random_seed_id, 
+                                      fc::variant(fc::ripemd160::hash( enc.result() )) );
       }
 
       /**
@@ -501,6 +540,8 @@ namespace bts { namespace blockchain {
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
+
+            update_random_seed( block_data.previous_secret, pending_state );
 
 
             save_undo_state( block_id, pending_state );
@@ -1133,6 +1174,7 @@ namespace bts { namespace blockchain {
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
+
     //  elog( "initial pay rate: ${R}   total fees: ${F} next: ${N}",
     //        ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
@@ -1236,6 +1278,7 @@ namespace bts { namespace blockchain {
 
       self->set_property( chain_property_enum::last_asset_id, 0 );
       self->set_property( chain_property_enum::last_name_id, uint64_t(config.names.size()) );
+      self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
    }
 
    void chain_database::set_observer( chain_observer* observer )
@@ -1393,6 +1436,10 @@ namespace bts { namespace blockchain {
          ++current_itr;
       }
       return results;
+   }
+   digest_type    chain_database::get_current_random_seed()const
+   {
+      return get_property( last_random_seed_id ).as<digest_type>();
    }
 
 } } // namespace bts::blockchain

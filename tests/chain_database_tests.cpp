@@ -432,6 +432,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
        uint32_t sleep_time_sec = (uint32_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
        std::cerr << "sleeping " << sleep_time_sec << "s \n";
        bts::blockchain::advance_time(sleep_time_sec);
+       std::cerr <<"\n\n\n\n";
       // fc::usleep( fc::seconds( sleep_time_sec ) );
     }
 
@@ -463,6 +464,60 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
 
     my_chain->export_fork_graph( "fork_graph.dot" );
     FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
+  }
+  catch ( const fc::exception& e )
+  {
+     elog( "${e}", ("e",e.to_detail_string() ) );
+     throw;
+  }
+}
+BOOST_AUTO_TEST_CASE( basic_chain_test )
+{
+   try {
+    // the purpose of this test is to validate the fork handling
+    // when two alternative forks are produced and then merged.
+
+    fc::temp_directory my_dir;
+    fc::temp_directory your_dir;
+
+    chain_database_ptr my_chain = std::make_shared<chain_database>();
+    my_chain->open( my_dir.path(), "genesis.dat" );
+
+    chain_database_ptr your_chain = std::make_shared<chain_database>();
+    your_chain->open( your_dir.path(), "genesis.dat" );
+
+    wallet  my_wallet( my_chain );
+    my_wallet.set_data_directory( my_dir.path() );
+    my_wallet.create(  "my_wallet", "password" );
+    my_wallet.unlock( fc::seconds( 10000000 ), "password" );
+
+
+    auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
+    for( uint32_t i = 0; i < keys.size(); ++i )
+    {
+          my_wallet.import_private_key( keys[i] );
+    }
+    my_wallet.scan_state();
+
+
+    // produce blocks for 30 seconds...
+    for( uint32_t i = 0; i < 20; ++i )
+    {
+       auto now = bts::blockchain::now(); //fc::time_point::now();
+       std::cerr << "now: "<< std::string( fc::time_point(now) ) << "\n";
+       auto my_next_block_time = my_wallet.next_block_production_time();
+       if( my_next_block_time == now )
+       {
+          auto my_block = my_chain->generate_block( my_next_block_time );
+          std::cerr << "producing my block: "<< my_block.block_num <<"\n";
+          my_wallet.sign_block( my_block );
+          my_chain->push_block( my_block );
+       }
+       uint32_t sleep_time_sec = (uint32_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC  - (now.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+       std::cerr << "sleeping " << sleep_time_sec << "s \n";
+       bts::blockchain::advance_time(sleep_time_sec);
+      // fc::usleep( fc::seconds( sleep_time_sec ) );
+    }
   }
   catch ( const fc::exception& e )
   {

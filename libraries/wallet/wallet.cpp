@@ -35,6 +35,25 @@ namespace bts { namespace wallet {
 
             virtual ~wallet_impl()override {}
 
+            secret_hash_type get_secret( uint32_t previous_block_num, const fc::ecc::private_key& delegate_key )
+            {
+               block_id_type prev_header_id;
+               if( previous_block_num != 0 ) 
+               {
+                  auto previous_block_header = _blockchain->get_block_header( previous_block_num );
+                  prev_header_id = previous_block_header.id();
+               }
+
+                                                                  
+               fc::sha512::encoder key_enc;
+               fc::raw::pack( key_enc, delegate_key );
+               fc::sha512::encoder enc;
+               fc::raw::pack( enc, key_enc.result() );
+               fc::raw::pack( enc, prev_header_id );
+
+               return fc::ripemd160::hash( enc.result() );
+            }
+
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
                if( invoice_number < 0 )
@@ -1453,6 +1472,66 @@ namespace bts { namespace wallet {
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
 
+   signed_transaction wallet::submit_proposal( const std::string& name,
+                                               const std::string& subject,
+                                               const std::string& body,
+                                               const std::string& proposal_type,
+                                               const fc::variant& json_data,
+                                               wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       auto current_fee_rate = my->_blockchain->get_fee_rate();
+       auto data_size = fc::raw::pack_size(json_data); //fc::json::to_string(json_data);
+       total_fees += asset((data_size * current_fee_rate) / 1000, 0);
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type delegate_id = name_rec->id;
+       trx.submit_proposal(delegate_id, subject, body, proposal_type, json_data);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+   }
+
+   signed_transaction wallet::vote_proposal(const std::string& name, 
+                                            proposal_id_type proposal_id,
+                                            uint8_t vote,
+                                            wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type voter_id = name_rec->id;
+       trx.vote_proposal(voter_id, proposal_id, vote);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+   }
 
    //functions for reporting delegate trust status
    void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
@@ -1487,14 +1566,25 @@ namespace bts { namespace wallet {
       return itr != my->_sending_keys.end();
    }
 
+
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
+      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
+      auto delegate_rec = my->_blockchain->get_name_record( signing_delegate_id );
+
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      //ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
+      header.previous_secret  = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced-1, 
+                                      delegate_key );
+
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
+      header.next_secret_hash = fc::ripemd160::hash( next_secret );
+//      ilog( "next_secret: ${next}    next_secret_hash: ${next_secret_hash}", 
+//            ("next",next_secret)("next_secret_hash",header.next_secret_hash) );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );

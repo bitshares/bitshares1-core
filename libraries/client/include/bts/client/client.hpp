@@ -43,12 +43,28 @@ namespace bts { namespace client {
          /**
           *  Reserve a name and broadcast it to the network.
           */
-         transaction_id_type reserve_name( const std::string& name, const fc::variant& data );
-         transaction_id_type register_delegate( const std::string& name, const fc::variant& data );
+         transaction_id_type reserve_name( const std::string& name, const fc::variant& json_data );
+         transaction_id_type update_name( const std::string& name,
+                                          const fc::optional<fc::variant>& json_data); //TODO
+         transaction_id_type register_delegate(const std::string& name, const fc::variant& json_data);
 
-         void                            set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level);
-         bts::wallet::delegate_trust_status   get_delegate_trust_status(const std::string& delegate_name) const;
+         /**
+         *  Submit and vote on proposals by broadcasting to the network.
+         */
+         transaction_id_type submit_proposal(const std::string& name,
+                                             const std::string& subject,
+                                             const std::string& body,
+                                             const std::string& proposal_type,
+                                             const fc::variant& json_data);
+         transaction_id_type vote_proposal( const std::string& name,
+                                             proposal_id_type proposal_id,
+                                             uint8_t vote);
+
+         void                               set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level);
+         bts::wallet::delegate_trust_status get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, bts::wallet::delegate_trust_status> list_delegate_trust_status() const;
+
+
 
          fc::path                            get_data_dir()const;
 
