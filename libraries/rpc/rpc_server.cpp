@@ -67,6 +67,8 @@ namespace bts { namespace rpc {
              (wallet_rescan_blockchain_state)\
              (wallet_reserve_name)\
              (wallet_register_delegate)\
+             (wallet_submit_proposal)\
+             (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
              (wallet_list_delegate_trust_status)\
@@ -1260,9 +1262,53 @@ As a json rpc call
        return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
     }
 
+    static rpc_server::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
+      /* description */ "Submit a proposal to the delegates for voting",
+      /* returns: */    "transaction_id",
+      /* params:          name          type       classification                   default_value */
+      { { "proposer", "string", rpc_server::required_positional, fc::ovariant() },
+        { "subject", "string", rpc_server::required_positional, fc::ovariant() },
+        { "body", "string", rpc_server::required_positional, fc::ovariant() },
+        { "proposal_type", "string", rpc_server::required_positional, fc::ovariant() },
+        { "json_data", "variant", rpc_server::optional_positional, fc::ovariant() } 
+      },
+        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+      R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_submit_proposal(const fc::variants& params)
+    {
+      auto transaction_id = _client->submit_proposal( params[0].as_string(), //proposer 
+                                                      params[1].as_string(), //subject
+                                                      params[2].as_string(), //body
+                                                      params[3].as_string(), //proposal_type
+                                                      params[4]              //json_data
+                                                      );
+      return fc::variant(transaction_id);
+    }
+
+    static rpc_server::method_data wallet_vote_proposal_metadata{ "wallet_vote_proposal", nullptr,
+      /* description */ "Vote on a proposal",
+      /* returns: */    "transaction_id",
+      /* params:          name          type       classification                   default_value */
+      { { "name", "string", rpc_server::required_positional, fc::ovariant() },
+        { "proposal_id", "transaction_id", rpc_server::required_positional, fc::ovariant() },
+        { "vote", "unsigned integer", rpc_server::required_positional, fc::ovariant() }
+      },
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+      R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
+    {
+      auto transaction_id = _client->vote_proposal(params[0].as_string(), 
+                                                   params[1].as_int64(),
+                                                   params[2].as_uint64());
+      return fc::variant(transaction_id);
+    }
+
+
     static rpc_server::method_data wallet_set_delegate_trust_status_metadata{ "wallet_set_delegate_trust_status", nullptr,
       /* description */ "Sets the trust level for a delegate",
-      /* returns: */    "bool",
+      /* returns: */    "null",
       /* params:          name          type       classification                   default_value */
       { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() },
       { "trust_level", "integer", rpc_server::required_positional, fc::ovariant() } },

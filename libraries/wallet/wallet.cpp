@@ -1472,6 +1472,66 @@ namespace bts { namespace wallet {
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
 
+   signed_transaction wallet::submit_proposal( const std::string& name,
+                                               const std::string& subject,
+                                               const std::string& body,
+                                               const std::string& proposal_type,
+                                               const fc::variant& json_data,
+                                               wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       auto current_fee_rate = my->_blockchain->get_fee_rate();
+       auto data_size = fc::raw::pack_size(json_data); //fc::json::to_string(json_data);
+       total_fees += asset((data_size * current_fee_rate) / 1000, 0);
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type delegate_id = name_rec->id;
+       trx.submit_proposal(delegate_id, subject, body, proposal_type, json_data);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+   }
+
+   signed_transaction wallet::vote_proposal(const std::string& name, 
+                                            proposal_id_type proposal_id,
+                                            uint8_t vote,
+                                            wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type voter_id = name_rec->id;
+       trx.vote_proposal(voter_id, proposal_id, vote);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+   }
 
    //functions for reporting delegate trust status
    void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
