@@ -259,7 +259,7 @@ FC_REFLECT( bts::blockchain::name_record,
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(votes_against)(blocks_produced)
             (blocks_missed)(pay_balance)(next_secret_hash)(last_block_num_produced) )
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(chain_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(last_random_seed_id)(chain_id) )
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
 FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
 FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )

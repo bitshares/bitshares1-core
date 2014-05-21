@@ -1278,6 +1278,7 @@ namespace bts { namespace blockchain {
 
       self->set_property( chain_property_enum::last_asset_id, 0 );
       self->set_property( chain_property_enum::last_name_id, uint64_t(config.names.size()) );
+      self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
    }
 
    void chain_database::set_observer( chain_observer* observer )
