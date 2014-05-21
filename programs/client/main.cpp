@@ -50,8 +50,8 @@ int main( int argc, char** argv )
                               ("daemon", "run in daemon mode with no CLI console")
                               ("rpcuser", boost::program_options::value<std::string>(), "username for JSON-RPC")
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
-                              ("httpport", boost::program_options::value<uint16_t>()->default_value(5679), "port to listen for HTTP JSON-RPC connections")
-                              ("rpcport", boost::program_options::value<uint16_t>()->default_value(5680), "port to listen for JSON-RPC connections")
+                              ("rpcport", boost::program_options::value<uint16_t>()->default_value(5679), "port to listen for JSON-RPC connections")
+                              ("httpport", boost::program_options::value<uint16_t>()->default_value(5680), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("version", "print the version information for bts_xt_client");

@@ -12,7 +12,4 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin_import/include" )
 add_executable( bitshares_client main.cpp )
 target_link_libraries( bitshares_client bitcoin_import bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client bts_utilities fc ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${ZLIB_LIBRARY} upnpc-static )
 
-set(INCLUDE_GUI FALSE CACHE BOOL "Include bts_xt_gui")
-if(${INCLUDE_GUI})
-  add_subdirectory( bts_xt_gui/qtapp )
-endif()
+add_subdirectory( "qt_wallet" )
