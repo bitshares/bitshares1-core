@@ -15,6 +15,7 @@
 #include <fc/git_revision.hpp>
 
 #include <iostream>
+#include <iomanip>
 
 struct config
 {
@@ -41,13 +42,14 @@ int main( int argc, char** argv )
    boost::program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", boost::program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
-                              ("port", boost::program_options::value<uint16_t>(), "set port to listen on")
-                              ("connect-to", boost::program_options::value<std::string>(), "set remote host to connect to")
+                              ("p2p-port", boost::program_options::value<uint16_t>()->default_value(5678), "set port to listen on")
+                              ("connect-to", boost::program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
+                              ("daemon", "run in daemon mode with no CLI console")
                               ("rpcuser", boost::program_options::value<std::string>(), "username for JSON-RPC")
                               ("rpcpassword", boost::program_options::value<std::string>(), "password for JSON-RPC")
-                              ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
-                              ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
+                              ("httpport", boost::program_options::value<uint16_t>()->default_value(5679), "port to listen for HTTP JSON-RPC connections")
+                              ("rpcport", boost::program_options::value<uint16_t>()->default_value(5680), "port to listen for JSON-RPC connections")
                               ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("version", "print the version information for bts_xt_client");
@@ -134,15 +136,35 @@ int main( int argc, char** argv )
       }
 
       c->configure( datadir );
-      if (option_variables.count("port"))
-        c->listen_on_port(option_variables["port"].as<uint16_t>());
+      if (option_variables.count("p2p-port"))
+      {
+         auto p2pport = option_variables["p2p-port"].as<uint16_t>();
+         std::cout << "Listening to P2P connections on port "<<p2pport<<"\n";
+         c->listen_on_port(p2pport);
+      }
       c->connect_to_p2p_network();
       if (option_variables.count("connect-to"))
-        c->connect_to_peer(option_variables["connect-to"].as<std::string>());
+      {
+         std::vector<std::string> hosts = option_variables["connect-to"].as<std::vector<std::string>>();
+         for( auto peer : hosts )
+         {
+            c->connect_to_peer( peer );
+         }
+      }
 
-      auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
-      cli->wait();
-
+      if( !option_variables.count("daemon") )
+      {
+         auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
+         cli->wait();
+      }
+      else if( option_variables.count( "server" ) ) // daemon & server
+      {
+         rpc_server->wait_on_quit();
+      }
+      else // daemon  !server
+      {
+         std::cerr << "You must start the rpc server in daemon mode\n";
+      }
    }
    catch ( const fc::exception& e )
    {
@@ -159,7 +181,7 @@ void print_banner()
 {
     std::cout<<"================================================================\n";
     std::cout<<"=                                                              =\n";
-    std::cout<<"=             Welcome to BitShares XT                          =\n";
+    std::cout<<"=             Welcome to BitShares "<< std::setw(5) << std::left << BTS_ADDRESS_PREFIX<<"                       =\n";
     std::cout<<"=                                                              =\n";
     std::cout<<"=  This software is in alpha testing and is not suitable for   =\n";
     std::cout<<"=  real monetary transactions or trading.  Use at your own     =\n";
@@ -235,7 +257,7 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
 
   fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
-  std::cout << "Using genesis block from file \"" << genesis_file.string() << "\"\n";
+  std::cout << "Using genesis block from file \"" << fc::absolute( genesis_file ).string() << "\"\n";
   chain->open( datadir / "chain", genesis_file );
 
   return chain;

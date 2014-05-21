@@ -112,6 +112,8 @@ namespace bts { namespace rpc {
     void check_wallet_unlocked();
     void check_wallet_is_open();
 
+    void wait_on_quit();
+
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
