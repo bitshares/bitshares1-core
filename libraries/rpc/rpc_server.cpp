@@ -49,6 +49,7 @@ namespace bts { namespace rpc {
              (wallet_create_from_json)\
              (wallet_lock)\
              (wallet_unlock)\
+             (wallet_change_password)\
              (wallet_create_receive_account) \
              (wallet_create_sending_account) \
              (wallet_import_private_key)\
@@ -863,6 +864,32 @@ As json rpc call
        {
          throw rpc_wallet_passphrase_incorrect_exception();
        }
+    }
+
+    static rpc_server::method_data wallet_change_password_metadata{"wallet_change_password", nullptr,
+          /* description */ "Change the password of the current wallet",
+          /* returns: */    "bool",
+          /* params:          name             type        classification                          default value */
+                            { {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
+        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+    R"(
+Changes the wallet password.
+This will change the wallet's spending passphrase, please make sure you remember it.
+
+Arguments:
+1. "passphrase" (string, required) The wallet new spending passphrase
+
+Note:
+Wallets exist in the wallet data directory.
+     )"};
+    fc::variant rpc_server_impl::wallet_change_password(const fc::variants& params)
+    {
+       std::string passphrase = params[0].as_string();
+       try
+       {
+         _client->get_wallet()->change_password( passphrase );
+         return fc::variant(true);
+       } FC_RETHROW_EXCEPTIONS( warn, "" )
     }
 
     static rpc_server::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
