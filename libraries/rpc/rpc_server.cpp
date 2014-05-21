@@ -809,6 +809,8 @@ Wallets exist in the wallet data directory
          /* returns: */    "void",
          /* params:     */ {},
        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+       R"(
+        )",
         /*aliases*/ { "wallet_lock", "walletlock" }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
