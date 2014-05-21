@@ -1,8 +1,0 @@
-.qmake.stash
-Makefile
-*.user
-*.o
-moc_*
-*.moc
-build/
-*.app

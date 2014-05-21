@@ -15,7 +15,7 @@
 @code
 cd programs/bts_xt
 
-./bts_xt_client --port 5678 --data-dir test_clienta
+./bitshares_client --p2p-port 5678 --data-dir test_clienta
 
 >>> wallet_create walleta
 passphrase:
@@ -109,7 +109,7 @@ You can get a list of all names known to the blockchain with:
 Start a second client:
 
 @code
-./bts_xt_client --port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678
+./bitshares_client --p2p-port 5679 --data-dir test_clientb --connect-to 127.0.0.1:5678
 
 >>> get_info
 {

@@ -176,9 +176,8 @@ namespace bts { namespace blockchain {
    {
        static const operation_type_enum type; 
 
-       asset_id_type    asset_id;
-       balance_id_type  balance_id;
-       share_type       amount;
+       issue_asset_operation( asset a = asset() ):amount(a){}
+       asset            amount;
    };
 
    struct reserve_name_operation
@@ -251,7 +250,7 @@ FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_inpu
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_name_id)(maximum_share_supply) )
 FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_name_id) )
-FC_REFLECT( bts::blockchain::issue_asset_operation, (asset_id)(balance_id)(amount) )
+FC_REFLECT( bts::blockchain::issue_asset_operation, (amount) )
 FC_REFLECT( bts::blockchain::reserve_name_operation, (name)(json_data)(owner_key)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::update_name_operation, (name_id)(json_data)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::submit_proposal_operation, (submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )

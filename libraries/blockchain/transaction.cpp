@@ -582,7 +582,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_issue_asset( const issue_asset_operation& op )
    { try {
       FC_ASSERT( op.amount > 0, "amount: ${amount}", ("amount",op.amount) );
-      auto cur_record = _current_state->get_asset_record( op.asset_id );
+      auto cur_record = _current_state->get_asset_record( op.amount.asset_id );
       if( !cur_record ) 
          fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
 
@@ -592,11 +592,11 @@ namespace bts { namespace blockchain {
 
       add_required_signature( issuer_name_record->active_key );
 
-      if( cur_record->available_shares() < op.amount )
+      if( !cur_record->can_issue( op.amount ) )
          fail( BTS_INSUFFICIENT_FUNDS, fc::variant(op) );
     
-      cur_record->current_share_supply += op.amount;
-      add_balance( asset(op.amount, op.asset_id) );
+      cur_record->current_share_supply += op.amount.amount;
+      add_balance( op.amount );
 
       _current_state->store_asset_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
@@ -685,6 +685,11 @@ namespace bts { namespace blockchain {
       op.issuer_name_id = issuer_id;
       op.maximum_share_supply = max_share_supply;
       operations.push_back( op );
+   }
+
+   void transaction::issue( const asset& amount_to_issue )
+   {
+      operations.push_back( issue_asset_operation( amount_to_issue ) );
    }
 
 } } // bts::blockchain 

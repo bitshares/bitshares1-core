@@ -1,10 +1,9 @@
-[submodule "libraries/fc"]
-	path = libraries/fc
-	url = https://github.com/InvictusInnovations/fc.git
 [submodule "vendor"]
 	path = vendor
 	url = https://github.com/BitShares/vendor.git
-    ignore = dirty
-[submodule "programs/bts_xt/htdocs"]
-	path = programs/bts_xt/htdocs
+[submodule "libraries/fc"]
+	path = libraries/fc
+	url = https://github.com/InvictusInnovations/fc.git
+[submodule "programs/client/htdocs"]
+	path = programs/client/htdocs
 	url = https://github.com/BitShares/web_wallet.git
