@@ -84,12 +84,18 @@ namespace bts { namespace blockchain {
 
    struct asset_record
    {
+      enum {
+         market_issued_asset = -2
+      };
+
       asset_record()
       :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
 
-      bool is_null()const           { return issuer_name_id == -1; }
+      bool is_null()const            { return issuer_name_id == -1; }
+      /** the asset is issued by the market and not by any user */
+      bool is_market_issued()const   { return issuer_name_id == market_issued_asset; }
       asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
 
       asset_id_type       id;
@@ -176,51 +182,51 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec    now()const                                                       = 0;
+         virtual fc::time_point_sec         now()const                                                      = 0;
 
-         virtual std::vector<name_id_type>    get_active_delegates()const = 0;
-         bool is_active_delegate( name_id_type ) const;
+         virtual std::vector<name_id_type>  get_active_delegates()const                                     = 0;
+         bool                               is_active_delegate( name_id_type ) const;
 
          /** return the current fee rate in millishares */
-         virtual int64_t               get_fee_rate()const                                              = 0;
-         virtual int64_t               get_delegate_pay_rate()const                                     = 0;
-         virtual share_type            get_delegate_registration_fee()const;
-         virtual share_type            get_asset_registration_fee()const;
+         virtual int64_t                    get_fee_rate()const                                             = 0;
+         virtual int64_t                    get_delegate_pay_rate()const                                    = 0;
+         virtual share_type                 get_delegate_registration_fee()const;
+         virtual share_type                 get_asset_registration_fee()const;
 
-         virtual fc::variant           get_property( chain_property_enum property_id )const             = 0;
-         virtual void                  set_property( chain_property_enum property_id, 
-                                                     const fc::variant& property_value )                = 0;
+         virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;
+         virtual void                       set_property( chain_property_enum property_id, 
+                                                          const fc::variant& property_value )               = 0;
 
-         virtual oasset_record         get_asset_record( asset_id_type id )const                        = 0;
-         virtual obalance_record       get_balance_record( const balance_id_type& id )const             = 0;
-         virtual oname_record          get_name_record( name_id_type id )const                          = 0;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& )const      = 0;
+         virtual oasset_record              get_asset_record( asset_id_type id )const                       = 0;
+         virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
+         virtual oname_record               get_name_record( name_id_type id )const                         = 0;
+         virtual otransaction_location      get_transaction_location( const transaction_id_type& )const     = 0;
                                                                                                           
-         virtual oasset_record         get_asset_record( const std::string& symbol )const               = 0;
-         virtual oname_record          get_name_record( const std::string& name )const                  = 0;
+         virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
+         virtual oname_record               get_name_record( const std::string& name )const                 = 0;
                                                                                                           
-         virtual void                  store_proposal_record( const proposal_record& r )                = 0;
-         virtual oproposal_record      get_proposal_record( proposal_id_type id )const                  = 0;
+         virtual void                       store_proposal_record( const proposal_record& r )               = 0;
+         virtual oproposal_record           get_proposal_record( proposal_id_type id )const                 = 0;
                                                                                                           
-         virtual void                  store_proposal_vote( const proposal_vote& r )                    = 0;
-         virtual oproposal_vote        get_proposal_vote( proposal_vote_id_type id )const               = 0;
+         virtual void                       store_proposal_vote( const proposal_vote& r )                   = 0;
+         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const              = 0;
 
-         virtual void                  store_asset_record( const asset_record& r )                      = 0;
-         virtual void                  store_balance_record( const balance_record& r )                  = 0;
-         virtual void                  store_name_record( const name_record& r )                        = 0;
-         virtual void                  store_transaction_location( const transaction_id_type&,
-                                                                   const transaction_location& loc )    = 0;
+         virtual void                       store_asset_record( const asset_record& r )                     = 0;
+         virtual void                       store_balance_record( const balance_record& r )                 = 0;
+         virtual void                       store_name_record( const name_record& r )                       = 0;
+         virtual void                       store_transaction_location( const transaction_id_type&,
+                                                                        const transaction_location& loc )   = 0;
 
-         virtual void                  apply_deterministic_updates(){}
+         virtual void                       apply_deterministic_updates(){}
 
-         virtual asset_id_type         last_asset_id()const;
-         virtual asset_id_type         new_asset_id(); 
+         virtual asset_id_type              last_asset_id()const;
+         virtual asset_id_type              new_asset_id(); 
 
-         virtual name_id_type          last_name_id()const;
-         virtual name_id_type          new_name_id();
+         virtual name_id_type               last_name_id()const;
+         virtual name_id_type               new_name_id();
 
-         virtual proposal_id_type      last_proposal_id()const;
-         virtual proposal_id_type      new_proposal_id();
+         virtual proposal_id_type           last_proposal_id()const;
+         virtual proposal_id_type           new_proposal_id();
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;

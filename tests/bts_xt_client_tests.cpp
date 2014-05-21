@@ -348,10 +348,11 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 void bts_client_launcher_fixture::create_unsynchronized_wallets()
 {
   const uint32_t initial_block_count = 400; // generate this many blocks
-  bts::blockchain::advance_time(-1 * (initial_block_count + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+  fc::time_point_sec genesis_block_time(((bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) - (initial_block_count + 1)) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+  bts::blockchain::advance_time(genesis_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
 
   // create a blockchain
-  genesis_block.timestamp = bts::blockchain::now();
+  genesis_block.timestamp = genesis_block_time;
   fc::path genesis_json = bts_xt_client_test_config::config_directory / "genesis.json";
   fc::json::save_to_file(genesis_block, genesis_json, true);
 
@@ -379,14 +380,14 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     // generate a block
     // the first client will always have the complete blockchain, so use it for building the blockchain.
     // earlier clients will have progressively shorter chains
-
     bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
     fc::time_point_sec my_next_block_time = first_client.wallet->next_block_production_time();
+    bts::blockchain::advance_time(my_next_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
     bts::blockchain::full_block next_block = first_client.blockchain->generate_block(my_next_block_time);
     first_client.wallet->sign_block(next_block);
 
     // push it on the clients' block chains
-    for (uint32_t i = 0; i < client_processes.size(); ++i)
+    for (unsigned i = 0; i < client_processes.size(); ++i)
     {
       uint32_t number_of_blocks_for_this_client = initial_block_count * (client_processes.size() - i) / client_processes.size();
       if (current_block_count <= number_of_blocks_for_this_client)
@@ -486,7 +487,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
     for (const fc::variant& peer_info : peers_info)
     {
       fc::variant_object peer_info_object = peer_info.get_object();
@@ -587,7 +588,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 void bts_client_launcher_fixture::get_node_ids()
 {
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->getinfo()["_node_id"].as<fc::uint160_t>());
+    BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->get_info()["_node_id"].as<fc::uint160_t>());
 }
 
 void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts::net::message_propagation_data>& propagation_data, int initial_node, const fc::path& output_file)
@@ -930,7 +931,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
     uint64_t total_in = 0;
     uint64_t total_out = 0;
     for (const fc::variant& peer_info : peers_info)
@@ -1037,7 +1038,7 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->getpeerinfo();
+    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
     uint64_t total_in = 0;
     uint64_t total_out = 0;
     for (const fc::variant& peer_info : peers_info)
@@ -1094,7 +1095,7 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
   std::vector<uint32_t> initial_block_counts;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variant_object info = client_processes[i].rpc_client->getinfo();
+    fc::variant_object info = client_processes[i].rpc_client->get_info();
     initial_block_counts.push_back((uint32_t)info["blocks"].as_int64());
     BOOST_TEST_MESSAGE("Client " << i << " has " << info["blocks"].as_int64() << " blocks");
   }
@@ -1137,7 +1138,7 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
     std::vector<uint32_t> final_block_counts;
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      fc::variant_object info = client_processes[i].rpc_client->getinfo();
+      fc::variant_object info = client_processes[i].rpc_client->get_info();
       final_block_counts.push_back((uint32_t)info["blocks"].as_int64());
     }
 

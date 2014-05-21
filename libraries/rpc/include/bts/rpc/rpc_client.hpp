@@ -50,9 +50,9 @@ namespace bts { namespace rpc {
     fc::optional<std::string> wallet_get_name();
     bool wallet_close();
     void wallet_lock();
-    uint32_t getconnectioncount();
-    fc::variants getpeerinfo();
-    fc::variant_object getinfo();
+    uint32_t network_get_connection_count();
+    fc::variants network_get_peer_info();
+    fc::variant_object get_info();
     void _set_advanced_node_parameters(const fc::variant_object& params);
     bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
     bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);

@@ -568,6 +568,12 @@ namespace bts { namespace wallet {
                      case fire_delegate_op_type:
                         // TODO
                         break;
+                     case submit_proposal_op_type:
+                        // TODO
+                        break;
+                     case vote_proposal_op_type:
+                        // TODO
+                        break;
                      default:
                         FC_ASSERT( false, "Transaction ${t} contains unknown operation type ${o}", ("t",trx)("o",op.type) );
                         break;
@@ -1293,6 +1299,41 @@ namespace bts { namespace wallet {
                                   ("invoice_memo",invoice_memo)
                                   ("from_account",from_account_name)
                                   ("options",options) ) }
+
+
+   signed_transaction  wallet::create_asset( const std::string& symbol,
+                                                const std::string& asset_name,
+                                                const std::string& description,
+                                                const fc::variant& data,
+                                                const std::string& issuer_name,
+                                                share_type max_share_supply,
+                                                const std::string& account_name,
+                                                wallet_flag options  )
+   { try {
+      FC_ASSERT( is_unlocked() );
+      std::unordered_set<address> required_sigs;
+
+      signed_transaction trx;
+
+      oasset_record prior_asset = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT( !prior_asset, "Asset already registered", ("prior_asset",*prior_asset) );
+
+      oname_record issuer_record = my->_blockchain->get_name_record( issuer_name );
+      FC_ASSERT( prior_asset, "Issuer must be a registered name", ("name",issuer_name) );
+
+      required_sigs.insert( address( issuer_record->active_key ) );
+
+      trx.create_asset( symbol, asset_name, description, data, issuer_record->id, max_share_supply );
+
+      size_t trx_size = fc::raw::pack_size( trx );
+      size_t fees = trx_size + BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+      fees       *= my->_blockchain->get_fee_rate();
+
+      my->withdraw_to_transaction( trx, fees, required_sigs );
+      my->sign_transaction( trx, required_sigs );
+
+      return trx;
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create asset ${symbol}", ("symbol",symbol)("asset_name",asset_name) ) }
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,

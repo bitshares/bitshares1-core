@@ -1,4 +1,5 @@
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/utilities/git_revision.hpp>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -11,6 +12,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/rpc/json_connection.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/git_revision.hpp>
 
 #include <iomanip>
 #include <limits>
@@ -29,6 +31,7 @@ namespace bts { namespace rpc {
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
              (blockchain_get_name)\
+             (blockchain_get_name_by_id)\
              (blockchain_get_asset)\
              (blockchain_get_asset_by_id)\
              (blockchain_get_assets)\
@@ -56,6 +59,7 @@ namespace bts { namespace rpc {
              (wallet_get_account)\
              (wallet_rename_account)\
              (wallet_transfer)\
+             (wallet_create_asset)\
              (wallet_get_balance)\
              (wallet_get_transaction_history)\
              (wallet_rescan_blockchain)\
@@ -104,9 +108,11 @@ namespace bts { namespace rpc {
            {
              if (parameter.classification == rpc_server::required_positional)
                help_string += std::string("<") + parameter.name + std::string("> ");
+             if (parameter.classification == rpc_server::optional_named)
+               help_string += std::string("{") + parameter.name + std::string("} ");
              else if (parameter.classification == rpc_server::required_positional_hidden)
                continue;
-             else
+             else 
                help_string += std::string("[") + parameter.name + std::string("] ");
            }
            sstream << help_string << "  " << method_data.description << "\n";
@@ -587,7 +593,8 @@ Result:
                                      /* returns: */    "info",
                                      /* params:          name                 type      required */
                                                        { },
-                                   /* prerequisites */ 0} ;
+                                   /* prerequisites */ 0, 
+                                    /* aliases */ { "getinfo" } } ;
     fc::variant rpc_server_impl::get_info(const fc::variants& params)
     {
        fc::mutable_variant_object info;
@@ -609,6 +616,10 @@ Result:
        info["chain_id"]         = _client->get_chain()->chain_id();
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
+       info["symbol"]           = BTS_ADDRESS_PREFIX;
+       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["_fc_revision"]     = fc::git_revision_sha;
+       info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
        return fc::variant( std::move(info) );
     }
 
@@ -924,7 +935,7 @@ As json rpc call
             /* params:          name                    type        classification                   default value */
                               {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
                                {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
-                               {"asset_id",             "int",      rpc_server::optional_named,      fc::variant(0)},
+                               {"asset_symbol",         "string",   rpc_server::optional_named,      fc::variant(BTS_ADDRESS_PREFIX)},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
@@ -935,14 +946,59 @@ As json rpc call
        auto          amount     = params[0].as_int64();
        std::string   to_account = params[1].as_string();
        fc::variant_object named_params = params[2].get_object();
-       asset_id_type asset_id = named_params["asset_id"].as<asset_id_type>();
+       std::string   asset_symbol = named_params["asset_symbol"].as_string();
        std::string   from_account = named_params["from_account"].as_string();
        std::string   invoice_memo = named_params["invoice_memo"].as_string();
-       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_id ), from_account, invoice_memo );
+       auto asset_rec = _client->get_chain()->get_asset_record( asset_symbol );
+       FC_ASSERT( asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol",asset_symbol) );
+       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_rec->id ), from_account, invoice_memo );
        for( auto trx : summary.payments )
           _client->broadcast_transaction( trx.second );
        return fc::variant(summary);
     }
+
+
+    static rpc_server::method_data wallet_create_asset_metadata{"wallet_create_asset", nullptr,
+            /* description */ "Creates a new user issued asset",
+            /* returns: */    "invoice_summary",
+            /* params:          name                    type        classification                   default value */
+                              {{"symbol",               "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"name",                 "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"issuer_name",          "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
+                               {"description",          "string",   rpc_server::optional_named,      fc::variant("")},
+                               {"data",                 "json",     rpc_server::optional_named,      fc::ovariant()},
+                               {"maximum_share_supply", "int64",    rpc_server::optional_named,      fc::variant(BTS_BLOCKCHAIN_MAX_SHARES)}
+                              },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+          R"(
+          )" };
+    fc::variant rpc_server_impl::wallet_create_asset(const fc::variants& params)
+    {
+       FC_ASSERT( !"Not Yet Implemented" );
+       fc::variant_object named_params = params[3].get_object();
+       auto create_asset_trx = _client->get_wallet()->create_asset( 
+              params[0].as_string(), 
+              params[1].as_string(),
+              named_params["description"].as_string(),
+              named_params["data"],
+              params[2].as_string(),
+              named_params["max_share_supply"].as_int64(),
+              named_params["from_account"].as_string() );
+       _client->broadcast_transaction( create_asset_trx );
+       return fc::variant(create_asset_trx);
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
@@ -1100,13 +1156,25 @@ As a json rpc call
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
-                              {{"name",       "name_record", rpc_server::required_positional, fc::ovariant()}},
+                              {{"name",       "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
      )" };
     fc::variant rpc_server_impl::blockchain_get_name(const fc::variants& params)
     {
       return fc::variant( _client->get_chain()->get_name_record(params[0].as_string()) );
+    }
+    static rpc_server::method_data blockchain_get_name_by_id_metadata{"blockchain_get_name_by_id", nullptr,
+            /* description */ "Retrieves the name record",
+            /* returns: */    "name_record",
+            /* params:          name          type      classification                   default_value */
+                              {{"name",       "int", rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::blockchain_get_name_by_id(const fc::variants& params)
+    {
+      return fc::variant( _client->get_chain()->get_name_record(params[0].as_int64()) );
     }
 
     static rpc_server::method_data blockchain_get_asset_metadata{"blockchain_get_asset", nullptr,

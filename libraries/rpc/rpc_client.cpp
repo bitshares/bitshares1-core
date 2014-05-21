@@ -2,6 +2,7 @@
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/utilities/key_conversion.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/rpc/json_connection.hpp>
@@ -44,9 +45,9 @@ namespace bts { namespace rpc {
       fc::optional<std::string> wallet_get_name();
       bool wallet_close();
       void wallet_lock();
-      uint32_t getconnectioncount();
-      fc::variants getpeerinfo();
-      fc::variant_object getinfo();
+      uint32_t network_get_connection_count();
+      fc::variants network_get_peer_info();
+      fc::variant_object get_info();
       void _set_advanced_node_parameters(const fc::variant_object& params);
       bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
       bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
@@ -150,21 +151,9 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("import_bitcoin_wallet", wallet_filename.string(), password);
     }
 
-    static std::string key_to_wif(const fc::ecc::private_key& key)
-    {
-      fc::sha256 secret = key.get_secret();
-      const size_t size_of_data_to_hash = sizeof(secret) + 1;
-      const size_t size_of_hash_bytes = 4;
-      char data[size_of_data_to_hash + size_of_hash_bytes];
-      data[0] = (char)0x80;
-      memcpy(&data[1], (char*)&secret, sizeof(secret));
-      fc::sha256 digest = fc::sha256::hash(data, size_of_data_to_hash);
-      memcpy(data + size_of_data_to_hash, (char*)&digest, size_of_hash_bytes);
-      return fc::to_base58(data, sizeof(data));
-    }
     bool rpc_client_impl::wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name, bool rescan_blockchain)
     {
-      return _json_connection->call<bool>("wallet_import_private_key", key_to_wif(key), account_name, rescan_blockchain);
+      return _json_connection->call<bool>("wallet_import_private_key", bts::utilities::key_to_wif(key), account_name, rescan_blockchain);
     }
     bool rpc_client_impl::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
@@ -187,17 +176,17 @@ namespace bts { namespace rpc {
     {
       _json_connection->async_call("wallet_lock").wait();
     }
-    uint32_t rpc_client_impl::getconnectioncount()
+    uint32_t rpc_client_impl::network_get_connection_count()
     {
-      return _json_connection->call<uint32_t>("getconnectioncount");
+      return _json_connection->call<uint32_t>("network_get_connection_count");
     }
-    fc::variants rpc_client_impl::getpeerinfo()
+    fc::variants rpc_client_impl::network_get_peer_info()
     {
-      return _json_connection->async_call("getpeerinfo").wait().get_array();
+      return _json_connection->async_call("network_get_peer_info").wait().get_array();
     }
-    fc::variant_object rpc_client_impl::getinfo()
+    fc::variant_object rpc_client_impl::get_info()
     {
-      return _json_connection->async_call("getinfo").wait().get_object();
+      return _json_connection->async_call("get_info").wait().get_object();
     }
     void rpc_client_impl::_set_advanced_node_parameters(const fc::variant_object& params)
     {
@@ -334,17 +323,17 @@ namespace bts { namespace rpc {
   {
     my->wallet_lock();
   }
-  uint32_t rpc_client::getconnectioncount()
+  uint32_t rpc_client::network_get_connection_count()
   {
-    return my->getconnectioncount();
+    return my->network_get_connection_count();
   }
-  fc::variants rpc_client::getpeerinfo()
+  fc::variants rpc_client::network_get_peer_info()
   {
-    return my->getpeerinfo();
+    return my->network_get_peer_info();
   }
-  fc::variant_object rpc_client::getinfo()
+  fc::variant_object rpc_client::get_info()
   {
-    return my->getinfo();
+    return my->get_info();
   }
   void rpc_client::_set_advanced_node_parameters(const fc::variant_object& params)
   {

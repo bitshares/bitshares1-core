@@ -527,10 +527,13 @@ namespace bts { namespace blockchain {
       if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );
       if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
-      auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
-      if( !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 
-      add_required_signature(issuer_name_record->active_key);
+      if( op.issuer_name_id != asset_record::market_issued_asset  )
+      {
+         auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
+         if( op.issuer_name_id > 0 && !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+         add_required_signature(issuer_name_record->active_key);
+      }
 
       sub_balance( balance_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
 
@@ -636,6 +639,23 @@ namespace bts { namespace blockchain {
       if( itr != balance.end() )
          return itr->second;
       return 0;
+   }
+   void transaction::create_asset( const std::string& symbol, 
+                                   const std::string& name, 
+                                   const std::string& description,
+                                   const fc::variant& data,
+                                   name_id_type issuer_id,
+                                   share_type   max_share_supply )
+   {
+      FC_ASSERT( max_share_supply > 0 );
+      create_asset_operation op;
+      op.symbol = symbol;
+      op.name = name;
+      op.description = description;
+      op.json_data = data;
+      op.issuer_name_id = issuer_id;
+      op.maximum_share_supply = max_share_supply;
+      operations.push_back( op );
    }
 
 } } // bts::blockchain 

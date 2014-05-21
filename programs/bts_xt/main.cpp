@@ -5,12 +5,14 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
+#include <bts/utilities/git_revision.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/git_revision.hpp>
 
 #include <iostream>
 
@@ -47,7 +49,9 @@ int main( int argc, char** argv )
                               ("rpcport", boost::program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", boost::program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
-                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)");
+                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
+                              ("version", "print the version information for bts_xt_client");
+
 
    boost::program_options::positional_options_description positional_config;
    positional_config.add("data-dir", 1);
@@ -72,6 +76,15 @@ int main( int argc, char** argv )
      return 0;
    }
 
+   if (option_variables.count("version"))
+   {
+     std::cout << "bts_xt_client built on " << __DATE__ << " at " << __TIME__ << "\n";
+     std::cout << "  bitshares_toolkit revision: " << bts::utilities::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
+     std::cout << "                 fc revision: " << fc::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
+     return 0;
+   }
 
    try {
       print_banner();
@@ -83,9 +96,8 @@ int main( int argc, char** argv )
       auto wall  = std::make_shared<bts::wallet::wallet>(chain);
       wall->set_data_directory( datadir );
 
-      auto c = std::make_shared<bts::client::client>();
+      auto c = std::make_shared<bts::client::client>( chain );
       _global_client = c.get();
-      c->set_chain( chain );
       c->set_wallet( wall );
       c->run_delegate();
 
@@ -221,12 +233,11 @@ bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::
 { try {
   std::cout << "Loading blockchain from " << ( datadir / "chain" ).generic_string()  << "\n";
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
-  fc::optional<fc::path> genesis_file;
 
-  genesis_file = option_variables["genesis-config"].as<std::string>();
-  std::cout << "Using genesis block from file \"" << genesis_file->string() << "\"\n";
-
+  fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
+  std::cout << "Using genesis block from file \"" << genesis_file.string() << "\"\n";
   chain->open( datadir / "chain", genesis_file );
+
   return chain;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 

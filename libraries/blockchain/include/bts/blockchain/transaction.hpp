@@ -53,6 +53,13 @@ namespace bts { namespace blockchain {
                         const fc::optional<fc::variant>& json_data, 
                         const fc::optional<public_key_type>& active, 
                         bool as_delegate = false );
+
+      void create_asset( const std::string& symbol, 
+                         const std::string& name, 
+                         const std::string& description,
+                         const fc::variant& data,
+                         name_id_type issuer_id,
+                         share_type   max_share_supply );
    }; // transaction
 
    struct transaction_summary_details
