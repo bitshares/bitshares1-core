@@ -421,7 +421,18 @@ namespace bts { namespace client {
         broadcast_transaction( trx );
         return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
-    transaction_id_type client::register_delegate( const std::string& name, const fc::variant& data )
+
+    /*
+    transaction_id_type client::update_name(const std::string& name, const fc::variant& data)
+    {
+      try {
+        auto trx = get_wallet()->update_name(name, data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+    */
+    transaction_id_type client::register_delegate(const std::string& name, const fc::variant& data)
     { try {
              FC_ASSERT( false, "Not Implemented" );
         //auto trx = get_wallet()->register_delegate( name, data );
@@ -444,6 +455,31 @@ namespace bts { namespace client {
     std::map<std::string,bts::wallet::delegate_trust_status> client::list_delegate_trust_status() const
     {
       return get_wallet()->list_delegate_trust_status();
+    }
+
+    transaction_id_type client::submit_proposal(const std::string& name, 
+                                                const std::string& subject,
+                                                const std::string& body,
+                                                const std::string& proposal_type,
+                                                const fc::variant& json_data)
+    {
+      try {
+        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+    }
+
+    transaction_id_type client::vote_proposal(const std::string& name, 
+                                              proposal_id_type proposal_id,
+                                              uint8_t vote)
+
+    {
+      try {
+        auto trx = get_wallet()->vote_proposal(name,proposal_id,vote);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote",vote))
     }
 
     fc::sha256 client_notification::digest()const

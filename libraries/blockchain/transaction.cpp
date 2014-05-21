@@ -633,6 +633,35 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
+   void transaction::submit_proposal(name_id_type delegate_id,
+                                     const std::string& subject,
+                                     const std::string& body,
+                                     const std::string& proposal_type,
+                                     const fc::variant& json_data)
+   {
+     submit_proposal_operation op;
+     op.submitting_delegate_id = delegate_id;
+     op.submission_date = fc::time_point::now();
+     op.subject = subject;
+     op.body = body;
+     op.proposal_type = proposal_type;
+     op.data = json_data;
+     operations.push_back(op);
+   }
+
+   void transaction::vote_proposal(proposal_id_type proposal_id,
+                                   name_id_type voter_id,
+                                   uint8_t vote)
+   {
+     vote_proposal_operation op;
+     op.id.proposal_id = proposal_id;
+     op.id.delegate_id = voter_id;
+     op.timestamp = fc::time_point::now();
+     op.vote = vote;
+     operations.push_back(op);
+   }
+
+
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const
    {
       auto itr = balance.find(id);
