@@ -7,6 +7,3 @@
 [submodule "programs/client/htdocs"]
 	path = programs/client/htdocs
 	url = https://github.com/BitShares/web_wallet.git
-[submodule "programs/client/qt_wallet"]
-	path = programs/client/qt_wallet
-	url = https://github.com/BitShares/qt_wallet.git
