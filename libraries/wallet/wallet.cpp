@@ -1,11 +1,11 @@
-#include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/import_bitcoin_wallet.hpp>
+#include <bts/wallet/wallet.hpp>
+
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/base58.hpp>
-#include <bts/import_bitcoin_wallet.hpp>
-
 #include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
@@ -869,7 +869,6 @@ namespace bts { namespace wallet {
           scan_chain( my->get_last_scanned_block_number() );
 
           my->_is_open = true;
-          std::cout << "Opened wallet " << wallet_filename.generic_string() << "\n";
       }
       catch( ... )
       {
@@ -913,6 +912,7 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const fc::path& path )
    {
+       FC_ASSERT( !fc::exists( path ) );
        FC_ASSERT( is_open() );
        std::map< uint32_t, wallet_record > db_map;
 
@@ -1689,6 +1689,11 @@ namespace bts { namespace wallet {
    void wallet::set_data_directory( const fc::path& data_dir )
    {
       my->_data_dir = data_dir;
+   }
+
+   fc::path wallet::get_data_directory()const
+   {
+      return my->_data_dir;
    }
 
    /**

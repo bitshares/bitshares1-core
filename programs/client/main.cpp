@@ -210,14 +210,14 @@ void configure_logging(const fc::path& data_dir)
     ac.truncate = false;
     ac.flush    = true;
 
-    std::cout << "Logging to file " << ac.filename.generic_string() << "\n";
+    std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
     
     fc::file_appender::config ac_rpc;
     ac_rpc.filename = data_dir / "rpc.log";
     ac_rpc.truncate = false;
     ac_rpc.flush    = true;
 
-    std::cout << "Logging RPC to file " << ac_rpc.filename.generic_string() << "\n";
+    std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
     
     cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
     cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
@@ -263,7 +263,7 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
                                                                       const boost::program_options::variables_map& option_variables)
 { try {
-  std::cout << "Loading blockchain from " << ( datadir / "chain" ).generic_string()  << "\n";
+  std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
 
   fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
@@ -279,7 +279,7 @@ config load_config( const fc::path& datadir )
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config " << config_file.generic_string()  << "\n";
+         std::cout << "Loading config \"" << config_file.generic_string()  << "\"\n";
          cfg = fc::json::from_file( config_file ).as<config>();
       }
       else
