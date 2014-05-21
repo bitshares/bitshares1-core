@@ -64,6 +64,7 @@ namespace bts { namespace blockchain {
 
          bool                          is_known_block( const block_id_type& block_id )const;
 
+         digest_type                   get_current_random_seed()const;
          fc::ecc::public_key           get_signing_delegate_key( fc::time_point_sec )const;
          name_id_type                  get_signing_delegate_id( fc::time_point_sec )const;
          uint32_t                      get_block_num( const block_id_type& )const;

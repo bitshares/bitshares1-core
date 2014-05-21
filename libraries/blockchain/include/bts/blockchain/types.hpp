@@ -9,6 +9,7 @@ namespace bts { namespace blockchain {
    typedef fc::ripemd160                    block_id_type;
    typedef fc::ripemd160                    transaction_id_type;
    typedef fc::ripemd160                    public_key_hash_type;
+   typedef fc::ripemd160                    secret_hash_type;
    typedef fc::sha256                       digest_type;
    typedef std::vector<transaction_id_type> transaction_ids;
    typedef fc::ecc::compact_signature       signature_type;

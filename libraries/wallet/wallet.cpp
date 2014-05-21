@@ -35,6 +35,25 @@ namespace bts { namespace wallet {
 
             virtual ~wallet_impl()override {}
 
+            secret_hash_type get_secret( uint32_t previous_block_num, const fc::ecc::private_key& delegate_key )
+            {
+               block_id_type prev_header_id;
+               if( previous_block_num != 0 ) 
+               {
+                  auto previous_block_header = _blockchain->get_block_header( previous_block_num );
+                  prev_header_id = previous_block_header.id();
+               }
+
+                                                                  
+               fc::sha512::encoder key_enc;
+               fc::raw::pack( key_enc, delegate_key );
+               fc::sha512::encoder enc;
+               fc::raw::pack( enc, key_enc.result() );
+               fc::raw::pack( enc, prev_header_id );
+
+               return fc::ripemd160::hash( enc.result() );
+            }
+
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
                if( invoice_number < 0 )
@@ -1487,14 +1506,25 @@ namespace bts { namespace wallet {
       return itr != my->_sending_keys.end();
    }
 
+
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
+      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
+      auto delegate_rec = my->_blockchain->get_name_record( signing_delegate_id );
+
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      //ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
+      header.previous_secret  = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced-1, 
+                                      delegate_key );
+
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
+      header.next_secret_hash = fc::ripemd160::hash( next_secret );
+//      ilog( "next_secret: ${next}    next_secret_hash: ${next_secret_hash}", 
+//            ("next",next_secret)("next_secret_hash",header.next_secret_hash) );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );

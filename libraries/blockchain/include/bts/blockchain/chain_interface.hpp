@@ -15,16 +15,19 @@ namespace bts { namespace blockchain {
        blocks_missed(0),
        pay_balance(0){}
 
-      share_type   votes_for;
-      share_type   votes_against;
-      uint32_t     blocks_produced;
-      uint32_t     blocks_missed;
+      share_type                     votes_for;
+      share_type                     votes_against;
+      uint32_t                       blocks_produced;
+      uint32_t                       blocks_missed;
+      secret_hash_type               next_secret_hash;
+      uint32_t                       last_block_num_produced;
+
       /**
        *  Delegate pay is held in escrow and may be siezed 
        *  and returned to the shareholders if they are fired
        *  for provable cause.
        */
-      share_type   pay_balance;
+      share_type                     pay_balance;
    };
 
    struct proposal_record
@@ -183,10 +186,11 @@ namespace bts { namespace blockchain {
 
    enum chain_property_enum
    {
-      last_asset_id    = 0,
-      last_name_id     = 1,
-      last_proposal_id = 2,
-      chain_id         = 3 // hash of initial state
+      last_asset_id       = 0,
+      last_name_id        = 1,
+      last_proposal_id    = 2,
+      last_random_seed_id = 3,
+      chain_id            = 4 // hash of initial state
    };
    typedef uint32_t chain_property_type;
 
@@ -199,6 +203,8 @@ namespace bts { namespace blockchain {
 
          virtual std::vector<name_id_type>  get_active_delegates()const                                     = 0;
          bool                               is_active_delegate( name_id_type ) const;
+
+         virtual digest_type                get_current_random_seed()const                                  = 0;
 
          /** return the current fee rate in millishares */
          virtual int64_t                    get_fee_rate()const                                             = 0;
@@ -250,7 +256,9 @@ FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_
 FC_REFLECT( bts::blockchain::name_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
-FC_REFLECT( bts::blockchain::delegate_stats, (votes_for)(votes_against)(blocks_produced)(blocks_missed)(pay_balance) )
+FC_REFLECT( bts::blockchain::delegate_stats, 
+            (votes_for)(votes_against)(blocks_produced)
+            (blocks_missed)(pay_balance)(next_secret_hash)(last_block_num_produced) )
 FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(chain_id) )
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
 FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
