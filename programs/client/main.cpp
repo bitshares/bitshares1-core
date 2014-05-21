@@ -1,6 +1,7 @@
 #include <boost/program_options.hpp>
 
 #include <bts/client/client.hpp>
+#include <bts/net/upnp.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_server.hpp>
@@ -43,6 +44,7 @@ int main( int argc, char** argv )
    option_config.add_options()("data-dir", boost::program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
                               ("p2p-port", boost::program_options::value<uint16_t>()->default_value(5678), "set port to listen on")
+                              ("upnp", boost::program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", boost::program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console")
@@ -141,6 +143,14 @@ int main( int argc, char** argv )
          auto p2pport = option_variables["p2p-port"].as<uint16_t>();
          std::cout << "Listening to P2P connections on port "<<p2pport<<"\n";
          c->listen_on_port(p2pport);
+
+         if( option_variables["upnp"].as<bool>() )
+         {
+            std::cout << "Attempting to map UPNP port...\n";
+            auto upnp_service = new bts::net::upnp_service();
+            upnp_service->map_port( p2pport );
+            fc::usleep( fc::seconds(3) );
+         }
       }
       c->connect_to_p2p_network();
       if (option_variables.count("connect-to"))
