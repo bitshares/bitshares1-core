@@ -110,7 +110,7 @@ namespace bts { namespace rpc {
            {
              if (parameter.classification == rpc_server::required_positional)
                help_string += std::string("<") + parameter.name + std::string("> ");
-             if (parameter.classification == rpc_server::optional_named)
+             else if (parameter.classification == rpc_server::optional_named)
                help_string += std::string("{") + parameter.name + std::string("} ");
              else if (parameter.classification == rpc_server::required_positional_hidden)
                continue;
