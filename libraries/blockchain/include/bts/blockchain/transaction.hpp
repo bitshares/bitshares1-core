@@ -36,6 +36,8 @@ namespace bts { namespace blockchain {
       fc::optional<name_id_type>       delegate_id; // delegate being voted for in required payouts
       std::vector<operation>           operations; 
 
+      void issue( const asset& amount_to_issue );
+
       void withdraw( const balance_id_type& account, 
                      share_type amount );
 

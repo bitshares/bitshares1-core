@@ -59,7 +59,8 @@ namespace bts { namespace rpc {
              (wallet_get_account)\
              (wallet_rename_account)\
              (wallet_transfer)\
-             (wallet_create_asset)\
+             (wallet_asset_create)\
+             (wallet_asset_issue)\
              (wallet_get_balance)\
              (wallet_get_transaction_history)\
              (wallet_rescan_blockchain)\
@@ -81,12 +82,13 @@ namespace bts { namespace rpc {
     class rpc_server_impl
     {
        public:
-         rpc_server::config  _config;
-         client_ptr          _client;
-         fc::http::server    _httpd;
-         fc::tcp_server      _tcp_serv;
-         fc::future<void>    _accept_loop_complete;
-         rpc_server*         _self;
+         rpc_server::config                _config;
+         client_ptr                        _client;
+         fc::http::server                  _httpd;
+         fc::tcp_server                    _tcp_serv;
+         fc::future<void>                  _accept_loop_complete;
+         rpc_server*                       _self;
+         fc::shared_ptr<fc::promise<void>> _on_quit_promise;
 
          typedef std::map<std::string, rpc_server::method_data> method_map_type;
          method_map_type _method_map;
@@ -108,7 +110,7 @@ namespace bts { namespace rpc {
            {
              if (parameter.classification == rpc_server::required_positional)
                help_string += std::string("<") + parameter.name + std::string("> ");
-             if (parameter.classification == rpc_server::optional_named)
+             else if (parameter.classification == rpc_server::optional_named)
                help_string += std::string("{") + parameter.name + std::string("} ");
              else if (parameter.classification == rpc_server::required_positional_hidden)
                continue;
@@ -958,7 +960,7 @@ As json rpc call
     }
 
 
-    static rpc_server::method_data wallet_create_asset_metadata{"wallet_create_asset", nullptr,
+    static rpc_server::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
             /* returns: */    "invoice_summary",
             /* params:          name                    type        classification                   default value */
@@ -973,7 +975,7 @@ As json rpc call
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )" };
-    fc::variant rpc_server_impl::wallet_create_asset(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_asset_create(const fc::variants& params)
     {
        FC_ASSERT( !"Not Yet Implemented" );
        fc::variant_object named_params = params[3].get_object();
@@ -989,6 +991,29 @@ As json rpc call
        return fc::variant(create_asset_trx);
     }
 
+
+    static rpc_server::method_data wallet_asset_issue_metadata{"wallet_asset_issue", nullptr,
+            /* description */ "Issues new shares of a given asset type",
+            /* returns: */    "invoice_summary",
+            /* params:          name                    type        classification                   default value */
+                              {{"amount",               "int",      rpc_server::required_positional, fc::ovariant()},
+                               {"symbol",               "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"to_account_name",      "string",   rpc_server::required_positional, fc::ovariant()},
+                              },
+          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+          R"(
+          )" };
+    fc::variant rpc_server_impl::wallet_asset_issue(const fc::variants& params)
+    {
+       FC_ASSERT( !"Not Yet Implemented" );
+       fc::variant_object named_params = params[3].get_object();
+       auto issue_asset_trx = _client->get_wallet()->issue_asset( 
+              params[1].as_string(), 
+              params[0].as_int64(),
+              params[2].as_string() );
+       _client->broadcast_transaction( issue_asset_trx );
+       return fc::variant(issue_asset_trx);
+    }
 
 
 
@@ -1669,7 +1694,8 @@ Stop BitShares server.
 )" };
     fc::variant rpc_server_impl::stop(const fc::variants& params)
     {
-      _client->stop();
+       if( _on_quit_promise ) _on_quit_promise->set_value();
+       _client->stop();
       return fc::variant();
     }
 
@@ -1767,6 +1793,8 @@ Result:
   rpc_server::~rpc_server()
   {
      try {
+         if( my->_on_quit_promise && !my->_on_quit_promise->ready() )
+            my->_on_quit_promise->set_value();
          my->_tcp_serv.close();
          if( my->_accept_loop_complete.valid() )
          {
@@ -1889,6 +1917,12 @@ Result:
   void rpc_server::check_wallet_is_open()
   {
     my->check_wallet_is_open();
+  }
+
+  void rpc_server::wait_on_quit()
+  {
+     my->_on_quit_promise.reset( new fc::promise<void>("rpc_quit") );
+     my->_on_quit_promise->wait();
   }
 
   exception::exception(fc::log_message&& m) :

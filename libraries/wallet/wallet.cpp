@@ -523,7 +523,7 @@ namespace bts { namespace wallet {
             }
             bool scan_issue_asset( const issue_asset_operation& op )
             {
-               return _assets.find( op.asset_id ) != _assets.end();
+               return _assets.find( op.amount.asset_id ) != _assets.end();
             }
 
             void scan_transaction( const signed_transaction& trx )
@@ -1312,7 +1312,6 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_unlocked() );
       std::unordered_set<address> required_sigs;
-
       signed_transaction trx;
 
       oasset_record prior_asset = my->_blockchain->get_asset_record( symbol );
@@ -1334,6 +1333,48 @@ namespace bts { namespace wallet {
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create asset ${symbol}", ("symbol",symbol)("asset_name",asset_name) ) }
+
+
+   signed_transaction  wallet::issue_asset( const std::string& symbol, share_type amount,
+                                               const std::string& to_account_name )
+   { try {
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( amount > 0 );
+
+      std::unordered_set<address> required_sigs;
+      signed_transaction trx;
+
+      oasset_record asset_to_issue = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT( asset_to_issue.valid(), "Unknown Asset '${symbol}'", ("symbol",symbol) );
+      FC_ASSERT( asset_to_issue->issuer_name_id == asset_record::market_issued_asset, "Cannot issue market-issued asset" );
+
+      oname_record issuer_record = my->_blockchain->get_name_record( asset_to_issue->issuer_name_id );
+      FC_ASSERT( issuer_record, "Database is corrupted, there should be a registered issuer" );
+      required_sigs.insert( address( issuer_record->active_key ) );
+
+      FC_ASSERT( asset_to_issue->can_issue( amount ) );
+
+      trx.issue( asset( amount, asset_to_issue->id ) );
+
+      int32_t sending_invoice_index;
+      int32_t last_sending_payment_index;
+      address payment_address;
+      my->get_new_payment_address_from_account( to_account_name, 
+                                                sending_invoice_index, 
+                                                last_sending_payment_index, 
+                                                payment_address );
+
+      size_t trx_size = fc::raw::pack_size( trx );
+      size_t fees = trx_size + BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+      fees       *= my->_blockchain->get_fee_rate();
+
+      my->withdraw_to_transaction( trx, fees, required_sigs );
+
+      my->sign_transaction( trx, required_sigs );
+      return trx;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("amount",amount)("account_name",to_account_name) ) }
+
+
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,
