@@ -806,7 +806,8 @@ namespace bts { namespace blockchain {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
       uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      unsigned  delegate_pos = (unsigned)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
+      interval_number += get_current_random_seed()._hash[0];
+      uint32_t  delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
       auto sorted_delegates = get_active_delegates();
 
       FC_ASSERT( delegate_pos < sorted_delegates.size() );

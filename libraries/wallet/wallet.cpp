@@ -1577,14 +1577,13 @@ namespace bts { namespace wallet {
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
+      ilog( "sign block............" );
       header.previous_secret  = my->get_secret( 
                                       delegate_rec->delegate_info->last_block_num_produced-1, 
                                       delegate_key );
 
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
-//      ilog( "next_secret: ${next}    next_secret_hash: ${next_secret_hash}", 
-//            ("next",next_secret)("next_secret_hash",header.next_secret_hash) );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
@@ -1599,33 +1598,24 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    {
-      fc::time_point_sec now = bts::blockchain::now(); //fc::time_point::now();
+      auto now = bts::blockchain::now();
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint32_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
+      if( now == my->_blockchain->get_head_block().timestamp ) interval_number++;
+      uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
-      fc::time_point_sec next_time;
-
-      auto sorted_delegates = my->_blockchain->get_delegates_by_vote();
-      for( unsigned i = 0; i < sorted_delegates.size(); ++i )
+      while( next_block_time < last_block_time )
       {
-         auto name_itr = my->_names.find( sorted_delegates[i] );
+         auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
+         auto name_itr = my->_names.find( id );
          if( name_itr != my->_names.end() )
          {
-             if( (round_start + i) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC < now.sec_since_epoch() )
-             {
-                fc::time_point_sec tmp((round_start + i + BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-                if( tmp < next_time || next_time == fc::time_point_sec() )
-                   next_time = tmp;
-             }
-             else
-             {
-                fc::time_point_sec tmp((round_start + i) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-                if( tmp < next_time || next_time == fc::time_point_sec() )
-                   next_time = tmp;
-             }
+            wlog( "next block time:  ${t}", ("t",fc::time_point_sec( next_block_time ) ) );
+            return fc::time_point_sec( next_block_time ); 
          }
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       }
-      return next_time;
+      return fc::time_point_sec();
    }
 
    std::unordered_map<address,std::string> wallet::get_send_addresses()const

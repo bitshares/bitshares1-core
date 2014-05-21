@@ -440,9 +440,9 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
     // simulate the two chains syncing up by pushing the blocks in order...
 
     std::cerr << "synchronizing chains\n";
-    uint32_t your_length = your_chain->get_head_block_num();
+    int32_t your_length = your_chain->get_head_block_num();
     std::cerr << "your length: "<<your_length << "\n";
-    for( uint32_t i = your_length-1; i > 0 ; --i )
+    for( int32_t i = your_length-1; i > 0 ; --i )
     {
        try {
           auto b = your_chain->get_block( i );
