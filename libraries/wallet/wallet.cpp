@@ -1620,10 +1620,12 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    {
-      auto now = bts::blockchain::now();
+      auto now = fc::time_point(bts::blockchain::now());
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      if( now == my->_blockchain->get_head_block().timestamp ) interval_number++;
       uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      if( next_block_time == my->_blockchain->now().sec_since_epoch() )
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
       uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
       while( next_block_time < last_block_time )
