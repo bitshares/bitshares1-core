@@ -55,6 +55,7 @@ namespace bts { namespace wallet {
 
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
+               //ilog( "account: ${a} invoice: ${i} payment: ${p}", ("a",account)("i",invoice_number)("p",payment_number ) );
                if( invoice_number < 0 )
                   return;
                if( account.account_number >= 0 )
@@ -62,7 +63,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        //ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                //        ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _receive_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -71,7 +72,7 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                        //ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
+                 //       ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
                         _sending_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
                      }
                }
@@ -764,7 +765,6 @@ namespace bts { namespace wallet {
                        auto pkr = record.as<private_key_record>();
                        _extra_receive_keys[pkr.extra_key_index] = pkr;
                        auto pubkey = pkr.get_private_key(_wallet_password).get_public_key();
-                       elog( "public key: ${key}", ("key",pubkey) );
                        _receive_keys[ address( pubkey ) ] =
                           address_index( pkr.account_number, -1, pkr.extra_key_index );
                        _receive_keys[ address(pts_address(pubkey,false,56) )] =
@@ -839,14 +839,14 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "unable to create wallet ${wallet_name}", ("wallet_name",wallet_name) ) }
 
-   void wallet::open( const std::string& wallet_name, const std::string& password )
+   void wallet::open( const std::string& wallet_name, const std::string& password, fc::microseconds unlock_time )
    { try {
       FC_ASSERT( !wallet_name.empty() );
       FC_ASSERT( !password.empty() );
 
       try
       {
-          open_file( my->_data_dir / wallet_name, password );
+          open_file( my->_data_dir / wallet_name, password, unlock_time );
           my->_wallet_name = wallet_name;
       }
       catch( ... )
@@ -856,7 +856,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
 
-   void wallet::open_file( const fc::path& wallet_filename, const std::string& password )
+   void wallet::open_file( const fc::path& wallet_filename, const std::string& password, fc::microseconds unlock_time )
    { try {
       FC_ASSERT( !password.empty() );
       FC_ASSERT( fc::exists( wallet_filename ), "Unable to open ${wallet_filename}", ("wallet_filename",wallet_filename) );
@@ -874,6 +874,9 @@ namespace bts { namespace wallet {
           scan_chain( my->get_last_scanned_block_number() );
 
           my->_is_open = true;
+
+          if( unlock_time != fc::microseconds() )
+             unlock( unlock_time, password );
       }
       catch( ... )
       {
@@ -1078,6 +1081,8 @@ namespace bts { namespace wallet {
 
         auto master_key = my->_master_key->get_extended_private_key(my->_wallet_password);
         wcr.extended_key = master_key.child( wcr.account_number );
+        wcr.last_payment_index[0] = 0;
+        wcr.last_payment_index[1] = 0;
 
         my->_account_name_index[account_name] = wcr.account_number;
         my->_accounts[wcr.account_number] = wcr;
@@ -1250,7 +1255,9 @@ namespace bts { namespace wallet {
    { try {
       asset balance(0,asset_id);
       for( auto item : my->_balances )
+      {
          balance += item.second.get_balance( asset_id );
+      }
       return balance;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("asset_id",asset_id) ) }
 
@@ -1573,6 +1580,7 @@ namespace bts { namespace wallet {
 
    bool wallet::is_receive_address( const address& addr )const
    {
+   //   ilog( "wallet: ${name} receive keys: ${keys}",( "name",get_name())("keys",my->_receive_keys ) );
       auto itr = my->_receive_keys.find( addr );
       if( itr != my->_receive_keys.end() )
       {

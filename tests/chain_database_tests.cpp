@@ -179,6 +179,10 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
       ilog( "." );
       share_type total_sent = 0;
+
+      std::string your_account_name = "my-send-to-your";
+      auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
+      my_wallet.create_sending_account( your_account_name, your_account );
       for( uint32_t i = 10; i < 100; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
@@ -199,7 +203,22 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
          ilog( "                YOUR_WALLET   PUSH_BLOCK" );
          blockchain2->push_block( next_block );
 
-         ilog( "my balance: ${my}   your balance: ${your}",
+
+         ilog( "BEFORE: my balance: ${my}   your balance: ${your}",
+               ("my",my_wallet.get_balance("*",0))
+               ("your",your_wallet.get_balance("*",0)) );
+         /** 
+          * close and reopen the wallet to make sure we do not lose state.
+          */
+         //my_wallet.close();
+         your_wallet.is_receive_address( address() );
+         your_wallet.close();
+         //my_wallet.open( "my_wallet", "password" );
+         //my_wallet.unlock( fc::microseconds::maximum(), "password" );
+         your_wallet.open( "your_wallet", "password" );
+         your_wallet.unlock( fc::microseconds::maximum(), "password" );
+         your_wallet.is_receive_address( address() );
+         ilog( "AFTER: my balance: ${my}   your balance: ${your}",
                ("my",my_wallet.get_balance("*",0))
                ("your",your_wallet.get_balance("*",0)) );
 
@@ -211,16 +230,13 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
          for( uint64_t t = 1; t <= 2; ++t )
          {
-            std::string your_account_name = "my-"+fc::to_string(t*1000+i);
-            auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
-            my_wallet.create_sending_account( your_account_name, your_account );
             auto amnt = rand()%30000 + 1;
             auto invoice_sum = my_wallet.transfer( your_account_name, asset( amnt ) );
             for( auto trx : invoice_sum.payments )
             {
                blockchain->store_pending_transaction( trx.second );
                blockchain2->store_pending_transaction( trx.second );
-               ilog( "trx: ${trx}", ("trx",trx.second) );
+               //ilog( "trx: ${trx}", ("trx",trx.second) );
             }
             total_sent += amnt;
          }
