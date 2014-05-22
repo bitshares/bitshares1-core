@@ -4,6 +4,7 @@
 *.cmake
 *.lib
 *.sw*
+*.dot
 
 docs/html
 docs/latex

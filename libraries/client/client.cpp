@@ -495,6 +495,88 @@ namespace bts { namespace client {
       return get_chain()->get_asset_record(asset_id);
     }
 
+    transaction_id_type client::wallet_reserve_name(const std::string& name, const fc::variant& data)
+    {
+      try {
+        auto trx = get_wallet()->reserve_name(name, data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    /*
+    transaction_id_type client::wallet_update_name(const std::string& name, const fc::variant& data)
+    {
+    try {
+    auto trx = get_wallet()->update_name(name, data);
+    broadcast_transaction(trx);
+    return trx.id();
+    } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+    */
+    transaction_id_type client::wallet_register_delegate(const std::string& name, const fc::variant& data)
+    {
+      try {
+        auto trx = get_wallet()->reserve_name(name, data, true);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    void client::wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
+    {
+      try {
+        auto name_record = get_chain()->get_name_record(delegate_name);
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name));
+        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+
+        get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level))
+    }
+
+    bts::wallet::delegate_trust_status 
+    client::wallet_get_delegate_trust_status(const std::string& delegate_name) const
+    {
+      try {
+        auto name_record = get_chain()->get_name_record(delegate_name);
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name));
+        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+
+        return get_wallet()->get_delegate_trust_status(delegate_name);
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
+    }
+
+    std::map<std::string, bts::wallet::delegate_trust_status> 
+    client::wallet_list_delegate_trust_status() const
+    {
+      return get_wallet()->list_delegate_trust_status();
+    }
+
+    transaction_id_type 
+    client::wallet_submit_proposal(const std::string& name,
+                                   const std::string& subject,
+                                   const std::string& body,
+                                   const std::string& proposal_type,
+                                   const fc::variant& json_data)
+    {
+      try {
+        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+    }
+
+    transaction_id_type client::wallet_vote_proposal(const std::string& name,
+      proposal_id_type proposal_id,
+      uint8_t vote)
+
+    {
+      try {
+        auto trx = get_wallet()->vote_proposal(name, proposal_id, vote);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+    }
 
     //JSON-RPC Method Implementations END
 
@@ -593,77 +675,6 @@ namespace bts { namespace client {
       my->_p2p_node->connect_to_p2p_network();
     }
 
-    transaction_id_type client::reserve_name( const std::string& name, const fc::variant& data )
-    { try {
-        auto trx = get_wallet()->reserve_name( name, data );
-        broadcast_transaction( trx );
-        return trx.id();
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
-
-    /*
-    transaction_id_type client::update_name(const std::string& name, const fc::variant& data)
-    {
-      try {
-        auto trx = get_wallet()->update_name(name, data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
-    }
-    */
-    transaction_id_type client::register_delegate(const std::string& name, const fc::variant& data)
-    { try {
-        auto trx = get_wallet()->reserve_name( name, data, true );
-        broadcast_transaction(trx);
-        return trx.id();
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
-
-    void client::set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
-    { try {
-        auto name_record = get_chain()->get_name_record( delegate_name );
-        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
-        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
-        
-        get_wallet()->set_delegate_trust_status( delegate_name, user_trust_level );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level) ) }
-
-    bts::wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
-    { try {
-        auto name_record = get_chain()->get_name_record( delegate_name );
-        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
-        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
-
-        return get_wallet()->get_delegate_trust_status( delegate_name );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
-
-    std::map<std::string,bts::wallet::delegate_trust_status> client::list_delegate_trust_status() const
-    {
-      return get_wallet()->list_delegate_trust_status();
-    }
-
-    transaction_id_type client::submit_proposal(const std::string& name, 
-                                                const std::string& subject,
-                                                const std::string& body,
-                                                const std::string& proposal_type,
-                                                const fc::variant& json_data)
-    {
-      try {
-        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
-    }
-
-    transaction_id_type client::vote_proposal(const std::string& name, 
-                                              proposal_id_type proposal_id,
-                                              uint8_t vote)
-
-    {
-      try {
-        auto trx = get_wallet()->vote_proposal(name,proposal_id,vote);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote",vote))
-    }
 
     fc::sha256 client_notification::digest()const
     {

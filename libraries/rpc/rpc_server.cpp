@@ -1236,7 +1236,7 @@ As a json rpc call
     }
 
     static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
-            /* description */ "Reserves the name record",
+            /* description */ "Reserve a name in the blockchain",
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
@@ -1247,8 +1247,9 @@ As a json rpc call
      };
     fc::variant rpc_server_impl::wallet_reserve_name(const fc::variants& params)
     {
-       return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
+       return fc::variant( _client->wallet_reserve_name(params[0].as_string(), params[1]) );
     }
+
     static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
             /* description */ "Registers a delegate to be voted upon by shareholders",
             /* returns: */    "name_record",
@@ -1260,7 +1261,7 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_register_delegate(const fc::variants& params)
     {
-       return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
+       return fc::variant( _client->wallet_register_delegate(params[0].as_string(), params[1]) );
     }
 
     static rpc_server::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
@@ -1278,12 +1279,12 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_submit_proposal(const fc::variants& params)
     {
-      auto transaction_id = _client->submit_proposal( params[0].as_string(), //proposer 
-                                                      params[1].as_string(), //subject
-                                                      params[2].as_string(), //body
-                                                      params[3].as_string(), //proposal_type
-                                                      params[4]              //json_data
-                                                      );
+      auto transaction_id = _client->wallet_submit_proposal(params[0].as_string(), //proposer 
+                                                            params[1].as_string(), //subject
+                                                            params[2].as_string(), //body
+                                                            params[3].as_string(), //proposal_type
+                                                            params[4]              //json_data
+                                                            );
       return fc::variant(transaction_id);
     }
 
@@ -1300,9 +1301,9 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
     {
-      auto transaction_id = _client->vote_proposal(params[0].as_string(), 
-                                                   params[1].as_int64(),
-                                                   params[2].as_uint64());
+      auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
+                                                          params[1].as_int64(),
+                                                          params[2].as_uint64());
       return fc::variant(transaction_id);
     }
 
@@ -1319,7 +1320,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
     {
-      _client->set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
       return fc::variant();
     }
 
@@ -1334,7 +1335,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_get_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->get_delegate_trust_status(params[0].as_string()));
+      return fc::variant(_client->wallet_get_delegate_trust_status(params[0].as_string()));
     }
 
     static rpc_server::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
@@ -1347,7 +1348,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->list_delegate_trust_status());
+      return fc::variant(_client->wallet_list_delegate_trust_status());
     }
 
     static rpc_server::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
