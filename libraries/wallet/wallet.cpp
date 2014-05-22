@@ -714,7 +714,7 @@ namespace bts { namespace wallet {
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
             void load_records(const std::string& password)
-            {
+            { try {
               for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
               {
                  auto record = record_itr.value();
@@ -792,7 +792,7 @@ namespace bts { namespace wallet {
               }
 
               self->lock();
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       }; // wallet_impl
 
@@ -876,7 +876,16 @@ namespace bts { namespace wallet {
           my->_is_open = true;
 
           if( unlock_time != fc::microseconds() )
+          {
+            ilog( "." );
              unlock( unlock_time, password );
+          }
+      }
+      catch( std::exception& e )
+      {
+         elog( "${e}", ("e",e.what() ) );
+         close();
+         throw;
       }
       catch( ... )
       {
