@@ -9,7 +9,6 @@
 #include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/crypto/aes.hpp>
 
 #include <iostream>
 
@@ -23,34 +22,33 @@ namespace bts { namespace wallet {
       class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
-            wallet_impl() :
-              _is_open(false)
+            wallet_impl() : _is_open(false), _data_dir(".")
             {
-               // this effectively sets the maximum transaction size to 10KB without
-               // custom code.  We will set this initial fee high while the network
-               // is of lower value to prevent initial spam attacks.   We also
-               // want to subsidize the delegates earlly on.
+               // This effectively sets the maximum transaction size to 10KB without
+               // custom code. We will set this initial fee high while the network
+               // is of lower value to prevent initial spam attacks. We also
+               // want to subsidize the delegates early on.
                _priority_fee = asset( 1000*100, 0 );
-               _data_dir = ".";
             }
 
-            virtual ~wallet_impl()override {}
-
-            secret_hash_type get_secret( uint32_t previous_block_num, const fc::ecc::private_key& delegate_key )
+            virtual ~wallet_impl()override
             {
-               block_id_type prev_header_id;
-               if( previous_block_num != 0 ) 
+            }
+
+            secret_hash_type get_secret( uint32_t block_num, const fc::ecc::private_key& delegate_key )
+            {
+               block_id_type header_id;
+               if( block_num != uint32_t(-1) && block_num > 1 )
                {
-                  auto previous_block_header = _blockchain->get_block_header( previous_block_num );
-                  prev_header_id = previous_block_header.id();
+                  auto block_header = _blockchain->get_block_header( block_num - 1 );
+                  header_id = block_header.id();
                }
 
-                                                                  
                fc::sha512::encoder key_enc;
                fc::raw::pack( key_enc, delegate_key );
                fc::sha512::encoder enc;
                fc::raw::pack( enc, key_enc.result() );
-               fc::raw::pack( enc, prev_header_id );
+               fc::raw::pack( enc, header_id );
 
                return fc::ripemd160::hash( enc.result() );
             }
@@ -217,18 +215,23 @@ namespace bts { namespace wallet {
 
             int32_t get_new_index()
             {
+               int32_t new_index = 1;
+
                auto meta_itr = _meta.find( next_record_number );
                if( meta_itr == _meta.end() )
                {
-                  _meta[next_record_number] = wallet_meta_record( 0, next_record_number, 1 );
-                  store_record( _meta[next_record_number] );
-                  return 1;
+                  _meta[next_record_number] = wallet_meta_record( new_index - 1, next_record_number, new_index + 1 );
                }
-               int32_t next_index = meta_itr->second.value.as<int32_t>() + 1;
-               _meta[next_record_number].value = next_index;
+               else
+               {
+                  new_index = meta_itr->second.value.as<int32_t>();
+                   _meta[next_record_number].value = new_index + 1;
+               }
+
                FC_ASSERT( _meta[next_record_number].index == 0 );
                store_record( _meta[next_record_number] );
-               return next_index;
+
+               return new_index;
             }
 
             uint32_t get_last_scanned_block_number()
@@ -328,6 +331,7 @@ namespace bts { namespace wallet {
                _master_key = master_key_record();
                _master_key->index = get_new_index();
                _master_key->encrypted_key = fc::aes_encrypt( _wallet_password, fc::raw::pack(exp) );
+               /** TODO: salt the password checksum with something */
                _master_key->checksum = fc::sha512::hash( _wallet_password );
 
                store_record( *_master_key  );
@@ -883,7 +887,8 @@ namespace bts { namespace wallet {
       if( my->_wallet_relocker_done.valid() )
       {
          my->_wallet_relocker_done.cancel();
-         my->_wallet_relocker_done.wait();
+         if( my->_wallet_relocker_done.ready() ) // TODO: There may be a deeper issue here; see unlock()
+           my->_wallet_relocker_done.wait();
       }
       my->_relock_time = fc::time_point();
 
@@ -1004,7 +1009,7 @@ namespace bts { namespace wallet {
 #if 0
       // change the above code to this version once task cancellation is fixed in fc
       // if we're currently unlocked and have a timer counting down,
-      // kill it and starrt a new one
+      // kill it and start a new one
       if (my->_wallet_relocker_done.valid() && !my->_wallet_relocker_done.ready())
       {
         my->_wallet_relocker_done.cancel();
@@ -1050,6 +1055,7 @@ namespace bts { namespace wallet {
       // re-encrypt master private
       auto master_private_key = my->_master_key->get_extended_private_key(my->_wallet_password);
       my->_master_key->encrypted_key = fc::aes_encrypt( new_wallet_password, fc::raw::pack(master_private_key) );
+      /** TODO: salt the password checksum with something */
       my->_master_key->checksum = fc::sha512::hash( new_wallet_password );
       my->store_record( *my->_master_key  );
 
@@ -1594,12 +1600,11 @@ namespace bts { namespace wallet {
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      ilog( "sign block............" );
-      header.previous_secret  = my->get_secret( 
-                                      delegate_rec->delegate_info->last_block_num_produced-1, 
+      header.previous_secret = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced,
                                       delegate_key );
 
-      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
       header.sign(delegate_key);
