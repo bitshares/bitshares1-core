@@ -882,7 +882,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_filename) ) }
 
-   bool wallet::close()
+   void wallet::close()
    { try {
       if( my->_wallet_relocker_done.valid() )
       {
@@ -913,10 +913,9 @@ namespace bts { namespace wallet {
       my->_account_name_index.clear();
 
       my->_is_open = false;
-      return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::export_to_json( const fc::path& path )
+   void wallet::export_to_json( const fc::path& path ) const
    {
        FC_ASSERT( !fc::exists( path ) );
        FC_ASSERT( is_open() );
@@ -1036,12 +1035,12 @@ namespace bts { namespace wallet {
 #endif
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::change_password( const std::string& new_password )
+   void wallet::change_passphrase(const std::string& new_passphrase)
    {
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( !new_password.empty() );
+      FC_ASSERT(!new_passphrase.empty());
 
-      auto new_wallet_password = fc::sha512::hash( new_password.c_str(), new_password.size() );
+      auto new_wallet_password = fc::sha512::hash(new_passphrase.c_str(), new_passphrase.size());
 
       // iterate over all private key records and re-encrypt them
       for ( auto priv_key_record : my->_extra_receive_keys)
@@ -1114,7 +1113,7 @@ namespace bts { namespace wallet {
                             ("new_account_name",new_account_name) ) }
 
    void wallet::create_sending_account( const std::string& account_name,
-                                        const extended_public_key& account_pub_key )
+                                        const extended_public_key& account_public_key )
    { try {
         auto current_itr = my->_account_name_index.find(account_name);
         if (current_itr != my->_account_name_index.end())
@@ -1125,7 +1124,7 @@ namespace bts { namespace wallet {
         wcr.account_number    = -my->get_next_account_number();
         wcr.name              =  account_name;
 
-        wcr.extended_key = account_pub_key;
+        wcr.extended_key = account_public_key;
         //wlog( "creating account '${account_name}'", ("account_name",wcr) );
 
         my->_account_name_index[account_name] = wcr.account_number;
@@ -1134,7 +1133,8 @@ namespace bts { namespace wallet {
         my->store_record( wcr );
         my->cache_deterministic_keys( wcr, 0, 0 );
         my->cache_deterministic_keys( wcr, 1, 0 );
-   } FC_RETHROW_EXCEPTIONS( warn, "unable to create account", ("name",account_name)("ext_pub_key", account_pub_key) ) }
+   } FC_RETHROW_EXCEPTIONS(warn, "unable to create account", ("name", account_name)("ext_pub_key", account_public_key))
+   }
 
    std::map<std::string,extended_address> wallet::list_receive_accounts( uint32_t start, uint32_t count )const
    {
@@ -1348,8 +1348,7 @@ namespace bts { namespace wallet {
                                                 const std::string& description,
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
-                                                share_type max_share_supply,
-                                                const std::string& account_name,
+                                                share_type maximum_share_supply,
                                                 wallet_flag options  )
    { try {
       FC_ASSERT( is_unlocked() );
@@ -1364,7 +1363,7 @@ namespace bts { namespace wallet {
 
       required_sigs.insert( address( issuer_record->active_key ) );
 
-      trx.create_asset( symbol, asset_name, description, data, issuer_record->id, max_share_supply );
+      trx.create_asset(symbol, asset_name, description, data, issuer_record->id, maximum_share_supply);
 
       size_t trx_size = fc::raw::pack_size( trx );
       size_t fees = trx_size + BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
@@ -1377,8 +1376,9 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create asset ${symbol}", ("symbol",symbol)("asset_name",asset_name) ) }
 
 
-   signed_transaction  wallet::issue_asset( const std::string& symbol, share_type amount,
-                                               const std::string& to_account_name )
+   signed_transaction  wallet::issue_asset( share_type amount,
+                                            const std::string& symbol,
+                                            const std::string& to_account_name )
    { try {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( amount > 0 );
@@ -1620,10 +1620,12 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    {
-      auto now = bts::blockchain::now();
+      auto now = fc::time_point(bts::blockchain::now());
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      if( now == my->_blockchain->get_head_block().timestamp ) interval_number++;
       uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      if( next_block_time == my->_blockchain->now().sec_since_epoch() )
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
       uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
       while( next_block_time < last_block_time )

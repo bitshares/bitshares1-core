@@ -321,7 +321,7 @@ namespace bts { namespace client {
     }
 
     //JSON-RPC Method Implementations START
-    bts::blockchain::block_id_type client::blockchain_get_blockhash(int64_t block_number) const
+    bts::blockchain::block_id_type client::blockchain_get_blockhash(int32_t block_number) const
     {
       return get_chain()->get_block(block_number).id();
     }
@@ -335,6 +335,105 @@ namespace bts { namespace client {
     {
       get_wallet()->open_file(wallet_filename, password );
     }
+
+    void client::wallet_open(const std::string& wallet_name, const std::string& password)
+    {
+      get_wallet()->open(wallet_name, password);
+    }
+
+    void client::wallet_create(const std::string& wallet_name, const std::string& password)
+    {
+      get_wallet()->create(wallet_name,password);
+    }
+
+    std::string client::wallet_get_name() const
+    {
+      return get_wallet()->get_name();
+    }
+
+    void client::wallet_close()
+    {
+      get_wallet()->close();
+    }
+
+    void client::wallet_export_to_json(const fc::path& path) const
+    {
+      get_wallet()->export_to_json(path);
+    }
+
+    void client::wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase)
+    {
+      get_wallet()->create_from_json(path,name,passphrase);
+    }
+
+    void client::wallet_lock()
+    {
+      get_wallet()->lock();
+    }
+
+    void client::wallet_unlock(const fc::microseconds& timeout, const std::string& password)
+    {
+      get_wallet()->unlock(timeout,password);
+    }
+
+    void client::wallet_change_passphrase(const std::string& new_password)
+    {
+      get_wallet()->change_passphrase(new_password);
+    }
+
+    wallet_account_record client::wallet_create_receive_account(const std::string& account_name)
+    {
+      return get_wallet()->create_receive_account(account_name);
+    }
+
+    void client::wallet_create_sending_account(const std::string& account_name,
+                                               const extended_public_key& account_public_key)
+    {
+      return get_wallet()->create_sending_account(account_name, account_public_key);
+    }
+
+    //TODO Skipping _RPC calls for now, classify and implement later
+    //_send_transaction -> _client->broadcast_transaction(transaction);
+
+    invoice_summary client::wallet_transfer(int64_t amount, 
+                                            const std::string& to_account_name,
+                                            const std::string asset_symbol,
+                                            const std::string& from_account_name,
+                                            const std::string& invoice_memo)
+    {
+      auto asset_rec = get_chain()->get_asset_record(asset_symbol);
+      FC_ASSERT(asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol", asset_symbol));
+      bts::wallet::invoice_summary summary = 
+           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account_name, invoice_memo);
+      for (auto trx : summary.payments)
+        broadcast_transaction(trx.second);
+      return summary;
+    }
+
+    signed_transaction client::wallet_asset_create(const std::string& symbol,
+                                                    const std::string& asset_name,
+                                                    const std::string& description,
+                                                    const fc::variant& data,
+                                                    const std::string& issuer_name,
+                                                    share_type maximum_share_supply)
+    {
+      auto create_asset_trx = 
+        get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply);
+      broadcast_transaction(create_asset_trx);
+      return create_asset_trx;
+    }
+
+    signed_transaction  client::wallet_asset_issue(share_type amount,
+                                                   const std::string& symbol,
+                                                   const std::string& to_account_name)
+    {
+      auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name);
+      broadcast_transaction(issue_asset_trx);
+      return issue_asset_trx;
+    }
+
+
+
     //JSON-RPC Method Implementations END
 
     void client::run_delegate( )

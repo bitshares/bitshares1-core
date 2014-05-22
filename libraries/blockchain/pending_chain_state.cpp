@@ -3,11 +3,6 @@
 #include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
-   std::vector<name_id_type>    pending_chain_state::get_active_delegates()const
-   {
-      if( _prev_state ) return _prev_state->get_active_delegates();
-      return std::vector<name_id_type>();
-   }
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
