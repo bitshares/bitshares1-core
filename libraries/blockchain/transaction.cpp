@@ -317,13 +317,19 @@ namespace bts { namespace blockchain {
          case withdraw_password_type:
          {
             auto pass = arec->condition.as<withdraw_with_password>();
-            uint32_t count = 0;
-            count += check_signature( pass.payor );
-            count += check_signature( pass.payee );
-            if( count < 2 && op.claim_input_data.size() ) 
-               count += pass.password_hash == fc::ripemd160::hash( op.claim_input_data.data(), op.claim_input_data.size() );
-            if( count != 2 )
-               fail( BTS_MISSING_SIGNATURE, fc::variant(op) );
+            if( pass.timeout < _current_state->now() )
+               check_signature( pass.payor );
+            else 
+            {
+               check_signature( pass.payee );
+               auto input_password_hash = fc::ripemd160::hash( op.claim_input_data.data(), 
+                                                              op.claim_input_data.size() );
+
+               if( pass.password_hash != input_password_hash )
+               { // TODO: add new fail condtion INVALID_PASSWORD
+                  fail( BTS_MISSING_SIGNATURE, fc::variant(op) );
+               }
+            }
             break;
          }
 
