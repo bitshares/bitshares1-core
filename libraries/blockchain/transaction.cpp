@@ -326,8 +326,8 @@ namespace bts { namespace blockchain {
                                                               op.claim_input_data.size() );
 
                if( pass.password_hash != input_password_hash )
-               { // TODO: add new fail condtion INVALID_PASSWORD
-                  fail( BTS_MISSING_SIGNATURE, fc::variant(op) );
+               {
+                  fail( BTS_INVALID_PASSWORD, fc::variant(op) );
                }
             }
             break;
