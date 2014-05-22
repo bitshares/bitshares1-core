@@ -187,11 +187,12 @@ namespace bts { namespace blockchain {
 
    enum chain_property_enum
    {
-      last_asset_id       = 0,
-      last_name_id        = 1,
-      last_proposal_id    = 2,
-      last_random_seed_id = 3,
-      chain_id            = 4 // hash of initial state
+      last_asset_id            = 0,
+      last_name_id             = 1,
+      last_proposal_id         = 2,
+      last_random_seed_id      = 3,
+      active_delegate_list_id  = 4,
+      chain_id                 = 5 // hash of initial state
    };
    typedef uint32_t chain_property_type;
 
@@ -200,9 +201,10 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec         now()const                                                      = 0;
-
-         virtual std::vector<name_id_type>  get_active_delegates()const                                     = 0;
+         virtual fc::time_point_sec         now()const                                                       = 0;
+                                                                                                             
+         std::vector<name_id_type>          get_active_delegates()const;
+         void                               set_active_delegates( const std::vector<name_id_type>& id );
          bool                               is_active_delegate( name_id_type ) const;
 
          virtual digest_type                get_current_random_seed()const                                  = 0;

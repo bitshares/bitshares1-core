@@ -102,7 +102,10 @@ namespace bts { namespace blockchain {
          /** return the current fee rate in millishares */
          virtual int64_t                    get_fee_rate()const override;
          virtual int64_t                    get_delegate_pay_rate()const override;
-         virtual std::vector<name_id_type>  get_active_delegates()const override;
+
+         /** top delegates by current vote, projected to be active in the next round */
+         std::vector<name_id_type>          next_round_active_delegates()const;
+
          std::vector<name_id_type>          get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
          std::vector<name_record>           get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
          std::vector<proposal_record>       get_proposals( uint32_t first=0, uint32_t count = -1)const;
