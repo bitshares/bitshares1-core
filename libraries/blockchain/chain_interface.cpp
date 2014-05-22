@@ -1,6 +1,7 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/config.hpp>
 #include <fc/io/json.hpp>
+#include <algorithm>
 #include <sstream>
 
 namespace bts{ namespace blockchain {
