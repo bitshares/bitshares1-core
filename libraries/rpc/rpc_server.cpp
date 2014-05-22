@@ -627,7 +627,7 @@ Result:
        return fc::variant( std::move(info) );
     }
 
-    static rpc_server::method_data blockchain_get_blockhash_metadata{"bitcoin_getblockhash", nullptr,
+    static rpc_server::method_data blockchain_get_blockhash_metadata{"blockchain_get_blockhash", nullptr,
                                      /* description */ "Returns hash of block in best-block-chain at index provided",
                                      /* returns: */    "block_id_type",
                                      /* params:          name         type   classification                   default value */
@@ -644,14 +644,14 @@ Examples:
 > bitshares-cli blockchain_get_blockhash 1000
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
     )",
-        /*aliases*/ { "blockchain_get_blockhash", "getblockhash" }};
+        /*aliases*/ { "bitcoin_getblockhash", "getblockhash" }};
     fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->get_block( (uint32_t)params[0].as_int64() ).id());
     }
 
 
-    static rpc_server::method_data blockchain_get_blockcount_metadata{"bitcoin_getblockcount", nullptr,
+    static rpc_server::method_data blockchain_get_blockcount_metadata{"blockchain_get_blockcount", nullptr,
                                      /* description */ "Returns the number of blocks in the longest block chain",
                                      /* returns: */    "int",
                                      /* params:  */    { },
@@ -664,7 +664,7 @@ Examples:
 > bitshares-cli blockchain_get_blockcount
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockcount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
          )",
-         /*aliases*/ { "blockchain_get_blockcount", "getblockcount" }} ;
+         /*aliases*/ { "bitcoin_getblockcount", "getblockcount" }} ;
     fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->get_head_block_num());
@@ -803,14 +803,14 @@ Wallets exist in the wallet data directory
         return fc::variant( true );
     }
 
-    static rpc_server::method_data wallet_lock_metadata{"bitcoin_walletlock", nullptr,
+    static rpc_server::method_data wallet_lock_metadata{"wallet_lock", nullptr,
          /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
          /* returns: */    "void",
          /* params:     */ {},
        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
        R"(
         )",
-        /*aliases*/ { "wallet_lock", "walletlock" }};
+        /*aliases*/ { "bitcoin_walletlock", "walletlock" }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        _client->get_wallet()->lock();
@@ -1123,7 +1123,7 @@ Wallets exist in the wallet data directory.
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
-    static rpc_server::method_data wallet_get_balance_metadata{"bitcoin_getbalance", nullptr,
+    static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
             /* params:          name                  type      classification                   default_value */
@@ -1164,7 +1164,7 @@ The total amount in the account named tabby with at least 6 confirmations
 As a json rpc call
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_get_balance", "params": ["tabby", 6] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
-    /*aliases*/ { "wallet_get_balance", "getbalance" }};
+    /*aliases*/ { "bitcoin_getbalance", "getbalance" }};
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
       std::string account_name = params[0].as_string();;
@@ -1369,7 +1369,7 @@ returns false if delegate is not recognized
       return fc::variant( _client->get_chain()->get_transaction( params[0].as<transaction_id_type>() )  );
     }
 
-    static rpc_server::method_data blockchain_get_block_metadata{"bitcoin_getblock", nullptr,
+    static rpc_server::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
             /* description */ "Retrieves the block header for the given block hash",
             /* returns: */    "block_header",
             /* params:          name              type             classification                   default_value */
@@ -1412,7 +1412,7 @@ Examples:
 > bitshares-cli blockchain_get_block "00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_block", "params": ["00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
-    /*aliases*/ { "blockchain_get_block", "getblock" }};
+    /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
     { try {
       return fc::variant( _client->get_chain()->get_block( params[0].as<block_id_type>() )  );
