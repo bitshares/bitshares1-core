@@ -49,6 +49,7 @@ namespace bts { namespace rpc {
              (wallet_create_from_json)\
              (wallet_lock)\
              (wallet_unlock)\
+             (wallet_change_passphrase)\
              (wallet_create_receive_account) \
              (wallet_create_sending_account) \
              (wallet_import_private_key)\
@@ -620,6 +621,10 @@ Result:
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
        info["symbol"]           = BTS_ADDRESS_PREFIX;
+       asset_record share_record     = *_client->get_chain()->get_asset_record( asset_id_type(0) );
+       info["current_share_supply"]  = share_record.current_share_supply;
+       info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
+       info["random_seed"]      = _client->get_chain()->get_current_random_seed();
        info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["_fc_revision"]     = fc::git_revision_sha;
        info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
@@ -642,7 +647,8 @@ Result:
 Examples:
 > bitshares-cli blockchain_get_blockhash 1000
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-    )" };
+    )",
+        /*aliases*/ { "bitcoin_getblockhash", "getblockhash" }};
     fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->get_block( (uint32_t)params[0].as_int64() ).id());
@@ -661,7 +667,8 @@ n (numeric) The current block count
 Examples:
 > bitshares-cli blockchain_get_blockcount
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockcount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-         )" } ;
+         )",
+         /*aliases*/ { "bitcoin_getblockcount", "getblockcount" }} ;
     fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
     {
       return fc::variant(_client->get_chain()->get_head_block_num());
@@ -804,7 +811,10 @@ Wallets exist in the wallet data directory
          /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
          /* returns: */    "void",
          /* params:     */ {},
-       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open};
+       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+       R"(
+        )",
+        /*aliases*/ { "bitcoin_walletlock", "walletlock" }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        _client->get_wallet()->lock();
@@ -861,6 +871,32 @@ As json rpc call
             throw rpc_wallet_passphrase_incorrect_exception();
         }
         return fc::variant( true );
+    }
+
+    static rpc_server::method_data wallet_change_passphrase_metadata{"wallet_change_passphrase", nullptr,
+          /* description */ "Change the password of the current wallet",
+          /* returns: */    "bool",
+          /* params:          name             type        classification                          default value */
+                            { {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
+        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+    R"(
+Changes the wallet password.
+This will change the wallet's spending passphrase, please make sure you remember it.
+
+Arguments:
+1. "passphrase" (string, required) The wallet new spending passphrase
+
+Note:
+Wallets exist in the wallet data directory.
+     )"};
+    fc::variant rpc_server_impl::wallet_change_passphrase(const fc::variants& params)
+    {
+       std::string passphrase = params[0].as_string();
+       try
+       {
+         _client->get_wallet()->change_password( passphrase );
+         return fc::variant(true);
+       } FC_RETHROW_EXCEPTIONS( warn, "" )
     }
 
     static rpc_server::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
@@ -1131,7 +1167,8 @@ The total amount in the account named tabby with at least 6 confirmations
 
 As a json rpc call
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_get_balance", "params": ["tabby", 6] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )" };
+     )",
+    /*aliases*/ { "bitcoin_getbalance", "getbalance" }};
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
       std::string account_name = params[0].as_string();;
@@ -1378,7 +1415,8 @@ Result (for verbose=false):
 Examples:
 > bitshares-cli blockchain_get_block "00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_block", "params": ["00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )" };
+     )",
+    /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
     { try {
       return fc::variant( _client->get_chain()->get_block( params[0].as<block_id_type>() )  );
