@@ -9,6 +9,7 @@
 #include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/crypto/aes.hpp>
 
 #include <iostream>
 
@@ -1033,10 +1034,26 @@ namespace bts { namespace wallet {
    void wallet::change_password( const std::string& new_password )
    {
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( !"Not Implemented Yet" );
-      // TODO: implement change password
+      FC_ASSERT( !new_password.empty() );
+
+      auto new_wallet_password = fc::sha512::hash( new_password.c_str(), new_password.size() );
+
       // iterate over all private key records and re-encrypt them
+      for ( auto priv_key_record : my->_extra_receive_keys)
+      {
+         auto private_key = priv_key_record.second.get_private_key(my->_wallet_password);
+         priv_key_record.second.encrypted_key = fc::aes_encrypt( new_wallet_password, fc::raw::pack( private_key ) );
+
+         my->store_record(priv_key_record.second);
+      }
+
       // re-encrypt master private
+      auto master_private_key = my->_master_key->get_extended_private_key(my->_wallet_password);
+      my->_master_key->encrypted_key = fc::aes_encrypt( new_wallet_password, fc::raw::pack(master_private_key) );
+      my->_master_key->checksum = fc::sha512::hash( new_wallet_password );
+      my->store_record( *my->_master_key  );
+
+      my->_wallet_password = new_wallet_password;
    }
 
    wallet_account_record wallet::create_receive_account( const std::string& account_name )

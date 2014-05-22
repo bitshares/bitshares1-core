@@ -972,7 +972,8 @@ namespace bts { namespace blockchain {
          my->_names.remove( name_id );
          if( name_rec.valid() )
             my->_name_index.remove( name_rec->name );
-         // TODO: remove vote index as well...
+         if ( name_rec.valid() && name_rec->is_delegate() )
+            my->_delegate_vote_index.remove( vote_del(name_rec->net_votes(), name_rec->id) );
       } catch ( const fc::exception& e )
       {
          wlog( "caught exception ${e}", ("e", e.to_detail_string() ) );
