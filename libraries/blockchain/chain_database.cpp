@@ -538,6 +538,11 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
 
+            if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
+            {
+                self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+            }
+
             update_random_seed( block_data.previous_secret, pending_state );
 
             save_undo_state( block_id, pending_state );
@@ -661,7 +666,7 @@ namespace bts { namespace blockchain {
          wlog( "unexpected exception closing database\n" );
       }
    }
-   std::vector<name_id_type> chain_database::get_active_delegates()const
+   std::vector<name_id_type> chain_database::next_round_active_delegates()const
    {
       return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
@@ -1274,6 +1279,7 @@ namespace bts { namespace blockchain {
       gen_fork.is_linked = true;
       _fork_db.store( block_id_type(), gen_fork );
 
+      self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
       self->set_property( chain_property_enum::last_asset_id, 0 );
       self->set_property( chain_property_enum::last_name_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
