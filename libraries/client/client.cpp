@@ -567,15 +567,45 @@ namespace bts { namespace client {
     }
 
     transaction_id_type client::wallet_vote_proposal(const std::string& name,
-      proposal_id_type proposal_id,
-      uint8_t vote)
-
+                                                     proposal_id_type proposal_id,
+                                                     uint8_t vote)
     {
       try {
         auto trx = get_wallet()->vote_proposal(name, proposal_id, vote);
         broadcast_transaction(trx);
         return trx.id();
       } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+    }
+
+    osigned_transaction client::blockchain_get_transaction(const transaction_id_type& transaction_id) const
+    {
+      return get_chain()->get_transaction(transaction_id);
+    }
+
+    full_block client::blockchain_get_block(const block_id_type& block_id) const
+    {
+      return get_chain()->get_block(block_id);
+    }
+
+    full_block client::blockchain_get_block_by_number(uint32_t block_number) const
+    {
+      return get_chain()->get_block(block_number);
+    }
+
+    void client::wallet_rescan_blockchain(uint32_t starting_block_number)
+    {
+      get_wallet()->scan_chain(starting_block_number);
+    }
+
+    void client::wallet_rescan_blockchain_state()
+    {
+      get_wallet()->scan_state();
+    }
+
+    void client::wallet_import_bitcoin(const fc::path& filename,
+                                       const std::string& passphrase)
+    {
+      get_wallet()->import_bitcoin_wallet(filename,passphrase);
     }
 
     //JSON-RPC Method Implementations END

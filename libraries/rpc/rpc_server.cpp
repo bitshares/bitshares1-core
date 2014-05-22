@@ -1361,7 +1361,7 @@ returns false if delegate is not recognized
           )" };
     fc::variant rpc_server_impl::blockchain_get_transaction(const fc::variants& params)
     {
-      return fc::variant( _client->get_chain()->get_transaction( params[0].as<transaction_id_type>() )  );
+      return fc::variant( _client->blockchain_get_transaction( params[0].as<transaction_id_type>() )  );
     }
 
     static rpc_server::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
@@ -1410,7 +1410,7 @@ Examples:
     /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
     { try {
-      return fc::variant( _client->get_chain()->get_block( params[0].as<block_id_type>() )  );
+      return fc::variant( _client->blockchain_get_block( params[0].as<block_id_type>() )  );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data blockchain_get_block_by_number_metadata{"blockchain_get_block_by_number", nullptr,
@@ -1421,7 +1421,7 @@ Examples:
                                  /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::blockchain_get_block_by_number(const fc::variants& params)
     { try {
-      return fc::variant( _client->get_chain()->get_block( params[0].as<uint32_t>() ) );
+      return fc::variant( _client->blockchain_get_block_by_number( params[0].as<uint32_t>() ) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data validate_address_metadata{"validate_address", nullptr,
@@ -1453,6 +1453,7 @@ Examples:
      )" };
     fc::variant rpc_server_impl::validate_address(const fc::variants& params)
     {
+      FC_ASSERT("Not implemented")
       try {
         return fc::variant(params[0].as_string());
       }
@@ -1463,23 +1464,23 @@ Examples:
     }
 
     static rpc_server::method_data wallet_rescan_blockchain_metadata{"wallet_rescan_blockchain", nullptr,
-            /* description */ "Rescan the block chain from the given block",
-            /* returns: */    "bool",
+            /* description */ "Rescan the block chain from the given block number",
+            /* returns: */    "void",
             /* params:          name              type   classification                   default_value */
-                              {{"starting_block", "int", rpc_server::optional_positional, 0}},
+                              {{"starting_block_number", "int", rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_rescan_blockchain(const fc::variants& params)
     {
-      uint32_t block_num = params[0].as<uint32_t>();;
-      _client->get_wallet()->scan_chain(block_num);
-      return fc::variant(true);
+      uint32_t starting_block_number = params[0].as<uint32_t>();;
+      _client->wallet_rescan_blockchain(starting_block_number);
+      return fc::variant();
     }
 
     static rpc_server::method_data wallet_rescan_blockchain_state_metadata{"wallet_rescan_blockchain_state", nullptr,
             /* description */ "Rescans the genesis block and state (not the transactions)",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name              type    required */
                               {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -1487,13 +1488,13 @@ Examples:
      )" };
     fc::variant rpc_server_impl::wallet_rescan_blockchain_state(const fc::variants& params)
     {
-      _client->get_wallet()->scan_state();
-      return fc::variant(true);
+      _client->wallet_rescan_blockchain_state();
+      return fc::variant();
     }
 
     static rpc_server::method_data wallet_import_bitcoin_metadata{"wallet_import_bitcoin", nullptr,
             /* description */ "Import a BTC/PTS wallet",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name           type      classification                          default_value */
                               {{"filename",   "path",   rpc_server::required_positional,        fc::ovariant()},
                                {"passphrase", "string", rpc_server::required_positional_hidden, fc::ovariant()}},
@@ -1506,14 +1507,14 @@ Examples:
         auto passphrase = params[1].as<std::string>();
         try
         {
-            _client->get_wallet()->import_bitcoin_wallet( filename, passphrase );
+          _client->wallet_import_bitcoin( filename, passphrase );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
+          wlog( "${e}", ("e",e.to_detail_string() ) );
+          throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant( true );
+        return fc::variant();
     }
 
     // TODO: get account argument

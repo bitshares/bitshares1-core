@@ -1674,6 +1674,7 @@ namespace bts { namespace wallet {
       }
       return result;
    }
+
    void wallet::import_bitcoin_wallet( const fc::path& wallet_dat,
                                        const std::string& passphrase,
                                        const std::string& account_name,

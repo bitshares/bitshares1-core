@@ -109,6 +109,14 @@ namespace bts { namespace client {
          bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const;
 
+                        osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const;
+                                 full_block blockchain_get_block(const block_id_type& block_id) const;
+                                 full_block blockchain_get_block_by_number(uint32_t block_number) const;
+
+                       void wallet_rescan_blockchain(uint32_t starting_block_number);
+                       void wallet_rescan_blockchain_state();
+                       void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase);
+
 
 
          fc::path                            get_data_dir()const;
