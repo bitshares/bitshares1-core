@@ -281,30 +281,6 @@ namespace bts { namespace cli {
                       return fc::variant( false );
                   }
               }
-              else if (command == "wallet_create_from_json")
-              {
-                  auto filename = arguments[0].as<fc::path>();
-                  auto wallet_name = arguments[1].as_string();
-                  if( !fc::exists( filename ) )
-                  {
-                     std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                     return fc::variant(false);
-                  }
-                  if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                  {
-                    std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                    return fc::variant(false);
-                  }
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
-                  }
-                  catch (const fc::canceled_exception&)
-                  {
-                      std::cout << "Command aborted\n";
-                      return fc::variant( false );
-                  }
-              }
               else if ( command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
               {
                   if( command == "wallet_open" )
@@ -352,6 +328,39 @@ namespace bts { namespace cli {
                   catch( const fc::exception& e )
                   {
                      ilog( "failed with empty password: ${e}", ("e",e.to_detail_string() ) );
+                  }
+                  try
+                  {
+                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
+                  }
+                  catch (const fc::canceled_exception&)
+                  {
+                      std::cout << "Command aborted\n";
+                      return fc::variant( false );
+                  }
+              }
+              else if (command == "wallet_export_to_json")
+              {
+                  auto filename = arguments[0].as<fc::path>();
+                  if( fc::exists( filename ) )
+                  {
+                     std::cout << "File \"" << filename.generic_string() << "\" already exists\n";
+                     return fc::variant(false);
+                  }
+              }
+              else if (command == "wallet_create_from_json")
+              {
+                  auto filename = arguments[0].as<fc::path>();
+                  auto wallet_name = arguments[1].as_string();
+                  if( !fc::exists( filename ) )
+                  {
+                     std::cout << "File \"" << filename.generic_string() << "\" not found\n";
+                     return fc::variant(false);
+                  }
+                  if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                  {
+                    std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
+                    return fc::variant(false);
                   }
                   try
                   {
