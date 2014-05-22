@@ -215,18 +215,23 @@ namespace bts { namespace wallet {
 
             int32_t get_new_index()
             {
+               int32_t new_index = 1;
+
                auto meta_itr = _meta.find( next_record_number );
                if( meta_itr == _meta.end() )
                {
-                  _meta[next_record_number] = wallet_meta_record( 0, next_record_number, 1 );
-                  store_record( _meta[next_record_number] );
-                  return 1;
+                  _meta[next_record_number] = wallet_meta_record( new_index - 1, next_record_number, new_index + 1 );
                }
-               int32_t next_index = meta_itr->second.value.as<int32_t>() + 1;
-               _meta[next_record_number].value = next_index;
+               else
+               {
+                  new_index = meta_itr->second.value.as<int32_t>();
+                   _meta[next_record_number].value = new_index + 1;
+               }
+
                FC_ASSERT( _meta[next_record_number].index == 0 );
                store_record( _meta[next_record_number] );
-               return next_index;
+
+               return new_index;
             }
 
             uint32_t get_last_scanned_block_number()
