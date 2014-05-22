@@ -165,12 +165,11 @@ namespace bts { namespace wallet {
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
                                                 share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                                const std::string& account_name = "*",
                                                 wallet_flag options = sign_and_broadcast );
 
-         signed_transaction       issue_asset( const std::string& symbol,
-                                               share_type amount,
-                                               const std::string& account_name );
+         signed_transaction       issue_asset( share_type amount, 
+                                               const std::string& symbol,                                               
+                                               const std::string& to_account_name );
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
