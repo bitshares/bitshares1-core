@@ -599,7 +599,7 @@ Result:
                                                        { },
                                    /* prerequisites */ 0, 
                                     /* aliases */ { "getinfo" } } ;
-    fc::variant rpc_server_impl::get_info(const fc::variants& params)
+    fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
     {
        fc::mutable_variant_object info;
        if( _client->get_wallet()->is_open() )
@@ -631,7 +631,7 @@ Result:
                                      /* description */ "Returns hash of block in best-block-chain at index provided",
                                      /* returns: */    "block_id_type",
                                      /* params:          name         type   classification                   default value */
-                                                       {{"block_num", "int", rpc_server::required_positional, fc::ovariant()} },
+                                                       {{"block_number", "int", rpc_server::required_positional, fc::ovariant()} },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
 Arguments:
@@ -646,7 +646,7 @@ Examples:
     )" };
     fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
     {
-      return fc::variant(_client->get_chain()->get_block( (uint32_t)params[0].as_int64() ).id());
+      return fc::variant(_client->blockchain_get_blockhash( (uint32_t)params[0].as_int64() ) );
     }
 
 
@@ -665,7 +665,7 @@ Examples:
          )" } ;
     fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
     {
-      return fc::variant(_client->get_chain()->get_head_block_num());
+      return fc::variant(_client->blockchain_get_blockcount());
     }
 
 

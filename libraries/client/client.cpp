@@ -320,6 +320,23 @@ namespace bts { namespace client {
       my->_p2p_node->broadcast(trx_message(trx));
     }
 
+    //JSON-RPC Method Implementations START
+    bts::blockchain::block_id_type client::blockchain_get_blockhash(int64_t block_number) const
+    {
+      return get_chain()->get_block(block_number).id();
+    }
+
+    uint32_t client::blockchain_get_blockcount() const
+    {
+      return get_chain()->get_head_block_num();
+    }
+
+    void client::wallet_open_file(const fc::path wallet_filename, const std::string& password)
+    {
+      get_wallet()->open_file(wallet_filename, password );
+    }
+    //JSON-RPC Method Implementations END
+
     void client::run_delegate( )
     {
        my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );

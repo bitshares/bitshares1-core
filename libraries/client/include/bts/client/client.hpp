@@ -40,6 +40,14 @@ namespace bts { namespace client {
          bts::net::node_ptr     get_node()const;
          signed_transactions    get_pending_transactions()const;
 
+         //-------------------------------------------------- JSON-RPC Method Implementations
+         //TODO? help()
+         //TODO? fc::variant get_info()
+         bts::blockchain::block_id_type blockchain_get_blockhash(int64_t block_number) const;
+                               uint32_t blockchain_get_blockcount() const;
+                                   void wallet_open_file(const fc::path wallet_filename, const std::string& password);
+
+
          /**
           *  Reserve a name and broadcast it to the network.
           */
