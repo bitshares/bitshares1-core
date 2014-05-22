@@ -179,6 +179,10 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
       ilog( "." );
       share_type total_sent = 0;
+
+      std::string your_account_name = "my-send-to-your";
+      auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
+      my_wallet.create_sending_account( your_account_name, your_account );
       for( uint32_t i = 10; i < 100; ++i )
       {
          auto next_block_time = my_wallet.next_block_production_time();
@@ -199,7 +203,22 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
          ilog( "                YOUR_WALLET   PUSH_BLOCK" );
          blockchain2->push_block( next_block );
 
-         ilog( "my balance: ${my}   your balance: ${your}",
+
+         ilog( "BEFORE: my balance: ${my}   your balance: ${your}",
+               ("my",my_wallet.get_balance("*",0))
+               ("your",your_wallet.get_balance("*",0)) );
+         /** 
+          * close and reopen the wallet to make sure we do not lose state.
+          */
+         //my_wallet.close();
+         your_wallet.is_receive_address( address() );
+         your_wallet.close();
+         //my_wallet.open( "my_wallet", "password" );
+         //my_wallet.unlock( fc::microseconds::maximum(), "password" );
+         your_wallet.open( "your_wallet", "password" );
+         your_wallet.unlock( fc::microseconds::maximum(), "password" );
+         your_wallet.is_receive_address( address() );
+         ilog( "AFTER: my balance: ${my}   your balance: ${your}",
                ("my",my_wallet.get_balance("*",0))
                ("your",your_wallet.get_balance("*",0)) );
 
@@ -211,16 +230,13 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
          for( uint64_t t = 1; t <= 2; ++t )
          {
-            std::string your_account_name = "my-"+fc::to_string(t*1000+i);
-            auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
-            my_wallet.create_sending_account( your_account_name, your_account );
             auto amnt = rand()%30000 + 1;
             auto invoice_sum = my_wallet.transfer( your_account_name, asset( amnt ) );
             for( auto trx : invoice_sum.payments )
             {
                blockchain->store_pending_transaction( trx.second );
                blockchain2->store_pending_transaction( trx.second );
-               ilog( "trx: ${trx}", ("trx",trx.second) );
+               //ilog( "trx: ${trx}", ("trx",trx.second) );
             }
             total_sent += amnt;
          }
@@ -291,7 +307,9 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         std::string name_prefix = "test-name";
         for ( uint32_t i = 0; i < 10; ++i )
         {
-            auto trx = my_wallet.reserve_name( name_prefix + fc::to_string(i), fc::to_string(i), (i % 2 == 0) );
+            // reserve names or register delegates depending on i.
+            bool is_delegate = (i % 2 == 0);
+            auto trx = my_wallet.reserve_name( name_prefix + fc::to_string(i), fc::to_string(i), is_delegate );
             ilog( "trx: ${trx}", ("trx", trx) );
             blockchain->store_pending_transaction( trx );
 
@@ -313,16 +331,17 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
             auto name_record = blockchain->get_name_record( name_prefix + fc::to_string(i) );
             FC_ASSERT( !!name_record
                 && name_record->json_data.as_string() == fc::to_string(i)
-                && name_record->is_delegate() == ( i % 2 == 0 )
+                && name_record->is_delegate() == is_delegate
                 , "", ("name_record", *name_record)("name", name_prefix + fc::to_string(i))("json_data", fc::to_string(i)));
         }
 
-        // test updating name records
+        // test updating name records and change all test none-delegate names to delegate
         std::string json_prefix = "url: test";
         for ( uint32_t i = 0; i < 10; ++i )
         {
             auto trx = my_wallet.update_name( name_prefix + fc::to_string(i),
-                fc::variant(json_prefix + fc::to_string(i)), fc::optional<public_key_type>(), true);
+                fc::variant(json_prefix + fc::to_string(i)), fc::optional<public_key_type>(), 
+                /*change to delegate*/true);
             blockchain->store_pending_transaction( trx );
         }
 
@@ -352,6 +371,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
                 == (json_prefix + fc::to_string(i)),
                 "", ("json", result[i].json_data) );
 
+            // assert all are delegates
             FC_ASSERT( result[i].is_delegate(), "", ("i", i)("delegate_info", !!(result[i].delegate_info)) );
         }
 

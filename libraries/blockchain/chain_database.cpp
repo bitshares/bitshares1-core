@@ -2,6 +2,8 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/fire_operation.hpp>
 
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -111,9 +113,6 @@ namespace bts { namespace blockchain {
                                                            const pending_chain_state_ptr& );
             void                       save_undo_state( const block_id_type& id,
                                                            const pending_chain_state_ptr& );
-            void                       save_redo_state( const block_id_type& id,
-                                                           const pending_chain_state_ptr& );
-            void                       clear_redo_state( const block_id_type& id );
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
             void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
@@ -136,7 +135,6 @@ namespace bts { namespace blockchain {
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>     _undo_state;
-            bts::db::level_map<block_id_type,pending_chain_state>     _redo_state;
 
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type>     _block_num_to_id;
@@ -396,15 +394,6 @@ namespace bts { namespace blockchain {
            _undo_state.store( block_id, *undo_state );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
-      void chain_database_impl::save_redo_state( const block_id_type& block_id,
-                                                 const pending_chain_state_ptr& pending_state )
-      {try{
-           _redo_state.store( block_id, *pending_state );
-      }FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
-      void chain_database_impl::clear_redo_state( const block_id_type& id )
-      {
-         _redo_state.remove(id);
-      }
 
       void chain_database_impl::verify_header( const full_block& block_data )
       { try {
@@ -547,16 +536,6 @@ namespace bts { namespace blockchain {
 
             save_undo_state( block_id, pending_state );
 
-            // in case we crash during apply changes... remember what we
-            // were in the process of applying...
-            //
-            // TODO: what if we crash in the middle of save_redo_state?
-            //
-            // on launch if data in redo database is not marked as
-            // included... the re-apply the redo state and mark it as
-            // included.
-            save_redo_state( block_id, pending_state );
-
             // TODO: verify that apply changes can be called any number of
             // times without changing the database other than the first
             // attempt.
@@ -564,10 +543,6 @@ namespace bts { namespace blockchain {
             pending_state->apply_changes();
 
             mark_included( block_id, true );
-
-            // we have compelted successfully (as far as we can tell,
-            // we can free the redo state
-            clear_redo_state( block_id );
 
             update_head_block( block_data );
 
@@ -649,6 +624,17 @@ namespace bts { namespace blockchain {
    chain_database::chain_database()
    :my( new detail::chain_database_impl() )
    {
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<reserve_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      
       my->self = this;
    }
 
@@ -720,7 +706,6 @@ namespace bts { namespace blockchain {
           my->_proposals_db.open( data_dir / "proposals", true );
           my->_proposal_votes_db.open( data_dir / "proposal_votes", true );
           my->_undo_state.open( data_dir / "undo_state", true );
-          my->_redo_state.open( data_dir / "redo_state", true );
 
           my->_block_num_to_id.open( data_dir / "block_num_to_id", true );
           my->_pending_transactions.open( data_dir / "pending_transactions", true );
@@ -779,19 +764,21 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
-      my->_fork_db.close();
       my->_fork_number_db.close();
       my->_undo_state.close();
-      my->_redo_state.close();
       my->_pending_transactions.close();
       my->_processed_transaction_ids.close();
+      my->_fork_db.close();
       my->_properties_db.close();
       my->_proposals_db.close();
       my->_proposal_votes_db.close();
-      my->_block_num_to_id.close();
+      my->_undo_state.close();
 
       my->_block_num_to_id.close();
+      my->_pending_transactions.close();
+      my->_processed_transaction_ids.close();
       my->_block_id_to_block.close();
+      
       my->_assets.close();
       my->_names.close();
       my->_balances.close();

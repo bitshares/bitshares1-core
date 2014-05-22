@@ -22,7 +22,8 @@ enum bts_error_code {
    BTS_NAME_RETRACTED,
    BTS_NEGATIVE_WITHDRAW,
    BTS_NEGATIVE_DEPOSIT,
-   BTS_NEGATIVE_ISSUE
+   BTS_NEGATIVE_ISSUE,
+   BTS_INVALID_PASSWORD
 };
 
 } } // bts::blockchain
@@ -47,4 +48,5 @@ FC_REFLECT_ENUM( bts::blockchain::bts_error_code,
      (BTS_NEGATIVE_WITHDRAW)
      (BTS_NEGATIVE_DEPOSIT)
      (BTS_NEGATIVE_ISSUE)
+     (BTS_INVALID_PASSWORD)
      )

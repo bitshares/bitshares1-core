@@ -1,5 +1,6 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/fire_operation.hpp>
+#include <bts/blockchain/operation_factory.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw_variant.hpp>
 
@@ -35,91 +36,39 @@ namespace bts { namespace blockchain {
                                                    const public_key_type& active, bool as_delegate )
    :name(n),json_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
 
+   operation_factory& operation_factory::instance()
+   {
+      static std::unique_ptr<operation_factory> inst( new operation_factory() );
+      return *inst;
+   }
+
+   void operation_factory::to_variant( const bts::blockchain::operation& in, fc::variant& output )
+   { try {
+      auto converter_itr = _converters.find( in.type.value );
+      FC_ASSERT( converter_itr != _converters.end() );
+      converter_itr->second->to_variant( in, output );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void operation_factory::from_variant( const fc::variant& in, bts::blockchain::operation& output )
+   { try {
+      auto obj = in.get_object();
+      output.type = obj["type"].as<operation_type_enum>();
+
+      auto converter_itr = _converters.find( output.type.value );
+      FC_ASSERT( converter_itr != _converters.end() );
+      converter_itr->second->from_variant( in, output );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("in",in) ) }
+
 } } // bts::blockchain
 
 namespace fc {
    void to_variant( const bts::blockchain::operation& var,  variant& vo )
    {
-      using namespace bts::blockchain;
-      mutable_variant_object obj( "type", var.type );
-      switch( (operation_type_enum)var.type )
-      {
-         case withdraw_operation::type:
-            obj["data"] =  fc::raw::unpack<withdraw_operation>( var.data );
-            break;
-         case deposit_operation::type:
-            obj[ "data"] = fc::raw::unpack<deposit_operation>( var.data );
-            break;
-         case reserve_name_op_type:
-            obj[ "data"] = fc::raw::unpack<reserve_name_operation>( var.data );
-            break;
-         case update_name_op_type:
-            obj[ "data"] = fc::raw::unpack<update_name_operation>( var.data );
-            break;
-         case create_asset_op_type:
-            obj[ "data"] = fc::raw::unpack<create_asset_operation>( var.data );
-            break;
-         case update_asset_op_type:
-            obj[ "data"] = fc::raw::unpack<update_asset_operation>( var.data );
-            break;
-         case issue_asset_op_type:
-            obj[ "data"] = fc::raw::unpack<issue_asset_operation>( var.data );
-            break;
-         case fire_delegate_op_type:
-            obj[ "data"] = fc::raw::unpack<fire_delegate_operation>( var.data );
-            break;
-         case submit_proposal_op_type:
-            obj[ "data"] = fc::raw::unpack<submit_proposal_operation>( var.data );
-            break;
-         case vote_proposal_op_type:
-            obj[ "data"] = fc::raw::unpack<vote_proposal_operation>( var.data );
-            break;
-         case null_op_type:
-            obj[ "data"] = nullptr;
-            break;
-      }
-      vo = std::move(obj);
+      bts::blockchain::operation_factory::instance().to_variant( var, vo );
    }
-   /** @todo implement */
+
    void from_variant( const variant& var,  bts::blockchain::operation& vo )
    {
-      using namespace bts::blockchain;
-      auto obj = var.get_object();
-      from_variant( obj["type"], vo.type );
-      switch( (operation_type_enum)vo.type )
-      {
-         case withdraw_operation::type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_operation>() );
-            break;
-         case deposit_operation::type:
-            vo.data = fc::raw::pack( obj["data"].as<deposit_operation>() );
-            break;
-         case reserve_name_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<reserve_name_operation>() );
-            break;
-         case update_name_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<update_asset_operation>() );
-            break;
-         case create_asset_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<create_asset_operation>() );
-            break;
-         case update_asset_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<update_asset_operation>() );
-            break;
-         case issue_asset_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<issue_asset_operation>() );
-            break;
-         case fire_delegate_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<fire_delegate_operation>() );
-            break;
-         case submit_proposal_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<submit_proposal_operation>() );
-            break;
-         case vote_proposal_op_type:
-            vo.data = fc::raw::pack( obj["data"].as<vote_proposal_operation>() );
-            break;
-         case null_op_type:
-            break;
-      }
+      bts::blockchain::operation_factory::instance().from_variant( var, vo );
    }
 }

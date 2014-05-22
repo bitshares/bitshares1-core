@@ -13,7 +13,7 @@
 
 
 @code
-cd programs/bts_xt
+cd programs/client
 
 ./bitshares_client --p2p-port 5678 --data-dir test_clienta
 
