@@ -765,9 +765,6 @@ namespace bts { namespace blockchain {
    void chain_database::close()
    { try {
       my->_fork_number_db.close();
-      my->_undo_state.close();
-      my->_pending_transactions.close();
-      my->_processed_transaction_ids.close();
       my->_fork_db.close();
       my->_properties_db.close();
       my->_proposals_db.close();
@@ -778,7 +775,6 @@ namespace bts { namespace blockchain {
       my->_pending_transactions.close();
       my->_processed_transaction_ids.close();
       my->_block_id_to_block.close();
-      
       my->_assets.close();
       my->_names.close();
       my->_balances.close();
