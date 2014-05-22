@@ -2,6 +2,8 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/fire_operation.hpp>
 
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -644,6 +646,17 @@ namespace bts { namespace blockchain {
    chain_database::chain_database()
    :my( new detail::chain_database_impl() )
    {
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<reserve_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      
       my->self = this;
    }
 
