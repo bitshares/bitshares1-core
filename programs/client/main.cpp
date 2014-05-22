@@ -126,8 +126,8 @@ int main( int argc, char** argv )
           rpc_config.httpd_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["httpport"].as<uint16_t>());
         std::cout<<"Starting json rpc server on "<< std::string( rpc_config.rpc_endpoint ) <<"\n";
         std::cout<<"Starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
-        bool rpc_succuss = rpc_server->configure(rpc_config);
-        if (!rpc_succuss)
+        bool rpc_success = rpc_server->configure(rpc_config);
+        if (!rpc_success)
         {
             std::cerr << "Error starting rpc server\n\n";
         }
@@ -184,8 +184,6 @@ int main( int argc, char** argv )
    }
    return 0;
 }
-
-
 
 void print_banner()
 {

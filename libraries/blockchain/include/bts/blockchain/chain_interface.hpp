@@ -13,6 +13,7 @@ namespace bts { namespace blockchain {
        votes_against(0),
        blocks_produced(0),
        blocks_missed(0),
+       last_block_num_produced(-1),
        pay_balance(0){}
 
       share_type                     votes_for;
