@@ -910,7 +910,7 @@ Wallets exist in the wallet data directory.
      )"};
     fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
     {
-       auto receive_account_record = _client->get_wallet()->create_receive_account( params[0].as_string() );
+       auto receive_account_record = _client->wallet_create_receive_account( params[0].as_string() );
        return fc::variant(extended_address(receive_account_record.extended_key));
     }
 
@@ -926,7 +926,7 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
     {
        _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
-       return fc::variant(true);
+       return fc::variant();
     }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
@@ -959,16 +959,13 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_transfer(const fc::variants& params)
     {
        auto          amount     = params[0].as_int64();
-       std::string   to_account = params[1].as_string();
+       std::string   to_account_name = params[1].as_string();
        fc::variant_object named_params = params[2].get_object();
        std::string   asset_symbol = named_params["asset_symbol"].as_string();
-       std::string   from_account = named_params["from_account"].as_string();
+       std::string   from_account_name = named_params["from_account"].as_string();
        std::string   invoice_memo = named_params["invoice_memo"].as_string();
-       auto asset_rec = _client->get_chain()->get_asset_record( asset_symbol );
-       FC_ASSERT( asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol",asset_symbol) );
-       bts::wallet::invoice_summary summary = _client->get_wallet()->transfer( to_account, asset( amount, asset_rec->id ), from_account, invoice_memo );
-       for( auto trx : summary.payments )
-          _client->broadcast_transaction( trx.second );
+       bts::wallet::invoice_summary summary = 
+         _client->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
        return fc::variant(summary);
     }
 
@@ -978,9 +975,8 @@ Wallets exist in the wallet data directory.
             /* returns: */    "invoice_summary",
             /* params:          name                    type        classification                   default value */
                               {{"symbol",               "string",   rpc_server::required_positional, fc::ovariant()},
-                               {"name",                 "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"asset_name",           "string",   rpc_server::required_positional, fc::ovariant()},
                                {"issuer_name",          "string",   rpc_server::required_positional, fc::ovariant()},
-                               {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
                                {"description",          "string",   rpc_server::optional_named,      fc::variant("")},
                                {"data",                 "json",     rpc_server::optional_named,      fc::ovariant()},
                                {"maximum_share_supply", "int64",    rpc_server::optional_named,      fc::variant(BTS_BLOCKCHAIN_MAX_SHARES)}
@@ -990,17 +986,14 @@ Wallets exist in the wallet data directory.
           )" };
     fc::variant rpc_server_impl::wallet_asset_create(const fc::variants& params)
     {
-       FC_ASSERT( !"Not Yet Implemented" );
        fc::variant_object named_params = params[3].get_object();
-       auto create_asset_trx = _client->get_wallet()->create_asset( 
+       auto create_asset_trx = _client->wallet_asset_create(
               params[0].as_string(), 
               params[1].as_string(),
               named_params["description"].as_string(),
               named_params["data"],
               params[2].as_string(),
-              named_params["max_share_supply"].as_int64(),
-              named_params["from_account"].as_string() );
-       _client->broadcast_transaction( create_asset_trx );
+              named_params["maximum_share_supply"].as_int64());
        return fc::variant(create_asset_trx);
     }
 
@@ -1018,25 +1011,14 @@ Wallets exist in the wallet data directory.
           )" };
     fc::variant rpc_server_impl::wallet_asset_issue(const fc::variants& params)
     {
-       FC_ASSERT( !"Not Yet Implemented" );
        fc::variant_object named_params = params[3].get_object();
-       auto issue_asset_trx = _client->get_wallet()->issue_asset( 
-              params[1].as_string(), 
+       auto issue_asset_trx = _client->wallet_asset_issue(
               params[0].as_int64(),
+              params[1].as_string(),
               params[2].as_string() );
        _client->broadcast_transaction( issue_asset_trx );
        return fc::variant(issue_asset_trx);
     }
-
-
-
-
-
-
-
-
-
-
 
     static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
