@@ -26,6 +26,12 @@ namespace bts { namespace blockchain {
          virtual oasset_record              get_asset_record( const std::string& symbol )const override;
          virtual oname_record               get_name_record( const std::string& name )const override;
 
+         virtual obid_record                get_bid_record( const market_id_type& )const override;
+         virtual oask_record                get_ask_record( const market_id_type& )const override;  
+                                                                                                            
+         virtual void                       store_bid_record( const bid_record& ) override;
+         virtual void                       store_ask_record( const ask_record& ) override;
+
          virtual void                       store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;
                                                                                                           
@@ -72,6 +78,8 @@ namespace bts { namespace blockchain {
          std::unordered_map< chain_property_type,   fc::variant>          properties; 
          std::unordered_map<proposal_id_type, proposal_record>            proposals;
          std::map< proposal_vote_id_type, proposal_vote>                  proposal_votes; 
+         std::map< market_id_type, bid_record>                  bids; 
+         std::map< market_id_type, ask_record>                  asks; 
 
          chain_interface_ptr                                            _prev_state;
    };
@@ -82,4 +90,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(names)(balances)(name_id_index)(symbol_id_index)(unique_transactions)
-            (properties)(proposals)(proposal_votes) )
+            (properties)(proposals)(proposal_votes)(bids)(asks) )

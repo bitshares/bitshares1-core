@@ -159,6 +159,10 @@ namespace bts { namespace blockchain {
             bts::db::level_map< std::string, asset_id_type >                     _symbol_index;
             bts::db::level_pod_map< vote_del, int >                              _delegate_vote_index;
 
+
+            bts::db::level_map< market_id_type, ask_record >                     _asks_db;
+            bts::db::level_map< market_id_type, bid_record >                     _bids_db;
+
             /** used to prevent duplicate processing */
             bts::db::level_pod_map< transaction_id_type, transaction_location >  _processed_transaction_ids;
       };
@@ -700,6 +704,8 @@ namespace bts { namespace blockchain {
       {
           fc::create_directories( data_dir );
 
+          my->_asks_db.open( data_dir / "asks_db", true );
+          my->_bids_db.open( data_dir / "bids_db", true );
           my->_fork_number_db.open( data_dir / "fork_number_db", true );
           my->_fork_db.open( data_dir / "fork_db", true );
           my->_properties_db.open( data_dir / "properties", true );
@@ -764,6 +770,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_asks_db.close();
+      my->_bids_db.close();
       my->_fork_number_db.close();
       my->_undo_state.close();
       my->_pending_transactions.close();
@@ -1379,9 +1387,13 @@ namespace bts { namespace blockchain {
    void chain_database::store_proposal_vote( const proposal_vote& r )
    {
       if( r.is_null() )
+      {
          my->_proposal_votes_db.remove( r.id );
+      }
       else
+      {
          my->_proposal_votes_db.store( r.id, r );
+      }
    }
 
    oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
@@ -1428,9 +1440,41 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
+
    digest_type    chain_database::get_current_random_seed()const
    {
       return get_property( last_random_seed_id ).as<digest_type>();
    }
+
+   obid_record   chain_database::get_bid_record( const market_id_type& id )const
+   { try {
+      auto bid_itr = my->_bids_db.find( id );
+      if( bid_itr.valid() ) return bid_itr.value();
+      return obid_record();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
+
+   oask_record   chain_database::get_ask_record( const market_id_type& id )const
+   { try {
+      auto ask_itr = my->_asks_db.find( id );
+      if( ask_itr.valid() ) return ask_itr.value();
+      return oask_record();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
+                                                                                              
+   void          chain_database::store_bid_record( const bid_record& rec )
+   { 
+      if( rec.is_null() )
+         my->_bids_db.remove( rec.id() );
+      else
+         my->_bids_db.store( rec.id(), rec );
+   } 
+
+   void          chain_database::store_ask_record( const ask_record& rec )
+   {
+      if( rec.is_null() )
+         my->_asks_db.remove( rec.id() );
+      else
+         my->_asks_db.store( rec.id(), rec );
+   }
+
 
 } } // namespace bts::blockchain

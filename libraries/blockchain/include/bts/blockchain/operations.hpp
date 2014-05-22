@@ -17,7 +17,11 @@ namespace bts { namespace blockchain {
       issue_asset_op_type       = 7,
       fire_delegate_op_type     = 8,
       submit_proposal_op_type   = 9,
-      vote_proposal_op_type     = 10
+      vote_proposal_op_type     = 10,
+      bid_op_type               = 11,
+      ask_op_type               = 12,
+      short_op_type             = 13,
+      collateral_op_type        = 14
    };
 
    /**

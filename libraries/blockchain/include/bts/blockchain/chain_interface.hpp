@@ -6,6 +6,7 @@
 #include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
+#include <bts/blockchain/market_records.hpp>
 
 namespace bts { namespace blockchain {
    typedef fc::optional<signed_transaction> osigned_transaction;
@@ -43,6 +44,13 @@ namespace bts { namespace blockchain {
          virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;
          virtual void                       set_property( chain_property_enum property_id, 
                                                           const fc::variant& property_value )               = 0;
+
+         virtual obid_record                get_bid_record( const market_id_type& )const                    = 0;
+         virtual oask_record                get_ask_record( const market_id_type& )const                    = 0;
+                                                                                                            
+         virtual void                       store_bid_record( const bid_record& )                           = 0;
+         virtual void                       store_ask_record( const ask_record& )                           = 0;
+
 
          virtual oasset_record              get_asset_record( asset_id_type id )const                       = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
