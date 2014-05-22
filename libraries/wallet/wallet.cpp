@@ -9,7 +9,6 @@
 #include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/crypto/aes.hpp>
 
 #include <iostream>
 
@@ -327,6 +326,7 @@ namespace bts { namespace wallet {
                _master_key = master_key_record();
                _master_key->index = get_new_index();
                _master_key->encrypted_key = fc::aes_encrypt( _wallet_password, fc::raw::pack(exp) );
+               /** TODO: salt the password checksum with something */
                _master_key->checksum = fc::sha512::hash( _wallet_password );
 
                store_record( *_master_key  );
@@ -882,7 +882,8 @@ namespace bts { namespace wallet {
       if( my->_wallet_relocker_done.valid() )
       {
          my->_wallet_relocker_done.cancel();
-         my->_wallet_relocker_done.wait();
+         if( my->_wallet_relocker_done.ready() ) // TODO: There may be a deeper issue here; see unlock()
+           my->_wallet_relocker_done.wait();
       }
       my->_relock_time = fc::time_point();
 
@@ -1003,7 +1004,7 @@ namespace bts { namespace wallet {
 #if 0
       // change the above code to this version once task cancellation is fixed in fc
       // if we're currently unlocked and have a timer counting down,
-      // kill it and starrt a new one
+      // kill it and start a new one
       if (my->_wallet_relocker_done.valid() && !my->_wallet_relocker_done.ready())
       {
         my->_wallet_relocker_done.cancel();
@@ -1049,6 +1050,7 @@ namespace bts { namespace wallet {
       // re-encrypt master private
       auto master_private_key = my->_master_key->get_extended_private_key(my->_wallet_password);
       my->_master_key->encrypted_key = fc::aes_encrypt( new_wallet_password, fc::raw::pack(master_private_key) );
+      /** TODO: salt the password checksum with something */
       my->_master_key->checksum = fc::sha512::hash( new_wallet_password );
       my->store_record( *my->_master_key  );
 
