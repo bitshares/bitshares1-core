@@ -363,17 +363,6 @@ namespace bts { namespace cli {
                       return fc::variant( false );
                   }
               }
-              else if (command == "wallet_change_password")
-              {
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
-                  }
-                  catch (fc::canceled_exception&)
-                  {
-                      return fc::variant( false );
-                  }
-              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
