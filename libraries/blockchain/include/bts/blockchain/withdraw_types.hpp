@@ -67,12 +67,27 @@ namespace bts { namespace blockchain {
       std::vector<address> owners; 
    };
 
+   /**
+    *  User A picks a random password and generates password_hash. 
+    *  User A sends funds to user B which they may claim with the password + their signature, but
+    *     where User A can recover the funds after a timeout T.
+    *  User B sends funds to user A under the same conditions where they can recover the
+    *     the funds after a timeout T2 << T
+    *  User A claims the funds from User B revealing password before T2.... 
+    *  User B now has the time between T2 and T to claim the funds.
+    *
+    *  When User A claims the funds from user B, user B learns the password that
+    *  allows them to spend the funds from user A.  
+    *
+    *  User A can spend the funds after a timeout.  
+    */
    struct withdraw_with_password
    {
       static const uint8_t type;
 
-      address payee;
-      address payor;
+      address              payee;
+      address              payor;
+      fc::time_point_sec   timeout;
       fc::ripemd160        password_hash;
    };
 
@@ -105,6 +120,6 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
 FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
-FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(password_hash) )
+FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 

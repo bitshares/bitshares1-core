@@ -56,6 +56,15 @@ namespace bts { namespace blockchain {
                         const fc::optional<public_key_type>& active, 
                         bool as_delegate = false );
 
+      void submit_proposal( name_id_type delegate_id,
+                            const std::string& subject,
+                            const std::string& body,
+                            const std::string& proposal_type,
+                            const fc::variant& json_data);
+
+      void vote_proposal(proposal_id_type proposal_id, name_id_type voter_id, uint8_t vote);
+
+
       void create_asset( const std::string& symbol, 
                          const std::string& name, 
                          const std::string& description,

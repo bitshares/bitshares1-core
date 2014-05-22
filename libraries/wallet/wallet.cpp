@@ -1,11 +1,11 @@
-#include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/import_bitcoin_wallet.hpp>
+#include <bts/wallet/wallet.hpp>
+
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/base58.hpp>
-#include <bts/import_bitcoin_wallet.hpp>
-
 #include <fc/io/raw.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/thread.hpp>
@@ -35,6 +35,25 @@ namespace bts { namespace wallet {
             }
 
             virtual ~wallet_impl()override {}
+
+            secret_hash_type get_secret( uint32_t previous_block_num, const fc::ecc::private_key& delegate_key )
+            {
+               block_id_type prev_header_id;
+               if( previous_block_num != 0 ) 
+               {
+                  auto previous_block_header = _blockchain->get_block_header( previous_block_num );
+                  prev_header_id = previous_block_header.id();
+               }
+
+                                                                  
+               fc::sha512::encoder key_enc;
+               fc::raw::pack( key_enc, delegate_key );
+               fc::sha512::encoder enc;
+               fc::raw::pack( enc, key_enc.result() );
+               fc::raw::pack( enc, prev_header_id );
+
+               return fc::ripemd160::hash( enc.result() );
+            }
 
             void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
             {
@@ -851,7 +870,6 @@ namespace bts { namespace wallet {
           scan_chain( my->get_last_scanned_block_number() );
 
           my->_is_open = true;
-          std::cout << "Opened wallet " << wallet_filename.generic_string() << "\n";
       }
       catch( ... )
       {
@@ -895,6 +913,7 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const fc::path& path )
    {
+       FC_ASSERT( !fc::exists( path ) );
        FC_ASSERT( is_open() );
        std::map< uint32_t, wallet_record > db_map;
 
@@ -1470,6 +1489,66 @@ namespace bts { namespace wallet {
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
 
+   signed_transaction wallet::submit_proposal( const std::string& name,
+                                               const std::string& subject,
+                                               const std::string& body,
+                                               const std::string& proposal_type,
+                                               const fc::variant& json_data,
+                                               wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       auto current_fee_rate = my->_blockchain->get_fee_rate();
+       auto data_size = fc::raw::pack_size(json_data); //fc::json::to_string(json_data);
+       total_fees += asset((data_size * current_fee_rate) / 1000, 0);
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type delegate_id = name_rec->id;
+       trx.submit_proposal(delegate_id, subject, body, proposal_type, json_data);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+   }
+
+   signed_transaction wallet::vote_proposal(const std::string& name, 
+                                            proposal_id_type proposal_id,
+                                            uint8_t vote,
+                                            wallet_flag /* flag */)
+   {
+     try {
+       auto name_rec = my->_blockchain->get_name_record(name);
+       FC_ASSERT(!!name_rec);
+       //TODO verify we are delegate?
+
+       std::unordered_set<address> required_sigs;
+       signed_transaction trx;
+
+       //sign as "name"
+       required_sigs.insert(address(name_rec->active_key));
+
+       asset total_fees = my->_priority_fee;
+       my->withdraw_to_transaction(trx, total_fees, required_sigs);
+
+       name_id_type voter_id = name_rec->id;
+       trx.vote_proposal(voter_id, proposal_id, vote);
+
+       my->sign_transaction(trx, required_sigs);
+       return trx;
+       //TODO fix rethrow
+     } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+   }
 
    //functions for reporting delegate trust status
    void wallet::set_delegate_trust_status( const std::string& delegate_name, fc::optional<int32_t> trust_level )
@@ -1504,14 +1583,24 @@ namespace bts { namespace wallet {
       return itr != my->_sending_keys.end();
    }
 
+
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
+      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
+      auto delegate_rec = my->_blockchain->get_name_record( signing_delegate_id );
+
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      //ilog( "delegate_pub_key: ${key}", ("key",delegate_pub_key) );
+      ilog( "sign block............" );
+      header.previous_secret  = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced-1, 
+                                      delegate_key );
+
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
+      header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
       header.sign(delegate_key);
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
@@ -1526,33 +1615,24 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    {
-      fc::time_point_sec now = bts::blockchain::now(); //fc::time_point::now();
+      auto now = bts::blockchain::now();
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint32_t round_start = (interval_number / BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_NUM_DELEGATES;
+      if( now == my->_blockchain->get_head_block().timestamp ) interval_number++;
+      uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
-      fc::time_point_sec next_time;
-
-      auto sorted_delegates = my->_blockchain->get_delegates_by_vote();
-      for( unsigned i = 0; i < sorted_delegates.size(); ++i )
+      while( next_block_time < last_block_time )
       {
-         auto name_itr = my->_names.find( sorted_delegates[i] );
+         auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
+         auto name_itr = my->_names.find( id );
          if( name_itr != my->_names.end() )
          {
-             if( (round_start + i) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC < now.sec_since_epoch() )
-             {
-                fc::time_point_sec tmp((round_start + i + BTS_BLOCKCHAIN_NUM_DELEGATES) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-                if( tmp < next_time || next_time == fc::time_point_sec() )
-                   next_time = tmp;
-             }
-             else
-             {
-                fc::time_point_sec tmp((round_start + i) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-                if( tmp < next_time || next_time == fc::time_point_sec() )
-                   next_time = tmp;
-             }
+            wlog( "next block time:  ${t}", ("t",fc::time_point_sec( next_block_time ) ) );
+            return fc::time_point_sec( next_block_time ); 
          }
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       }
-      return next_time;
+      return fc::time_point_sec();
    }
 
    std::unordered_map<address,std::string> wallet::get_send_addresses()const
@@ -1626,6 +1706,11 @@ namespace bts { namespace wallet {
    void wallet::set_data_directory( const fc::path& data_dir )
    {
       my->_data_dir = data_dir;
+   }
+
+   fc::path wallet::get_data_directory()const
+   {
+      return my->_data_dir;
    }
 
    /**

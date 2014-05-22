@@ -68,10 +68,11 @@ namespace bts { namespace rpc {
              (wallet_rescan_blockchain_state)\
              (wallet_reserve_name)\
              (wallet_register_delegate)\
+             (wallet_submit_proposal)\
+             (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
              (wallet_list_delegate_trust_status)\
-             (_create_sendtoaddress_transaction)\
              (_get_block_propagation_data)\
              (_get_transaction_propagation_data)\
              (_list_json_commands)\
@@ -682,21 +683,16 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_open_file(const fc::variants& params)
     {
-      try
-      {
-         _client->get_wallet()->open_file( params[0].as_string(), params[1].as_string() );
-        return fc::variant(true);
-      }
-      catch( const fc::exception& e )
-      {
-        wlog( "${e}", ("e",e.to_detail_string() ) );
-        throw e;
-      }
-      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
-      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
-                  //       or some other filesystem error then it should be properly reported.
-        throw rpc_wallet_passphrase_incorrect_exception();
-      }
+        try
+        {
+            _client->get_wallet()->open_file( params[0].as_string(), params[1].as_string() );
+        }
+        catch( const fc::exception& e ) // TODO: see wallet_unlock()
+        {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
+            throw rpc_wallet_passphrase_incorrect_exception();
+        }
+        return fc::variant( true );
     }
 
     static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
@@ -711,21 +707,16 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_open(const fc::variants& params)
     {
-      try
-      {
-        _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
-        return fc::variant(true);
-      }
-      catch( const fc::exception& e )
-      {
-        wlog( "${e}", ("e",e.to_detail_string() ) );
-        throw e;
-      }
-      catch (...) // TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
-      {           //       if the problem is 'file not found' or 'invalid user' or 'permission denined'
-                  //       or some other filesystem error then it should be properly reported.
-        throw rpc_wallet_passphrase_incorrect_exception();
-      }
+        try
+        {
+            _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
+        }
+        catch( const fc::exception& e ) // TODO: see wallet_unlock()
+        {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
+            throw rpc_wallet_passphrase_incorrect_exception();
+        }
+        return fc::variant( true );
     }
 
     static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
@@ -797,11 +788,19 @@ Wallets exist in the wallet data directory
     )" };
     fc::variant rpc_server_impl::wallet_create_from_json(const fc::variants& params)
     {
-       auto filename = params[0].as<fc::path>();
-       auto wallet_name = params[1].as_string();
-       auto passphrase = params[2].as_string();
-       _client->get_wallet()->create_from_json( filename, wallet_name, passphrase );
-       return fc::variant( true );
+        auto filename = params[0].as<fc::path>();
+        auto wallet_name = params[1].as_string();
+        auto passphrase = params[2].as_string();
+        try
+        {
+            _client->get_wallet()->create_from_json( filename, wallet_name, passphrase );
+        }
+        catch( const fc::exception& e ) // TODO: see wallet_unlock()
+        {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
+            throw rpc_wallet_passphrase_incorrect_exception();
+        }
+        return fc::variant( true );
     }
 
     static rpc_server::method_data wallet_lock_metadata{"bitcoin_walletlock", nullptr,
@@ -814,15 +813,8 @@ Wallets exist in the wallet data directory
         /*aliases*/ { "wallet_lock", "walletlock" }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
-       try
-       {
-         _client->get_wallet()->lock();
-         return fc::variant();
-       }
-       catch (...)
-       {
-         throw rpc_wallet_passphrase_incorrect_exception();
-       }
+       _client->get_wallet()->lock();
+       return fc::variant( true );
     }
 
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
@@ -858,17 +850,23 @@ As json rpc call
      )"};
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
-       unsigned timeout_sec = params[0].as<unsigned>();
-       std::string passphrase = params[1].as_string();
-       try
-       {
-         _client->get_wallet()->unlock(fc::seconds(timeout_sec), passphrase);
-         return fc::variant();
-       }
-       catch (...)
-       {
-         throw rpc_wallet_passphrase_incorrect_exception();
-       }
+        unsigned timeout_sec = params[0].as<unsigned>();
+        std::string passphrase = params[1].as_string();
+        try
+        {
+            _client->get_wallet()->unlock(fc::seconds(timeout_sec), passphrase);
+        }
+        catch( const fc::exception& e )
+        {
+            /*
+             * TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
+             * if the problem is 'file not found' or 'invalid user' or 'permission denined'
+             * or some other filesystem error then it should be properly reported.
+             */
+            wlog( "${e}", ("e",e.to_detail_string() ) );
+            throw rpc_wallet_passphrase_incorrect_exception();
+        }
+        return fc::variant( true );
     }
 
     static rpc_server::method_data wallet_change_password_metadata{"wallet_change_password", nullptr,
@@ -923,30 +921,8 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
     {
        _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
-       return fc::variant();
+       return fc::variant(true);
     }
-
-    static rpc_server::method_data _create_sendtoaddress_transaction_metadata{"_create_sendtoaddress_transaction", nullptr,
-          /* description */ "Creates a transaction in the same manner as 'sendtoaddress', but do not broadcast it",
-          /* returns: */    "signed_transaction",
-          /* params:          name             type        classification                   default value */
-                            {{"to_address",    "address",  rpc_server::required_positional, fc::ovariant()},
-                             {"amount",        "int64",    rpc_server::required_positional, fc::ovariant()},
-                             {"comment",       "string",   rpc_server::optional_positional, fc::variant("")},
-                             {"to_comment",    "string",   rpc_server::optional_positional, fc::variant("")}},
-        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
-        R"(
-     )" };
-    fc::variant rpc_server_impl::_create_sendtoaddress_transaction(const fc::variants& params)
-    { try {
-       //bts::blockchain::address destination_address = params[0].as<bts::blockchain::address>();
-       //ilog( "destination: ${d}", ("d",destination_address) );
-       //auto amount = params[1].as<int64_t>();
-       //std::string comment = params[2].as_string();
-       // TODO: we're currently ignoring optional parameter 4, [to-comment]
-       FC_ASSERT(false, "not implemented");
-       return fc::variant(); //_client->get_wallet()->send_to_address(asset(amount), destination_address, comment));
-    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
@@ -1293,9 +1269,53 @@ As a json rpc call
        return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
     }
 
+    static rpc_server::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
+      /* description */ "Submit a proposal to the delegates for voting",
+      /* returns: */    "transaction_id",
+      /* params:          name          type       classification                   default_value */
+      { { "proposer", "string", rpc_server::required_positional, fc::ovariant() },
+        { "subject", "string", rpc_server::required_positional, fc::ovariant() },
+        { "body", "string", rpc_server::required_positional, fc::ovariant() },
+        { "proposal_type", "string", rpc_server::required_positional, fc::ovariant() },
+        { "json_data", "variant", rpc_server::optional_positional, fc::ovariant() } 
+      },
+        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+      R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_submit_proposal(const fc::variants& params)
+    {
+      auto transaction_id = _client->submit_proposal( params[0].as_string(), //proposer 
+                                                      params[1].as_string(), //subject
+                                                      params[2].as_string(), //body
+                                                      params[3].as_string(), //proposal_type
+                                                      params[4]              //json_data
+                                                      );
+      return fc::variant(transaction_id);
+    }
+
+    static rpc_server::method_data wallet_vote_proposal_metadata{ "wallet_vote_proposal", nullptr,
+      /* description */ "Vote on a proposal",
+      /* returns: */    "transaction_id",
+      /* params:          name          type       classification                   default_value */
+      { { "name", "string", rpc_server::required_positional, fc::ovariant() },
+        { "proposal_id", "transaction_id", rpc_server::required_positional, fc::ovariant() },
+        { "vote", "unsigned integer", rpc_server::required_positional, fc::ovariant() }
+      },
+      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+      R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
+    {
+      auto transaction_id = _client->vote_proposal(params[0].as_string(), 
+                                                   params[1].as_int64(),
+                                                   params[2].as_uint64());
+      return fc::variant(transaction_id);
+    }
+
+
     static rpc_server::method_data wallet_set_delegate_trust_status_metadata{ "wallet_set_delegate_trust_status", nullptr,
       /* description */ "Sets the trust level for a delegate",
-      /* returns: */    "bool",
+      /* returns: */    "null",
       /* params:          name          type       classification                   default_value */
       { { "delegate_name", "string", rpc_server::required_positional, fc::ovariant() },
       { "trust_level", "integer", rpc_server::required_positional, fc::ovariant() } },
@@ -1487,10 +1507,18 @@ Examples:
      )" };
     fc::variant rpc_server_impl::wallet_import_bitcoin(const fc::variants& params)
     {
-      auto wallet_dat      = params[0].as<fc::path>();
-      auto wallet_passphrase = params[1].as<std::string>();
-      _client->get_wallet()->import_bitcoin_wallet( wallet_dat, wallet_passphrase );
-      return fc::variant(true);
+        auto filename = params[0].as<fc::path>();
+        auto passphrase = params[1].as<std::string>();
+        try
+        {
+            _client->get_wallet()->import_bitcoin_wallet( filename, passphrase );
+        }
+        catch( const fc::exception& e ) // TODO: see wallet_unlock()
+        {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
+            throw rpc_wallet_passphrase_incorrect_exception();
+        }
+        return fc::variant( true );
     }
 
     // TODO: get account argument

@@ -317,13 +317,19 @@ namespace bts { namespace blockchain {
          case withdraw_password_type:
          {
             auto pass = arec->condition.as<withdraw_with_password>();
-            uint32_t count = 0;
-            count += check_signature( pass.payor );
-            count += check_signature( pass.payee );
-            if( count < 2 && op.claim_input_data.size() ) 
-               count += pass.password_hash == fc::ripemd160::hash( op.claim_input_data.data(), op.claim_input_data.size() );
-            if( count != 2 )
-               fail( BTS_MISSING_SIGNATURE, fc::variant(op) );
+            if( pass.timeout < _current_state->now() )
+               check_signature( pass.payor );
+            else 
+            {
+               check_signature( pass.payee );
+               auto input_password_hash = fc::ripemd160::hash( op.claim_input_data.data(), 
+                                                              op.claim_input_data.size() );
+
+               if( pass.password_hash != input_password_hash )
+               { // TODO: add new fail condtion INVALID_PASSWORD
+                  fail( BTS_MISSING_SIGNATURE, fc::variant(op) );
+               }
+            }
             break;
          }
 
@@ -632,6 +638,35 @@ namespace bts { namespace blockchain {
       op.is_delegate = as_delegate;
       operations.push_back( op );
    }
+
+   void transaction::submit_proposal(name_id_type delegate_id,
+                                     const std::string& subject,
+                                     const std::string& body,
+                                     const std::string& proposal_type,
+                                     const fc::variant& json_data)
+   {
+     submit_proposal_operation op;
+     op.submitting_delegate_id = delegate_id;
+     op.submission_date = fc::time_point::now();
+     op.subject = subject;
+     op.body = body;
+     op.proposal_type = proposal_type;
+     op.data = json_data;
+     operations.push_back(op);
+   }
+
+   void transaction::vote_proposal(proposal_id_type proposal_id,
+                                   name_id_type voter_id,
+                                   uint8_t vote)
+   {
+     vote_proposal_operation op;
+     op.id.proposal_id = proposal_id;
+     op.id.delegate_id = voter_id;
+     op.timestamp = fc::time_point::now();
+     op.vote = vote;
+     operations.push_back(op);
+   }
+
 
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const
    {
