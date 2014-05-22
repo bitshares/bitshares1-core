@@ -141,7 +141,8 @@ void upnp_service::map_port( uint16_t local_port )
       //         throw;
            }
        } else {
-           printf("No valid UPnP IGDs found\n");
+           //printf("No valid UPnP IGDs found\n");
+           wlog("No valid UPnP IGDs found");
            freeUPNPDevlist(devlist); devlist = 0;
            if (r != 0)
            {
@@ -151,10 +152,4 @@ void upnp_service::map_port( uint16_t local_port )
   });
 }
 
-
-
-
 } } // namespace bts::net
-
-
-

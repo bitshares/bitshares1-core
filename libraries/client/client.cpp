@@ -451,23 +451,28 @@ namespace bts { namespace client {
     */
     transaction_id_type client::register_delegate(const std::string& name, const fc::variant& data)
     { try {
-             FC_ASSERT( false, "Not Implemented" );
-        //auto trx = get_wallet()->register_delegate( name, data );
-        //broadcast_transaction( trx );
-       // return trx.id();
+        auto trx = get_wallet()->reserve_name( name, data, true );
+        broadcast_transaction(trx);
+        return trx.id();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
 
     void client::set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
-    {
-      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
-      get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
-    }
+    { try {
+        auto name_record = get_chain()->get_name_record( delegate_name );
+        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
+        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
+        
+        get_wallet()->set_delegate_trust_status( delegate_name, user_trust_level );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level) ) }
 
     bts::wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
-    {
-      //TODO verify if delegate_name is a valid delegate_name in blockchain before sending to wallet
-      return get_wallet()->get_delegate_trust_status(delegate_name);
-    }
+    { try {
+        auto name_record = get_chain()->get_name_record( delegate_name );
+        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
+        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
+
+        return get_wallet()->get_delegate_trust_status( delegate_name );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
 
     std::map<std::string,bts::wallet::delegate_trust_status> client::list_delegate_trust_status() const
     {

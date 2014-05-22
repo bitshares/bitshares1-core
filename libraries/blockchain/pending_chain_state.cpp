@@ -13,6 +13,13 @@ namespace bts { namespace blockchain {
    {
    }
 
+   digest_type  pending_chain_state::get_current_random_seed()const
+   {
+      if( _prev_state ) 
+         return _prev_state->get_current_random_seed();
+      return digest_type();
+   }
+
    void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
    {
       _prev_state = prev_state;

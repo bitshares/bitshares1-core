@@ -31,18 +31,79 @@ namespace bts { namespace cli {
       {
          public:
             client_ptr                  _client;
-            bts::rpc::rpc_server_ptr    _rpc_server;
+            rpc_server_ptr              _rpc_server;
             bts::cli::cli*              _self;
             fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
             std::set<std::string>       _json_command_list;
 
-            cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server );
+            cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server );
 
-            void create_wallet_if_missing();
+            void process_commands()
+            {
+              std::string line = _self->get_line();
+              while (std::cin.good())
+              {
+                std::string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
+                if (!trimmed_line_to_parse.empty())
+                {
+                  std::string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
+                  std::string command;
+                  fc::istream_ptr argument_stream;
+                  if (iter != trimmed_line_to_parse.end())
+                  {
+                    // then there are arguments to this function
+                    size_t first_space_pos = iter - trimmed_line_to_parse.begin();
+                    command = trimmed_line_to_parse.substr(0, first_space_pos);
+                    argument_stream = std::make_shared<fc::stringstream>((trimmed_line_to_parse.substr(first_space_pos + 1)));
+                  }
+                  else
+                  {
+                    command = trimmed_line_to_parse;
+                    argument_stream = std::make_shared<fc::stringstream>();
+                  }
 
-            std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false )
+                  fc::buffered_istream buffered_argument_stream(argument_stream);
+
+                  bool command_is_valid = false;
+                  fc::variants arguments;
+                  try
+                  {
+                    arguments = _self->parse_interactive_command(buffered_argument_stream, command);
+                    command_is_valid = true;
+                  }
+                  catch (fc::key_not_found_exception&)
+                  {
+                    std::cout << "Error: invalid command \"" << command << "\"\n";
+                  }
+                  catch (fc::exception& e)
+                  {
+                    std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                  }
+
+                  if (command_is_valid)
+                  {
+                    try
+                    {
+                      fc::variant result = _self->execute_interactive_command(command, arguments);
+                      _self->format_and_print_result(command, result);
+                    }
+                    catch ( const fc::canceled_exception& )
+                    {
+                      return;
+                    }
+                    catch ( const fc::exception& e )
+                    {
+                      std::cout << e.to_detail_string() << "\n";
+                    }
+                  }
+                }
+                line = _self->get_line();
+              }
+            }
+
+            std::string get_line( const std::string& prompt, bool no_echo )
             {
                   std::string line;
                   if ( no_echo )
@@ -70,214 +131,69 @@ namespace bts { namespace cli {
                      std::getline( std::cin, line );
                   #endif
                   }
+
+                  boost::trim(line);
                   return line;
             }
 
-            /** assumes last argument is passphrase */
-            fc::variant execute_command_with_passphrase_query( const std::string& command, const fc::variants& arguments,
-                                                               const std::string& query_string, std::string& passphrase,
-                                                               bool verify = false )
+            fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const std::string& command)
             {
-                auto new_arguments = arguments;
-                new_arguments.push_back( fc::variant( passphrase ) );
-
-                while( true )
-                {
-                    passphrase = _self->get_line( query_string + ": ", true );
-                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "");
-
-                    if( verify )
-                    {
-                        if( passphrase != _self->get_line( query_string + " (verify): ", true ) )
-                        {
-                            std::cout << "Passphrases do not match, try again\n";
-                            continue;
-                        }
-                    }
-
-                    new_arguments.back() = fc::variant( passphrase );
-
-                    try
-                    {
-                        return _rpc_server->direct_invoke_method( command, new_arguments );
-                    }
-                    catch (bts::rpc::rpc_wallet_open_needed_exception&)
-                    {
-                        try
-                        {
-                            interactive_open_wallet();
-                        }
-                        catch (fc::canceled_exception&)
-                        {
-                            std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
-                            return fc::variant(false);
-                        }
-                    }
-                    catch( const fc::exception& e )
-                    {
-                        wlog( "${e}", ("e",e.to_string() ) );
-                        std::cout << "Incorrect passphrase, try again\n";
-                    }
-                }
-
-                return fc::variant( false );
-            }
-
-            /** assumes last argument is passphrase */
-            fc::variant execute_wallet_command_with_passphrase_query(const std::string& command, const fc::variants& arguments,
-                                                                     const std::string& query_string, bool verify = false)
-            {
-                std::string passphrase;
-                auto result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
-                if( !result.as_bool() ) return result;
-
-                if( _client->get_wallet()->is_locked() )
-                {
-                    fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
-                    _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
-                    std::cout << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
-                }
-
-                return result;
-            }
-
-            void interactive_open_wallet()
-            {
-              if( _client->get_wallet()->is_open() )
-                  return;
-
-              std::cout << "A wallet must be open to execute this command. You can:\n";
-              std::cout << "(o) Open an existing wallet\n";
-              std::cout << "(c) Create a new wallet\n";
-              std::cout << "(q) Abort command\n";
-
-              std::string choice = _self->get_line("Choose [o/c/q]: ");
-              boost::trim(choice);
-
-              if (choice == "c")
+              try
               {
-                std::string wallet_name = _self->get_line("new wallet name [default]: ");
-                boost::trim(wallet_name);
-                if (wallet_name.empty()) wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
-                execute_interactive_command( "wallet_create", arguments );
+                const rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
+                return _self->parse_recognized_interactive_command(argument_stream, method_data);
               }
-              else if (choice == "o")
+              catch (fc::key_not_found_exception&)
               {
-                std::string wallet_name = _self->get_line("existing wallet name [default]: ");
-                boost::trim(wallet_name);
-                if (wallet_name.empty()) wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
-                execute_interactive_command( "wallet_open", arguments );
-              }
-              else if (choice == "q")
-              {
-                FC_THROW_EXCEPTION(canceled_exception, "");
-              }
-              else
-              {
-                std::cout << "Wrong answer!\n";
-                FC_THROW_EXCEPTION(canceled_exception, "");
+                return _self->parse_unrecognized_interactive_command(argument_stream, command);
               }
             }
 
-            fc::variant execute_command_and_prompt_for_passphrases(const std::string& command, const fc::variants& arguments)
-            { try {
-              while (true)
+            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
+                                                               const rpc_server::method_data& method_data)
+            {
+              fc::variants arguments;
+              for (unsigned i = 0; i < method_data.parameters.size(); ++i)
               {
-                // try to execute the method.  If the method needs the wallet to be
-                // unlocked, it will throw an exception, and we'll attempt to
-                // unlock it and then retry the command
                 try
                 {
-                  return _rpc_server->direct_invoke_method(command, arguments);
+                  arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
-                catch (bts::rpc::rpc_wallet_open_needed_exception&)
+                catch (const fc::eof_exception& e)
                 {
-                  try
-                  {
-                    interactive_open_wallet();
-                  }
-                  catch (fc::canceled_exception&)
-                  {
-                    std::cout << "Failed to open wallet, aborting \"" << command << "\" command\n";
-                    return fc::variant(false);
-                  }
+                  if (method_data.parameters[i].classification != rpc_server::required_positional)
+                    return arguments;
+                  else
+                    FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
+                             ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
                 }
-                catch (bts::rpc::rpc_wallet_unlock_needed_exception&)
+                catch (fc::parse_error_exception& e)
                 {
-                  try
-                  {
-                    fc::variants arguments { 60 * 5 }; // default to five minute timeout
-                    execute_wallet_command_with_passphrase_query( "wallet_unlock", arguments, "passphrase" );
-                  }
-                  catch (fc::canceled_exception&)
-                  {
-                    std::cout << "Failed to unlock wallet, aborting \"" << command << "\" command\n";
-                    return fc::variant(false);
-                  }
+                  FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
+                                        ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
+
+                if (method_data.parameters[i].classification == rpc_server::optional_named)
+                  break;
               }
-            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
+              return arguments;
+            }
 
-            fc::variant interactive_sendtoaddress(const std::string& command, const fc::variants& arguments)
-            { try {
-              // validate arguments
-              FC_ASSERT(arguments.size() >= 2 && arguments.size() <= 4);
-
-              // _create_sendtoaddress_transaction takes the same arguments as sendtoaddress
-              fc::variant result = execute_command_and_prompt_for_passphrases("_create_sendtoaddress_transaction", arguments);
-              bts::blockchain::signed_transaction transaction = result.as<bts::blockchain::signed_transaction>();
-
-              while (1)
-              {
-                  std::string response;
-                  std::cout << "About to broadcast transaction:\n\n";
-                  // TODO: update confirmation message
-                  //std::cout << _client->get_wallet()->get_transaction_info_string(*_client->get_chain(), transaction) << "\n";
-                  std::cout << "Broadcast this transaction? (yes/no)\n";
-                  std::cin >> response;
-
-                  if (response == "yes")
-                  {
-                    result = execute_command_and_prompt_for_passphrases("_send_transaction", fc::variants{fc::variant(transaction)});
-                    bts::blockchain::transaction_id_type transaction_id = result.as<bts::blockchain::transaction_id_type>();
-                    std::cout << "Transaction broadcasted (" << (std::string)transaction_id << ")\n";
-                    return result;
-                  }
-                  else if (response == "no")
-                  {
-                    std::cout << "Transaction canceled\n";
-                    break;
-                  }
-              }
-
-              return fc::variant(false);
-            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command)("args",arguments) ) }
-
-            fc::variant interactive_rescan(const std::string& command, const fc::variants& arguments)
+            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
+                                                                 const std::string& command)
             {
-              // implement the "rescan" function locally instead of going through JSON,
-              // which will let us display progress messages
-              FC_ASSERT(arguments.size() == 0 || arguments.size() == 1);
-              uint32_t block_num = 0;
-              if (arguments.size() == 1)
-                block_num = (uint32_t)arguments[0].as_uint64();
+              /* Quit isn't registered with the RPC server, the RPC server spells it "stop" */
+              if (command == "quit")
+                return fc::variants();
 
-                _client->get_wallet()->scan_chain( block_num, [](uint32_t cur, uint32_t last, uint32_t trx, uint32_t last_trx)
-                {
-                    std::cout << "Scanning transaction " <<  cur << "." << trx <<"  of " << last << "." << last_trx << "         \r";
-                });
-              return fc::variant();
+              FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
-                                                      const bts::rpc::rpc_server::method_data& method_data,
+                                                      const rpc_server::method_data& method_data,
                                                       unsigned parameter_index)
             {
-              const bts::rpc::rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
+              const rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
               {
                 // for now, accept plain int, assume it's always in the base asset
@@ -342,103 +258,93 @@ namespace bts { namespace cli {
               }
             }
 
-            fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
-                                                                 const std::string& command)
-            {
-              /* Quit isn't registered with the RPC server, the RPC server spells it "stop" */
-              if (command == "quit")
-                return fc::variants();
-
-              FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
-            }
-
-            fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
-                                                               const bts::rpc::rpc_server::method_data& method_data)
-            {
-              fc::variants arguments;
-              for (unsigned i = 0; i < method_data.parameters.size(); ++i)
-              {
-                try
-                {
-                  arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
-                }
-                catch (const fc::eof_exception& e)
-                {
-                  if (method_data.parameters[i].classification != bts::rpc::rpc_server::required_positional)
-                    return arguments;
-                  else
-                    FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                             ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
-                }
-                catch (fc::parse_error_exception& e)
-                {
-                  FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
-                                        ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
-                }
-
-                if (method_data.parameters[i].classification == bts::rpc::rpc_server::optional_named)
-                  break;
-              }
-              return arguments;
-            }
-
-            fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const std::string& command)
-            {
-              try
-              {
-                const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
-                return _self->parse_recognized_interactive_command(argument_stream, method_data);
-              }
-              catch (fc::key_not_found_exception&)
-              {
-                return _self->parse_unrecognized_interactive_command(argument_stream, command);
-              }
-            }
-
             fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create")
+              if (command == "wallet_create" || command == "wallet_change_passphrase")
               {
+                  if( command == "wallet_create" )
+                  {
+                      auto wallet_name = arguments[0].as_string();
+                      if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                      {
+                        std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
+                        return fc::variant(false);
+                      }
+                  }
                   try
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
                   }
-                  catch (fc::canceled_exception&)
+                  catch (const fc::canceled_exception&)
                   {
+                      std::cout << "Command aborted\n";
                       return fc::variant( false );
                   }
               }
               else if (command == "wallet_create_from_json")
               {
+                  auto filename = arguments[0].as<fc::path>();
+                  auto wallet_name = arguments[1].as_string();
+                  if( !fc::exists( filename ) )
+                  {
+                     std::cout << "File \"" << filename.generic_string() << "\" not found\n";
+                     return fc::variant(false);
+                  }
+                  if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                  {
+                    std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
+                    return fc::variant(false);
+                  }
                   try
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception&)
+                  catch (const fc::canceled_exception&)
                   {
+                      std::cout << "Command aborted\n";
                       return fc::variant( false );
                   }
               }
               else if ( command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
               {
+                  if( command == "wallet_open" )
+                  {
+                      auto wallet_name = arguments[0].as_string();
+                      if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                      {
+                        std::cout << "Wallet \"" << wallet_name << "\" not found\n";
+                        return fc::variant(false);
+                      }
+                  }
+                  else if( command == "wallet_open_file" )
+                  {
+                      auto filename = arguments[0].as<fc::path>();
+                      if( !fc::exists( filename ) )
+                      {
+                         std::cout << "File \"" << filename.generic_string() << "\" not found\n";
+                         return fc::variant(false);
+                      }
+                  }
                   try
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
                   }
-                  catch (fc::canceled_exception&)
+                  catch (const fc::canceled_exception&)
                   {
+                      std::cout << "Command aborted\n";
                       return fc::variant( false );
                   }
               }
               else if (command == "wallet_import_bitcoin")
               {
+                  auto filename = arguments[0].as<fc::path>();
+                  if( !fc::exists( filename ) )
+                  {
+                     std::cout << "File \"" << filename.generic_string() << "\" not found\n";
+                     return fc::variant(false);
+                  }
                   try /* Try empty password first */
                   {
-                      if( !fc::exists( arguments[0].as<fc::path>() ) )
-                      {
-                         std::cout << "File not found: '"<< arguments[0].as<fc::path>().generic_string() << "'\n";
-                         return fc::variant(false);
-                      }
                       auto new_arguments = arguments;
                       new_arguments.push_back( fc::variant( "" ) );
                       return _rpc_server->direct_invoke_method( command, new_arguments );
@@ -447,44 +353,150 @@ namespace bts { namespace cli {
                   {
                      ilog( "failed with empty password: ${e}", ("e",e.to_detail_string() ) );
                   }
-
                   try
                   {
                       return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
                   }
-                  catch (fc::canceled_exception&)
+                  catch (const fc::canceled_exception&)
                   {
+                      std::cout << "Command aborted\n";
                       return fc::variant( false );
                   }
-              }
-              else if (command == "sendtoaddress")
-              {
-                // the raw json version sends immediately, in the interactive version we want to
-                // generate the transaction, have the user confirm it, then broadcast it
-                interactive_sendtoaddress(command, arguments);
-                return fc::variant();
-              }
-              else if( command == "listdelegates" )
-              {
-                if( arguments.size() == 2 )
-                  _self->list_delegates( (uint32_t)arguments[1].as<int64_t>() );
-                else
-                  _self->list_delegates( );
-                return fc::variant();
-              }
-              else if (command == "rescan")
-              {
-                return interactive_rescan(command, arguments);
               }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
               }
-              else
+
+              return execute_command(command, arguments);
+            }
+
+            fc::variant execute_command(const std::string& command, const fc::variants& arguments)
+            { try {
+              while (true)
               {
-                return execute_command_and_prompt_for_passphrases(command, arguments);
+                // try to execute the method.  If the method needs the wallet to be
+                // unlocked, it will throw an exception, and we'll attempt to
+                // unlock it and then retry the command
+                try
+                {
+                    return _rpc_server->direct_invoke_method(command, arguments);
+                }
+                catch (const rpc_wallet_open_needed_exception&)
+                {
+                    auto result = interactive_open_wallet();
+                    if( !result.as_bool() ) return result;
+                }
+                catch (const rpc_wallet_unlock_needed_exception&)
+                {
+                    fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                    auto result = execute_interactive_command( "wallet_unlock", arguments );
+                    if( !result.as_bool() ) return result;
+                }
               }
-              return fc::variant();
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
+
+            /** assumes last argument is passphrase */
+            fc::variant execute_command_with_passphrase_query( const std::string& command, const fc::variants& arguments,
+                                                               const std::string& query_string, std::string& passphrase,
+                                                               bool verify = false )
+            {
+                auto new_arguments = arguments;
+                new_arguments.push_back( fc::variant( passphrase ) );
+
+                while( true )
+                {
+                    passphrase = _self->get_line( query_string + ": ", true );
+                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "");
+
+                    if( verify )
+                    {
+                        if( passphrase != _self->get_line( query_string + " (verify): ", true ) )
+                        {
+                            std::cout << "Passphrases do not match, try again\n";
+                            continue;
+                        }
+                    }
+
+                    new_arguments.back() = fc::variant( passphrase );
+
+                    try
+                    {
+                        return execute_command( command, new_arguments );
+                    }
+                    catch( const rpc_wallet_passphrase_incorrect_exception&)
+                    {
+                        std::cout << "Incorrect passphrase, try again\n";
+                    }
+                }
+
+                return fc::variant( false );
+            }
+
+            /** assumes last argument is passphrase */
+            fc::variant execute_wallet_command_with_passphrase_query(const std::string& command, const fc::variants& arguments,
+                                                                     const std::string& query_string, bool verify = false)
+            {
+                std::string passphrase;
+                fc::variant result;
+                try
+                {
+                    result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
+
+                    if( command.find("wallet_create") != std::string::npos )
+                        std::cout << "Created wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
+                    else if ( command.find("wallet_open") != std::string::npos)
+                        std::cout << "Opened wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
+
+                    if( _client->get_wallet()->is_locked() )
+                    {
+                        fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
+                        _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
+                        std::cout << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
+                    }
+                }
+                catch( const fc::canceled_exception& )
+                {
+                    return fc::variant( false );
+                }
+
+                return result;
+            }
+
+            fc::variant interactive_open_wallet()
+            {
+              if( _client->get_wallet()->is_open() ) return fc::variant( true );
+
+              std::cout << "A wallet must be open to execute this command. You can:\n";
+              std::cout << "(o) Open an existing wallet\n";
+              std::cout << "(c) Create a new wallet\n";
+              std::cout << "(q) Abort command\n";
+
+              std::string choice = _self->get_line("Choose [o/c/q]: ");
+
+              if (choice == "c")
+              {
+                std::string wallet_name = _self->get_line("new wallet name [default]: ");
+                if (wallet_name.empty()) wallet_name = "default";
+
+                fc::variants arguments { wallet_name };
+                return execute_interactive_command( "wallet_create", arguments );
+              }
+              else if (choice == "o")
+              {
+                std::string wallet_name = _self->get_line("wallet name [default]: ");
+                if (wallet_name.empty()) wallet_name = "default";
+
+                fc::variants arguments { wallet_name };
+                return execute_interactive_command( "wallet_open", arguments );
+              }
+              else if (choice == "q")
+              {
+                return fc::variant( false );
+              }
+
+              std::cout << "Wrong answer!\n";
+              return fc::variant( false );
             }
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
@@ -505,27 +517,10 @@ namespace bts { namespace cli {
                  elog( " unexpected exception " );
               }
               
-              if (method_name == "sendtoaddress")
-              {
-                // sendtoaddress does its own output formatting
-              }
-              else if (method_name == "list_receive_addresses")
-              {
-                std::cout << std::setw( 33 ) << std::left << "address" << " : " << "account" << "\n";
-                std::cout << "--------------------------------------------------------------------------------\n";
-                auto addrs = _client->get_wallet()->get_receive_addresses();
-                for( auto item : addrs )
-                  std::cout << std::setw( 33 ) << std::left << std::string(item.first) << " : " << item.second << "\n";
-                std::cout << std::right;
-              }
-              else if (method_name == "help")
+              if (method_name == "help")
               {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
-              }
-              else if (method_name == "rescan")
-              {
-                std::cout << "\ndone scanning block chain\n";
               }
               else if (method_name == "wallet_get_transaction_history")
               {
@@ -539,7 +534,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const bts::rpc::rpc_server::method_data& method_data = _rpc_server->get_method_data(method_name);
+                  const rpc_server::method_data& method_data = _rpc_server->get_method_data(method_name);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")
@@ -696,108 +691,6 @@ namespace bts { namespace cli {
                 }
             }
 
-            void process_commands()
-            {
-              std::string line = _self->get_line();
-              while (std::cin.good())
-              {
-                std::string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
-                if (!trimmed_line_to_parse.empty())
-                {
-                  std::string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
-                  std::string command;
-                  fc::istream_ptr argument_stream;
-                  if (iter != trimmed_line_to_parse.end())
-                  {
-                    // then there are arguments to this function
-                    size_t first_space_pos = iter - trimmed_line_to_parse.begin();
-                    command = trimmed_line_to_parse.substr(0, first_space_pos);
-                    argument_stream = std::make_shared<fc::stringstream>((trimmed_line_to_parse.substr(first_space_pos + 1)));
-                  }
-                  else
-                  {
-                    command = trimmed_line_to_parse;
-                    argument_stream = std::make_shared<fc::stringstream>();
-                  }
-
-                  fc::buffered_istream buffered_argument_stream(argument_stream);
-
-                  bool command_is_valid = false;
-                  fc::variants arguments;
-                  try
-                  {
-                    arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-                    command_is_valid = true;
-                  }
-                  catch (fc::key_not_found_exception&)
-                  {
-                    std::cout << "Error: invalid command \"" << command << "\"\n";
-                  }
-                  catch (fc::exception& e)
-                  {
-                    std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
-                  }
-
-                  if (command_is_valid)
-                  {
-                    try
-                    {
-                      fc::variant result = _self->execute_interactive_command(command, arguments);
-                      _self->format_and_print_result(command, result);
-                    }
-                    catch ( const fc::canceled_exception& )
-                    {
-                      return;
-                    }
-                    catch ( const fc::exception& e )
-                    {
-                      std::cout << e.to_detail_string() << "\n";
-                    }
-                  }
-                }
-                line = _self->get_line();
-              }
-            }
-
-            // Parse the given line into a command and arguments, returning them in the form our
-            // json-rpc server functions require them.
-            void parse_json_command(const std::string& line_to_parse, std::string& command, fc::variants& arguments)
-            {
-              // the first whitespace-separated token on the line should be an un-quoted
-              // JSON-RPC command name
-              command.clear();
-              arguments.clear();
-              std::string::const_iterator iter = std::find_if(line_to_parse.begin(), line_to_parse.end(), ::isspace);
-              if (iter != line_to_parse.end())
-              {
-                // then there are arguments to this function
-                size_t first_space_pos = iter - line_to_parse.begin();
-                command = line_to_parse.substr(0, first_space_pos);
-                fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>((line_to_parse.substr(first_space_pos + 1)));
-                fc::buffered_istream buffered_argument_stream(argument_stream);
-                while (1)
-                {
-                  try
-                  {
-                    arguments.emplace_back(fc::json::from_stream(buffered_argument_stream));
-                  }
-                  catch (fc::eof_exception&)
-                  {
-                    break;
-                  }
-                  catch (fc::parse_error_exception& e)
-                  {
-                    FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
-                                         ("argument_number", arguments.size() + 1)("command", command)("detail", e.get_log()));
-                  }
-                }
-              }
-              else
-              {
-                // no arguments
-                command = line_to_parse;
-              }
-            }
 #ifdef HAVE_READLINE
             char* json_command_completion_generator(const char* text, int state);
             char* json_argument_completion_generator(const char* text, int state);
@@ -809,7 +702,7 @@ namespace bts { namespace cli {
     extern "C" char** json_completion_function(const char* text, int start, int end);
 #endif
 
-	  cli_impl::cli_impl( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server ) :
+	  cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server ) :
 	    _client(client),
 	    _rpc_server(rpc_server)
 	  {
@@ -817,74 +710,6 @@ namespace bts { namespace cli {
       cli_impl_instance = this;
       rl_attempted_completion_function = &json_completion_function;
 #endif
-    }
-
-    void cli_impl::create_wallet_if_missing()
-    {
-       /*
-      std::string user = "default";
-      auto wallet_dat = _client->get_wallet()->get_wallet_filename_for_user(user);
-      if( !fc::exists( wallet_dat ) )
-      {
-        std::cout << "Creating wallet \""<< user << "\"\n";
-        std::cout << "You will be asked to provide two passphrase, the first passphrase\n";
-        std::cout << "encrypts the entire contents of your wallet on disk.  The second\n";
-        std::cout << "passphrase will only encrypt your private keys.\n\n";
-
-        std::cout << "Please set a passphrase for encrypting your wallet: \n";
-        std::string pass1, pass2;
-        pass1  = _self->get_line("wallet passphrase: ", true);
-        while( pass1 != pass2 )
-        {
-          pass2 = _self->get_line("wallet passphrase (again): ", true);
-          if( pass2 != pass1 )
-          {
-            std::cout << "Your passphrases did not match, please try again.\n";
-            pass2 = std::string();
-            pass1 = _self->get_line("wallet passphrase: ", true);
-          }
-        }
-        if( pass1 == std::string() )
-        {
-          std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
-        }
-
-        std::cout << "\nPlease set a passphrase for encrypting your private keys: \n";
-        std::string keypass1, keypass2;
-        bool retry = false;
-        keypass1  = _self->get_line("spending passphrase: ", true);
-        while( keypass1 != keypass2 )
-        {
-          if( keypass1.size() > 8 )
-              keypass2 = _self->get_line("spending passphrase (again): ", true);
-          else
-          {
-              std::cout << "Your key passphrase must be more than 8 characters.\n";
-              retry = true;
-          }
-          if( keypass2 != keypass1 )
-          {
-              std::cout << "Your passphrase did not match.\n";
-              retry = true;
-          }
-          if( retry )
-          {
-            retry = false;
-            std::cout << "Please try again.\n";
-            keypass2 = std::string();
-            keypass1 = _self->get_line("spending passphrase: ", true);
-          }
-        }
-        if( keypass1 == std::string() )
-        {
-          std::cout << "No passphrase provided, your wallet will be stored unencrypted.\n";
-        }
-
-        _client->get_wallet()->create( user, pass1, keypass1 );
-        std::cout << "Wallet created.\n";
-      }
-      */
-
     }
 
 #ifdef HAVE_READLINE
@@ -895,7 +720,7 @@ namespace bts { namespace cli {
       if (first)
       {
         first = false;
-        fc::variant result = execute_command_and_prompt_for_passphrases("_list_json_commands", fc::variants());
+        fc::variant result = execute_command("_list_json_commands", fc::variants());
         std::vector<std::string> _unsorted_json_commands = result.as<std::vector<std::string> >();
         _json_command_list.insert(_unsorted_json_commands.begin(), _unsorted_json_commands.end());
       }
@@ -937,73 +762,44 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, const bts::rpc::rpc_server_ptr& rpc_server )
+  cli::cli( const client_ptr& client, const rpc_server_ptr& rpc_server )
   :my( new detail::cli_impl(client, rpc_server) )
   {
     my->_self        = this;
     my->_main_thread = &fc::thread::current();
 
-   // my->create_wallet_if_missing();
-   // my->interactive_open_wallet();
-
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
 
-   cli::~cli()
-   {
-      try
-      {
-        wait();
-      }
-      catch ( const fc::exception& e )
-      {
-         wlog( "${e}", ("e",e.to_detail_string()) );
-      }
-   }
+  cli::~cli()
+  {
+    try
+    {
+      wait();
+    }
+    catch ( const fc::exception& e )
+    {
+       wlog( "${e}", ("e",e.to_detail_string()) );
+    }
+  }
 
-   void cli::list_delegates( uint32_t count )
-   {
-        std::vector<name_record> delegates =
-           my->_client->get_chain()->get_delegate_records_by_vote( 0, count);
+  void cli::wait()
+  {
+    my->_cin_complete.wait();
+  }
 
-        std::cerr<<"Delegate Ranking\n";
-        std::cerr<<std::setw(6)<<"Rank "<<"  "
-                 <<std::setw(6)<<"ID"<<"  "
-                 <<std::setw(18)<<"NAME"<<"  "
-                 <<std::setw(18)<<"VOTES FOR"<<"  "
-                 <<std::setw(18)<<"VOTES AGAINST"<<"  \n";
-        std::cerr<<"==========================================================================================\n";
-        for( uint32_t i = 0; i < delegates.size(); ++i )
-        {
-           std::cerr << std::setw(6)  << i               << "  "
-                     << std::setw(6)  << delegates[i].id   << "  "
-                     << std::setw(18) << delegates[i].name          << "  "
-                     << std::setw(18) << delegates[i].delegate_info->votes_for     << "  "
-                     << std::setw(18) << delegates[i].delegate_info->votes_against << "  \n";
-           ++i;
-           if( i == count ) break;
-        }
+  void cli::quit()
+  {
+    my->_cin_complete.cancel();
+  }
 
-      // client()->get_chain()->dump_delegates( count );
-   }
-
-   void cli::wait()
-   {
-       my->_cin_complete.wait();
-   }
-
-   void cli::quit()
-   {
-      my->_cin_complete.cancel();
-   }
-
-   std::string cli::get_line( const std::string& prompt, bool no_echo )
-   {
-       return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
-   }
+  std::string cli::get_line( const std::string& prompt, bool no_echo )
+  {
+    return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
+  }
 
   fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,
-                                                const bts::rpc::rpc_server::method_data& method_data,
+                                                const rpc_server::method_data& method_data,
                                                 unsigned parameter_index)
   {
     return my->parse_argument_of_known_type(argument_stream, method_data, parameter_index);
@@ -1014,7 +810,7 @@ namespace bts { namespace cli {
     return my->parse_unrecognized_interactive_command(argument_stream, command);
   }
   fc::variants cli::parse_recognized_interactive_command(fc::buffered_istream& argument_stream,
-                                                         const bts::rpc::rpc_server::method_data& method_data)
+                                                         const rpc_server::method_data& method_data)
   {
     return my->parse_recognized_interactive_command(argument_stream, method_data);
   }

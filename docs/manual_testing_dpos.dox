@@ -24,7 +24,7 @@ true
 
 >>> wallet_unlock 90000
 passphrase:
-null
+true
 @endcode
 
   Once you have unlocked your wallet you can begin importing private keys from the
@@ -130,7 +130,7 @@ true
 
 >>> wallet_unlock 90000
 passphrase:
-null
+true
 
 >>> wallet_create_receive_account "from_walleta"
 "XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4"
@@ -140,7 +140,7 @@ Back in test_clienta
 
 @code
 >>> wallet_create_sending_account "to_walletb" XTS3CDvdbytBiG8VzzuVCUuNyxhVgSEbBwPa3tTimDuQxgbZxqZfhCfLtvPFkxkuYsqCysjy6cRfadBokJw64xirUqeRX1jV4
-null
+true
 
 >>> wallet_transfer 54321 "to_walletb"
 {
