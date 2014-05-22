@@ -335,6 +335,52 @@ namespace bts { namespace client {
     {
       get_wallet()->open_file(wallet_filename, password );
     }
+
+    void client::wallet_open(const std::string& wallet_name, const std::string& password)
+    {
+      get_wallet()->open(wallet_name, password);
+    }
+
+    void client::wallet_create(const std::string& wallet_name, const std::string& password)
+    {
+      get_wallet()->create(wallet_name,password);
+    }
+
+    std::string client::wallet_get_name() const
+    {
+      return get_wallet()->get_name();
+    }
+
+    void client::wallet_close()
+    {
+      get_wallet()->close();
+    }
+
+    void client::wallet_export_to_json(const fc::path& path) const
+    {
+      get_wallet()->export_to_json(path);
+    }
+
+    void client::wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase)
+    {
+      get_wallet()->create_from_json(path,name,passphrase);
+    }
+
+    void client::wallet_lock()
+    {
+      get_wallet()->lock();
+    }
+
+    void client::wallet_unlock(const fc::microseconds& timeout, const std::string& password)
+    {
+      get_wallet()->unlock(timeout,password);
+    }
+
+    void client::wallet_change_passphrase(const std::string& new_password)
+    {
+      get_wallet()->change_passphrase(new_password);
+    }
+
     //JSON-RPC Method Implementations END
 
     void client::run_delegate( )

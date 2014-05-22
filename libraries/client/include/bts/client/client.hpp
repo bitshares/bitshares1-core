@@ -46,6 +46,16 @@ namespace bts { namespace client {
          bts::blockchain::block_id_type blockchain_get_blockhash(int64_t block_number) const;
                                uint32_t blockchain_get_blockcount() const;
                                    void wallet_open_file(const fc::path wallet_filename, const std::string& password);
+                                   void wallet_open(const std::string& wallet_name, const std::string& password);
+                                   void wallet_create(const std::string& wallet_name, const std::string& password);
+                            std::string wallet_get_name() const;
+                                   void wallet_close();
+                                   void wallet_export_to_json(const fc::path& path) const;
+                                   void wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase);
+                                   void wallet_lock();
+                                   void wallet_unlock(const fc::microseconds& timeout, const std::string& password);
+                                   void wallet_change_passphrase(const std::string& new_password);
+
 
 
          /**

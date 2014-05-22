@@ -51,10 +51,10 @@ namespace bts { namespace wallet {
          void           create( const std::string& wallet_name, const std::string& password );
          void           open( const std::string& wallet_name, const std::string& password );
          void           open_file( const fc::path& wallet_filename, const std::string& password );
-         bool           close();
+         void           close();
 
          void           backup_wallet( const fc::path& file );
-         void           export_to_json( const fc::path& path );
+         void           export_to_json( const fc::path& path ) const;
          void           create_from_json( const fc::path& path, const std::string& name, const std::string& passphrase );
 
          bool           is_open()const;
@@ -68,7 +68,7 @@ namespace bts { namespace wallet {
          ///@{
          void           unlock( const fc::microseconds& timeout, const std::string& password );
          void           lock();
-         void           change_password( const std::string& new_password );
+         void           change_passphrase(const std::string& new_passphrase);
 
          bool           is_unlocked()const;
          bool           is_locked()const;

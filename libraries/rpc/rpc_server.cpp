@@ -677,7 +677,7 @@ Examples:
 
     static rpc_server::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
      /* description */ "Opens the wallet at the given path",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_file",   "path",   rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
@@ -689,7 +689,7 @@ Wallets exist in the wallet data directory
     {
         try
         {
-            _client->get_wallet()->open_file( params[0].as_string(), params[1].as_string() );
+            _client->wallet_open_file( params[0].as_string(), params[1].as_string() );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
@@ -701,7 +701,7 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
      /* description */ "Opens the wallet of the given name",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
@@ -713,19 +713,19 @@ Wallets exist in the wallet data directory
     {
         try
         {
-            _client->get_wallet()->open( params[0].as_string(), params[1].as_string() );
+            _client->wallet_open( params[0].as_string(), params[1].as_string() );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
             wlog( "${e}", ("e",e.to_detail_string() ) );
             throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant( true );
+        return fc::variant();
     }
 
     static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
      /* description */ "Opens the wallet of the given name",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()}},
@@ -735,8 +735,8 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
-        _client->get_wallet()->create( params[0].as_string(), params[1].as_string() );
-        return fc::variant(true);
+        _client->wallet_create( params[0].as_string(), params[1].as_string() );
+        return fc::variant();
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data wallet_get_name_metadata{"wallet_get_name", nullptr,
@@ -750,24 +750,25 @@ Wallets exist in the wallet data directory
     {
        if( !_client->get_wallet()->is_open() )
           return fc::variant(nullptr);
-       return fc::variant(_client->get_wallet()->get_name());
+       return fc::variant(_client->wallet_get_name());
     }
 
     static rpc_server::method_data wallet_close_metadata{"wallet_close", nullptr,
       /* description */ "Closes the curent wallet if one is open",
-      /* returns: */    "bool",
+      /* returns: */    "void",
       /* params:     */ {},
       /* prerequisites */ rpc_server::no_prerequisites,
     R"(
     )" };
     fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
-       return fc::variant( _client->get_wallet()->close() );
+       _client->wallet_close();
+       return fc::variant();
     }
 
     static rpc_server::method_data wallet_export_to_json_metadata{"wallet_export_to_json", nullptr,
       /* description */ "Exports the current wallet to a JSON file",
-      /* returns: */    "bool",
+      /* returns: */    "void",
       /* params:         name           type     classification                          default_value */
                       {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()}},
       /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -776,13 +777,13 @@ Wallets exist in the wallet data directory
     fc::variant rpc_server_impl::wallet_export_to_json(const fc::variants& params)
     {
        auto filename = params[0].as<fc::path>();
-       _client->get_wallet()->export_to_json( filename );
-       return fc::variant( true );
+       _client->wallet_export_to_json( filename );
+       return fc::variant();
     }
 
     static rpc_server::method_data wallet_create_from_json_metadata{"wallet_create_from_json", nullptr,
       /* description */ "Creates a new wallet from an exported JSON file",
-      /* returns: */    "bool",
+      /* returns: */    "void",
       /* params:         name           type     classification                          default_value */
                       {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()},
                        {"wallet_name", "string", rpc_server::required_positional,        fc::ovariant()},
@@ -797,14 +798,14 @@ Wallets exist in the wallet data directory
         auto passphrase = params[2].as_string();
         try
         {
-            _client->get_wallet()->create_from_json( filename, wallet_name, passphrase );
+            _client->wallet_create_from_json( filename, wallet_name, passphrase );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
             wlog( "${e}", ("e",e.to_detail_string() ) );
             throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant( true );
+        return fc::variant();
     }
 
     static rpc_server::method_data wallet_lock_metadata{"wallet_lock", nullptr,
@@ -817,8 +818,8 @@ Wallets exist in the wallet data directory
         /*aliases*/ { "bitcoin_walletlock", "walletlock" }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
-       _client->get_wallet()->lock();
-       return fc::variant( true );
+       _client->wallet_lock();
+       return fc::variant();
     }
 
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
@@ -858,7 +859,7 @@ As json rpc call
         std::string passphrase = params[1].as_string();
         try
         {
-            _client->get_wallet()->unlock(fc::seconds(timeout_sec), passphrase);
+            _client->wallet_unlock(fc::seconds(timeout_sec), passphrase);
         }
         catch( const fc::exception& e )
         {
@@ -870,12 +871,12 @@ As json rpc call
             wlog( "${e}", ("e",e.to_detail_string() ) );
             throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant( true );
+        return fc::variant();
     }
 
     static rpc_server::method_data wallet_change_passphrase_metadata{"wallet_change_passphrase", nullptr,
           /* description */ "Change the password of the current wallet",
-          /* returns: */    "bool",
+          /* returns: */    "void",
           /* params:          name             type        classification                          default value */
                             { {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
@@ -894,8 +895,8 @@ Wallets exist in the wallet data directory.
        std::string passphrase = params[0].as_string();
        try
        {
-         _client->get_wallet()->change_password( passphrase );
-         return fc::variant(true);
+         _client->wallet_change_passphrase( passphrase );
+         return fc::variant();
        } FC_RETHROW_EXCEPTIONS( warn, "" )
     }
 

@@ -882,7 +882,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "unable to open wallet '${file}'", ("file",wallet_filename) ) }
 
-   bool wallet::close()
+   void wallet::close()
    { try {
       if( my->_wallet_relocker_done.valid() )
       {
@@ -913,10 +913,9 @@ namespace bts { namespace wallet {
       my->_account_name_index.clear();
 
       my->_is_open = false;
-      return true;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::export_to_json( const fc::path& path )
+   void wallet::export_to_json( const fc::path& path ) const
    {
        FC_ASSERT( !fc::exists( path ) );
        FC_ASSERT( is_open() );
@@ -1036,12 +1035,12 @@ namespace bts { namespace wallet {
 #endif
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::change_password( const std::string& new_password )
+   void wallet::change_passphrase(const std::string& new_passphrase)
    {
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( !new_password.empty() );
+      FC_ASSERT(!new_passphrase.empty());
 
-      auto new_wallet_password = fc::sha512::hash( new_password.c_str(), new_password.size() );
+      auto new_wallet_password = fc::sha512::hash(new_passphrase.c_str(), new_passphrase.size());
 
       // iterate over all private key records and re-encrypt them
       for ( auto priv_key_record : my->_extra_receive_keys)
