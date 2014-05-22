@@ -432,6 +432,68 @@ namespace bts { namespace client {
       return issue_asset_trx;
     }
 
+    std::map<std::string, extended_address> client::wallet_list_sending_accounts(uint32_t start, uint32_t count) const
+    {
+      return get_wallet()->list_sending_accounts(start, count);
+    }
+
+    std::vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
+    {
+      auto names = get_wallet()->names(account_name);
+      std::vector<name_record> name_records;
+      name_records.reserve(names.size());
+      for (auto name : names)
+        name_records.push_back(name_record(name.second));
+      return name_records;
+    }
+
+    void client::wallet_rename_account(const std::string& current_account_name,
+                                       const std::string& new_account_name)
+    {
+      get_wallet()->rename_account(current_account_name, new_account_name);
+    }
+
+    
+    std::map<std::string, extended_address> client::wallet_list_receive_accounts(uint32_t start, uint32_t count) const
+    {
+      return get_wallet()->list_receive_accounts(start, count);
+    }
+
+    wallet_account_record client::wallet_get_account(const std::string& account_name) const
+    {
+      return get_wallet()->get_account(account_name);
+    }
+
+    //FIX RPC side and docs
+    asset client::wallet_get_balance(const std::string& account_name, asset_id_type asset_id) const
+    {
+      return get_wallet()->get_balance(account_name, asset_id);
+    }
+
+    std::vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
+    {
+      return get_wallet()->get_transaction_history(count);
+    }
+
+    oname_record client::blockchain_get_name_record(const std::string& name) const
+    {
+      return get_chain()->get_name_record(name);
+    }
+
+    oname_record client::blockchain_get_name_record_by_id(name_id_type name_id) const
+    {
+      return get_chain()->get_name_record(name_id);
+    }
+
+    oasset_record client::blockchain_get_asset_record(const std::string& symbol) const
+    {
+      return get_chain()->get_asset_record(symbol);
+    }
+
+    oasset_record client::blockchain_get_asset_record_by_id(asset_id_type asset_id) const
+    {
+      return get_chain()->get_asset_record(asset_id);
+    }
 
 
     //JSON-RPC Method Implementations END

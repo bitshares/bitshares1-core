@@ -1724,7 +1724,7 @@ namespace bts { namespace wallet {
     * TODO
     * @todo actually filter based upon account_name and use "*" to represent all accounts
     */
-   std::vector<wallet_transaction_record> wallet::get_transactions( unsigned count )const
+   std::vector<wallet_transaction_record> wallet::get_transaction_history( unsigned count )const
    {
        std::vector<wallet_transaction_record> trx_records;
        trx_records.reserve(my->_transactions.size());

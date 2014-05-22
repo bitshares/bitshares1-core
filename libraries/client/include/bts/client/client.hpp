@@ -71,7 +71,18 @@ namespace bts { namespace client {
                      signed_transaction wallet_asset_issue(share_type amount,
                                                           const std::string& symbol,
                                                           const std::string& to_account_name);
+         std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const;
+                        std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const;
+                                            void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name);
+         std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start, uint32_t count) const;
 
+                  wallet_account_record wallet_get_account(const std::string& account_name) const;
+                                  asset wallet_get_balance(const std::string& account_name, asset_id_type asset_id) const;
+         std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const;
+                           oname_record blockchain_get_name_record(const std::string& name) const;
+                           oname_record blockchain_get_name_record_by_id(name_id_type name_id) const;
+                          oasset_record blockchain_get_asset_record(const std::string& symbol) const;
+                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const;
 
 
          /**
