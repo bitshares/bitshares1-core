@@ -22,34 +22,33 @@ namespace bts { namespace wallet {
       class wallet_impl : public bts::blockchain::chain_observer
       {
          public:
-            wallet_impl() :
-              _is_open(false)
+            wallet_impl() : _is_open(false), _data_dir(".")
             {
-               // this effectively sets the maximum transaction size to 10KB without
-               // custom code.  We will set this initial fee high while the network
-               // is of lower value to prevent initial spam attacks.   We also
-               // want to subsidize the delegates earlly on.
+               // This effectively sets the maximum transaction size to 10KB without
+               // custom code. We will set this initial fee high while the network
+               // is of lower value to prevent initial spam attacks. We also
+               // want to subsidize the delegates early on.
                _priority_fee = asset( 1000*100, 0 );
-               _data_dir = ".";
             }
 
-            virtual ~wallet_impl()override {}
-
-            secret_hash_type get_secret( uint32_t previous_block_num, const fc::ecc::private_key& delegate_key )
+            virtual ~wallet_impl()override
             {
-               block_id_type prev_header_id;
-               if( previous_block_num != 0 ) 
+            }
+
+            secret_hash_type get_secret( uint32_t block_num, const fc::ecc::private_key& delegate_key )
+            {
+               block_id_type header_id;
+               if( block_num != uint32_t(-1) && block_num > 1 )
                {
-                  auto previous_block_header = _blockchain->get_block_header( previous_block_num );
-                  prev_header_id = previous_block_header.id();
+                  auto block_header = _blockchain->get_block_header( block_num - 1 );
+                  header_id = block_header.id();
                }
 
-                                                                  
                fc::sha512::encoder key_enc;
                fc::raw::pack( key_enc, delegate_key );
                fc::sha512::encoder enc;
                fc::raw::pack( enc, key_enc.result() );
-               fc::raw::pack( enc, prev_header_id );
+               fc::raw::pack( enc, header_id );
 
                return fc::ripemd160::hash( enc.result() );
             }
@@ -1577,12 +1576,11 @@ namespace bts { namespace wallet {
       auto delegate_key = my->get_private_key( delegate_pub_key );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      ilog( "sign block............" );
-      header.previous_secret  = my->get_secret( 
-                                      delegate_rec->delegate_info->last_block_num_produced-1, 
+      header.previous_secret = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced,
                                       delegate_key );
 
-      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num(), delegate_key );
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
       header.sign(delegate_key);
