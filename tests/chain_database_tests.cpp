@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE( negative_transfer_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( genesis_block_test )
+BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 {
    try {
       fc::temp_directory dir2;
@@ -183,6 +183,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
       {
          auto next_block_time = my_wallet.next_block_production_time();
          ilog( "next block production time: ${t}", ("t",next_block_time) );
+         FC_ASSERT( next_block_time != blockchain->now() );
 
          auto wait_until_time = my_wallet.next_block_production_time();
          auto sleep_time = wait_until_time - bts::blockchain::now(); //fc::time_point::now();
@@ -213,7 +214,7 @@ BOOST_AUTO_TEST_CASE( genesis_block_test )
             std::string your_account_name = "my-"+fc::to_string(t*1000+i);
             auto your_account = your_wallet.create_receive_account( your_account_name ).extended_key;
             my_wallet.create_sending_account( your_account_name, your_account );
-            auto amnt = rand()%30000;
+            auto amnt = rand()%30000 + 1;
             auto invoice_sum = my_wallet.transfer( your_account_name, asset( amnt ) );
             for( auto trx : invoice_sum.payments )
             {
@@ -407,7 +408,7 @@ BOOST_AUTO_TEST_CASE( basic_fork_test )
 
 
     // produce blocks for 30 seconds...
-    for( uint32_t i = 0; i < 20; ++i )
+    for( uint32_t i = 0; i < 40; ++i )
     {
        auto now = bts::blockchain::now(); //fc::time_point::now();
        std::cerr << "now: "<< std::string( fc::time_point(now) ) << "\n";
