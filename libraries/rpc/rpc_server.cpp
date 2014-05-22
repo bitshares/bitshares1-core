@@ -621,6 +621,10 @@ Result:
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
        info["symbol"]           = BTS_ADDRESS_PREFIX;
+       asset_record share_record     = *_client->get_chain()->get_asset_record( asset_id_type(0) );
+       info["current_share_supply"]  = share_record.current_share_supply;
+       info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
+       info["random_seed"]      = _client->get_chain()->get_current_random_seed();
        info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["_fc_revision"]     = fc::git_revision_sha;
        info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
