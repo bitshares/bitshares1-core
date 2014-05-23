@@ -14,6 +14,12 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_name_operation::type       = update_name_op_type;
    const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
    const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
+   const operation_type_enum bid_operation::type               = bid_op_type;
+   const operation_type_enum ask_operation::type               = ask_op_type;
+   const operation_type_enum short_operation::type             = short_op_type;
+   const operation_type_enum cover_operation::type             = cover_op_type;
+   const operation_type_enum add_collateral_operation::type    = add_collateral_op_type;
+   const operation_type_enum remove_collateral_operation::type = remove_collateral_op_type;
 
 
    balance_id_type  deposit_operation::balance_id()const
