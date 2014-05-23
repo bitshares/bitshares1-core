@@ -119,7 +119,7 @@ namespace bts { namespace blockchain {
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
             void                       update_random_seed( secret_hash_type new_secret, 
                                                           const pending_chain_state_ptr& pending_state );
-            void                       update_active_delegate_list_id(const pending_chain_state_ptr& pending_state );
+            void                       update_active_delegate_list(const full_block& block_data, const pending_chain_state_ptr& pending_state );
 
 
             void update_delegate_production_info( const full_block& block_data, 
@@ -173,7 +173,6 @@ namespace bts { namespace blockchain {
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
       {
          std::vector<block_id_type> current_blocks;
-
          auto itr = _fork_number_db.find( block_num );
          if( itr.valid() ) return itr.value();
          return current_blocks;
@@ -505,9 +504,10 @@ namespace bts { namespace blockchain {
                                       fc::variant(fc::ripemd160::hash( enc.result() )) );
       }
        
-      void chain_database_impl::update_active_delegate_list_id(const pending_chain_state_ptr& pending_state )
+      void chain_database_impl::update_active_delegate_list( const full_block& block_data, const pending_chain_state_ptr& pending_state )
       {
-          pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+          if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
+             pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
       }
 
       /**
@@ -539,10 +539,7 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
 
-            if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
-            {
-                update_active_delegate_list_id(pending_state);
-            }
+            update_active_delegate_list(block_data, pending_state);
 
             update_random_seed( block_data.previous_secret, pending_state );
 
@@ -863,10 +860,7 @@ namespace bts { namespace blockchain {
 
    otransaction_location chain_database::get_transaction_location( const transaction_id_type& trx_id )const
    {
-      otransaction_location oloc;
-      auto loc_itr = my->_processed_transaction_ids.find( trx_id );
-      if( loc_itr.valid() ) return loc_itr.value();
-      return oloc;
+      return my->_processed_transaction_ids.fetch_optional( trx_id );
    }
 
    /**
@@ -932,57 +926,13 @@ namespace bts { namespace blockchain {
 
    obalance_record      chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
-      auto itr = my->_balances.find( balance_id );
-      if( itr.valid() )
-         return itr.value();
-      return obalance_record();
+      return my->_balances.fetch_optional( balance_id );
    }
 
    oname_record         chain_database::get_name_record( name_id_type name_id )const
    {
-      auto itr = my->_names.find( name_id );
-      if( itr.valid() )
-         return itr.value();
-      return oname_record();
+      return my->_names.fetch_optional( name_id );
    }
-
-   void      chain_database::remove_asset_record( asset_id_type asset_id )const
-   { try {
-      try {
-         auto asset_rec = get_asset_record( asset_id );
-         my->_assets.remove( asset_id );
-         if( asset_rec.valid() )
-            my->_symbol_index.remove( asset_rec->symbol );
-      } catch ( const fc::exception& e )
-      {
-         wlog( "caught exception ${e}", ("e", e.to_detail_string() ) );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
-
-   void      chain_database::remove_balance_record( const balance_id_type& balance_id )const
-   { try {
-      try {
-         my->_balances.remove( balance_id );
-      } catch ( const fc::exception& e )
-      {
-         wlog( "caught exception ${e}", ("e", e.to_detail_string() ) );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("balance_id",balance_id) ) }
-
-   void      chain_database::remove_name_record( name_id_type name_id )const
-   { try {
-      try {
-         auto name_rec = get_name_record( name_id );
-         my->_names.remove( name_id );
-         if( name_rec.valid() )
-            my->_name_index.remove( name_rec->name );
-         if ( name_rec.valid() && name_rec->is_delegate() )
-            my->_delegate_vote_index.remove( vote_del(name_rec->net_votes(), name_rec->id) );
-      } catch ( const fc::exception& e )
-      {
-         wlog( "caught exception ${e}", ("e", e.to_detail_string() ) );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("name_id",name_id) ) }
 
 
    oasset_record        chain_database::get_asset_record( const std::string& symbol )const
@@ -1387,9 +1337,7 @@ namespace bts { namespace blockchain {
 
    oproposal_record chain_database::get_proposal_record( proposal_id_type id )const
    {
-      auto itr = my->_proposals_db.find(id);
-      if( itr.valid() ) return itr.value();
-      return oproposal_record();
+      return my->_proposals_db.fetch_optional(id);
    }
                                                                                             
    void chain_database::store_proposal_vote( const proposal_vote& r )
@@ -1406,9 +1354,7 @@ namespace bts { namespace blockchain {
 
    oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
    {
-      auto itr = my->_proposal_votes_db.find(id);
-      if( itr.valid() ) return itr.value();
-      return oproposal_vote();
+      return my->_proposal_votes_db.fetch_optional(id);
    }
 
    digest_type chain_database::chain_id()const
@@ -1454,34 +1400,50 @@ namespace bts { namespace blockchain {
       return get_property( last_random_seed_id ).as<digest_type>();
    }
 
-   oorder_record         chain_database::get_bid_record( const market_index_key& )const
+   oorder_record         chain_database::get_bid_record( const market_index_key&  key )const
    {
-      return oorder_record();
+      return my->_bids_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_ask_record( const market_index_key& )const
+   oorder_record         chain_database::get_ask_record( const market_index_key&  key )const
    {
-      return oorder_record();
+      return my->_asks_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_short_record( const market_index_key& )const
+   oorder_record         chain_database::get_short_record( const market_index_key& key )const
    {
-      return oorder_record();
+      return my->_shorts_db.fetch_optional(key);
    }
-   ocollateral_record    chain_database::get_collateral_record( const market_index_key& )const
+   ocollateral_record    chain_database::get_collateral_record( const market_index_key& key )const
    {
-      return ocollateral_record();
+      return my->_collateral_db.fetch_optional(key);
    }
                                                                                               
-   void chain_database::store_bid_record( const market_index_key& key, const order_record& ) 
+   void chain_database::store_bid_record( const market_index_key& key, const order_record& order ) 
    {
+      if( order.is_null() )
+         my->_bids_db.remove( key );
+      else
+         my->_bids_db.store( key, order );
    }
-   void chain_database::store_ask_record( const market_index_key& key, const order_record& ) 
+   void chain_database::store_ask_record( const market_index_key& key, const order_record& order ) 
    {
+      if( order.is_null() )
+         my->_asks_db.remove( key );
+      else
+         my->_asks_db.store( key, order );
    }
-   void chain_database::store_short_record( const market_index_key& key, const order_record& )
+   void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
+      if( order.is_null() )
+         my->_shorts_db.remove( key );
+      else
+         my->_shorts_db.store( key, order );
    }
-   void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& ) 
+   void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral ) 
    {
+      if( collateral.is_null() )
+         my->_collateral_db.remove( key );
+      else
+         my->_collateral_db.store( key, collateral );
    }
 
 

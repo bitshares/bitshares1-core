@@ -52,6 +52,13 @@ namespace bts { namespace db {
           _db.reset();
         }
 
+        fc::optional<Value> fetch_optional( const Key& k )
+        {
+           auto itr = find( k );
+           if( itr.valid() ) return itr.value();
+           return fc::optional<Value>();
+        }
+
         Value fetch( const Key& key )
         {
           try {
@@ -126,6 +133,7 @@ namespace bts { namespace db {
            }
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error seeking to first" ) }
+
 
         iterator find( const Key& key )
         { try {

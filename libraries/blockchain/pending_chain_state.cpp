@@ -41,14 +41,16 @@ namespace bts { namespace blockchain {
    void  pending_chain_state::apply_changes()const
    {
       if( !_prev_state ) return;
-      for( auto item   : properties ) _prev_state->set_property( (chain_property_enum)item.first, item.second );
-      for( auto record : assets )    _prev_state->store_asset_record( record.second );
-      for( auto record : names )     _prev_state->store_name_record( record.second );
-      for( auto record : balances ) _prev_state->store_balance_record( record.second );
-      for( auto record : proposals ) _prev_state->store_proposal_record( record.second );
+      for( auto item   : properties )     _prev_state->set_property( (chain_property_enum)item.first, item.second );
+      for( auto record : assets )         _prev_state->store_asset_record( record.second );
+      for( auto record : names )          _prev_state->store_name_record( record.second );
+      for( auto record : balances )       _prev_state->store_balance_record( record.second );
+      for( auto record : proposals )      _prev_state->store_proposal_record( record.second );
       for( auto record : proposal_votes ) _prev_state->store_proposal_vote( record.second );
-      //for( auto record : bids )  _prev_state->store_bid_record( record.second );
-      //for( auto record : asks )  _prev_state->store_ask_record( record.second );
+      for( auto record : bids )           _prev_state->store_bid_record( record.first, record.second );
+      for( auto record : asks )           _prev_state->store_ask_record( record.first, record.second );
+      for( auto record : shorts )         _prev_state->store_short_record( record.first, record.second );
+      for( auto record : collateral )     _prev_state->store_collateral_record( record.first, record.second );
       for( auto record : unique_transactions ) 
          _prev_state->store_transaction_location( record.first, record.second );
    }
@@ -96,32 +98,30 @@ namespace bts { namespace blockchain {
          if( !!prev_address ) undo_state->store_balance_record( *prev_address );
          else undo_state->store_balance_record( record.second.make_null() );
       }
-
-      /*
-      for( auto record : bids ) 
+      for( auto record : bids )
       {
-         auto prev_address = _prev_state->get_bid_record( record.first );
-         if( !!prev_address ) undo_state->store_bid_record( *prev_address );
-         else 
-         {
-            auto tmp = record.second;
-            tmp.make_null(); 
-            undo_state->store_bid_record( tmp );
-         }
+         auto prev_value = _prev_state->get_bid_record( record.first );
+         if( prev_value.valid() ) undo_state->store_bid_record( record.first, *prev_value );
+         else  undo_state->store_bid_record( record.first, order_record() );
       }
-
-      for( auto record : asks ) 
+      for( auto record : asks )
       {
-         auto prev_address = _prev_state->get_ask_record( record.first );
-         if( !!prev_address ) undo_state->store_ask_record( *prev_address );
-         else 
-         {
-            auto tmp = record.second;
-            tmp.make_null(); 
-            undo_state->store_ask_record( tmp );
-         }
+         auto prev_value = _prev_state->get_ask_record( record.first );
+         if( prev_value.valid() ) undo_state->store_ask_record( record.first, *prev_value );
+         else  undo_state->store_ask_record( record.first, order_record() );
       }
-      */
+      for( auto record : shorts )
+      {
+         auto prev_value = _prev_state->get_short_record( record.first );
+         if( prev_value.valid() ) undo_state->store_short_record( record.first, *prev_value );
+         else  undo_state->store_short_record( record.first, order_record() );
+      }
+      for( auto record : collateral )
+      {
+         auto prev_value = _prev_state->get_collateral_record( record.first );
+         if( prev_value.valid() ) undo_state->store_collateral_record( record.first, *prev_value );
+         else  undo_state->store_collateral_record( record.first, collateral_record() );
+      }
    }
 
    /** load the state from a variant */
@@ -278,34 +278,50 @@ namespace bts { namespace blockchain {
       else if( _prev_state ) return _prev_state->get_proposal_vote( id );
       return oproposal_vote();
    }
-   oorder_record         pending_chain_state::get_bid_record( const market_index_key& )const
+   oorder_record         pending_chain_state::get_bid_record( const market_index_key& key )const
    {
+      auto rec_itr = bids.find( key );
+      if( rec_itr == bids.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_bid_record( key );
       return oorder_record();
    }
-   oorder_record         pending_chain_state::get_ask_record( const market_index_key& )const
+   oorder_record         pending_chain_state::get_ask_record( const market_index_key& key )const
    {
+      auto rec_itr = asks.find( key );
+      if( rec_itr == asks.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_ask_record( key );
       return oorder_record();
    }
-   oorder_record         pending_chain_state::get_short_record( const market_index_key& )const
+   oorder_record         pending_chain_state::get_short_record( const market_index_key& key )const
    {
+      auto rec_itr = shorts.find( key );
+      if( rec_itr == shorts.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_short_record( key );
       return oorder_record();
    }
-   ocollateral_record    pending_chain_state::get_collateral_record( const market_index_key& )const
+   ocollateral_record    pending_chain_state::get_collateral_record( const market_index_key& key )const
    {
+      auto rec_itr = collateral.find( key );
+      if( rec_itr == collateral.end() ) return rec_itr->second;
+      else if( _prev_state ) return _prev_state->get_collateral_record( key );
       return ocollateral_record();
    }
                                                                                               
-   void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& ) 
+   void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& rec ) 
    {
+      bids[key] = rec;
    }
-   void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& ) 
+   void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec ) 
    {
+      asks[key] = rec;
    }
-   void pending_chain_state::store_short_record( const market_index_key& key, const order_record& )
+   void pending_chain_state::store_short_record( const market_index_key& key, const order_record& rec )
    {
+      shorts[key] = rec;
    }
-   void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& ) 
+   void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {
+      collateral[key] = rec;
    }
 
 
