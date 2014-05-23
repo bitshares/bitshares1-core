@@ -73,11 +73,11 @@ namespace bts { namespace rpc {
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
              (wallet_list_delegate_trust_status)\
-             (_get_block_propagation_data)\
-             (_get_transaction_propagation_data)\
+             (network_get_block_propagation_data)\
+             (network_get_transaction_propagation_data)\
              (_list_json_commands)\
-             (_send_transaction)\
-             (_set_advanced_node_parameters)
+             (network_send_transaction)\
+             (network_set_advanced_node_parameters)
 
   namespace detail
   {
@@ -618,7 +618,7 @@ Result:
        info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
        info["walletversion"]    = BTS_WALLET_VERSION;
        info["blocks"]           = _client->get_chain()->get_head_block_num();
-       info["connections"]      = _client->get_connection_count();
+       info["connections"]      = _client->network_get_connection_count();
        info["chain_id"]         = _client->get_chain()->chain_id();
        info["_node_id"]         = _client->get_node_id();
        info["rpc_port"]         = _config.rpc_endpoint.port();
@@ -931,7 +931,7 @@ Wallets exist in the wallet data directory.
        return fc::variant();
     }
 
-    static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
+    static rpc_server::method_data network_send_transaction_metadata{"network_send_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
             /* params:          name                  type                   classification                   default_value */
@@ -939,7 +939,7 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network,
           R"(
      )" };
-    fc::variant rpc_server_impl::_send_transaction(const fc::variants& params)
+    fc::variant rpc_server_impl::network_send_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
@@ -1624,11 +1624,7 @@ Arguments:
     {
       uint32_t first = params[0].as<uint32_t>();;
       uint32_t count = params[1].as<uint32_t>();
-      auto delegates = _client->get_chain()->get_delegates_by_vote(first, count);
-      std::vector<name_record> delegate_records;
-      delegate_records.reserve( delegates.size() );
-      for( auto delegate_id : delegates )
-         delegate_records.push_back( *_client->get_chain()->get_name_record( delegate_id ) );
+      std::vector<name_record> delegate_records = _client->blockchain_get_delegates(first, count);
       return fc::variant(delegate_records);
     }
 
@@ -1648,7 +1644,7 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_get_connection_count(const fc::variants&)
     {
-      return fc::variant(_client->get_connection_count());
+      return fc::variant(_client->network_get_connection_count());
     }
 
     static rpc_server::method_data network_get_peer_info_metadata{"network_get_peer_info", nullptr,
@@ -1690,10 +1686,10 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_get_peer_info(const fc::variants&)
     {
-      return _client->get_peer_info();
+      return _client->network_get_peer_info();
     }
 
-    static rpc_server::method_data _set_advanced_node_parameters_metadata{"_set_advanced_node_parameters", nullptr,
+    static rpc_server::method_data network_set_advanced_node_parameters_metadata{"network_set_advanced_node_parameters", nullptr,
             /* description */ "Sets advanced node parameters, used for setting up automated tests",
             /* returns: */    "null",
             /* params:          name      type         classification                   default value */
@@ -1703,9 +1699,9 @@ Examples:
 Result:
 null
   )" };
-    fc::variant rpc_server_impl::_set_advanced_node_parameters(const fc::variants& params)
+    fc::variant rpc_server_impl::network_set_advanced_node_parameters(const fc::variants& params)
     {
-      _client->set_advanced_node_parameters(params[0].get_object());
+      _client->network_set_advanced_node_parameters(params[0].get_object());
       return fc::variant();
     }
 
@@ -1732,7 +1728,7 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_add_node(const fc::variants& params)
     {
-      _client->addnode(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
+      _client->network_add_node(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
       return fc::variant();
     }
 
@@ -1748,19 +1744,20 @@ Stop BitShares server.
 )" };
     fc::variant rpc_server_impl::stop(const fc::variants& params)
     {
-       if( _on_quit_promise ) _on_quit_promise->set_value();
-       _client->stop();
+      if (_on_quit_promise)
+        _on_quit_promise->set_value();
+      _client->stop();
       return fc::variant();
     }
 
-    static rpc_server::method_data _get_transaction_propagation_data_metadata{"_get_transaction_propagation_data", nullptr,
+    static rpc_server::method_data network_get_transaction_propagation_data_metadata{"network_get_transaction_propagation_data", nullptr,
             /* description */ "Returns the time the transaction was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type             classification                   default value */
                               {{"transaction_id", "transaction_id",rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_transaction_propagation_data <transaction_id>
+network_get_transaction_propagation_data <transaction_id>
 
 Returns the time the transaction was first seen by this client.
 
@@ -1769,18 +1766,19 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_transaction_propagation_data(const fc::variants& params)
+    fc::variant rpc_server_impl::network_get_transaction_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_transaction_propagation_data(params[0].as<transaction_id_type>()));
+      return fc::variant(_client->network_get_transaction_propagation_data(params[0].as<transaction_id_type>()));
     }
-    static rpc_server::method_data _get_block_propagation_data_metadata{"_get_block_propagation_data", nullptr,
+
+    static rpc_server::method_data network_get_block_propagation_data_metadata{"network_get_block_propagation_data", nullptr,
             /* description */ "Returns the time the block was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type             classification                   default value */
                               {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_block_propagation_data <block_hash>
+network_get_block_propagation_data <block_hash>
 
 Returns the time the block was first seen by this client.
 
@@ -1789,9 +1787,9 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_block_propagation_data(const fc::variants& params)
+    fc::variant rpc_server_impl::network_get_block_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_block_propagation_data(params[0].as<block_id_type>()));
+      return fc::variant(_client->network_get_block_propagation_data(params[0].as<block_id_type>()));
     }
 
     static rpc_server::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,

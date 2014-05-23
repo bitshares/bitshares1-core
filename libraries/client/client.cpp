@@ -393,7 +393,7 @@ namespace bts { namespace client {
     }
 
     //TODO Skipping _RPC calls for now, classify and implement later
-    //_send_transaction -> _client->broadcast_transaction(transaction);
+    //network_send_transaction -> _client->broadcast_transaction(transaction);
 
     invoice_summary client::wallet_transfer(int64_t amount, 
                                             const std::string& to_account_name,
@@ -628,36 +628,33 @@ namespace bts { namespace client {
       return get_chain()->get_assets(first_symbol,count);
     }
 
-
-    //JSON-RPC Method Implementations END
-
-    void client::run_delegate( )
+    std::vector<name_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
     {
-       my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );
+      auto delegates = get_chain()->get_delegates_by_vote(first, count);
+      std::vector<name_record> delegate_records;
+      delegate_records.reserve( delegates.size() );
+      for( auto delegate_id : delegates )
+        delegate_records.push_back( *get_chain()->get_name_record( delegate_id ) );
+      return delegate_records;
     }
 
-    bool client::is_connected() const
-    {
-        return my->_p2p_node->is_connected();
-    }
-
-    uint32_t client::get_connection_count() const
-    {
-       return my->_p2p_node->get_connection_count();
-    }
-
-    fc::variants client::get_peer_info() const
+    fc::variants client::network_get_peer_info() const
     {
       fc::variants results;
-        std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
-        for (const bts::net::peer_status& peer_status : peer_statuses)
-        {
-          results.push_back(peer_status.info);
-        }
+      std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
+      for (const bts::net::peer_status& peer_status : peer_statuses)
+      {
+        results.push_back(peer_status.info);
+      }
       return results;
     }
 
-    void client::addnode(const fc::ip::endpoint& node, const std::string& command)
+    void client::network_set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      my->_p2p_node->set_advanced_node_parameters(params);
+    }
+
+    void client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
       if (my->_p2p_node)
       {
@@ -670,26 +667,40 @@ namespace bts { namespace client {
     {
     }
 
-    bts::net::message_propagation_data client::get_transaction_propagation_data(const transaction_id_type& transaction_id)
+
+    uint32_t client::network_get_connection_count() const
     {
-        return my->_p2p_node->get_transaction_propagation_data(transaction_id);
+      return my->_p2p_node->get_connection_count();
+    }
+
+    bts::net::message_propagation_data client::network_get_transaction_propagation_data(const transaction_id_type& transaction_id)
+    {
+      return my->_p2p_node->get_transaction_propagation_data(transaction_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
-    bts::net::message_propagation_data client::get_block_propagation_data(const block_id_type& block_id)
+    bts::net::message_propagation_data client::network_get_block_propagation_data(const block_id_type& block_id)
     {
-        return my->_p2p_node->get_block_propagation_data(block_id);
+      return my->_p2p_node->get_block_propagation_data(block_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
+    }
+
+
+    //JSON-RPC Method Implementations END
+
+    void client::run_delegate( )
+    {
+      my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );
+    }
+
+    bool client::is_connected() const
+    {
+      return my->_p2p_node->is_connected();
     }
 
     fc::uint160_t client::get_node_id() const
     {
       return my->_p2p_node->get_node_id();
-    }
-
-    void client::set_advanced_node_parameters(const fc::variant_object& params)
-    {
-        my->_p2p_node->set_advanced_node_parameters(params);
     }
 
     void client::listen_on_port(uint16_t port_to_listen)

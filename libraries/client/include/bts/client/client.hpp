@@ -122,20 +122,22 @@ namespace bts { namespace client {
 
      std::vector<name_record> blockchain_get_names(const std::string& first, uint32_t count) const;
     std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const;
+     std::vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const;
 
+                         void stop();
 
+                  uint32_t network_get_connection_count() const;
+              fc::variants network_get_peer_info() const;
+                      void network_set_advanced_node_parameters(const fc::variant_object& params);
+                      void network_add_node(const fc::ip::endpoint& node, const std::string& command);
+
+         bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id);
+         bts::net::message_propagation_data network_get_block_propagation_data(const block_id_type& block_id);
 
          fc::path                            get_data_dir()const;
 
          // returns true if the client is connected to the network (either server or p2p)
          bool is_connected() const;
-         uint32_t get_connection_count() const;
-         fc::variants get_peer_info() const;
-         void set_advanced_node_parameters(const fc::variant_object& params);
-         void addnode(const fc::ip::endpoint& node, const std::string& command);
-         void stop();
-         bts::net::message_propagation_data get_transaction_propagation_data(const transaction_id_type& transaction_id);
-         bts::net::message_propagation_data get_block_propagation_data(const block_id_type& block_id);
          fc::uint160_t get_node_id() const;
 
          void configure( const fc::path& configuration_directory );

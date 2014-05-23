@@ -432,7 +432,7 @@ void bts_client_launcher_fixture::establish_rpc_connection(uint32_t client_index
   parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
   parameters["desired_number_of_connections"] = _desired_number_of_connections;
   parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
-  client_processes[client_index].rpc_client->_set_advanced_node_parameters(parameters);
+  client_processes[client_index].rpc_client->network_set_advanced_node_parameters(parameters);
 }
 
 void bts_client_launcher_fixture::establish_rpc_connections()
@@ -454,7 +454,7 @@ void bts_client_launcher_fixture::trigger_network_connections()
     parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
     parameters["desired_number_of_connections"] = _desired_number_of_connections;
     parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
-    client_processes[i].rpc_client->_set_advanced_node_parameters(parameters);
+    client_processes[i].rpc_client->network_set_advanced_node_parameters(parameters);
     client_processes[i].rpc_client->network_add_node(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port), "add");
     fc::usleep(fc::milliseconds(250));
   }
@@ -1242,7 +1242,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   std::vector<bts::net::message_propagation_data> propagation_data;
   propagation_data.resize(client_processes.size());
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    propagation_data[i] = client_processes[i].rpc_client->_get_transaction_propagation_data(transaction_id);
+    propagation_data[i] = client_processes[i].rpc_client->network_get_transaction_propagation_data(transaction_id);
 
   get_node_ids();
 

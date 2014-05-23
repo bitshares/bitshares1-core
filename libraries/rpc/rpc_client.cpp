@@ -48,9 +48,9 @@ namespace bts { namespace rpc {
       uint32_t network_get_connection_count();
       fc::variants network_get_peer_info();
       fc::variant_object get_info();
-      void _set_advanced_node_parameters(const fc::variant_object& params);
-      bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
-      bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+      void network_set_advanced_node_parameters(const fc::variant_object& params);
+      bts::net::message_propagation_data network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+      bts::net::message_propagation_data network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
       void _set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
 
       void network_add_node(const fc::ip::endpoint& node, const std::string& command);
@@ -188,17 +188,17 @@ namespace bts { namespace rpc {
     {
       return _json_connection->async_call("get_info").wait().get_object();
     }
-    void rpc_client_impl::_set_advanced_node_parameters(const fc::variant_object& params)
+    void rpc_client_impl::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
-      _json_connection->async_call("_set_advanced_node_parameters", fc::variant(params)).wait();
+      _json_connection->async_call("network_set_advanced_node_parameters", fc::variant(params)).wait();
     }
-    bts::net::message_propagation_data rpc_client_impl::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+    bts::net::message_propagation_data rpc_client_impl::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
-      return _json_connection->call<bts::net::message_propagation_data>("_get_transaction_propagation_data", fc::variant(transaction_id));
+      return _json_connection->call<bts::net::message_propagation_data>("network_get_transaction_propagation_data", fc::variant(transaction_id));
     }
-    bts::net::message_propagation_data rpc_client_impl::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+    bts::net::message_propagation_data rpc_client_impl::network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
     {
-      return _json_connection->call<bts::net::message_propagation_data>("_get_block_propagation_data", fc::variant(block_id));
+      return _json_connection->call<bts::net::message_propagation_data>("network_get_block_propagation_data", fc::variant(block_id));
     }
     void rpc_client_impl::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
     {
@@ -335,17 +335,17 @@ namespace bts { namespace rpc {
   {
     return my->get_info();
   }
-  void rpc_client::_set_advanced_node_parameters(const fc::variant_object& params)
+  void rpc_client::network_set_advanced_node_parameters(const fc::variant_object& params)
   {
-    my->_set_advanced_node_parameters(params);
+    my->network_set_advanced_node_parameters(params);
   }
-  bts::net::message_propagation_data rpc_client::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+  bts::net::message_propagation_data rpc_client::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
   {
-    return my->_get_transaction_propagation_data(transaction_id);
+    return my->network_get_transaction_propagation_data(transaction_id);
   }
-  bts::net::message_propagation_data rpc_client::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+  bts::net::message_propagation_data rpc_client::network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
   {
-    return my->_get_block_propagation_data(block_id);
+    return my->network_get_block_propagation_data(block_id);
   }
   void rpc_client::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
   {
