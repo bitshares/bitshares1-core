@@ -568,18 +568,18 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<wallet_transaction_record>& trx_records)
             {
                 /* Print header */
-                std::cout << std::setw(  3 ) << "#";
+                std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 20 ) << "TIMESTAMP";
                 std::cout << std::setw( 37 ) << "FROM";
                 std::cout << std::setw( 37 ) << "TO";
                 std::cout << std::setw( 16 ) << " AMOUNT";
-                std::cout << std::setw(  7 ) << "FEE";
+                std::cout << std::setw(  8 ) << " FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
                 std::cout << std::setw( 40 ) << "ID";
                 std::cout << "\n----------------------------------------------------------------------------------------------";
-                std::cout <<   "---------------------------------------------------------------------------------------------\n";
+                std::cout <<   "----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right;
                 auto count = 1;
                 char timestamp_buffer[20];
@@ -668,7 +668,7 @@ namespace bts { namespace cli {
                     {
                         std::stringstream ss;
                         share_type amount = 0;
-                        if( sending ) amount -= withdraw_amount;
+                        if( sending ) amount -= deposit_amount;
                         if( receiving ) amount += deposit_amount;
                         if( amount > 0 ) ss << "+";
                         else if( amount == 0 ) ss << " ";
@@ -677,7 +677,12 @@ namespace bts { namespace cli {
                     }
 
                     /* Print fee */
-                    std::cout << std::setw( 7 ) << (withdraw_amount - deposit_amount);
+                    {
+                        std::stringstream ss;
+                        if( sending ) ss << deposit_amount - withdraw_amount;
+                        else ss << " 0";
+                        std::cout << std::setw( 8 ) << ss.str();
+                    }
 
                     /* Print delegate vote */
                     {
