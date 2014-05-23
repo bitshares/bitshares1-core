@@ -119,7 +119,7 @@ namespace bts { namespace blockchain {
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
             void                       update_random_seed( secret_hash_type new_secret, 
                                                           const pending_chain_state_ptr& pending_state );
-            void                       update_active_delegate_list_id(const pending_chain_state_ptr& pending_state );
+            void                       update_active_delegate_list(const full_block& block_data, const pending_chain_state_ptr& pending_state );
 
 
             void update_delegate_production_info( const full_block& block_data, 
@@ -505,9 +505,10 @@ namespace bts { namespace blockchain {
                                       fc::variant(fc::ripemd160::hash( enc.result() )) );
       }
        
-      void chain_database_impl::update_active_delegate_list_id(const pending_chain_state_ptr& pending_state )
+      void chain_database_impl::update_active_delegate_list( const full_block& block_data, const pending_chain_state_ptr& pending_state )
       {
-          pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+          if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
+             pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
       }
 
       /**
@@ -539,10 +540,7 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
 
-            if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
-            {
-                update_active_delegate_list_id(pending_state);
-            }
+            update_active_delegate_list(block_data, pending_state);
 
             update_random_seed( block_data.previous_secret, pending_state );
 
