@@ -8,6 +8,8 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type; 
         bid_operation():amount(0){}
 
+        /** bid amount is in the quote unit */
+        asset        get_amount()const { return asset( amount, bid_price.quote_asset_id ); }
         share_type   amount;
         price        bid_price;
         address      owner;
@@ -19,6 +21,7 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type; 
         ask_operation():amount(0){}
 
+        asset        get_amount()const { return asset( amount, ask_price.base_asset_id ); }
         share_type   amount;
         price        ask_price;
         address      owner;
@@ -30,6 +33,7 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type; 
         short_operation():amount(0){}
 
+        asset        get_amount()const { return asset( amount, 0 ); }
         share_type   amount;
         price        short_price;
         address      owner;
@@ -41,6 +45,7 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type; 
         cover_operation():amount(0){}
 
+        asset        get_amount()const { return asset( amount, cover_ask_price.base_asset_id ); }
         share_type   amount;
         price        cover_ask_price;
         address      owner;

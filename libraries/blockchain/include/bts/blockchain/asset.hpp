@@ -1,11 +1,13 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/config.hpp>
 #include <fc/uint128.hpp>
 #include <fc/io/enum_type.hpp>
 #include <stdint.h>
 
 namespace bts { namespace blockchain {
 
+  #define BTS_PRICE_PERCISION (BTS_BLOCKCHAIN_MAX_SHARES)
   struct price;
 
   /**
@@ -32,6 +34,7 @@ namespace bts { namespace blockchain {
          tmp.amount /= constant;
          return tmp;
       }
+      asset operator-()const { return asset( -amount, asset_id); }
 
       operator std::string()const;
        
@@ -54,6 +57,8 @@ namespace bts { namespace blockchain {
 
       price( const std::string& s );
       price( double a, asset_id_type base, asset_id_type quote );
+      void set_ratio_from_string( const std::string& ratio_str );
+      std::string ratio_string()const;
       operator std::string()const;
       operator double()const;
 
@@ -108,8 +113,8 @@ namespace fc
 {
  //  void to_variant( const bts::blockchain::asset& var,  variant& vo );
  //  void from_variant( const variant& var,  bts::blockchain::asset& vo );
- //  void to_variant( const bts::blockchain::price& var,  variant& vo );
- //  void from_variant( const variant& var,  bts::blockchain::price& vo );
+   void to_variant( const bts::blockchain::price& var,  variant& vo );
+   void from_variant( const variant& var,  bts::blockchain::price& vo );
 }
 
 #include <fc/reflect/reflect.hpp>

@@ -173,6 +173,10 @@ namespace bts { namespace blockchain {
          virtual void evaluate_fire_operation( const fire_delegate_operation& op );
          virtual void evaluate_submit_proposal( const submit_proposal_operation& op );
          virtual void evaluate_vote_proposal( const vote_proposal_operation& op );
+         virtual void evaluate_bid( const bid_operation& op );
+         virtual void evaluate_ask( const ask_operation& op );
+         virtual void evaluate_short( const short_operation& op );
+         virtual void evaluate_cover( const cover_operation& op );
          
          virtual void fail( bts_error_code error_code, const fc::variant& data );
          

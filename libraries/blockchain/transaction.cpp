@@ -146,6 +146,8 @@ namespace bts { namespace blockchain {
    {
       switch( (operation_type_enum)op.type  )
       {
+         case null_op_type:
+            FC_ASSERT( !"Invalid Opperation" );
          case withdraw_op_type:
             evaluate_withdraw( op.as<withdraw_operation>() );
             break;
@@ -176,7 +178,17 @@ namespace bts { namespace blockchain {
          case vote_proposal_op_type:
             evaluate_vote_proposal( op.as<vote_proposal_operation>() );
             break;
-         case null_op_type:
+         case bid_op_type:
+            evaluate_bid( op.as<bid_operation>() );
+            break;
+         case ask_op_type:
+            evaluate_ask( op.as<ask_operation>() );
+            break;
+         case short_op_type:
+            evaluate_short( op.as<short_operation>() );
+            break;
+         case cover_op_type:
+            evaluate_cover( op.as<cover_operation>() );
             break;
       }
    }
@@ -607,6 +619,58 @@ namespace bts { namespace blockchain {
       _current_state->store_asset_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
+   void transaction_evaluation_state::evaluate_bid( const bid_operation& op )
+   { try {
+      FC_ASSERT( op.amount != 0 );
+
+      market_index_key bid_index(op.bid_price,op.owner);
+      auto cur_bid  = _current_state->get_bid_record( bid_index );
+      if( !cur_bid )
+      {  // then this is a new bid
+         cur_bid = order_record( 0, op.delegate_id );
+      }
+
+      if( op.get_amount().asset_id == BASE_ASSET_ID )
+      {
+         auto delegate_record = _current_state->get_name_record( op.delegate_id );
+         FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+         if( cur_bid->balance )
+            sub_vote( cur_bid->delegate_id, cur_bid->balance );
+
+         cur_bid->delegate_id = op.delegate_id;
+         cur_bid->balance      += op.amount;
+         FC_ASSERT( cur_bid->balance >= 0 );
+
+         if( cur_bid->balance )
+            add_vote( cur_bid->delegate_id, cur_bid->balance );
+      }
+      else
+      {
+         cur_bid->balance      += op.amount;
+         FC_ASSERT( cur_bid->balance > 0 );
+      }
+
+      if( op.amount < 0 ) // we are withdrawing part or all of the bid (canceling the bid)
+      { // this is effectively a withdraw
+         add_balance( -op.get_amount() );
+      }
+      else if( op.amount > 0 ) // we are adding more value to the bid (increasing the amount, but not price)
+      { // this is similar to a deposit
+         sub_balance( balance_id_type(), op.get_amount() );
+      }
+
+      _current_state->store_bid_record( bid_index, *cur_bid );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
+
+   void transaction_evaluation_state::evaluate_ask( const ask_operation& op )
+   {
+   }
+   void transaction_evaluation_state::evaluate_short( const short_operation& op )
+   {
+   }
+   void transaction_evaluation_state::evaluate_cover( const cover_operation& op )
+   {
+   }
 
 
    void transaction::withdraw( const balance_id_type& account, share_type amount )
