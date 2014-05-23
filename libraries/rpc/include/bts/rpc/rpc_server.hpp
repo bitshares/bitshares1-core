@@ -93,6 +93,21 @@ namespace bts { namespace rpc {
       std::vector<std::string>    aliases;
     };
 
+    /* For pretty-printing get_transaction_history_summary */
+    struct pretty_transaction_summary
+    {
+        uint32_t                                          number;
+        uint32_t                                          block_num;
+        uint32_t                                          tx_num;
+        time_t                                            timestamp;
+        std::vector<std::pair<address, std::string>>      from_addrs;
+        std::vector<std::pair<address, std::string>>      to_addrs;
+        share_type                                        amount;
+        share_type                                        fee;
+        std::pair<name_id_type, std::string>              vote;
+        transaction_id_type                               tx_id;
+    };
+
     rpc_server();
     virtual ~rpc_server();
 
@@ -160,3 +175,4 @@ RPC_DECLARE_EXCEPTION(rpc_wallet_open_needed_exception)
 
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::rpc::rpc_server::config, (rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
+FC_REFLECT( bts::rpc::rpc_server::pretty_transaction_summary, (number)(block_num)(tx_num)(timestamp)(from_addrs)(to_addrs)(amount)(fee)(tx_id)(vote))

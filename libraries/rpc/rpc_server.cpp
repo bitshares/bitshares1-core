@@ -64,6 +64,7 @@ namespace bts { namespace rpc {
              (wallet_asset_issue)\
              (wallet_get_balance)\
              (wallet_get_transaction_history)\
+             (wallet_get_transaction_history_summary)\
              (wallet_rescan_blockchain)\
              (wallet_rescan_blockchain_state)\
              (wallet_reserve_name)\
@@ -1174,6 +1175,90 @@ As a json rpc call
       unsigned count = params[0].as<unsigned>();
       return fc::variant( _client->get_wallet()->get_transactions( count ) );
     }
+
+
+    static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
+            /* description */ "Returns a transaction history table for pretty printing",
+            /* returns: */    "std::vector<transaction_summary>",
+            /* params:          name     type      classification                   default_value */
+                              {{"count", "unsigned",    rpc_server::optional_positional, 0}},
+            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
+    {
+        unsigned count = params[0].as<unsigned>();
+        auto tx_recs = _client->get_wallet()->get_transactions( count );
+        auto result = std::vector<rpc_server::pretty_transaction_summary>();
+        auto index = 1;
+        for( auto tx_rec : tx_recs)
+        {
+            auto sum = bts::rpc::rpc_server::pretty_transaction_summary();
+            sum.number = index; index++;
+            sum.block_num = tx_rec.location.block_num;
+            sum.tx_num = tx_rec.location.trx_num;
+            sum.timestamp = time_t( tx_rec.received.sec_since_epoch() );
+            share_type withdraw_amount = 0;
+            share_type deposit_amount = 0;
+            bool sending = false;
+            bool receiving = false;
+            name_id_type vote = 0;
+            for( auto op : tx_rec.trx.operations )
+            {
+				if( operation_type_enum( op.type ) == withdraw_op_type )
+                {
+                    auto withdraw_op = op.as<withdraw_operation>();
+                    withdraw_amount += withdraw_op.amount;
+                    auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
+                    std::string name;
+                    if( owner.valid() )
+                    {
+                        sending |= _client->get_wallet()->is_receive_address( *owner );	
+                        auto rec = _client->get_wallet()->get_account_record( *owner);
+                        if( rec.valid() )
+                            name = rec->name;
+                    }
+                    sum.from_addrs.push_back( std::make_pair(withdraw_op.balance_id, name) );
+                } 
+
+				if( operation_type_enum( op.type ) == deposit_op_type )
+                {
+                    auto deposit_op = op.as<deposit_operation>();
+                    deposit_amount += deposit_op.amount;
+                    vote = deposit_op.condition.delegate_id;
+                    std::string name;
+                    if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                    {
+                        auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                        receiving |= _client->get_wallet()->is_receive_address( condition.owner );
+
+                        auto rec = _client->get_wallet()->get_account_record( condition.owner );
+                        if( rec.valid() )
+                            name = rec->name;
+                        sum.to_addrs.push_back( std::make_pair(condition.owner, name) );
+                    }
+                } 
+
+            }
+            sum.amount = 0;
+            if (sending)
+                sum.amount -= withdraw_amount;
+            if (receiving)
+                sum.amount += deposit_amount;
+            sum.fee = withdraw_amount - deposit_amount;
+
+            auto pos_id = (vote > 0) ? vote : name_id_type(-vote);
+            auto delegate_rec = _client->get_chain()->get_name_record(pos_id);
+            auto name = delegate_rec.valid() ? delegate_rec->name : "";
+            sum.vote = std::make_pair(vote, name);
+
+            sum.tx_id = tx_rec.trx.id();
+
+            result.push_back( sum );
+        }
+        return fc::variant( result );
+    }
+
 
     static rpc_server::method_data blockchain_get_name_metadata{"blockchain_get_name", nullptr,
             /* description */ "Retrieves the name record",

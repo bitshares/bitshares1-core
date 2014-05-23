@@ -17,6 +17,12 @@ claim_dns_output::claim_dns_output(const std::string& k, const last_tx_type_enum
 {
 }
 
+fc::sha256 dns_commit_secret(claim_dns_output claim)
+{
+    auto as_vector = fc::raw::pack(claim);
+    return fc::sha256::hash(std::string(as_vector.begin(), as_vector.end()));
+}
+
 bool is_dns_output(const trx_output& output)
 {
     return output.claim_func == claim_dns;
