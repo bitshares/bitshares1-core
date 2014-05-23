@@ -13,10 +13,11 @@ namespace bts { namespace blockchain {
 
    static const fc::microseconds one_year = fc::seconds( 60*60*24*365 );
 
-   digest_type transaction::digest()const
+   digest_type transaction::digest( const digest_type& chain_id )const
    {
       fc::sha256::encoder enc;
       fc::raw::pack(enc,*this);
+      fc::raw::pack(enc,chain_id);
       return enc.result();
    }
    size_t signed_transaction::data_size()const
@@ -31,13 +32,13 @@ namespace bts { namespace blockchain {
       fc::raw::pack(enc,*this);
       return fc::ripemd160::hash( enc.result() );
    }
-   void signed_transaction::sign( const fc::ecc::private_key& signer )
+   void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
-      signatures.push_back( signer.sign_compact( digest() ) );
+      signatures.push_back( signer.sign_compact( digest(chain_id) ) );
    }
 
-   transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state )
-   :_current_state( current_state )
+   transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
+   :_current_state( current_state ),_chain_id(chain_id)
    {
    }
 
@@ -66,7 +67,7 @@ namespace bts { namespace blockchain {
          fail( BTS_DUPLICATE_TRANSACTION, "transaction has already been processed" );
 
       trx = trx_arg;
-      auto digest = trx_arg.digest();
+      auto digest = trx_arg.digest( _chain_id );
       for( auto sig : trx.signatures )
       {
          auto key = fc::ecc::public_key( sig, digest ).serialize();
@@ -651,8 +652,9 @@ namespace bts { namespace blockchain {
       }
 
       if( op.amount < 0 ) // we are withdrawing part or all of the bid (canceling the bid)
-      { // this is effectively a withdraw
-         add_balance( -op.get_amount() );
+      { // this is effectively a withdraw and move to deposit...
+         add_balance( -op.get_amount() );  
+         add_required_signature( op.owner );
       }
       else if( op.amount > 0 ) // we are adding more value to the bid (increasing the amount, but not price)
       { // this is similar to a deposit

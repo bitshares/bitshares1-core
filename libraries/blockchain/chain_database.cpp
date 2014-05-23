@@ -127,6 +127,7 @@ namespace bts { namespace blockchain {
 
             chain_database*                                           self;
             chain_observer*                                           _observer;
+            digest_type                                               _chain_id;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> > _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>         _fork_db;
@@ -370,7 +371,7 @@ namespace bts { namespace blockchain {
             for( auto trx : user_transactions )
             {
                transaction_evaluation_state_ptr trx_eval_state =
-                      std::make_shared<transaction_evaluation_state>(pending_state);
+                      std::make_shared<transaction_evaluation_state>(pending_state,_chain_id);
                trx_eval_state->evaluate( trx );
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
               // TODO:  capture the evaluation state with a callback for wallets...
@@ -763,6 +764,7 @@ namespace bts { namespace blockchain {
 
           if( last_block_num == uint32_t(-1) )
              my->initialize_genesis(genesis_file);
+          my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
       }
       catch( ... )
       {
@@ -825,7 +827,7 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
    { try {
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(shared_from_this());
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state);
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
 
@@ -1107,7 +1109,7 @@ namespace bts { namespace blockchain {
          block_size += trx_size;
          // make modifications to tempoary state...
          pending_chain_state_ptr pending_trx_state = std::make_shared<pending_chain_state>(pending_state);
-         transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pending_trx_state);
+         transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pending_trx_state,my->_chain_id);
          try {
             trx_eval_state->evaluate( item->trx );
             // TODO: what about fees in other currencies?
@@ -1165,7 +1167,8 @@ namespace bts { namespace blockchain {
 
       fc::sha256::encoder enc;
       fc::raw::pack( enc, config );
-      self->set_property( bts::blockchain::chain_id, fc::variant(enc.result()) );
+      _chain_id = enc.result();
+      self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 
       double total_unscaled = 0;
       for( auto item : config.balances ) total_unscaled += item.second;
@@ -1359,13 +1362,7 @@ namespace bts { namespace blockchain {
 
    digest_type chain_database::chain_id()const
    {
-      try {
-        return get_property( bts::blockchain::chain_id ).as<digest_type>();
-      } 
-      catch( const fc::exception& e )
-      {
-         return digest_type();
-      }
+         return my->_chain_id;
    }
    std::vector<proposal_record>  chain_database::get_proposals( uint32_t first, uint32_t count )const
    {

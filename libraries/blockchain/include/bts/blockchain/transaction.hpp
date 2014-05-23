@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    {
       transaction(){}
 
-      digest_type                      digest()const;
+      digest_type                      digest( const digest_type& chain_id )const;
 
       fc::optional<fc::time_point_sec> expiration;
       /**
@@ -117,7 +117,7 @@ namespace bts { namespace blockchain {
    {
       transaction_id_type                     id()const;
       size_t                                  data_size()const;
-      void                                    sign( const fc::ecc::private_key& signer );
+      void                                    sign( const fc::ecc::private_key& signer, const digest_type& chain_id );
 
       std::vector<fc::ecc::compact_signature> signatures;
    };
@@ -139,7 +139,7 @@ namespace bts { namespace blockchain {
    class transaction_evaluation_state
    {
       public:
-         transaction_evaluation_state( const chain_interface_ptr& blockchain );
+         transaction_evaluation_state( const chain_interface_ptr& blockchain, digest_type chain_id );
          transaction_evaluation_state(){};
 
          virtual ~transaction_evaluation_state();
@@ -251,6 +251,7 @@ namespace bts { namespace blockchain {
          std::unordered_map<name_id_type, vote_state>     net_delegate_votes;
       protected:
          chain_interface_ptr                              _current_state;
+         digest_type                                      _chain_id;
    };
 
    typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;

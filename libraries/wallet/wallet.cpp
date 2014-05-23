@@ -156,6 +156,7 @@ namespace bts { namespace wallet {
 
             wallet*                                                             self;
 
+            digest_type                                                         _chain_id;
             asset                                                               _priority_fee;
 
             bool                                                                _is_open;
@@ -709,7 +710,7 @@ namespace bts { namespace wallet {
                 for( auto item : required_sigs )
                 {
                    auto priv_key = get_private_key( item );
-                   trx.sign( priv_key );
+                   trx.sign( priv_key, _chain_id );
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
@@ -803,6 +804,7 @@ namespace bts { namespace wallet {
    {
       my->self = this;
       my->_blockchain = chain_db;
+      my->_chain_id   = my->_blockchain->chain_id();
       chain_db->set_observer( my.get() );
    }
 
