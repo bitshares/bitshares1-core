@@ -119,6 +119,7 @@ namespace bts { namespace blockchain {
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
             void                       update_random_seed( secret_hash_type new_secret, 
                                                           const pending_chain_state_ptr& pending_state );
+            void                       update_active_delegate_list_id(const pending_chain_state_ptr& pending_state );
 
 
             void update_delegate_production_info( const full_block& block_data, 
@@ -503,6 +504,11 @@ namespace bts { namespace blockchain {
          pending_state->set_property( last_random_seed_id, 
                                       fc::variant(fc::ripemd160::hash( enc.result() )) );
       }
+       
+      void chain_database_impl::update_active_delegate_list_id(const pending_chain_state_ptr& pending_state )
+      {
+          pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+      }
 
       /**
        *  Performs all of the block validation steps and throws if error.
@@ -535,7 +541,7 @@ namespace bts { namespace blockchain {
 
             if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
             {
-                self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+                update_active_delegate_list_id(pending_state);
             }
 
             update_random_seed( block_data.previous_secret, pending_state );
