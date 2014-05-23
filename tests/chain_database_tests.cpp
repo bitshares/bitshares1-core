@@ -588,7 +588,6 @@ BOOST_AUTO_TEST_CASE( undo_state_test )
         your_wallet.unlock( fc::seconds( 10000000 ), "password" );
         
         
-        // your chain should longer than my chain
         auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
         for( uint32_t i = 0; i < keys.size(); ++i )
         {
@@ -625,7 +624,7 @@ BOOST_AUTO_TEST_CASE( undo_state_test )
             {
                 auto trx = my_wallet.reserve_name( "your" + name_prefix + fc::to_string(i), fc::to_string(i), false );
                 your_reserved_names.push_back("your" + name_prefix + fc::to_string(i));
-                my_chain->store_pending_transaction( trx );
+                your_chain->store_pending_transaction( trx );
                 
                 auto your_block = your_chain->generate_block( your_next_block_time );
                 std::cerr << "producing your block: "<< your_block.block_num <<"\n";
@@ -638,6 +637,12 @@ BOOST_AUTO_TEST_CASE( undo_state_test )
             bts::blockchain::advance_time(sleep_time_sec);
             std::cerr <<"\n\n\n\n";
             // fc::usleep( fc::seconds( sleep_time_sec ) );
+        }
+        
+        bool your_chain_longer_than_mine = false;
+        if ( your_chain->get_head_block_num() > my_chain->get_head_block_num() )
+        {
+            your_chain_longer_than_mine = true;
         }
         
         // we now have two chains of different lengths
@@ -668,18 +673,17 @@ BOOST_AUTO_TEST_CASE( undo_state_test )
         << "  your_length: " << your_length << " \n";
         
         // my_chain->export_fork_graph( "fork_graph.dot" );
-        
         // undo state for my chain should after 5 blocks
         for ( uint32_t i = 5; i < 40; i ++)
         {
             auto record = my_chain->get_name_record("my" + name_prefix + fc::to_string(i));
-            FC_ASSERT(!record, "my chain's state after 5th block should have already been undo ${r}", ("r", *record));
+            FC_ASSERT(your_chain_longer_than_mine ^ (!!record), "my chain's state after 5th block should have already been undo ${r}, your chain is longer ${y}", ("r", *record)("y", your_chain_longer_than_mine));
         }
         
         for ( auto your_name : your_reserved_names )
         {
             auto record = my_chain->get_name_record(your_name);
-            FC_ASSERT(!!record, "your chain is longer , so your reserved names should all be included in the chain ${r}", ("r", your_name));
+            FC_ASSERT(your_chain_longer_than_mine ^ (!record), "if your chain is longer , so your reserved names should all be included in the chain ${r}, your chain is longer ${y}", ("r", your_name)("y", your_chain_longer_than_mine));
         }
         
         FC_ASSERT( my_chain->get_head_block_num() == your_chain->get_head_block_num() );
