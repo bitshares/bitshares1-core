@@ -1662,6 +1662,10 @@ namespace bts { namespace wallet {
    std::unordered_map<address,std::string> wallet::get_send_addresses()const
    {
       std::unordered_map<address,std::string> result;
+      for ( auto item : my->_sending_keys )
+      {
+          result[item.first] = my->get_address_label( item.second );
+      }
       return result;
    }
 
