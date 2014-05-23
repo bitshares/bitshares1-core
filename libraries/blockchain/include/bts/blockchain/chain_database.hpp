@@ -142,11 +142,15 @@ namespace bts { namespace blockchain {
          virtual void                       store_proposal_vote( const proposal_vote& r )override;
          virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const override;
 
-         virtual obid_record                get_bid_record( const market_id_type& )const;
-         virtual oask_record                get_ask_record( const market_id_type& )const;
+         virtual oorder_record              get_bid_record( const market_index_key& )const override;
+         virtual oorder_record              get_ask_record( const market_index_key& )const override;
+         virtual oorder_record              get_short_record( const market_index_key& )const override;
+         virtual ocollateral_record         get_collateral_record( const market_index_key& )const override;
                                                                                                             
-         virtual void                       store_bid_record( const bid_record& );
-         virtual void                       store_ask_record( const ask_record& );
+         virtual void                       store_bid_record( const market_index_key& key, const order_record& ) override;
+         virtual void                       store_ask_record( const market_index_key& key, const order_record& ) override;
+         virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
+         virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
       private:
          std::unique_ptr<detail::chain_database_impl> my;

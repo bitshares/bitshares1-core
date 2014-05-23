@@ -160,8 +160,10 @@ namespace bts { namespace blockchain {
             bts::db::level_pod_map< vote_del, int >                              _delegate_vote_index;
 
 
-            bts::db::level_map< market_id_type, ask_record >                     _asks_db;
-            bts::db::level_map< market_id_type, bid_record >                     _bids_db;
+            bts::db::level_map< market_index_key, order_record >                     _asks_db;
+            bts::db::level_map< market_index_key, order_record >                     _bids_db;
+            bts::db::level_map< market_index_key, order_record >                     _shorts_db;
+            bts::db::level_map< market_index_key, collateral_record >                _collateral_db;
 
             /** used to prevent duplicate processing */
             bts::db::level_pod_map< transaction_id_type, transaction_location >  _processed_transaction_ids;
@@ -1446,34 +1448,34 @@ namespace bts { namespace blockchain {
       return get_property( last_random_seed_id ).as<digest_type>();
    }
 
-   obid_record   chain_database::get_bid_record( const market_id_type& id )const
-   { try {
-      auto bid_itr = my->_bids_db.find( id );
-      if( bid_itr.valid() ) return bid_itr.value();
-      return obid_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
-
-   oask_record   chain_database::get_ask_record( const market_id_type& id )const
-   { try {
-      auto ask_itr = my->_asks_db.find( id );
-      if( ask_itr.valid() ) return ask_itr.value();
-      return oask_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
-                                                                                              
-   void          chain_database::store_bid_record( const bid_record& rec )
-   { 
-      if( rec.is_null() )
-         my->_bids_db.remove( rec.id() );
-      else
-         my->_bids_db.store( rec.id(), rec );
-   } 
-
-   void          chain_database::store_ask_record( const ask_record& rec )
+   oorder_record         chain_database::get_bid_record( const market_index_key& )const
    {
-      if( rec.is_null() )
-         my->_asks_db.remove( rec.id() );
-      else
-         my->_asks_db.store( rec.id(), rec );
+      return oorder_record();
+   }
+   oorder_record         chain_database::get_ask_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   oorder_record         chain_database::get_short_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   ocollateral_record    chain_database::get_collateral_record( const market_index_key& )const
+   {
+      return ocollateral_record();
+   }
+                                                                                              
+   void chain_database::store_bid_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void chain_database::store_ask_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void chain_database::store_short_record( const market_index_key& key, const order_record& )
+   {
+   }
+   void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& ) 
+   {
    }
 
 

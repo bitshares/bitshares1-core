@@ -47,8 +47,8 @@ namespace bts { namespace blockchain {
       for( auto record : balances ) _prev_state->store_balance_record( record.second );
       for( auto record : proposals ) _prev_state->store_proposal_record( record.second );
       for( auto record : proposal_votes ) _prev_state->store_proposal_vote( record.second );
-      for( auto record : bids )  _prev_state->store_bid_record( record.second );
-      for( auto record : asks )  _prev_state->store_ask_record( record.second );
+      //for( auto record : bids )  _prev_state->store_bid_record( record.second );
+      //for( auto record : asks )  _prev_state->store_ask_record( record.second );
       for( auto record : unique_transactions ) 
          _prev_state->store_transaction_location( record.first, record.second );
    }
@@ -97,6 +97,7 @@ namespace bts { namespace blockchain {
          else undo_state->store_balance_record( record.second.make_null() );
       }
 
+      /*
       for( auto record : bids ) 
       {
          auto prev_address = _prev_state->get_bid_record( record.first );
@@ -120,6 +121,7 @@ namespace bts { namespace blockchain {
             undo_state->store_ask_record( tmp );
          }
       }
+      */
    }
 
    /** load the state from a variant */
@@ -276,31 +278,35 @@ namespace bts { namespace blockchain {
       else if( _prev_state ) return _prev_state->get_proposal_vote( id );
       return oproposal_vote();
    }
-
-   obid_record   pending_chain_state::get_bid_record( const market_id_type& id )const
-   { try {
-       auto bid_itr = bids.find(id);
-       if(  bid_itr != bids.end() ) return bid_itr->second;
-       else if( _prev_state ) return _prev_state->get_bid_record(id);
-       return obid_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
-
-   oask_record   pending_chain_state::get_ask_record( const market_id_type& id )const
-   { try {
-       auto ask_itr = asks.find(id);
-       if(  ask_itr != asks.end() ) return ask_itr->second;
-       else if( _prev_state ) return _prev_state->get_ask_record(id);
-       return oask_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
-                                                                                              
-   void          pending_chain_state::store_bid_record( const bid_record& rec )
-   { 
-      bids[rec.id()] = rec;
-   } 
-
-   void          pending_chain_state::store_ask_record( const ask_record& rec )
+   oorder_record         pending_chain_state::get_bid_record( const market_index_key& )const
    {
-      asks[rec.id()] = rec;
+      return oorder_record();
    }
+   oorder_record         pending_chain_state::get_ask_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   oorder_record         pending_chain_state::get_short_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   ocollateral_record    pending_chain_state::get_collateral_record( const market_index_key& )const
+   {
+      return ocollateral_record();
+   }
+                                                                                              
+   void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void pending_chain_state::store_short_record( const market_index_key& key, const order_record& )
+   {
+   }
+   void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& ) 
+   {
+   }
+
 
 } } // bts::blockchain
