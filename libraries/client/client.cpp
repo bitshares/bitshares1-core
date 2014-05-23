@@ -608,6 +608,27 @@ namespace bts { namespace client {
       get_wallet()->import_bitcoin_wallet(filename,passphrase);
     }
 
+    void client::wallet_import_private_key(std::string wif_key_to_import, 
+                                           const std::string& account_name,
+                                           bool wallet_rescan_blockchain)
+    {
+      get_wallet()->import_wif_private_key(wif_key_to_import, account_name);
+      if (wallet_rescan_blockchain)
+        get_wallet()->scan_chain(0);
+    }
+
+    std::vector<name_record> client::blockchain_get_names(const std::string& first,
+                                                          uint32_t count) const
+    {
+      return get_chain()->get_names(first, count);
+    }
+
+    std::vector<asset_record> client::blockchain_get_assets(const std::string& first_symbol, uint32_t count) const
+    {
+      return get_chain()->get_assets(first_symbol,count);
+    }
+
+
     //JSON-RPC Method Implementations END
 
     void client::run_delegate( )

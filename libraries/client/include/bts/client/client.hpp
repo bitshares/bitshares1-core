@@ -116,6 +116,12 @@ namespace bts { namespace client {
                        void wallet_rescan_blockchain(uint32_t starting_block_number);
                        void wallet_rescan_blockchain_state();
                        void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase);
+                       void wallet_import_private_key(std::string wif_key_to_import, 
+                                                      const std::string& account_name,
+                                                      bool wallet_rescan_blockchain);
+
+     std::vector<name_record> blockchain_get_names(const std::string& first, uint32_t count) const;
+    std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const;
 
 
 

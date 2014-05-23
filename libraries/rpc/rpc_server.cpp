@@ -1520,9 +1520,9 @@ Examples:
     // TODO: get account argument
     static rpc_server::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
             /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name            type           classification                   default_value */
-                              {{"key",          "private_key", rpc_server::required_positional, fc::ovariant()},
+                              {{"key_to_import", "wif_private_key", rpc_server::required_positional, fc::ovariant()},
                                {"account_name", "string",      rpc_server::optional_positional, fc::variant("default")},
                                {"rescan",       "bool",        rpc_server::optional_positional, false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
@@ -1553,16 +1553,11 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
     {
-      auto wif   =  params[0].as_string();
+      auto key_to_import   =  params[0].as_string();
       std::string account_name = params[1].as_string();
       bool wallet_rescan_blockchain = params[2].as_bool();
-
-      _client->get_wallet()->import_wif_private_key(wif, account_name);
-
-      if (wallet_rescan_blockchain)
-          _client->get_wallet()->scan_chain(0);
-
-      return fc::variant(true);
+      _client->wallet_import_private_key(key_to_import, account_name, wallet_rescan_blockchain);
+      return fc::variant();
     }
 
     static rpc_server::method_data blockchain_get_names_metadata{"blockchain_get_names", nullptr,
@@ -1581,7 +1576,7 @@ Returns up to count reserved names that follow first alphabetically.
     {
       std::string first = params[0].as_string();
       uint32_t count = params[1].as<uint32_t>();
-      return fc::variant(_client->get_chain()->get_names( first, count ) );
+      return fc::variant(_client->blockchain_get_names( first, count ) );
     }
 
 
@@ -1600,9 +1595,9 @@ Returns up to count reserved assets that follow first alphabetically.
              )" };
     fc::variant rpc_server_impl::blockchain_get_assets(const fc::variants& params)
     {
-      std::string first = params[0].as_string();
+      std::string first_symbol = params[0].as_string();
       uint32_t count = params[1].as<uint32_t>();
-      return fc::variant(_client->get_chain()->get_assets( first, count ) );
+      return fc::variant( _client->blockchain_get_assets(first_symbol, count) );
     }
 
 
@@ -1623,7 +1618,6 @@ Arguments:
    count - the maximum number of delegates to be returned
 
              )" };
-
     fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
     {
       uint32_t first = params[0].as<uint32_t>();;
