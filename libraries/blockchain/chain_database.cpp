@@ -870,7 +870,7 @@ namespace bts { namespace blockchain {
 
    otransaction_location chain_database::get_transaction_location( const transaction_id_type& trx_id )const
    {
-      return my->_processed_transaction_ids.fetch_optional( trx_id );
+      return my->_processed_transaction_id_db.fetch_optional( trx_id );
    }
 
    /**
@@ -936,12 +936,12 @@ namespace bts { namespace blockchain {
 
    obalance_record      chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
-      return my->_balances.fetch_optional( balance_id );
+      return my->_balance_db.fetch_optional( balance_id );
    }
 
    oname_record         chain_database::get_name_record( name_id_type name_id )const
    {
-      return my->_names.fetch_optional( name_id );
+      return my->_name_db.fetch_optional( name_id );
    }
 
    oasset_record        chain_database::get_asset_record( const std::string& symbol )const
@@ -1346,7 +1346,7 @@ namespace bts { namespace blockchain {
 
    oproposal_record chain_database::get_proposal_record( proposal_id_type id )const
    {
-      return my->_proposals_db.fetch_optional(id);
+      return my->_proposal_db.fetch_optional(id);
    }
                                                                                             
    void chain_database::store_proposal_vote( const proposal_vote& r )
@@ -1363,7 +1363,7 @@ namespace bts { namespace blockchain {
 
    oproposal_vote chain_database::get_proposal_vote( proposal_vote_id_type id )const
    {
-      return my->_proposal_votes_db.fetch_optional(id);
+      return my->_proposal_vote_db.fetch_optional(id);
    }
 
    digest_type chain_database::chain_id()const
@@ -1411,15 +1411,15 @@ namespace bts { namespace blockchain {
 
    oorder_record         chain_database::get_bid_record( const market_index_key&  key )const
    {
-      return my->_bids_db.fetch_optional(key);
+      return my->_bid_db.fetch_optional(key);
    }
    oorder_record         chain_database::get_ask_record( const market_index_key&  key )const
    {
-      return my->_asks_db.fetch_optional(key);
+      return my->_ask_db.fetch_optional(key);
    }
    oorder_record         chain_database::get_short_record( const market_index_key& key )const
    {
-      return my->_shorts_db.fetch_optional(key);
+      return my->_short_db.fetch_optional(key);
    }
    ocollateral_record    chain_database::get_collateral_record( const market_index_key& key )const
    {
@@ -1429,23 +1429,23 @@ namespace bts { namespace blockchain {
    void chain_database::store_bid_record( const market_index_key& key, const order_record& order ) 
    {
       if( order.is_null() )
-         my->_bids_db.remove( key );
+         my->_bid_db.remove( key );
       else
-         my->_bids_db.store( key, order );
+         my->_bid_db.store( key, order );
    }
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order ) 
    {
       if( order.is_null() )
-         my->_asks_db.remove( key );
+         my->_ask_db.remove( key );
       else
-         my->_asks_db.store( key, order );
+         my->_ask_db.store( key, order );
    }
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
       if( order.is_null() )
-         my->_shorts_db.remove( key );
+         my->_short_db.remove( key );
       else
-         my->_shorts_db.store( key, order );
+         my->_short_db.store( key, order );
    }
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral ) 
    {
