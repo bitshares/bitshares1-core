@@ -47,6 +47,8 @@ namespace bts { namespace blockchain {
       for( auto record : balances ) _prev_state->store_balance_record( record.second );
       for( auto record : proposals ) _prev_state->store_proposal_record( record.second );
       for( auto record : proposal_votes ) _prev_state->store_proposal_vote( record.second );
+      //for( auto record : bids )  _prev_state->store_bid_record( record.second );
+      //for( auto record : asks )  _prev_state->store_ask_record( record.second );
       for( auto record : unique_transactions ) 
          _prev_state->store_transaction_location( record.first, record.second );
    }
@@ -95,7 +97,33 @@ namespace bts { namespace blockchain {
          else undo_state->store_balance_record( record.second.make_null() );
       }
 
+      /*
+      for( auto record : bids ) 
+      {
+         auto prev_address = _prev_state->get_bid_record( record.first );
+         if( !!prev_address ) undo_state->store_bid_record( *prev_address );
+         else 
+         {
+            auto tmp = record.second;
+            tmp.make_null(); 
+            undo_state->store_bid_record( tmp );
+         }
+      }
+
+      for( auto record : asks ) 
+      {
+         auto prev_address = _prev_state->get_ask_record( record.first );
+         if( !!prev_address ) undo_state->store_ask_record( *prev_address );
+         else 
+         {
+            auto tmp = record.second;
+            tmp.make_null(); 
+            undo_state->store_ask_record( tmp );
+         }
+      }
+      */
    }
+
    /** load the state from a variant */
    void                    pending_chain_state::from_variant( const fc::variant& v )
    {
@@ -250,5 +278,35 @@ namespace bts { namespace blockchain {
       else if( _prev_state ) return _prev_state->get_proposal_vote( id );
       return oproposal_vote();
    }
+   oorder_record         pending_chain_state::get_bid_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   oorder_record         pending_chain_state::get_ask_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   oorder_record         pending_chain_state::get_short_record( const market_index_key& )const
+   {
+      return oorder_record();
+   }
+   ocollateral_record    pending_chain_state::get_collateral_record( const market_index_key& )const
+   {
+      return ocollateral_record();
+   }
+                                                                                              
+   void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& ) 
+   {
+   }
+   void pending_chain_state::store_short_record( const market_index_key& key, const order_record& )
+   {
+   }
+   void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& ) 
+   {
+   }
+
 
 } } // bts::blockchain
