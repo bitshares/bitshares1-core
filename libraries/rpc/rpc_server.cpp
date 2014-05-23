@@ -106,7 +106,7 @@ namespace bts { namespace rpc {
            std::string help_string;
            std::stringstream sstream;
            //format into columns
-           sstream << std::setw(70) << std::left;
+           sstream << std::setw(100) << std::left;
            help_string = method_data.name + " ";
            for (const rpc_server::parameter_data& parameter : method_data.parameters)
            {
