@@ -7,7 +7,7 @@
 
 namespace bts { namespace blockchain {
 
-  #define BTS_PRICE_PERCISION (BTS_BLOCKCHAIN_MAX_SHARES)
+  #define BTS_PRICE_PERCISION (BTS_BLOCKCHAIN_MAX_SHARES*1000)
   struct price;
 
   /**

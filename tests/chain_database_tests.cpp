@@ -39,6 +39,9 @@ BOOST_AUTO_TEST_CASE( price_math )
       price priceA( 0.000234, 6, 5 );
       std::string string_from_A( priceA );
       price priceA_from_string( string_from_A );
+      
+      auto tmp = asset( 1, 2 ) / asset( 3, 1 );
+      ilog( "${tmp}", ("tmp",tmp) );
 
       ilog( "${price_a}", ("price_a",priceA) );
       ilog( "${price_a}", ("price_a",std::string(priceA)) );
