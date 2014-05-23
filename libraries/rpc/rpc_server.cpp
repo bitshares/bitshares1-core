@@ -14,6 +14,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
+#include <bts/wallet/pretty.hpp>
+
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -1179,85 +1181,111 @@ As a json rpc call
 
     static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
             /* description */ "Returns a transaction history table for pretty printing",
-            /* returns: */    "std::vector<transaction_summary>",
+            /* returns: */    "std::vector<pretty_transaction>",
             /* params:          name     type      classification                   default_value */
                               {{"count", "unsigned",    rpc_server::optional_positional, 0}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
-    {
+    { try {
         unsigned count = params[0].as<unsigned>();
         auto tx_recs = _client->get_wallet()->get_transactions( count );
-        auto result = std::vector<rpc_server::pretty_transaction_summary>();
-        auto index = 1;
+        auto result = std::vector<wallet::pretty_transaction>();
+        auto counter = 1;
+
         for( auto tx_rec : tx_recs)
         {
-            auto sum = bts::rpc::rpc_server::pretty_transaction_summary();
-            sum.number = index; index++;
-            sum.block_num = tx_rec.location.block_num;
-            sum.tx_num = tx_rec.location.trx_num;
-            sum.timestamp = time_t( tx_rec.received.sec_since_epoch() );
-            share_type withdraw_amount = 0;
-            share_type deposit_amount = 0;
-            bool sending = false;
-            bool receiving = false;
-            name_id_type vote = 0;
+            auto pretty_tx = wallet::pretty_transaction();
+            pretty_tx.number = counter; counter++;
+            pretty_tx.block_num = tx_rec.location.block_num;
+            pretty_tx.tx_num = tx_rec.location.trx_num;
+            pretty_tx.timestamp = time_t( tx_rec.received.sec_since_epoch() );
+            pretty_tx.tx_id = tx_rec.trx.id();
+           
+            pretty_tx.totals_in[std::string("XTS")] = 0; 
+            pretty_tx.totals_out[std::string("XTS")] = 0; 
+            pretty_tx.fees[std::string("XTS")] = 0; 
+
             for( auto op : tx_rec.trx.operations )
             {
-				if( operation_type_enum( op.type ) == withdraw_op_type )
+                switch( operation_type_enum( op.type ) )
                 {
+                case (withdraw_op_type):
+                {
+                    auto pretty_op = wallet::pretty_withdraw_op();
                     auto withdraw_op = op.as<withdraw_operation>();
-                    withdraw_amount += withdraw_op.amount;
                     auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
-                    std::string name;
+
+                    /* TODO who are we taking the vote away from?
+                    auto vote = withdraw_op.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = std::make_pair(vote, delegate_name);
+                    */
+
+                    auto name = std::string("");
                     if( owner.valid() )
                     {
-                        sending |= _client->get_wallet()->is_receive_address( *owner );	
-                        auto rec = _client->get_wallet()->get_account_record( *owner);
-                        if( rec.valid() )
+                        auto rec = _client->get_wallet()->get_account_record( *owner );
+                        if ( rec.valid() )
                             name = rec->name;
                     }
-                    sum.from_addrs.push_back( std::make_pair(withdraw_op.balance_id, name) );
-                } 
-
-				if( operation_type_enum( op.type ) == deposit_op_type )
+                    pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
+                    pretty_op.amount = withdraw_op.amount;
+                    pretty_tx.totals_in[std::string("XTS")] += withdraw_op.amount;
+                    pretty_tx.add_operation(pretty_op);
+                    break;
+                }
+                case (deposit_op_type):
                 {
+                    auto pretty_op = wallet::pretty_deposit_op();
                     auto deposit_op = op.as<deposit_operation>();
-                    deposit_amount += deposit_op.amount;
-                    vote = deposit_op.condition.delegate_id;
-                    std::string name;
+
+                    auto vote = deposit_op.condition.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = make_pair(vote, delegate_name);
+
+                    auto name = std::string("");
                     if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
                     {
                         auto condition = deposit_op.condition.as<withdraw_with_signature>();
-                        receiving |= _client->get_wallet()->is_receive_address( condition.owner );
-
                         auto rec = _client->get_wallet()->get_account_record( condition.owner );
-                        if( rec.valid() )
+                        if (rec.valid())
                             name = rec->name;
-                        sum.to_addrs.push_back( std::make_pair(condition.owner, name) );
+                        pretty_op.owner = std::make_pair( condition.owner, name );
+                    } 
+                    else
+                    {
+                        FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                        ("c", deposit_op.condition.type));
                     }
-                } 
+
+                    pretty_op.amount = deposit_op.amount;
+                    pretty_tx.totals_out[std::string("XTS")] += deposit_op.amount;
+
+                    pretty_tx.add_operation(pretty_op);
+                    break;
+                }
+                default:
+                {
+                    FC_ASSERT(false, "Unknown op type: ${type}", ("type", op.type));
+                }
+                } //switch op_type
 
             }
-            sum.amount = 0;
-            if (sending)
-                sum.amount -= withdraw_amount;
-            if (receiving)
-                sum.amount += deposit_amount;
-            sum.fee = withdraw_amount - deposit_amount;
-
-            auto pos_id = (vote > 0) ? vote : name_id_type(-vote);
-            auto delegate_rec = _client->get_chain()->get_name_record(pos_id);
-            auto name = delegate_rec.valid() ? delegate_rec->name : "";
-            sum.vote = std::make_pair(vote, name);
-
-            sum.tx_id = tx_rec.trx.id();
-
-            result.push_back( sum );
+        
+            for (auto pair : pretty_tx.totals_in)
+            {
+                pretty_tx.fees[pair.first] = pair.second - pretty_tx.totals_out[pair.first] ;
+            }
+            result.push_back( pretty_tx );
         }
         return fc::variant( result );
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("", params)) }
 
 
     static rpc_server::method_data blockchain_get_name_metadata{"blockchain_get_name", nullptr,
