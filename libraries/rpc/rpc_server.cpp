@@ -597,7 +597,9 @@ Result:
                                      /* returns: */    "info",
                                      /* params:          name                 type      required */
                                                        { },
-                                   /* prerequisites */ 0, 
+                                   /* prerequisites */ 0,
+                                   R"(
+                                       )",
                                     /* aliases */ { "getinfo" } } ;
     fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
     {
