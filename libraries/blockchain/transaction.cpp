@@ -146,6 +146,8 @@ namespace bts { namespace blockchain {
    {
       switch( (operation_type_enum)op.type  )
       {
+         case null_op_type:
+            break;
          case withdraw_op_type:
             evaluate_withdraw( op.as<withdraw_operation>() );
             break;
@@ -176,7 +178,8 @@ namespace bts { namespace blockchain {
          case vote_proposal_op_type:
             evaluate_vote_proposal( op.as<vote_proposal_operation>() );
             break;
-         case null_op_type:
+         default:
+            FC_ASSERT( false, "Evaluation for op type ${t} not implemented!", ("t", op.type) );
             break;
       }
    }
