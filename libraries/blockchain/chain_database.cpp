@@ -542,7 +542,6 @@ namespace bts { namespace blockchain {
             if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
             {
                 update_active_delegate_list_id(pending_state);
-                //self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
             }
 
             update_random_seed( block_data.previous_secret, pending_state );
