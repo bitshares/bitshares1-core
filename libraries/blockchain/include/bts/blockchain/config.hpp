@@ -42,6 +42,8 @@
 
 /**
  *  The maximum amount that can be issued for user assets.
+ *
+ *  10^18 / 2^63 < 1 
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                   (1000*1000*1000ll*1000*1000ll)
 

@@ -5,7 +5,7 @@ namespace bts { namespace blockchain {
 
    /**
     *  Creates / defines an asset type but does not
-    *  allocate it to anyone.  Use issue_asset_opperation
+    *  allocate it to anyone. Use issue_asset_operation
     */
    struct create_asset_operation
    {
@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
         */
        std::string         name;
        /**
-        *  Descripts the asset and its purpose.
+        *  Describes the asset and its purpose.
         */
        std::string         description;
        /**

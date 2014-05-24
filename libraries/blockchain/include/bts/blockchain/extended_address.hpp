@@ -5,7 +5,6 @@
 #include <fc/array.hpp>
 #include <string>
 
-
 namespace bts { namespace blockchain {
     /**
      *  Given an extended public key you can calculate the public key of all
@@ -74,8 +73,6 @@ namespace bts { namespace blockchain {
           fc::sha256          priv_key;
           fc::sha256          chain_code;
     };
-
-
 
    /**
     *  @brief encapsulates an encoded, checksumed public key in

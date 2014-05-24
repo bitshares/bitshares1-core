@@ -33,7 +33,7 @@ namespace bts { namespace rpc {
                                                    const std::string& from_account = "*",
                                                    uint32_t asset_id = 0);
       std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
-      bts::blockchain::asset wallet_get_balance(const std::string& account_name = "*", int minconf = 0, int asset = 0);
+      std::vector<std::pair<share_type,std::string> > wallet_get_balance( const std::string& symbol, const std::string& account_name );
       bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
       bts::blockchain::signed_block_header getblock(uint32_t block_num);
       bool validateaddress(bts::blockchain::address address);
@@ -121,9 +121,9 @@ namespace bts { namespace rpc {
       return _json_connection->call<std::unordered_map<blockchain::address,std::string> >("list_receive_addresses");
     }
 
-    bts::blockchain::asset rpc_client_impl::wallet_get_balance(const std::string& account_name, int minconf, int asset)
+    std::vector<std::pair<share_type,std::string> > rpc_client_impl::wallet_get_balance( const std::string& symbol, const std::string& account_name )
     {
-      return _json_connection->call<bts::blockchain::asset>("wallet_get_balance", account_name, minconf, asset);
+      return _json_connection->call< std::vector<std::pair<share_type,std::string> >  >("wallet_get_balance", symbol, account_name );
     }
 
     bts::blockchain::signed_transaction rpc_client_impl::get_transaction(bts::blockchain::transaction_id_type trascaction_id)
@@ -267,9 +267,9 @@ namespace bts { namespace rpc {
     return my->list_receive_addresses();
   }
 
-  bts::blockchain::asset rpc_client::wallet_get_balance(const std::string& account_name, int minconf, int asset)
+  std::vector<std::pair<share_type,std::string> > rpc_client::wallet_get_balance( const std::string& symbol, const std::string& account_name )
   {
-    return my->wallet_get_balance(account_name, minconf, asset);
+    return my->wallet_get_balance(symbol,account_name);
   }
 
   bts::blockchain::signed_transaction rpc_client::get_transaction(bts::blockchain::transaction_id_type trascaction_id)

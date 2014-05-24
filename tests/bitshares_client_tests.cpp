@@ -467,7 +467,7 @@ void bts_client_launcher_fixture::import_initial_balances()
   {
     client_processes[i].rpc_client->wallet_import_private_key(client_processes[i].private_key, "blah");
     client_processes[i].rpc_client->wallet_rescan_blockchain(0);
-    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->wallet_get_balance().amount, client_processes[i].initial_balance);
+    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->wallet_get_balance()[0].first, client_processes[i].initial_balance);
   }
 }
 
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    bts::blockchain::asset balance = client_processes[i].rpc_client->wallet_get_balance();
+    auto balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
     BOOST_CHECK(balance == bts::blockchain::asset());
   }
 
@@ -839,7 +839,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   {
     uint32_t next_client_index = (i + 1) % client_processes.size();
     bts::blockchain::extended_address destination_address = client_processes[next_client_index].rpc_client->wallet_create_receive_account("circle_test");
-    bts::blockchain::asset destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance();
+    auto destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first;
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     const uint32_t amount_to_transfer = 1000000;
     client_processes[i].rpc_client->wallet_create_sending_account("next_client", destination_address);
@@ -848,7 +848,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     for (;;)
     {
       fc::usleep(fc::milliseconds(500));
-      if (client_processes[next_client_index].rpc_client->wallet_get_balance() == destination_initial_balance + amount_to_transfer)
+      if (client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first == destination_initial_balance + amount_to_transfer)
       {
         BOOST_TEST_MESSAGE("Client " << next_client_index << " received 1MBTS from client " << i);
         break;
@@ -922,7 +922,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
   uint64_t total_balances_received = 0;
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_received += (client_processes[i].rpc_client->wallet_get_balance().amount - initial_balance_for_each_node);
+    total_balances_received += (client_processes[i].rpc_client->wallet_get_balance()[0].first - initial_balance_for_each_node);
 
   BOOST_TEST_MESSAGE("Received " << total_balances_received << " in total");
   BOOST_CHECK(total_balances_received == total_amount_to_transfer);
@@ -1342,7 +1342,7 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
 
     // get everyone's initial balance
     for (unsigned i = 0;i < client_processes.size(); ++i)
-      client_processes[i].expected_balance = client_processes[i].rpc_client->wallet_get_balance().amount;
+      client_processes[i].expected_balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
 
     // disconnect a few nodes
     for (uint32_t i : disconnect_node_indices)
@@ -1373,7 +1373,7 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
     // verify that the transfers succeeded
     for (uint32_t i : transaction_destination_indices)
     {
-      uint64_t actual_balance = client_processes[i].rpc_client->wallet_get_balance().amount;
+      uint64_t actual_balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
       BOOST_CHECK_EQUAL(client_processes[i].expected_balance, actual_balance);
     }
 

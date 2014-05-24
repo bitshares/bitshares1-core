@@ -27,6 +27,7 @@ namespace bts{ namespace wallet {
          return address_index( account_number, invoice_number, ++invoice_itr->second );
       }
   }
+
   int32_t wallet_account_record::get_next_invoice_index()
   {
       auto last_itr = last_payment_index.rbegin();
@@ -38,24 +39,22 @@ namespace bts{ namespace wallet {
       last_payment_index[last_itr->first + 1] = 0;
       return last_itr->first + 1;
   }
+
   public_key_type wallet_account_record::get_key( int32_t invoice_number, int32_t payment_number )const
   {
      return fc::ecc::public_key(extended_key.child( invoice_number ).child( payment_number ));
   }
-
 
   extended_private_key    master_key_record::get_extended_private_key( const fc::sha512& password )const
   { try {
      return fc::raw::unpack<extended_private_key>( fc::aes_decrypt( password, encrypted_key ) );
   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-
   fc::ecc::private_key    private_key_record::get_private_key( const fc::sha512& password )const
   { try {
      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_key ) );
   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
   
-
   private_key_record::private_key_record( int32_t index_arg, int32_t account_number_arg, int32_t extra_index_arg,
                                           const fc::ecc::private_key& key, const fc::sha512& password )
   {
