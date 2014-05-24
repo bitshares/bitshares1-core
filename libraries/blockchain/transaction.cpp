@@ -148,7 +148,8 @@ namespace bts { namespace blockchain {
       switch( (operation_type_enum)op.type  )
       {
          case null_op_type:
-            FC_ASSERT( !"Invalid Opperation" );
+            FC_ASSERT( !"Invalid operation" );
+            break;
          case withdraw_op_type:
             evaluate_withdraw( op.as<withdraw_operation>() );
             break;
@@ -190,6 +191,9 @@ namespace bts { namespace blockchain {
             break;
          case cover_op_type:
             evaluate_cover( op.as<cover_operation>() );
+            break;
+         default:
+            FC_ASSERT( false, "Evaluation for op type ${t} not implemented!", ("t", op.type) );
             break;
       }
    }

@@ -5,7 +5,6 @@
 [submodule "libraries/fc"]
 	path = libraries/fc
 	url = https://github.com/InvictusInnovations/fc.git
-    ignore = dirty
 [submodule "programs/client/htdocs"]
 	path = programs/client/htdocs
 	url = https://github.com/BitShares/web_wallet.git
