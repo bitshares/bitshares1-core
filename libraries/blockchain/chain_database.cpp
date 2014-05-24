@@ -505,10 +505,26 @@ namespace bts { namespace blockchain {
                                       fc::variant(fc::ripemd160::hash( enc.result() )) );
       }
        
-      void chain_database_impl::update_active_delegate_list( const full_block& block_data, const pending_chain_state_ptr& pending_state )
+      void chain_database_impl::update_active_delegate_list( const full_block& block_data, 
+                                                             const pending_chain_state_ptr& pending_state )
       {
           if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
-             pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+          {
+             // perform a random shuffle of the sorted delegate list.
+             
+             auto active_del = self->next_round_active_delegates();
+             auto rand_seed = self->get_current_random_seed();
+             rand_seed = fc::sha256::hash(rand_seed);
+             size_t num_del = active_del.size();
+             for( uint32_t i = 0; i < num_del; ++i )
+             {
+                for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
+                   std::swap( active_del[i], active_del[rand_seed._hash[x]%num_del] );
+                rand_seed = fc::sha256::hash(rand_seed);
+             }
+
+             pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(active_del) );
+          }
       }
 
       /**
@@ -809,7 +825,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
       uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      interval_number += get_current_random_seed()._hash[0];
       uint32_t  delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
       auto sorted_delegates = get_active_delegates();
 
