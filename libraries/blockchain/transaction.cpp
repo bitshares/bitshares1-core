@@ -616,7 +616,7 @@ namespace bts { namespace blockchain {
     
       cur_record->current_share_supply += op.amount.amount;
       
-      // TODO: To be checked, issued asset is not for pay fee. balance better to be changed to fee_balance?
+      // TODO: To be checked, issued asset is not for pay fee, nor related to balance i/o, issued out from void.
       //add_balance( op.amount );
 
       _current_state->store_asset_record( *cur_record );
