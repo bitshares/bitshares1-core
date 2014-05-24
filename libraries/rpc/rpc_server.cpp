@@ -664,7 +664,7 @@ Result:
 
     static rpc_server::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
      /* description */ "Opens the wallet at the given path",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_file",   "path",   rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
@@ -688,7 +688,7 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_open_metadata{"wallet_open", nullptr,
      /* description */ "Opens the wallet of the given name",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
@@ -709,12 +709,12 @@ Wallets exist in the wallet data directory
             wlog( "${e}", ("e",e.to_detail_string() ) );
             throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant(true);
+        return fc::variant();
     }
 
     static rpc_server::method_data wallet_create_metadata{"wallet_create", nullptr,
      /* description */ "Opens the wallet of the given name",
-     /* returns: */    "bool",
+     /* returns: */    "void",
      /* params:          name             type      classification                          default value */
                        {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()}},
@@ -725,7 +725,7 @@ Wallets exist in the wallet data directory
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
         _client->wallet_create( params[0].as_string(), params[1].as_string() );
-        return fc::variant(true);
+        return fc::variant();
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     static rpc_server::method_data wallet_get_name_metadata{"wallet_get_name", nullptr,
@@ -744,7 +744,7 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_close_metadata{"wallet_close", nullptr,
       /* description */ "Closes the curent wallet if one is open",
-      /* returns: */    "bool",
+      /* returns: */    "void",
       /* params:     */ {},
       /* prerequisites */ rpc_server::no_prerequisites,
     R"(
@@ -753,7 +753,7 @@ Wallets exist in the wallet data directory
     fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
        _client->wallet_close();
-       return fc::variant(true);
+       return fc::variant();
     }
 
     static rpc_server::method_data wallet_export_to_json_metadata{"wallet_export_to_json", nullptr,
@@ -800,7 +800,7 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_lock_metadata{"wallet_lock", nullptr,
          /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
-         /* returns: */    "bool",
+         /* returns: */    "void",
          /* params:     */ {},
        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
        R"(
@@ -809,7 +809,7 @@ Wallets exist in the wallet data directory
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        _client->wallet_lock();
-       return fc::variant(true);
+       return fc::variant();
     }
 
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
