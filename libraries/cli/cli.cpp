@@ -287,7 +287,7 @@ namespace bts { namespace cli {
                       if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                       {
                         std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                        return fc::variant(false);
+                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
@@ -303,7 +303,7 @@ namespace bts { namespace cli {
                       if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                       {
                         std::cout << "Wallet \"" << wallet_name << "\" not found\n";
-                        return fc::variant(false);
+                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
                   else if( command == "wallet_open_file" )
@@ -312,7 +312,7 @@ namespace bts { namespace cli {
                       if( !fc::exists( filename ) )
                       {
                          std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                         return fc::variant(false);
+                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
@@ -323,7 +323,7 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
                   try /* Try empty password first */
                   {
@@ -343,7 +343,7 @@ namespace bts { namespace cli {
                   if( fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" already exists\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
               }
               else if (command == "wallet_create_from_json")
@@ -353,12 +353,12 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
                   if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                   {
                     std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                    return fc::variant(false);
+                    FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
