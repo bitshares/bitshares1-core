@@ -415,13 +415,13 @@ namespace bts { namespace cli {
                 catch (const rpc_wallet_open_needed_exception&)
                 {
                     auto result = interactive_open_wallet();
-                    if( !result.as_bool() ) return result;
+                    if( !result.as_bool() ) FC_THROW_EXCEPTION(assert_exception, "open wallet failed");
                 }
                 catch (const rpc_wallet_unlock_needed_exception&)
                 {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
                     auto result = execute_interactive_command( "wallet_unlock", arguments );
-                    if( !result.as_bool() ) return result;
+                    if( !result.as_bool() ) FC_THROW_EXCEPTION(assert_exception, "unlock wallet failed");
                 }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
