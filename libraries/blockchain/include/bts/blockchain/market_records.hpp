@@ -26,6 +26,9 @@ namespace bts { namespace blockchain {
    struct order_record 
    {
       order_record():balance(0){}
+      order_record( share_type b, name_id_type d )
+      :balance(b),delegate_id(d){}
+
       bool is_null() const { return 0 == balance; }
 
       share_type   balance;

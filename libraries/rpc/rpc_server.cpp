@@ -640,15 +640,6 @@ Result:
                                                        {{"block_number", "int", rpc_server::required_positional, fc::ovariant()} },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
-Arguments:
-1. index (numeric, required) The block index
-
-Result:
-"hash" (string) The block hash
-
-Examples:
-> bitshares-cli blockchain_get_blockhash 1000
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
     )",
         /*aliases*/ { "bitcoin_getblockhash", "getblockhash" }};
     fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
@@ -663,12 +654,6 @@ Examples:
                                      /* params:  */    { },
                                    /* prerequisites */ rpc_server::no_prerequisites,
          R"(
-Result:
-n (numeric) The current block count
-
-Examples:
-> bitshares-cli blockchain_get_blockcount
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockcount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
          )",
          /*aliases*/ { "bitcoin_getblockcount", "getblockcount" }} ;
     fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
@@ -710,7 +695,9 @@ Wallets exist in the wallet data directory
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
 Wallets exist in the wallet data directory
-   )"};
+   )",
+    /* aliases */ { "open" } 
+    };
     fc::variant rpc_server_impl::wallet_open(const fc::variants& params)
     {
         try
@@ -761,7 +748,8 @@ Wallets exist in the wallet data directory
       /* params:     */ {},
       /* prerequisites */ rpc_server::no_prerequisites,
     R"(
-    )" };
+    )",
+      /* aliases */ { "close" } };
     fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
        _client->wallet_close();
@@ -817,7 +805,7 @@ Wallets exist in the wallet data directory
        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
        R"(
         )",
-        /*aliases*/ { "bitcoin_walletlock", "walletlock" }};
+        /*aliases*/ { "bitcoin_walletlock", "walletlock", "lock"  }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        _client->wallet_lock();
@@ -826,35 +814,15 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
-          /* returns: */    "void",
+          /* returns: */    "null",
           /* params:          name             type        classification                          default value */
                             {{"timeout",       "unsigned", rpc_server::required_positional,        fc::ovariant()},
                              {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
-Stores the wallet decryption key in memory for 'timeout' seconds.
-This is needed prior to performing transactions related to private keys such as sending bitcoins
-
-Arguments:
-1. timeout (numeric, required) The time to keep the decryption key in seconds.
-2. "passphrase" (string, required) The wallet spending passphrase
-
-Note:
-Issuing the wallet_unlock command while the wallet is already unlocked will set a new unlock
-time that overrides the old one if the new time is longer than the old one, but you can immediately
-lock the wallet with the wallet_lock command.
-
-Examples:
-
-unlock the wallet for 60 seconds
-> bitshares-cli wallet_unlock 60 "my pass phrase"
-
-Lock the wallet again (before 60 seconds)
-> bitshares-cli wallet_lock
-
-As json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_unlock", "params": [60, "my pass phrase"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )"};
+     )",
+        /** aliases */ { "unlock" }
+    };
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
         unsigned timeout_sec = params[0].as<unsigned>();
@@ -1114,51 +1082,19 @@ Wallets exist in the wallet data directory.
 
     static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
             /* description */ "Returns the wallet's current balance",
-            /* returns: */    "asset",
+            /* returns: */    "vector< pair<share_type,string> >",
             /* params:          name                  type      classification                   default_value */
-                              {{"account_name",       "string", rpc_server::optional_positional, fc::ovariant(fc::variant("*"))},
-                               {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)},
-                               {"asset",              "int",    rpc_server::optional_positional, fc::variant(0)}},
+                              {
+                               {"symbol",             "string", rpc_server::optional_positional, fc::variant(BTS_ADDRESS_PREFIX)},
+                               {"account_name",       "string", rpc_server::optional_positional, fc::variant("*")}
+                              },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
-TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
-wallet_get_balance ( "account" min_confirms )
-
-If account is not specified, returns the wallet's total available balance.
-If account is specified, returns the balance in the account.
-Note that the account "" is not the same as leaving the parameter out.
-The wallet total may be different to the balance in the default "" account.
-
-Arguments:
-1. "account" (string, optional) The selected account, or "*" for entire wallet. It may be the default account using "".
-2. min_confirms (numeric, optional, default=1) Only include transactions confirmed at least this many times.
-
-Result:
-amount (numeric) The total amount in BTS received for this account.
-
-Examples:
-
-The total amount in the server across all accounts
-> bitshares-cli wallet_get_balance
-
-The total amount in the server across all accounts, with at least 5 confirmations
-> bitshares-cli wallet_get_balance "*" 6
-
-The total amount in the default account with at least 1 confirmation
-> bitshares-cli wallet_get_balance ""
-
-The total amount in the account named tabby with at least 6 confirmations
-> bitshares-cli wallet_get_balance "tabby" 6
-
-As a json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_get_balance", "params": ["tabby", 6] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
-    /*aliases*/ { "bitcoin_getbalance", "getbalance" }};
+    /*aliases*/ { "bitcoin_getbalance", "getbalance", "balance" }};
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
-      std::string account_name = params[0].as_string();;
-      bts::blockchain::asset_id_type asset_id = params[2].as<asset_id_type>();
-      return fc::variant( _client->get_wallet()->get_balance( account_name, asset_id ) );
+      return fc::variant(_client->wallet_get_balance( params[0].as_string(), params[1].as_string() ));
     }
 
     static rpc_server::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
@@ -1365,41 +1301,6 @@ returns false if delegate is not recognized
                               {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-blockchain_get_block "hash" ( verbose )
-
-If verbose is false, returns a string that is serialized, hex-encoded data for block 'hash'.
-If verbose is true, returns an Object with information about block <hash>.
-
-Arguments:
-1. "hash" (string, required) The block hash
-2. verbose (boolean, optional, default=true) true for a json object, false for the hex encoded data
-
-Result (for verbose = true):
-{
-"hash" : "hash", (string) the block hash (same as provided)
-"confirmations" : n, (numeric) The number of confirmations
-"size" : n, (numeric) The block size
-"height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version
-"merkleroot" : "xxxx", (string) The merkle root
-"tx" : [ (array of string) The transaction ids
-"transactionid" (string) The transaction id
-,...
-],
-"time" : ttt, (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)
-"nonce" : n, (numeric) The nonce //TODO: fake this
-"bits" : "1d00ffff", (string) The bits
-"difficulty" : x.xxx, (numeric) The difficulty //TODO: fake this
-"previousblockhash" : "hash", (string) The hash of the previous block
-"nextblockhash" : "hash" (string) The hash of the next block
-}
-
-Result (for verbose=false):
-"data" (string) A string that is serialized, hex-encoded data for block 'hash'.
-
-Examples:
-> bitshares-cli blockchain_get_block "00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_block", "params": ["00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
     /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)

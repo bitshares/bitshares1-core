@@ -12,6 +12,7 @@
 
 namespace bts { namespace rpc {
   namespace detail { class rpc_client_impl; }
+  using namespace bts::blockchain;
 
 
   /**
@@ -38,7 +39,7 @@ namespace bts { namespace rpc {
     bts::blockchain::transaction_id_type sendtoaddress(const bts::blockchain::address& address, uint64_t amount,
                                                        const std::string& comment = "", const std::string& comment_to = "");
     std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
-    bts::blockchain::asset wallet_get_balance(const std::string& account_name = "*", int minconf = 0, int asset = 0);
+  std::vector<std::pair<share_type,std::string> > wallet_get_balance( const std::string& symbol = BTS_ADDRESS_PREFIX, const std::string& account_name = "*" );
     bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
     bts::blockchain::signed_block_header getblock(uint32_t block_num);
     bool validateaddress(bts::blockchain::address address);

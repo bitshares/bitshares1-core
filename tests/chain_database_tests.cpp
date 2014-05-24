@@ -26,6 +26,40 @@ const char* test_keys = R"([
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
 ])";
 
+BOOST_AUTO_TEST_CASE( price_math )
+{
+   try {
+      try {
+      std::string test_price ="3.14 5/6";
+      price p( test_price  );
+      ilog( "price: ${p}", ("p",p) );
+      std::cout << test_price << "  ==?  " << std::string(p) <<"\n";
+
+
+      price priceA( 0.000234, 6, 5 );
+      std::string string_from_A( priceA );
+      price priceA_from_string( string_from_A );
+      
+      auto tmp = asset( 1, 2 ) / asset( 3, 1 );
+      ilog( "${tmp}", ("tmp",tmp) );
+
+      ilog( "${price_a}", ("price_a",priceA) );
+      ilog( "${price_a}", ("price_a",std::string(priceA)) );
+      ilog( "${price_a}", ("price_a",std::string(priceA_from_string)) );
+
+      FC_ASSERT( priceA == priceA_from_string, "",
+                 ("priceA",priceA)("priceA_from_string",priceA_from_string)("string_from_A",string_from_A) );
+
+
+      } FC_RETHROW_EXCEPTIONS( warn, "" )
+
+   } catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string() ) );
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE( block_signing )
 {
    try {

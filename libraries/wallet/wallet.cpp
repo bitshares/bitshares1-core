@@ -156,6 +156,7 @@ namespace bts { namespace wallet {
 
             wallet*                                                             self;
 
+            digest_type                                                         _chain_id;
             asset                                                               _priority_fee;
 
             bool                                                                _is_open;
@@ -178,6 +179,25 @@ namespace bts { namespace wallet {
             void store_record( const T& record )
             {
                _wallet_db.store( record.index, wallet_record(record) );
+            }
+
+            std::string get_account_name_for_address( const address addr )
+            {
+               auto recv_itr = _receive_keys.find( addr );
+               if( _receive_keys.end() != recv_itr )
+               {
+                  auto account_itr = _accounts.find( recv_itr->second.account_number );
+                  if( account_itr != _accounts.end() ) 
+                     return account_itr->second.name;
+               }
+               auto send_itr = _sending_keys.find( addr );
+               if( _sending_keys.end() != send_itr )
+               {
+                  auto account_itr = _accounts.find( send_itr->second.account_number );
+                  if( account_itr != _accounts.end() ) 
+                     return account_itr->second.name;
+               }
+               return std::string();
             }
 
             /** the password required to decrypt the wallet records */
@@ -709,7 +729,7 @@ namespace bts { namespace wallet {
                 for( auto item : required_sigs )
                 {
                    auto priv_key = get_private_key( item );
-                   trx.sign( priv_key );
+                   trx.sign( priv_key, _chain_id );
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
@@ -803,6 +823,7 @@ namespace bts { namespace wallet {
    {
       my->self = this;
       my->_blockchain = chain_db;
+      my->_chain_id   = my->_blockchain->chain_id();
       chain_db->set_observer( my.get() );
    }
 
@@ -1258,18 +1279,59 @@ namespace bts { namespace wallet {
       });
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   std::string  wallet::get_symbol( asset_id_type asset_id )const
+   {
+      // TODO: cache these lookups for assets used by this wallet..
+      auto asset_rec = my->_blockchain->get_asset_record( asset_id );
+      if( asset_rec.valid() ) return asset_rec->symbol;
+      return "????";
+   }
+
    /**
     *  @todo respect account name, for now it will ignore the account name
     */
-   asset wallet::get_balance( const std::string& account_name, asset_id_type asset_id )
+   asset wallet::get_balance( const std::string& symbol, const std::string& account_name )
    { try {
-      asset balance(0,asset_id);
+      auto asset_rec = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT( asset_rec.valid(), "unable to find asset for symbol '${symbol}'", ("symbol",symbol) );
+
+      asset balance(0,asset_rec->id);
       for( auto item : my->_balances )
       {
-         balance += item.second.get_balance( asset_id );
+         if( account_name == "*" )
+            balance += item.second.get_balance( asset_rec->id );
+         else if( my->get_account_name_for_address( item.second.owner() ) == account_name )
+            balance += item.second.get_balance( asset_rec->id );
       }
       return balance;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("asset_id",asset_id) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
+   /**
+    *  @todo respect account name, for now it will ignore the account name
+    */
+   std::vector<asset> wallet::get_all_balances( const std::string& account_name )
+   { try {
+      std::map<asset_id_type,share_type> all_balances;
+
+      for( auto item : my->_balances )
+      {
+         if( account_name == "*" )
+         {
+            auto amount = item.second.get_balance();
+            all_balances[amount.asset_id] += amount.amount;
+         }
+         else if( my->get_account_name_for_address( item.first ) == account_name )
+         {
+            auto amount = item.second.get_balance();
+            all_balances[amount.asset_id] += amount.amount;
+         }
+      }
+      std::vector<asset> results;
+      results.reserve( all_balances.size() );
+      for( auto item : all_balances )
+         results.push_back( asset( item.second, item.first ) );
+
+      return results;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
    address  wallet::get_new_address( const std::string& account_name,
