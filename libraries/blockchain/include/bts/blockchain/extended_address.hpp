@@ -21,6 +21,7 @@ namespace bts { namespace blockchain {
           extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code );
 
           extended_public_key child( uint32_t c )const;
+          extended_public_key child( const fc::sha256& secret )const;
 
           operator fc::ecc::public_key()const { return pub_key; }
 
@@ -63,6 +64,7 @@ namespace bts { namespace blockchain {
            *      required to calculate all children.
            */
           extended_private_key child( uint32_t c, derivation_type derivation = private_derivation )const;
+          extended_private_key child( const fc::sha256& secret, derivation_type derivation = private_derivation )const;
 
           operator fc::ecc::private_key()const;
           fc::ecc::public_key get_public_key()const;
