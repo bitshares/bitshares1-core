@@ -181,23 +181,11 @@ namespace bts { namespace wallet {
                _wallet_db.store( record.index, wallet_record(record) );
             }
 
-            std::string get_account_name_for_address( const address addr )
+            std::string get_account_name_for_address( const address& addr )
             {
-               auto recv_itr = _receive_keys.find( addr );
-               if( _receive_keys.end() != recv_itr )
-               {
-                  auto account_itr = _accounts.find( recv_itr->second.account_number );
-                  if( account_itr != _accounts.end() ) 
-                     return account_itr->second.name;
-               }
-               auto send_itr = _sending_keys.find( addr );
-               if( _sending_keys.end() != send_itr )
-               {
-                  auto account_itr = _accounts.find( send_itr->second.account_number );
-                  if( account_itr != _accounts.end() ) 
-                     return account_itr->second.name;
-               }
-               return std::string();
+               auto account_record = self->get_account_record( addr );
+               if( !account_record.valid() ) return std::string();
+               return account_record->name;
             }
 
             /** the password required to decrypt the wallet records */
