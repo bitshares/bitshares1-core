@@ -19,7 +19,7 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   bool signed_block_header::validate_signee( const public_key_type& expected_signee )const
+   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
    { 
       return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
    }

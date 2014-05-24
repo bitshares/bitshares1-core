@@ -217,7 +217,7 @@ namespace bts { namespace blockchain {
        new_proposal.proposal_type = op.proposal_type;
        new_proposal.data = op.data;
 
-       add_required_signature( address( delegate_record->active_key ) );
+       add_required_signature( delegate_record->active_address() );
        _current_state->store_proposal_record( new_proposal );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
@@ -232,7 +232,7 @@ namespace bts { namespace blockchain {
        FC_ASSERT( _current_state->is_active_delegate(op.id.delegate_id), 
                   "A proposal may only be submitted by an active delegate" );
 
-       add_required_signature( address( delegate_record->active_key ) );
+       add_required_signature( delegate_record->active_address() );
 
        proposal_vote new_vote;
        new_vote.id = op.id;
@@ -264,7 +264,7 @@ namespace bts { namespace blockchain {
           case fire_delegate_operation::invalid_testimony:
           {
              auto testimony = fc::raw::unpack<signed_delegate_testimony>( op.data );
-             FC_ASSERT( testimony.signee() == delegate_record->active_key );
+             FC_ASSERT( testimony.signee() == delegate_record->active_address() );
              auto trx_loc = _current_state->get_transaction_location( testimony.transaction_id );
 
              if( testimony.valid || !!trx_loc  )
@@ -525,7 +525,7 @@ namespace bts { namespace blockchain {
       if( !!op.active_key && *op.active_key != cur_record->active_key )
          add_required_signature( cur_record->owner_key );
       else
-         add_required_signature( cur_record->active_key );
+         add_required_signature( cur_record->active_address() );
 
       if( !!op.json_data )
       {
@@ -555,7 +555,7 @@ namespace bts { namespace blockchain {
       {
          auto issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
          if( op.issuer_name_id > 0 && !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-         add_required_signature(issuer_name_record->active_key);
+         add_required_signature(issuer_name_record->active_address());
       }
 
       sub_balance( balance_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
@@ -584,13 +584,13 @@ namespace bts { namespace blockchain {
       auto issuer_name_record = _current_state->get_name_record( cur_record->issuer_name_id );
       if( !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 
-      add_required_signature(issuer_name_record->active_key);  
+      add_required_signature(issuer_name_record->active_address());  
 
       if( op.issuer_name_id != cur_record->issuer_name_id )
       {
           auto new_issuer_name_record = _current_state->get_name_record( op.issuer_name_id );
           if( !new_issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-          add_required_signature(new_issuer_name_record->active_key); 
+          add_required_signature(new_issuer_name_record->active_address()); 
       }
 
       cur_record->description    = op.description;
@@ -613,7 +613,7 @@ namespace bts { namespace blockchain {
       if( !issuer_name_record ) 
          fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 
-      add_required_signature( issuer_name_record->active_key );
+      add_required_signature( issuer_name_record->active_address() );
 
       if( !cur_record->can_issue( op.amount ) )
          fail( BTS_INSUFFICIENT_FUNDS, fc::variant(op) );
@@ -693,13 +693,13 @@ namespace bts { namespace blockchain {
    void transaction::reserve_name( const std::string& name, 
                                    const fc::variant& json_data, 
                                    const public_key_type& master, 
-                                   const public_key_type& active, bool as_delegate  )
+                                   const extended_public_key& active, bool as_delegate  )
    {
       operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
    }
    void transaction::update_name( name_id_type name_id, 
                                   const fc::optional<fc::variant>& json_data, 
-                                  const fc::optional<public_key_type>& active, bool as_delegate   )
+                                  const fc::optional<extended_public_key>& active, bool as_delegate   )
    {
       update_name_operation op;
       op.name_id = name_id;

@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
 
       ilog( "." );
       share_type total_sent = 0;
@@ -239,8 +239,8 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
 
          ilog( "BEFORE: my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
          /** 
           * close and reopen the wallet to make sure we do not lose state.
           */
@@ -253,11 +253,11 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
          your_wallet.unlock( fc::microseconds::maximum(), "password" );
          your_wallet.is_receive_address( address() );
          ilog( "AFTER: my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
 
-         FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
-                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
+         FC_ASSERT( total_sent == your_wallet.get_balance().amount, "",
+                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance().amount));
 
          bts::blockchain::advance_time(1);
          //fc::usleep( fc::microseconds(1200000) );
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         my_wallet.open( "my_wallet", "password" );
         my_wallet.unlock( fc::seconds(10000000), "password" );
 
-        ilog( "my balance: ${my}", ("my", my_wallet.get_balance("*", 0)) );
+        ilog( "my balance: ${my}", ("my", my_wallet.get_balance()) );
 
         ilog(".");
         //share_type total_sent = 0;
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         for ( uint32_t i = 0; i < 10; ++i )
         {
             auto trx = my_wallet.update_name( name_prefix + fc::to_string(i),
-                fc::variant(json_prefix + fc::to_string(i)), fc::optional<public_key_type>(), 
+                fc::variant(json_prefix + fc::to_string(i)), fc::optional<extended_public_key>(), 
                 /*change to delegate*/true);
             blockchain->store_pending_transaction( trx );
         }

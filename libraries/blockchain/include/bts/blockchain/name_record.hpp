@@ -72,13 +72,14 @@ namespace bts { namespace blockchain {
          FC_ASSERT( is_delegate() );
          return delegate_info->votes_against;
       }
-      bool is_retracted()const { return active_key == public_key_type(); }
+      bool is_retracted()const { return active_key == extended_public_key(); }
+      address active_address()const { return address( active_key.get_pub_key() ); }
 
       name_id_type                 id;
       std::string                  name;
       fc::variant                  json_data;
       public_key_type              owner_key;
-      public_key_type              active_key;
+      extended_public_key          active_key;
       fc::time_point_sec           registration_date;
       fc::time_point_sec           last_update;
       fc::optional<delegate_stats> delegate_info;
