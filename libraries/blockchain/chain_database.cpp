@@ -846,7 +846,7 @@ namespace bts { namespace blockchain {
    { try {
       auto delegate_record = get_name_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
-      return delegate_record->active_key;
+      return delegate_record->active_key.get_pub_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec", sec) ) }
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
@@ -1229,7 +1229,7 @@ namespace bts { namespace blockchain {
          rec.id                = name_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.active_key        = name.owner;
+         rec.active_key        = extended_public_key( name.owner, fc::sha256() );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )

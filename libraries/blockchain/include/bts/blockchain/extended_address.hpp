@@ -3,6 +3,7 @@
 #include <fc/crypto/sha1.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/array.hpp>
+#include <bts/blockchain/address.hpp>
 #include <string>
 
 namespace bts { namespace blockchain {
@@ -21,6 +22,10 @@ namespace bts { namespace blockchain {
           extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code );
 
           extended_public_key child( uint32_t c )const;
+          extended_public_key child( const fc::sha256& secret )const;
+
+          fc::ecc::public_key get_pub_key()const { return pub_key; }
+          operator address()const { return address(pub_key); }
 
           operator fc::ecc::public_key()const { return pub_key; }
 
@@ -63,6 +68,7 @@ namespace bts { namespace blockchain {
            *      required to calculate all children.
            */
           extended_private_key child( uint32_t c, derivation_type derivation = private_derivation )const;
+          extended_private_key child( const fc::sha256& secret, derivation_type derivation = private_derivation )const;
 
           operator fc::ecc::private_key()const;
           fc::ecc::public_key get_public_key()const;
