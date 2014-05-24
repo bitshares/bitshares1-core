@@ -109,7 +109,8 @@ namespace bts { namespace cli {
                     }
                     catch ( const fc::canceled_exception& )
                     {
-                      return;
+                      if( command != "quit" ) std::cout << "Command aborted\n";
+                      else return;
                     }
                     catch ( const fc::exception& e )
                     {
@@ -286,18 +287,10 @@ namespace bts { namespace cli {
                       if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                       {
                         std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                        return fc::variant(false);
+                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
-                  }
-                  catch (const fc::canceled_exception&)
-                  {
-                      std::cout << "Command aborted\n";
-                      return fc::variant( false );
-                  }
+                  return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
               }
               else if ( command == "unlock" || 
                         command == "open"   || 
@@ -310,7 +303,7 @@ namespace bts { namespace cli {
                       if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                       {
                         std::cout << "Wallet \"" << wallet_name << "\" not found\n";
-                        return fc::variant(false);
+                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
                   else if( command == "wallet_open_file" )
@@ -319,18 +312,10 @@ namespace bts { namespace cli {
                       if( !fc::exists( filename ) )
                       {
                          std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                         return fc::variant(false);
+                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
-                  }
-                  catch (const fc::canceled_exception&)
-                  {
-                      std::cout << "Command aborted\n";
-                      return fc::variant( false );
-                  }
+                  return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
               }
               else if (command == "wallet_import_bitcoin")
               {
@@ -338,7 +323,7 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
                   try /* Try empty password first */
                   {
@@ -350,15 +335,7 @@ namespace bts { namespace cli {
                   {
                      ilog( "failed with empty password: ${e}", ("e",e.to_detail_string() ) );
                   }
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
-                  }
-                  catch (const fc::canceled_exception&)
-                  {
-                      std::cout << "Command aborted\n";
-                      return fc::variant( false );
-                  }
+                  return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
               else if (command == "wallet_export_to_json")
               {
@@ -366,7 +343,7 @@ namespace bts { namespace cli {
                   if( fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" already exists\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
               }
               else if (command == "wallet_create_from_json")
@@ -376,22 +353,14 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                     return fc::variant(false);
+                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
                   if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                   {
                     std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                    return fc::variant(false);
+                    FC_THROW_EXCEPTION(invalid_arg_exception, "");
                   }
-                  try
-                  {
-                      return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
-                  }
-                  catch (const fc::canceled_exception&)
-                  {
-                      std::cout << "Command aborted\n";
-                      return fc::variant( false );
-                  }
+                  return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
               else if(command == "quit")
               {
@@ -414,14 +383,12 @@ namespace bts { namespace cli {
                 }
                 catch (const rpc_wallet_open_needed_exception&)
                 {
-                    auto result = interactive_open_wallet();
-                    if( !result.as_bool() ) return result;
+                    interactive_open_wallet();
                 }
                 catch (const rpc_wallet_unlock_needed_exception&)
                 {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
-                    auto result = execute_interactive_command( "wallet_unlock", arguments );
-                    if( !result.as_bool() ) return result;
+                    execute_interactive_command( "wallet_unlock", arguments );
                 }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
@@ -437,7 +404,7 @@ namespace bts { namespace cli {
                 while( true )
                 {
                     passphrase = _self->get_line( query_string + ": ", true );
-                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "");
+                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "password entry aborted");
 
                     if( verify )
                     {
@@ -468,26 +435,18 @@ namespace bts { namespace cli {
                                                                      const std::string& query_string, bool verify = false)
             {
                 std::string passphrase;
-                fc::variant result;
-                try
-                {
-                    result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
+                auto result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
 
-                    if( command.find("wallet_create") != std::string::npos )
-                        std::cout << "Created wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
-                    else if ( command.find("wallet_open") != std::string::npos)
-                        std::cout << "Opened wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
+                if( command.find("wallet_create") != std::string::npos )
+                    std::cout << "Created wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
+                else if ( command.find("wallet_open") != std::string::npos)
+                    std::cout << "Opened wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
 
-                    if( _client->get_wallet()->is_locked() )
-                    {
-                        fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
-                        _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
-                        std::cout << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
-                    }
-                }
-                catch( const fc::canceled_exception& )
+                if( _client->get_wallet()->is_locked() )
                 {
-                    return fc::variant( false );
+                    fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
+                    _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
+                    std::cout << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
                 }
 
                 return result;
@@ -510,7 +469,13 @@ namespace bts { namespace cli {
                 if (wallet_name.empty()) wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
-                return execute_interactive_command( "wallet_create", arguments );
+                try
+                {
+                    return execute_interactive_command( "wallet_create", arguments );
+                }
+                catch( const fc::canceled_exception& )
+                {
+                }
               }
               else if (choice == "o")
               {
@@ -518,14 +483,23 @@ namespace bts { namespace cli {
                 if (wallet_name.empty()) wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
-                return execute_interactive_command( "wallet_open", arguments );
+                try
+                {
+                    return execute_interactive_command( "wallet_open", arguments );
+                }
+                catch( const fc::canceled_exception& )
+                {
+                }
               }
               else if (choice == "q")
               {
-                return fc::variant( false );
+                FC_THROW_EXCEPTION(canceled_exception, "");
+              }
+              else
+              {
+                  std::cout << "Wrong answer!\n";
               }
 
-              std::cout << "Wrong answer!\n";
               return fc::variant( false );
             }
 
@@ -591,18 +565,18 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<wallet_transaction_record>& trx_records)
             {
                 /* Print header */
-                std::cout << std::setw(  3 ) << "#";
+                std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 20 ) << "TIMESTAMP";
                 std::cout << std::setw( 37 ) << "FROM";
                 std::cout << std::setw( 37 ) << "TO";
                 std::cout << std::setw( 16 ) << " AMOUNT";
-                std::cout << std::setw(  7 ) << "FEE";
+                std::cout << std::setw(  8 ) << " FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
                 std::cout << std::setw( 40 ) << "ID";
                 std::cout << "\n----------------------------------------------------------------------------------------------";
-                std::cout <<   "---------------------------------------------------------------------------------------------\n";
+                std::cout <<   "----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right;
                 auto count = 1;
                 char timestamp_buffer[20];
@@ -691,7 +665,7 @@ namespace bts { namespace cli {
                     {
                         std::stringstream ss;
                         share_type amount = 0;
-                        if( sending ) amount -= withdraw_amount;
+                        if( sending ) amount -= deposit_amount;
                         if( receiving ) amount += deposit_amount;
                         if( amount > 0 ) ss << "+";
                         else if( amount == 0 ) ss << " ";
@@ -700,7 +674,12 @@ namespace bts { namespace cli {
                     }
 
                     /* Print fee */
-                    std::cout << std::setw( 7 ) << (withdraw_amount - deposit_amount);
+                    {
+                        std::stringstream ss;
+                        if( sending ) ss << deposit_amount - withdraw_amount;
+                        else ss << " 0";
+                        std::cout << std::setw( 8 ) << ss.str();
+                    }
 
                     /* Print delegate vote */
                     {

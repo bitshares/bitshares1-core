@@ -18,7 +18,6 @@ namespace bts { namespace blockchain {
   {
   }
 
-
   extended_public_key extended_public_key::child( uint32_t child_idx )const
   { try {
       fc::sha512::encoder enc;
@@ -37,10 +36,7 @@ namespace bts { namespace blockchain {
       child_key.pub_key    = pub_key.add(ikey_left);
 
       return child_key;
-  } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", 
-                                  ("exteneded_key",*this)("child_idx", child_idx ) ) }
-
-
+  } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", ("child_idx", child_idx ) ) }
 
   extended_private_key::extended_private_key( const fc::sha256& key, const fc::sha256& ccode )
   :priv_key(key),chain_code(ccode)
@@ -53,7 +49,9 @@ namespace bts { namespace blockchain {
     memcpy( (char*)&chain_code, ((char*)&seed) + sizeof(priv_key), sizeof(priv_key) );
   }
 
-  extended_private_key::extended_private_key(){}
+  extended_private_key::extended_private_key()
+  {
+  }
 
   extended_private_key extended_private_key::child( uint32_t child_idx, derivation_type derivation )const
   { try {
@@ -83,8 +81,7 @@ namespace bts { namespace blockchain {
     child_key.chain_code = ikey_right; 
 
     return child_key;
-  } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", 
-                                  ("exteneded_key",*this)("child_idx", child_idx ) ) }
+  } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", ("child_idx", child_idx ) ) }
 
   extended_private_key::operator fc::ecc::private_key()const
   {
@@ -95,9 +92,6 @@ namespace bts { namespace blockchain {
   {
     return fc::ecc::private_key::regenerate( priv_key ).get_public_key();
   }
-
-
-
 
    extended_address::extended_address()
    { }
@@ -145,7 +139,6 @@ namespace bts { namespace blockchain {
    {
       return addr;
    }
-
 
 } } // namespace bts
 
