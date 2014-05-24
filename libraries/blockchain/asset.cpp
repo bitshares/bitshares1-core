@@ -42,7 +42,7 @@ namespace bts { namespace blockchain {
   {
       fc::bigint bi(amount);
       bi *= fix6464;
-      bi /= BTS_PRICE_PERCISION; //>>= 64;
+      bi /= BTS_PRICE_PRECISION; //>>= 64;
       return asset( fc::uint128(bi).high_bits(), asset_id );
   }
 
@@ -83,13 +83,13 @@ namespace bts { namespace blockchain {
      std::string fraction_part;
      ss >> int_part >> dot >> fraction_part >> quote_int >> div >> base_int;
 
-     std::string fract_str( fc::uint128( BTS_PRICE_PERCISION ) );
+     std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
      for( uint32_t i =0 ; i < fraction_part.size(); ++i )
      {
         fract_str[i+1] = fraction_part[i];
      }
      
-     ratio = fc::uint128(int_part) * BTS_PRICE_PERCISION + fc::uint128(fract_str) - BTS_PRICE_PERCISION;
+     ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION + fc::uint128(fract_str) - BTS_PRICE_PRECISION;
 
      quote_asset_id = quote_int;
      base_asset_id  = base_int;
@@ -104,13 +104,13 @@ namespace bts { namespace blockchain {
      std::string fraction_part;
      ss >> int_part >> dot >> fraction_part;
 
-     std::string fract_str( fc::uint128( BTS_PRICE_PERCISION ) );
+     std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
      for( uint32_t i =0 ; i < fraction_part.size(); ++i )
      {
         fract_str[i+1] = fraction_part[i];
      }
      
-     ratio = fc::uint128(int_part) * BTS_PRICE_PERCISION + fc::uint128(fract_str) - BTS_PRICE_PERCISION;
+     ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION + fc::uint128(fract_str) - BTS_PRICE_PRECISION;
   }
 
   price::price( double a, asset_id_type q, asset_id_type b )
@@ -121,7 +121,7 @@ namespace bts { namespace blockchain {
      double fract_part = a - high_bits;
      //uint64_t low_bits = uint64_t(-1)*fract_part;
      //ratio = fc::uint128( high_bits, low_bits );
-     ratio = (fc::uint128( high_bits ) * BTS_PRICE_PERCISION) + (int64_t((fract_part) * BTS_PRICE_PERCISION));
+     ratio = (fc::uint128( high_bits ) * BTS_PRICE_PRECISION) + (int64_t((fract_part) * BTS_PRICE_PRECISION));
      base_asset_id = b;
      quote_asset_id = q;
   }
@@ -135,9 +135,9 @@ namespace bts { namespace blockchain {
   {
      std::string full_int = std::string( ratio );
      std::stringstream ss;
-     ss <<std::string( ratio / BTS_PRICE_PERCISION ); 
+     ss <<std::string( ratio / BTS_PRICE_PRECISION ); 
      ss << '.';
-     ss << std::string( (ratio % BTS_PRICE_PERCISION) + BTS_PRICE_PERCISION ).substr(1);
+     ss << std::string( (ratio % BTS_PRICE_PRECISION) + BTS_PRICE_PRECISION ).substr(1);
 
      auto number = ss.str();
      while(  number.back() == '0' ) number.pop_back();
@@ -177,10 +177,10 @@ namespace bts { namespace blockchain {
         //fc::uint128 bl(l.amount);
         //fc::uint128 bl(r.amount);
 
-       // p.ratio = (bl* BTS_PRICE_PERCISION) / br;
+       // p.ratio = (bl* BTS_PRICE_PRECISION) / br;
         fc::bigint bl = l.amount;
         fc::bigint br = r.amount;
-        fc::bigint result = (bl * fc::bigint(BTS_PRICE_PERCISION)) / br;
+        fc::bigint result = (bl * fc::bigint(BTS_PRICE_PRECISION)) / br;
 
         p.ratio = result;
         return p;
@@ -204,7 +204,7 @@ namespace bts { namespace blockchain {
             fc::bigint r( p.ratio ); // 64.64
 
             auto amnt = ba * r; //  128.128
-            amnt /= BTS_PRICE_PERCISION; // 128.64 
+            amnt /= BTS_PRICE_PRECISION; // 128.64 
             auto lg2 = amnt.log2();
             if( lg2 >= 128 )
             {
@@ -221,7 +221,7 @@ namespace bts { namespace blockchain {
         else if( a.asset_id == p.quote_asset_id )
         {
             fc::bigint amt( a.amount ); // 64.64
-            amt *= BTS_PRICE_PERCISION; //<<= 64;  // 64.128
+            amt *= BTS_PRICE_PRECISION; //<<= 64;  // 64.128
             fc::bigint pri( p.ratio ); // 64.64
 
             auto result = amt / pri;  // 64.64
