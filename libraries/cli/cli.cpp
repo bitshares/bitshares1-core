@@ -437,11 +437,6 @@ namespace bts { namespace cli {
                 std::string passphrase;
                 auto result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
 
-                if( command.find("wallet_create") != std::string::npos )
-                    std::cout << "Created wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
-                else if ( command.find("wallet_open") != std::string::npos)
-                    std::cout << "Opened wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
-
                 if( _client->get_wallet()->is_locked() )
                 {
                     fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
