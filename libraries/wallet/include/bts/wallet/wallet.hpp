@@ -212,7 +212,7 @@ namespace bts { namespace wallet {
 
          signed_transaction update_name( const std::string& name,
                                          fc::optional<fc::variant> json_data,
-                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(),
+                                         fc::optional<extended_public_key> active = fc::optional<extended_public_key>(),
                                          bool as_delegate = false,
                                          wallet_flag flag = sign_and_broadcast );
 
@@ -247,6 +247,7 @@ namespace bts { namespace wallet {
          ///@{
          address                                    get_new_address( const std::string& account_name = "", uint32_t invoice = 0 );
          public_key_type                            get_new_public_key( const std::string& account_name = "", uint32_t invoice = 0 );
+         extended_public_key                        get_new_extended_public_key( const std::string& account_name = "" );
 
          std::unordered_map<address,std::string>    get_receive_addresses()const;
          std::unordered_map<address,std::string>    get_send_addresses()const;

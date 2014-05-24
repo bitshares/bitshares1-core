@@ -48,12 +48,12 @@ namespace bts { namespace blockchain {
       void reserve_name( const std::string& name, 
                          const fc::variant& json_data, 
                          const public_key_type& master, 
-                         const public_key_type& active, 
+                         const extended_public_key& active, 
                          bool as_delegate = false );
 
       void update_name( name_id_type name_id, 
                         const fc::optional<fc::variant>& json_data, 
-                        const fc::optional<public_key_type>& active, 
+                        const fc::optional<extended_public_key>& active, 
                         bool as_delegate = false );
 
       void submit_proposal( name_id_type delegate_id,
