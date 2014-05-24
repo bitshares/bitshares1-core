@@ -230,6 +230,8 @@ namespace bts { namespace wallet {
 
 
 
+         std::string  get_symbol( asset_id_type asset_id )const;
+
          void                                         set_delegate_trust_status(const std::string& delegate_name, 
                                                                                 fc::optional<int32_t> trust_level);
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
@@ -249,7 +251,10 @@ namespace bts { namespace wallet {
          std::unordered_map<address,std::string>    get_receive_addresses()const;
          std::unordered_map<address,std::string>    get_send_addresses()const;
 
-         asset                                      get_balance( const std::string& account_name = "*", asset_id_type asset_id = 0 );
+         asset                                      get_balance( const std::string& symbol = BTS_ADDRESS_PREFIX,
+                                                                 const std::string& account_name = "*" );
+
+         std::vector<asset>                         get_all_balances( const std::string& account_name = "*" );
          ///@}
 
          std::vector<wallet_transaction_record>     get_transactions( unsigned count = 0 )const;

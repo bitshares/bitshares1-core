@@ -43,25 +43,32 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
          //TODO? fc::variant get_info()
-         bts::blockchain::block_id_type blockchain_get_blockhash(int32_t block_number) const;
-                               uint32_t blockchain_get_blockcount() const;
-                                   void wallet_open_file(const fc::path wallet_filename, const std::string& password);
-                                   void wallet_open(const std::string& wallet_name, const std::string& password);
-                                   void wallet_create(const std::string& wallet_name, const std::string& password);
-                            std::string wallet_get_name() const;
-                                   void wallet_close();
-                                   void wallet_export_to_json(const fc::path& path) const;
-                                   void wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase);
-                                   void wallet_lock();
-                                   void wallet_unlock(const fc::microseconds& timeout, const std::string& password);
-                                   void wallet_change_passphrase(const std::string& new_password);
-                  wallet_account_record wallet_create_receive_account(const std::string& account_name);
-                                   void wallet_create_sending_account(const std::string& account_name, const extended_public_key& account_pub_key);
-                        invoice_summary wallet_transfer( int64_t amount,
-                                                         const std::string& to_account_name,
-                                                         const std::string asset_symbol,
-                                                         const std::string& from_account_name,
-                                                         const std::string& invoice_memo);
+         typedef std::vector<std::pair<share_type,std::string> > balances;
+         block_id_type          blockchain_get_blockhash(int32_t block_number) const;
+         uint32_t               blockchain_get_blockcount() const;
+         void                   wallet_open_file(const fc::path wallet_filename, const std::string& password);
+         void                   wallet_open(const std::string& wallet_name, const std::string& password);
+         void                   wallet_create(const std::string& wallet_name, const std::string& password);
+         std::string            wallet_get_name() const;
+         void                   wallet_close();
+         void                   wallet_export_to_json(const fc::path& path) const;
+         void                   wallet_create_from_json(const fc::path& path, 
+                                                        const std::string& name, 
+                                                        const std::string& passphrase);
+         void                   wallet_lock();
+         void                   wallet_unlock( const fc::microseconds& timeout, 
+                                               const std::string& password);
+         void                   wallet_change_passphrase( const std::string& new_password );
+         wallet_account_record  wallet_create_receive_account(const std::string& account_name);
+         void                   wallet_create_sending_account(const std::string& account_name, 
+                                                             const extended_public_key& account_pub_key);
+         balances               wallet_get_balance( const std::string& symbol       = "*", 
+                                                    const std::string& account_name = "*" );
+         invoice_summary        wallet_transfer( int64_t amount,
+                                                 const std::string& to_account_name,
+                                                 const std::string asset_symbol,
+                                                 const std::string& from_account_name,
+                                                 const std::string& invoice_memo);
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,

@@ -16,6 +16,17 @@ namespace bts{ namespace blockchain {
       if( id != condition.asset_id ) return asset( 0, id );
       return asset( balance, id );
    }
+   /** returns 0 if asset id is not condition.asset_id */
+   asset     balance_record::get_balance(  )const
+   {
+      return asset( balance, condition.asset_id );
+   }
+   address balance_record::owner()const
+   {
+      if( condition.type == withdraw_signature_type )
+         return condition.as<withdraw_with_signature>().owner;
+      return address();
+   }
 
    share_type     chain_interface::get_delegate_registration_fee()const
    {

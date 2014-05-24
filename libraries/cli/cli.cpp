@@ -40,9 +40,27 @@ namespace bts { namespace cli {
 
             cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server );
 
+            std::string get_prompt()const
+            {
+              std::string wallet_name =  _client->get_wallet()->get_name();
+              std::string prompt = wallet_name;
+              if( prompt == "" )
+              {
+                 prompt = "(wallet closed) >>> ";
+              }
+              else
+              {
+                 if( _client->get_wallet()->is_locked() )
+                    prompt += " (locked) >>> ";
+                 else
+                    prompt += " (unlocked) >>> ";
+              }
+              return prompt;
+            }
+
             void process_commands()
             {
-              std::string line = _self->get_line();
+              std::string line = _self->get_line(get_prompt());
               while (std::cin.good())
               {
                 std::string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
@@ -99,7 +117,7 @@ namespace bts { namespace cli {
                     }
                   }
                 }
-                line = _self->get_line();
+                line = _self->get_line( get_prompt()  );
               }
             }
 
@@ -281,9 +299,12 @@ namespace bts { namespace cli {
                       return fc::variant( false );
                   }
               }
-              else if ( command == "wallet_open" || command == "wallet_open_file" || command == "wallet_unlock")
+              else if ( command == "unlock" || 
+                        command == "open"   || 
+                        command == "wallet_open" || 
+                        command == "wallet_open_file" || command == "wallet_unlock")
               {
-                  if( command == "wallet_open" )
+                  if( command == "wallet_open" || command == "open" )
                   {
                       auto wallet_name = arguments[0].as_string();
                       if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
@@ -550,6 +571,8 @@ namespace bts { namespace cli {
                     std::cout << (std::string)result.as<bts::blockchain::asset>() << "\n";
                   else if (result_type == "address")
                     std::cout << (std::string)result.as<bts::blockchain::address>() << "\n";
+                  else if (result_type == "null" || result_type == "void")
+                    std::cout << "OK\n";
                   else
                     std::cout << fc::json::to_pretty_string(result) << "\n";
                 }

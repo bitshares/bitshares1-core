@@ -620,4 +620,27 @@ namespace bts { namespace client {
       return fc::ecc::public_key(signature, digest());
     }
 
+    client::balances  client::wallet_get_balance( const std::string& symbol, const std::string& account_name )
+    { try {
+       if( symbol == "*" )
+       {
+          std::vector<asset> all_balances = get_wallet()->get_all_balances(account_name);
+          balances all_results(all_balances.size());
+          for( uint32_t i = 0; i < all_balances.size(); ++i )
+          {
+             all_results[i].first  = all_balances[i].amount;
+             all_results[i].second = get_wallet()->get_symbol( all_balances[i].asset_id ); 
+          }
+          return all_results;
+       }
+       else
+       {
+          asset balance = get_wallet()->get_balance( symbol, account_name );
+          balances results(1);
+          results.back().first = balance.amount;
+          results.back().second = get_wallet()->get_symbol( balance.asset_id );
+          return results;
+       }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
+
 } } // bts::client
