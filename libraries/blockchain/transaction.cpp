@@ -615,7 +615,9 @@ namespace bts { namespace blockchain {
          fail( BTS_INSUFFICIENT_FUNDS, fc::variant(op) );
     
       cur_record->current_share_supply += op.amount.amount;
-      add_balance( op.amount );
+      
+      // TODO: To be checked, issued asset is not for pay fee. balance better to be changed to fee_balance?
+      //add_balance( op.amount );
 
       _current_state->store_asset_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }

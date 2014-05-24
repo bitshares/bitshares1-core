@@ -1437,7 +1437,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( !prior_asset, "Asset already registered", ("prior_asset",*prior_asset) );
 
       oname_record issuer_record = my->_blockchain->get_name_record( issuer_name );
-      FC_ASSERT( prior_asset, "Issuer must be a registered name", ("name",issuer_name) );
+      FC_ASSERT( !!issuer_record, "Issuer must be a registered name", ("name",issuer_name) );
 
       required_sigs.insert( address( issuer_record->active_key ) );
 
@@ -1466,7 +1466,7 @@ namespace bts { namespace wallet {
 
       oasset_record asset_to_issue = my->_blockchain->get_asset_record( symbol );
       FC_ASSERT( asset_to_issue.valid(), "Unknown Asset '${symbol}'", ("symbol",symbol) );
-      FC_ASSERT( asset_to_issue->issuer_name_id == asset_record::market_issued_asset, "Cannot issue market-issued asset" );
+      FC_ASSERT( asset_to_issue->issuer_name_id != asset_record::market_issued_asset, "Cannot issue market-issued asset" );
 
       oname_record issuer_record = my->_blockchain->get_name_record( asset_to_issue->issuer_name_id );
       FC_ASSERT( issuer_record, "Database is corrupted, there should be a registered issuer" );

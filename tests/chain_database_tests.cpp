@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
    //   my_wallet.scan_state();
 
          ilog( "my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
 
       ilog( "." );
       share_type total_sent = 0;
@@ -239,8 +239,8 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
 
 
          ilog( "BEFORE: my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
          /** 
           * close and reopen the wallet to make sure we do not lose state.
           */
@@ -253,11 +253,11 @@ BOOST_AUTO_TEST_CASE( hundred_block_transfer_test )
          your_wallet.unlock( fc::microseconds::maximum(), "password" );
          your_wallet.is_receive_address( address() );
          ilog( "AFTER: my balance: ${my}   your balance: ${your}",
-               ("my",my_wallet.get_balance("*",0))
-               ("your",your_wallet.get_balance("*",0)) );
+               ("my",my_wallet.get_balance())
+               ("your",your_wallet.get_balance()) );
 
-         FC_ASSERT( total_sent == your_wallet.get_balance("*",0).amount, "",
-                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance("*",0).amount));
+         FC_ASSERT( total_sent == your_wallet.get_balance().amount, "",
+                    ("toatl_sent",total_sent)("balance",your_wallet.get_balance().amount));
 
          bts::blockchain::advance_time(1);
          //fc::usleep( fc::microseconds(1200000) );
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         my_wallet.open( "my_wallet", "password" );
         my_wallet.unlock( fc::seconds(10000000), "password" );
 
-        ilog( "my balance: ${my}", ("my", my_wallet.get_balance("*", 0)) );
+        ilog( "my balance: ${my}", ("my", my_wallet.get_balance()) );
 
         ilog(".");
         //share_type total_sent = 0;
@@ -479,13 +479,14 @@ BOOST_AUTO_TEST_CASE( asset_record_test )
         my_wallet.open( "my_wallet", "password" );
         my_wallet.unlock( fc::seconds(10000000), "password" );
 
-        ilog( "my balance: ${my}", ("my", my_wallet.get_balance("*", 0)) );
+        ilog( "my balance: ${my}", ("my", my_wallet.get_balance()) );
 
         ilog(".");
         //share_type total_sent = 0;
 
         std::string name_prefix = "test-name";
         uint64_t total_supply = 100000000;
+        uint64_t current_share_supply = 5000000;
         for ( uint32_t i = 0; i < 5; ++i )
         {
             bool failed = false;
@@ -504,8 +505,7 @@ BOOST_AUTO_TEST_CASE( asset_record_test )
 
 
             // reserve names or register delegates depending on i.
-            bool is_delegate = (i % 2 == 0);
-            auto trx = my_wallet.reserve_name( name_prefix + fc::to_string(i), fc::to_string(i), is_delegate );
+            auto trx = my_wallet.reserve_name( name_prefix + fc::to_string(i), fc::to_string(i), false );
             ilog( "trx: ${trx}", ("trx", trx) );
             blockchain->store_pending_transaction( trx );
 
@@ -535,15 +535,21 @@ BOOST_AUTO_TEST_CASE( asset_record_test )
                 }
                 BOOST_REQUIRE(failed);  // asset should already created.
 
-                uint64_t current_share_supply = 5000000;
+                
                 auto asset_trx = my_wallet.issue_asset(current_share_supply, "AB" + fc::to_string(i-2), "*");
                 blockchain->store_pending_transaction( asset_trx );
             }
 
             if ( i > 2 )
             {
-                FC_ASSERT(my_wallet.get_balance("AB" + fc::to_string(i-3)) > 0, "5000000 should have already be issued to me");
+                auto asset_record = blockchain->get_asset_record("AB" + fc::to_string(i-3));
+                FC_ASSERT(!! asset_record);
+                FC_ASSERT(asset_record->current_share_supply >= current_share_supply, "current share supply should have already be issued", ("asset_record", asset_record));
+                // TODO: how issued asset become balance records?
+                // FC_ASSERT(my_wallet.get_balance("AB" + fc::to_string(i-3)) > 0, "5000000 should have already be issued to me");
             }
+
+            // TODO: test update asset operation
 
             auto next_block_time = my_wallet.next_block_production_time();
             ilog( "next block production time: ${t}", ("t", next_block_time) );
@@ -559,6 +565,7 @@ BOOST_AUTO_TEST_CASE( asset_record_test )
             blockchain->push_block( next_block );
 
             bts::blockchain::advance_time( 1 );
+            my_wallet.scan_state();
         }
 
         blockchain->close();
