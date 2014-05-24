@@ -215,6 +215,10 @@ void p2p_transaction_validator::validate_p2p_output(const claim_dns_output& outp
     {
         ilog("Have not seen a dns claim input on this tx");
         FC_ASSERT(new_or_expired && available, "Key already exists (and is younger than 1 block-year)");
+        //TODO this new auction must reference a precommit!
+        // one precommit in tx input, and dns_claim output must hash to precommit.secret
+	//                               ^^ dns_commit_secret(claim)
+        // "value" field contains a nonce
         return;
     }
 
