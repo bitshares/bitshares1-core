@@ -6,10 +6,11 @@
 #pragma once
 
 #include <bts/blockchain/address.hpp>
-#include <bts/client/client.hpp>
 #include <fc/variant.hpp>
 
 namespace bts { namespace wallet {
+
+using namespace bts::blockchain;
 
 struct pretty_transaction
 {

@@ -3,6 +3,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/db/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/vendor/miniupnp" )
 
 file(GLOB HEADERS "include/bts/net/*.hpp")

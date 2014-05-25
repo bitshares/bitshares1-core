@@ -1,8 +1,9 @@
 #pragma once
-#include <bts/blockchain/chain_database.hpp>
-#include <bts/wallet/wallet_db.hpp>
-#include <bts/blockchain/config.hpp>
 
+#include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/wallet/pretty.hpp>
+#include <bts/wallet/wallet_db.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
@@ -258,7 +259,7 @@ namespace bts { namespace wallet {
          std::vector<asset>                         get_all_balances( const std::string& account_name = "*" );
          ///@}
 
-         std::vector<wallet_transaction_record>     get_transactions( unsigned count = 0 )const;
+         std::vector<wallet_transaction_record>     get_transaction_history( unsigned count = 0 )const;
 
          fc::optional<address>                      get_owning_address( const balance_id_type& id )const;
          fc::optional<wallet_account_record>        get_account_record( const address& addr)const;
