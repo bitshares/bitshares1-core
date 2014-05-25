@@ -8,6 +8,8 @@
 
 #include <fc/log/logger.hpp>
 #include <fc/io/raw_variant.hpp>
+#include <iostream>
+#include <fc/io/json.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -309,8 +311,14 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
       if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
+      std::cerr << fc::json::to_pretty_string(op) <<"\n";
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
-      if( !arec ) fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
+      std::cerr << "arec: " << fc::json::to_pretty_string(arec) <<"\n";
+      if( !arec.valid() )
+      {
+         fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
+         FC_ASSERT( !"I shouldn't get here" );
+      }
 
       switch( (withdraw_condition_types)arec->condition.type )
       {
