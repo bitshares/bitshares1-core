@@ -394,7 +394,6 @@ namespace bts { namespace client {
     }
 
     //TODO Skipping _RPC calls for now, classify and implement later
-    //network_send_transaction -> _client->broadcast_transaction(transaction);
 
     invoice_summary client::wallet_transfer(int64_t amount, 
                                             const std::string& to_account_name,

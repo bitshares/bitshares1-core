@@ -77,7 +77,7 @@ namespace bts { namespace rpc {
              (network_get_block_propagation_data)\
              (network_get_transaction_propagation_data)\
              (_list_json_commands)\
-             (network_send_transaction)\
+             (network_broadcast_transaction)\
              (network_set_advanced_node_parameters)
 
   namespace detail
@@ -900,7 +900,7 @@ Wallets exist in the wallet data directory.
        return fc::variant();
     }
 
-    static rpc_server::method_data network_send_transaction_metadata{"network_send_transaction", nullptr,
+    static rpc_server::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
             /* params:          name                  type                   classification                   default_value */
@@ -908,7 +908,7 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network,
           R"(
      )" };
-    fc::variant rpc_server_impl::network_send_transaction(const fc::variants& params)
+    fc::variant rpc_server_impl::network_broadcast_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
