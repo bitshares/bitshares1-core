@@ -1116,7 +1116,6 @@ Wallets exist in the wallet data directory.
      /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
      R"(
      )" };
-
     fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
     {
       unsigned count = params[0].as<unsigned>();

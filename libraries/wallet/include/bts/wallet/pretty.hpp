@@ -47,8 +47,20 @@ struct pretty_deposit_op
     std::pair<name_id_type, std::string>        vote;
 };
 
+struct pretty_reserve_name_op
+{
+    pretty_reserve_name_op():op_name("reserve_name"){}
+    std::string                                 op_name;
+    std::string                                 name;
+    fc::variant                                 json_data;
+    public_key_type                             owner_key;
+    extended_public_key                         active_key;
+    bool                                        is_delegate;
+};
+
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::pretty_transaction, (number)(block_num)(tx_num)(timestamp)(fees)(tx_id) (operations)(totals_in)(totals_out)(fees));
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
+FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));
