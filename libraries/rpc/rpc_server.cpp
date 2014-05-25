@@ -1205,9 +1205,22 @@ Wallets exist in the wallet data directory.
                         pretty_tx.add_operation(pretty_op);
                         break;
                     }
+                    case (reserve_name_op_type):
+                    {
+                        auto pretty_op = pretty_reserve_name_op();
+                        auto deposit_op = op.as<reserve_name_operation>();
+                        pretty_op.name = deposit_op.name;
+                        pretty_op.json_data = deposit_op.json_data;
+                        pretty_op.owner_key = deposit_op.owner_key;
+                        pretty_op.active_key = deposit_op.active_key;
+                        pretty_op.is_delegate = deposit_op.is_delegate;
+                        
+                        pretty_tx.add_operation(pretty_op);
+                        break;
+                    }
                     default:
                     {
-                        FC_ASSERT(false, "Unknown op type: ${type}", ("type", op.type));
+                        FC_ASSERT(false, "Unimplemented op type display: ${type}", ("type", op.type));
                         break;
                     }
                 } //switch op_type
