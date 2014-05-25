@@ -77,7 +77,7 @@ namespace bts { namespace client {
             if( next_block_time < now ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
-               fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
+               fc::usleep( fc::seconds(2) );
                continue;
             }
             else
@@ -103,7 +103,7 @@ namespace bts { namespace client {
                   elog( "unable to produce block because wallet is locked" );
                }
             }
-            fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2) );
+            fc::usleep( fc::seconds(1) );
          }
        } // delegate_loop
 
