@@ -394,6 +394,7 @@ namespace bts { namespace net {
       void sync_from(const item_id&);
       bool is_connected() const;
       void set_advanced_node_parameters(const fc::variant_object& params);
+      fc::variant_object get_advanced_node_parameters();
       message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
       message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
       node_id_t get_node_id() const;
@@ -2042,6 +2043,15 @@ namespace bts { namespace net {
         _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
     }
 
+    fc::variant_object node_impl::get_advanced_node_parameters()
+    {
+      fc::mutable_variant_object result;
+      result["peer_connection_retry_timeout"] = _peer_connection_retry_timeout;
+      result["desired_number_of_connections"] = _desired_number_of_connections;
+      result["maximum_number_of_connections"] = _maximum_number_of_connections;
+      return result;
+    }
+
     message_propagation_data node_impl::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
       return _message_cache.get_message_propagation_data(transaction_id);
@@ -2150,6 +2160,11 @@ namespace bts { namespace net {
   void node::set_advanced_node_parameters(const fc::variant_object& params)
   {
     my->set_advanced_node_parameters(params);
+  }
+
+  fc::variant_object node::get_advanced_node_parameters()
+  {
+    return my->get_advanced_node_parameters();
   }
 
   message_propagation_data node::get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)

@@ -800,6 +800,11 @@ namespace bts { namespace client {
       my->_p2p_node->set_advanced_node_parameters(params);
     }
 
+    fc::variant_object client::network_get_advanced_node_parameters()
+    {
+      return my->_p2p_node->get_advanced_node_parameters();
+    }
+
     void client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
       if (my->_p2p_node)
