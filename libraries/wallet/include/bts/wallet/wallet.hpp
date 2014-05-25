@@ -1,8 +1,9 @@
 #pragma once
-#include <bts/blockchain/chain_database.hpp>
-#include <bts/wallet/wallet_db.hpp>
-#include <bts/blockchain/config.hpp>
 
+#include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/wallet/pretty.hpp>
+#include <bts/wallet/wallet_db.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
