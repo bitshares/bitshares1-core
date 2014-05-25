@@ -1151,14 +1151,13 @@ namespace bts { namespace net {
     void node_impl::on_fetch_blockchain_item_ids_message(peer_connection* originating_peer, 
                                                          const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received)
     {
+      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
+           ("last_item_seen", fetch_blockchain_item_ids_message_received.last_item_seen.item_hash)
+           ("peer_endpoint", originating_peer->get_remote_endpoint()));
       blockchain_item_ids_inventory_message reply_message;
       reply_message.item_hashes_available = _delegate->get_item_ids(fetch_blockchain_item_ids_message_received.last_item_seen,
                                                                     reply_message.total_remaining_item_count);
       reply_message.item_type = fetch_blockchain_item_ids_message_received.last_item_seen.item_type;
-
-      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
-           ("last_item_seen", fetch_blockchain_item_ids_message_received.last_item_seen.item_hash)
-           ("peer_endpoint", originating_peer->get_remote_endpoint()));
 
       // if our client doesn't have any items after the item the peer requested
       if (reply_message.item_hashes_available.empty())

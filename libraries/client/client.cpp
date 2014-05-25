@@ -188,6 +188,8 @@ namespace bts { namespace client {
                                                                     uint32_t limit /* = 2000 */)
        {
          FC_ASSERT(from_id.item_type == bts::client::block_message_type);
+         ilog("head_block is ${head_block_num}", ("head_block_num", _chain_db->get_head_block_num()));
+
          uint32_t last_seen_block_num;
          try
          {
