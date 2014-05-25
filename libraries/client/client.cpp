@@ -70,11 +70,11 @@ namespace bts { namespace client {
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = fc::time_point::now();
+            auto now = fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
-            ilog( "next block time: ${b}  interval: ${i} seconds",
-                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
-            if( next_block_time < now ||
+            ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+            if( next_block_time < (now + -1) ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
                fc::usleep( fc::seconds(2) );
