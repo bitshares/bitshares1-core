@@ -125,6 +125,11 @@ namespace bts { namespace rpc {
       return _json_connection->call<balances>("wallet_get_balance", asset_symbol, account_name);
     }
 
+    std::vector<wallet_transaction_record> rpc_client_impl::wallet_get_transaction_history(unsigned count)
+    {
+      return _json_connection->call<std::vector<wallet_transaction_record>>("wallet_get_transaction_history", fc::variant(count));
+    }
+
     full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
     {
       return _json_connection->call<full_block>("blockchain_get_block", fc::variant(block_id));

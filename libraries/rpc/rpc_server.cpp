@@ -605,32 +605,32 @@ Result:
     fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
     {
        fc::mutable_variant_object info;
+       info["chain_id"]                     = _client->get_chain()->chain_id();
+       info["symbol"]                       = BTS_ADDRESS_PREFIX;
+       info["interval_seconds"]             = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blocks"]                       = _client->get_chain()->get_head_block_num();
+       info["random_seed"]                  = _client->get_chain()->get_current_random_seed();
+       asset_record share_record            = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+       info["current_share_supply"]         = share_record.current_share_supply;
+       info["shares_per_bip"]               = double(share_record.current_share_supply) / BTS_BLOCKCHAIN_BIP;
        if( _client->get_wallet()->is_open() )
        {
-          info["balance"]          = _client->get_wallet()->get_balance().amount;
-          info["unlocked_until"]   = _client->get_wallet()->unlocked_until();
+          info["balance"]                   = _client->get_wallet()->get_balance().amount;
+          info["unlocked_until"]            = _client->get_wallet()->unlocked_until();
        }
        else
        {
-          info["balance"]          = 0;
-          info["unlocked_until"]   = fc::time_point_sec();
+          info["balance"]                   = 0;
+          info["unlocked_until"]            = fc::time_point_sec();
        }
-       info["version"]          = BTS_BLOCKCHAIN_VERSION;
-       info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
-       info["walletversion"]    = BTS_WALLET_VERSION;
-       info["chain_id"]         = _client->get_chain()->chain_id();
-       info["symbol"]           = BTS_ADDRESS_PREFIX;
-       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blocks"]           = _client->get_chain()->get_head_block_num();
-       asset_record share_record     = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       info["current_share_supply"]  = share_record.current_share_supply;
-       info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
-       info["random_seed"]      = _client->get_chain()->get_current_random_seed();
-       info["connections"]      = _client->network_get_connection_count();
-       info["rpc_port"]         = _config.rpc_endpoint.port();
-       info["_node_id"]         = _client->get_node_id();
-       info["_fc_revision"]     = fc::git_revision_sha;
-       info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
+       info["connections"]                  = _client->network_get_connection_count();
+       info["rpc_port"]                     = _config.rpc_endpoint.port();
+       info["blockchain_version"]           = BTS_BLOCKCHAIN_VERSION;
+       info["wallet_version"]               = BTS_WALLET_VERSION;
+       info["protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+       info["_node_id"]                     = _client->get_node_id();
+       info["_bitshares_toolkit_revision"]  = bts::utilities::git_revision_sha;
+       info["_fc_revision"]                 = fc::git_revision_sha;
        return fc::variant( std::move(info) );
     }
 

@@ -33,7 +33,7 @@ namespace bts { namespace blockchain {
          void                               set_active_delegates( const std::vector<name_id_type>& id );
          bool                               is_active_delegate( name_id_type ) const;
 
-         virtual digest_type                get_current_random_seed()const                                  = 0;
+         virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
          /** return the current fee rate in millishares */
          virtual int64_t                    get_fee_rate()const                                             = 0;
