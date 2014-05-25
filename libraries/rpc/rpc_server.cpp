@@ -609,7 +609,7 @@ Result:
        fc::mutable_variant_object info;
        if( _client->get_wallet()->is_open() )
        {
-          info["balance"]          = _client->get_wallet()->get_balance("*",0).amount;
+          info["balance"]          = _client->get_wallet()->get_balance().amount;
           info["unlocked_until"]   = _client->get_wallet()->unlocked_until();
        }
        else
@@ -624,7 +624,7 @@ Result:
        info["symbol"]           = BTS_ADDRESS_PREFIX;
        info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["blocks"]           = _client->get_chain()->get_head_block_num();
-       asset_record share_record     = *_client->get_chain()->get_asset_record( asset_id_type(0) );
+       asset_record share_record     = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
        info["current_share_supply"]  = share_record.current_share_supply;
        info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
        info["random_seed"]      = _client->get_chain()->get_current_random_seed();
