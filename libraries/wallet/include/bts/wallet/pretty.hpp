@@ -17,7 +17,7 @@ struct pretty_transaction
     uint32_t                                    block_num;
     uint32_t                                    tx_num;
     transaction_id_type                         tx_id;
-    time_t                                      timestamp;
+    uint32_t                                    timestamp;
     std::map<std::string, share_type>           totals_in;
     std::map<std::string, share_type>           totals_out;
     std::map<std::string, share_type>           fees;
