@@ -12,13 +12,13 @@ namespace bts { namespace blockchain {
       reserve_name_operation( const std::string& name, 
                               const fc::variant& json_data, 
                               const public_key_type& owner, 
-                              const extended_public_key& active, 
+                              const public_key_type& active, 
                               bool  as_delegate = false );
       
       std::string         name;
       fc::variant         json_data;
       public_key_type     owner_key;
-      extended_public_key     active_key;
+      public_key_type     active_key;
       bool                is_delegate;
    };
 
@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
       /** this should be 0 for creating a new name */
       name_id_type                      name_id;
       fc::optional<fc::variant>         json_data;
-      fc::optional<extended_public_key> active_key;
+      fc::optional<public_key_type>     active_key;
       bool                              is_delegate;
    };
 

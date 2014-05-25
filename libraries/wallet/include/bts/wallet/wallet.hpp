@@ -213,7 +213,7 @@ namespace bts { namespace wallet {
 
          signed_transaction update_name( const std::string& name,
                                          fc::optional<fc::variant> json_data,
-                                         fc::optional<extended_public_key> active = fc::optional<extended_public_key>(),
+                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(),
                                          bool as_delegate = false,
                                          wallet_flag flag = sign_and_broadcast );
 

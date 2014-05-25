@@ -1545,7 +1545,7 @@ namespace bts { namespace wallet {
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,
-                                           fc::optional<extended_public_key> active,
+                                           fc::optional<public_key_type> active,
                                            bool as_delegate,
                                            wallet_flag flag )
    { try {
@@ -1612,7 +1612,7 @@ namespace bts { namespace wallet {
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
 
       auto owner_key  = get_new_public_key();
-      auto active_key = get_new_extended_public_key();
+      auto active_key = get_new_public_key();
       trx.reserve_name( name, json_data, owner_key, active_key, as_delegate );
 
       my->sign_transaction( trx, required_sigs );

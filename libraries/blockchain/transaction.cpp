@@ -710,13 +710,13 @@ namespace bts { namespace blockchain {
    void transaction::reserve_name( const std::string& name, 
                                    const fc::variant& json_data, 
                                    const public_key_type& master, 
-                                   const extended_public_key& active, bool as_delegate  )
+                                   const public_key_type& active, bool as_delegate  )
    {
       operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
    }
    void transaction::update_name( name_id_type name_id, 
                                   const fc::optional<fc::variant>& json_data, 
-                                  const fc::optional<extended_public_key>& active, bool as_delegate   )
+                                  const fc::optional<public_key_type>& active, bool as_delegate   )
    {
       update_name_operation op;
       op.name_id = name_id;
