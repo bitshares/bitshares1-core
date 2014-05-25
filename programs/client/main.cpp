@@ -161,6 +161,10 @@ int main( int argc, char** argv )
             c->connect_to_peer( peer );
          }
       }
+      else
+      {
+            c->connect_to_peer( "107.170.30.182:5678" );
+      }
 
       if( !option_variables.count("daemon") )
       {

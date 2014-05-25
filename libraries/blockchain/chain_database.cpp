@@ -385,7 +385,9 @@ namespace bts { namespace blockchain {
             }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
 
-      void chain_database_impl::pay_delegate(  fc::time_point_sec time_slot, share_type amount, const pending_chain_state_ptr& pending_state)
+      void chain_database_impl::pay_delegate(  fc::time_point_sec time_slot, 
+                                               share_type amount, 
+                                               const pending_chain_state_ptr& pending_state )
       { try {
             auto delegate_record = pending_state->get_name_record( self->get_signing_delegate_id( time_slot ) );
             FC_ASSERT( !!delegate_record );
@@ -412,7 +414,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( block_data.timestamp > _head_block_header.timestamp, "",
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
             fc::time_point_sec now = bts::blockchain::now();
-            FC_ASSERT( block_data.timestamp <=  now,
+            FC_ASSERT( block_data.timestamp <=  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2),
                        "${t} < ${now}", ("t",block_data.timestamp)("now",now));
 
             size_t block_size = block_data.block_size();
@@ -846,7 +848,7 @@ namespace bts { namespace blockchain {
    { try {
       auto delegate_record = get_name_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
-      return delegate_record->active_key;
+      return delegate_record->active_key.get_pub_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec", sec) ) }
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
@@ -1133,7 +1135,9 @@ namespace bts { namespace blockchain {
          block_size += trx_size;
          // make modifications to tempoary state...
          pending_chain_state_ptr pending_trx_state = std::make_shared<pending_chain_state>(pending_state);
-         transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pending_trx_state,my->_chain_id);
+         transaction_evaluation_state_ptr trx_eval_state = 
+             std::make_shared<transaction_evaluation_state>(pending_trx_state,my->_chain_id);
+
          try {
             trx_eval_state->evaluate( item->trx );
             // TODO: what about fees in other currencies?
@@ -1154,6 +1158,8 @@ namespace bts { namespace blockchain {
       next_block.timestamp          = timestamp;
       next_block.fee_rate           = next_block.next_fee( my->_head_block_header.fee_rate, block_size );
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
+
+      // TODO: adjust fees vs dividends here...  right now 100% of fees are paid to delegates
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
 
@@ -1229,7 +1235,7 @@ namespace bts { namespace blockchain {
          rec.id                = name_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.active_key        = name.owner;
+         rec.active_key        = extended_public_key( name.owner, fc::sha256() );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )

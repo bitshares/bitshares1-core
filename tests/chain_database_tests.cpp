@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE( name_registration_test )
         for ( uint32_t i = 0; i < 10; ++i )
         {
             auto trx = my_wallet.update_name( name_prefix + fc::to_string(i),
-                fc::variant(json_prefix + fc::to_string(i)), fc::optional<public_key_type>(), 
+                fc::variant(json_prefix + fc::to_string(i)), fc::optional<extended_public_key>(), 
                 /*change to delegate*/true);
             blockchain->store_pending_transaction( trx );
         }

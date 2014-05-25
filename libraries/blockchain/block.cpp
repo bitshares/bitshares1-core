@@ -19,7 +19,7 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   bool signed_block_header::validate_signee( const public_key_type& expected_signee )const
+   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
    { 
       return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
    }
@@ -59,6 +59,7 @@ namespace bts { namespace blockchain {
      uint64_t next_pay = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_pay + (block_fees)) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
      return next_pay;
    }
+
    full_block::operator digest_block()const
    {
       digest_block db( (signed_block_header&)*this );

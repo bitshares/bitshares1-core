@@ -32,21 +32,22 @@ namespace bts { namespace db {
         //must be original type for the database
         old_record_type = record_type;
         int last_char = old_record_type.length() - 1;
+        //strip version number from current_record_name and append 0 to set old_record_type (e.g. mytype0)
+        while (last_char >= 0 && isdigit(old_record_type[last_char]))
+        {
+          --last_char;
+        }
+
         //upgradeable record types should always end with version number
-        if (!isdigit(old_record_type[last_char]))
+        if( 'v' != old_record_type[last_char] )
         {
           ilog("Database ${db} is not upgradeable",("db",dir.to_native_ansi_path()));
           return;
         }
-        //strip version number from current_record_name and append 0 to set old_record_type (e.g. mytype0)
-        while (isdigit(old_record_type[last_char]))
-        {
-          --last_char;
-        }
+
         ++last_char;
         old_record_type[last_char] = '0';
         old_record_type.resize(last_char+1);
-
       }
       else //read record type from file
       {
