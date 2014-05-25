@@ -381,13 +381,14 @@ namespace bts { namespace client {
       get_wallet()->change_passphrase(new_password);
     }
 
-    wallet_account_record client::wallet_create_receive_account(const std::string& account_name)
+    extended_address client::wallet_create_receive_account(const std::string& account_name)
     {
-      return get_wallet()->create_receive_account(account_name);
+      auto receive_account_record = get_wallet()->create_receive_account(account_name);
+      return extended_address(receive_account_record.extended_key);
     }
 
     void client::wallet_create_sending_account(const std::string& account_name,
-                                               const extended_public_key& account_public_key)
+                                               const extended_address& account_public_key)
     {
       return get_wallet()->create_sending_account(account_name, account_public_key);
     }
@@ -397,7 +398,7 @@ namespace bts { namespace client {
 
     invoice_summary client::wallet_transfer(int64_t amount, 
                                             const std::string& to_account_name,
-                                            const std::string asset_symbol,
+                                            const std::string& asset_symbol,
                                             const std::string& from_account_name,
                                             const std::string& invoice_memo)
     {
@@ -465,8 +466,15 @@ namespace bts { namespace client {
     }
 
     //FIX RPC side and docs
-    asset client::wallet_get_balance(const std::string& account_name, asset_id_type asset_id) const
+    asset client::wallet_get_balance(const std::string& account_name, const std::string& asset_symbol) const
     {
+      asset_id_type asset_id = 0;
+      if (!asset_symbol.empty())
+      { 
+        fc::optional<asset_record> asset_record = get_chain()->get_asset_record(asset_symbol);
+        //FIX FC_ASSERT(asset_record.valid(),"Unrecognized asset type ${asset}",("asset")(asset_symbol));
+        asset_id = asset_record->id;
+      }
       return get_wallet()->get_balance(account_name, asset_id);
     }
 
@@ -504,9 +512,12 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
     }
 
-    /*
     transaction_id_type client::wallet_update_name(const std::string& name, const fc::variant& data)
     {
+      FC_ASSERT("Not implemented")
+      return transaction_id_type();
+    }
+    /*
     try {
     auto trx = get_wallet()->update_name(name, data);
     broadcast_transaction(trx);
@@ -527,7 +538,7 @@ namespace bts { namespace client {
     {
       try {
         auto name_record = get_chain()->get_name_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name));
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
 
         get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
@@ -539,7 +550,7 @@ namespace bts { namespace client {
     {
       try {
         auto name_record = get_chain()->get_name_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name));
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
 
         return get_wallet()->get_delegate_trust_status(delegate_name);
@@ -608,7 +619,7 @@ namespace bts { namespace client {
       get_wallet()->import_bitcoin_wallet(filename,passphrase);
     }
 
-    void client::wallet_import_private_key(std::string wif_key_to_import, 
+    void client::wallet_import_private_key(const std::string& wif_key_to_import, 
                                            const std::string& account_name,
                                            bool wallet_rescan_blockchain)
     {

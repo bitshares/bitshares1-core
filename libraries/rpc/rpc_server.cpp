@@ -912,8 +912,8 @@ Wallets exist in the wallet data directory.
      )"};
     fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
     {
-       auto receive_account_record = _client->wallet_create_receive_account( params[0].as_string() );
-       return fc::variant(extended_address(receive_account_record.extended_key));
+       extended_address receive_address = _client->wallet_create_receive_account( params[0].as_string() );
+       return fc::variant(receive_address);
     }
 
     static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
@@ -927,7 +927,7 @@ Wallets exist in the wallet data directory.
      )"};
     fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
     {
-       _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
+       _client->wallet_create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
        return fc::variant();
     }
 
@@ -951,7 +951,7 @@ Wallets exist in the wallet data directory.
             /* returns: */    "invoice_summary",
             /* params:          name                    type        classification                   default value */
                               {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
-                               {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"to_account_name",      "string",   rpc_server::required_positional, fc::ovariant()},
                                {"asset_symbol",         "string",   rpc_server::optional_named,      fc::variant(BTS_ADDRESS_PREFIX)},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")}},
@@ -1112,9 +1112,10 @@ Wallets exist in the wallet data directory.
             /* description */ "Returns the wallet's current balance",
             /* returns: */    "asset",
             /* params:          name                  type      classification                   default_value */
-                              {{"account_name",       "string", rpc_server::optional_positional, fc::ovariant(fc::variant("*"))},
-                               {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)},
-                               {"asset",              "int",    rpc_server::optional_positional, fc::variant(0)}},
+                              { {"account_name",       "string", rpc_server::optional_positional, fc::variant("*")},
+                                {"asset_symbol",        "string", rpc_server::optional_positional, fc::variant("")},
+                                {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)}  
+                              },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
 TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
@@ -1153,8 +1154,8 @@ As a json rpc call
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
       std::string account_name = params[0].as_string();;
-      bts::blockchain::asset_id_type asset_id = params[2].as<asset_id_type>();
-      return fc::variant( _client->wallet_get_balance( account_name, asset_id ) );
+      std::string asset_symbol = params[1].as_string();
+      return fc::variant( _client->wallet_get_balance( account_name, asset_symbol ) );
     }
 
     static rpc_server::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
