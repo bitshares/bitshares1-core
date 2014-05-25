@@ -398,6 +398,10 @@ namespace bts { namespace wallet {
             {
                 switch( (withdraw_condition_types)account.condition.type )
                 {
+                   case withdraw_null_type:
+                   {
+                      break;
+                   }
                    case withdraw_signature_type:
                    {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
@@ -452,8 +456,17 @@ namespace bts { namespace wallet {
                       }
                       break;
                    }
-                   case withdraw_null_type:
-                      break;
+                   case withdraw_by_name_type:
+                   {
+                       // TODO
+                       FC_ASSERT( false, "NOT IMPLEMENTED" );
+                       break;
+                   }
+                   default:
+                   {
+                       FC_ASSERT( false, "Unknown condition type ${t}", ("t", account.condition.type) );
+                       break;
+                   }
                 }
             }
 
@@ -507,8 +520,14 @@ namespace bts { namespace wallet {
             {
                switch( (withdraw_condition_types) op.condition.type )
                {
+                  case withdraw_null_type:
+                  {
+                     break;
+                  }
                   case withdraw_signature_type:
+                  {
                      return self->is_receive_address( op.condition.as<withdraw_with_signature>().owner );
+                  }
                   case withdraw_multi_sig_type:
                   {
                      for( auto owner : op.condition.as<withdraw_with_multi_sig>().owners )
@@ -529,8 +548,16 @@ namespace bts { namespace wallet {
                      if( is_receive_address( cond.optionee ) ) return true;
                      break;
                   }
-                  case withdraw_null_type:
+                  case withdraw_by_name_type:
+                  {
+                     // TODO
+                     FC_ASSERT( false, "NOT IMPLEMENTED" );
                      break;
+                  }
+                  default:
+                  {
+                     FC_ASSERT( false, "Unknown condition type ${t}", ("t", op.condition.type) );
+                  }
                }
                return false;
             }
