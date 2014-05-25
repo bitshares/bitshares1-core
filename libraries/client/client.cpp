@@ -70,14 +70,14 @@ namespace bts { namespace client {
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = fc::time_point::now();
+            auto now = fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
-            ilog( "next block time: ${b}  interval: ${i} seconds",
-                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
-            if( next_block_time < now ||
+            ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+            if( next_block_time < (now + -1) ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
-               fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
+               fc::usleep( fc::seconds(2) );
                continue;
             }
             else
@@ -103,7 +103,7 @@ namespace bts { namespace client {
                   elog( "unable to produce block because wallet is locked" );
                }
             }
-            fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2) );
+            fc::usleep( fc::seconds(1) );
          }
        } // delegate_loop
 
@@ -381,23 +381,24 @@ namespace bts { namespace client {
       get_wallet()->change_passphrase(new_password);
     }
 
-    wallet_account_record client::wallet_create_receive_account(const std::string& account_name)
+    extended_address client::wallet_create_receive_account(const std::string& account_name)
     {
-      return get_wallet()->create_receive_account(account_name);
+      auto receive_account_record = get_wallet()->create_receive_account(account_name);
+      return extended_address(receive_account_record.extended_key);
     }
 
     void client::wallet_create_sending_account(const std::string& account_name,
-                                               const extended_public_key& account_public_key)
+                                               const extended_address& account_public_key)
     {
       return get_wallet()->create_sending_account(account_name, account_public_key);
     }
 
     //TODO Skipping _RPC calls for now, classify and implement later
-    //_send_transaction -> _client->broadcast_transaction(transaction);
+    //network_send_transaction -> _client->broadcast_transaction(transaction);
 
     invoice_summary client::wallet_transfer(int64_t amount, 
                                             const std::string& to_account_name,
-                                            const std::string asset_symbol,
+                                            const std::string& asset_symbol,
                                             const std::string& from_account_name,
                                             const std::string& invoice_memo)
     {
@@ -432,37 +433,226 @@ namespace bts { namespace client {
       return issue_asset_trx;
     }
 
-
-
-    //JSON-RPC Method Implementations END
-
-    void client::run_delegate( )
+    std::map<std::string, extended_address> client::wallet_list_sending_accounts(uint32_t start, uint32_t count) const
     {
-       my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );
+      return get_wallet()->list_sending_accounts(start, count);
     }
 
-    bool client::is_connected() const
+    std::vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
     {
-        return my->_p2p_node->is_connected();
+      auto names = get_wallet()->names(account_name);
+      std::vector<name_record> name_records;
+      name_records.reserve(names.size());
+      for (auto name : names)
+        name_records.push_back(name_record(name.second));
+      return name_records;
     }
 
-    uint32_t client::get_connection_count() const
+    void client::wallet_rename_account(const std::string& current_account_name,
+                                       const std::string& new_account_name)
     {
-       return my->_p2p_node->get_connection_count();
+      get_wallet()->rename_account(current_account_name, new_account_name);
     }
 
-    fc::variants client::get_peer_info() const
+    
+    std::map<std::string, extended_address> client::wallet_list_receive_accounts(uint32_t start, uint32_t count) const
+    {
+      return get_wallet()->list_receive_accounts(start, count);
+    }
+
+    wallet_account_record client::wallet_get_account(const std::string& account_name) const
+    {
+      return get_wallet()->get_account(account_name);
+    }
+
+    std::vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
+    {
+      return get_wallet()->get_transaction_history(count);
+    }
+
+    oname_record client::blockchain_get_name_record(const std::string& name) const
+    {
+      return get_chain()->get_name_record(name);
+    }
+
+    oname_record client::blockchain_get_name_record_by_id(name_id_type name_id) const
+    {
+      return get_chain()->get_name_record(name_id);
+    }
+
+    oasset_record client::blockchain_get_asset_record(const std::string& symbol) const
+    {
+      return get_chain()->get_asset_record(symbol);
+    }
+
+    oasset_record client::blockchain_get_asset_record_by_id(asset_id_type asset_id) const
+    {
+      return get_chain()->get_asset_record(asset_id);
+    }
+
+    transaction_id_type client::wallet_reserve_name(const std::string& name, const fc::variant& data)
+    {
+      try {
+        auto trx = get_wallet()->reserve_name(name, data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    transaction_id_type client::wallet_update_name(const std::string& name, const fc::variant& data)
+    {
+      FC_ASSERT("Not implemented")
+      return transaction_id_type();
+    }
+    /*
+    try {
+    auto trx = get_wallet()->update_name(name, data);
+    broadcast_transaction(trx);
+    return trx.id();
+    } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+    */
+    transaction_id_type client::wallet_register_delegate(const std::string& name, const fc::variant& data)
+    {
+      try {
+        auto trx = get_wallet()->reserve_name(name, data, true);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    void client::wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
+    {
+      try {
+        auto name_record = get_chain()->get_name_record(delegate_name);
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+
+        get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level))
+    }
+
+    bts::wallet::delegate_trust_status 
+    client::wallet_get_delegate_trust_status(const std::string& delegate_name) const
+    {
+      try {
+        auto name_record = get_chain()->get_name_record(delegate_name);
+        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+
+        return get_wallet()->get_delegate_trust_status(delegate_name);
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
+    }
+
+    std::map<std::string, bts::wallet::delegate_trust_status> 
+    client::wallet_list_delegate_trust_status() const
+    {
+      return get_wallet()->list_delegate_trust_status();
+    }
+
+    transaction_id_type 
+    client::wallet_submit_proposal(const std::string& name,
+                                   const std::string& subject,
+                                   const std::string& body,
+                                   const std::string& proposal_type,
+                                   const fc::variant& json_data)
+    {
+      try {
+        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+    }
+
+    transaction_id_type client::wallet_vote_proposal(const std::string& name,
+                                                     proposal_id_type proposal_id,
+                                                     uint8_t vote)
+    {
+      try {
+        auto trx = get_wallet()->vote_proposal(name, proposal_id, vote);
+        broadcast_transaction(trx);
+        return trx.id();
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+    }
+
+    osigned_transaction client::blockchain_get_transaction(const transaction_id_type& transaction_id) const
+    {
+      return get_chain()->get_transaction(transaction_id);
+    }
+
+    full_block client::blockchain_get_block(const block_id_type& block_id) const
+    {
+      return get_chain()->get_block(block_id);
+    }
+
+    full_block client::blockchain_get_block_by_number(uint32_t block_number) const
+    {
+      return get_chain()->get_block(block_number);
+    }
+
+    void client::wallet_rescan_blockchain(uint32_t starting_block_number)
+    {
+      get_wallet()->scan_chain(starting_block_number);
+    }
+
+    void client::wallet_rescan_blockchain_state()
+    {
+      get_wallet()->scan_state();
+    }
+
+    void client::wallet_import_bitcoin(const fc::path& filename,
+                                       const std::string& passphrase)
+    {
+      get_wallet()->import_bitcoin_wallet(filename,passphrase);
+    }
+
+    void client::wallet_import_private_key(const std::string& wif_key_to_import, 
+                                           const std::string& account_name,
+                                           bool wallet_rescan_blockchain)
+    {
+      get_wallet()->import_wif_private_key(wif_key_to_import, account_name);
+      if (wallet_rescan_blockchain)
+        get_wallet()->scan_chain(0);
+    }
+
+    std::vector<name_record> client::blockchain_get_names(const std::string& first,
+                                                          uint32_t count) const
+    {
+      return get_chain()->get_names(first, count);
+    }
+
+    std::vector<asset_record> client::blockchain_get_assets(const std::string& first_symbol, uint32_t count) const
+    {
+      return get_chain()->get_assets(first_symbol,count);
+    }
+
+    std::vector<name_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
+    {
+      auto delegates = get_chain()->get_delegates_by_vote(first, count);
+      std::vector<name_record> delegate_records;
+      delegate_records.reserve( delegates.size() );
+      for( auto delegate_id : delegates )
+        delegate_records.push_back( *get_chain()->get_name_record( delegate_id ) );
+      return delegate_records;
+    }
+
+    fc::variants client::network_get_peer_info() const
     {
       fc::variants results;
-        std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
-        for (const bts::net::peer_status& peer_status : peer_statuses)
-        {
-          results.push_back(peer_status.info);
-        }
+      std::vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
+      for (const bts::net::peer_status& peer_status : peer_statuses)
+      {
+        results.push_back(peer_status.info);
+      }
       return results;
     }
 
-    void client::addnode(const fc::ip::endpoint& node, const std::string& command)
+    void client::network_set_advanced_node_parameters(const fc::variant_object& params)
+    {
+      my->_p2p_node->set_advanced_node_parameters(params);
+    }
+
+    void client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
       if (my->_p2p_node)
       {
@@ -475,26 +665,40 @@ namespace bts { namespace client {
     {
     }
 
-    bts::net::message_propagation_data client::get_transaction_propagation_data(const transaction_id_type& transaction_id)
+
+    uint32_t client::network_get_connection_count() const
     {
-        return my->_p2p_node->get_transaction_propagation_data(transaction_id);
+      return my->_p2p_node->get_connection_count();
+    }
+
+    bts::net::message_propagation_data client::network_get_transaction_propagation_data(const transaction_id_type& transaction_id)
+    {
+      return my->_p2p_node->get_transaction_propagation_data(transaction_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
-    bts::net::message_propagation_data client::get_block_propagation_data(const block_id_type& block_id)
+    bts::net::message_propagation_data client::network_get_block_propagation_data(const block_id_type& block_id)
     {
-        return my->_p2p_node->get_block_propagation_data(block_id);
+      return my->_p2p_node->get_block_propagation_data(block_id);
       FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
+    }
+
+
+    //JSON-RPC Method Implementations END
+
+    void client::run_delegate( )
+    {
+      my->_delegate_loop_complete = fc::async( [=](){ my->delegate_loop(); } );
+    }
+
+    bool client::is_connected() const
+    {
+      return my->_p2p_node->is_connected();
     }
 
     fc::uint160_t client::get_node_id() const
     {
       return my->_p2p_node->get_node_id();
-    }
-
-    void client::set_advanced_node_parameters(const fc::variant_object& params)
-    {
-        my->_p2p_node->set_advanced_node_parameters(params);
     }
 
     void client::listen_on_port(uint16_t port_to_listen)
@@ -531,77 +735,6 @@ namespace bts { namespace client {
       my->_p2p_node->connect_to_p2p_network();
     }
 
-    transaction_id_type client::reserve_name( const std::string& name, const fc::variant& data )
-    { try {
-        auto trx = get_wallet()->reserve_name( name, data );
-        broadcast_transaction( trx );
-        return trx.id();
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
-
-    /*
-    transaction_id_type client::update_name(const std::string& name, const fc::variant& data)
-    {
-      try {
-        auto trx = get_wallet()->update_name(name, data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
-    }
-    */
-    transaction_id_type client::register_delegate(const std::string& name, const fc::variant& data)
-    { try {
-        auto trx = get_wallet()->reserve_name( name, data, true );
-        broadcast_transaction(trx);
-        return trx.id();
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",data) ) }
-
-    void client::set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
-    { try {
-        auto name_record = get_chain()->get_name_record( delegate_name );
-        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
-        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
-        
-        get_wallet()->set_delegate_trust_status( delegate_name, user_trust_level );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level) ) }
-
-    bts::wallet::delegate_trust_status client::get_delegate_trust_status(const std::string& delegate_name) const
-    { try {
-        auto name_record = get_chain()->get_name_record( delegate_name );
-        FC_ASSERT( name_record.valid(), "delegate ${d} does not exsit", ("d", delegate_name) );
-        FC_ASSERT( name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name) );
-
-        return get_wallet()->get_delegate_trust_status( delegate_name );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
-
-    std::map<std::string,bts::wallet::delegate_trust_status> client::list_delegate_trust_status() const
-    {
-      return get_wallet()->list_delegate_trust_status();
-    }
-
-    transaction_id_type client::submit_proposal(const std::string& name, 
-                                                const std::string& subject,
-                                                const std::string& body,
-                                                const std::string& proposal_type,
-                                                const fc::variant& json_data)
-    {
-      try {
-        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
-    }
-
-    transaction_id_type client::vote_proposal(const std::string& name, 
-                                              proposal_id_type proposal_id,
-                                              uint8_t vote)
-
-    {
-      try {
-        auto trx = get_wallet()->vote_proposal(name,proposal_id,vote);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote",vote))
-    }
 
     fc::sha256 client_notification::digest()const
     {
@@ -620,7 +753,7 @@ namespace bts { namespace client {
       return fc::ecc::public_key(signature, digest());
     }
 
-    client::balances  client::wallet_get_balance( const std::string& symbol, const std::string& account_name )
+    balances client::wallet_get_balance( const std::string& symbol, const std::string& account_name ) const
     { try {
        if( symbol == "*" )
        {

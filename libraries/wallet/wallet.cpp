@@ -1760,6 +1760,7 @@ namespace bts { namespace wallet {
       }
       return result;
    }
+
    void wallet::import_bitcoin_wallet( const fc::path& wallet_dat,
                                        const std::string& passphrase,
                                        const std::string& account_name,
@@ -1827,7 +1828,7 @@ namespace bts { namespace wallet {
     * TODO
     * @todo actually filter based upon account_name and use "*" to represent all accounts
     */
-   std::vector<wallet_transaction_record> wallet::get_transactions( unsigned count )const
+   std::vector<wallet_transaction_record> wallet::get_transaction_history( unsigned count )const
    {
        std::vector<wallet_transaction_record> trx_records;
        trx_records.reserve(my->_transactions.size());

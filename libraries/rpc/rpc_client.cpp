@@ -24,34 +24,35 @@ namespace bts { namespace rpc {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
       bool login(const std::string& username, const std::string& password);
-      bool wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase);
-      bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name);
+      void wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase);
+      extended_address wallet_create_receive_account(const std::string& account_name);
       void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
-      std::vector<std::string> wallet_list_receive_accounts(int32_t start = 0, uint32_t count = -1);
-      bts::wallet::invoice_summary wallet_transfer(int64_t amount, const std::string& sending_account_name,
-                                                   const std::string& invoice_memo = "",
+      std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1);
+      bts::wallet::invoice_summary wallet_transfer(int64_t amount, 
+                                                   const std::string& to_account_name,                                                   
+                                                   const std::string& asset_symbol,
                                                    const std::string& from_account = "*",
-                                                   uint32_t asset_id = 0);
-      std::unordered_map<blockchain::address,std::string> list_receive_addresses()const;
-      std::vector<std::pair<share_type,std::string> > wallet_get_balance( const std::string& symbol, const std::string& account_name );
-      bts::blockchain::signed_transaction get_transaction(bts::blockchain::transaction_id_type trascaction_id);
-      bts::blockchain::signed_block_header getblock(uint32_t block_num);
-      bool validateaddress(bts::blockchain::address address);
-      bool wallet_rescan_blockchain(uint32_t block_num);
-      bool import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password);
-      bool wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name = "default", bool rescan_blockchain = false);
-      bool wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
-      bool wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
-      fc::optional<std::string> wallet_get_name();
-      bool wallet_close();
+                                                   const std::string& invoice_memo = "");
+      balances wallet_get_balance(const std::string& account_name = "*", const std::string& asset_symbol = "");
+      std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
+      full_block blockchain_get_block(const block_id_type& block_id);
+      full_block blockchain_get_block_by_number(uint32_t block_number);
+      bool validate_address(bts::blockchain::address address);
+      void wallet_rescan_blockchain(uint32_t starting_block_number);
+      void wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password);
+      void wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name = "default", bool wallet_rescan_blockchain = false);
+      void wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
+      void wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
+      std::string wallet_get_name() const;
+      void wallet_close();
       void wallet_lock();
-      uint32_t network_get_connection_count();
-      fc::variants network_get_peer_info();
+      uint32_t network_get_connection_count() const;
+      fc::variants network_get_peer_info() const;
       fc::variant_object get_info();
-      void _set_advanced_node_parameters(const fc::variant_object& params);
-      bts::net::message_propagation_data _get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
-      bts::net::message_propagation_data _get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
-      void _set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
+      void network_set_advanced_node_parameters(const fc::variant_object& params);
+      bts::net::message_propagation_data network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
+      bts::net::message_propagation_data network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
+      void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
 
       void network_add_node(const fc::ip::endpoint& node, const std::string& command);
       void stop();
@@ -83,13 +84,13 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("login", username, password);
     }
 
-    bool rpc_client_impl::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
+    void rpc_client_impl::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
     {
       uint32_t timeout_seconds = (uint32_t)(timeout.count() / fc::seconds(1).count());
-      return _json_connection->call<bool>("wallet_unlock", fc::variant(timeout_seconds), passphrase);
+      _json_connection->call<bool>("wallet_unlock", fc::variant(timeout_seconds), passphrase);
     }
 
-    bts::blockchain::extended_address rpc_client_impl::wallet_create_receive_account(const std::string& account_name)
+    extended_address rpc_client_impl::wallet_create_receive_account(const std::string& account_name)
     {
       return _json_connection->call<bts::blockchain::extended_address>("wallet_create_receive_account", account_name);
     }
@@ -99,88 +100,86 @@ namespace bts { namespace rpc {
       _json_connection->async_call("wallet_create_sending_account", account_name, fc::variant(account_key)).wait();
     }
 
-    std::vector<std::string> rpc_client_impl::wallet_list_receive_accounts(int32_t start, uint32_t count)
+    std::map<std::string, extended_address> rpc_client_impl::wallet_list_receive_accounts(uint32_t start, uint32_t count)
     {
-      return _json_connection->call<std::vector<std::string> >("wallet_list_receive_accounts", fc::variant(start), fc::variant(count));
+      FC_ASSERT(false)
+      //return _json_connection->call<std::vector<std::string> >("wallet_list_receive_accounts", fc::variant(start), fc::variant(count));
     }
 
-    bts::wallet::invoice_summary rpc_client_impl::wallet_transfer(int64_t amount, const std::string& sending_account_name,
-                                                                  const std::string& invoice_memo,
-                                                                  const std::string& from_account,
-                                                                  uint32_t asset_id)
+    bts::wallet::invoice_summary rpc_client_impl::wallet_transfer(int64_t amount, 
+                                                                  const std::string& to_account_name,
+                                                                  const std::string& asset_symbol,
+                                                                  const std::string& from_account_name,
+                                                                  const std::string& invoice_memo)
     {
       fc::mutable_variant_object named_params;
+      named_params["asset_symbol"] = asset_symbol;
+      named_params["from_account"] = from_account_name;
       named_params["invoice_memo"] = invoice_memo;
-      named_params["from_account"] = from_account;
-      named_params["asset_id"] = asset_id;
-      return _json_connection->call<bts::wallet::invoice_summary>("wallet_transfer", fc::variant(amount), fc::variant(sending_account_name), named_params);
+      return _json_connection->call<bts::wallet::invoice_summary>("wallet_transfer", fc::variant(amount), fc::variant(to_account_name), named_params);
     }
 
-    std::unordered_map<blockchain::address,std::string> rpc_client_impl::list_receive_addresses()const
+    balances rpc_client_impl::wallet_get_balance(const std::string& asset_symbol, 
+                                                 const std::string& account_name)
     {
-      return _json_connection->call<std::unordered_map<blockchain::address,std::string> >("list_receive_addresses");
+      return _json_connection->call<balances>("wallet_get_balance", asset_symbol, account_name);
     }
 
-    std::vector<std::pair<share_type,std::string> > rpc_client_impl::wallet_get_balance( const std::string& symbol, const std::string& account_name )
+    full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
     {
-      return _json_connection->call< std::vector<std::pair<share_type,std::string> >  >("wallet_get_balance", symbol, account_name );
+      return _json_connection->call<full_block>("blockchain_get_block", fc::variant(block_id));
     }
 
-    bts::blockchain::signed_transaction rpc_client_impl::get_transaction(bts::blockchain::transaction_id_type trascaction_id)
+    full_block rpc_client_impl::blockchain_get_block_by_number(uint32_t block_number)
     {
-      return _json_connection->call<bts::blockchain::signed_transaction>("get_transaction", fc::variant(trascaction_id));
+      return _json_connection->call<full_block>("blockchain_get_block_by_number", fc::variant(block_number));
     }
 
-    bts::blockchain::signed_block_header rpc_client_impl::getblock(uint32_t block_num)
+    bool rpc_client_impl::validate_address(bts::blockchain::address address)
     {
-      return _json_connection->call<bts::blockchain::signed_block_header>("getblock", fc::variant(block_num));
+      return _json_connection->call<bool>("blockchain_get_block", fc::variant(address));
     }
 
-    bool rpc_client_impl::validateaddress(bts::blockchain::address address)
+    void rpc_client_impl::wallet_rescan_blockchain(uint32_t starting_block_number)
     {
-      return _json_connection->call<bool>("getblock", fc::variant(address));
+      _json_connection->async_call("wallet_rescan_blockchain", fc::variant(starting_block_number)).wait();
     }
 
-    bool rpc_client_impl::wallet_rescan_blockchain(uint32_t block_num)
+    void rpc_client_impl::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password)
     {
-      return _json_connection->call<bool>("wallet_rescan_blockchain", fc::variant(block_num));
+      _json_connection->async_call("wallet_import_bitcoin", wallet_filename.string(), password).wait();
     }
 
-    bool rpc_client_impl::import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password)
+    void rpc_client_impl::wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name, bool rescan_blockchain)
     {
-      return _json_connection->call<bool>("import_bitcoin_wallet", wallet_filename.string(), password);
+      _json_connection->async_call("wallet_import_private_key", wif_key_to_import, account_name, rescan_blockchain).wait();
     }
-
-    bool rpc_client_impl::wallet_import_private_key(const fc::ecc::private_key& key, const std::string& account_name, bool rescan_blockchain)
+    void rpc_client_impl::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
-      return _json_connection->call<bool>("wallet_import_private_key", bts::utilities::key_to_wif(key), account_name, rescan_blockchain);
+      _json_connection->async_call("wallet_open", wallet_name, wallet_passphrase).wait();
     }
-    bool rpc_client_impl::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
+    void rpc_client_impl::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
     {
-      return _json_connection->call<bool>("wallet_open", wallet_name, wallet_passphrase);
+      _json_connection->async_call("wallet_create", wallet_name, wallet_passphrase).wait();
     }
-    bool rpc_client_impl::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
-    {
-      return _json_connection->call<bool>("wallet_create", wallet_name, wallet_passphrase);
-    }
-    fc::optional<std::string> rpc_client_impl::wallet_get_name()
+    std::string rpc_client_impl::wallet_get_name() const
     {
       fc::variant result = _json_connection->async_call("wallet_get_name").wait();
-      return result.is_null() ? fc::optional<std::string>() : result.as_string();
+      return result.as_string();
     }
-    bool rpc_client_impl::wallet_close()
+    void rpc_client_impl::wallet_close()
     {
-      return _json_connection->call<bool>("wallet_close");
+      _json_connection->async_call("wallet_close").wait();
     }
     void rpc_client_impl::wallet_lock()
     {
       _json_connection->async_call("wallet_lock").wait();
     }
-    uint32_t rpc_client_impl::network_get_connection_count()
+    uint32_t rpc_client_impl::network_get_connection_count() const
     {
       return _json_connection->call<uint32_t>("network_get_connection_count");
     }
-    fc::variants rpc_client_impl::network_get_peer_info()
+    fc::variants rpc_client_impl::network_get_peer_info() const
     {
       return _json_connection->async_call("network_get_peer_info").wait().get_array();
     }
@@ -188,21 +187,21 @@ namespace bts { namespace rpc {
     {
       return _json_connection->async_call("get_info").wait().get_object();
     }
-    void rpc_client_impl::_set_advanced_node_parameters(const fc::variant_object& params)
+    void rpc_client_impl::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
-      _json_connection->async_call("_set_advanced_node_parameters", fc::variant(params)).wait();
+      _json_connection->async_call("network_set_advanced_node_parameters", fc::variant(params)).wait();
     }
-    bts::net::message_propagation_data rpc_client_impl::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+    bts::net::message_propagation_data rpc_client_impl::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
-      return _json_connection->call<bts::net::message_propagation_data>("_get_transaction_propagation_data", fc::variant(transaction_id));
+      return _json_connection->call<bts::net::message_propagation_data>("network_get_transaction_propagation_data", fc::variant(transaction_id));
     }
-    bts::net::message_propagation_data rpc_client_impl::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+    bts::net::message_propagation_data rpc_client_impl::network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
     {
-      return _json_connection->call<bts::net::message_propagation_data>("_get_block_propagation_data", fc::variant(block_id));
+      return _json_connection->call<bts::net::message_propagation_data>("network_get_block_propagation_data", fc::variant(block_id));
     }
-    void rpc_client_impl::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+    void rpc_client_impl::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
     {
-      _json_connection->async_call("_set_allowed_peers", fc::variant(allowed_peers)).wait();
+      _json_connection->async_call("network_set_allowed_peers", fc::variant(allowed_peers)).wait();
     }
     void rpc_client_impl::network_add_node(const fc::ip::endpoint& node, const std::string& command)
     {
@@ -234,13 +233,13 @@ namespace bts { namespace rpc {
     return my->login(username, password);
   }
   
-  bool rpc_client::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
+  void rpc_client::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
   {
-    return my->wallet_unlock(timeout, passphrase);
+    my->wallet_unlock(timeout, passphrase);
   }
 
-  bts::blockchain::extended_address rpc_client::wallet_create_receive_account(const std::string& account_name)
-  {
+  extended_address rpc_client::wallet_create_receive_account(const std::string& account_name)
+  {    
     return my->wallet_create_receive_account(account_name);
   }
 
@@ -249,85 +248,89 @@ namespace bts { namespace rpc {
     my->wallet_create_sending_account(account_name, account_key);
   }
 
-  std::vector<std::string> rpc_client::wallet_list_receive_accounts(int32_t start, uint32_t count)
+  /*
+  std::map<std::string, extended_address> rpc_client::wallet_list_receive_accounts(uint32_t start, uint32_t count)
   {
-    return my->wallet_list_receive_accounts(start, count);
+    FC_ASSERT(false)
+    //return my->wallet_list_receive_accounts(start, count);
+  }
+  */
+  invoice_summary rpc_client::wallet_transfer(int64_t amount, 
+                                              const std::string& to_account_name,
+                                              const std::string& asset_symbol,
+                                              const std::string& from_account_name,
+                                              const std::string& invoice_memo)
+  {
+    return my->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
   }
 
-  bts::wallet::invoice_summary rpc_client::wallet_transfer(int64_t amount, const std::string& sending_account_name,
-                                                           const std::string& invoice_memo,
-                                                           const std::string& from_account,
-                                                           uint32_t asset_id)
+  balances rpc_client::wallet_get_balance(const std::string& asset_symbol, 
+                                       const std::string& account_name) const
   {
-    return my->wallet_transfer(amount, sending_account_name, invoice_memo, from_account, asset_id);
+    return my->wallet_get_balance(asset_symbol, account_name);
   }
 
-  std::unordered_map<blockchain::address,std::string> rpc_client::list_receive_addresses()const
+  std::vector<wallet_transaction_record> rpc_client::wallet_get_transaction_history(unsigned count) const
   {
-    return my->list_receive_addresses();
+    return my->wallet_get_transaction_history(count);
   }
 
-  std::vector<std::pair<share_type,std::string> > rpc_client::wallet_get_balance( const std::string& symbol, const std::string& account_name )
+  full_block rpc_client::blockchain_get_block(const block_id_type& block_id) const
   {
-    return my->wallet_get_balance(symbol,account_name);
+    return my->blockchain_get_block(block_id);
   }
 
-  bts::blockchain::signed_transaction rpc_client::get_transaction(bts::blockchain::transaction_id_type trascaction_id)
+  full_block rpc_client::blockchain_get_block_by_number(uint32_t block_number) const
   {
-    return my->get_transaction(trascaction_id);
+    return my->blockchain_get_block_by_number(block_number);
+  }
+  /*
+  bool rpc_client::validate_address(bts::blockchain::address address)
+  {
+    return my->validate_address(address);
+  }
+  */
+  void rpc_client::wallet_rescan_blockchain(uint32_t starting_block_number /* = 0 */)
+  {
+    my->wallet_rescan_blockchain(starting_block_number);
   }
 
-  bts::blockchain::signed_block_header rpc_client::getblock(uint32_t block_num)
+  void rpc_client::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password)
   {
-    return my->getblock(block_num);
+    my->wallet_import_bitcoin(wallet_filename, password);
   }
 
-  bool rpc_client::validateaddress(bts::blockchain::address address)
-  {
-    return my->validateaddress(address);
-  }
-
-  bool rpc_client::wallet_rescan_blockchain(uint32_t block_num /* = 0 */)
-  {
-    return my->wallet_rescan_blockchain(block_num);
-  }
-
-  bool rpc_client::import_bitcoin_wallet(const fc::path& wallet_filename, const std::string& password)
-  {
-    return my->import_bitcoin_wallet(wallet_filename, password);
-  }
-
-  bool rpc_client::wallet_import_private_key(const fc::ecc::private_key& key, 
+  void rpc_client::wallet_import_private_key(const std::string& wif_key_to_import,
                                              const std::string& account_name, 
-                                             bool rescan_blockchain)
+                                             bool wallet_rescan_blockchain)
   {
-    return my->wallet_import_private_key(key, account_name, rescan_blockchain);
+    my->wallet_import_private_key(wif_key_to_import, account_name, wallet_rescan_blockchain);
   }
-  bool rpc_client::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
+  void rpc_client::wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase)
   {
-    return my->wallet_open(wallet_name, wallet_passphrase);
+    my->wallet_open(wallet_name, wallet_passphrase);
   }
-  bool rpc_client::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
+  void rpc_client::wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase)
   {
-    return my->wallet_create(wallet_name, wallet_passphrase);
+    my->wallet_create(wallet_name, wallet_passphrase);
   }
-  fc::optional<std::string> rpc_client::wallet_get_name()
+  std::string rpc_client::wallet_get_name() const
   {
     return my->wallet_get_name();
   }
-  bool rpc_client::wallet_close()
+  void rpc_client::wallet_close()
   {
-    return my->wallet_close();
+    my->wallet_close();
   }
   void rpc_client::wallet_lock()
   {
     my->wallet_lock();
   }
-  uint32_t rpc_client::network_get_connection_count()
+  uint32_t rpc_client::network_get_connection_count() const
   {
     return my->network_get_connection_count();
   }
-  fc::variants rpc_client::network_get_peer_info()
+  fc::variants rpc_client::network_get_peer_info() const
   {
     return my->network_get_peer_info();
   }
@@ -335,21 +338,21 @@ namespace bts { namespace rpc {
   {
     return my->get_info();
   }
-  void rpc_client::_set_advanced_node_parameters(const fc::variant_object& params)
+  void rpc_client::network_set_advanced_node_parameters(const fc::variant_object& params)
   {
-    my->_set_advanced_node_parameters(params);
+    my->network_set_advanced_node_parameters(params);
   }
-  bts::net::message_propagation_data rpc_client::_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
+  bts::net::message_propagation_data rpc_client::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
   {
-    return my->_get_transaction_propagation_data(transaction_id);
+    return my->network_get_transaction_propagation_data(transaction_id);
   }
-  bts::net::message_propagation_data rpc_client::_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
+  bts::net::message_propagation_data rpc_client::network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id)
   {
-    return my->_get_block_propagation_data(block_id);
+    return my->network_get_block_propagation_data(block_id);
   }
-  void rpc_client::_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+  void rpc_client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
   {
-    return my->_set_allowed_peers(allowed_peers);
+    return my->network_set_allowed_peers(allowed_peers);
   }
   void rpc_client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
   {

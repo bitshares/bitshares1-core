@@ -32,10 +32,10 @@ namespace bts { namespace rpc {
              (blockchain_get_transaction)\
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
-             (blockchain_get_name)\
-             (blockchain_get_name_by_id)\
-             (blockchain_get_asset)\
-             (blockchain_get_asset_by_id)\
+             (blockchain_get_name_record)\
+             (blockchain_get_name_record_by_id)\
+             (blockchain_get_asset_record)\
+             (blockchain_get_asset_record_by_id)\
              (blockchain_get_assets)\
              (blockchain_get_delegates)\
              (blockchain_get_names)\
@@ -76,11 +76,11 @@ namespace bts { namespace rpc {
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
              (wallet_list_delegate_trust_status)\
-             (_get_block_propagation_data)\
-             (_get_transaction_propagation_data)\
+             (network_get_block_propagation_data)\
+             (network_get_transaction_propagation_data)\
              (_list_json_commands)\
-             (_send_transaction)\
-             (_set_advanced_node_parameters)
+             (network_send_transaction)\
+             (network_set_advanced_node_parameters)
 
   namespace detail
   {
@@ -628,7 +628,7 @@ Result:
        info["current_share_supply"]  = share_record.current_share_supply;
        info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
        info["random_seed"]      = _client->get_chain()->get_current_random_seed();
-       info["connections"]      = _client->get_connection_count();
+       info["connections"]      = _client->network_get_connection_count();
        info["rpc_port"]         = _config.rpc_endpoint.port();
        info["_node_id"]         = _client->get_node_id();
        info["_fc_revision"]     = fc::git_revision_sha;
@@ -883,8 +883,8 @@ Wallets exist in the wallet data directory.
      )"};
     fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
     {
-       auto receive_account_record = _client->wallet_create_receive_account( params[0].as_string() );
-       return fc::variant(extended_address(receive_account_record.extended_key));
+       extended_address receive_address = _client->wallet_create_receive_account( params[0].as_string() );
+       return fc::variant(receive_address);
     }
 
     static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
@@ -898,11 +898,11 @@ Wallets exist in the wallet data directory.
      )"};
     fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
     {
-       _client->get_wallet()->create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
+       _client->wallet_create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
        return fc::variant();
     }
 
-    static rpc_server::method_data _send_transaction_metadata{"_send_transaction", nullptr,
+    static rpc_server::method_data network_send_transaction_metadata{"network_send_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
             /* params:          name                  type                   classification                   default_value */
@@ -910,7 +910,7 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network,
           R"(
      )" };
-    fc::variant rpc_server_impl::_send_transaction(const fc::variants& params)
+    fc::variant rpc_server_impl::network_send_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
@@ -922,7 +922,7 @@ Wallets exist in the wallet data directory.
             /* returns: */    "invoice_summary",
             /* params:          name                    type        classification                   default value */
                               {{"amount",               "int64",    rpc_server::required_positional, fc::ovariant()},
-                               {"sending_account_name", "string",   rpc_server::required_positional, fc::ovariant()},
+                               {"to_account_name",      "string",   rpc_server::required_positional, fc::ovariant()},
                                {"asset_symbol",         "string",   rpc_server::optional_named,      fc::variant(BTS_ADDRESS_PREFIX)},
                                {"from_account",         "string",   rpc_server::optional_named,      fc::variant("*")},
                                {"invoice_memo",         "string",   rpc_server::optional_named,      fc::variant("")}},
@@ -1006,7 +1006,7 @@ Wallets exist in the wallet data directory.
     {  try {
       int32_t start = params[0].as<int32_t>();
       uint32_t count = params[1].as<uint32_t>();
-      auto accounts = _client->get_wallet()->list_sending_accounts(start,count);
+      auto accounts = _client->wallet_list_sending_accounts(start,count);
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
@@ -1021,17 +1021,13 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_list_reserved_names(const fc::variants& params)
     {  try {
       std::string account_name = params[0].as_string();
-      auto names = _client->get_wallet()->names(account_name);
-      std::vector<name_record> name_records;
-      name_records.reserve(names.size());
-      for( auto name : names )
-         name_records.push_back( name_record( name.second ) );
+      std::vector<name_record> name_records = _client->wallet_list_reserved_names(account_name);
       return fc::variant( name_records );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
-            /* description */ "Lists all reserved names controlled by this wallet, filtered by account",
-            /* returns: */    "vector<name_record>",
+            /* description */ "Rename an account in wallet",
+            /* returns: */    "void",
             /* params:          name                    type       classification                   default value */
                               {{"current_account_name", "string",  rpc_server::required_positional, fc::ovariant()},
                                {"new_account_name",     "string",  rpc_server::required_positional, fc::ovariant()}},
@@ -1043,8 +1039,8 @@ Wallets exist in the wallet data directory.
     {  try {
       std::string current_account_name = params[0].as_string();
       std::string new_account_name = params[1].as_string();
-      _client->get_wallet()->rename_account(current_account_name, new_account_name);
-      return fc::variant( true );
+      _client->wallet_rename_account(current_account_name, new_account_name);
+      return fc::variant();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
@@ -1061,7 +1057,7 @@ Wallets exist in the wallet data directory.
     {  try {
       int32_t start = params[0].as<int32_t>();
       uint32_t count = params[1].as<uint32_t>();
-      auto accounts = _client->get_wallet()->list_receive_accounts(start,count);
+      auto accounts = _client->wallet_list_receive_accounts(start,count);
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
@@ -1075,7 +1071,7 @@ Wallets exist in the wallet data directory.
      )" };
     fc::variant rpc_server_impl::wallet_get_account(const fc::variants& params)
     {  try {
-      auto account_record = _client->get_wallet()->get_account(params[0].as_string());
+      auto account_record = _client->wallet_get_account(params[0].as_string());
       fc::mutable_variant_object result;
       result["name"] = account_record.name;
       result["extended_address"] = extended_address( account_record.extended_key );
@@ -1085,10 +1081,10 @@ Wallets exist in the wallet data directory.
 
     static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
             /* description */ "Returns the wallet's current balance",
-            /* returns: */    "vector< pair<share_type,string> >",
+            /* returns: */    "balances",
             /* params:          name                  type      classification                   default_value */
                               {
-                               {"symbol",             "string", rpc_server::optional_positional, fc::variant(BTS_ADDRESS_PREFIX)},
+                               {"asset_symbol",       "string", rpc_server::optional_positional, fc::variant(BTS_ADDRESS_PREFIX)},
                                {"account_name",       "string", rpc_server::optional_positional, fc::variant("*")}
                               },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -1111,22 +1107,30 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_get_transaction_history(const fc::variants& params)
     {
       unsigned count = params[0].as<unsigned>();
-      return fc::variant( _client->get_wallet()->get_transactions( count ) );
+      return fc::variant( _client->wallet_get_transaction_history( count ) );
     }
 
-
-    static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
+           static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
             /* description */ "Returns a transaction history table for pretty printing",
-            /* returns: */    "std::vector<pretty_transaction>",
-            /* params:          name     type      classification                   default_value */
-                              {{"count", "unsigned",    rpc_server::optional_positional, 0}},
+            /* returns: */ "std::vector<pretty_transaction>",
+            /* params: name type classification default_value */
+                              {{"count", "unsigned", rpc_server::optional_positional, 0}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
+
+//TODO Move implmentation of this function to client class
+    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
+    {
+        auto result = std::vector<pretty_transaction>();
+        return fc::variant( result );
+    }
+
+#if 0
     fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
     { try {
         unsigned count = params[0].as<unsigned>();
-        auto tx_recs = _client->get_wallet()->get_transactions( count );
+        auto tx_recs = _client->get_wallet_get_transactions( count );
         auto result = std::vector<pretty_transaction>();
 
         for( auto tx_rec : tx_recs)
@@ -1138,9 +1142,9 @@ Wallets exist in the wallet data directory.
             pretty_tx.timestamp = time_t( tx_rec.received.sec_since_epoch() );
             pretty_tx.tx_id = tx_rec.trx.id();
            
-            pretty_tx.totals_in[BTS_ADDRESS_PREFIX] = 0; 
-            pretty_tx.totals_out[BTS_ADDRESS_PREFIX] = 0; 
-            pretty_tx.fees[BTS_ADDRESS_PREFIX] = 0; 
+            pretty_tx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.fees[BTS_ADDRESS_PREFIX] = 0;
 
             for( auto op : tx_rec.trx.operations )
             {
@@ -1153,12 +1157,12 @@ Wallets exist in the wallet data directory.
                         auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
 
                         /* TODO who are we taking the vote away from?
-                        auto vote = withdraw_op.delegate_id;
-                        auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
-                        auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
-                        auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
-                        pretty_op.vote = std::make_pair(vote, delegate_name);
-                        */
+auto vote = withdraw_op.delegate_id;
+auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
+auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+pretty_op.vote = std::make_pair(vote, delegate_name);
+*/
 
                         auto name = std::string("");
                         if( owner.valid() )
@@ -1192,7 +1196,7 @@ Wallets exist in the wallet data directory.
                             if (rec.valid())
                                 name = rec->name;
                             pretty_op.owner = std::make_pair( condition.owner, name );
-                        } 
+                        }
                         else
                         {
                             FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
@@ -1222,77 +1226,90 @@ Wallets exist in the wallet data directory.
         }
         return fc::variant( result );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("", params)) }
+#endif
 
 
-    static rpc_server::method_data blockchain_get_name_metadata{"blockchain_get_name", nullptr,
+    static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
                               {{"name",       "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-     )" };
-    fc::variant rpc_server_impl::blockchain_get_name(const fc::variants& params)
+          )",
+          /* aliases */{ "blockchain_get_name" } //deprecated name
+          };
+    fc::variant rpc_server_impl::blockchain_get_name_record(const fc::variants& params)
     {
-      return fc::variant( _client->get_chain()->get_name_record(params[0].as_string()) );
-    }
-    static rpc_server::method_data blockchain_get_name_by_id_metadata{"blockchain_get_name_by_id", nullptr,
-            /* description */ "Retrieves the name record",
-            /* returns: */    "name_record",
-            /* params:          name          type      classification                   default_value */
-                              {{"name",       "int", rpc_server::required_positional, fc::ovariant()}},
-          /* prerequisites */ rpc_server::json_authenticated,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::blockchain_get_name_by_id(const fc::variants& params)
-    {
-      return fc::variant( _client->get_chain()->get_name_record(params[0].as_int64()) );
+      return fc::variant( _client->blockchain_get_name_record(params[0].as_string()) );
     }
 
-    static rpc_server::method_data blockchain_get_asset_metadata{"blockchain_get_asset", nullptr,
+    static rpc_server::method_data blockchain_get_name_record_by_id_metadata{"blockchain_get_name_record_by_id", nullptr,
+            /* description */ "Retrieves the name record for the given name_id",
+            /* returns: */    "name_record",
+            /* params:          name          type      classification                   default_value */
+                              {{"name_id",    "int", rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+          )",
+          /* aliases */{ "blockchain_get_name_by_id" } //deprecated name
+          };
+    fc::variant rpc_server_impl::blockchain_get_name_record_by_id(const fc::variants& params)
+    {
+      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as_int64()) );
+    }
+
+    static rpc_server::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
             /* description */ "Retrieves the asset record by the ticker symbol",
             /* returns: */    "asset_record",
             /* params:          asset          type      classification                   default_value */
                               {{"symbol",       "string", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-     )" };
-    fc::variant rpc_server_impl::blockchain_get_asset(const fc::variants& params)
+          )",
+          /* aliases */{ "blockchain_get_asset" } //deprecated name
+          };
+    fc::variant rpc_server_impl::blockchain_get_asset_record(const fc::variants& params)
     {
-      oasset_record rec = _client->get_chain()->get_asset_record(params[0].as_string());
+      oasset_record rec = _client->blockchain_get_asset_record(params[0].as_string());
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
     }
-    static rpc_server::method_data blockchain_get_asset_by_id_metadata{"blockchain_get_asset_by_id", nullptr,
+
+    static rpc_server::method_data blockchain_get_asset_record_by_id_metadata{"blockchain_get_asset_record_by_id", nullptr,
             /* description */ "Retrieves the asset record by the ticker symbol",
             /* returns: */    "asset_record",
             /* params:          asset          type      classification                   default_value */
                               {{"asset_id",       "int", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-     )" };
-    fc::variant rpc_server_impl::blockchain_get_asset_by_id(const fc::variants& params)
+          )",
+          /* aliases */{ "blockchain_get_asset_by_id" } //deprecated name
+          };
+    fc::variant rpc_server_impl::blockchain_get_asset_record_by_id(const fc::variants& params)
     {
-      oasset_record rec = _client->get_chain()->get_asset_record(params[0].as_int64());
+      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as_int64());
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
     }
 
     static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
-            /* description */ "Reserves the name record",
+            /* description */ "Reserve a name in the blockchain",
             /* returns: */    "name_record",
             /* params:          name          type       classification                   default_value */
                               {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
                                {"data",       "variant", rpc_server::optional_positional, fc::ovariant()}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
-     )" };
+          )"
+     };
     fc::variant rpc_server_impl::wallet_reserve_name(const fc::variants& params)
     {
-       return fc::variant( _client->reserve_name(params[0].as_string(), params[1]) );
+       return fc::variant( _client->wallet_reserve_name(params[0].as_string(), params[1]) );
     }
+
     static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
             /* description */ "Registers a delegate to be voted upon by shareholders",
             /* returns: */    "name_record",
@@ -1304,7 +1321,7 @@ Wallets exist in the wallet data directory.
      )" };
     fc::variant rpc_server_impl::wallet_register_delegate(const fc::variants& params)
     {
-       return fc::variant( _client->register_delegate(params[0].as_string(), params[1]) );
+       return fc::variant( _client->wallet_register_delegate(params[0].as_string(), params[1]) );
     }
 
     static rpc_server::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
@@ -1322,12 +1339,12 @@ Wallets exist in the wallet data directory.
      )" };
     fc::variant rpc_server_impl::wallet_submit_proposal(const fc::variants& params)
     {
-      auto transaction_id = _client->submit_proposal( params[0].as_string(), //proposer 
-                                                      params[1].as_string(), //subject
-                                                      params[2].as_string(), //body
-                                                      params[3].as_string(), //proposal_type
-                                                      params[4]              //json_data
-                                                      );
+      auto transaction_id = _client->wallet_submit_proposal(params[0].as_string(), //proposer 
+                                                            params[1].as_string(), //subject
+                                                            params[2].as_string(), //body
+                                                            params[3].as_string(), //proposal_type
+                                                            params[4]              //json_data
+                                                            );
       return fc::variant(transaction_id);
     }
 
@@ -1344,9 +1361,9 @@ Wallets exist in the wallet data directory.
      )" };
     fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
     {
-      auto transaction_id = _client->vote_proposal(params[0].as_string(), 
-                                                   params[1].as_int64(),
-                                                   params[2].as_uint64());
+      auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
+                                                          params[1].as_int64(),
+                                                          params[2].as_uint64());
       return fc::variant(transaction_id);
     }
 
@@ -1363,7 +1380,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
     {
-      _client->set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
       return fc::variant();
     }
 
@@ -1378,7 +1395,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_get_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->get_delegate_trust_status(params[0].as_string()));
+      return fc::variant(_client->wallet_get_delegate_trust_status(params[0].as_string()));
     }
 
     static rpc_server::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
@@ -1391,7 +1408,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->list_delegate_trust_status());
+      return fc::variant(_client->wallet_list_delegate_trust_status());
     }
 
     static rpc_server::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
@@ -1404,7 +1421,7 @@ returns false if delegate is not recognized
           )" };
     fc::variant rpc_server_impl::blockchain_get_transaction(const fc::variants& params)
     {
-      return fc::variant( _client->get_chain()->get_transaction( params[0].as<transaction_id_type>() )  );
+      return fc::variant( _client->blockchain_get_transaction( params[0].as<transaction_id_type>() )  );
     }
 
     static rpc_server::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
@@ -1418,7 +1435,7 @@ returns false if delegate is not recognized
     /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
     { try {
-      return fc::variant( _client->get_chain()->get_block( params[0].as<block_id_type>() )  );
+      return fc::variant( _client->blockchain_get_block( params[0].as<block_id_type>() )  );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data blockchain_get_block_by_number_metadata{"blockchain_get_block_by_number", nullptr,
@@ -1429,7 +1446,7 @@ returns false if delegate is not recognized
                                  /* prerequisites */ rpc_server::json_authenticated};
     fc::variant rpc_server_impl::blockchain_get_block_by_number(const fc::variants& params)
     { try {
-      return fc::variant( _client->get_chain()->get_block( params[0].as<uint32_t>() ) );
+      return fc::variant( _client->blockchain_get_block_by_number( params[0].as<uint32_t>() ) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
     static rpc_server::method_data validate_address_metadata{"validate_address", nullptr,
@@ -1461,6 +1478,7 @@ Examples:
      )" };
     fc::variant rpc_server_impl::validate_address(const fc::variants& params)
     {
+      FC_ASSERT("Not implemented")
       try {
         return fc::variant(params[0].as_string());
       }
@@ -1471,23 +1489,23 @@ Examples:
     }
 
     static rpc_server::method_data wallet_rescan_blockchain_metadata{"wallet_rescan_blockchain", nullptr,
-            /* description */ "Rescan the block chain from the given block",
-            /* returns: */    "bool",
+            /* description */ "Rescan the block chain from the given block number",
+            /* returns: */    "void",
             /* params:          name              type   classification                   default_value */
-                              {{"starting_block", "int", rpc_server::optional_positional, 0}},
+                              {{"starting_block_number", "int", rpc_server::optional_positional, 0}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_rescan_blockchain(const fc::variants& params)
     {
-      uint32_t block_num = params[0].as<uint32_t>();;
-      _client->get_wallet()->scan_chain(block_num);
-      return fc::variant(true);
+      uint32_t starting_block_number = params[0].as<uint32_t>();;
+      _client->wallet_rescan_blockchain(starting_block_number);
+      return fc::variant();
     }
 
     static rpc_server::method_data wallet_rescan_blockchain_state_metadata{"wallet_rescan_blockchain_state", nullptr,
             /* description */ "Rescans the genesis block and state (not the transactions)",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name              type    required */
                               {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
@@ -1495,13 +1513,13 @@ Examples:
      )" };
     fc::variant rpc_server_impl::wallet_rescan_blockchain_state(const fc::variants& params)
     {
-      _client->get_wallet()->scan_state();
-      return fc::variant(true);
+      _client->wallet_rescan_blockchain_state();
+      return fc::variant();
     }
 
     static rpc_server::method_data wallet_import_bitcoin_metadata{"wallet_import_bitcoin", nullptr,
             /* description */ "Import a BTC/PTS wallet",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name           type      classification                          default_value */
                               {{"filename",   "path",   rpc_server::required_positional,        fc::ovariant()},
                                {"passphrase", "string", rpc_server::required_positional_hidden, fc::ovariant()}},
@@ -1514,22 +1532,22 @@ Examples:
         auto passphrase = params[1].as<std::string>();
         try
         {
-            _client->get_wallet()->import_bitcoin_wallet( filename, passphrase );
+          _client->wallet_import_bitcoin( filename, passphrase );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
+          wlog( "${e}", ("e",e.to_detail_string() ) );
+          throw rpc_wallet_passphrase_incorrect_exception();
         }
-        return fc::variant( true );
+        return fc::variant();
     }
 
     // TODO: get account argument
     static rpc_server::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
             /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
-            /* returns: */    "bool",
+            /* returns: */    "void",
             /* params:          name            type           classification                   default_value */
-                              {{"key",          "private_key", rpc_server::required_positional, fc::ovariant()},
+                              {{"key_to_import", "wif_private_key", rpc_server::required_positional, fc::ovariant()},
                                {"account_name", "string",      rpc_server::optional_positional, fc::variant("default")},
                                {"rescan",       "bool",        rpc_server::optional_positional, false}},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
@@ -1560,16 +1578,11 @@ As a json rpc call
      )" };
     fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
     {
-      auto wif   =  params[0].as_string();
+      auto key_to_import   =  params[0].as_string();
       std::string account_name = params[1].as_string();
       bool wallet_rescan_blockchain = params[2].as_bool();
-
-      _client->get_wallet()->import_wif_private_key(wif, account_name);
-
-      if (wallet_rescan_blockchain)
-          _client->get_wallet()->scan_chain(0);
-
-      return fc::variant(true);
+      _client->wallet_import_private_key(key_to_import, account_name, wallet_rescan_blockchain);
+      return fc::variant();
     }
 
     static rpc_server::method_data blockchain_get_names_metadata{"blockchain_get_names", nullptr,
@@ -1588,7 +1601,7 @@ Returns up to count reserved names that follow first alphabetically.
     {
       std::string first = params[0].as_string();
       uint32_t count = params[1].as<uint32_t>();
-      return fc::variant(_client->get_chain()->get_names( first, count ) );
+      return fc::variant(_client->blockchain_get_names( first, count ) );
     }
 
 
@@ -1607,9 +1620,9 @@ Returns up to count reserved assets that follow first alphabetically.
              )" };
     fc::variant rpc_server_impl::blockchain_get_assets(const fc::variants& params)
     {
-      std::string first = params[0].as_string();
+      std::string first_symbol = params[0].as_string();
       uint32_t count = params[1].as<uint32_t>();
-      return fc::variant(_client->get_chain()->get_assets( first, count ) );
+      return fc::variant( _client->blockchain_get_assets(first_symbol, count) );
     }
 
 
@@ -1630,16 +1643,11 @@ Arguments:
    count - the maximum number of delegates to be returned
 
              )" };
-
     fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
     {
       uint32_t first = params[0].as<uint32_t>();;
       uint32_t count = params[1].as<uint32_t>();
-      auto delegates = _client->get_chain()->get_delegates_by_vote(first, count);
-      std::vector<name_record> delegate_records;
-      delegate_records.reserve( delegates.size() );
-      for( auto delegate_id : delegates )
-         delegate_records.push_back( *_client->get_chain()->get_name_record( delegate_id ) );
+      std::vector<name_record> delegate_records = _client->blockchain_get_delegates(first, count);
       return fc::variant(delegate_records);
     }
 
@@ -1659,7 +1667,7 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_get_connection_count(const fc::variants&)
     {
-      return fc::variant(_client->get_connection_count());
+      return fc::variant(_client->network_get_connection_count());
     }
 
     static rpc_server::method_data network_get_peer_info_metadata{"network_get_peer_info", nullptr,
@@ -1701,10 +1709,10 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_get_peer_info(const fc::variants&)
     {
-      return _client->get_peer_info();
+      return _client->network_get_peer_info();
     }
 
-    static rpc_server::method_data _set_advanced_node_parameters_metadata{"_set_advanced_node_parameters", nullptr,
+    static rpc_server::method_data network_set_advanced_node_parameters_metadata{"network_set_advanced_node_parameters", nullptr,
             /* description */ "Sets advanced node parameters, used for setting up automated tests",
             /* returns: */    "null",
             /* params:          name      type         classification                   default value */
@@ -1714,9 +1722,9 @@ Examples:
 Result:
 null
   )" };
-    fc::variant rpc_server_impl::_set_advanced_node_parameters(const fc::variants& params)
+    fc::variant rpc_server_impl::network_set_advanced_node_parameters(const fc::variants& params)
     {
-      _client->set_advanced_node_parameters(params[0].get_object());
+      _client->network_set_advanced_node_parameters(params[0].get_object());
       return fc::variant();
     }
 
@@ -1743,7 +1751,7 @@ Examples:
 )" };
     fc::variant rpc_server_impl::network_add_node(const fc::variants& params)
     {
-      _client->addnode(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
+      _client->network_add_node(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
       return fc::variant();
     }
 
@@ -1759,19 +1767,20 @@ Stop BitShares server.
 )" };
     fc::variant rpc_server_impl::stop(const fc::variants& params)
     {
-       if( _on_quit_promise ) _on_quit_promise->set_value();
-       _client->stop();
+      if (_on_quit_promise)
+        _on_quit_promise->set_value();
+      _client->stop();
       return fc::variant();
     }
 
-    static rpc_server::method_data _get_transaction_propagation_data_metadata{"_get_transaction_propagation_data", nullptr,
+    static rpc_server::method_data network_get_transaction_propagation_data_metadata{"network_get_transaction_propagation_data", nullptr,
             /* description */ "Returns the time the transaction was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type             classification                   default value */
                               {{"transaction_id", "transaction_id",rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_transaction_propagation_data <transaction_id>
+network_get_transaction_propagation_data <transaction_id>
 
 Returns the time the transaction was first seen by this client.
 
@@ -1780,18 +1789,19 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_transaction_propagation_data(const fc::variants& params)
+    fc::variant rpc_server_impl::network_get_transaction_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_transaction_propagation_data(params[0].as<transaction_id_type>()));
+      return fc::variant(_client->network_get_transaction_propagation_data(params[0].as<transaction_id_type>()));
     }
-    static rpc_server::method_data _get_block_propagation_data_metadata{"_get_block_propagation_data", nullptr,
+
+    static rpc_server::method_data network_get_block_propagation_data_metadata{"network_get_block_propagation_data", nullptr,
             /* description */ "Returns the time the block was first seen by this client",
             /* returns: */    "bts::net::message_propagation_data",
             /* params:          name              type             classification                   default value */
                               {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
 R"(
-_get_block_propagation_data <block_hash>
+network_get_block_propagation_data <block_hash>
 
 Returns the time the block was first seen by this client.
 
@@ -1800,9 +1810,9 @@ The data in the message cache is only kept for a few blocks, so you can only use
 about recent transactions. This is intended to be used to track message propagation delays
 in our test network.
 )" };
-    fc::variant rpc_server_impl::_get_block_propagation_data(const fc::variants& params)
+    fc::variant rpc_server_impl::network_get_block_propagation_data(const fc::variants& params)
     {
-      return fc::variant(_client->get_block_propagation_data(params[0].as<block_id_type>()));
+      return fc::variant(_client->network_get_block_propagation_data(params[0].as<block_id_type>()));
     }
 
     static rpc_server::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,

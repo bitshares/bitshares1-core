@@ -258,7 +258,7 @@ namespace bts { namespace wallet {
          std::vector<asset>                         get_all_balances( const std::string& account_name = "*" );
          ///@}
 
-         std::vector<wallet_transaction_record>     get_transactions( unsigned count = 0 )const;
+         std::vector<wallet_transaction_record>     get_transaction_history( unsigned count = 0 )const;
 
          fc::optional<address>                      get_owning_address( const balance_id_type& id )const;
          fc::optional<wallet_account_record>        get_account_record( const address& addr)const;
