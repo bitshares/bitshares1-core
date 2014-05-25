@@ -588,9 +588,11 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 5 ) << std::left << tx.tx_num;
 
                     /* Print timestamp */
+                    /*
                     auto timestamp = tx.timestamp;
                     strftime( timestamp_buffer, std::extent<decltype( timestamp_buffer )>::value, "%F %X", localtime( (time_t*)&timestamp ) );
                     std::cout << std::setw( 20 ) << timestamp_buffer;
+                    */
 
                     /* Print from address */
                     // TODO this only covers withdraw/deposit... what is our cli extensibility

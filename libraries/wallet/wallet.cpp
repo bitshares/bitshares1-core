@@ -759,76 +759,82 @@ namespace bts { namespace wallet {
               for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
               {
                  auto record = record_itr.value();
-                 switch( (wallet_record_type)record.type )
-                 {
-                    case master_key_record_type:
+                 try {
+                    switch( (wallet_record_type)record.type )
                     {
-                       _master_key = record.as<master_key_record>();
-                       self->unlock( fc::seconds( 60 * 5 ), password );
-                       break;
-                    }
-                    case account_record_type:
-                    {
-                       auto cr = record.as<wallet_account_record>();
-                       _accounts[cr.account_number] = cr;
-                       _account_name_index[cr.name] = cr.account_number;
+                       case master_key_record_type:
+                       {
+                          _master_key = record.as<master_key_record>();
+                          self->unlock( fc::seconds( 60 * 5 ), password );
+                          break;
+                       }
+                       case account_record_type:
+                       {
+                          auto cr = record.as<wallet_account_record>();
+                          _accounts[cr.account_number] = cr;
+                          _account_name_index[cr.name] = cr.account_number;
 
-                       cache_deterministic_keys( cr );
-                       break;
+                          cache_deterministic_keys( cr );
+                          break;
+                       }
+                       case transaction_record_type:
+                       {
+                          auto wtr    = record.as<wallet_transaction_record>();
+                          auto trx_id = wtr.trx.id();
+                          _transactions[trx_id] = wtr;
+                          break;
+                       }
+                       case name_record_type:
+                       {
+                          auto wnr = record.as<wallet_name_record>();
+                          _names[wnr.id] = wnr;
+                          break;
+                       }
+                       case asset_record_type:
+                       {
+                          auto wnr = record.as<wallet_asset_record>();
+                          _assets[wnr.id] = wnr;
+                          break;
+                       }
+                       case balance_record_type:
+                       {
+                          auto war = record.as<wallet_balance_record>();
+                          _balances[war.id()] = war;
+                          break;
+                       }
+                       case private_key_record_type:
+                       {
+                          auto pkr = record.as<private_key_record>();
+                          _extra_receive_keys[pkr.extra_key_index] = pkr;
+                          auto pubkey = pkr.get_private_key(_wallet_password).get_public_key();
+                          _receive_keys[ address( pubkey ) ] =
+                             address_index( pkr.account_number, -1, pkr.extra_key_index );
+                          _receive_keys[ address(pts_address(pubkey,false,56) )] =
+                             address_index( pkr.account_number, -1, pkr.extra_key_index );
+                          _receive_keys[ address(pts_address(pubkey,true,56) ) ] =
+                             address_index( pkr.account_number, -1, pkr.extra_key_index );
+                          _receive_keys[ address(pts_address(pubkey,false,0) ) ] =
+                             address_index( pkr.account_number, -1, pkr.extra_key_index );
+                          _receive_keys[ address(pts_address(pubkey,true,0) )  ] =
+                             address_index( pkr.account_number, -1, pkr.extra_key_index );
+                          break;
+                       }
+                       case meta_record_type:
+                       {
+                          auto metar = record.as<wallet_meta_record>();
+                          _meta[metar.key] = metar;
+                          break;
+                       }
+                       default:
+                       {
+                          FC_ASSERT( false, "Wallet database contains unknown record type ${type}", ("type",record.type) );
+                          break;
+                       }
                     }
-                    case transaction_record_type:
-                    {
-                       auto wtr    = record.as<wallet_transaction_record>();
-                       auto trx_id = wtr.trx.id();
-                       _transactions[trx_id] = wtr;
-                       break;
-                    }
-                    case name_record_type:
-                    {
-                       auto wnr = record.as<wallet_name_record>();
-                       _names[wnr.id] = wnr;
-                       break;
-                    }
-                    case asset_record_type:
-                    {
-                       auto wnr = record.as<wallet_asset_record>();
-                       _assets[wnr.id] = wnr;
-                       break;
-                    }
-                    case balance_record_type:
-                    {
-                       auto war = record.as<wallet_balance_record>();
-                       _balances[war.id()] = war;
-                       break;
-                    }
-                    case private_key_record_type:
-                    {
-                       auto pkr = record.as<private_key_record>();
-                       _extra_receive_keys[pkr.extra_key_index] = pkr;
-                       auto pubkey = pkr.get_private_key(_wallet_password).get_public_key();
-                       _receive_keys[ address( pubkey ) ] =
-                          address_index( pkr.account_number, -1, pkr.extra_key_index );
-                       _receive_keys[ address(pts_address(pubkey,false,56) )] =
-                          address_index( pkr.account_number, -1, pkr.extra_key_index );
-                       _receive_keys[ address(pts_address(pubkey,true,56) ) ] =
-                          address_index( pkr.account_number, -1, pkr.extra_key_index );
-                       _receive_keys[ address(pts_address(pubkey,false,0) ) ] =
-                          address_index( pkr.account_number, -1, pkr.extra_key_index );
-                       _receive_keys[ address(pts_address(pubkey,true,0) )  ] =
-                          address_index( pkr.account_number, -1, pkr.extra_key_index );
-                       break;
-                    }
-                    case meta_record_type:
-                    {
-                       auto metar = record.as<wallet_meta_record>();
-                       _meta[metar.key] = metar;
-                       break;
-                    }
-                    default:
-                    {
-                       FC_ASSERT( false, "Wallet database contains unknown record type ${type}", ("type",record.type) );
-                       break;
-                    }
+                 } 
+                 catch( const fc::exception& w )
+                 {
+                    wlog( "warning: unable to load wallet racord: ${r}  ${w}", ("r",record)("w",w.to_detail_string()) );
                  }
               }
 
