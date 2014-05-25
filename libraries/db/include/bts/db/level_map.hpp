@@ -53,6 +53,13 @@ namespace bts { namespace db {
           _db.reset();
         }
 
+        fc::optional<Value> fetch_optional( const Key& k )
+        {
+           auto itr = find( k );
+           if( itr.valid() ) return itr.value();
+           return fc::optional<Value>();
+        }
+
         Value fetch( const Key& k )
         {
           try {

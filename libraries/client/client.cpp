@@ -77,7 +77,7 @@ namespace bts { namespace client {
             if( next_block_time < now ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
-               fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) );
+               fc::usleep( fc::seconds(2) );
                continue;
             }
             else
@@ -103,7 +103,7 @@ namespace bts { namespace client {
                   elog( "unable to produce block because wallet is locked" );
                }
             }
-            fc::usleep( fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2) );
+            fc::usleep( fc::seconds(1) );
          }
        } // delegate_loop
 
@@ -465,19 +465,6 @@ namespace bts { namespace client {
       return get_wallet()->get_account(account_name);
     }
 
-    //FIX RPC side and docs
-    asset client::wallet_get_balance(const std::string& account_name, const std::string& asset_symbol) const
-    {
-      asset_id_type asset_id = 0;
-      if (!asset_symbol.empty())
-      { 
-        fc::optional<asset_record> asset_record = get_chain()->get_asset_record(asset_symbol);
-        //FIX FC_ASSERT(asset_record.valid(),"Unrecognized asset type ${asset}",("asset")(asset_symbol));
-        asset_id = asset_record->id;
-      }
-      return get_wallet()->get_balance(account_name, asset_id);
-    }
-
     std::vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
     {
       return get_wallet()->get_transaction_history(count);
@@ -765,5 +752,28 @@ namespace bts { namespace client {
     {
       return fc::ecc::public_key(signature, digest());
     }
+
+    balances client::wallet_get_balance( const std::string& symbol, const std::string& account_name ) const
+    { try {
+       if( symbol == "*" )
+       {
+          std::vector<asset> all_balances = get_wallet()->get_all_balances(account_name);
+          balances all_results(all_balances.size());
+          for( uint32_t i = 0; i < all_balances.size(); ++i )
+          {
+             all_results[i].first  = all_balances[i].amount;
+             all_results[i].second = get_wallet()->get_symbol( all_balances[i].asset_id ); 
+          }
+          return all_results;
+       }
+       else
+       {
+          asset balance = get_wallet()->get_balance( symbol, account_name );
+          balances results(1);
+          results.back().first = balance.amount;
+          results.back().second = get_wallet()->get_symbol( balance.asset_id );
+          return results;
+       }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
 } } // bts::client

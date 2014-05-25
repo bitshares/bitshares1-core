@@ -111,10 +111,6 @@ namespace bts { namespace blockchain {
          std::vector<proposal_record>       get_proposals( uint32_t first=0, uint32_t count = -1)const;
          std::vector<proposal_vote>         get_proposal_votes( proposal_id_type proposal_id ) const;
 
-         virtual void                       remove_asset_record( asset_id_type id )const;
-         virtual void                       remove_balance_record( const balance_id_type& id )const;
-         virtual void                       remove_name_record( name_id_type id )const;
-
          void                               scan_assets( const std::function<void( const asset_record& )>& callback );
          void                               scan_balances( const std::function<void( const balance_record& )>& callback );
          void                               scan_names( const std::function<void( const name_record& )>& callback );

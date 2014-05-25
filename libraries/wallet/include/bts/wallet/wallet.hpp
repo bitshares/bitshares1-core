@@ -170,6 +170,35 @@ namespace bts { namespace wallet {
          signed_transaction       issue_asset( share_type amount, 
                                                const std::string& symbol,                                               
                                                const std::string& to_account_name );
+
+
+
+         /**
+          * 
+          */
+         signed_transaction       market_bid( share_type amount, 
+                                              const price& bid_price, 
+                                              const std::string& from_account_name = "*",
+                                              wallet_flag flag = sign_and_broadcast );
+
+         /**
+          *  If there are any bids owned by order_owner, cancel them and send the
+          *  proceeeds to receive_account_name in this wallet.
+          */
+         signed_transaction       market_cancel_order( address order_owner,
+                                              const std::string& receive_account_name = "*",
+                                              wallet_flag flag = sign_and_broadcast );
+
+         signed_transaction       market_ask( share_type delta_amount, 
+                                              const price& bid_price, 
+                                              const std::string& from_account_name = "*",
+                                              wallet_flag flag = sign_and_broadcast );
+
+         signed_transaction       market_short( share_type delta_amount, 
+                                                const price& bid_price, 
+                                                const std::string& from_account_name = "*",
+                                                wallet_flag flag = sign_and_broadcast );
+
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
@@ -183,7 +212,7 @@ namespace bts { namespace wallet {
 
          signed_transaction update_name( const std::string& name,
                                          fc::optional<fc::variant> json_data,
-                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(),
+                                         fc::optional<extended_public_key> active = fc::optional<extended_public_key>(),
                                          bool as_delegate = false,
                                          wallet_flag flag = sign_and_broadcast );
 
@@ -201,7 +230,10 @@ namespace bts { namespace wallet {
 
 
 
-         void                                         set_delegate_trust_status(const std::string& delegate_name, fc::optional<int32_t> trust_level);
+         std::string  get_symbol( asset_id_type asset_id )const;
+
+         void                                         set_delegate_trust_status(const std::string& delegate_name, 
+                                                                                fc::optional<int32_t> trust_level);
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
 
@@ -215,11 +247,15 @@ namespace bts { namespace wallet {
          ///@{
          address                                    get_new_address( const std::string& account_name = "", uint32_t invoice = 0 );
          public_key_type                            get_new_public_key( const std::string& account_name = "", uint32_t invoice = 0 );
+         extended_public_key                        get_new_extended_public_key( const std::string& account_name = "" );
 
          std::unordered_map<address,std::string>    get_receive_addresses()const;
          std::unordered_map<address,std::string>    get_send_addresses()const;
 
-         asset                                      get_balance( const std::string& account_name = "*", asset_id_type asset_id = 0 );
+         asset                                      get_balance( const std::string& symbol = BTS_ADDRESS_PREFIX,
+                                                                 const std::string& account_name = "*" );
+
+         std::vector<asset>                         get_all_balances( const std::string& account_name = "*" );
          ///@}
 
          std::vector<wallet_transaction_record>     get_transaction_history( unsigned count = 0 )const;

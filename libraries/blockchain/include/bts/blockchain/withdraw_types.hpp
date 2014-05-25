@@ -15,6 +15,7 @@ namespace bts { namespace blockchain {
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
       withdraw_option_type      = 4,
+      withdraw_by_name_type     = 5
    };
 
    /**
@@ -55,6 +56,17 @@ namespace bts { namespace blockchain {
       withdraw_with_signature( const address owner_arg = address() )
       :owner(owner_arg){}
 
+      address                 owner; 
+   };
+
+   struct withdraw_by_name
+   {
+      static const uint8_t    type;
+      withdraw_by_name( const address owner_arg = address() )
+      :owner(owner_arg){}
+
+      public_key_type         one_time_key;
+      std::vector<char>       encrypted_meta_data;
       address                 owner; 
    };
 
@@ -115,11 +127,14 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_signature_type)
         (withdraw_multi_sig_type)
         (withdraw_password_type)
-        (withdraw_option_type) )
+        (withdraw_option_type) 
+        (withdraw_by_name_type) 
+        )
 
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
 FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
+FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_meta_data)(owner) )
 

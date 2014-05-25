@@ -20,7 +20,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (5ll)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (30ll)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -42,6 +42,8 @@
 
 /**
  *  The maximum amount that can be issued for user assets.
+ *
+ *  10^18 / 2^63 < 1 
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                   (1000*1000*1000ll*1000*1000ll)
 

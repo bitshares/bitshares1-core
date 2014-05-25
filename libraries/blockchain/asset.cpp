@@ -42,7 +42,7 @@ namespace bts { namespace blockchain {
   {
       fc::bigint bi(amount);
       bi *= fix6464;
-      bi >>= 64;
+      bi /= BTS_PRICE_PRECISION; //>>= 64;
       return asset( fc::uint128(bi).high_bits(), asset_id );
   }
 
@@ -71,16 +71,46 @@ namespace bts { namespace blockchain {
   }
 
   price::price( const std::string& s )
-  {
+  { try {
+     
      std::stringstream ss(s);
-     std::string quote, base, asset_ids;
-     double a;
-     ss >> a >> asset_ids; 
-     quote = asset_ids.substr(0,3);
-     base = asset_ids.substr(4,3);
-     ratio      = fc::uint128( uint64_t(a), uint64_t(-1) * (a - uint64_t(a)) ); 
-     quote_asset_id = fc::variant(quote).as<asset_id_type>();
-     base_asset_id  = fc::variant(base).as<asset_id_type>();
+     std::string price_int;
+     char div;
+     int quote_int;
+     int base_int;
+     char dot;
+     int64_t int_part;
+     std::string fraction_part;
+     ss >> int_part >> dot >> fraction_part >> quote_int >> div >> base_int;
+
+     std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
+     for( uint32_t i =0 ; i < fraction_part.size(); ++i )
+     {
+        fract_str[i+1] = fraction_part[i];
+     }
+     
+     ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION + fc::uint128(fract_str) - BTS_PRICE_PRECISION;
+
+     quote_asset_id = quote_int;
+     base_asset_id  = base_int;
+  } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+  void price::set_ratio_from_string( const std::string& ratio_str )
+  {
+     std::stringstream ss(ratio_str);
+     std::string price_int;
+     char dot;
+     int64_t int_part;
+     std::string fraction_part;
+     ss >> int_part >> dot >> fraction_part;
+
+     std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
+     for( uint32_t i =0 ; i < fraction_part.size(); ++i )
+     {
+        fract_str[i+1] = fraction_part[i];
+     }
+     
+     ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION + fc::uint128(fract_str) - BTS_PRICE_PRECISION;
   }
 
   price::price( double a, asset_id_type q, asset_id_type b )
@@ -89,8 +119,9 @@ namespace bts { namespace blockchain {
 
      uint64_t high_bits = uint64_t(a);
      double fract_part = a - high_bits;
-     uint64_t low_bits = uint64_t(-1)*fract_part;
-     ratio = fc::uint128( high_bits, low_bits );
+     //uint64_t low_bits = uint64_t(-1)*fract_part;
+     //ratio = fc::uint128( high_bits, low_bits );
+     ratio = (fc::uint128( high_bits ) * BTS_PRICE_PRECISION) + (int64_t((fract_part) * BTS_PRICE_PRECISION));
      base_asset_id = b;
      quote_asset_id = q;
   }
@@ -100,28 +131,28 @@ namespace bts { namespace blockchain {
      return double(ratio.high_bits()) + double(ratio.low_bits()) / double(uint64_t(-1));
   }
 
-  price::operator std::string()const
+  std::string price::ratio_string()const
   {
-     uint64_t integer = ratio.high_bits();
-     fc::uint128 one(1,0);
+     std::string full_int = std::string( ratio );
+     std::stringstream ss;
+     ss <<std::string( ratio / BTS_PRICE_PRECISION ); 
+     ss << '.';
+     ss << std::string( (ratio % BTS_PRICE_PRECISION) + BTS_PRICE_PRECISION ).substr(1);
 
-     fc::uint128 fraction(0,ratio.low_bits());
-     fraction *= BASE10_PRECISION;
-     fraction /= one;
-     fraction += BASE10_PRECISION;
-     if( fraction.to_uint64()  % 10 >= 5 )
-     {
-        fraction += 10 - (fraction.to_uint64()  % 10);
-        integer += ((fraction / BASE10_PRECISION) - 1).to_uint64();
-     }
-     std::string s = fc::to_string(integer);
-     s += ".";
-     std::string frac(fraction);
-     s += frac.substr(1,frac.size()-2);
-     s += " " + fc::to_string(int64_t(quote_asset_id.value));
-     s += "/" + fc::to_string(int64_t(base_asset_id.value)); 
-     return s;
+     auto number = ss.str();
+     while(  number.back() == '0' ) number.pop_back();
+
+     return number;
   }
+  price::operator std::string()const
+  { try {
+     auto number = ratio_string();
+
+     number += ' ' + fc::to_string(int64_t(quote_asset_id.value));
+     number +=  '/' + fc::to_string(int64_t(base_asset_id.value)); 
+
+     return number;
+  } FC_RETHROW_EXCEPTIONS( warn, "" )}
 
   /**
    *  A price will reorder the asset types such that the
@@ -143,9 +174,13 @@ namespace bts { namespace blockchain {
         p.base_asset_id = r.asset_id;
         p.quote_asset_id = l.asset_id;
 
+        //fc::uint128 bl(l.amount);
+        //fc::uint128 bl(r.amount);
+
+       // p.ratio = (bl* BTS_PRICE_PRECISION) / br;
         fc::bigint bl = l.amount;
         fc::bigint br = r.amount;
-        fc::bigint result = (bl <<= 64) / br;
+        fc::bigint result = (bl * fc::bigint(BTS_PRICE_PRECISION)) / br;
 
         p.ratio = result;
         return p;
@@ -167,16 +202,14 @@ namespace bts { namespace blockchain {
         {
             fc::bigint ba( a.amount ); // 64.64
             fc::bigint r( p.ratio ); // 64.64
-            //fc::uint128 ba_test = ba; 
 
             auto amnt = ba * r; //  128.128
-            amnt >>= 64; // 128.64 
+            amnt /= BTS_PRICE_PRECISION; // 128.64 
             auto lg2 = amnt.log2();
             if( lg2 >= 128 )
             {
                FC_THROW_EXCEPTION( exception, "overflow ${a} * ${p}", ("a",a)("p",p) );
             }
-         //   amnt += 5000000000; // TODO:evaluate this rounding factor... 
 
             asset rtn;
             rtn.amount = amnt;
@@ -188,7 +221,7 @@ namespace bts { namespace blockchain {
         else if( a.asset_id == p.quote_asset_id )
         {
             fc::bigint amt( a.amount ); // 64.64
-            amt <<= 64;  // 64.128
+            amt *= BTS_PRICE_PRECISION; //<<= 64;  // 64.128
             fc::bigint pri( p.ratio ); // 64.64
 
             auto result = amt / pri;  // 64.64
@@ -220,9 +253,9 @@ namespace bts { namespace blockchain {
 
 
 } } // bts::blockchain
-/*
 namespace fc
 {
+/*
    void to_variant( const bts::blockchain::asset& var,  variant& vo )
    {
      vo = std::string(var);
@@ -231,13 +264,19 @@ namespace fc
    {
      vo = bts::blockchain::asset( var.as_string() );
    }
+*/
    void to_variant( const bts::blockchain::price& var,  variant& vo )
    {
-     vo = std::string(var);
+      fc::mutable_variant_object obj("ratio",var.ratio_string());
+      obj( "quote_asset_id", var.quote_asset_id );
+      obj( "base_asset_id", var.base_asset_id );
+      vo = std::move(obj);
    }
    void from_variant( const variant& var,  bts::blockchain::price& vo )
    {
-     vo = bts::blockchain::price( var.as_string() );
+     auto obj = var.get_object();
+     vo.set_ratio_from_string( obj["ratio"].as_string() );
+     from_variant( obj["quote_asset_id"], vo.quote_asset_id );
+     from_variant( obj["base_asset_id"], vo.base_asset_id );
    }
 }
-*/

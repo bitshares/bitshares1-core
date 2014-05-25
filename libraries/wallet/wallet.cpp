@@ -13,6 +13,7 @@
 #include <iostream>
 
 #define EXTRA_PRIVATE_KEY_BASE (100*1000*1000ll)
+#define EXTENDED_KEY_INDEX (-100000000)
 //#define ACCOUNT_INDEX_BASE     (200*1000*1000ll)
 
 namespace bts { namespace wallet {
@@ -156,6 +157,7 @@ namespace bts { namespace wallet {
 
             wallet*                                                             self;
 
+            digest_type                                                         _chain_id;
             asset                                                               _priority_fee;
 
             bool                                                                _is_open;
@@ -178,6 +180,13 @@ namespace bts { namespace wallet {
             void store_record( const T& record )
             {
                _wallet_db.store( record.index, wallet_record(record) );
+            }
+
+            std::string get_account_name_for_address( const address& addr )
+            {
+               auto account_record = self->get_account_record( addr );
+               if( !account_record.valid() ) return std::string();
+               return account_record->name;
             }
 
             /** the password required to decrypt the wallet records */
@@ -465,7 +474,7 @@ namespace bts { namespace wallet {
                }
                else
                {
-                  if( self->is_receive_address( address( name.owner_key ) ) || self->is_receive_address( address( name.active_key) ) )
+                  if( self->is_receive_address( address( name.owner_key ) ) || self->is_receive_address( name.active_address() ) )
                   {
                      _names[name.id] = wallet_name_record( get_new_index(), name );
                      store_record( _names[name.id] );
@@ -664,7 +673,12 @@ namespace bts { namespace wallet {
 
             fc::ecc::private_key get_private_key( const address_index& index )
             { try {
-                if( index.invoice_number < 0 )
+                if( index.invoice_number == EXTENDED_KEY_INDEX )
+                {
+                    auto priv_key = _master_key->get_extended_private_key( _wallet_password );
+                    return priv_key.child( index.account_number, extended_private_key::private_derivation );
+                }
+                else if( index.invoice_number < 0 )
                 {
                     auto priv_key_rec_itr = _extra_receive_keys.find( index.payment_number );
                     if( priv_key_rec_itr == _extra_receive_keys.end() )
@@ -709,7 +723,7 @@ namespace bts { namespace wallet {
                 for( auto item : required_sigs )
                 {
                    auto priv_key = get_private_key( item );
-                   trx.sign( priv_key );
+                   trx.sign( priv_key, _chain_id );
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
@@ -803,6 +817,7 @@ namespace bts { namespace wallet {
    {
       my->self = this;
       my->_blockchain = chain_db;
+      my->_chain_id   = my->_blockchain->chain_id();
       chain_db->set_observer( my.get() );
    }
 
@@ -1258,18 +1273,59 @@ namespace bts { namespace wallet {
       });
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   std::string  wallet::get_symbol( asset_id_type asset_id )const
+   {
+      // TODO: cache these lookups for assets used by this wallet..
+      auto asset_rec = my->_blockchain->get_asset_record( asset_id );
+      if( asset_rec.valid() ) return asset_rec->symbol;
+      return "????";
+   }
+
    /**
     *  @todo respect account name, for now it will ignore the account name
     */
-   asset wallet::get_balance( const std::string& account_name, asset_id_type asset_id )
+   asset wallet::get_balance( const std::string& symbol, const std::string& account_name )
    { try {
-      asset balance(0,asset_id);
+      auto asset_rec = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT( asset_rec.valid(), "unable to find asset for symbol '${symbol}'", ("symbol",symbol) );
+
+      asset balance(0,asset_rec->id);
       for( auto item : my->_balances )
       {
-         balance += item.second.get_balance( asset_id );
+         if( account_name == "*" )
+            balance += item.second.get_balance( asset_rec->id );
+         else if( my->get_account_name_for_address( item.second.owner() ) == account_name )
+            balance += item.second.get_balance( asset_rec->id );
       }
       return balance;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("asset_id",asset_id) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
+   /**
+    *  @todo respect account name, for now it will ignore the account name
+    */
+   std::vector<asset> wallet::get_all_balances( const std::string& account_name )
+   { try {
+      std::map<asset_id_type,share_type> all_balances;
+
+      for( auto item : my->_balances )
+      {
+         if( account_name == "*" )
+         {
+            auto amount = item.second.get_balance();
+            all_balances[amount.asset_id] += amount.amount;
+         }
+         else if( my->get_account_name_for_address( item.first ) == account_name )
+         {
+            auto amount = item.second.get_balance();
+            all_balances[amount.asset_id] += amount.amount;
+         }
+      }
+      std::vector<asset> results;
+      results.reserve( all_balances.size() );
+      for( auto item : all_balances )
+         results.push_back( asset( item.second, item.first ) );
+
+      return results;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
    address  wallet::get_new_address( const std::string& account_name,
@@ -1277,6 +1333,7 @@ namespace bts { namespace wallet {
    { try {
       return address( get_new_public_key( account_name, invoice_number ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",account_name) ) }
+
 
    public_key_type  wallet::get_new_public_key( const std::string& account_name,
                                                 uint32_t invoice_number)
@@ -1307,6 +1364,31 @@ namespace bts { namespace wallet {
          return get_new_public_key( account_name, invoice_number );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+
+
+   extended_public_key wallet::get_new_extended_public_key( const std::string& account_name )
+   { try {
+      FC_ASSERT( is_unlocked() );
+      auto account_name_itr = my->_account_name_index.find( account_name );
+      if( account_name_itr != my->_account_name_index.end() )
+      {
+         auto account = my->get_account( account_name_itr->second );
+         address pub_addr(account.extended_key.get_pub_key());
+         my->_receive_keys[ pub_addr ] = address_index( account.account_number, EXTENDED_KEY_INDEX, 0 );
+         return account.extended_key;
+      }
+      else
+      {
+         wlog( "create account for '${account_name}'",
+               ("account_name",account_name) );
+
+         create_receive_account( account_name );
+         return get_new_extended_public_key( account_name );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+
 
    // TODO: save memo
    invoice_summary  wallet::transfer( const std::string& to_account_name,
@@ -1375,9 +1457,9 @@ namespace bts { namespace wallet {
       FC_ASSERT( !prior_asset, "Asset already registered", ("prior_asset",*prior_asset) );
 
       oname_record issuer_record = my->_blockchain->get_name_record( issuer_name );
-      FC_ASSERT( prior_asset, "Issuer must be a registered name", ("name",issuer_name) );
+      FC_ASSERT( !!issuer_record, "Issuer must be a registered name", ("name",issuer_name) );
 
-      required_sigs.insert( address( issuer_record->active_key ) );
+      required_sigs.insert( issuer_record->active_address() );
 
       trx.create_asset(symbol, asset_name, description, data, issuer_record->id, maximum_share_supply);
 
@@ -1404,11 +1486,11 @@ namespace bts { namespace wallet {
 
       oasset_record asset_to_issue = my->_blockchain->get_asset_record( symbol );
       FC_ASSERT( asset_to_issue.valid(), "Unknown Asset '${symbol}'", ("symbol",symbol) );
-      FC_ASSERT( asset_to_issue->issuer_name_id == asset_record::market_issued_asset, "Cannot issue market-issued asset" );
+      FC_ASSERT( asset_to_issue->issuer_name_id != asset_record::market_issued_asset, "Cannot issue market-issued asset" );
 
       oname_record issuer_record = my->_blockchain->get_name_record( asset_to_issue->issuer_name_id );
       FC_ASSERT( issuer_record, "Database is corrupted, there should be a registered issuer" );
-      required_sigs.insert( address( issuer_record->active_key ) );
+      required_sigs.insert( issuer_record->active_address() );
 
       FC_ASSERT( asset_to_issue->can_issue( amount ) );
 
@@ -1436,7 +1518,7 @@ namespace bts { namespace wallet {
 
    signed_transaction wallet::update_name( const std::string& name,
                                            fc::optional<fc::variant> json_data,
-                                           fc::optional<public_key_type> active,
+                                           fc::optional<extended_public_key> active,
                                            bool as_delegate,
                                            wallet_flag flag )
    { try {
@@ -1503,7 +1585,7 @@ namespace bts { namespace wallet {
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
 
       auto owner_key  = get_new_public_key();
-      auto active_key = get_new_public_key();
+      auto active_key = get_new_extended_public_key();
       trx.reserve_name( name, json_data, owner_key, active_key, as_delegate );
 
       my->sign_transaction( trx, required_sigs );
@@ -1527,7 +1609,7 @@ namespace bts { namespace wallet {
        signed_transaction trx;
 
        //sign as "name"
-       required_sigs.insert(address(name_rec->active_key));
+       required_sigs.insert(name_rec->active_address());
 
        asset total_fees = my->_priority_fee;
        auto current_fee_rate = my->_blockchain->get_fee_rate();
@@ -1558,7 +1640,7 @@ namespace bts { namespace wallet {
        signed_transaction trx;
 
        //sign as "name"
-       required_sigs.insert(address(name_rec->active_key));
+       required_sigs.insert(name_rec->active_address());
 
        asset total_fees = my->_priority_fee;
        my->withdraw_to_transaction(trx, total_fees, required_sigs);
@@ -1662,6 +1744,10 @@ namespace bts { namespace wallet {
    std::unordered_map<address,std::string> wallet::get_send_addresses()const
    {
       std::unordered_map<address,std::string> result;
+      for ( auto item : my->_sending_keys )
+      {
+          result[item.first] = my->get_address_label( item.second );
+      }
       return result;
    }
 

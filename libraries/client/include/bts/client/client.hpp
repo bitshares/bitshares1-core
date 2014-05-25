@@ -11,6 +11,7 @@ namespace bts { namespace client {
 
     namespace detail { class client_impl; }
 
+    using namespace bts::rpc;
     /**
      * @class client
      * @brief integrates the network, wallet, and blockchain
@@ -44,25 +45,29 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
          //TODO? fc::variant get_info()
-         bts::blockchain::block_id_type blockchain_get_blockhash(int32_t block_number) const override;
-                               uint32_t blockchain_get_blockcount() const override;
-                                   void wallet_open_file(const fc::path wallet_filename, const std::string& password) override;
-                                   void wallet_open(const std::string& wallet_name, const std::string& password) override;
-                                   void wallet_create(const std::string& wallet_name, const std::string& password) override;
-                            std::string wallet_get_name() const override;
-                                   void wallet_close() override;
-                                   void wallet_export_to_json(const fc::path& path) const override;
-                                   void wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase) override;
-                                   void wallet_lock() override;
-                                   void wallet_unlock(const fc::microseconds& timeout, const std::string& password) override;
-                                   void wallet_change_passphrase(const std::string& new_password) override;
-                       extended_address wallet_create_receive_account(const std::string& account_name) override;
-                                   void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) override;
-                        invoice_summary wallet_transfer( int64_t amount,
-                                                         const std::string& to_account_name,
-                                                         const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
-                                                         const std::string& from_account_name = std::string("*"),
-                                                         const std::string& invoice_memo = std::string()) override;
+         block_id_type          blockchain_get_blockhash(int32_t block_number) const override;
+         uint32_t               blockchain_get_blockcount() const override;
+         void                   wallet_open_file(const fc::path wallet_filename, const std::string& password) override;
+         void                   wallet_open(const std::string& wallet_name, const std::string& password) override;
+         void                   wallet_create(const std::string& wallet_name, const std::string& password) override;
+         std::string            wallet_get_name() const override;
+         void                   wallet_close() override;
+         void                   wallet_export_to_json(const fc::path& path) const override;
+         void                   wallet_create_from_json(const fc::path& path, 
+                                                        const std::string& name, 
+                                                        const std::string& passphrase) override;
+         void                   wallet_lock();
+         void                   wallet_unlock( const fc::microseconds& timeout, 
+                                               const std::string& password) override;
+         void                   wallet_change_passphrase( const std::string& new_password ) override;
+         extended_address       wallet_create_receive_account(const std::string& account_name) override;
+         void                   wallet_create_sending_account(const std::string& account_name, 
+                                                             const extended_address& account_pub_key) override;
+         invoice_summary        wallet_transfer( int64_t amount,
+                                                 const std::string& to_account_name,
+                                                 const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
+                                                 const std::string& from_account_name = std::string("*"),
+                                                 const std::string& invoice_memo = std::string()) override;
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,
@@ -78,7 +83,8 @@ namespace bts { namespace client {
          std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const override;
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override;
-                                  asset wallet_get_balance(const std::string& account_name = std::string("*"), const std::string& asset_symbol = std::string()) const override;
+                 balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 
+                                                            const std::string& account_name = "*" ) const override;
          std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const override;
                            oname_record blockchain_get_name_record(const std::string& name) const override;
                            oname_record blockchain_get_name_record_by_id(name_id_type name_id) const override;

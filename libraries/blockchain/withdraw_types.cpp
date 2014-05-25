@@ -6,6 +6,7 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
    const uint8_t withdraw_option::type            = withdraw_option_type;
+   const uint8_t withdraw_by_name::type           = withdraw_by_name_type;
 
    balance_id_type withdraw_condition::get_address()const
    {
@@ -36,6 +37,9 @@ namespace fc {
          case withdraw_option_type:
             obj["data"] = fc::raw::unpack<withdraw_option>( var.data );
             break;
+         case withdraw_by_name_type:
+            obj["data"] = fc::raw::unpack<withdraw_by_name>( var.data );
+            break;
          case withdraw_null_type:
             obj["data"] = fc::variant();
             break;
@@ -64,6 +68,9 @@ namespace fc {
             break;
          case withdraw_option_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_option>() );
+            break;
+         case withdraw_by_name_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_by_name>() );
             break;
          case withdraw_null_type:
             break;

@@ -33,7 +33,7 @@ namespace bts { namespace rpc {
                                                    const std::string& asset_symbol,
                                                    const std::string& from_account = "*",
                                                    const std::string& invoice_memo = "");
-      bts::blockchain::asset wallet_get_balance(const std::string& account_name = "*", const std::string& asset_symbol = "");
+      balances wallet_get_balance(const std::string& account_name = "*", const std::string& asset_symbol = "");
       std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
       full_block blockchain_get_block(const block_id_type& block_id);
       full_block blockchain_get_block_by_number(uint32_t block_number);
@@ -119,15 +119,10 @@ namespace bts { namespace rpc {
       return _json_connection->call<bts::wallet::invoice_summary>("wallet_transfer", fc::variant(amount), fc::variant(to_account_name), named_params);
     }
 
-    bts::blockchain::asset rpc_client_impl::wallet_get_balance(const std::string& account_name, 
-                                                               const std::string& asset_symbol)
+    balances rpc_client_impl::wallet_get_balance(const std::string& asset_symbol, 
+                                                 const std::string& account_name)
     {
-      return _json_connection->call<bts::blockchain::asset>("wallet_get_balance", account_name, asset_symbol);
-    }
-
-    std::vector<wallet_transaction_record> rpc_client_impl::wallet_get_transaction_history(unsigned count)
-    {
-      return _json_connection->call<std::vector<wallet_transaction_record>>("wallet_get_transaction_history", fc::variant(count));
+      return _json_connection->call<balances>("wallet_get_balance", asset_symbol, account_name);
     }
 
     full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
@@ -269,10 +264,10 @@ namespace bts { namespace rpc {
     return my->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
   }
 
-  asset rpc_client::wallet_get_balance(const std::string& account_name, 
-                                       const std::string& asset_symbol) const
+  balances rpc_client::wallet_get_balance(const std::string& asset_symbol, 
+                                       const std::string& account_name) const
   {
-    return my->wallet_get_balance(account_name, asset_symbol);
+    return my->wallet_get_balance(asset_symbol, account_name);
   }
 
   std::vector<wallet_transaction_record> rpc_client::wallet_get_transaction_history(unsigned count) const

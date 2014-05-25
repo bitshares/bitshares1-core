@@ -14,6 +14,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
+#include <bts/wallet/pretty.hpp>
+
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -64,6 +66,7 @@ namespace bts { namespace rpc {
              (wallet_asset_issue)\
              (wallet_get_balance)\
              (wallet_get_transaction_history)\
+             (wallet_get_transaction_history_summary)\
              (wallet_rescan_blockchain)\
              (wallet_rescan_blockchain_state)\
              (wallet_reserve_name)\
@@ -106,7 +109,7 @@ namespace bts { namespace rpc {
            std::string help_string;
            std::stringstream sstream;
            //format into columns
-           sstream << std::setw(70) << std::left;
+           sstream << std::setw(100) << std::left;
            help_string = method_data.name + " ";
            for (const rpc_server::parameter_data& parameter : method_data.parameters)
            {
@@ -606,7 +609,7 @@ Result:
        fc::mutable_variant_object info;
        if( _client->get_wallet()->is_open() )
        {
-          info["balance"]          = _client->get_wallet()->get_balance("*",0).amount;
+          info["balance"]          = _client->get_wallet()->get_balance().amount;
           info["unlocked_until"]   = _client->get_wallet()->unlocked_until();
        }
        else
@@ -617,17 +620,17 @@ Result:
        info["version"]          = BTS_BLOCKCHAIN_VERSION;
        info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
        info["walletversion"]    = BTS_WALLET_VERSION;
-       info["blocks"]           = _client->get_chain()->get_head_block_num();
-       info["connections"]      = _client->network_get_connection_count();
        info["chain_id"]         = _client->get_chain()->chain_id();
-       info["_node_id"]         = _client->get_node_id();
-       info["rpc_port"]         = _config.rpc_endpoint.port();
        info["symbol"]           = BTS_ADDRESS_PREFIX;
-       asset_record share_record     = *_client->get_chain()->get_asset_record( asset_id_type(0) );
+       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blocks"]           = _client->get_chain()->get_head_block_num();
+       asset_record share_record     = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
        info["current_share_supply"]  = share_record.current_share_supply;
        info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
        info["random_seed"]      = _client->get_chain()->get_current_random_seed();
-       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["connections"]      = _client->network_get_connection_count();
+       info["rpc_port"]         = _config.rpc_endpoint.port();
+       info["_node_id"]         = _client->get_node_id();
        info["_fc_revision"]     = fc::git_revision_sha;
        info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
        return fc::variant( std::move(info) );
@@ -640,15 +643,6 @@ Result:
                                                        {{"block_number", "int", rpc_server::required_positional, fc::ovariant()} },
                                       /* prerequisites */ rpc_server::no_prerequisites,
                                       R"(
-Arguments:
-1. index (numeric, required) The block index
-
-Result:
-"hash" (string) The block hash
-
-Examples:
-> bitshares-cli blockchain_get_blockhash 1000
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockhash", "params": [1000] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
     )",
         /*aliases*/ { "bitcoin_getblockhash", "getblockhash" }};
     fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
@@ -663,12 +657,6 @@ Examples:
                                      /* params:  */    { },
                                    /* prerequisites */ rpc_server::no_prerequisites,
          R"(
-Result:
-n (numeric) The current block count
-
-Examples:
-> bitshares-cli blockchain_get_blockcount
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_blockcount", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
          )",
          /*aliases*/ { "bitcoin_getblockcount", "getblockcount" }} ;
     fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
@@ -710,7 +698,9 @@ Wallets exist in the wallet data directory
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
 Wallets exist in the wallet data directory
-   )"};
+   )",
+    /* aliases */ { "open" } 
+    };
     fc::variant rpc_server_impl::wallet_open(const fc::variants& params)
     {
         try
@@ -761,7 +751,8 @@ Wallets exist in the wallet data directory
       /* params:     */ {},
       /* prerequisites */ rpc_server::no_prerequisites,
     R"(
-    )" };
+    )",
+      /* aliases */ { "close" } };
     fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
     {
        _client->wallet_close();
@@ -817,7 +808,7 @@ Wallets exist in the wallet data directory
        /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
        R"(
         )",
-        /*aliases*/ { "bitcoin_walletlock", "walletlock" }};
+        /*aliases*/ { "bitcoin_walletlock", "walletlock", "lock"  }};
     fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
     {
        _client->wallet_lock();
@@ -826,35 +817,15 @@ Wallets exist in the wallet data directory
 
     static rpc_server::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
-          /* returns: */    "void",
+          /* returns: */    "null",
           /* params:          name             type        classification                          default value */
                             {{"timeout",       "unsigned", rpc_server::required_positional,        fc::ovariant()},
                              {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
-Stores the wallet decryption key in memory for 'timeout' seconds.
-This is needed prior to performing transactions related to private keys such as sending bitcoins
-
-Arguments:
-1. timeout (numeric, required) The time to keep the decryption key in seconds.
-2. "passphrase" (string, required) The wallet spending passphrase
-
-Note:
-Issuing the wallet_unlock command while the wallet is already unlocked will set a new unlock
-time that overrides the old one if the new time is longer than the old one, but you can immediately
-lock the wallet with the wallet_lock command.
-
-Examples:
-
-unlock the wallet for 60 seconds
-> bitshares-cli wallet_unlock 60 "my pass phrase"
-
-Lock the wallet again (before 60 seconds)
-> bitshares-cli wallet_lock
-
-As json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_unlock", "params": [60, "my pass phrase"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )"};
+     )",
+        /** aliases */ { "unlock" }
+    };
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
         unsigned timeout_sec = params[0].as<unsigned>();
@@ -1110,52 +1081,19 @@ Wallets exist in the wallet data directory.
 
     static rpc_server::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
             /* description */ "Returns the wallet's current balance",
-            /* returns: */    "asset",
+            /* returns: */    "balances",
             /* params:          name                  type      classification                   default_value */
-                              { {"account_name",       "string", rpc_server::optional_positional, fc::variant("*")},
-                                {"asset_symbol",        "string", rpc_server::optional_positional, fc::variant("")},
-                                {"minconf",            "int",    rpc_server::optional_positional, fc::variant(0)}  
+                              {
+                               {"asset_symbol",       "string", rpc_server::optional_positional, fc::variant(BTS_ADDRESS_PREFIX)},
+                               {"account_name",       "string", rpc_server::optional_positional, fc::variant("*")}
                               },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
-TODO: HOW SHOULD THIS BEHAVE WITH ASSETS AND ACCOUNTS?
-wallet_get_balance ( "account" min_confirms )
-
-If account is not specified, returns the wallet's total available balance.
-If account is specified, returns the balance in the account.
-Note that the account "" is not the same as leaving the parameter out.
-The wallet total may be different to the balance in the default "" account.
-
-Arguments:
-1. "account" (string, optional) The selected account, or "*" for entire wallet. It may be the default account using "".
-2. min_confirms (numeric, optional, default=1) Only include transactions confirmed at least this many times.
-
-Result:
-amount (numeric) The total amount in BTS received for this account.
-
-Examples:
-
-The total amount in the server across all accounts
-> bitshares-cli wallet_get_balance
-
-The total amount in the server across all accounts, with at least 5 confirmations
-> bitshares-cli wallet_get_balance "*" 6
-
-The total amount in the default account with at least 1 confirmation
-> bitshares-cli wallet_get_balance ""
-
-The total amount in the account named tabby with at least 6 confirmations
-> bitshares-cli wallet_get_balance "tabby" 6
-
-As a json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_get_balance", "params": ["tabby", 6] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
-    /*aliases*/ { "bitcoin_getbalance", "getbalance" }};
+    /*aliases*/ { "bitcoin_getbalance", "getbalance", "balance" }};
     fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
     {
-      std::string account_name = params[0].as_string();;
-      std::string asset_symbol = params[1].as_string();
-      return fc::variant( _client->wallet_get_balance( account_name, asset_symbol ) );
+      return fc::variant(_client->wallet_get_balance( params[0].as_string(), params[1].as_string() ));
     }
 
     static rpc_server::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
@@ -1171,6 +1109,125 @@ As a json rpc call
       unsigned count = params[0].as<unsigned>();
       return fc::variant( _client->wallet_get_transaction_history( count ) );
     }
+
+           static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
+            /* description */ "Returns a transaction history table for pretty printing",
+            /* returns: */ "std::vector<pretty_transaction>",
+            /* params: name type classification default_value */
+                              {{"count", "unsigned", rpc_server::optional_positional, 0}},
+            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          R"(
+     )" };
+
+//TODO Move implmentation of this function to client class
+    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
+    {
+        auto result = std::vector<pretty_transaction>();
+        return fc::variant( result );
+    }
+
+#if 0
+    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
+    { try {
+        unsigned count = params[0].as<unsigned>();
+        auto tx_recs = _client->get_wallet_get_transactions( count );
+        auto result = std::vector<pretty_transaction>();
+
+        for( auto tx_rec : tx_recs)
+        {
+            auto pretty_tx = pretty_transaction();
+            pretty_tx.number = result.size() + 1;
+            pretty_tx.block_num = tx_rec.location.block_num;
+            pretty_tx.tx_num = tx_rec.location.trx_num;
+            pretty_tx.timestamp = time_t( tx_rec.received.sec_since_epoch() );
+            pretty_tx.tx_id = tx_rec.trx.id();
+           
+            pretty_tx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.fees[BTS_ADDRESS_PREFIX] = 0;
+
+            for( auto op : tx_rec.trx.operations )
+            {
+                switch( operation_type_enum( op.type ) )
+                {
+                    case (withdraw_op_type):
+                    {
+                        auto pretty_op = pretty_withdraw_op();
+                        auto withdraw_op = op.as<withdraw_operation>();
+                        auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
+
+                        /* TODO who are we taking the vote away from?
+auto vote = withdraw_op.delegate_id;
+auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
+auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+pretty_op.vote = std::make_pair(vote, delegate_name);
+*/
+
+                        auto name = std::string("");
+                        if( owner.valid() )
+                        {
+                            auto rec = _client->get_wallet()->get_account_record( *owner );
+                            if ( rec.valid() )
+                                name = rec->name;
+                        }
+                        pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
+                        pretty_op.amount = withdraw_op.amount;
+                        pretty_tx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
+                        pretty_tx.add_operation(pretty_op);
+                        break;
+                    }
+                    case (deposit_op_type):
+                    {
+                        auto pretty_op = pretty_deposit_op();
+                        auto deposit_op = op.as<deposit_operation>();
+
+                        auto vote = deposit_op.condition.delegate_id;
+                        auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                        auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
+                        auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                        pretty_op.vote = make_pair(vote, delegate_name);
+
+                        auto name = std::string("");
+                        if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                        {
+                            auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                            auto rec = _client->get_wallet()->get_account_record( condition.owner );
+                            if (rec.valid())
+                                name = rec->name;
+                            pretty_op.owner = std::make_pair( condition.owner, name );
+                        }
+                        else
+                        {
+                            FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                            ("c", deposit_op.condition.type));
+                        }
+
+                        pretty_op.amount = deposit_op.amount;
+                        pretty_tx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
+
+                        pretty_tx.add_operation(pretty_op);
+                        break;
+                    }
+                    default:
+                    {
+                        FC_ASSERT(false, "Unknown op type: ${type}", ("type", op.type));
+                        break;
+                    }
+                } //switch op_type
+
+            }
+        
+            for (auto pair : pretty_tx.totals_in)
+            {
+                pretty_tx.fees[pair.first] = pair.second - pretty_tx.totals_out[pair.first] ;
+            }
+            result.push_back( pretty_tx );
+        }
+        return fc::variant( result );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("", params)) }
+#endif
+
 
     static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
             /* description */ "Retrieves the name record",
@@ -1374,41 +1431,6 @@ returns false if delegate is not recognized
                               {{"block_hash",     "block_id_type", rpc_server::required_positional, fc::ovariant()}},
           /* prerequisites */ rpc_server::json_authenticated,
           R"(
-blockchain_get_block "hash" ( verbose )
-
-If verbose is false, returns a string that is serialized, hex-encoded data for block 'hash'.
-If verbose is true, returns an Object with information about block <hash>.
-
-Arguments:
-1. "hash" (string, required) The block hash
-2. verbose (boolean, optional, default=true) true for a json object, false for the hex encoded data
-
-Result (for verbose = true):
-{
-"hash" : "hash", (string) the block hash (same as provided)
-"confirmations" : n, (numeric) The number of confirmations
-"size" : n, (numeric) The block size
-"height" : n, (numeric) The block height or index
-"version" : n, (numeric) The block version
-"merkleroot" : "xxxx", (string) The merkle root
-"tx" : [ (array of string) The transaction ids
-"transactionid" (string) The transaction id
-,...
-],
-"time" : ttt, (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)
-"nonce" : n, (numeric) The nonce //TODO: fake this
-"bits" : "1d00ffff", (string) The bits
-"difficulty" : x.xxx, (numeric) The difficulty //TODO: fake this
-"previousblockhash" : "hash", (string) The hash of the previous block
-"nextblockhash" : "hash" (string) The hash of the next block
-}
-
-Result (for verbose=false):
-"data" (string) A string that is serialized, hex-encoded data for block 'hash'.
-
-Examples:
-> bitshares-cli blockchain_get_block "00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "blockchain_get_block", "params": ["00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )",
     /*aliases*/ { "bitcoin_getblock", "getblock" }};
     fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)

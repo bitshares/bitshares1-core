@@ -93,6 +93,7 @@ namespace bts { namespace rpc {
       std::vector<std::string>    aliases;
     };
 
+
     rpc_server();
     virtual ~rpc_server();
 

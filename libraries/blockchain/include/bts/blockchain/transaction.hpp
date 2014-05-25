@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    {
       transaction(){}
 
-      digest_type                      digest()const;
+      digest_type                      digest( const digest_type& chain_id )const;
 
       fc::optional<fc::time_point_sec> expiration;
       /**
@@ -48,12 +48,12 @@ namespace bts { namespace blockchain {
       void reserve_name( const std::string& name, 
                          const fc::variant& json_data, 
                          const public_key_type& master, 
-                         const public_key_type& active, 
+                         const extended_public_key& active, 
                          bool as_delegate = false );
 
       void update_name( name_id_type name_id, 
                         const fc::optional<fc::variant>& json_data, 
-                        const fc::optional<public_key_type>& active, 
+                        const fc::optional<extended_public_key>& active, 
                         bool as_delegate = false );
 
       void submit_proposal( name_id_type delegate_id,
@@ -117,7 +117,7 @@ namespace bts { namespace blockchain {
    {
       transaction_id_type                     id()const;
       size_t                                  data_size()const;
-      void                                    sign( const fc::ecc::private_key& signer );
+      void                                    sign( const fc::ecc::private_key& signer, const digest_type& chain_id );
 
       std::vector<fc::ecc::compact_signature> signatures;
    };
@@ -139,7 +139,7 @@ namespace bts { namespace blockchain {
    class transaction_evaluation_state
    {
       public:
-         transaction_evaluation_state( const chain_interface_ptr& blockchain );
+         transaction_evaluation_state( const chain_interface_ptr& blockchain, digest_type chain_id );
          transaction_evaluation_state(){};
 
          virtual ~transaction_evaluation_state();
@@ -173,6 +173,10 @@ namespace bts { namespace blockchain {
          virtual void evaluate_fire_operation( const fire_delegate_operation& op );
          virtual void evaluate_submit_proposal( const submit_proposal_operation& op );
          virtual void evaluate_vote_proposal( const vote_proposal_operation& op );
+         virtual void evaluate_bid( const bid_operation& op );
+         virtual void evaluate_ask( const ask_operation& op );
+         virtual void evaluate_short( const short_operation& op );
+         virtual void evaluate_cover( const cover_operation& op );
          
          virtual void fail( bts_error_code error_code, const fc::variant& data );
          
@@ -247,6 +251,7 @@ namespace bts { namespace blockchain {
          std::unordered_map<name_id_type, vote_state>     net_delegate_votes;
       protected:
          chain_interface_ptr                              _current_state;
+         digest_type                                      _chain_id;
    };
 
    typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
