@@ -1,14 +1,15 @@
-/* This file contains structs to populate for JSON representation of transactions/operations
+/* 
+ * This file contains structs to populate for JSON representation of transactions/operations
  * for wallets and block explorers and such 
  */
 
 #pragma once
-#include <fc/variant.hpp>
-#include <bts/client/client.hpp>
+
 #include <bts/blockchain/address.hpp>
+#include <bts/client/client.hpp>
+#include <fc/variant.hpp>
 
 namespace bts { namespace wallet {
-using namespace bts::client;
 
 struct pretty_transaction
 {
@@ -26,6 +27,7 @@ struct pretty_transaction
 
     std::vector<fc::variant>                    operations;
 };
+
 struct pretty_withdraw_op 
 {
     pretty_withdraw_op():op_name("withdraw"){}
