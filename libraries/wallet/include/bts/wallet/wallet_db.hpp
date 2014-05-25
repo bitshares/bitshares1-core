@@ -118,7 +118,7 @@ namespace bts { namespace wallet {
        wallet_transaction_record():transmit_count(0){}
 
        wallet_transaction_record( int32_t i, const signed_transaction& s )
-       :index(i),trx(s){}
+       :index(i),trx(s),transmit_count(0){}
 
        int32_t                        index;
        signed_transaction             trx;
