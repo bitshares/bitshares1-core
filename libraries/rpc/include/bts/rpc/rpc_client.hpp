@@ -57,7 +57,7 @@ namespace bts { namespace rpc {
         virtual std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const {};
         virtual                std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const {};
         virtual                                    void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) {};
-        virtual std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start {}, uint32_t count = -1) const {};
+        virtual std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const {};
 
         virtual          wallet_account_record wallet_get_account(const std::string& account_name) const {};
         virtual                       balances wallet_get_balance(const std::string& asset_symbol = std::string(BTS_ADDRESS_PREFIX), const std::string& account_name = std::string("*")) const {};
@@ -97,7 +97,7 @@ namespace bts { namespace rpc {
          virtual                        full_block blockchain_get_block(const block_id_type& block_id) const {};
          virtual                        full_block blockchain_get_block_by_number(uint32_t block_number) const {};
 
-         virtual              void wallet_rescan_blockchain(uint32_t starting_block_number {}) {};
+         virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) {};
          virtual              void wallet_rescan_blockchain_state() {};
          virtual              void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase) {};
          virtual              void wallet_import_private_key(const std::string& wif_key_to_import, 
