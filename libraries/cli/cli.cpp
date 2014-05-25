@@ -1,5 +1,6 @@
 #include <bts/cli/cli.hpp>
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/wallet/pretty.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -8,6 +9,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/variant.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
 #include <iomanip>
@@ -437,11 +439,6 @@ namespace bts { namespace cli {
                 std::string passphrase;
                 auto result = execute_command_with_passphrase_query( command, arguments, query_string, passphrase, verify );
 
-                if( command.find("wallet_create") != std::string::npos )
-                    std::cout << "Created wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
-                else if ( command.find("wallet_open") != std::string::npos)
-                    std::cout << "Opened wallet \"" << _client->get_wallet()->get_filename().generic_string() << "\"\n";
-
                 if( _client->get_wallet()->is_locked() )
                 {
                     fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
@@ -526,10 +523,10 @@ namespace bts { namespace cli {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
               }
-              else if (method_name == "wallet_get_transaction_history")
+              else if (method_name == "wallet_get_transaction_history_summary")
               {
-                auto trx_records = result.as<std::vector<wallet_transaction_record>>();
-                print_transaction_history(trx_records);
+                  auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
+                  print_transaction_history(tx_history_summary);
               }
               else
               {
@@ -562,7 +559,7 @@ namespace bts { namespace cli {
               }
             }
 
-            void print_transaction_history(const std::vector<wallet_transaction_record>& trx_records)
+            void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
                 std::cout << std::setw(  3 ) << std::right << "#";
@@ -578,95 +575,71 @@ namespace bts { namespace cli {
                 std::cout << "\n----------------------------------------------------------------------------------------------";
                 std::cout <<   "----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right;
-                auto count = 1;
                 char timestamp_buffer[20];
-                for( auto trx_record : trx_records )
+                for( auto tx : txs )
                 {
                     /* Print index */
-                    std::cout << std::setw( 3 ) << count;
+                    std::cout << std::setw( 3 ) << tx.number;
 
                     /* Print block and transaction numbers */
-                    std::cout << std::setw( 7 ) << trx_record.location.block_num << ".";
-                    std::cout << std::setw( 5 ) << std::left << trx_record.location.trx_num;
+                    std::cout << std::setw( 7 ) << tx.block_num << ".";
+                    std::cout << std::setw( 5 ) << std::left << tx.tx_num;
 
                     /* Print timestamp */
-                    auto timestamp = time_t( trx_record.received.sec_since_epoch() );
+                    auto timestamp = tx.timestamp;
                     strftime( timestamp_buffer, std::extent<decltype( timestamp_buffer )>::value, "%F %X", localtime( &timestamp ) );
                     std::cout << std::setw( 20 ) << timestamp_buffer;
 
                     /* Print from address */
-                    share_type withdraw_amount = 0;
+                    // TODO this only covers withdraw/deposit... what is our cli extensibility
+                    // plan?
                     bool sending = false;
+                    for( auto op : tx.operations )
                     {
-                        std::stringstream ss;
-                        bool first = true;
-                        for( auto op : trx_record.trx.operations )
+                        if (op.get_object()["op_name"].as<std::string>()
+                                == std::string("withdraw"))
                         {
-                            if( operation_type_enum( op.type ) == withdraw_op_type )
+                            auto withdraw_op = op.as<pretty_withdraw_op>();
+                            auto owner = _client->get_wallet()->get_owning_address( withdraw_op.owner.first );
+                            if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
+                            if (!withdraw_op.owner.second.empty())
                             {
-                                auto withdraw_op = op.as<withdraw_operation>();
-                                withdraw_amount += withdraw_op.amount;
-
-                                auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
-                                if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
-
-                                if( first )
-                                {
-                                    if( owner.valid()  )
-                                    {
-                                        auto rec = _client->get_wallet()->get_account_record( *owner );
-                                        if( rec.valid()  ) ss << rec->name;
-                                        else ss << std::string( withdraw_op.balance_id );
-                                    }
-                                    else
-                                    {
-                                        ss << std::string( withdraw_op.balance_id );
-                                    }
-                                }
-                                first = false;
+                                std::cout << std::setw( 37 ) << withdraw_op.owner.second;
+                            } else {
+                                std::cout << std::setw( 37 ) << std::string(withdraw_op.owner.first);
                             }
+                            break; // TODO
                         }
-                        std::cout << std::setw( 37 ) << ss.str();
                     }
 
                     /* Print to address */
-                    share_type deposit_amount = 0;
-                    name_id_type vote = 0;
                     bool receiving = false;
+                    std::pair<name_id_type, std::string> vote;
+                    for (auto op : tx.operations) 
                     {
-                        std::stringstream ss;
-                        bool first = true;
-                        for( auto op : trx_record.trx.operations )
+                        if( op.get_object()["op_name"].as<std::string>()
+                                == std::string("deposit") )
                         {
-                            if( operation_type_enum( op.type ) == deposit_op_type )
+                            auto deposit_op = op.as<pretty_deposit_op>();
+                            receiving |= _client->get_wallet()->is_receive_address( deposit_op.owner.first );
+                            vote = deposit_op.vote;
+                            if (!deposit_op.owner.second.empty())
                             {
-                                auto deposit_op = op.as<deposit_operation>();
-                                deposit_amount += deposit_op.amount;
-                                vote = deposit_op.condition.delegate_id;
-                                if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
-                                {
-                                    auto condition = deposit_op.condition.as<withdraw_with_signature>();
-                                    receiving |= _client->get_wallet()->is_receive_address( condition.owner );
-
-                                    if( first )
-                                    {
-                                        auto rec = _client->get_wallet()->get_account_record( condition.owner );
-                                        if( rec.valid()  ) ss << rec->name;
-                                        else ss << std::string( condition.owner );
-                                    }
-                                    first = false;
-                                }
+                                std::cout << std::setw(37) << deposit_op.owner.second;
+                            } else {
+                                std::cout << std::setw(37) << std::string(deposit_op.owner.first);
                             }
+                            break; // TODO
                         }
-                        std::cout << std::setw( 37 ) << ss.str();
                     }
 
                     /* Print amount */
                     {
                         std::stringstream ss;
                         share_type amount = 0;
-                        if( sending ) amount -= deposit_amount;
-                        if( receiving ) amount += deposit_amount;
+                        //if( sending ) amount -= tx.totals_in[BTS_ADDRESS_PREFIX];
+                        if( sending ) amount -= tx.totals_out[BTS_ADDRESS_PREFIX];
+                        if( receiving ) amount += tx.totals_out[BTS_ADDRESS_PREFIX];
                         if( amount > 0 ) ss << "+";
                         else if( amount == 0 ) ss << " ";
                         ss << amount;
@@ -676,7 +649,7 @@ namespace bts { namespace cli {
                     /* Print fee */
                     {
                         std::stringstream ss;
-                        if( sending ) ss << deposit_amount - withdraw_amount;
+                        if( sending ) ss << -tx.fees[BTS_ADDRESS_PREFIX];
                         else ss << " 0";
                         std::cout << std::setw( 8 ) << ss.str();
                     }
@@ -684,21 +657,17 @@ namespace bts { namespace cli {
                     /* Print delegate vote */
                     {
                         std::stringstream ss;
-                        auto id = (vote > 0) ? vote : name_id_type(-vote);
-                        auto rec = _client->get_chain()->get_name_record(id);
-                        auto name = rec.valid()  ? rec->name : "";
-                        if( vote > 0 ) ss << "+";
-                        else if( vote < 0 ) ss << "-";
+                        if( vote.first > 0 ) ss << "+";
+                        else if( vote.first < 0 ) ss << "-";
                         else ss << " ";
-                        ss << name;
+                        ss << vote.second;
                         std::cout << std::setw( 14 ) << ss.str();
                     }
 
                     /* Print transaction ID */
-                    std::cout << std::setw( 40 ) << std::string( trx_record.trx.id() );
+                    std::cout << std::setw( 40 ) << std::string( tx.tx_id );
 
                     std::cout << std::right << "\n";
-                    ++count;
                 }
             }
 
