@@ -530,6 +530,7 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_get_transaction_history")
               {
+                  FC_ASSERT(!"Unimplemented, use wallet_get_transaction_history_summary for raw view");
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
               }
