@@ -523,7 +523,7 @@ namespace bts { namespace cli {
                 std::string help_string = result.as<std::string>();
                 std::cout << help_string << "\n";
               }
-              else if (method_name == "wallet_get_transaction_history")
+              else if (method_name == "wallet_get_transaction_history_summary")
               {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
@@ -582,8 +582,8 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 3 ) << tx.number;
 
                     /* Print block and transaction numbers */
-                    std::cout << std::setw( 7 ) << tx.block_num;
-                    std::cout << std::setw( 5 ) << tx.tx_num;
+                    std::cout << std::setw( 7 ) << tx.block_num << ".";
+                    std::cout << std::setw( 5 ) << std::left << tx.tx_num;
 
                     /* Print timestamp */
                     auto timestamp = tx.timestamp;
@@ -600,14 +600,15 @@ namespace bts { namespace cli {
                                 == std::string("withdraw"))
                         {
                             auto withdraw_op = op.as<pretty_withdraw_op>();
-                            sending |= _client->get_wallet()->is_receive_address( withdraw_op.owner.first );
-                            if (withdraw_op.owner.second != std::string(""))
+                            auto owner = _client->get_wallet()->get_owning_address( withdraw_op.owner.first );
+                            if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
+                            if (!withdraw_op.owner.second.empty())
                             {
-                                std::cout << std::setw( 37 ) << withdraw_op.owner.second.c_str();
+                                std::cout << std::setw( 37 ) << withdraw_op.owner.second;
                             } else {
-                                std::cout << std::setw( 37 ) << &withdraw_op.owner.first;
+                                std::cout << std::setw( 37 ) << std::string(withdraw_op.owner.first);
                             }
-                            break;
+                            break; // TODO
                         }
                     }
 
@@ -622,13 +623,13 @@ namespace bts { namespace cli {
                             auto deposit_op = op.as<pretty_deposit_op>();
                             receiving |= _client->get_wallet()->is_receive_address( deposit_op.owner.first );
                             vote = deposit_op.vote;
-                            if (deposit_op.owner.second != std::string(""))
+                            if (!deposit_op.owner.second.empty())
                             {
-                                std::cout << std::setw(37) << deposit_op.owner.second.c_str();
+                                std::cout << std::setw(37) << deposit_op.owner.second;
                             } else {
-                                std::cout << std::setw(37) << &deposit_op.owner.first;
+                                std::cout << std::setw(37) << std::string(deposit_op.owner.first);
                             }
-                            break;
+                            break; // TODO
                         }
                     }
 
@@ -636,8 +637,9 @@ namespace bts { namespace cli {
                     {
                         std::stringstream ss;
                         share_type amount = 0;
-                        if( sending ) amount -= tx.totals_in["XTS"];
-                        if( receiving ) amount += tx.totals_out["XTS"];
+                        //if( sending ) amount -= tx.totals_in[BTS_ADDRESS_PREFIX];
+                        if( sending ) amount -= tx.totals_out[BTS_ADDRESS_PREFIX];
+                        if( receiving ) amount += tx.totals_out[BTS_ADDRESS_PREFIX];
                         if( amount > 0 ) ss << "+";
                         else if( amount == 0 ) ss << " ";
                         ss << amount;
@@ -647,7 +649,7 @@ namespace bts { namespace cli {
                     /* Print fee */
                     {
                         std::stringstream ss;
-                        if( sending ) ss << tx.fees["XTS"];
+                        if( sending ) ss << -tx.fees[BTS_ADDRESS_PREFIX];
                         else ss << " 0";
                         std::cout << std::setw( 8 ) << ss.str();
                     }
