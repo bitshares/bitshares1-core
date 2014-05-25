@@ -86,6 +86,7 @@ namespace bts { namespace client {
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 
                                                             const std::string& account_name = "*" ) const override;
          std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const override;
+         std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const override;
                            oname_record blockchain_get_name_record(const std::string& name) const override;
                            oname_record blockchain_get_name_record_by_id(name_id_type name_id) const override;
                           oasset_record blockchain_get_asset_record(const std::string& symbol) const override;
