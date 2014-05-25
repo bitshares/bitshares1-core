@@ -57,6 +57,7 @@ namespace bts { namespace net {
       fc::optional<fc::ip::endpoint> _remote_endpoint;
       message_oriented_connection    _message_connection;
     public:
+      fc::time_point connection_initiation_time;
       peer_connection_direction direction;
       connection_state state;
 
@@ -814,21 +815,38 @@ namespace bts { namespace net {
       for (;;)
       {
         std::list<peer_connection_ptr> peers_to_disconnect;
-        fc::time_point disconnect_threshold = fc::time_point::now() - fc::seconds(_peer_inactivity_timeout);
-        for (const peer_connection_ptr& peer : _active_connections)
-          if (peer->get_last_message_received_time() < disconnect_threshold && 
-              peer->get_last_message_sent_time() < disconnect_threshold)
-          {
-            wlog("Disconnecting from active peer ${peer} due to inactivity", ("peer", peer->get_remote_endpoint()));
-            peers_to_disconnect.push_back(peer);
-          }
+
+        // Disconnect peers that haven't sent us any data recently
+        // These numbers are just guesses and we need to think through how this works better.
+        // If we and our peers get disconnected from the rest of the network, we will not 
+        // receive any blocks or transactions from the rest of the world, and that will 
+        // probably make us disconnect from our peers even though we have working connections to
+        // them (but they won't have sent us anything since they aren't getting blocks either).
+        // This might not be so bad because it could make us initiate more connections and
+        // reconnect with the rest of the network, or it might just futher isolate us.
+      
+        uint32_t handshaking_timeout = _peer_inactivity_timeout;
+        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
         for (const peer_connection_ptr handshaking_peer : _handshaking_connections)
-          if (handshaking_peer->get_last_message_received_time() < disconnect_threshold && 
-              handshaking_peer->get_last_message_sent_time() < disconnect_threshold)
+          if (handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
+              handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
+              handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold)
           {
-            wlog("Disconnecting from handshaking peer ${peer} due to inactivity", ("peer", handshaking_peer->get_remote_endpoint()));            
+            wlog("Disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", ("peer", handshaking_peer->get_remote_endpoint())("timeout", handshaking_timeout));            
             peers_to_disconnect.push_back(handshaking_peer);
           }
+
+        uint32_t active_timeout = _peer_inactivity_timeout * 10;
+        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
+        for (const peer_connection_ptr& peer : _active_connections)
+          if (peer->connection_initiation_time < active_disconnect_threshold &&
+              peer->get_last_message_received_time() < active_disconnect_threshold &&
+              peer->get_last_message_sent_time() < active_disconnect_threshold)
+          {
+            wlog("Disconnecting from active peer ${peer} due to inactivity of at least ${timeout} seconds", ("peer", peer->get_remote_endpoint())("timeout", active_timeout));
+            peers_to_disconnect.push_back(peer);
+          }
+
         for (const peer_connection_ptr& peer : peers_to_disconnect)
           disconnect_from_peer(peer.get());
         fc::usleep(fc::seconds(15));
@@ -1766,6 +1784,7 @@ namespace bts { namespace net {
         {
           _tcp_server.accept(new_peer->get_socket());
           ilog("accepted inbound connection from ${remote_endpoint}", ("remote_endpoint", new_peer->get_socket().remote_endpoint()));
+          new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert(new_peer);
 
           fc::async([=]() { accept_connection_task(new_peer); });
@@ -1909,6 +1928,7 @@ namespace bts { namespace net {
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint(remote_endpoint);
+      new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert(new_peer);
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
     }
