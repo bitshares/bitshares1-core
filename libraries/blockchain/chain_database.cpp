@@ -414,7 +414,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( block_data.timestamp > _head_block_header.timestamp, "",
                        ("block_data.timestamp",block_data.timestamp)("timestamp()",_head_block_header.timestamp)  );
             fc::time_point_sec now = bts::blockchain::now();
-            FC_ASSERT( block_data.timestamp <=  now,
+            FC_ASSERT( block_data.timestamp <=  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC/2),
                        "${t} < ${now}", ("t",block_data.timestamp)("now",now));
 
             size_t block_size = block_data.block_size();
