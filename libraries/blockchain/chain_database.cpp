@@ -516,8 +516,7 @@ namespace bts { namespace blockchain {
              // perform a random shuffle of the sorted delegate list.
              
              auto active_del = self->next_round_active_delegates();
-             auto rand_seed = self->get_current_random_seed();
-             rand_seed = fc::sha256::hash(rand_seed);
+             auto rand_seed = fc::sha256::hash(self->get_current_random_seed());
              size_t num_del = active_del.size();
              for( uint32_t i = 0; i < num_del; ++i )
              {
@@ -1422,9 +1421,9 @@ namespace bts { namespace blockchain {
       return results;
    }
 
-   digest_type    chain_database::get_current_random_seed()const
+   fc::ripemd160    chain_database::get_current_random_seed()const
    {
-      return get_property( last_random_seed_id ).as<digest_type>();
+      return get_property( last_random_seed_id ).as<fc::ripemd160>();
    }
 
    oorder_record         chain_database::get_bid_record( const market_index_key&  key )const

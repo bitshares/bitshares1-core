@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
 
          virtual ~pending_chain_state()override;
 
-         digest_type                        get_current_random_seed()const override;
+         fc::ripemd160                      get_current_random_seed()const override;
 
          virtual fc::time_point_sec         now()const override;
          virtual int64_t                    get_fee_rate()const override;

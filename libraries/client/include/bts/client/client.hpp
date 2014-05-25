@@ -80,7 +80,7 @@ namespace bts { namespace client {
          std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const override;
                         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override;
                                             void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override;
-         std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const;// TODO dan n? this was broke   override;
+         std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const override;
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override;
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 

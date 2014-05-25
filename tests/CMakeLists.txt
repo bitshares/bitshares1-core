@@ -45,16 +45,15 @@ if( false )
    target_link_libraries( simple_net_test_client bts_client bts_net bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${crypto_library})
 endif (false )
 
-   include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
+include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
 
-#   add_executable( bitshares_client_tests bitshares_client_tests.cpp )
-#   if( WIN32 )
-#       target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
-#       set( RPCRT4 Rpcrt4 )
-#   endif (WIN32)
-#   target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library})
+add_executable( bitshares_client_tests bitshares_client_tests.cpp )
+if( WIN32 )
+   target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
+   set( RPCRT4 Rpcrt4 )
+endif (WIN32)
+target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library})
 
 if( false )
    add_subdirectory( dns )
 endif (false )
-
