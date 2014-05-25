@@ -59,6 +59,7 @@ namespace bts { namespace blockchain {
      uint64_t next_pay = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_pay + (block_fees)) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
      return next_pay;
    }
+
    full_block::operator digest_block()const
    {
       digest_block db( (signed_block_header&)*this );

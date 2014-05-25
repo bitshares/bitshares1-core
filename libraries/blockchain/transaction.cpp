@@ -319,6 +319,11 @@ namespace bts { namespace blockchain {
             add_required_signature( arec->condition.as<withdraw_with_signature>().owner );
             break;
          }
+         case withdraw_by_name_type:  
+         {
+            add_required_signature( arec->condition.as<withdraw_by_name>().owner );
+            break;
+         }
 
          case withdraw_multi_sig_type:
          {
@@ -367,8 +372,10 @@ namespace bts { namespace blockchain {
             }
             break;
          }
-         default:
+         case withdraw_null_type:
             fail( BTS_INVALID_WITHDRAW_CONDITION, fc::variant(op) );
+            break;
+      //   default:
       }
       // update delegate vote on withdrawn account..
 
