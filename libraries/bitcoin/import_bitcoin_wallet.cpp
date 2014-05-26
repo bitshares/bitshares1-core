@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include <bts/import_bitcoin_wallet.hpp>
+#include <bts/bitcoin/import_bitcoin_wallet.hpp>
 
 #include <bts/blockchain/pts_address.hpp>
 

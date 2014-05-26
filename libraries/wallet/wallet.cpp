@@ -1,7 +1,7 @@
+#include <bts/bitcoin/import_bitcoin_wallet.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/import_bitcoin_wallet.hpp>
 #include <bts/wallet/wallet.hpp>
 
 #include <fc/crypto/aes.hpp>
