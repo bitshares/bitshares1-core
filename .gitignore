@@ -22,5 +22,6 @@ programs/utils/bts_create_key
 programs/utils/bts_genesis_to_bin
 programs/utils/key_to_wif
 
+tests/bitcoin/wallet_import_tests
 tests/bitshares_client_tests
 tests/chain_database_tests
