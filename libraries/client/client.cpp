@@ -479,7 +479,6 @@ namespace bts { namespace client {
         for( auto tx_rec : tx_recs)
         {
             result.push_back( get_wallet()->to_pretty_trx( tx_rec, result.size() + 1 ) );
-
         }
 
         return result;

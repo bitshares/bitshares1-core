@@ -832,9 +832,13 @@ namespace bts { namespace wallet {
                        }
                     }
                  } 
+                 catch( const fc::invalid_arg_exception& )
+                 {
+                    throw; /* Assume invalid password */
+                 }
                  catch( const fc::exception& w )
                  {
-                    wlog( "warning: unable to load wallet racord: ${r}  ${w}", ("r",record)("w",w.to_detail_string()) );
+                    wlog( "warning: unable to load wallet record: ${r}  ${w}", ("r",record)("w",w.to_detail_string()) );
                  }
               }
 
@@ -1040,7 +1044,7 @@ namespace bts { namespace wallet {
       if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) )
       {
          my->_wallet_password = fc::sha512();
-         FC_THROW("Incorrect passphrase");
+         FC_THROW_EXCEPTION( invalid_arg_exception, "Invalid password" );
       }
       if( timeout == fc::microseconds::maximum() )
       {
