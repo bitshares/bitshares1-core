@@ -226,7 +226,7 @@ namespace bts { namespace wallet {
              **/
             std::unordered_map<int32_t, private_key_record >                    _extra_receive_keys;
 
-            std::unordered_map<std::string, uint32_t>                           _account_name_index;
+            std::unordered_map<std::string, int32_t>                           _account_name_index;
 
             int32_t get_new_index()
             {
@@ -1244,7 +1244,13 @@ namespace bts { namespace wallet {
    {
       std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+      {
+          // receive accounts are positive
+          if (item.second >= 0)
+          {
+              cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+          }
+      }
       return cons;
    }
    wallet_account_record    wallet::get_account( const std::string& account_name )const
@@ -1259,7 +1265,13 @@ namespace bts { namespace wallet {
    {
       std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+      {
+          //send accounts are negative
+          if (item.second < 0)
+          {
+              cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+          }
+      }
       return cons;
    }
 
