@@ -99,18 +99,45 @@ namespace bts { namespace wallet {
          ///@}
 
 
+         /**
+          *  The following API calls are used to manage TITAN transactions and are the
+          *  preferred API for future wallets. 
+          */
          ///@{ TITAN 
-         owallet_identity             lookup_identity( const std::string& name );
-         void                         rename_unlisted_identity( const std::string& old_name, 
-                                                                const std::string& new_name );
-         void                         add_unlisted_identity( const std::string& unregistered_name,
-                                                             const public_key_type& key );
-         public_key_type              create_unlisted_identity( const std::string& identity_name );
-         signed_transaction           register_identity( const std::string& unregistered_name, 
-                                                         bool as_delegate = false,
-                                                         const fc::variant& data = fc::variant() );
-         std::vector<wallet_identity> list_identities()const;
-         void                         scan_with_identities( uint32_t start_block = 0, uint32_t count = -1)const;
+         owallet_identity                lookup_identity( const std::string& name );
+
+         void                            rename_unlisted_identity( const std::string& old_name, 
+                                                                   const std::string& new_name );
+
+         void                            add_unlisted_identity( const std::string& unregistered_name,
+                                                                const public_key_type& key );
+
+         public_key_type                 create_unlisted_identity( const std::string& identity_name );
+                                         
+         signed_transaction              register_identity( const std::string& unregistered_name, 
+                                                            bool as_delegate = false,
+                                                            const fc::variant& data = fc::variant() );
+                                         
+         std::vector<wallet_identity>    list_identities()const;
+                                         
+         void                            scan_with_identities( uint32_t start_block = 0, 
+                                                               uint32_t count = -1 )const;
+
+         uint32_t                        get_last_identity_scanned_block_number()const;
+
+        // void                            set_default_identity( const std::string& identity_name );
+        // std::string                     get_default_identity()const;
+
+         std::vector<signed_transaction> transfer_to_identity( const std::string& to_identity_name, 
+                                                               share_type num_shares, 
+                                                               const std::string& asset_symbol,
+                                                               const std::string& from_identity_name,
+                                                               const std::string& memo_message 
+                                                             );
+
+         signed_transaction              issue_to_identity( const std::string& to_identity_name,
+                                                            share_type num_shares,
+                                                            const std::string& asset_symbol );
          ///@} TITAN 
          
 
