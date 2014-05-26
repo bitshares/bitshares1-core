@@ -1,6 +1,7 @@
 #include <bts/cli/cli.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/wallet/pretty.hpp>
+#include <bts/wallet/wallet.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -364,6 +365,45 @@ namespace bts { namespace cli {
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
+              /* TODO toast changing wallet stuff ignore
+              else if ( command == "wallet_transfer" )
+              {
+                auto amount = arguments[0].as_int64();
+                std::string to_account_name = arguments[1].as_string();
+                fc::variant_object named_params = arguments[2].get_object();
+              //  std::string   asset_symbol = named_params["asset_symbol"].as_string();
+               // std::string   from_account_name = named_params["from_account"].as_string();
+                //std::string   invoice_memo = named_params["invoice_memo"].as_string();
+                auto invoice_summary = _client->get_wallet()->transfer(to_account_name, amount,
+                                                                       from_account_name,
+                                                                       invoice_memo,
+                                                                       bts::wallet::wallet::do_not_broadcast);
+                auto count = 0;
+                std::cout << "here!\n";
+                for (auto pair : invoice_summary.payments)
+                {
+                    auto tmp_rec = wallet_transaction_record( ++count, pair.second );
+                    std::cout << "here 2\n";
+                    auto pretty_trx = _client->get_wallet()->to_pretty_trx( tmp_rec );
+                    std::cout<< "here 3\n";
+                    std::cout << fc::json::to_pretty_string( fc::variant(pretty_trx) );
+                    std::cout << "\n";
+                }
+    
+                std::cout << "Broadcast these " << 
+                             invoice_summary.payments.size() << "transactions? (Y/n)?\n";
+                char response = std::getchar();
+                if (response == 'Y')
+                {
+                    for( auto pair : invoice_summary.payments )
+                    {
+                        _client->broadcast_transaction( pair.second );
+                    }
+                } else {
+                    std::cout << "Transaction canceled.\n";
+                }
+              }
+              */
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
