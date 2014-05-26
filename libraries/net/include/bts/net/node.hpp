@@ -173,6 +173,7 @@ namespace bts { namespace net {
         bool      is_connected()const;
 
         void set_advanced_node_parameters(const fc::variant_object& params);
+        fc::variant_object get_advanced_node_parameters();
         message_propagation_data get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
         message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
         node_id_t get_node_id() const;

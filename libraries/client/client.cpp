@@ -188,6 +188,8 @@ namespace bts { namespace client {
                                                                     uint32_t limit /* = 2000 */)
        {
          FC_ASSERT(from_id.item_type == bts::client::block_message_type);
+         ilog("head_block is ${head_block_num}", ("head_block_num", _chain_db->get_head_block_num()));
+
          uint32_t last_seen_block_num;
          try
          {
@@ -797,6 +799,11 @@ namespace bts { namespace client {
     void client::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
       my->_p2p_node->set_advanced_node_parameters(params);
+    }
+
+    fc::variant_object client::network_get_advanced_node_parameters()
+    {
+      return my->_p2p_node->get_advanced_node_parameters();
     }
 
     void client::network_add_node(const fc::ip::endpoint& node, const std::string& command)

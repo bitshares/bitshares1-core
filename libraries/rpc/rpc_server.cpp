@@ -624,6 +624,8 @@ Result:
           info["unlocked_until"]            = fc::time_point_sec();
        }
        info["connections"]                  = _client->network_get_connection_count();
+       fc::variant_object advanced_params = _client->network_get_advanced_node_parameters();
+       info["maximum_number_of_connections"] = advanced_params["maximum_number_of_connections"];
        info["rpc_port"]                     = _config.rpc_endpoint.port();
        info["blockchain_version"]           = BTS_BLOCKCHAIN_VERSION;
        info["wallet_version"]               = BTS_WALLET_VERSION;
@@ -1149,7 +1151,7 @@ Wallets exist in the wallet data directory.
           };
     fc::variant rpc_server_impl::blockchain_get_name_record_by_id(const fc::variants& params)
     {
-      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as_int64()) );
+      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as<int32_t>()) );
     }
 
     static rpc_server::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
@@ -1182,7 +1184,7 @@ Wallets exist in the wallet data directory.
           };
     fc::variant rpc_server_impl::blockchain_get_asset_record_by_id(const fc::variants& params)
     {
-      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as_int64());
+      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as<int32_t>());
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
@@ -1255,8 +1257,8 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
     {
       auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
-                                                          params[1].as_int64(),
-                                                          params[2].as_uint64());
+                                                          params[1].as<int32_t>(),
+                                                          params[2].as<uint8_t>());
       return fc::variant(transaction_id);
     }
 
@@ -1273,7 +1275,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
     {
-      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as<int32_t>());
       return fc::variant();
     }
 

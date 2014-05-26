@@ -111,6 +111,7 @@ namespace bts { namespace rpc {
           virtual        uint32_t network_get_connection_count() const = 0;
           virtual    fc::variants network_get_peer_info() const = 0;
           virtual            void network_set_advanced_node_parameters(const fc::variant_object& params) = 0;
+          virtual fc::variant_object network_get_advanced_node_parameters() = 0;
           virtual            void network_add_node(const fc::ip::endpoint& node, const std::string& command) = 0;
 
          virtual bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id) = 0;
@@ -223,6 +224,8 @@ namespace bts { namespace rpc {
                   uint32_t network_get_connection_count() const override;
               fc::variants network_get_peer_info() const override;
                       void network_set_advanced_node_parameters(const fc::variant_object& params) override;
+                      fc::variant_object network_get_advanced_node_parameters() override;
+
                       void network_add_node(const fc::ip::endpoint& node, const std::string& command) override;
                       void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
 
