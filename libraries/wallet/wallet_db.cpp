@@ -72,9 +72,14 @@ namespace bts{ namespace wallet {
   }
 
   fc::ecc::private_key    wallet_identity::decrypt_private_key( const fc::sha512& password )const
-  {
-      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_private_key ) );
-  }
+  { try {
+      if( encrypted_private_key.size() == 0 ) 
+         FC_ASSERT( !"No private key for identity" );
+
+      auto plain_text_key = fc::aes_decrypt( password, encrypted_private_key );
+
+      return fc::raw::unpack<fc::ecc::private_key>( plain_text_key );
+  } FC_RETHROW_EXCEPTIONS( warn , "", ("identity",*this) ) }
 
   void                    memo_record::encrypt_private_key( const fc::sha512& password, 
                                                                 const fc::ecc::private_key& key)

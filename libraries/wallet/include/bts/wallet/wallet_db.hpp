@@ -56,7 +56,9 @@ namespace bts { namespace wallet {
       next_record_number,
       last_account_number,
       default_transaction_fee,
-      last_scanned_block_number
+      last_scanned_block_number,
+      default_identity_name,
+      last_identity_scanned_block_number
    };
 
    /** Used to store key/value property pairs.
@@ -120,7 +122,7 @@ namespace bts { namespace wallet {
       std::vector<char>                         encrypted_private_key;
       name_id_type                              registered_name_id;
 
-      std::unordered_set< transaction_id_type > received_transactions;
+      std::unordered_set< transaction_id_type > transactions;
       std::unordered_set< balance_id_type >     balances;
 
       void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
@@ -134,6 +136,7 @@ namespace bts { namespace wallet {
       wallet_identity_record():index(0){}
       int32_t               index;
    };
+   typedef fc::optional<wallet_identity_record> owallet_identity_record;
 
    struct memo_record 
    {
@@ -253,6 +256,8 @@ FC_REFLECT_ENUM( bts::wallet::meta_record_property_enum,
                     (last_account_number)
                     (default_transaction_fee)
                     (last_scanned_block_number)
+                    (last_identity_scanned_block_number)
+                    (default_identity_name)
                 )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type, 
@@ -296,7 +301,7 @@ FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::blockchain::name_reco
 FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::private_key_record,  (index)(account_number)(extra_key_index)(encrypted_key) )
 
-FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id)(balances)(received_transactions) )
+FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id)(balances)(transactions) )
 FC_REFLECT_DERIVED( bts::wallet::wallet_identity_record, (bts::wallet::wallet_identity), (index) )
 
 FC_REFLECT( bts::wallet::memo_record, (index)(to_address)(from)(balance_id)(encrypted_private_key)(memo)(valid_from_signature) )
