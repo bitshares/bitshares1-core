@@ -30,6 +30,9 @@
 #include <bts/net/config.hpp>
 #include <bts/client/messages.hpp>
 
+#include <bts/utilities/git_revision.hpp>
+#include <fc/git_revision.hpp>
+
 
 namespace bts { namespace net {
   namespace detail
@@ -66,6 +69,11 @@ namespace bts { namespace net {
       node_id_t        node_id;
       uint32_t         core_protocol_version;
       std::string      user_agent;
+      fc::optional<std::string> bitshares_git_revision_sha;
+      fc::optional<fc::time_point_sec> bitshares_git_revision_unix_timestamp;
+      fc::optional<std::string> fc_git_revision_sha;
+      fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
+      fc::optional<std::string> platform;
       fc::ip::endpoint inbound_endpoint;
       /// @}
 
@@ -526,7 +534,6 @@ namespace bts { namespace net {
 
     node_impl::node_impl() : 
       _delegate(nullptr),
-      _user_agent_string("bts::net::node"),
       _desired_number_of_connections(8),
       _maximum_number_of_connections(12),
       _peer_connection_retry_timeout(60 * 5),
@@ -535,6 +542,27 @@ namespace bts { namespace net {
       _total_number_of_unfetched_items(0)
     {
       fc::rand_pseudo_bytes(_node_id.data(), 20);
+
+      // for the time being, shoehorn a bunch of properties into the user_agent string
+      // once we settle on what we really want in there, we'll either promote them to first
+      // class fields in the hello message, or explicitly convert the user_agent string into a 
+      // propertly list
+      fc::mutable_variant_object user_agent_properties;
+      user_agent_properties["name"] = "bts::net::node";
+      user_agent_properties["bitshares_git_revision_sha"] = bts::utilities::git_revision_sha;
+      user_agent_properties["bitshares_git_revision_unix_timestamp"] = bts::utilities::git_revision_unix_timestamp;
+      user_agent_properties["fc_git_revision_sha"] = fc::git_revision_sha;
+      user_agent_properties["fc_git_revision_unix_timestamp"] = fc::git_revision_unix_timestamp;
+#if defined(__APPLE__)
+      user_agent_properties["platform"] = "osx";
+#elif defined(__linux__)
+      user_agent_properties["platform"] = "linux";
+#elif defined(_MSC_VER)
+      user_agent_properties["platform"] = "win32";
+#else 
+      user_agent_properties["platform"] = "other";
+#endif
+      _user_agent_string = fc::json::to_string(user_agent_properties);
     }
 
     node_impl::~node_impl()
@@ -1025,7 +1053,34 @@ namespace bts { namespace net {
       if (originating_peer->inbound_endpoint.get_address() == fc::ip::address())
         originating_peer->inbound_endpoint = fc::ip::endpoint(originating_peer->get_socket().remote_endpoint().get_address(),
                                                               originating_peer->inbound_endpoint.port());
-      originating_peer->user_agent = hello_message_received.user_agent;
+
+      // try to parse data out of the user_agent string
+      try
+      {
+        fc::variant user_agent_variant = fc::json::from_string(hello_message_received.user_agent);
+        if (user_agent_variant.is_object())
+        {
+          fc::variant_object user_agent_properties = user_agent_variant.get_object();
+          if (user_agent_properties.contains("name"))
+            originating_peer->user_agent = user_agent_properties["name"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_sha"))
+            originating_peer->bitshares_git_revision_sha = user_agent_properties["bitshares_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_unix_timestamp"))
+            originating_peer->bitshares_git_revision_unix_timestamp = user_agent_properties["bitshares_git_revision_unix_timestamp"].as<fc::time_point_sec>();
+          if (user_agent_properties.contains("fc_git_revision_sha"))
+            originating_peer->fc_git_revision_sha = user_agent_properties["fc_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("fc_git_revision_unix_timestamp"))
+            originating_peer->fc_git_revision_unix_timestamp = user_agent_properties["fc_git_revision_unix_timestamp"].as<fc::time_point_sec>();
+          if (user_agent_properties.contains("platform"))
+            originating_peer->platform = user_agent_properties["platform"].as_string();
+        }
+        else
+          originating_peer->user_agent = hello_message_received.user_agent;
+      }
+      catch (const fc::exception&)
+      {
+        originating_peer->user_agent = hello_message_received.user_agent;
+      }
 
       // now decide what to do with it
       if( originating_peer->state == peer_connection::secure_connection_established && 
@@ -2009,7 +2064,7 @@ namespace bts { namespace net {
       }
 
       ilog("--------- MEMORY USAGE ------------");
-      ilog("node._active_sync_requests size: ${size}", ("size", _active_sync_requests.size()));
+      ilog("node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size())); // TODO: un-break this
       ilog("node._received_sync_items size: ${size}", ("size", _received_sync_items.size()));
       ilog("node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size()));
       ilog("node._new_inventory size: ${size}", ("size", _new_inventory.size()));
@@ -2054,10 +2109,10 @@ namespace bts { namespace net {
         peer_status this_peer_status;
         this_peer_status.version = 0; // TODO
         fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
-        if( endpoint.valid() )
+        if (endpoint)
           this_peer_status.host = *endpoint;
         fc::mutable_variant_object peer_details;
-        peer_details["addr"] = endpoint.valid() ? (std::string)*endpoint : std::string();
+        peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
         peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
         peer_details["lastsend"] = peer->get_last_message_sent_time().sec_since_epoch();
@@ -2073,6 +2128,56 @@ namespace bts { namespace net {
         peer_details["startingheight"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["banscore"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["syncnode"] = ""; // TODO: fill me for bitcoin compatibility
+
+        if (peer->bitshares_git_revision_sha)
+        {
+          std::string revision_string = *peer->bitshares_git_revision_sha;
+          if (*peer->bitshares_git_revision_sha == bts::utilities::git_revision_sha)
+            revision_string += " (same as ours)";
+          else
+            revision_string += " (different from ours)";
+          peer_details["bitshares_git_revision_sha"] = *peer->bitshares_git_revision_sha;
+
+        }
+        if (peer->bitshares_git_revision_unix_timestamp)
+        {
+          peer_details["bitshares_git_revision_unix_timestamp"] = *peer->bitshares_git_revision_unix_timestamp;
+          std::string age_string = fc::get_approximate_relative_time_string(*peer->bitshares_git_revision_unix_timestamp);
+          if (*peer->bitshares_git_revision_unix_timestamp == fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
+            age_string += " (same as ours)";
+          else if (*peer->bitshares_git_revision_unix_timestamp > fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
+            age_string += " (newer than ours)";
+          else
+            age_string += " (older than ours)";
+          peer_details["bitshares_git_revision_age"] = age_string;
+        }
+        
+        if (peer->fc_git_revision_sha)
+        {
+          std::string revision_string = *peer->fc_git_revision_sha;
+          if (*peer->fc_git_revision_sha == fc::git_revision_sha)
+            revision_string += " (same as ours)";
+          else
+            revision_string += " (different from ours)";
+          peer_details["fc_git_revision_sha"] = *peer->fc_git_revision_sha;
+
+        }
+        if (peer->fc_git_revision_unix_timestamp)
+        {
+          peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
+          std::string age_string = fc::get_approximate_relative_time_string(*peer->fc_git_revision_unix_timestamp);
+          if (*peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp))
+            age_string += " (same as ours)";
+          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp))
+            age_string += " (newer than ours)";
+          else
+            age_string += " (older than ours)";
+          peer_details["fc_git_revision_age"] = age_string;
+        }
+
+        if (peer->platform)
+          peer_details["platform"] = *peer->platform;
+
         this_peer_status.info = peer_details;
         statuses.push_back(this_peer_status);
       }
