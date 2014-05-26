@@ -12,6 +12,7 @@
 #include <fc/variant.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -561,8 +562,6 @@ namespace bts { namespace cli {
 
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
-                char timestamp_buffer[20];
-
                 /* Print header */
                 std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
@@ -588,11 +587,7 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 5 ) << std::left << tx.tx_num;
 
                     /* Print timestamp */
-                    /*
-                    auto timestamp = tx.timestamp;
-                    strftime( timestamp_buffer, std::extent<decltype( timestamp_buffer )>::value, "%F %X", localtime( (time_t*)&timestamp ) );
-                    std::cout << std::setw( 20 ) << timestamp_buffer;
-                    */
+                    std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.timestamp ) );
 
                     /* Print from address */
                     // TODO this only covers withdraw/deposit... what is our cli extensibility
