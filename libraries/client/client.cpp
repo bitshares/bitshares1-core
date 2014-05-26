@@ -554,49 +554,49 @@ namespace bts { namespace client {
                     }
                     case( reserve_name_op_type ):
                     {
-                        auto reserve_name_op = op.as<reserve_name_operation>();
+                        //auto reserve_name_op = op.as<reserve_name_operation>();
                         auto pretty_op = pretty_reserve_name_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( update_name_op_type ):
                     {
-                        auto update_name_op = op.as<update_name_operation>();
+                        //auto update_name_op = op.as<update_name_operation>();
                         auto pretty_op = pretty_update_name_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( create_asset_op_type ):
                     {
-                        auto create_asset_op = op.as<create_asset_operation>();
+                        //auto create_asset_op = op.as<create_asset_operation>();
                         auto pretty_op = pretty_create_asset_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( update_asset_op_type ):
                     {
-                        auto update_asset_op = op.as<update_asset_operation>();
+                        //auto update_asset_op = op.as<update_asset_operation>();
                         auto pretty_op = pretty_update_asset_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( issue_asset_op_type ):
                     {
-                        auto issue_asset_op = op.as<issue_asset_operation>();
+                        //auto issue_asset_op = op.as<issue_asset_operation>();
                         auto pretty_op = pretty_issue_asset_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( submit_proposal_op_type ):
                     {
-                        auto submit_proposal_op = op.as<submit_proposal_operation>();
+                        //auto submit_proposal_op = op.as<submit_proposal_operation>();
                         auto pretty_op = pretty_submit_proposal_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
                     }
                     case( vote_proposal_op_type ):
                     {
-                        auto vote_proposal_op = op.as<vote_proposal_operation>();
+                        //auto vote_proposal_op = op.as<vote_proposal_operation>();
                         auto pretty_op = pretty_vote_proposal_op();
                         pretty_tx.add_operation( pretty_op );
                         break;
@@ -607,7 +607,6 @@ namespace bts { namespace client {
                         break;
                     }
                 } //switch op_type
-
             }
         
             for (auto pair : pretty_tx.totals_in)

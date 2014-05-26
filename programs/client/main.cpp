@@ -295,7 +295,7 @@ config load_config( const fc::path& datadir )
       }
       else
       {
-         std::cerr<<"Creating default config file "<<config_file.generic_string()<<"\n";
+         std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
          fc::json::save_to_file( cfg, config_file );
       }
       return cfg;
