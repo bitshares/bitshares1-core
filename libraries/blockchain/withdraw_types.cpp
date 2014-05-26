@@ -1,4 +1,5 @@
 #include <bts/blockchain/withdraw_types.hpp>
+#include <bts/blockchain/extended_address.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
@@ -10,15 +11,72 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_option::type            = withdraw_option_type;
    const uint8_t withdraw_by_name::type           = withdraw_by_name_type;
 
+   memo_status::memo_status( const memo_data& memo, 
+                   bool valid_signature,
+                   const fc::ecc::private_key& opk )
+   :memo_data(memo),has_valid_signature(valid_signature),owner_private_key(opk){}
+
+   void        memo_data::set_message( const std::string& message_str )
+   {
+      FC_ASSERT( message_str.size() < sizeof( message ) );
+      if( message_str.size() )
+      {
+         memcpy( (char*)&message, message_str.c_str(), message_str.size() );
+      }
+   }
+
+   std::string memo_data::get_message()const
+   {
+      return std::string( (const char*)&message, 20 );
+   }
+
+
    balance_id_type withdraw_condition::get_address()const
    {
       return address( *this );
    }
+   omemo_status withdraw_by_name::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
+   { try {
+      auto secret = receiver_key.get_shared_secret( one_time_key );
+      extended_private_key ext_receiver_key(receiver_key);
+      
+      fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret) );
+      auto secret_public_key = secret_private_key.get_public_key();
+
+      if( owner != address(secret_public_key) )
+         return omemo_status();
+
+      auto memo = decrypt_memo_data( secret );
+      auto check_secret = secret_private_key.get_shared_secret( memo.from );
+      bool has_valid_signature = check_secret._hash[0] == memo.from_signature;
+
+      return memo_status( memo, has_valid_signature, secret_private_key );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+   void  withdraw_by_name::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
+                                   const fc::ecc::public_key&  to_public_key,
+                                   const fc::ecc::private_key& from_private_key,
+                                   const std::string& memo_message )
+   {
+      auto secret = one_time_private_key.get_shared_secret( to_public_key );
+      auto secret_public_key = extended_public_key(to_public_key).child( fc::sha256::hash(secret) );
+      owner = address( secret_public_key.get_pub_key() );
+
+      auto check_secret = from_private_key.get_shared_secret( secret_public_key );
+
+      memo_data memo;
+      memo.set_message( memo_message );
+      memo.from    = from_private_key.get_public_key();
+      memo.from_signature = check_secret._hash[0];
+
+      encrypt_memo_data( secret, memo );
+   }
 
    memo_data withdraw_by_name::decrypt_memo_data( const fc::sha512& secret )const
-   {
+   { try {
       return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, encrypted_memo_data ) );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void withdraw_by_name::encrypt_memo_data( const fc::sha512& secret, 
                                              const memo_data& memo )

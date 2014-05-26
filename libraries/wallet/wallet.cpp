@@ -1915,49 +1915,17 @@ namespace bts { namespace wallet {
                   auto deposit_op = op.as<deposit_operation>();
                   if( deposit_op.condition.type == withdraw_by_name_type )
                   {
-                     auto deposit_condition = deposit_op.condition.as<withdraw_by_name>();
+                     auto by_name_condition = deposit_op.condition.as<withdraw_by_name>();
                      for( auto priv_key : private_keys )
                      {
-                        fc::ecc::private_key p = priv_key;
-                        auto secret = p.get_shared_secret( deposit_condition.one_time_key );
-                        fc::ecc::private_key receive_private_key = priv_key.child( fc::sha256::hash( secret ) );
-                        fc::ecc::public_key  receive_public_key  = receive_private_key.get_public_key();
-                        address              receive_address( receive_public_key );
-
-                        if( deposit_condition.owner == receive_public_key )
+                        omemo_status status = by_name_condition.decrypt_memo_data( priv_key );
+                        if( status.valid() )
                         {
-                           auto memo = deposit_condition.decrypt_memo_data( secret );
-
-                           auto op_balance_id = deposit_op.balance_id();
-
-                           memo_record new_memo_record;
-                           auto old_itr = my->_memos.find( op_balance_id );
-                           if( old_itr != my->_memos.end() )
-                              new_memo_record = old_itr->second;
-                           else
-                              new_memo_record.index =  my->get_new_index();
-                           new_memo_record.to_address = priv_key.get_public_key();
-                           new_memo_record.encrypt_private_key(  my->_wallet_password, receive_private_key);
-                           new_memo_record.memo = memo;
-
-                           my->_memos[op_balance_id] = new_memo_record;
-
-                           new_memo_record.from = memo.from; 
-                           auto check_secret = receive_private_key.get_shared_secret( memo.from );
-                           if( check_secret._hash[0] == memo.from_signature )
-                              new_memo_record.valid_from_signature = true;
-                           else
-                              new_memo_record.valid_from_signature = false;
-                           auto opt_balance_record = my->_blockchain->get_balance_record( op_balance_id );
-
-                           if( !is_receive_address( receive_public_key ) )
-                              my->import_private_key( receive_private_key, 0, "" );
-
-                           if( opt_balance_record.valid() )
-                              my->index_balance( *opt_balance_record );
-
-                            my->store_record( new_memo_record );
-                        } // if my identity
+                           // TODO:
+                           // lookup account for key... 
+                           // add private key to wallet with account id + memo_status
+                           // index balance_id for use when constructing transactions
+                        }
                      } // for each identity private key
                   } // if withdraw by name
                } // if deposit

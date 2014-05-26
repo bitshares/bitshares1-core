@@ -712,34 +712,13 @@ namespace bts { namespace blockchain {
                                       const std::string& memo_message,
                                       name_id_type delegate_id )
    {
-      memo_data clear_memo;
-
-      FC_ASSERT( memo_message.size() <= sizeof(clear_memo.message) );
-      if( memo_message.size() )
-      {
-         memcpy( (char*)&clear_memo.message,
-                 memo_message.c_str(), 
-                 memo_message.size() );
-      }
-      clear_memo.from = from_key.get_public_key();
-
-      withdraw_by_name by_name_condition;
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
 
-      
-      auto secret = one_time_private_key.get_shared_secret( receiver_key );
-      extended_public_key  extended_receiver_key( receiver_key );
-
-      auto secret_receive_public_key = extended_receiver_key.child( fc::sha256(secret) );
-
-      auto check_secret = from_key.get_shared_secret( secret_receive_public_key )._hash[0];
-      clear_memo.from_signature = check_secret;
-
       withdraw_by_name by_name;
-      by_name.one_time_key = one_time_private_key.get_public_key();
-      by_name.owner = secret_receive_public_key;
-      by_name.encrypt_memo_data( secret, clear_memo );
-
+      by_name.encrypt_memo_data( one_time_private_key,
+                                 receiver_key,
+                                 from_key,
+                                 memo_message );
 
       deposit_operation op;
       op.amount = amount.amount;

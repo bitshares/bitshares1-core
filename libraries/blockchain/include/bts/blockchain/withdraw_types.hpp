@@ -64,11 +64,28 @@ namespace bts { namespace blockchain {
       public_key_type                      from;
       uint64_t                             from_signature;
 
+      void        set_message( const std::string& message );
+      std::string get_message()const;
+
       /** messages are a constant length to preven analysis of
        * transactions with the same length memo_data
        */
       fc::optional<fc::array<char,20>>     message;
    };
+   typedef fc::optional<memo_data>         omemo_data;
+
+   struct memo_status : public memo_data
+   {
+      memo_status():has_valid_signature(false){}
+
+      memo_status( const memo_data& memo, 
+                   bool valid_signature,
+                   const fc::ecc::private_key& opk );
+
+      bool                 has_valid_signature;
+      fc::ecc::private_key owner_private_key;
+   };
+   typedef fc::optional<memo_status> omemo_status;
 
    struct withdraw_by_name
    {
@@ -76,8 +93,14 @@ namespace bts { namespace blockchain {
       withdraw_by_name( const address owner_arg = address() )
       :owner(owner_arg){}
 
-      memo_data decrypt_memo_data( const fc::sha512& secret )const;
-      void      encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
+      void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
+                                      const fc::ecc::public_key&  to_public_key,
+                                      const fc::ecc::private_key& from_private_key,
+                                      const std::string& memo_message );
+
+      memo_data    decrypt_memo_data( const fc::sha512& secret )const;
+      void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
 
       public_key_type         one_time_key;
       std::vector<char>       encrypted_memo_data;
@@ -152,4 +175,5 @@ FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(pas
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_memo_data)(owner) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message) );
+FC_REFLECT_DERIVED( bts::blockchain::memo_status, (bts::blockchain::memo_data), (has_valid_signature) )
 

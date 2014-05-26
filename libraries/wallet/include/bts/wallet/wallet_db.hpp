@@ -174,19 +174,21 @@ namespace bts { namespace wallet {
        wallet_transaction_record( int32_t i, const signed_transaction& s )
        :index(i),trx(s),transmit_count(0){}
 
-       int32_t                        index;
-       signed_transaction             trx;
-       std::string                    memo;
-       fc::time_point                 received;
-       transaction_location           location;
+       int32_t                  index;
+       int32_t                  identity_index;
+       signed_transaction       trx;
+       std::string              memo;
+       fc::time_point           received;
+       transaction_location     location;
        /** the number of times this transaction has been transmitted */
-       uint32_t                       transmit_count;
+       uint32_t                 transmit_count;
    };
 
    struct wallet_asset_record : public asset_record
    {
        static const uint32_t type;
        int32_t               index;
+       int32_t               identity_index;
 
        wallet_asset_record():index(0){}
        wallet_asset_record( int32_t idx, const asset_record& rec )
@@ -197,6 +199,7 @@ namespace bts { namespace wallet {
    {
        static const uint32_t type;
        int32_t               index;
+       int32_t               identity_index;
 
        wallet_name_record():index(0){}
        wallet_name_record( int32_t idx, const name_record& rec )
@@ -214,6 +217,7 @@ namespace bts { namespace wallet {
        wallet_balance_record():index(0){}
 
        int32_t               index;
+       int32_t               identity_index;
    };
 
    struct master_key_record 
@@ -246,6 +250,7 @@ namespace bts { namespace wallet {
        int32_t                        index;
        int32_t                        account_number;
        int32_t                        extra_key_index;
+       int32_t                        identity_index;
        std::vector<char>              encrypted_key;
    };
 
