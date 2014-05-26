@@ -781,6 +781,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
 BOOST_AUTO_TEST_CASE(unlocking_test)
 {
   client_processes.resize(1);
+  client_processes[0].set_process_number(0);
   client_processes[0].initial_balance = 100000000; // not important, we just need a nonzero balance to avoid crashing
   create_delegates_and_genesis_block();
   launch_clients();

@@ -4,6 +4,7 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <fc/interprocess/file_mapping.hpp>
 #include <fc/io/json.hpp>
@@ -77,6 +78,7 @@ namespace bts { namespace rpc {
              (network_get_block_propagation_data)\
              (network_get_transaction_propagation_data)\
              (_list_json_commands)\
+             (wallet_get_pretty_transaction)\
              (network_broadcast_transaction)\
              (network_set_advanced_node_parameters)
 
@@ -605,32 +607,35 @@ Result:
     fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
     {
        fc::mutable_variant_object info;
-       info["chain_id"]                     = _client->get_chain()->chain_id();
-       info["symbol"]                       = BTS_ADDRESS_PREFIX;
-       info["interval_seconds"]             = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blocks"]                       = _client->get_chain()->get_head_block_num();
-       info["random_seed"]                  = _client->get_chain()->get_current_random_seed();
-       asset_record share_record            = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       info["current_share_supply"]         = share_record.current_share_supply;
-       info["shares_per_bip"]               = double(share_record.current_share_supply) / BTS_BLOCKCHAIN_BIP;
-       if( _client->get_wallet()->is_open() )
-       {
-          info["balance"]                   = _client->get_wallet()->get_balance().amount;
-          info["unlocked_until"]            = _client->get_wallet()->unlocked_until();
-       }
-       else
-       {
-          info["balance"]                   = 0;
-          info["unlocked_until"]            = fc::time_point_sec();
-       }
-       info["connections"]                  = _client->network_get_connection_count();
-       info["rpc_port"]                     = _config.rpc_endpoint.port();
+       auto share_record = _client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
+       auto bips_per_share = current_share_supply > 0 ? BTS_BLOCKCHAIN_BIP / double( current_share_supply ) : 0;
+       auto advanced_params = _client->network_get_advanced_node_parameters();
+       auto wallet_balance_shares = _client->get_wallet()->is_open() ? _client->get_wallet()->get_balance().amount : 0;
+
+       info["blockchain_bips_per_share"]    = bips_per_share;
+       info["blockchain_id"]                = _client->get_chain()->chain_id();
+       info["blockchain_interval_seconds"]  = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blockchain_num_blocks"]        = _client->get_chain()->get_head_block_num();
+       info["blockchain_random_seed"]       = _client->get_chain()->get_current_random_seed();
+       info["blockchain_share_supply"]      = current_share_supply;
+       info["blockchain_symbol"]            = BTS_ADDRESS_PREFIX;
        info["blockchain_version"]           = BTS_BLOCKCHAIN_VERSION;
+       info["client_rpc_port"]              = _config.rpc_endpoint.port();
+       info["network_num_connections"]      = _client->network_get_connection_count();
+       info["network_num_connections_max"]  = advanced_params["maximum_number_of_connections"];
+       info["network_protocol_version"]     = BTS_NET_PROTOCOL_VERSION;
+       info["wallet_balance_bips"]          = wallet_balance_shares * bips_per_share;
+       info["wallet_balance_shares"]        = wallet_balance_shares;
+       info["wallet_open"]                  = _client->get_wallet()->is_open();
+       info["wallet_unlocked_until"]        = _client->get_wallet()->is_open()
+                                            ? boost::posix_time::to_iso_string( boost::posix_time::from_time_t( _client->get_wallet()->unlocked_until().sec_since_epoch() ) )
+                                            : "";
        info["wallet_version"]               = BTS_WALLET_VERSION;
-       info["protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
-       info["_node_id"]                     = _client->get_node_id();
        info["_bitshares_toolkit_revision"]  = bts::utilities::git_revision_sha;
        info["_fc_revision"]                 = fc::git_revision_sha;
+       info["_network_node_id"]             = _client->get_node_id();
+
        return fc::variant( std::move(info) );
     }
 
@@ -900,6 +905,22 @@ Wallets exist in the wallet data directory.
        return fc::variant();
     }
 
+    static rpc_server::method_data wallet_get_pretty_transaction_metadata{"wallet_get_pretty_transaction", nullptr,
+            /* description */ "Return a pretty json representation of a transaction",
+            /* returns: */    "pretty_transaction",
+            /* params:          name                  type                   classification                   default_value */
+                              {{"signed_transaction", "signed_transaction",  rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_get_pretty_transaction(const fc::variants& params)
+    {
+      bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
+      auto rec = wallet_transaction_record( -1, transaction );
+      auto pretty = _client->get_wallet()->to_pretty_trx( rec );
+      return fc::variant(pretty);
+    }
+
     static rpc_server::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
@@ -939,7 +960,6 @@ Wallets exist in the wallet data directory.
          _client->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
        return fc::variant(summary);
     }
-
 
     static rpc_server::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
@@ -1149,7 +1169,7 @@ Wallets exist in the wallet data directory.
           };
     fc::variant rpc_server_impl::blockchain_get_name_record_by_id(const fc::variants& params)
     {
-      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as_int64()) );
+      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as<int32_t>()) );
     }
 
     static rpc_server::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
@@ -1182,7 +1202,7 @@ Wallets exist in the wallet data directory.
           };
     fc::variant rpc_server_impl::blockchain_get_asset_record_by_id(const fc::variants& params)
     {
-      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as_int64());
+      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as<int32_t>());
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
@@ -1255,8 +1275,8 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
     {
       auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
-                                                          params[1].as_int64(),
-                                                          params[2].as_uint64());
+                                                          params[1].as<int32_t>(),
+                                                          params[2].as<uint8_t>());
       return fc::variant(transaction_id);
     }
 
@@ -1273,7 +1293,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
     {
-      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as<int32_t>());
       return fc::variant();
     }
 

@@ -64,7 +64,7 @@
 
 
 /**
- * A BIP is one 1/2^15 of the share supply at any given time.
+ * A BIP is one 1/10^15 of the share supply at any given time.
  */
 #define BTS_BLOCKCHAIN_BIP                          (1000*1000ll*1000*1000*1000ll)
 

@@ -843,9 +843,13 @@ namespace bts { namespace wallet {
                        }
                     }
                  } 
+                 catch( const fc::invalid_arg_exception& )
+                 {
+                    throw; /* Assume invalid password */
+                 }
                  catch( const fc::exception& w )
                  {
-                    wlog( "warning: unable to load wallet racord: ${r}  ${w}", ("r",record)("w",w.to_detail_string()) );
+                    wlog( "warning: unable to load wallet record: ${r}  ${w}", ("r",record)("w",w.to_detail_string()) );
                  }
               }
 
@@ -1051,7 +1055,7 @@ namespace bts { namespace wallet {
       if( my->_master_key->checksum != fc::sha512::hash( my->_wallet_password ) )
       {
          my->_wallet_password = fc::sha512();
-         FC_THROW("Incorrect passphrase");
+         FC_THROW_EXCEPTION( invalid_arg_exception, "Invalid password" );
       }
       if( timeout == fc::microseconds::maximum() )
       {
@@ -2130,5 +2134,147 @@ namespace bts { namespace wallet {
          results.push_back( item.second );
       return results;
    }
+
+    pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec, int number)
+    {
+        auto pretty_trx = pretty_transaction();
+        pretty_trx.number = number;
+        pretty_trx.block_num = trx_rec.location.block_num;
+        pretty_trx.trx_num = trx_rec.location.trx_num;
+        pretty_trx.timestamp = time_t( trx_rec.received.sec_since_epoch() );
+        pretty_trx.trx_id = trx_rec.trx.id();
+
+        pretty_trx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+        pretty_trx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+        pretty_trx.fees[BTS_ADDRESS_PREFIX] = 0;
+
+        for( auto op : trx_rec.trx.operations )
+        {
+            switch( operation_type_enum( op.type ) )
+            {
+                case (withdraw_op_type):
+                {
+                    auto pretty_op = pretty_withdraw_op();
+                    auto withdraw_op = op.as<withdraw_operation>();
+                    auto owner = get_owning_address( withdraw_op.balance_id );
+
+                    /* TODO who are we taking the vote away from?
+                    auto vote = withdraw_op.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = get_chain()->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = std::make_pair(vote, delegate_name);
+                    */
+
+                    auto name = std::string("");
+                    if( owner.valid() )
+                    {
+                        auto rec = get_account_record( *owner );
+                        if ( rec.valid() )
+                            name = rec->name;
+                    }
+                    pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
+                    pretty_op.amount = withdraw_op.amount;
+                    pretty_trx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
+                    pretty_trx.add_operation(pretty_op);
+                    break;
+                }
+                case (deposit_op_type):
+                {
+                    auto pretty_op = pretty_deposit_op();
+                    auto deposit_op = op.as<deposit_operation>();
+
+                    auto vote = deposit_op.condition.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = my->_blockchain->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = std::make_pair(vote, delegate_name);
+
+                    auto name = std::string("");
+                    if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                    {
+                        auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                        auto rec = get_account_record( condition.owner );
+                        if (rec.valid())
+                            name = rec->name;
+                        pretty_op.owner = std::make_pair( condition.owner, name );
+                    }
+                    else
+                    {
+                        FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                        ("c", deposit_op.condition.type));
+                    }
+
+                    pretty_op.amount = deposit_op.amount;
+                    pretty_trx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
+
+                    pretty_trx.add_operation(pretty_op);
+                    break;
+                }
+                case( reserve_name_op_type ):
+                {
+                    auto reserve_name_op = op.as<reserve_name_operation>();
+                    auto pretty_op = pretty_reserve_name_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( update_name_op_type ):
+                {
+                    auto update_name_op = op.as<update_name_operation>();
+                    auto pretty_op = pretty_update_name_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( create_asset_op_type ):
+                {
+                    auto create_asset_op = op.as<create_asset_operation>();
+                    auto pretty_op = pretty_create_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( update_asset_op_type ):
+                {
+                    auto update_asset_op = op.as<update_asset_operation>();
+                    auto pretty_op = pretty_update_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( issue_asset_op_type ):
+                {
+                    auto issue_asset_op = op.as<issue_asset_operation>();
+                    auto pretty_op = pretty_issue_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( submit_proposal_op_type ):
+                {
+                    auto submit_proposal_op = op.as<submit_proposal_operation>();
+                    auto pretty_op = pretty_submit_proposal_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( vote_proposal_op_type ):
+                {
+                    auto vote_proposal_op = op.as<vote_proposal_operation>();
+                    auto pretty_op = pretty_vote_proposal_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                default:
+                {
+                    FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
+                    break;
+                }
+            } //switch op_type
+
+        }
+    
+        for (auto pair : pretty_trx.totals_in)
+        {
+            pretty_trx.fees[pair.first] = pair.second - pretty_trx.totals_out[pair.first] ;
+        }
+
+        return pretty_trx;
+    }
 
 } } // bts::wallet
