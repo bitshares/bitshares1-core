@@ -70,7 +70,7 @@ namespace bts { namespace blockchain {
       /** messages are a constant length to preven analysis of
        * transactions with the same length memo_data
        */
-      fc::optional<fc::array<char,20>>     message;
+      fc::array<char,20>     message;
    };
    typedef fc::optional<memo_data>         omemo_data;
 
