@@ -250,6 +250,7 @@ namespace bts { namespace net {
       /// used by the task that manages connecting to peers
       // @{
       peer_database          _potential_peer_db;
+      std::list<potential_peer_record> _add_once_node_list; /// list of peers we want to connect to as soon as possible
       fc::promise<void>::ptr _retrigger_connect_loop_promise;
       bool                   _potential_peer_database_updated;
       fc::future<void>       _p2p_network_connect_loop_done;
@@ -379,6 +380,7 @@ namespace bts { namespace net {
       void accept_connection_task(peer_connection_ptr new_peer);
       void accept_loop();
       void connect_to_task(peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint);
+      peer_connection_ptr get_connection_to_endpoint(const fc::ip::endpoint& remote_endpoint);
       bool is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint);
 
       void dump_node_status();
@@ -405,6 +407,7 @@ namespace bts { namespace net {
       message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
       node_id_t get_node_id() const;
       void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
+      void clear_peer_database();
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -569,6 +572,33 @@ namespace bts { namespace net {
         ilog("Starting an iteration of p2p_network_connect_loop().");
         display_current_connections();
 
+        // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
+        if (!_add_once_node_list.empty())
+        {
+          std::list<potential_peer_record> add_once_node_list;
+          add_once_node_list.swap(_add_once_node_list);
+          ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
+          for (const potential_peer_record& add_once_peer : add_once_node_list)
+          {
+            ilog("    ${peer}", ("peer", add_once_peer.endpoint));
+          }
+          for (const potential_peer_record& add_once_peer : add_once_node_list)
+          {
+            // see if we have an existing connection to that peer.  If we do, disconnect them and
+            // then try to connect the next time through the loop
+            peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
+            if (existing_connection_ptr)
+            {
+              wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
+              disconnect_from_peer(existing_connection_ptr.get());
+              _add_once_node_list.push_back(add_once_peer);
+            }
+            else
+              connect_to(add_once_peer.endpoint);
+          }
+          ilog("Done processing \"add once\" node list");
+        }
+
         while (is_wanting_new_connections())
         {
           bool initiated_connection_this_pass = false;
@@ -603,9 +633,12 @@ namespace bts { namespace net {
         try
         {
           _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
-          if (is_wanting_new_connections())
+          if (is_wanting_new_connections() || !_add_once_node_list.empty())
           {
-            ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+            if (is_wanting_new_connections())
+              ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+            else
+              ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
             _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
           }
           else
@@ -1841,7 +1874,8 @@ namespace bts { namespace net {
     void node_impl::set_delegate(node_delegate* del)
     {
       _delegate = del;
-      if( _delegate != nullptr ) _chain_id = del->get_chain_id();
+      if (_delegate)
+        _chain_id = del->get_chain_id();
     }
 
     void node_impl::load_configuration(const fc::path& configuration_directory)
@@ -1912,7 +1946,7 @@ namespace bts { namespace net {
       // us to immediately retry this peer
       updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
                                                                                       fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
-        
+      _add_once_node_list.push_back(updated_peer_record);
       _potential_peer_db.update_entry(updated_peer_record);
       trigger_p2p_network_connect_loop();
     }
@@ -1932,21 +1966,26 @@ namespace bts { namespace net {
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
     }
 
-    bool node_impl::is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint)
+    peer_connection_ptr node_impl::get_connection_to_endpoint(const fc::ip::endpoint& remote_endpoint)
     {
       for (const peer_connection_ptr& active_peer : _active_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(active_peer->get_remote_endpoint());
         if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
-          return true;
+          return active_peer;
       }
       for (const peer_connection_ptr& handshaking_peer : _handshaking_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(handshaking_peer->get_remote_endpoint());
         if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
-          return true;
+          return handshaking_peer;
       }
-      return false;
+      return peer_connection_ptr();
+    }
+
+    bool node_impl::is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint)
+    {
+      return get_connection_to_endpoint(remote_endpoint) != peer_connection_ptr();
     }
 
     void node_impl::dump_node_status()
@@ -2132,6 +2171,10 @@ namespace bts { namespace net {
         disconnect_from_peer(peer.get());
 #endif // ENABLE_P2P_DEBUGGING_API
     }
+    void node_impl::clear_peer_database()
+    {
+      _potential_peer_db.clear();
+    }
 
   }  // end namespace detail
 
@@ -2235,5 +2278,8 @@ namespace bts { namespace net {
   {
     my->set_allowed_peers(allowed_peers);
   }
-
+  void node::clear_peer_database()
+  {
+    my->clear_peer_database();
+  }
 } } // end namespace bts::net

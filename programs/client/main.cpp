@@ -55,6 +55,8 @@ int main( int argc, char** argv )
                               ("httpport", boost::program_options::value<uint16_t>()->default_value(5680), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", boost::program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
+                              ("clear-peer-database", "erase all information in the peer database")
+                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
                               ("version", "print the version information for bts_xt_client");
 
 
@@ -161,6 +163,13 @@ int main( int argc, char** argv )
             fc::usleep( fc::seconds(3) );
          }
       }
+
+      if (option_variables.count("clear-peer-database"))
+      {
+        std::cout << "Erasing old peer database\n";
+        client->get_node()->clear_peer_database();
+      }
+
       client->connect_to_p2p_network();
       if (option_variables.count("connect-to"))
       {
@@ -274,7 +283,23 @@ fc::path get_data_dir(const boost::program_options::variables_map& option_variab
 bts::blockchain::chain_database_ptr load_and_configure_chain_database(const fc::path& datadir,
                                                                       const boost::program_options::variables_map& option_variables)
 { try {
-  std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
+  if (option_variables.count("resync-blockchain"))
+  {
+    std::cout << "Deleting old copy of the blockchain in \"" << ( datadir / "chain" ).generic_string() << "\"\n";
+    try
+    {
+      fc::remove_all(datadir / "chain");
+    }
+    catch (const fc::exception& e)
+    {
+      std::cout << "Error while deleting old copy of the blockchain: " << e.what() << "\n";
+      std::cout << "You may need to manually delete your blockchain and relaunch bitshares_client\n";
+    }
+  }
+  else
+  {
+    std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
+  }
   bts::blockchain::chain_database_ptr chain = std::make_shared<bts::blockchain::chain_database>();
 
   fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
