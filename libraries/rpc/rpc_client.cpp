@@ -32,7 +32,8 @@ namespace bts { namespace rpc {
                                                    const std::string& to_account_name,                                                   
                                                    const std::string& asset_symbol,
                                                    const std::string& from_account = "*",
-                                                   const std::string& invoice_memo = "");
+                                                   const std::string& invoice_memo = "",
+                                                   rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast);
       balances wallet_get_balance(const std::string& account_name = "*", const std::string& asset_symbol = "");
       std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
       full_block blockchain_get_block(const block_id_type& block_id);
@@ -110,7 +111,8 @@ namespace bts { namespace rpc {
                                                                   const std::string& to_account_name,
                                                                   const std::string& asset_symbol,
                                                                   const std::string& from_account_name,
-                                                                  const std::string& invoice_memo)
+                                                                  const std::string& invoice_memo,
+                                                                  rpc_client_api::generate_transaction_flag flag)
     {
       fc::mutable_variant_object named_params;
       named_params["asset_symbol"] = asset_symbol;
@@ -264,9 +266,10 @@ namespace bts { namespace rpc {
                                               const std::string& to_account_name,
                                               const std::string& asset_symbol,
                                               const std::string& from_account_name,
-                                              const std::string& invoice_memo)
+                                              const std::string& invoice_memo,
+                                              rpc_client_api::generate_transaction_flag flag)
   {
-    return my->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
+    return my->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo, flag);
   }
 
   balances rpc_client::wallet_get_balance(const std::string& asset_symbol, 

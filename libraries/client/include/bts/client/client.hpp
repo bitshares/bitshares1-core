@@ -11,6 +11,7 @@ namespace bts { namespace client {
 
     namespace detail { class client_impl; }
 
+
     using namespace bts::rpc;
     /**
      * @class client
@@ -67,16 +68,47 @@ namespace bts { namespace client {
                                                  const std::string& to_account_name,
                                                  const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                  const std::string& from_account_name = std::string("*"),
-                                                 const std::string& invoice_memo = std::string()) override;
-                     signed_transaction wallet_asset_create(const std::string& symbol,
-                                                            const std::string& asset_name,
-                                                            const std::string& description,
-                                                            const fc::variant& data,
-                                                            const std::string& issuer_name,
-                                                            share_type maximum_share_supply) override;
-                     signed_transaction wallet_asset_issue(share_type amount,
-                                                          const std::string& symbol,
-                                                          const std::string& to_account_name) override;
+                                                 const std::string& invoice_memo = std::string(),
+                                                 generate_transaction_flag flag = sign_and_broadcast) override;
+         signed_transaction         wallet_asset_create(const std::string& symbol,
+                                                        const std::string& asset_name,
+                                                        const std::string& description,
+                                                        const fc::variant& data,
+                                                        const std::string& issuer_name,
+                                                        share_type maximum_share_supply,
+                                                        generate_transaction_flag flag = sign_and_broadcast) override;
+         signed_transaction         wallet_asset_issue(share_type amount,
+                                                      const std::string& symbol,
+                                                      const std::string& to_account_name,
+                                                      generate_transaction_flag flag = sign_and_broadcast) override;
+         /**
+          *  Reserve a name and broadcast it to the network.
+          */
+         signed_transaction          wallet_reserve_name( const std::string& name, 
+                                                          const fc::variant& json_data,
+                                                          generate_transaction_flag flag = sign_and_broadcast ) override;
+         signed_transaction wallet_update_name( const std::string& name,
+                                                const fc::variant& json_data,
+                                                generate_transaction_flag flag = sign_and_broadcast) override; //TODO
+         signed_transaction wallet_register_delegate(const std::string& name,
+                                                     const fc::variant& json_data,
+                                                     generate_transaction_flag flag = sign_and_broadcast) override;
+
+         /**
+         *  Submit and vote on proposals by broadcasting to the network.
+         */
+         signed_transaction wallet_submit_proposal(const std::string& name,
+                                                     const std::string& subject,
+                                                     const std::string& body,
+                                                     const std::string& proposal_type,
+                                                     const fc::variant& json_data,
+                                                     generate_transaction_flag flag = sign_and_broadcast) override;
+         signed_transaction wallet_vote_proposal( const std::string& name,
+                                                   proposal_id_type proposal_id,
+                                                   uint8_t vote,
+                                                   generate_transaction_flag flag = sign_and_broadcast) override;
+
+
          std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const override;
                         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override;
                                             void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override;
@@ -92,26 +124,6 @@ namespace bts { namespace client {
                           oasset_record blockchain_get_asset_record(const std::string& symbol) const override;
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const override;
 
-
-         /**
-          *  Reserve a name and broadcast it to the network.
-          */
-         transaction_id_type wallet_reserve_name( const std::string& name, const fc::variant& json_data ) override;
-         transaction_id_type wallet_update_name( const std::string& name,
-                                                 const fc::variant& json_data) override; //TODO
-         transaction_id_type wallet_register_delegate(const std::string& name, const fc::variant& json_data) override;
-
-         /**
-         *  Submit and vote on proposals by broadcasting to the network.
-         */
-         transaction_id_type wallet_submit_proposal(const std::string& name,
-                                                     const std::string& subject,
-                                                     const std::string& body,
-                                                     const std::string& proposal_type,
-                                                     const fc::variant& json_data) override;
-         transaction_id_type wallet_vote_proposal( const std::string& name,
-                                                   proposal_id_type proposal_id,
-                                                   uint8_t vote) override;
 
          void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) override;
          bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override;
@@ -180,3 +192,4 @@ namespace bts { namespace client {
 } } // bts::client
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
+FC_REFLECT_ENUM( bts::client::client::generate_transaction_flag, (do_not_broadcast)(do_not_sign)(sign_and_broadcast) )

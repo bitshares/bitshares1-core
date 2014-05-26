@@ -680,7 +680,8 @@ namespace bts { namespace wallet {
 
             // TODO: optimize input balance collection
             void withdraw_to_transaction( signed_transaction& trx,
-                                          const asset& amount, std::unordered_set<address>& required_sigs )
+                                          const asset& amount,
+                                          std::unordered_set<address>& required_sigs )
             { try {
                 asset total_in( 0, amount.asset_id );
                 asset total_left = amount;
@@ -1482,7 +1483,7 @@ namespace bts { namespace wallet {
                                       const asset& amount,
                                       const std::string& from_account_name,
                                       const std::string& invoice_memo,
-                                      wallet_flag options )
+                                      const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       invoice_summary result;
@@ -1513,7 +1514,10 @@ namespace bts { namespace wallet {
       my->get_new_payment_address_from_account( to_account_name, sending_invoice_index, last_sending_payment_index, payment_address );
 
       trx.deposit( payment_address, amount, delegate_id );
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+          my->sign_transaction( trx, required_sigs );
+      }
 
       result.payments[trx.id()]         = trx;
       result.from_account               = from_account_name;
@@ -1525,7 +1529,7 @@ namespace bts { namespace wallet {
                                   ("amount",amount)
                                   ("invoice_memo",invoice_memo)
                                   ("from_account",from_account_name)
-                                  ("options",options) ) }
+                                  ("sign",sign) ) }
 
 
    signed_transaction  wallet::create_asset( const std::string& symbol,
@@ -1534,7 +1538,7 @@ namespace bts { namespace wallet {
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
                                                 share_type maximum_share_supply,
-                                                wallet_flag options  )
+                                                const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       std::unordered_set<address> required_sigs;
@@ -1555,7 +1559,10 @@ namespace bts { namespace wallet {
       fees       *= my->_blockchain->get_fee_rate();
 
       my->withdraw_to_transaction( trx, fees, required_sigs );
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+        my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create asset ${symbol}", ("symbol",symbol)("asset_name",asset_name) ) }
@@ -1563,7 +1570,8 @@ namespace bts { namespace wallet {
 
    signed_transaction  wallet::issue_asset( share_type amount,
                                             const std::string& symbol,
-                                            const std::string& to_account_name )
+                                            const std::string& to_account_name,
+                                            const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( amount > 0 );
@@ -1596,8 +1604,11 @@ namespace bts { namespace wallet {
       fees       *= my->_blockchain->get_fee_rate();
 
       my->withdraw_to_transaction( trx, fees, required_sigs );
-
-      my->sign_transaction( trx, required_sigs );
+       
+      if (sign)
+      {
+         my->sign_transaction( trx, required_sigs );
+      }
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("amount",amount)("account_name",to_account_name) ) }
 
@@ -1607,7 +1618,7 @@ namespace bts { namespace wallet {
                                            fc::optional<fc::variant> json_data,
                                            fc::optional<public_key_type> active,
                                            bool as_delegate,
-                                           wallet_flag flag )
+                                           const bool sign )
    { try {
       auto name_rec = my->_blockchain->get_name_record( name );
       FC_ASSERT( !!name_rec );
@@ -1641,7 +1652,10 @@ namespace bts { namespace wallet {
 
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
       trx.update_name( name_rec->id, json_data, active, as_delegate );
-      my->sign_transaction( trx, required_sigs );
+      if (sign) 
+      {
+         my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("json",json_data)("active",active)("as_delegate",as_delegate) ) }
@@ -1649,7 +1663,7 @@ namespace bts { namespace wallet {
    signed_transaction wallet::reserve_name( const std::string& name,
                                             const fc::variant& json_data,
                                             bool as_delegate,
-                                            wallet_flag flag )
+                                            const bool sign )
    { try {
       FC_ASSERT( name_record::is_valid_name( name ), "", ("name",name) );
       auto name_rec = my->_blockchain->get_name_record( name );
@@ -1674,7 +1688,10 @@ namespace bts { namespace wallet {
       auto active_key = get_new_public_key();
       trx.reserve_name( name, json_data, owner_key, active_key, as_delegate );
 
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+        my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
@@ -1764,7 +1781,7 @@ namespace bts { namespace wallet {
                                                const std::string& body,
                                                const std::string& proposal_type,
                                                const fc::variant& json_data,
-                                               wallet_flag /* flag */)
+                                               const bool sign )
    {
      try {
        auto name_rec = my->_blockchain->get_name_record(name);
@@ -1786,7 +1803,10 @@ namespace bts { namespace wallet {
        name_id_type delegate_id = name_rec->id;
        trx.submit_proposal(delegate_id, subject, body, proposal_type, json_data);
 
-       my->sign_transaction(trx, required_sigs);
+       if (sign)
+       {
+           my->sign_transaction(trx, required_sigs);
+       }
        return trx;
        //TODO fix rethrow
      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
@@ -1795,7 +1815,7 @@ namespace bts { namespace wallet {
    signed_transaction wallet::vote_proposal(const std::string& name, 
                                             proposal_id_type proposal_id,
                                             uint8_t vote,
-                                            wallet_flag /* flag */)
+                                            const bool sign)
    {
      try {
        auto name_rec = my->_blockchain->get_name_record(name);
@@ -1814,7 +1834,10 @@ namespace bts { namespace wallet {
        name_id_type voter_id = name_rec->id;
        trx.vote_proposal(voter_id, proposal_id, vote);
 
-       my->sign_transaction(trx, required_sigs);
+       if (sign)
+       {
+          my->sign_transaction(trx, required_sigs);
+       }
        return trx;
        //TODO fix rethrow
      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))

@@ -165,18 +165,11 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
-         enum wallet_flag
-         {
-            sign_and_broadcast    = 0,
-            do_not_broadcast      = 1,
-            do_not_sign           = 2
-         };
-
          invoice_summary          transfer( const std::string& to_account_name,
                                             const asset& amount,
                                             const std::string& from_account_name = "*",
                                             const std::string& invoice_memo = "",
-                                            wallet_flag options = sign_and_broadcast );
+                                            const bool sign = true );
 
          signed_transaction       create_asset( const std::string& symbol,
                                                 const std::string& asset_name,
@@ -184,11 +177,12 @@ namespace bts { namespace wallet {
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
                                                 share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                                wallet_flag options = sign_and_broadcast );
+                                                const bool sign = true );
 
          signed_transaction       issue_asset( share_type amount, 
                                                const std::string& symbol,                                               
-                                               const std::string& to_account_name );
+                                               const std::string& to_account_name,
+                                               const bool sign = true );
 
 
 
@@ -200,25 +194,31 @@ namespace bts { namespace wallet {
          signed_transaction reserve_name( const std::string& name,
                                           const fc::variant& json_data,
                                           bool as_delegate = false,
-                                          wallet_flag flag = sign_and_broadcast );
+                                          const bool sign = true );
 
          signed_transaction update_name( const std::string& name,
                                          fc::optional<fc::variant> json_data,
                                          fc::optional<public_key_type> active = fc::optional<public_key_type>(),
                                          bool as_delegate = false,
-                                         wallet_flag flag = sign_and_broadcast );
+                                         const bool sign = true );
 
          signed_transaction submit_proposal( const std::string& name,
                                              const std::string& subject,
                                              const std::string& body,
                                              const std::string& proposal_type,
                                              const fc::variant& data,
-                                             wallet_flag flag = sign_and_broadcast );
+                                             const bool sign = true );
 
          signed_transaction vote_proposal( const std::string& name, 
                                            proposal_id_type proposal_id, 
                                            uint8_t vote,
-                                           wallet_flag flag = sign_and_broadcast);
+                                           const bool sign = true);
+
+
+         ///@} Transaction Generation Methods
+ 
+         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
+                                                                int number = 0 );
 
 
 
@@ -229,14 +229,9 @@ namespace bts { namespace wallet {
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
 
-         ///@} Transaction Generation Methods
          bool                                       is_sending_address( const address& addr )const;
          bool                                       is_receive_address( const address& addr )const;
 
-
-
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
-                                                                int number = 0 );
 
 
          /**
@@ -277,6 +272,5 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT_ENUM( bts::wallet::wallet::wallet_flag, (do_not_broadcast)(do_not_sign)(sign_and_broadcast) )
 FC_REFLECT( bts::wallet::invoice_summary, (payments)(from_account)(to_account)(sending_invoice_index)(last_sending_payment_index) )
 FC_REFLECT( bts::wallet::delegate_trust_status, (user_trust_level) )
