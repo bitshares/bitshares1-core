@@ -1,6 +1,6 @@
-#include <bts/electrum_wallet.hpp>
+#include <bts/bitcoin/electrum_wallet.hpp>
 
-#include <bts/pts_address.hpp>
+#include <bts/blockchain/pts_address.hpp>
 
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/base64.hpp>

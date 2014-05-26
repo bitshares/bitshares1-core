@@ -3,7 +3,7 @@
 
 #include <boost/locale.hpp>
 
-#include <bts/multibit_wallet.hpp>
+#include <bts/bitcoin/multibit_wallet.hpp>
 
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/hex.hpp>

@@ -1,8 +1,8 @@
-#include "bts/armory_wallet.hpp"
+#include <bts/bitcoin/armory_wallet.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/io/fstream.hpp>
-#include <bts/pts_address.hpp>
+#include <bts/blockchain/pts_address.hpp>
 
 //disable codet till romix files get committed
 #if 0

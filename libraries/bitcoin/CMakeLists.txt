@@ -8,7 +8,7 @@ if( NOT ${BerkeleyDB_FOUND} )
 else()
   message( STATUS "Enabling Bitcoin Core Wallet Imports")
   include_directories( ${BDB_INCLUDE_DIR} )
-  set( sources import_bitcoin_wallet.cpp ) #import_multibit_wallet.cpp )#import_electrum_wallet.cpp)
+  set( sources armory_wallet.cpp import_bitcoin_wallet.cpp electrum_wallet.cpp multibit_wallet.cpp )
 endif()
 
 file(GLOB HEADERS "include/bts/*.hpp")
