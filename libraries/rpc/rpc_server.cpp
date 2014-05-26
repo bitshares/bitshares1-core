@@ -77,6 +77,7 @@ namespace bts { namespace rpc {
              (network_get_block_propagation_data)\
              (network_get_transaction_propagation_data)\
              (_list_json_commands)\
+             (wallet_get_pretty_transaction)\
              (network_broadcast_transaction)\
              (network_set_advanced_node_parameters)
 
@@ -902,6 +903,22 @@ Wallets exist in the wallet data directory.
        return fc::variant();
     }
 
+    static rpc_server::method_data wallet_get_pretty_transaction_metadata{"wallet_get_pretty_transaction", nullptr,
+            /* description */ "Return a pretty json representation of a transaction",
+            /* returns: */    "pretty_transaction",
+            /* params:          name                  type                   classification                   default_value */
+                              {{"signed_transaction", "signed_transaction",  rpc_server::required_positional, fc::ovariant()}},
+          /* prerequisites */ rpc_server::json_authenticated,
+          R"(
+     )" };
+    fc::variant rpc_server_impl::wallet_get_pretty_transaction(const fc::variants& params)
+    {
+      bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
+      auto rec = wallet_transaction_record( -1, transaction );
+      auto pretty = _client->get_wallet()->to_pretty_trx( rec );
+      return fc::variant(pretty);
+    }
+
     static rpc_server::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
@@ -941,7 +958,6 @@ Wallets exist in the wallet data directory.
          _client->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
        return fc::variant(summary);
     }
-
 
     static rpc_server::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
