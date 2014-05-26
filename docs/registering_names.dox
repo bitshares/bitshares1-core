@@ -1,0 +1,68 @@
+/**
+    @defgroup registering_names Registering Names
+
+    This guide will walk you through the process of registering a name on the blockchain. Because BitShares uses TITAN transactions ("named stealth addresses"), your name acts like your "address" while providing more privacy than bitcoin-style transactions.
+
+
+   1) Create a wallet, if you have't already. You will need funds
+
+@code
+./bitshares_client
+
+(wallet closed) >>> wallet_create mywallet
+new passphrase: 
+new passphrase (verify): 
+Wallet unlocked for 5 minutes, use wallet_unlock for more time
+OK
+@endcode
+
+    2) You will need funds to pay the transaction fee for registering a name (alternatively, someone else can reserve your name for you -- see the end of this guide TODO). You can create a receiving account without a registered name:
+
+@code
+mywallet (unlocked) >>> wallet_create_receive_account temp
+"XTS2ydE4mxMMKc83nC6wsNdm4RJ63rUSUnpVc3WdBQfARWK6VDUgRi3fHjgdXCs7SvL1U2zuJcPU4M2SV7xuMmau6AXQZypBB"
+@endcode
+
+You will see your "receiving address" (actually this is an extended public key - read more about TITAN here TODO). Send funds to this address.
+
+    3) Once you get some funds, you can reserve a name:
+
+@code
+mywallet (unlocked) >>> wallet_reserve_name toast
+"27640a18eac2730037e5228f4f581a6ac1911182"
+@endcode
+
+    4) Once at least one block has been produced you should see your transaction in wallet_get_transaction_history:
+
+@code
+mywallet (unlocked) >>> wallet_get_transaction_history_summary 
+...
+7   2435.0    2014-05-26T15:52:00 mywallet                                     0              -100001               27640a18eac2730037e5228f4f581a6ac1911182
+...
+@endcode
+
+and your name should appear in wallet_list_reserved_names:
+
+@code
+mywallet (unlocked) >>> wallet_list_reserved_names 
+[{
+    "id": 353,
+    "name": "toast",
+    "json_data": null,
+    "owner_key": "03ebec2c97fca3498e518b0ed70dfecb774c38c77bc897b0826125609ab01c22de",
+    "active_key": "02931566888c4664fded81f8274f8db8777d4eb02da5ca0f1b5aa3b57c20816fcf",
+    "delegate_info": null,
+    "registration_date": "20140526T155130",
+    "last_update": "20140526T155130"
+  }
+]
+@endcode
+
+    5) Now you can give people your name instead of a bitcoin-style receiving address!
+
+@code
+mywallet (unlocked) >>> wallet_transfer 123 toast
+TODO unimplemented
+@endcode
+
+    2*) Registering a name for another user is UNIMPLEMENTED TODO
