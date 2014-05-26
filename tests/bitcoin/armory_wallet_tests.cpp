@@ -5,8 +5,8 @@
 #include <boost/assert.hpp>
 #include <fc/filesystem.hpp>
 
-#include <bts/armory_wallet.hpp>
-#include <bts/pts_address.hpp>
+#include <bts/bitcoin/armory.hpp>
+#include <bts/blockchain/pts_address.hpp>
 
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 {
@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 
     std::vector<std::string> addrs;
     for (auto &key : keys) {
-        bts::pts_address a_c( key.get_public_key(), true );
+        bts::blockchain::pts_address a_c( key.get_public_key(), true );
         std::string addr = a_c;
         addrs.push_back( addr );
     }
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted )
 
     std::vector<std::string> addrs;
     for (auto &key : keys) {
-        bts::pts_address a_c( key.get_public_key(), true );
+        bts::blockchain::pts_address a_c( key.get_public_key(), true );
         std::string addr = a_c;
         addrs.push_back( addr );
     }

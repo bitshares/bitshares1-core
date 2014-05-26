@@ -5,13 +5,13 @@
 #include <bts/blockchain/pts_address.hpp>
 
 //disable codet till romix files get committed
-#if 0
-#include <fc/crypto/romix.hpp>
+//#include <fc/crypto/romix.hpp>
 
 namespace bts
 {
     std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_dat, const std::string& passphrase )
     {
+#if 0
         if( !fc::exists( wallet_dat ) )
             FC_THROW( ("Unable to open wallet: file \"" + wallet_dat.to_native_ansi_path() + "\" not found!").c_str() );
 
@@ -221,7 +221,7 @@ namespace bts
         }
 
         return output;
+#endif //if 0
+        return std::vector<fc::ecc::private_key>();
     }
 }
-
-#endif //if 0
