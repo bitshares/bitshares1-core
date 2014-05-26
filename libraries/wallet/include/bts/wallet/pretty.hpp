@@ -16,8 +16,8 @@ struct pretty_transaction
 {
     uint32_t                                    number;
     uint32_t                                    block_num;
-    uint32_t                                    tx_num;
-    transaction_id_type                         tx_id;
+    uint32_t                                    trx_num;
+    transaction_id_type                         trx_id;
     uint32_t                                    timestamp;
     std::map<std::string, share_type>           totals_in;
     std::map<std::string, share_type>           totals_out;
@@ -159,7 +159,7 @@ struct pretty_remove_collateral_op
 
 }} // bts::wallet
 
-FC_REFLECT( bts::wallet::pretty_transaction, (number)(block_num)(tx_num)(timestamp)(fees)(tx_id) (operations)(totals_in)(totals_out)(fees));
+FC_REFLECT( bts::wallet::pretty_transaction, (number)(block_num)(trx_num)(timestamp)(fees)(trx_id) (operations)(totals_in)(totals_out)(fees));
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));

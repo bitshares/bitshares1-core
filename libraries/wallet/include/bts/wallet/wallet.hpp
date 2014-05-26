@@ -242,6 +242,12 @@ namespace bts { namespace wallet {
          bool                                       is_sending_address( const address& addr )const;
          bool                                       is_receive_address( const address& addr )const;
 
+
+
+         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
+                                                                int number = 0 );
+
+
          /**
           *  Bitcoin compatiblity
           */

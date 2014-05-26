@@ -585,7 +585,7 @@ namespace bts { namespace cli {
 
                     /* Print block and transaction numbers */
                     std::cout << std::setw( 7 ) << tx.block_num << ".";
-                    std::cout << std::setw( 5 ) << std::left << tx.tx_num;
+                    std::cout << std::setw( 5 ) << std::left << tx.trx_num;
 
                     /* Print timestamp */
                     /*
@@ -669,7 +669,7 @@ namespace bts { namespace cli {
                     }
 
                     /* Print transaction ID */
-                    std::cout << std::setw( 40 ) << std::string( tx.tx_id );
+                    std::cout << std::setw( 40 ) << std::string( tx.trx_id );
 
                     std::cout << std::right << "\n";
                 }
