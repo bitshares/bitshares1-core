@@ -13,6 +13,8 @@ namespace bts{ namespace wallet {
   const uint32_t wallet_transaction_record::type   =   transaction_record_type; 
   const uint32_t wallet_account_record::type       =   account_record_type; 
   const uint32_t wallet_meta_record::type          =   meta_record_type; 
+  const uint32_t wallet_identity_record::type      =   identity_record_type; 
+  const uint32_t memo_record::type                 =   memo_record_type; 
 
   address_index wallet_account_record::get_next_key_index( uint32_t invoice_number )
   {
@@ -62,6 +64,27 @@ namespace bts{ namespace wallet {
      account_number = account_number_arg;
      extra_key_index = extra_index_arg;
      encrypted_key = fc::aes_encrypt( password, fc::raw::pack( key ) );
+  }
+  void                    wallet_identity::encrypt_private_key( const fc::sha512& password, 
+                                                                const fc::ecc::private_key& key)
+  {
+      encrypted_private_key = fc::aes_encrypt( password, fc::raw::pack( key ) );
+  }
+
+  fc::ecc::private_key    wallet_identity::decrypt_private_key( const fc::sha512& password )const
+  {
+      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_private_key ) );
+  }
+
+  void                    memo_record::encrypt_private_key( const fc::sha512& password, 
+                                                                const fc::ecc::private_key& key)
+  {
+      encrypted_private_key = fc::aes_encrypt( password, fc::raw::pack( key ) );
+  }
+
+  fc::ecc::private_key    memo_record::decrypt_private_key( const fc::sha512& password )const
+  {
+      return fc::raw::unpack<fc::ecc::private_key>( fc::aes_decrypt( password, encrypted_private_key ) );
   }
 
 } } // bts::wallet

@@ -59,14 +59,28 @@ namespace bts { namespace blockchain {
       address                 owner; 
    };
 
+   struct memo_data
+   {
+      public_key_type                      from;
+      uint64_t                             from_signature;
+
+      /** messages are a constant length to preven analysis of
+       * transactions with the same length memo_data
+       */
+      fc::optional<fc::array<char,20>>     message;
+   };
+
    struct withdraw_by_name
    {
       static const uint8_t    type;
       withdraw_by_name( const address owner_arg = address() )
       :owner(owner_arg){}
 
+      memo_data decrypt_memo_data( const fc::sha512& secret )const;
+      void      encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+
       public_key_type         one_time_key;
-      std::vector<char>       encrypted_meta_data;
+      std::vector<char>       encrypted_memo_data;
       address                 owner; 
    };
 
@@ -136,5 +150,6 @@ FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
-FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_meta_data)(owner) )
+FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_memo_data)(owner) )
+FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message) );
 

@@ -36,6 +36,7 @@ namespace bts { namespace wallet {
       payment_index_type                                last_sending_payment_index;
    };
 
+
    class wallet
    {
       public:
@@ -96,6 +97,23 @@ namespace bts { namespace wallet {
          void               scan_chain( uint32_t block_num,
                                         scan_progress_callback cb = scan_progress_callback() );
          ///@}
+
+
+         ///@{ TITAN 
+         owallet_identity             lookup_identity( const std::string& name );
+         void                         rename_unlisted_identity( const std::string& old_name, 
+                                                                const std::string& new_name );
+         void                         add_unlisted_identity( const std::string& unregistered_name,
+                                                             const public_key_type& key );
+         public_key_type              create_unlisted_identity( const std::string& identity_name );
+         signed_transaction           register_identity( const std::string& unregistered_name, 
+                                                         bool as_delegate = false,
+                                                         const fc::variant& data = fc::variant() );
+         std::vector<wallet_identity> list_identities()const;
+         void                         scan_with_identities( uint32_t start_block = 0, uint32_t count = -1)const;
+         ///@} TITAN 
+         
+
 
          /**
           *  Block Generation API
@@ -175,32 +193,6 @@ namespace bts { namespace wallet {
 
 
          /**
-          * 
-          */
-         signed_transaction       market_bid( share_type amount, 
-                                              const price& bid_price, 
-                                              const std::string& from_account_name = "*",
-                                              wallet_flag flag = sign_and_broadcast );
-
-         /**
-          *  If there are any bids owned by order_owner, cancel them and send the
-          *  proceeeds to receive_account_name in this wallet.
-          */
-         signed_transaction       market_cancel_order( address order_owner,
-                                              const std::string& receive_account_name = "*",
-                                              wallet_flag flag = sign_and_broadcast );
-
-         signed_transaction       market_ask( share_type delta_amount, 
-                                              const price& bid_price, 
-                                              const std::string& from_account_name = "*",
-                                              wallet_flag flag = sign_and_broadcast );
-
-         signed_transaction       market_short( share_type delta_amount, 
-                                                const price& bid_price, 
-                                                const std::string& from_account_name = "*",
-                                                wallet_flag flag = sign_and_broadcast );
-
-         /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
@@ -208,7 +200,6 @@ namespace bts { namespace wallet {
          signed_transaction reserve_name( const std::string& name,
                                           const fc::variant& json_data,
                                           bool as_delegate = false,
-                                          const std::string& account_name = "*",
                                           wallet_flag flag = sign_and_broadcast );
 
          signed_transaction update_name( const std::string& name,
@@ -241,6 +232,12 @@ namespace bts { namespace wallet {
          ///@} Transaction Generation Methods
          bool                                       is_sending_address( const address& addr )const;
          bool                                       is_receive_address( const address& addr )const;
+
+
+
+         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
+                                                                int number = 0 );
+
 
          /**
           *  Bitcoin compatiblity

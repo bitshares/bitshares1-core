@@ -194,6 +194,11 @@ namespace bts { namespace wallet {
 
             fc::optional<master_key_record>                                     _master_key;
 
+            std::map<std::string,wallet_identity_record>                        _identities;
+            std::unordered_map<address,std::string>                             _address_to_identity;
+            std::unordered_map<balance_id_type, memo_record>                    _memos;
+
+
             /** lookup account state */
             std::unordered_map<int32_t,wallet_account_record>                   _accounts;
 
@@ -348,7 +353,7 @@ namespace bts { namespace wallet {
             }
 
             /** the key index that the account belongs to */
-            void index_account( const address_index& idx, const balance_record& balance )
+            void index_balance( /*const address_index& idx,*/ const balance_record& balance )
             {
                auto id  = balance.id();
                auto itr = _balances.find( id );
@@ -407,7 +412,7 @@ namespace bts { namespace wallet {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
                       if( is_receive_address( owner ) )
                       {
-                          index_account( _receive_keys.find( owner )->second, account );
+                          index_balance( /*_receive_keys.find( owner )->second,*/ account );
                       }
                       break;
                    }
@@ -418,7 +423,7 @@ namespace bts { namespace wallet {
                       {
                          if( is_receive_address( owner ) )
                          {
-                            index_account( _receive_keys.find( owner )->second, account );
+                            index_balance( /*_receive_keys.find( owner )->second,*/ account );
                             break;
                          }
                       }
@@ -429,13 +434,13 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.payee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.payor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                    }
@@ -445,21 +450,25 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.optionor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.optionee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       break;
                    }
                    case withdraw_by_name_type:
                    {
-                       // TODO
-                       FC_ASSERT( false, "NOT IMPLEMENTED" );
+                       /** note: we must process the transaction via scan_with_identities
+                        *   before this will have a chance at passing.
+                        */
+                       auto cond = account.condition.as<withdraw_by_name>();
+                       if( is_receive_address( cond.owner ) )
+                          index_balance( account );
                        break;
                    }
                    default:
@@ -754,6 +763,28 @@ namespace bts { namespace wallet {
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
+
+            void load_memo_record( const memo_record& memo_to_load )
+            { try {
+               auto current_itr = _memos.find( memo_to_load.balance_id );
+               if( current_itr != _memos.end() )
+                  FC_ASSERT( !"Duplicate Memo Record" );
+               _memos[memo_to_load.balance_id] = memo_to_load;
+
+               auto memo_priv_key = memo_to_load.decrypt_private_key( _wallet_password );
+               if( !is_receive_address( memo_priv_key.get_public_key() ) )
+                  import_private_key( memo_priv_key, 0, "" );
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("memo",memo_to_load) ) }
+
+            void load_identity_record( const wallet_identity_record& identity_to_load )
+            { try {
+               if( _identities.find( identity_to_load.name ) != _identities.end() )
+                   FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",identity_to_load.name ) );
+               _identities[ identity_to_load.name ] = identity_to_load;
+               _address_to_identity[ identity_to_load.key ] = identity_to_load.name;
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("identity_to_load",identity_to_load) ) }
+
+
             void load_records(const std::string& password)
             { try {
               for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
@@ -768,6 +799,13 @@ namespace bts { namespace wallet {
                           self->unlock( fc::seconds( 60 * 5 ), password );
                           break;
                        }
+                       case identity_record_type:
+                          load_identity_record( record.as<wallet_identity_record>() );
+                          break;
+                       case memo_record_type:
+                          load_memo_record( record.as<memo_record>() );
+                          break;
+
                        case account_record_type:
                        {
                           auto cr = record.as<wallet_account_record>();
@@ -1599,7 +1637,6 @@ namespace bts { namespace wallet {
    signed_transaction wallet::reserve_name( const std::string& name,
                                             const fc::variant& json_data,
                                             bool as_delegate,
-                                            const std::string& account_name,
                                             wallet_flag flag )
    { try {
       FC_ASSERT( name_record::is_valid_name( name ), "", ("name",name) );
@@ -1629,6 +1666,86 @@ namespace bts { namespace wallet {
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
+
+
+   void wallet::scan_with_identities( uint32_t start_block, uint32_t count  )const
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      std::vector<extended_private_key> private_keys;
+      for( auto item : my->_identities )
+         if( item.second.encrypted_private_key.size() )
+            private_keys.push_back( extended_private_key( item.second.decrypt_private_key( my->_wallet_password ) ) );
+
+      uint32_t last_block = my->_blockchain->get_head_block_num();
+      if( last_block == 0 ) return;
+      if( count < last_block ) last_block = std::min( start_block + count, last_block );
+      for( uint32_t block_num = start_block; block_num <= last_block; ++block_num )
+      {
+         auto current_block = my->_blockchain->get_block(block_num);
+         for( auto trx : current_block.user_transactions )
+         {
+            for( auto op : trx.operations )
+            {
+               if( op.type == deposit_op_type )
+               {
+                  auto deposit_op = op.as<deposit_operation>();
+                  if( deposit_op.condition.type == withdraw_by_name_type )
+                  {
+                     auto deposit_condition = deposit_op.condition.as<withdraw_by_name>();
+                     for( auto priv_key : private_keys )
+                     {
+                        fc::ecc::private_key p = priv_key;
+                        auto secret = p.get_shared_secret( deposit_condition.one_time_key );
+                        fc::ecc::private_key receive_private_key = priv_key.child( fc::sha256::hash( secret ) );
+                        fc::ecc::public_key  receive_public_key  = receive_private_key.get_public_key();
+                        address              receive_address( receive_public_key );
+
+                        if( deposit_condition.owner == receive_public_key )
+                        {
+                           auto memo = deposit_condition.decrypt_memo_data( secret );
+
+                           auto op_balance_id = deposit_op.balance_id();
+
+                           memo_record new_memo_record;
+                           auto old_itr = my->_memos.find( op_balance_id );
+                           if( old_itr != my->_memos.end() )
+                              new_memo_record = old_itr->second;
+                           else
+                              new_memo_record.index =  my->get_new_index();
+                           new_memo_record.to_address = priv_key.get_public_key();
+                           new_memo_record.encrypt_private_key(  my->_wallet_password, receive_private_key);
+                           new_memo_record.memo = memo;
+
+                           my->_memos[op_balance_id] = new_memo_record;
+
+                           new_memo_record.from = memo.from; 
+                           auto check_secret = receive_private_key.get_shared_secret( memo.from );
+                           if( check_secret._hash[0] == memo.from_signature )
+                              new_memo_record.valid_from_signature = true;
+                           else
+                              new_memo_record.valid_from_signature = false;
+                           auto opt_balance_record = my->_blockchain->get_balance_record( op_balance_id );
+
+                           if( !is_receive_address( receive_public_key ) )
+                              my->import_private_key( receive_private_key, 0, "" );
+
+                           if( opt_balance_record.valid() )
+                              my->index_balance( *opt_balance_record );
+
+                            my->store_record( new_memo_record );
+                        } // if my identity
+                     } // for each identity private key
+                  } // if withdraw by name
+               } // if deposit
+            } // for each op
+         } // for each trx
+         // TODO increment last titan scanned block 
+      } // for each block number
+      
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("start_block",start_block)("count",count) ) }
+
 
    signed_transaction wallet::submit_proposal( const std::string& name,
                                                const std::string& subject,
@@ -1928,5 +2045,270 @@ namespace bts { namespace wallet {
    {
        return my->_names;
    }
+   owallet_identity     wallet::lookup_identity( const std::string& identity_name )
+   { try {
+      FC_ASSERT( is_open() );
+      auto itr = my->_identities.find( identity_name );
+      if( itr != my->_identities.end() )
+         return itr->second;
+      return owallet_identity();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",identity_name) ) }
+
+   void                 wallet::add_unlisted_identity( const std::string& unlisted_name,
+                                                       const public_key_type& key )
+   { try {
+       FC_ASSERT( name_record::is_valid_name( unlisted_name ) );
+       FC_ASSERT( is_open() );
+
+       auto current_ident = lookup_identity( unlisted_name );
+       FC_ASSERT( !current_ident.valid(), "name already in use" );
+
+       wallet_identity_record new_identity;
+       new_identity.key = key;
+       new_identity.index = my->get_new_index();
+
+       my->_identities[ new_identity.name ]         = new_identity;
+       my->_address_to_identity[ new_identity.key ] = new_identity.name;
+       my->store_record( new_identity );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",unlisted_name) ) }
+
+   void wallet::rename_unlisted_identity( const std::string& old_name, const std::string& new_name )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( old_name != new_name );
+       FC_ASSERT( name_record::is_valid_name( new_name ) );
+
+       auto current_itr = my->_identities.find( old_name );
+       FC_ASSERT( current_itr != my->_identities.end(), 
+                  "unknown idenity name ${name}", ("name",old_name) );
+       FC_ASSERT( current_itr->second.registered_name_id == 0, "you cannot change the name of a registered identity" );
+       
+       current_itr->second.name = new_name;
+       my->store_record( current_itr->second );
+       my->_address_to_identity[ current_itr->second.key ] = new_name;
+       my->_identities[new_name] = current_itr->second;
+       my->_identities.erase( current_itr ); //old_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("old_name",old_name)("new_name",new_name) ) }
+
+   public_key_type      wallet::create_unlisted_identity( const std::string& unlisted_name )
+   { try {
+       FC_ASSERT( name_record::is_valid_name( unlisted_name ) );
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       auto current_ident = lookup_identity( unlisted_name );
+       FC_ASSERT( !current_ident.valid(), "name already in use" );
+
+       fc::sha256 key_index  = fc::sha256::hash( unlisted_name.c_str(), unlisted_name.size() );
+       auto master_priv_key  = my->_master_key->get_extended_private_key( my->_wallet_password );
+       auto new_identity_private_key = master_priv_key.child( key_index );
+
+       wallet_identity_record new_identity;
+       new_identity.encrypt_private_key( my->_wallet_password, new_identity_private_key );
+       new_identity.key = new_identity_private_key.get_public_key();
+       new_identity.index = my->get_new_index();
+
+       my->_identities[ new_identity.name ]         = new_identity;
+       my->_address_to_identity[ new_identity.key ] = new_identity.name;
+       my->store_record( new_identity );
+
+       return new_identity.key;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",unlisted_name)  ) }
+
+   signed_transaction   wallet::register_identity( const std::string& unregistered_name, 
+                                                   bool as_delegate,
+                                                   const fc::variant& data )
+   { try {
+      FC_ASSERT( name_record::is_valid_name( unregistered_name ) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto name_rec = my->_blockchain->get_name_record( unregistered_name );
+      FC_ASSERT( !name_rec, "Name '${name}' has already been reserved", ("name",unregistered_name)  );
+
+      auto unreg_ident = lookup_identity( unregistered_name );
+      if( !unreg_ident.valid() )
+      {
+         create_unlisted_identity( unregistered_name );
+         unreg_ident = lookup_identity( unregistered_name );
+      }
+
+      std::unordered_set<address> required_sigs;
+      signed_transaction trx;
+
+      asset total_fees = my->_priority_fee;
+
+      auto current_fee_rate = my->_blockchain->get_fee_rate();
+      if( as_delegate )
+      {
+        total_fees += asset( (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE*current_fee_rate)/1000, 0 );
+      }
+      auto data_size = fc::raw::pack_size(data);
+      total_fees += asset( (data_size * current_fee_rate)/1000, 0 );
+
+      my->withdraw_to_transaction( trx, total_fees, required_sigs );
+
+
+      trx.reserve_name( unregistered_name, 
+                        data, 
+                        unreg_ident->key, 
+                        unreg_ident->key, as_delegate );
+
+      my->sign_transaction( trx, required_sigs );
+
+      return trx;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("unregistered_name", unregistered_name)("as_delegate",as_delegate)("data",data) ) }
+
+   std::vector<wallet_identity> wallet::list_identities()const
+   {
+      std::vector<wallet_identity> results;
+      results.reserve( my->_identities.size() );
+      for( auto item : my->_identities )
+         results.push_back( item.second );
+      return results;
+   }
+
+    pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec, int number)
+    {
+        auto pretty_trx = pretty_transaction();
+        pretty_trx.number = number;
+        pretty_trx.block_num = trx_rec.location.block_num;
+        pretty_trx.trx_num = trx_rec.location.trx_num;
+        pretty_trx.timestamp = time_t( trx_rec.received.sec_since_epoch() );
+        pretty_trx.trx_id = trx_rec.trx.id();
+
+        pretty_trx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+        pretty_trx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+        pretty_trx.fees[BTS_ADDRESS_PREFIX] = 0;
+
+        for( auto op : trx_rec.trx.operations )
+        {
+            switch( operation_type_enum( op.type ) )
+            {
+                case (withdraw_op_type):
+                {
+                    auto pretty_op = pretty_withdraw_op();
+                    auto withdraw_op = op.as<withdraw_operation>();
+                    auto owner = get_owning_address( withdraw_op.balance_id );
+
+                    /* TODO who are we taking the vote away from?
+                    auto vote = withdraw_op.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = get_chain()->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = std::make_pair(vote, delegate_name);
+                    */
+
+                    auto name = std::string("");
+                    if( owner.valid() )
+                    {
+                        auto rec = get_account_record( *owner );
+                        if ( rec.valid() )
+                            name = rec->name;
+                    }
+                    pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
+                    pretty_op.amount = withdraw_op.amount;
+                    pretty_trx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
+                    pretty_trx.add_operation(pretty_op);
+                    break;
+                }
+                case (deposit_op_type):
+                {
+                    auto pretty_op = pretty_deposit_op();
+                    auto deposit_op = op.as<deposit_operation>();
+
+                    auto vote = deposit_op.condition.delegate_id;
+                    auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                    auto delegate_rec = my->_blockchain->get_name_record(pos_delegate_id);
+                    auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                    pretty_op.vote = std::make_pair(vote, delegate_name);
+
+                    auto name = std::string("");
+                    if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                    {
+                        auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                        auto rec = get_account_record( condition.owner );
+                        if (rec.valid())
+                            name = rec->name;
+                        pretty_op.owner = std::make_pair( condition.owner, name );
+                    }
+                    else
+                    {
+                        FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                        ("c", deposit_op.condition.type));
+                    }
+
+                    pretty_op.amount = deposit_op.amount;
+                    pretty_trx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
+
+                    pretty_trx.add_operation(pretty_op);
+                    break;
+                }
+                case( reserve_name_op_type ):
+                {
+                    auto reserve_name_op = op.as<reserve_name_operation>();
+                    auto pretty_op = pretty_reserve_name_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( update_name_op_type ):
+                {
+                    auto update_name_op = op.as<update_name_operation>();
+                    auto pretty_op = pretty_update_name_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( create_asset_op_type ):
+                {
+                    auto create_asset_op = op.as<create_asset_operation>();
+                    auto pretty_op = pretty_create_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( update_asset_op_type ):
+                {
+                    auto update_asset_op = op.as<update_asset_operation>();
+                    auto pretty_op = pretty_update_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( issue_asset_op_type ):
+                {
+                    auto issue_asset_op = op.as<issue_asset_operation>();
+                    auto pretty_op = pretty_issue_asset_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( submit_proposal_op_type ):
+                {
+                    auto submit_proposal_op = op.as<submit_proposal_operation>();
+                    auto pretty_op = pretty_submit_proposal_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                case( vote_proposal_op_type ):
+                {
+                    auto vote_proposal_op = op.as<vote_proposal_operation>();
+                    auto pretty_op = pretty_vote_proposal_op();
+                    pretty_trx.add_operation( pretty_op );
+                    break;
+                }
+                default:
+                {
+                    FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
+                    break;
+                }
+            } //switch op_type
+
+        }
+    
+        for (auto pair : pretty_trx.totals_in)
+        {
+            pretty_trx.fees[pair.first] = pair.second - pretty_trx.totals_out[pair.first] ;
+        }
+
+        return pretty_trx;
+    }
 
 } } // bts::wallet
