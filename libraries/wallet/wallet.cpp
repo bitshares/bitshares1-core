@@ -1886,7 +1886,7 @@ namespace bts { namespace wallet {
                                        const std::string& account_name,
                                        const std::string& invoice_memo )
    { try {
-      auto priv_keys = bts::import_bitcoin_wallet(  wallet_dat, passphrase );
+      auto priv_keys = bts::bitcoin::import_bitcoin_wallet(  wallet_dat, passphrase );
       for( auto key : priv_keys )
       {
          import_private_key( key, wallet_dat.filename().generic_string() );

@@ -10,7 +10,7 @@
 
 BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_unencrypted )
 {
-   std::vector<fc::ecc::private_key> keys = bts::import_multibit_wallet( fc::path ( "tests/multibit-unencrypted.wallet" ), "" );
+   std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_multibit_wallet( fc::path ( "tests/multibit-unencrypted.wallet" ), "" );
 
    BOOST_REQUIRE( (keys.size() == 4) );
 
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_unencrypted )
 
 BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_encrypted )
 {
-   std::vector<fc::ecc::private_key> keys = bts::import_multibit_wallet( fc::path ( "tests/multibit-encrypted.wallet" ), "1234password");
+   std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_multibit_wallet( fc::path ( "tests/multibit-encrypted.wallet" ), "1234password");
 
    BOOST_REQUIRE( (keys.size() == 4) );
 
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_encrypted )
 
 BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_encrypted_wrong_pass )
 {
-   std::vector<fc::ecc::private_key> keys = bts::import_multibit_wallet( fc::path ( "tests/multibit-encrypted.wallet" ), "whatisit" );
+   std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_multibit_wallet( fc::path ( "tests/multibit-encrypted.wallet" ), "whatisit" );
 
    BOOST_REQUIRE( (keys.size() == 0) );
 }

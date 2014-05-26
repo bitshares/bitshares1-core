@@ -11,7 +11,7 @@
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 {
     printf("Testing unecrypted wallet\n");
-    std::vector<fc::ecc::private_key> keys = bts::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_decrypt.wallet" ), "" );
+    std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_decrypt.wallet" ), "" );
     printf("found %d keys\n", (int)keys.size());
     BOOST_REQUIRE( (keys.size() == 104) );
 
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted )
 {
     printf("Testing ecrypted wallet - good password\n");
-    std::vector<fc::ecc::private_key> keys = bts::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_encrypt.wallet" ), "armory" );
+    std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_encrypt.wallet" ), "armory" );
 
     printf("found %d keys\n", (int)keys.size());
     BOOST_REQUIRE( (keys.size() == 104) );
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted )
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted_wrong_pass )
 {
     printf("Testing ecrypted wallet - bad password\n");
-    std::vector<fc::ecc::private_key> keys = bts::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_encrypt.wallet" ), "notthepassword" );
+    std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "tests/armory_pv6Mmjdh_encrypt.wallet" ), "notthepassword" );
 
     printf("found %d keys\n", (int)keys.size());
     BOOST_REQUIRE( (keys.size() == 0) );

@@ -10,7 +10,7 @@
 
 BOOST_AUTO_TEST_CASE( import_bitcoin_wallet_test_unencrypted )
 {
-	std::vector<fc::ecc::private_key> keys = bts::import_bitcoin_wallet( fc::path ( "tests/wallet-unencrypted.dat" ), "" );
+	std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_bitcoin_wallet( fc::path ( "tests/wallet-unencrypted.dat" ), "" );
 	BOOST_REQUIRE( (keys.size() == 4) );
 
 	std::vector<std::string> addrs;
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( import_bitcoin_wallet_test_unencrypted )
 
 BOOST_AUTO_TEST_CASE( import_bitcoin_wallet_test_encrypted )
 {
-	std::vector<fc::ecc::private_key> keys = bts::import_bitcoin_wallet( fc::path ( "tests/wallet-encrypted.dat" ), "1234password" );
+	std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_bitcoin_wallet( fc::path ( "tests/wallet-encrypted.dat" ), "1234password" );
 
 	BOOST_REQUIRE( (keys.size() == 4) );
 
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE( import_bitcoin_wallet_test_encrypted )
 
 BOOST_AUTO_TEST_CASE( import_bitcoin_wallet_test_encrypted_wrong_pass )
 {
-	std::vector<fc::ecc::private_key> keys = bts::import_bitcoin_wallet( fc::path ( "tests/wallet-encrypted.dat" ), "whatisit" );
+	std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_bitcoin_wallet( fc::path ( "tests/wallet-encrypted.dat" ), "whatisit" );
 
 	BOOST_REQUIRE( (keys.size() == 0) );
 }
