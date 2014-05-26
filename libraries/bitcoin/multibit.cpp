@@ -3,17 +3,14 @@
 
 #include <boost/locale.hpp>
 
-//#include <bts/multibit_wallet.hpp>
+#include <bts/bitcoin/multibit.hpp>
 
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/hex.hpp>
 #include <fc/crypto/scrypt.hpp>
-#include <fc/crypto/elliptic.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
-
-#include <fc/path.hpp>
 
 namespace bts {
 

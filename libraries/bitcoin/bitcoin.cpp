@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include <bts/bitcoin/import_bitcoin_wallet.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
 
 #include <bts/blockchain/pts_address.hpp>
 
@@ -16,7 +16,6 @@
 #include <openssl/evp.h>
 
 namespace bts {
-   using bts::blockchain::pts_address;
 
    // bitcoin wallet DB key / value blob handling
    class wallet_db_blob
@@ -154,8 +153,8 @@ namespace bts {
          {
             _encrypted = false;
             _privkey = privkey;
-            bts::pts_address a_c( privkey.get_public_key(), true );
-            bts::pts_address a_uc( privkey.get_public_key(), false );
+            bts::blockchain::pts_address a_c( privkey.get_public_key(), true );
+            bts::blockchain::pts_address a_uc( privkey.get_public_key(), false );
             _address_compressed = a_c;
             _address_uncompressed = a_uc;
          }

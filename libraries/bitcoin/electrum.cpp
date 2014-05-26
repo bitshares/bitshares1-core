@@ -1,4 +1,4 @@
-#include <bts/bitcoin/electrum_wallet.hpp>
+#include <bts/bitcoin/electrum.hpp>
 
 #include <bts/blockchain/pts_address.hpp>
 

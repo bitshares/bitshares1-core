@@ -1,4 +1,4 @@
-#include <bts/bitcoin/armory_wallet.hpp>
+#include <bts/bitcoin/armory.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/io/fstream.hpp>

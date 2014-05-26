@@ -1,4 +1,4 @@
-#include <bts/bitcoin/import_bitcoin_wallet.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
