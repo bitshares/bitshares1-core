@@ -57,6 +57,7 @@ namespace bts { namespace net {
       fc::optional<fc::ip::endpoint> _remote_endpoint;
       message_oriented_connection    _message_connection;
     public:
+      fc::time_point connection_initiation_time;
       peer_connection_direction direction;
       connection_state state;
 
@@ -284,6 +285,7 @@ namespace bts { namespace net {
       std::unordered_set<item_id> _new_inventory; /// list of items we have received but not yet advertised to our peers
       // @}
 
+      fc::future<void>       _terminate_inactive_connections_loop_done;
 
       std::string          _user_agent_string;
       node_id_t            _node_id;
@@ -294,6 +296,8 @@ namespace bts { namespace net {
       uint32_t             _maximum_number_of_connections;
       /** retry connections to peers that have failed or rejected us this often, in seconds */
       uint32_t              _peer_connection_retry_timeout;
+      /** how many seconds of inactivity are permitted before disconnecting a peer */
+      uint32_t              _peer_inactivity_timeout;
 
       fc::tcp_server       _tcp_server;
       fc::future<void>     _accept_loop_complete;
@@ -333,6 +337,8 @@ namespace bts { namespace net {
 
       void advertise_inventory_loop();
       void trigger_advertise_inventory_loop();
+
+      void terminate_inactive_connections_loop();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -521,6 +527,7 @@ namespace bts { namespace net {
       _desired_number_of_connections(8),
       _maximum_number_of_connections(12),
       _peer_connection_retry_timeout(60 * 5),
+      _peer_inactivity_timeout(45),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0)
     {
@@ -801,6 +808,49 @@ namespace bts { namespace net {
     {
       if (_retrigger_advertise_inventory_loop_promise)
         _retrigger_advertise_inventory_loop_promise->set_value();
+    }
+
+    void node_impl::terminate_inactive_connections_loop()
+    {
+      for (;;)
+      {
+        std::list<peer_connection_ptr> peers_to_disconnect;
+
+        // Disconnect peers that haven't sent us any data recently
+        // These numbers are just guesses and we need to think through how this works better.
+        // If we and our peers get disconnected from the rest of the network, we will not 
+        // receive any blocks or transactions from the rest of the world, and that will 
+        // probably make us disconnect from our peers even though we have working connections to
+        // them (but they won't have sent us anything since they aren't getting blocks either).
+        // This might not be so bad because it could make us initiate more connections and
+        // reconnect with the rest of the network, or it might just futher isolate us.
+      
+        uint32_t handshaking_timeout = _peer_inactivity_timeout;
+        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
+        for (const peer_connection_ptr handshaking_peer : _handshaking_connections)
+          if (handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
+              handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
+              handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold)
+          {
+            wlog("Disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", ("peer", handshaking_peer->get_remote_endpoint())("timeout", handshaking_timeout));            
+            peers_to_disconnect.push_back(handshaking_peer);
+          }
+
+        uint32_t active_timeout = _peer_inactivity_timeout * 10;
+        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
+        for (const peer_connection_ptr& peer : _active_connections)
+          if (peer->connection_initiation_time < active_disconnect_threshold &&
+              peer->get_last_message_received_time() < active_disconnect_threshold &&
+              peer->get_last_message_sent_time() < active_disconnect_threshold)
+          {
+            wlog("Disconnecting from active peer ${peer} due to inactivity of at least ${timeout} seconds", ("peer", peer->get_remote_endpoint())("timeout", active_timeout));
+            peers_to_disconnect.push_back(peer);
+          }
+
+        for (const peer_connection_ptr& peer : peers_to_disconnect)
+          disconnect_from_peer(peer.get());
+        fc::usleep(fc::seconds(15));
+      }
     }
 
     bool node_impl::is_accepting_new_connections()
@@ -1101,14 +1151,13 @@ namespace bts { namespace net {
     void node_impl::on_fetch_blockchain_item_ids_message(peer_connection* originating_peer, 
                                                          const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received)
     {
+      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
+           ("last_item_seen", fetch_blockchain_item_ids_message_received.last_item_seen.item_hash)
+           ("peer_endpoint", originating_peer->get_remote_endpoint()));
       blockchain_item_ids_inventory_message reply_message;
       reply_message.item_hashes_available = _delegate->get_item_ids(fetch_blockchain_item_ids_message_received.last_item_seen,
                                                                     reply_message.total_remaining_item_count);
       reply_message.item_type = fetch_blockchain_item_ids_message_received.last_item_seen.item_type;
-
-      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
-           ("last_item_seen", fetch_blockchain_item_ids_message_received.last_item_seen.item_hash)
-           ("peer_endpoint", originating_peer->get_remote_endpoint()));
 
       // if our client doesn't have any items after the item the peer requested
       if (reply_message.item_hashes_available.empty())
@@ -1734,6 +1783,7 @@ namespace bts { namespace net {
         {
           _tcp_server.accept(new_peer->get_socket());
           ilog("accepted inbound connection from ${remote_endpoint}", ("remote_endpoint", new_peer->get_socket().remote_endpoint()));
+          new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert(new_peer);
 
           fc::async([=]() { accept_connection_task(new_peer); });
@@ -1838,6 +1888,7 @@ namespace bts { namespace net {
       _fetch_sync_items_loop_done = fc::async([=]() { fetch_sync_items_loop(); });
       _fetch_item_loop_done = fc::async([=]() { fetch_items_loop(); });
       _advertise_inventory_loop_done = fc::async([=]() { advertise_inventory_loop(); });
+      _terminate_inactive_connections_loop_done = fc::async([=]() { terminate_inactive_connections_loop(); });
 
       if (!_accept_loop_complete.valid())
       {
@@ -1876,6 +1927,7 @@ namespace bts { namespace net {
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint(remote_endpoint);
+      new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert(new_peer);
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
     }
