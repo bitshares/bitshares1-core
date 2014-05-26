@@ -61,12 +61,7 @@ namespace bts { namespace blockchain {
 
    struct memo_data
    {
-      /** 
-       * @note using address rather than name_id because a name
-       * can change their active key and there can be unregistered
-       * names that may wish to be identified.
-       */
-      address                              from_address;
+      public_key_type                      from;
       uint64_t                             from_signature;
 
       /** messages are a constant length to preven analysis of
@@ -156,5 +151,5 @@ FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_memo_data)(owner) )
-FC_REFLECT( bts::blockchain::memo_data, (from_address)(from_signature)(message) );
+FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message) );
 

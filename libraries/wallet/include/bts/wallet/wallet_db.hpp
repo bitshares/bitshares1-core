@@ -19,7 +19,8 @@ namespace bts { namespace wallet {
       balance_record_type        = 5,
       private_key_record_type    = 6,
       meta_record_type           = 7,
-      identity_record_type       = 8
+      identity_record_type       = 8,
+      memo_record_type           = 9
    };
 
    struct wallet_record
@@ -114,10 +115,13 @@ namespace bts { namespace wallet {
 
    struct wallet_identity
    {
-      std::string               name;
-      public_key_type           key;
-      std::vector<char>         encrypted_private_key;
-      name_id_type              registered_name_id;
+      std::string                               name;
+      public_key_type                           key;
+      std::vector<char>                         encrypted_private_key;
+      name_id_type                              registered_name_id;
+
+      std::unordered_set< transaction_id_type > received_transactions;
+      std::unordered_set< balance_id_type >     balances;
 
       void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
       fc::ecc::private_key      decrypt_private_key( const fc::sha512& password )const;
@@ -130,6 +134,34 @@ namespace bts { namespace wallet {
       wallet_identity_record():index(0){}
       int32_t               index;
    };
+
+   struct memo_record 
+   {
+      static const uint32_t           type;
+
+      memo_record()
+      :index(0),valid_from_signature(false){}
+
+      int32_t                         index;
+
+      /**
+       *  The ID of the balance record
+       */
+      balance_id_type                 balance_id;
+
+      /**
+       *  The address of the identity the funds were sent to
+       */
+      address                         to_address;
+      fc::optional<public_key_type>   from;
+      std::vector<char>               encrypted_private_key;
+      memo_data                       memo;
+      bool                            valid_from_signature;
+
+      void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
+      fc::ecc::private_key      decrypt_private_key( const fc::sha512& password )const;
+   };
+
 
    struct wallet_transaction_record
    {
@@ -233,6 +265,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type,
                    (asset_record_type)
                    (meta_record_type)
                    (identity_record_type)
+                   (memo_record_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_meta_record, (index)(key)(value) )
@@ -262,8 +295,11 @@ FC_REFLECT_DERIVED( bts::wallet::wallet_balance_record, (bts::blockchain::balanc
 FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::blockchain::name_record), (index) )
 FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::private_key_record,  (index)(account_number)(extra_key_index)(encrypted_key) )
-FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id) )
+
+FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id)(balances)(received_transactions) )
 FC_REFLECT_DERIVED( bts::wallet::wallet_identity_record, (bts::wallet::wallet_identity), (index) )
+
+FC_REFLECT( bts::wallet::memo_record, (index)(to_address)(from)(balance_id)(encrypted_private_key)(memo)(valid_from_signature) )
 
 namespace bts { namespace wallet {
        template<typename RecordType>

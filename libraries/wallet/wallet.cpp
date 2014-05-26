@@ -196,6 +196,8 @@ namespace bts { namespace wallet {
 
             std::map<std::string,wallet_identity_record>                        _identities;
             std::unordered_map<address,std::string>                             _address_to_identity;
+            std::unordered_map<balance_id_type, memo_record>                    _memos;
+
 
             /** lookup account state */
             std::unordered_map<int32_t,wallet_account_record>                   _accounts;
@@ -351,7 +353,7 @@ namespace bts { namespace wallet {
             }
 
             /** the key index that the account belongs to */
-            void index_account( const address_index& idx, const balance_record& balance )
+            void index_balance( /*const address_index& idx,*/ const balance_record& balance )
             {
                auto id  = balance.id();
                auto itr = _balances.find( id );
@@ -410,7 +412,7 @@ namespace bts { namespace wallet {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
                       if( is_receive_address( owner ) )
                       {
-                          index_account( _receive_keys.find( owner )->second, account );
+                          index_balance( /*_receive_keys.find( owner )->second,*/ account );
                       }
                       break;
                    }
@@ -421,7 +423,7 @@ namespace bts { namespace wallet {
                       {
                          if( is_receive_address( owner ) )
                          {
-                            index_account( _receive_keys.find( owner )->second, account );
+                            index_balance( /*_receive_keys.find( owner )->second,*/ account );
                             break;
                          }
                       }
@@ -432,13 +434,13 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.payee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.payor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                    }
@@ -448,21 +450,25 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.optionor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.optionee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       break;
                    }
                    case withdraw_by_name_type:
                    {
-                       // TODO
-                       FC_ASSERT( false, "NOT IMPLEMENTED" );
+                       /** note: we must process the transaction via scan_with_identities
+                        *   before this will have a chance at passing.
+                        */
+                       auto cond = account.condition.as<withdraw_by_name>();
+                       if( is_receive_address( cond.owner ) )
+                          index_balance( account );
                        break;
                    }
                    default:
@@ -757,6 +763,28 @@ namespace bts { namespace wallet {
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
+
+            void load_memo_record( const memo_record& memo_to_load )
+            { try {
+               auto current_itr = _memos.find( memo_to_load.balance_id );
+               if( current_itr != _memos.end() )
+                  FC_ASSERT( !"Duplicate Memo Record" );
+               _memos[memo_to_load.balance_id] = memo_to_load;
+
+               auto memo_priv_key = memo_to_load.decrypt_private_key( _wallet_password );
+               if( !is_receive_address( memo_priv_key.get_public_key() ) )
+                  import_private_key( memo_priv_key, 0, "" );
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("memo",memo_to_load) ) }
+
+            void load_identity_record( const wallet_identity_record& identity_to_load )
+            { try {
+               if( _identities.find( identity_to_load.name ) != _identities.end() )
+                   FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",identity_to_load.name ) );
+               _identities[ identity_to_load.name ] = identity_to_load;
+               _address_to_identity[ identity_to_load.key ] = identity_to_load.name;
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("identity_to_load",identity_to_load) ) }
+
+
             void load_records(const std::string& password)
             { try {
               for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
@@ -772,13 +800,12 @@ namespace bts { namespace wallet {
                           break;
                        }
                        case identity_record_type:
-                       {
-                          auto ident_rec = record.as<wallet_identity_record>();
-                          if( _identities.find( ident_rec.name ) != _identities.end() )
-                              FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",ident_rec.name ) );
-                          _identities[ident_rec.name] = ident_rec;
-                          _address_to_identity[ident_rec.key] = ident_rec.name;
-                       }
+                          load_identity_record( record.as<wallet_identity_record>() );
+                          break;
+                       case memo_record_type:
+                          load_memo_record( record.as<memo_record>() );
+                          break;
+
                        case account_record_type:
                        {
                           auto cr = record.as<wallet_account_record>();
@@ -1678,29 +1705,36 @@ namespace bts { namespace wallet {
                         if( deposit_condition.owner == receive_public_key )
                         {
                            auto memo = deposit_condition.decrypt_memo_data( secret );
-                           // TODO: import private key, log memo, add deposit record to our balance
 
-                           #if 0 // validate signature
-                            auto from_pub_key = lookup_identity( memo.from_address );
-                            if( from_pub_key.valid() )
-                            {// verify signature
-                               auto check_secret = receive_private_key->get_shared_secret( *from_pub_key );
-                               if( check_secret._hash[0] == memo.from_signature )
-                               {
-                                  // TODO: do something to indicate the signature passed
-                               }
-                               else
-                               {
-                                  // TODO: do something to indicate the signature failed
-                               }
-                               fc::ecc::extended_public_key from_ext_pub_key( from_pub_key );
-                           } 
+                           auto op_balance_id = deposit_op.balance_id();
+
+                           memo_record new_memo_record;
+                           auto old_itr = my->_memos.find( op_balance_id );
+                           if( old_itr != my->_memos.end() )
+                              new_memo_record = old_itr->second;
                            else
-                           {
-                              // TODO: do something to indicate that the signature has not been validated
-                              // because we did not have a public key for the address
-                           }
-                           #endif
+                              new_memo_record.index =  my->get_new_index();
+                           new_memo_record.to_address = priv_key.get_public_key();
+                           new_memo_record.encrypt_private_key(  my->_wallet_password, receive_private_key);
+                           new_memo_record.memo = memo;
+
+                           my->_memos[op_balance_id] = new_memo_record;
+
+                           new_memo_record.from = memo.from; 
+                           auto check_secret = receive_private_key.get_shared_secret( memo.from );
+                           if( check_secret._hash[0] == memo.from_signature )
+                              new_memo_record.valid_from_signature = true;
+                           else
+                              new_memo_record.valid_from_signature = false;
+                           auto opt_balance_record = my->_blockchain->get_balance_record( op_balance_id );
+
+                           if( !is_receive_address( receive_public_key ) )
+                              my->import_private_key( receive_private_key, 0, "" );
+
+                           if( opt_balance_record.valid() )
+                              my->index_balance( *opt_balance_record );
+
+                            my->store_record( new_memo_record );
                         } // if my identity
                      } // for each identity private key
                   } // if withdraw by name
