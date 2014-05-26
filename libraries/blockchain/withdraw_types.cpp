@@ -1,5 +1,7 @@
 #include <bts/blockchain/withdraw_types.hpp>
+#include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace blockchain {
    const uint8_t withdraw_with_signature::type    = withdraw_signature_type;
@@ -12,6 +14,18 @@ namespace bts { namespace blockchain {
    {
       return address( *this );
    }
+
+   memo_data withdraw_by_name::decrypt_memo_data( const fc::sha512& secret )const
+   {
+      return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, encrypted_memo_data ) );
+   }
+
+   void withdraw_by_name::encrypt_memo_data( const fc::sha512& secret, 
+                                             const memo_data& memo )
+   {
+      encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo ) );
+   }
+
 } } // bts::blockchain
 
 namespace fc {

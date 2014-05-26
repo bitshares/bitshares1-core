@@ -18,7 +18,8 @@ namespace bts { namespace wallet {
       asset_record_type          = 4,
       balance_record_type        = 5,
       private_key_record_type    = 6,
-      meta_record_type           = 7
+      meta_record_type           = 7,
+      identity_record_type       = 8
    };
 
    struct wallet_record
@@ -36,7 +37,6 @@ namespace bts { namespace wallet {
        RecordType as()const;// { return json_data.as<RecordType>(); }
 
        fc::enum_type<uint8_t,wallet_record_type>   type;
-       //std::string                                 json_data;
        fc::variant                                 json_data;
    };
 
@@ -110,6 +110,25 @@ namespace bts { namespace wallet {
        /** balances in the chain database */
        std::unordered_map< asset_id_type, std::unordered_set<address> >         balances;
        std::unordered_set<transaction_id_type>                                  transaction_history;
+   };
+
+   struct wallet_identity
+   {
+      std::string               name;
+      public_key_type           key;
+      std::vector<char>         encrypted_private_key;
+      name_id_type              registered_name_id;
+
+      void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
+      fc::ecc::private_key      decrypt_private_key( const fc::sha512& password )const;
+   };
+   typedef fc::optional<wallet_identity> owallet_identity;
+
+   struct wallet_identity_record : public wallet_identity
+   {
+      static const uint32_t type;
+      wallet_identity_record():index(0){}
+      int32_t               index;
    };
 
    struct wallet_transaction_record
@@ -213,6 +232,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type,
                    (private_key_record_type)
                    (asset_record_type)
                    (meta_record_type)
+                   (identity_record_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_meta_record, (index)(key)(value) )
@@ -242,6 +262,8 @@ FC_REFLECT_DERIVED( bts::wallet::wallet_balance_record, (bts::blockchain::balanc
 FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::blockchain::name_record), (index) )
 FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::private_key_record,  (index)(account_number)(extra_key_index)(encrypted_key) )
+FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id) )
+FC_REFLECT_DERIVED( bts::wallet::wallet_identity_record, (bts::wallet::wallet_identity), (index) )
 
 namespace bts { namespace wallet {
        template<typename RecordType>

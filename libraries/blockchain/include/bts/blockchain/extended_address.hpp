@@ -61,6 +61,7 @@ namespace bts { namespace blockchain {
           };
           extended_private_key( const fc::sha512& seed );
           extended_private_key( const fc::sha256& key, const fc::sha256& chain_code );
+          extended_private_key( const fc::ecc::private_key& k ):priv_key(k.get_secret()){}
           extended_private_key();
 
           /** @param pub_derivation - if true, then extended_public_key can be used
@@ -76,8 +77,8 @@ namespace bts { namespace blockchain {
           operator extended_public_key()const
           { return extended_public_key( fc::ecc::private_key::regenerate(priv_key).get_public_key(), chain_code); }
 
-          fc::sha256          priv_key;
-          fc::sha256          chain_code;
+          fc::ecc::private_key_secret  priv_key;
+          fc::sha256                   chain_code;
     };
 
    /**

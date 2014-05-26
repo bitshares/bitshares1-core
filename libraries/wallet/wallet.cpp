@@ -194,6 +194,9 @@ namespace bts { namespace wallet {
 
             fc::optional<master_key_record>                                     _master_key;
 
+            std::map<std::string,wallet_identity_record>                        _identities;
+            std::unordered_map<address,std::string>                             _address_to_identity;
+
             /** lookup account state */
             std::unordered_map<int32_t,wallet_account_record>                   _accounts;
 
@@ -767,6 +770,14 @@ namespace bts { namespace wallet {
                           _master_key = record.as<master_key_record>();
                           self->unlock( fc::seconds( 60 * 5 ), password );
                           break;
+                       }
+                       case identity_record_type:
+                       {
+                          auto ident_rec = record.as<wallet_identity_record>();
+                          if( _identities.find( ident_rec.name ) != _identities.end() )
+                              FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",ident_rec.name ) );
+                          _identities[ident_rec.name] = ident_rec;
+                          _address_to_identity[ident_rec.key] = ident_rec.name;
                        }
                        case account_record_type:
                        {
@@ -1595,7 +1606,6 @@ namespace bts { namespace wallet {
    signed_transaction wallet::reserve_name( const std::string& name,
                                             const fc::variant& json_data,
                                             bool as_delegate,
-                                            const std::string& account_name,
                                             wallet_flag flag )
    { try {
       FC_ASSERT( name_record::is_valid_name( name ), "", ("name",name) );
@@ -1625,6 +1635,79 @@ namespace bts { namespace wallet {
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
+
+
+   void wallet::scan_with_identities( uint32_t start_block, uint32_t count  )const
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      std::vector<extended_private_key> private_keys;
+      for( auto item : my->_identities )
+         if( item.second.encrypted_private_key.size() )
+            private_keys.push_back( extended_private_key( item.second.decrypt_private_key( my->_wallet_password ) ) );
+
+      uint32_t last_block = my->_blockchain->get_head_block_num();
+      if( last_block == 0 ) return;
+      if( count < last_block ) last_block = std::min( start_block + count, last_block );
+      for( uint32_t block_num = start_block; block_num <= last_block; ++block_num )
+      {
+         auto current_block = my->_blockchain->get_block(block_num);
+         for( auto trx : current_block.user_transactions )
+         {
+            for( auto op : trx.operations )
+            {
+               if( op.type == deposit_op_type )
+               {
+                  auto deposit_op = op.as<deposit_operation>();
+                  if( deposit_op.condition.type == withdraw_by_name_type )
+                  {
+                     auto deposit_condition = deposit_op.condition.as<withdraw_by_name>();
+                     for( auto priv_key : private_keys )
+                     {
+                        fc::ecc::private_key p = priv_key;
+                        auto secret = p.get_shared_secret( deposit_condition.one_time_key );
+                        fc::ecc::private_key receive_private_key = priv_key.child( fc::sha256::hash( secret ) );
+                        fc::ecc::public_key  receive_public_key  = receive_private_key.get_public_key();
+                        address              receive_address( receive_public_key );
+
+                        if( deposit_condition.owner == receive_public_key )
+                        {
+                           auto memo = deposit_condition.decrypt_memo_data( secret );
+                           // TODO: import private key, log memo, add deposit record to our balance
+
+                           #if 0 // validate signature
+                            auto from_pub_key = lookup_identity( memo.from_address );
+                            if( from_pub_key.valid() )
+                            {// verify signature
+                               auto check_secret = receive_private_key->get_shared_secret( *from_pub_key );
+                               if( check_secret._hash[0] == memo.from_signature )
+                               {
+                                  // TODO: do something to indicate the signature passed
+                               }
+                               else
+                               {
+                                  // TODO: do something to indicate the signature failed
+                               }
+                               fc::ecc::extended_public_key from_ext_pub_key( from_pub_key );
+                           } 
+                           else
+                           {
+                              // TODO: do something to indicate that the signature has not been validated
+                              // because we did not have a public key for the address
+                           }
+                           #endif
+                        } // if my identity
+                     } // for each identity private key
+                  } // if withdraw by name
+               } // if deposit
+            } // for each op
+         } // for each trx
+         // TODO increment last titan scanned block 
+      } // for each block number
+      
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("start_block",start_block)("count",count) ) }
+
 
    signed_transaction wallet::submit_proposal( const std::string& name,
                                                const std::string& subject,
@@ -1923,6 +2006,129 @@ namespace bts { namespace wallet {
    std::unordered_map<name_id_type, wallet_name_record>  wallet::names( const std::string& account_name  )const
    {
        return my->_names;
+   }
+   owallet_identity     wallet::lookup_identity( const std::string& identity_name )
+   { try {
+      FC_ASSERT( is_open() );
+      auto itr = my->_identities.find( identity_name );
+      if( itr != my->_identities.end() )
+         return itr->second;
+      return owallet_identity();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",identity_name) ) }
+
+   void                 wallet::add_unlisted_identity( const std::string& unlisted_name,
+                                                       const public_key_type& key )
+   { try {
+       FC_ASSERT( name_record::is_valid_name( unlisted_name ) );
+       FC_ASSERT( is_open() );
+
+       auto current_ident = lookup_identity( unlisted_name );
+       FC_ASSERT( !current_ident.valid(), "name already in use" );
+
+       wallet_identity_record new_identity;
+       new_identity.key = key;
+       new_identity.index = my->get_new_index();
+
+       my->_identities[ new_identity.name ]         = new_identity;
+       my->_address_to_identity[ new_identity.key ] = new_identity.name;
+       my->store_record( new_identity );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",unlisted_name) ) }
+
+   void wallet::rename_unlisted_identity( const std::string& old_name, const std::string& new_name )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( old_name != new_name );
+       FC_ASSERT( name_record::is_valid_name( new_name ) );
+
+       auto current_itr = my->_identities.find( old_name );
+       FC_ASSERT( current_itr != my->_identities.end(), 
+                  "unknown idenity name ${name}", ("name",old_name) );
+       FC_ASSERT( current_itr->second.registered_name_id == 0, "you cannot change the name of a registered identity" );
+       
+       current_itr->second.name = new_name;
+       my->store_record( current_itr->second );
+       my->_address_to_identity[ current_itr->second.key ] = new_name;
+       my->_identities[new_name] = current_itr->second;
+       my->_identities.erase( current_itr ); //old_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("old_name",old_name)("new_name",new_name) ) }
+
+   public_key_type      wallet::create_unlisted_identity( const std::string& unlisted_name )
+   { try {
+       FC_ASSERT( name_record::is_valid_name( unlisted_name ) );
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       auto current_ident = lookup_identity( unlisted_name );
+       FC_ASSERT( !current_ident.valid(), "name already in use" );
+
+       fc::sha256 key_index  = fc::sha256::hash( unlisted_name.c_str(), unlisted_name.size() );
+       auto master_priv_key  = my->_master_key->get_extended_private_key( my->_wallet_password );
+       auto new_identity_private_key = master_priv_key.child( key_index );
+
+       wallet_identity_record new_identity;
+       new_identity.encrypt_private_key( my->_wallet_password, new_identity_private_key );
+       new_identity.key = new_identity_private_key.get_public_key();
+       new_identity.index = my->get_new_index();
+
+       my->_identities[ new_identity.name ]         = new_identity;
+       my->_address_to_identity[ new_identity.key ] = new_identity.name;
+       my->store_record( new_identity );
+
+       return new_identity.key;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",unlisted_name)  ) }
+
+   signed_transaction   wallet::register_identity( const std::string& unregistered_name, 
+                                                   bool as_delegate,
+                                                   const fc::variant& data )
+   { try {
+      FC_ASSERT( name_record::is_valid_name( unregistered_name ) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto name_rec = my->_blockchain->get_name_record( unregistered_name );
+      FC_ASSERT( !name_rec, "Name '${name}' has already been reserved", ("name",unregistered_name)  );
+
+      auto unreg_ident = lookup_identity( unregistered_name );
+      if( !unreg_ident.valid() )
+      {
+         create_unlisted_identity( unregistered_name );
+         unreg_ident = lookup_identity( unregistered_name );
+      }
+
+      std::unordered_set<address> required_sigs;
+      signed_transaction trx;
+
+      asset total_fees = my->_priority_fee;
+
+      auto current_fee_rate = my->_blockchain->get_fee_rate();
+      if( as_delegate )
+      {
+        total_fees += asset( (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE*current_fee_rate)/1000, 0 );
+      }
+      auto data_size = fc::raw::pack_size(data);
+      total_fees += asset( (data_size * current_fee_rate)/1000, 0 );
+
+      my->withdraw_to_transaction( trx, total_fees, required_sigs );
+
+
+      trx.reserve_name( unregistered_name, 
+                        data, 
+                        unreg_ident->key, 
+                        unreg_ident->key, as_delegate );
+
+      my->sign_transaction( trx, required_sigs );
+
+      return trx;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("unregistered_name", unregistered_name)("as_delegate",as_delegate)("data",data) ) }
+
+   std::vector<wallet_identity> wallet::list_identities()const
+   {
+      std::vector<wallet_identity> results;
+      results.reserve( my->_identities.size() );
+      for( auto item : my->_identities )
+         results.push_back( item.second );
+      return results;
    }
 
 } } // bts::wallet
