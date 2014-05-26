@@ -23,6 +23,7 @@ namespace bts { namespace blockchain {
       fc::sha512::encoder enc;
       fc::raw::pack( enc, pub_key );
       fc::raw::pack( enc, child_idx );
+      fc::raw::pack( enc, chain_code );
 
       fc::sha512 ikey  = enc.result();
       fc::sha256 ikey_left;
@@ -44,6 +45,7 @@ namespace bts { namespace blockchain {
       fc::sha512::encoder enc;
       fc::raw::pack( enc, pub_key );
       fc::raw::pack( enc, child_idx );
+      fc::raw::pack( enc, chain_code );
 
       fc::sha512 ikey  = enc.result();
       fc::sha256 ikey_left;
@@ -68,7 +70,7 @@ namespace bts { namespace blockchain {
   extended_private_key::extended_private_key( const fc::sha512& seed )
   {
     memcpy( (char*)&priv_key, (char*)&seed, sizeof(priv_key) );
-    memcpy( (char*)&chain_code, ((char*)&seed) + sizeof(priv_key), sizeof(priv_key) );
+  //  memcpy( (char*)&chain_code, ((char*)&seed) + sizeof(priv_key), sizeof(priv_key) );
   }
 
   extended_private_key::extended_private_key()
@@ -91,6 +93,7 @@ namespace bts { namespace blockchain {
       fc::raw::pack( enc, priv_key );
     }
     fc::raw::pack( enc, child_idx );
+    fc::raw::pack( enc, chain_code );
     fc::sha512 ikey = enc.result();
 
     fc::sha256 ikey_left;
@@ -122,6 +125,7 @@ namespace bts { namespace blockchain {
       fc::raw::pack( enc, priv_key );
     }
     fc::raw::pack( enc, child_idx );
+    fc::raw::pack( enc, chain_code );
     fc::sha512 ikey = enc.result();
 
     fc::sha256 ikey_left;

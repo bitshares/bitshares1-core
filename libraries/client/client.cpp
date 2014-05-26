@@ -188,6 +188,8 @@ namespace bts { namespace client {
                                                                     uint32_t limit /* = 2000 */)
        {
          FC_ASSERT(from_id.item_type == bts::client::block_message_type);
+         ilog("head_block is ${head_block_num}", ("head_block_num", _chain_db->get_head_block_num()));
+
          uint32_t last_seen_block_num;
          try
          {
@@ -394,7 +396,6 @@ namespace bts { namespace client {
     }
 
     //TODO Skipping _RPC calls for now, classify and implement later
-    //network_send_transaction -> _client->broadcast_transaction(transaction);
 
     invoice_summary client::wallet_transfer(int64_t amount, 
                                             const std::string& to_account_name,
@@ -468,6 +469,155 @@ namespace bts { namespace client {
     std::vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
     {
       return get_wallet()->get_transaction_history(count);
+    }
+
+    std::vector<pretty_transaction> client::wallet_get_transaction_history_summary(unsigned count) const
+    {
+        auto tx_recs = get_wallet()->get_transaction_history( count );
+        auto result = std::vector<pretty_transaction>();
+
+        for( auto tx_rec : tx_recs)
+        {
+            auto pretty_tx = pretty_transaction();
+            pretty_tx.number = result.size() + 1;
+            pretty_tx.block_num = tx_rec.location.block_num;
+            pretty_tx.tx_num = tx_rec.location.trx_num;
+            pretty_tx.timestamp = time_t( tx_rec.received.sec_since_epoch() );
+            pretty_tx.tx_id = tx_rec.trx.id();
+           
+            pretty_tx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+            pretty_tx.fees[BTS_ADDRESS_PREFIX] = 0;
+
+            for( auto op : tx_rec.trx.operations )
+            {
+                switch( operation_type_enum( op.type ) )
+                {
+                    case (withdraw_op_type):
+                    {
+                        auto pretty_op = pretty_withdraw_op();
+                        auto withdraw_op = op.as<withdraw_operation>();
+                        auto owner = get_wallet()->get_owning_address( withdraw_op.balance_id );
+
+                        /* TODO who are we taking the vote away from?
+                        auto vote = withdraw_op.delegate_id;
+                        auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                        auto delegate_rec = get_chain()->get_name_record(pos_delegate_id);
+                        auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                        pretty_op.vote = std::make_pair(vote, delegate_name);
+                        */
+
+                        auto name = std::string("");
+                        if( owner.valid() )
+                        {
+                            auto rec = get_wallet()->get_account_record( *owner );
+                            if ( rec.valid() )
+                                name = rec->name;
+                        }
+                        pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
+                        pretty_op.amount = withdraw_op.amount;
+                        pretty_tx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
+                        pretty_tx.add_operation(pretty_op);
+                        break;
+                    }
+                    case (deposit_op_type):
+                    {
+                        auto pretty_op = pretty_deposit_op();
+                        auto deposit_op = op.as<deposit_operation>();
+
+                        auto vote = deposit_op.condition.delegate_id;
+                        auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                        auto delegate_rec = get_chain()->get_name_record(pos_delegate_id);
+                        auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
+                        pretty_op.vote = make_pair(vote, delegate_name);
+
+                        auto name = std::string("");
+                        if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                        {
+                            auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                            auto rec = get_wallet()->get_account_record( condition.owner );
+                            if (rec.valid())
+                                name = rec->name;
+                            pretty_op.owner = std::make_pair( condition.owner, name );
+                        }
+                        else
+                        {
+                            FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                            ("c", deposit_op.condition.type));
+                        }
+
+                        pretty_op.amount = deposit_op.amount;
+                        pretty_tx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
+
+                        pretty_tx.add_operation(pretty_op);
+                        break;
+                    }
+                    case( reserve_name_op_type ):
+                    {
+                        auto reserve_name_op = op.as<reserve_name_operation>();
+                        auto pretty_op = pretty_reserve_name_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( update_name_op_type ):
+                    {
+                        auto update_name_op = op.as<update_name_operation>();
+                        auto pretty_op = pretty_update_name_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( create_asset_op_type ):
+                    {
+                        auto create_asset_op = op.as<create_asset_operation>();
+                        auto pretty_op = pretty_create_asset_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( update_asset_op_type ):
+                    {
+                        auto update_asset_op = op.as<update_asset_operation>();
+                        auto pretty_op = pretty_update_asset_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( issue_asset_op_type ):
+                    {
+                        auto issue_asset_op = op.as<issue_asset_operation>();
+                        auto pretty_op = pretty_issue_asset_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( submit_proposal_op_type ):
+                    {
+                        auto submit_proposal_op = op.as<submit_proposal_operation>();
+                        auto pretty_op = pretty_submit_proposal_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    case( vote_proposal_op_type ):
+                    {
+                        auto vote_proposal_op = op.as<vote_proposal_operation>();
+                        auto pretty_op = pretty_vote_proposal_op();
+                        pretty_tx.add_operation( pretty_op );
+                        break;
+                    }
+                    default:
+                    {
+                        FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
+                        break;
+                    }
+                } //switch op_type
+
+            }
+        
+            for (auto pair : pretty_tx.totals_in)
+            {
+                pretty_tx.fees[pair.first] = pair.second - pretty_tx.totals_out[pair.first] ;
+            }
+            result.push_back( pretty_tx );
+        }
+
+        return result;
     }
 
     oname_record client::blockchain_get_name_record(const std::string& name) const
@@ -650,6 +800,11 @@ namespace bts { namespace client {
     void client::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
       my->_p2p_node->set_advanced_node_parameters(params);
+    }
+
+    fc::variant_object client::network_get_advanced_node_parameters()
+    {
+      return my->_p2p_node->get_advanced_node_parameters();
     }
 
     void client::network_add_node(const fc::ip::endpoint& node, const std::string& command)

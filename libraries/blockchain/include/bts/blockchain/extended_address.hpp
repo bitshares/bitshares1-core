@@ -19,7 +19,7 @@ namespace bts { namespace blockchain {
           extended_public_key();
           virtual ~extended_public_key();
 
-          extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code );
+          extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code = fc::sha256() );
 
           extended_public_key child( uint32_t c )const;
           extended_public_key child( const fc::sha256& secret )const;

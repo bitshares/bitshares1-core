@@ -125,6 +125,11 @@ namespace bts { namespace rpc {
       return _json_connection->call<balances>("wallet_get_balance", asset_symbol, account_name);
     }
 
+    std::vector<wallet_transaction_record> rpc_client_impl::wallet_get_transaction_history(unsigned count)
+    {
+      return _json_connection->call<std::vector<wallet_transaction_record>>("wallet_get_transaction_history", fc::variant(count));
+    }
+
     full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
     {
       return _json_connection->call<full_block>("blockchain_get_block", fc::variant(block_id));
@@ -342,6 +347,11 @@ namespace bts { namespace rpc {
   {
     my->network_set_advanced_node_parameters(params);
   }
+  fc::variant_object rpc_client::network_get_advanced_node_parameters()
+  {
+    FC_THROW_EXCEPTION(invalid_operation_exception, "Not implemented");
+  }
+
   bts::net::message_propagation_data rpc_client::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
   {
     return my->network_get_transaction_propagation_data(transaction_id);

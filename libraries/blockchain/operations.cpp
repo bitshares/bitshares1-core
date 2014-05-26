@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
    reserve_name_operation::reserve_name_operation( const std::string& n, 
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
-                                                   const extended_public_key& active, bool as_delegate )
+                                                   const public_key_type& active, bool as_delegate )
    :name(n),json_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
 
    operation_factory& operation_factory::instance()

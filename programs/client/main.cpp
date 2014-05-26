@@ -44,6 +44,7 @@ int main( int argc, char** argv )
    option_config.add_options()("data-dir", boost::program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
                               ("p2p-port", boost::program_options::value<uint16_t>()->default_value(5678), "set port to listen on")
+                              ("maximum-number-of-connections", boost::program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", boost::program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", boost::program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
@@ -100,13 +101,13 @@ int main( int argc, char** argv )
       auto wall  = std::make_shared<bts::wallet::wallet>(chain);
       wall->set_data_directory( datadir );
 
-      auto c = std::make_shared<bts::client::client>( chain );
-      _global_client = c.get();
-      c->set_wallet( wall );
-      c->run_delegate();
+      bts::client::client_ptr client = std::make_shared<bts::client::client>( chain );
+      _global_client = client.get();
+      client->set_wallet( wall );
+      client->run_delegate();
 
       bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
-      rpc_server->set_client(c);
+      rpc_server->set_client(client);
 
       if( option_variables.count("server") )
       {
@@ -137,12 +138,20 @@ int main( int argc, char** argv )
          std::cout << "Not starting rpc server, use --server to enable the rpc interface\n";
       }
 
-      c->configure( datadir );
+      client->configure( datadir );
+
+      if (option_variables.count("maximum-number-of-connections"))
+      {
+        fc::mutable_variant_object params;
+        params["maximum_number_of_connections"] = option_variables["maximum-number-of-connections"].as<uint16_t>();
+        client->network_set_advanced_node_parameters(params);
+      }
+
       if (option_variables.count("p2p-port"))
       {
          auto p2pport = option_variables["p2p-port"].as<uint16_t>();
          std::cout << "Listening to P2P connections on port "<<p2pport<<"\n";
-         c->listen_on_port(p2pport);
+         client->listen_on_port(p2pport);
 
          if( option_variables["upnp"].as<bool>() )
          {
@@ -152,23 +161,23 @@ int main( int argc, char** argv )
             fc::usleep( fc::seconds(3) );
          }
       }
-      c->connect_to_p2p_network();
+      client->connect_to_p2p_network();
       if (option_variables.count("connect-to"))
       {
          std::vector<std::string> hosts = option_variables["connect-to"].as<std::vector<std::string>>();
          for( auto peer : hosts )
          {
-            c->connect_to_peer( peer );
+            client->connect_to_peer( peer );
          }
       }
       else
       {
-            c->connect_to_peer( "107.170.30.182:5678" );
+            client->connect_to_peer( "107.170.30.182:5678" );
       }
 
       if( !option_variables.count("daemon") )
       {
-         auto cli = std::make_shared<bts::cli::cli>( c, rpc_server );
+         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
          cli->wait();
       }
       else if( option_variables.count( "server" ) ) // daemon & server

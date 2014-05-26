@@ -14,8 +14,6 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
-#include <bts/wallet/pretty.hpp>
-
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -79,7 +77,7 @@ namespace bts { namespace rpc {
              (network_get_block_propagation_data)\
              (network_get_transaction_propagation_data)\
              (_list_json_commands)\
-             (network_send_transaction)\
+             (network_broadcast_transaction)\
              (network_set_advanced_node_parameters)
 
   namespace detail
@@ -607,32 +605,34 @@ Result:
     fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
     {
        fc::mutable_variant_object info;
+       info["chain_id"]                     = _client->get_chain()->chain_id();
+       info["symbol"]                       = BTS_ADDRESS_PREFIX;
+       info["interval_seconds"]             = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blocks"]                       = _client->get_chain()->get_head_block_num();
+       info["random_seed"]                  = _client->get_chain()->get_current_random_seed();
+       asset_record share_record            = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+       info["current_share_supply"]         = share_record.current_share_supply;
+       info["shares_per_bip"]               = double(share_record.current_share_supply) / BTS_BLOCKCHAIN_BIP;
        if( _client->get_wallet()->is_open() )
        {
-          info["balance"]          = _client->get_wallet()->get_balance().amount;
-          info["unlocked_until"]   = _client->get_wallet()->unlocked_until();
+          info["balance"]                   = _client->get_wallet()->get_balance().amount;
+          info["unlocked_until"]            = _client->get_wallet()->unlocked_until();
        }
        else
        {
-          info["balance"]          = 0;
-          info["unlocked_until"]   = fc::time_point_sec();
+          info["balance"]                   = 0;
+          info["unlocked_until"]            = fc::time_point_sec();
        }
-       info["version"]          = BTS_BLOCKCHAIN_VERSION;
-       info["protocolversion"]  = BTS_NET_PROTOCOL_VERSION;
-       info["walletversion"]    = BTS_WALLET_VERSION;
-       info["chain_id"]         = _client->get_chain()->chain_id();
-       info["symbol"]           = BTS_ADDRESS_PREFIX;
-       info["interval_seconds"] = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blocks"]           = _client->get_chain()->get_head_block_num();
-       asset_record share_record     = *_client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       info["current_share_supply"]  = share_record.current_share_supply;
-       info["shares_per_bip"]   = share_record.current_share_supply / BTS_BLOCKCHAIN_BIP;
-       info["random_seed"]      = _client->get_chain()->get_current_random_seed();
-       info["connections"]      = _client->network_get_connection_count();
-       info["rpc_port"]         = _config.rpc_endpoint.port();
-       info["_node_id"]         = _client->get_node_id();
-       info["_fc_revision"]     = fc::git_revision_sha;
-       info["_bitshares_toolkit_revision"] = bts::utilities::git_revision_sha;
+       info["connections"]                  = _client->network_get_connection_count();
+       fc::variant_object advanced_params = _client->network_get_advanced_node_parameters();
+       info["maximum_number_of_connections"] = advanced_params["maximum_number_of_connections"];
+       info["rpc_port"]                     = _config.rpc_endpoint.port();
+       info["blockchain_version"]           = BTS_BLOCKCHAIN_VERSION;
+       info["wallet_version"]               = BTS_WALLET_VERSION;
+       info["protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+       info["_node_id"]                     = _client->get_node_id();
+       info["_bitshares_toolkit_revision"]  = bts::utilities::git_revision_sha;
+       info["_fc_revision"]                 = fc::git_revision_sha;
        return fc::variant( std::move(info) );
     }
 
@@ -902,7 +902,7 @@ Wallets exist in the wallet data directory.
        return fc::variant();
     }
 
-    static rpc_server::method_data network_send_transaction_metadata{"network_send_transaction", nullptr,
+    static rpc_server::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
             /* params:          name                  type                   classification                   default_value */
@@ -910,7 +910,7 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::connected_to_network,
           R"(
      )" };
-    fc::variant rpc_server_impl::network_send_transaction(const fc::variants& params)
+    fc::variant rpc_server_impl::network_broadcast_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
       _client->broadcast_transaction(transaction);
@@ -1110,124 +1110,19 @@ Wallets exist in the wallet data directory.
       return fc::variant( _client->wallet_get_transaction_history( count ) );
     }
 
-           static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
-            /* description */ "Returns a transaction history table for pretty printing",
-            /* returns: */ "std::vector<pretty_transaction>",
-            /* params: name type classification default_value */
-                              {{"count", "unsigned", rpc_server::optional_positional, 0}},
-            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
-          R"(
+    static rpc_server::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
+     /* description */ "Returns a transaction history table for pretty printing",
+     /* returns: */ "std::vector<pretty_transaction>",
+     /* params: name type classification default_value */
+                       {{"count", "unsigned", rpc_server::optional_positional, 0}},
+     /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+     R"(
      )" };
-
-//TODO Move implmentation of this function to client class
     fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
     {
-        auto result = std::vector<pretty_transaction>();
-        return fc::variant( result );
+      unsigned count = params[0].as<unsigned>();
+      return fc::variant( _client->wallet_get_transaction_history_summary( count ) );
     }
-
-#if 0
-    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
-    { try {
-        unsigned count = params[0].as<unsigned>();
-        auto tx_recs = _client->get_wallet_get_transactions( count );
-        auto result = std::vector<pretty_transaction>();
-
-        for( auto tx_rec : tx_recs)
-        {
-            auto pretty_tx = pretty_transaction();
-            pretty_tx.number = result.size() + 1;
-            pretty_tx.block_num = tx_rec.location.block_num;
-            pretty_tx.tx_num = tx_rec.location.trx_num;
-            pretty_tx.timestamp = time_t( tx_rec.received.sec_since_epoch() );
-            pretty_tx.tx_id = tx_rec.trx.id();
-           
-            pretty_tx.totals_in[BTS_ADDRESS_PREFIX] = 0;
-            pretty_tx.totals_out[BTS_ADDRESS_PREFIX] = 0;
-            pretty_tx.fees[BTS_ADDRESS_PREFIX] = 0;
-
-            for( auto op : tx_rec.trx.operations )
-            {
-                switch( operation_type_enum( op.type ) )
-                {
-                    case (withdraw_op_type):
-                    {
-                        auto pretty_op = pretty_withdraw_op();
-                        auto withdraw_op = op.as<withdraw_operation>();
-                        auto owner = _client->get_wallet()->get_owning_address( withdraw_op.balance_id );
-
-                        /* TODO who are we taking the vote away from?
-auto vote = withdraw_op.delegate_id;
-auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
-auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
-auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
-pretty_op.vote = std::make_pair(vote, delegate_name);
-*/
-
-                        auto name = std::string("");
-                        if( owner.valid() )
-                        {
-                            auto rec = _client->get_wallet()->get_account_record( *owner );
-                            if ( rec.valid() )
-                                name = rec->name;
-                        }
-                        pretty_op.owner = std::make_pair(withdraw_op.balance_id, name);
-                        pretty_op.amount = withdraw_op.amount;
-                        pretty_tx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
-                        pretty_tx.add_operation(pretty_op);
-                        break;
-                    }
-                    case (deposit_op_type):
-                    {
-                        auto pretty_op = pretty_deposit_op();
-                        auto deposit_op = op.as<deposit_operation>();
-
-                        auto vote = deposit_op.condition.delegate_id;
-                        auto pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
-                        auto delegate_rec = _client->get_chain()->get_name_record(pos_delegate_id);
-                        auto delegate_name = delegate_rec.valid() ? delegate_rec->name : "";
-                        pretty_op.vote = make_pair(vote, delegate_name);
-
-                        auto name = std::string("");
-                        if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
-                        {
-                            auto condition = deposit_op.condition.as<withdraw_with_signature>();
-                            auto rec = _client->get_wallet()->get_account_record( condition.owner );
-                            if (rec.valid())
-                                name = rec->name;
-                            pretty_op.owner = std::make_pair( condition.owner, name );
-                        }
-                        else
-                        {
-                            FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
-                                            ("c", deposit_op.condition.type));
-                        }
-
-                        pretty_op.amount = deposit_op.amount;
-                        pretty_tx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
-
-                        pretty_tx.add_operation(pretty_op);
-                        break;
-                    }
-                    default:
-                    {
-                        FC_ASSERT(false, "Unknown op type: ${type}", ("type", op.type));
-                        break;
-                    }
-                } //switch op_type
-
-            }
-        
-            for (auto pair : pretty_tx.totals_in)
-            {
-                pretty_tx.fees[pair.first] = pair.second - pretty_tx.totals_out[pair.first] ;
-            }
-            result.push_back( pretty_tx );
-        }
-        return fc::variant( result );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("", params)) }
-#endif
-
 
     static rpc_server::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
             /* description */ "Retrieves the name record",
@@ -1256,7 +1151,7 @@ pretty_op.vote = std::make_pair(vote, delegate_name);
           };
     fc::variant rpc_server_impl::blockchain_get_name_record_by_id(const fc::variants& params)
     {
-      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as_int64()) );
+      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as<int32_t>()) );
     }
 
     static rpc_server::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
@@ -1289,7 +1184,7 @@ pretty_op.vote = std::make_pair(vote, delegate_name);
           };
     fc::variant rpc_server_impl::blockchain_get_asset_record_by_id(const fc::variants& params)
     {
-      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as_int64());
+      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as<int32_t>());
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
@@ -1362,8 +1257,8 @@ pretty_op.vote = std::make_pair(vote, delegate_name);
     fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
     {
       auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
-                                                          params[1].as_int64(),
-                                                          params[2].as_uint64());
+                                                          params[1].as<int32_t>(),
+                                                          params[2].as<uint8_t>());
       return fc::variant(transaction_id);
     }
 
@@ -1380,7 +1275,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
     {
-      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as_int64());
+      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as<int32_t>());
       return fc::variant();
     }
 

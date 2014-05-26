@@ -311,9 +311,9 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
       if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
-      std::cerr << fc::json::to_pretty_string(op) <<"\n";
+      wlog("${op}",("op",fc::json::to_pretty_string(op)));
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
-      std::cerr << "arec: " << fc::json::to_pretty_string(arec) <<"\n";
+      wlog("arec: ${op}",("op",fc::json::to_pretty_string(arec)));
       if( !arec.valid() )
       {
          fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
@@ -710,13 +710,13 @@ namespace bts { namespace blockchain {
    void transaction::reserve_name( const std::string& name, 
                                    const fc::variant& json_data, 
                                    const public_key_type& master, 
-                                   const extended_public_key& active, bool as_delegate  )
+                                   const public_key_type& active, bool as_delegate  )
    {
       operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
    }
    void transaction::update_name( name_id_type name_id, 
                                   const fc::optional<fc::variant>& json_data, 
-                                  const fc::optional<extended_public_key>& active, bool as_delegate   )
+                                  const fc::optional<public_key_type>& active, bool as_delegate   )
    {
       update_name_operation op;
       op.name_id = name_id;

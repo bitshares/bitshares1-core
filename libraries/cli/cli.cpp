@@ -561,6 +561,8 @@ namespace bts { namespace cli {
 
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
+                char timestamp_buffer[20];
+
                 /* Print header */
                 std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
@@ -574,8 +576,8 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 40 ) << "ID";
                 std::cout << "\n----------------------------------------------------------------------------------------------";
                 std::cout <<   "----------------------------------------------------------------------------------------------\n";
-                std::cout << std::right;
-                char timestamp_buffer[20];
+                std::cout << std::right; 
+
                 for( auto tx : txs )
                 {
                     /* Print index */
@@ -586,9 +588,11 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 5 ) << std::left << tx.tx_num;
 
                     /* Print timestamp */
+                    /*
                     auto timestamp = tx.timestamp;
                     strftime( timestamp_buffer, std::extent<decltype( timestamp_buffer )>::value, "%F %X", localtime( (time_t*)&timestamp ) );
                     std::cout << std::setw( 20 ) << timestamp_buffer;
+                    */
 
                     /* Print from address */
                     // TODO this only covers withdraw/deposit... what is our cli extensibility

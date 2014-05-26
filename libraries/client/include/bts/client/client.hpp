@@ -86,6 +86,7 @@ namespace bts { namespace client {
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 
                                                             const std::string& account_name = "*" ) const override;
          std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const override;
+         std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const override;
                            oname_record blockchain_get_name_record(const std::string& name) const override;
                            oname_record blockchain_get_name_record_by_id(name_id_type name_id) const override;
                           oasset_record blockchain_get_asset_record(const std::string& symbol) const override;
@@ -136,6 +137,7 @@ namespace bts { namespace client {
                   uint32_t network_get_connection_count() const override;
               fc::variants network_get_peer_info() const override;
                       void network_set_advanced_node_parameters(const fc::variant_object& params) override;
+                      fc::variant_object network_get_advanced_node_parameters() override;
                       void network_add_node(const fc::ip::endpoint& node, const std::string& command) override;
 
          bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id) override;
