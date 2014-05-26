@@ -311,9 +311,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
       if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
-      wlog("${op}",("op",fc::json::to_pretty_string(op)));
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
-      wlog("arec: ${op}",("op",fc::json::to_pretty_string(arec)));
       if( !arec.valid() )
       {
          fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
