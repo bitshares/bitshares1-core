@@ -13,5 +13,5 @@ endif()
 
 file(GLOB HEADERS "include/bts/*.hpp")
 
-add_library( bitcoin_import ${sources} ${HEADERS})
-target_link_libraries( bitcoin_import  fc ${BDB_LIBRARIES} )
+add_library( bitcoin ${sources} ${HEADERS})
+target_link_libraries( bitcoin fc ${BDB_LIBRARIES} )
