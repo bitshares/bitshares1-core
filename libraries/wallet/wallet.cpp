@@ -1,7 +1,7 @@
+#include <bts/bitcoin/bitcoin.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/import_bitcoin_wallet.hpp>
 #include <bts/wallet/wallet.hpp>
 
 #include <fc/crypto/aes.hpp>
@@ -2116,7 +2116,7 @@ namespace bts { namespace wallet {
                                        const std::string& account_name,
                                        const std::string& invoice_memo )
    { try {
-      auto priv_keys = bts::import_bitcoin_wallet(  wallet_dat, passphrase );
+      auto priv_keys = bts::bitcoin::import_bitcoin_wallet(  wallet_dat, passphrase );
       for( auto key : priv_keys )
       {
          import_private_key( key, wallet_dat.filename().generic_string() );
@@ -2443,49 +2443,49 @@ namespace bts { namespace wallet {
                 }
                 case( reserve_name_op_type ):
                 {
-                    auto reserve_name_op = op.as<reserve_name_operation>();
+                    //auto reserve_name_op = op.as<reserve_name_operation>();
                     auto pretty_op = pretty_reserve_name_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( update_name_op_type ):
                 {
-                    auto update_name_op = op.as<update_name_operation>();
+                    //auto update_name_op = op.as<update_name_operation>();
                     auto pretty_op = pretty_update_name_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( create_asset_op_type ):
                 {
-                    auto create_asset_op = op.as<create_asset_operation>();
+                    //auto create_asset_op = op.as<create_asset_operation>();
                     auto pretty_op = pretty_create_asset_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( update_asset_op_type ):
                 {
-                    auto update_asset_op = op.as<update_asset_operation>();
+                    //auto update_asset_op = op.as<update_asset_operation>();
                     auto pretty_op = pretty_update_asset_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( issue_asset_op_type ):
                 {
-                    auto issue_asset_op = op.as<issue_asset_operation>();
+                    //auto issue_asset_op = op.as<issue_asset_operation>();
                     auto pretty_op = pretty_issue_asset_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( submit_proposal_op_type ):
                 {
-                    auto submit_proposal_op = op.as<submit_proposal_operation>();
+                    //auto submit_proposal_op = op.as<submit_proposal_operation>();
                     auto pretty_op = pretty_submit_proposal_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
                 }
                 case( vote_proposal_op_type ):
                 {
-                    auto vote_proposal_op = op.as<vote_proposal_operation>();
+                    //auto vote_proposal_op = op.as<vote_proposal_operation>();
                     auto pretty_op = pretty_vote_proposal_op();
                     pretty_trx.add_operation( pretty_op );
                     break;
