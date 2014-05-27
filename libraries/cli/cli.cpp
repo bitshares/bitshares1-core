@@ -394,11 +394,6 @@ namespace bts { namespace cli {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
                     execute_interactive_command( "wallet_unlock", arguments );
                 }
-                catch (...)
-                {
-                    fc::variants arguments { command };
-                    return _rpc_server->direct_invoke_method("help", arguments);
-                }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
 
