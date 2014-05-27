@@ -30,6 +30,9 @@
 #include <bts/net/config.hpp>
 #include <bts/client/messages.hpp>
 
+#include <bts/utilities/git_revision.hpp>
+#include <fc/git_revision.hpp>
+
 
 namespace bts { namespace net {
   namespace detail
@@ -66,6 +69,11 @@ namespace bts { namespace net {
       node_id_t        node_id;
       uint32_t         core_protocol_version;
       std::string      user_agent;
+      fc::optional<std::string> bitshares_git_revision_sha;
+      fc::optional<fc::time_point_sec> bitshares_git_revision_unix_timestamp;
+      fc::optional<std::string> fc_git_revision_sha;
+      fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
+      fc::optional<std::string> platform;
       fc::ip::endpoint inbound_endpoint;
       /// @}
 
@@ -250,6 +258,7 @@ namespace bts { namespace net {
       /// used by the task that manages connecting to peers
       // @{
       peer_database          _potential_peer_db;
+      std::list<potential_peer_record> _add_once_node_list; /// list of peers we want to connect to as soon as possible
       fc::promise<void>::ptr _retrigger_connect_loop_promise;
       bool                   _potential_peer_database_updated;
       fc::future<void>       _p2p_network_connect_loop_done;
@@ -379,6 +388,7 @@ namespace bts { namespace net {
       void accept_connection_task(peer_connection_ptr new_peer);
       void accept_loop();
       void connect_to_task(peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint);
+      peer_connection_ptr get_connection_to_endpoint(const fc::ip::endpoint& remote_endpoint);
       bool is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint);
 
       void dump_node_status();
@@ -405,6 +415,7 @@ namespace bts { namespace net {
       message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
       node_id_t get_node_id() const;
       void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
+      void clear_peer_database();
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -523,7 +534,6 @@ namespace bts { namespace net {
 
     node_impl::node_impl() : 
       _delegate(nullptr),
-      _user_agent_string("bts::net::node"),
       _desired_number_of_connections(8),
       _maximum_number_of_connections(12),
       _peer_connection_retry_timeout(60 * 5),
@@ -532,6 +542,27 @@ namespace bts { namespace net {
       _total_number_of_unfetched_items(0)
     {
       fc::rand_pseudo_bytes(_node_id.data(), 20);
+
+      // for the time being, shoehorn a bunch of properties into the user_agent string
+      // once we settle on what we really want in there, we'll either promote them to first
+      // class fields in the hello message, or explicitly convert the user_agent string into a 
+      // propertly list
+      fc::mutable_variant_object user_agent_properties;
+      user_agent_properties["name"] = "bts::net::node";
+      user_agent_properties["bitshares_git_revision_sha"] = bts::utilities::git_revision_sha;
+      user_agent_properties["bitshares_git_revision_unix_timestamp"] = bts::utilities::git_revision_unix_timestamp;
+      user_agent_properties["fc_git_revision_sha"] = fc::git_revision_sha;
+      user_agent_properties["fc_git_revision_unix_timestamp"] = fc::git_revision_unix_timestamp;
+#if defined(__APPLE__)
+      user_agent_properties["platform"] = "osx";
+#elif defined(__linux__)
+      user_agent_properties["platform"] = "linux";
+#elif defined(_MSC_VER)
+      user_agent_properties["platform"] = "win32";
+#else 
+      user_agent_properties["platform"] = "other";
+#endif
+      _user_agent_string = fc::json::to_string(user_agent_properties);
     }
 
     node_impl::~node_impl()
@@ -569,6 +600,33 @@ namespace bts { namespace net {
         ilog("Starting an iteration of p2p_network_connect_loop().");
         display_current_connections();
 
+        // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
+        if (!_add_once_node_list.empty())
+        {
+          std::list<potential_peer_record> add_once_node_list;
+          add_once_node_list.swap(_add_once_node_list);
+          ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
+          for (const potential_peer_record& add_once_peer : add_once_node_list)
+          {
+            ilog("    ${peer}", ("peer", add_once_peer.endpoint));
+          }
+          for (const potential_peer_record& add_once_peer : add_once_node_list)
+          {
+            // see if we have an existing connection to that peer.  If we do, disconnect them and
+            // then try to connect the next time through the loop
+            peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
+            if (existing_connection_ptr)
+            {
+              wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
+              disconnect_from_peer(existing_connection_ptr.get());
+              _add_once_node_list.push_back(add_once_peer);
+            }
+            else
+              connect_to(add_once_peer.endpoint);
+          }
+          ilog("Done processing \"add once\" node list");
+        }
+
         while (is_wanting_new_connections())
         {
           bool initiated_connection_this_pass = false;
@@ -603,9 +661,12 @@ namespace bts { namespace net {
         try
         {
           _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
-          if (is_wanting_new_connections())
+          if (is_wanting_new_connections() || !_add_once_node_list.empty())
           {
-            ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+            if (is_wanting_new_connections())
+              ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+            else
+              ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
             _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
           }
           else
@@ -992,7 +1053,34 @@ namespace bts { namespace net {
       if (originating_peer->inbound_endpoint.get_address() == fc::ip::address())
         originating_peer->inbound_endpoint = fc::ip::endpoint(originating_peer->get_socket().remote_endpoint().get_address(),
                                                               originating_peer->inbound_endpoint.port());
-      originating_peer->user_agent = hello_message_received.user_agent;
+
+      // try to parse data out of the user_agent string
+      try
+      {
+        fc::variant user_agent_variant = fc::json::from_string(hello_message_received.user_agent);
+        if (user_agent_variant.is_object())
+        {
+          fc::variant_object user_agent_properties = user_agent_variant.get_object();
+          if (user_agent_properties.contains("name"))
+            originating_peer->user_agent = user_agent_properties["name"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_sha"))
+            originating_peer->bitshares_git_revision_sha = user_agent_properties["bitshares_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_unix_timestamp"))
+            originating_peer->bitshares_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["bitshares_git_revision_unix_timestamp"].as<uint32_t>());
+          if (user_agent_properties.contains("fc_git_revision_sha"))
+            originating_peer->fc_git_revision_sha = user_agent_properties["fc_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("fc_git_revision_unix_timestamp"))
+            originating_peer->fc_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["fc_git_revision_unix_timestamp"].as<uint32_t>());
+          if (user_agent_properties.contains("platform"))
+            originating_peer->platform = user_agent_properties["platform"].as_string();
+        }
+        else
+          originating_peer->user_agent = hello_message_received.user_agent;
+      }
+      catch (const fc::exception&)
+      {
+        originating_peer->user_agent = hello_message_received.user_agent;
+      }
 
       // now decide what to do with it
       if( originating_peer->state == peer_connection::secure_connection_established && 
@@ -1841,7 +1929,8 @@ namespace bts { namespace net {
     void node_impl::set_delegate(node_delegate* del)
     {
       _delegate = del;
-      if( _delegate != nullptr ) _chain_id = del->get_chain_id();
+      if (_delegate)
+        _chain_id = del->get_chain_id();
     }
 
     void node_impl::load_configuration(const fc::path& configuration_directory)
@@ -1912,7 +2001,7 @@ namespace bts { namespace net {
       // us to immediately retry this peer
       updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
                                                                                       fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
-        
+      _add_once_node_list.push_back(updated_peer_record);
       _potential_peer_db.update_entry(updated_peer_record);
       trigger_p2p_network_connect_loop();
     }
@@ -1932,21 +2021,26 @@ namespace bts { namespace net {
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
     }
 
-    bool node_impl::is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint)
+    peer_connection_ptr node_impl::get_connection_to_endpoint(const fc::ip::endpoint& remote_endpoint)
     {
       for (const peer_connection_ptr& active_peer : _active_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(active_peer->get_remote_endpoint());
         if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
-          return true;
+          return active_peer;
       }
       for (const peer_connection_ptr& handshaking_peer : _handshaking_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(handshaking_peer->get_remote_endpoint());
         if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
-          return true;
+          return handshaking_peer;
       }
-      return false;
+      return peer_connection_ptr();
+    }
+
+    bool node_impl::is_connection_to_endpoint_in_progress(const fc::ip::endpoint& remote_endpoint)
+    {
+      return get_connection_to_endpoint(remote_endpoint) != peer_connection_ptr();
     }
 
     void node_impl::dump_node_status()
@@ -1970,7 +2064,7 @@ namespace bts { namespace net {
       }
 
       ilog("--------- MEMORY USAGE ------------");
-      ilog("node._active_sync_requests size: ${size}", ("size", _active_sync_requests.size()));
+      ilog("node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size())); // TODO: un-break this
       ilog("node._received_sync_items size: ${size}", ("size", _received_sync_items.size()));
       ilog("node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size()));
       ilog("node._new_inventory size: ${size}", ("size", _new_inventory.size()));
@@ -2015,10 +2109,10 @@ namespace bts { namespace net {
         peer_status this_peer_status;
         this_peer_status.version = 0; // TODO
         fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
-        if( endpoint.valid() )
+        if (endpoint)
           this_peer_status.host = *endpoint;
         fc::mutable_variant_object peer_details;
-        peer_details["addr"] = endpoint.valid() ? (std::string)*endpoint : std::string();
+        peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
         peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
         peer_details["lastsend"] = peer->get_last_message_sent_time().sec_since_epoch();
@@ -2034,6 +2128,56 @@ namespace bts { namespace net {
         peer_details["startingheight"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["banscore"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["syncnode"] = ""; // TODO: fill me for bitcoin compatibility
+
+        if (peer->bitshares_git_revision_sha)
+        {
+          std::string revision_string = *peer->bitshares_git_revision_sha;
+          if (*peer->bitshares_git_revision_sha == bts::utilities::git_revision_sha)
+            revision_string += " (same as ours)";
+          else
+            revision_string += " (different from ours)";
+          peer_details["bitshares_git_revision_sha"] = *peer->bitshares_git_revision_sha;
+
+        }
+        if (peer->bitshares_git_revision_unix_timestamp)
+        {
+          peer_details["bitshares_git_revision_unix_timestamp"] = *peer->bitshares_git_revision_unix_timestamp;
+          std::string age_string = fc::get_approximate_relative_time_string(*peer->bitshares_git_revision_unix_timestamp);
+          if (*peer->bitshares_git_revision_unix_timestamp == fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
+            age_string += " (same as ours)";
+          else if (*peer->bitshares_git_revision_unix_timestamp > fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
+            age_string += " (newer than ours)";
+          else
+            age_string += " (older than ours)";
+          peer_details["bitshares_git_revision_age"] = age_string;
+        }
+        
+        if (peer->fc_git_revision_sha)
+        {
+          std::string revision_string = *peer->fc_git_revision_sha;
+          if (*peer->fc_git_revision_sha == fc::git_revision_sha)
+            revision_string += " (same as ours)";
+          else
+            revision_string += " (different from ours)";
+          peer_details["fc_git_revision_sha"] = *peer->fc_git_revision_sha;
+
+        }
+        if (peer->fc_git_revision_unix_timestamp)
+        {
+          peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
+          std::string age_string = fc::get_approximate_relative_time_string(*peer->fc_git_revision_unix_timestamp);
+          if (*peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp))
+            age_string += " (same as ours)";
+          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp))
+            age_string += " (newer than ours)";
+          else
+            age_string += " (older than ours)";
+          peer_details["fc_git_revision_age"] = age_string;
+        }
+
+        if (peer->platform)
+          peer_details["platform"] = *peer->platform;
+
         this_peer_status.info = peer_details;
         statuses.push_back(this_peer_status);
       }
@@ -2131,6 +2275,10 @@ namespace bts { namespace net {
       for (const peer_connection_ptr& peer : peers_to_disconnect)
         disconnect_from_peer(peer.get());
 #endif // ENABLE_P2P_DEBUGGING_API
+    }
+    void node_impl::clear_peer_database()
+    {
+      _potential_peer_db.clear();
     }
 
   }  // end namespace detail
@@ -2235,5 +2383,8 @@ namespace bts { namespace net {
   {
     my->set_allowed_peers(allowed_peers);
   }
-
+  void node::clear_peer_database()
+  {
+    my->clear_peer_database();
+  }
 } } // end namespace bts::net

@@ -5,7 +5,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/libraries/net/include )
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/utilities/include )
 
 add_executable( chain_database_tests chain_database_tests.cpp )
-target_link_libraries( chain_database_tests bts_wallet bts_blockchain bts_net bitcoin_import fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
+target_link_libraries( chain_database_tests bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
 
@@ -53,6 +53,8 @@ if( WIN32 )
    set( RPCRT4 Rpcrt4 )
 endif (WIN32)
 target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library})
+
+add_subdirectory( bitcoin )
 
 if( false )
    add_subdirectory( dns )

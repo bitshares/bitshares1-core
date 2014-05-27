@@ -4,7 +4,7 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/blockchain/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/rpc/include" )
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin_import/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/bitcoin/include" )
 
 file(GLOB HEADERS "include/bts/client/*.hpp")
 
@@ -14,4 +14,4 @@ add_library( bts_client
              messages.cpp
              ${HEADERS} )
 
-target_link_libraries( bts_client fc bts_db bts_blockchain leveldb bitcoin_import bts_net )
+target_link_libraries( bts_client fc bts_db bts_blockchain leveldb bitcoin bts_net )

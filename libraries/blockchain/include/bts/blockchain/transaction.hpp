@@ -45,6 +45,13 @@ namespace bts { namespace blockchain {
                     const asset& amount, 
                     name_id_type delegate_id );
 
+      void deposit_to_name( fc::ecc::public_key receiver_key,
+                            asset amount,
+                            fc::ecc::private_key from_key,
+                            const std::string& memo_message,
+                            name_id_type delegate_id );
+
+
       void reserve_name( const std::string& name, 
                          const fc::variant& json_data, 
                          const public_key_type& master, 

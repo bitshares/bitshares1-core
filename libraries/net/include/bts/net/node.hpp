@@ -178,6 +178,13 @@ namespace bts { namespace net {
         message_propagation_data get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
         node_id_t get_node_id() const;
         void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
+
+        /**
+         * Instructs the node to forget everything in its peer database, mostly for debugging 
+         * problems where nodes are failing to connect to the network 
+         */
+        void clear_peer_database();
+
       private:
         std::unique_ptr<detail::node_impl> my;
    };

@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
    {
        pts_address(); ///< constructs empty / null address
        pts_address( const std::string& base58str );   ///< converts to binary, validates checksum
-       pts_address( const fc::ecc::public_key& pub, bool compressed = false, uint8_t version=56 ); ///< converts to binary
+       pts_address( const fc::ecc::public_key& pub, bool compressed = true, uint8_t version=56 ); ///< converts to binary
 
        uint8_t version()const { return addr.at(0); }
        bool is_valid()const;
