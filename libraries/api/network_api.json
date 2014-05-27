@@ -1,0 +1,34 @@
+{
+  "type_map":
+    [
+      {
+        "type_name" : "ip_endpoint",
+        "cpp_parameter_type" : "const fc::ip::endpoint&",
+        "cpp_return_type" : "fc::ip::endpoint"
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "network_add_node",
+        "description": "Attempts add or remove <node> from the peer list or try a connection to <node> once",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "node", 
+              "type" : "ip_endpoint", 
+              "description" : "the node to add",
+              "example" : "192.168.1.5:5678"
+            },
+            { 
+              "name" : "command", 
+              "type" : "std::string", 
+              "description" : "'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once",
+              "example" : "add"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      }
+    ]
+}
