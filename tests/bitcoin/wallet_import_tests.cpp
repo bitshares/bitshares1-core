@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE BitcoinWalletImportTests
 
 #include <algorithm>
+#include <array>
 
 #include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
