@@ -110,6 +110,7 @@ namespace bts { namespace rpc {
 
           virtual        uint32_t network_get_connection_count() const = 0;
           virtual    fc::variants network_get_peer_info() const = 0;
+          virtual            void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers) = 0;
           virtual            void network_set_advanced_node_parameters(const fc::variant_object& params) = 0;
           virtual fc::variant_object network_get_advanced_node_parameters() = 0;
           virtual            void network_add_node(const fc::ip::endpoint& node, const std::string& command) = 0;

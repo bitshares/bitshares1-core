@@ -661,6 +661,14 @@ namespace bts { namespace client {
       return results;
     }
 
+    void client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+    {
+      if (my->_p2p_node)
+        my->_p2p_node->set_allowed_peers(allowed_peers);      
+      else
+        FC_THROW_EXCEPTION(invalid_operation_exception, "set_allowed_peers only valid in p2p mode");
+    }
+
     void client::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
       my->_p2p_node->set_advanced_node_parameters(params);
