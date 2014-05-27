@@ -7,3 +7,8 @@
  * tracking where messages came from and when)
  */
 #define ENABLE_P2P_DEBUGGING_API 1
+
+/**
+ * 512 kb
+ */
+#define MAX_MESSAGE_SIZE (524288)  

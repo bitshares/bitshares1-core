@@ -10,13 +10,13 @@ namespace bts { namespace net {
 
   /**
    *  Defines an 8 byte header that is always present because the minimum encrypted packet
-   *  size is 8 bytes (blowfish).  The maximum message size is 16 MB.  The channel,
+   *  size is 8 bytes (blowfish).  The maximum message size is defined in config.hpp. The channel,
    *  and message type is also included because almost every channel will have a message type
    *  field and we might as well include it in the 8 byte header to save space.
    */
   struct message_header
   {
-     uint32_t  size;   // number of bytes in message, max 16 MB per message
+     uint32_t  size;   // number of bytes in message, capped at MAX_MESSAGE_SIZE
      uint32_t  msg_type;  // every channel gets a 16 bit message type specifier
   };
 
