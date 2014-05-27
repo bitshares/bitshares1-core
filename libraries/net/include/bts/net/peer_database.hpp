@@ -69,6 +69,7 @@ namespace bts { namespace net {
 
     void open(const fc::path& databaseFilename);
     void close();
+    void clear();
 
     void update_entry(const potential_peer_record& updatedRecord);
     potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);

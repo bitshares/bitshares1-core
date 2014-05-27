@@ -36,7 +36,13 @@ namespace bts { namespace wallet {
             {
             }
 
-            secret_hash_type get_secret( uint32_t block_num, const fc::ecc::private_key& delegate_key )
+            name_id_type get_new_delegate_vote()
+            {
+               return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+            }
+
+            secret_hash_type get_secret( uint32_t block_num, 
+                                         const fc::ecc::private_key& delegate_key )
             {
                block_id_type header_id;
                if( block_num != uint32_t(-1) && block_num > 1 )
@@ -54,9 +60,29 @@ namespace bts { namespace wallet {
                return fc::ripemd160::hash( enc.result() );
             }
 
-            void cache_deterministic_keys( const wallet_account_record& account, int32_t invoice_number, int32_t payment_number )
+            owallet_identity_record     lookup_identity( const std::string& identity_name )
+            { try {
+               auto itr = _identities.find( identity_name );
+               if( itr != _identities.end() )
+                  return itr->second;
+               return owallet_identity_record();
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("name",identity_name) ) }
+
+            share_type get_available_balance( asset_id_type asset_id )
             {
-               //ilog( "account: ${a} invoice: ${i} payment: ${p}", ("a",account)("i",invoice_number)("p",payment_number ) );
+               share_type total = 0;
+               for( auto item : _balances )
+               {
+                   if( item.second.asset_id() == asset_id )
+                      total += item.second.get_balance().amount;
+               }
+               return total;
+            }
+
+            void cache_deterministic_keys( const wallet_account_record& account, 
+                                           int32_t invoice_number, 
+                                           int32_t payment_number )
+            {
                if( invoice_number < 0 )
                   return;
                if( account.account_number >= 0 )
@@ -64,8 +90,8 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                //        ilog( "receive caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
-                        _receive_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
+                        _receive_keys[ account.get_key( invoice_number, i ) ] = 
+                           address_index( account.account_number, invoice_number, i );
                      }
                }
                else
@@ -73,8 +99,8 @@ namespace bts { namespace wallet {
                      uint32_t last = payment_number + 2;
                      for( uint32_t i = 0; i <= last; ++i )
                      {
-                 //       ilog( "send caching: ${a}.${i}.${p} as ${k}", ("a",account.account_number)("i",invoice_number)("p",i)("k",  address(account.get_key( invoice_number, i ))));
-                        _sending_keys[ account.get_key( invoice_number, i ) ] = address_index( account.account_number, invoice_number, i );
+                        _sending_keys[ account.get_key( invoice_number, i ) ] = 
+                           address_index( account.account_number, invoice_number, i );
                      }
                }
             }
@@ -93,7 +119,7 @@ namespace bts { namespace wallet {
                 }
             }
 
-            virtual void state_changed( const pending_chain_state_ptr& applied_changes )override
+            virtual void state_changed( const pending_chain_state_ptr& applied_changes ) override
             {
                for( auto balance : applied_changes->balances )
                {
@@ -112,9 +138,13 @@ namespace bts { namespace wallet {
             wallet_account_record get_account( const std::string& account_name )
             { try {
                auto account_name_itr = _account_name_index.find(account_name);
+
                if( account_name_itr != _account_name_index.end() )
                   return get_account( account_name_itr->second );
-               FC_ASSERT( false, "Unable to find account \"${account_name}\"", ("account_name",account_name) );
+
+               FC_ASSERT( false, "Unable to find account \"${account_name}\"", 
+                          ("account_name",account_name) );
+
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             wallet_account_record get_account( int32_t account_number )
@@ -122,7 +152,8 @@ namespace bts { namespace wallet {
                auto itr = _accounts.find( account_number );
                FC_ASSERT( itr != _accounts.end() );
                return itr->second;
-            } FC_RETHROW_EXCEPTIONS( warn, "unable to find account", ("account_number",account_number) ) }
+            } FC_RETHROW_EXCEPTIONS( warn, "unable to find account", 
+                                     ("account_number",account_number) ) }
 
             void get_new_payment_address_from_account( const std::string& to_account_name,
                                                        int32_t& sending_invoice_index,
@@ -133,10 +164,12 @@ namespace bts { namespace wallet {
                sending_invoice_index      = account_rec.get_next_invoice_index();
                last_sending_payment_index = account_rec.last_payment_index[sending_invoice_index];
 
-               public_key_type pub_key = account_rec.get_key( sending_invoice_index, last_sending_payment_index );
+               public_key_type pub_key = account_rec.get_key( sending_invoice_index, 
+                                                              last_sending_payment_index );
                payment_address = pub_key;
 
-               cache_deterministic_keys( account_rec, sending_invoice_index, last_sending_payment_index );
+               cache_deterministic_keys( account_rec, sending_invoice_index, 
+                                         last_sending_payment_index );
             }
 
             /**
@@ -196,6 +229,8 @@ namespace bts { namespace wallet {
 
             std::map<std::string,wallet_identity_record>                        _identities;
             std::unordered_map<address,std::string>                             _address_to_identity;
+            std::unordered_map<balance_id_type, memo_record>                    _memos;
+
 
             /** lookup account state */
             std::unordered_map<int32_t,wallet_account_record>                   _accounts;
@@ -224,7 +259,7 @@ namespace bts { namespace wallet {
              **/
             std::unordered_map<int32_t, private_key_record >                    _extra_receive_keys;
 
-            std::unordered_map<std::string, uint32_t>                           _account_name_index;
+            std::unordered_map<std::string, int32_t>                           _account_name_index;
 
             int32_t get_new_index()
             {
@@ -247,6 +282,35 @@ namespace bts { namespace wallet {
                return new_index;
             }
 
+            uint32_t get_last_identity_scanned_block_number()
+            {
+               auto meta_itr = _meta.find( last_identity_scanned_block_number );
+               if( meta_itr == _meta.end() )
+               {
+                  wallet_meta_record rec( get_new_index(), last_identity_scanned_block_number, 0 );
+                  _meta[last_identity_scanned_block_number] = rec;
+                  store_record( rec );
+                  return 0;
+               }
+               return meta_itr->second.value.as<uint32_t>();
+            }
+
+            void set_last_identity_scanned_block_number( uint32_t num )
+            {
+               auto meta_itr = _meta.find( last_identity_scanned_block_number );
+               if( meta_itr == _meta.end() )
+               {
+                  wallet_meta_record rec( get_new_index(), last_identity_scanned_block_number, int64_t(num) );
+                  _meta[last_identity_scanned_block_number] = rec;
+                  store_record( rec );
+               }
+               else
+               {
+                  meta_itr->second.value = num;
+                  store_record( meta_itr->second );
+               }
+            }
+
             uint32_t get_last_scanned_block_number()
             {
                auto meta_itr = _meta.find( last_scanned_block_number );
@@ -259,6 +323,7 @@ namespace bts { namespace wallet {
                }
                return meta_itr->second.value.as<uint32_t>();
             }
+
             void set_last_scanned_block_number( uint32_t num )
             {
                auto meta_itr = _meta.find( last_scanned_block_number );
@@ -351,7 +416,7 @@ namespace bts { namespace wallet {
             }
 
             /** the key index that the account belongs to */
-            void index_account( const address_index& idx, const balance_record& balance )
+            void index_balance( /*const address_index& idx,*/ const balance_record& balance )
             {
                auto id  = balance.id();
                auto itr = _balances.find( id );
@@ -410,7 +475,7 @@ namespace bts { namespace wallet {
                       auto owner = account.condition.as<withdraw_with_signature>().owner;
                       if( is_receive_address( owner ) )
                       {
-                          index_account( _receive_keys.find( owner )->second, account );
+                          index_balance( /*_receive_keys.find( owner )->second,*/ account );
                       }
                       break;
                    }
@@ -421,7 +486,7 @@ namespace bts { namespace wallet {
                       {
                          if( is_receive_address( owner ) )
                          {
-                            index_account( _receive_keys.find( owner )->second, account );
+                            index_balance( /*_receive_keys.find( owner )->second,*/ account );
                             break;
                          }
                       }
@@ -432,13 +497,13 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.payee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.payor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                    }
@@ -448,21 +513,25 @@ namespace bts { namespace wallet {
                       auto itr = _receive_keys.find( cond.optionor );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       itr = _receive_keys.find( cond.optionee );
                       if( itr != _receive_keys.end() )
                       {
-                         index_account( itr->second, account );
+                         index_balance( /*itr->second,*/ account );
                          break;
                       }
                       break;
                    }
                    case withdraw_by_name_type:
                    {
-                       // TODO
-                       FC_ASSERT( false, "NOT IMPLEMENTED" );
+                       /** note: we must process the transaction via scan_with_identities
+                        *   before this will have a chance at passing.
+                        */
+                       auto cond = account.condition.as<withdraw_by_name>();
+                       if( is_receive_address( cond.owner ) )
+                          index_balance( account );
                        break;
                    }
                    default:
@@ -674,7 +743,8 @@ namespace bts { namespace wallet {
 
             // TODO: optimize input balance collection
             void withdraw_to_transaction( signed_transaction& trx,
-                                          const asset& amount, std::unordered_set<address>& required_sigs )
+                                          const asset& amount,
+                                          std::unordered_set<address>& required_sigs )
             { try {
                 asset total_in( 0, amount.asset_id );
                 asset total_left = amount;
@@ -757,6 +827,28 @@ namespace bts { namespace wallet {
                 }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("required",required_sigs) ) }
 
+
+            void load_memo_record( const memo_record& memo_to_load )
+            { try {
+               auto current_itr = _memos.find( memo_to_load.balance_id );
+               if( current_itr != _memos.end() )
+                  FC_ASSERT( !"Duplicate Memo Record" );
+               _memos[memo_to_load.balance_id] = memo_to_load;
+
+               auto memo_priv_key = memo_to_load.decrypt_private_key( _wallet_password );
+               if( !is_receive_address( memo_priv_key.get_public_key() ) )
+                  import_private_key( memo_priv_key, 0, "" );
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("memo",memo_to_load) ) }
+
+            void load_identity_record( const wallet_identity_record& identity_to_load )
+            { try {
+               if( _identities.find( identity_to_load.name ) != _identities.end() )
+                   FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",identity_to_load.name ) );
+               _identities[ identity_to_load.name ] = identity_to_load;
+               _address_to_identity[ identity_to_load.key ] = identity_to_load.name;
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("identity_to_load",identity_to_load) ) }
+
+
             void load_records(const std::string& password)
             { try {
               for( auto record_itr = _wallet_db.begin(); record_itr.valid(); ++record_itr )
@@ -772,13 +864,12 @@ namespace bts { namespace wallet {
                           break;
                        }
                        case identity_record_type:
-                       {
-                          auto ident_rec = record.as<wallet_identity_record>();
-                          if( _identities.find( ident_rec.name ) != _identities.end() )
-                              FC_ASSERT( !"Duplicate Identity Name Discovered", "", ("name",ident_rec.name ) );
-                          _identities[ident_rec.name] = ident_rec;
-                          _address_to_identity[ident_rec.key] = ident_rec.name;
-                       }
+                          load_identity_record( record.as<wallet_identity_record>() );
+                          break;
+                       case memo_record_type:
+                          load_memo_record( record.as<memo_record>() );
+                          break;
+
                        case account_record_type:
                        {
                           auto cr = record.as<wallet_account_record>();
@@ -1217,7 +1308,13 @@ namespace bts { namespace wallet {
    {
       std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+      {
+          // receive accounts are positive
+          if (item.second >= 0)
+          {
+              cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+          }
+      }
       return cons;
    }
    wallet_account_record    wallet::get_account( const std::string& account_name )const
@@ -1228,11 +1325,22 @@ namespace bts { namespace wallet {
       return my->get_account( itr->second );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+   uint32_t wallet::get_last_identity_scanned_block_number()const
+   {
+      return my->get_last_identity_scanned_block_number();
+   }
+
    std::map<std::string,extended_address> wallet::list_sending_accounts( uint32_t start, uint32_t count )const
    {
       std::map<std::string,extended_address> cons;
       for( auto item : my->_account_name_index )
-         cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+      {
+          //send accounts are negative
+          if (item.second < 0)
+          {
+              cons[item.first] = extended_address(my->get_account( item.second ).extended_key);
+          }
+      }
       return cons;
    }
 
@@ -1337,7 +1445,8 @@ namespace bts { namespace wallet {
       auto asset_rec = my->_blockchain->get_asset_record( symbol );
       FC_ASSERT( asset_rec.valid(), "unable to find asset for symbol '${symbol}'", ("symbol",symbol) );
 
-      asset balance(0,asset_rec->id);
+      return asset(my->get_available_balance( asset_rec->id ),asset_rec->id);
+      /*
       for( auto item : my->_balances )
       {
          if( account_name == "*" )
@@ -1346,6 +1455,7 @@ namespace bts { namespace wallet {
             balance += item.second.get_balance( asset_rec->id );
       }
       return balance;
+      */
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
    /**
     *  @todo respect account name, for now it will ignore the account name
@@ -1437,13 +1547,137 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
+   std::vector<signed_transaction> wallet::transfer_to_identity( const std::string& to_identity_name, 
+                                                                 share_type shares_to_transfer, 
+                                                                 const std::string& share_symbol,
+                                                                 const std::string& from_identity_name,
+                                                                 const std::string& memo_message 
+                                                                )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       owallet_identity_record from_identity_record = my->lookup_identity( from_identity_name );
+
+       FC_ASSERT( from_identity_record.valid(),
+                  "Unable to find identity ${name}", 
+                  ("name",from_identity_name) );
+
+       auto from_identity_private_key = from_identity_record->decrypt_private_key( my->_wallet_password );
+       
+       owallet_identity_record to_identity_record  = my->lookup_identity( to_identity_name );
+       oname_record            to_name_record      = my->_blockchain->get_name_record( to_identity_name );
+       if( to_identity_record.valid() && to_name_record.valid() )
+       {
+          FC_ASSERT( to_identity_record->key != to_name_record->active_key,
+                     "Ambigious Identity Name", 
+                     ("to_identity_record",*to_identity_record)
+                     ("to_name_record",*to_name_record) )
+       }
+
+       FC_ASSERT( to_identity_record.valid() || to_name_record.valid(), 
+                  "Unable to find public key for identity ${name}",
+                  ("name",to_identity_name) );
+
+       fc::ecc::public_key to_key = to_identity_record.valid() ? 
+                                    to_identity_record->key : to_name_record->active_key;
+
+       auto share_asset_record = my->_blockchain->get_asset_record( share_symbol );
+
+       FC_ASSERT( share_asset_record.valid(), 
+                  "Unknown share symbol ${symbol}",
+                  ( "symbol",share_symbol) );
+      
+       std::vector<signed_transaction> result;
+       if( share_asset_record->id == 0 )
+       { // then create one transaction per input until we have
+         // collected enough to facilitate the transfer
+
+          share_type total_available = my->get_available_balance(0);
+
+          /** TODO: estimate fees... */
+
+          FC_ASSERT( total_available > shares_to_transfer, "",
+                     ("total_available", total_available)
+                     ("shares_to_transfer",shares_to_transfer) );
+
+          share_type total_remaining   = shares_to_transfer;
+          for( auto balance : my->_balances )
+          {
+             const balance_record&  current_balance = balance.second;
+             if( balance.second.asset_id() == 0 )
+             {
+
+                signed_transaction trx;
+                std::unordered_set<address> required_signatures;
+                required_signatures.insert( current_balance.owner() );
+               
+                trx.withdraw( current_balance.id(), current_balance.balance );
+                share_type fees = my->_priority_fee.amount;
+                
+                if( total_remaining > (current_balance.balance - fees) )
+                {
+                   share_type partial_payment_amount = current_balance.balance - fees;
+                   trx.deposit_to_name( to_key, 
+                                        asset(partial_payment_amount, share_asset_record->id),
+                                        from_identity_private_key,
+                                        memo_message,
+                                        my->get_new_delegate_vote()
+                                      );
+                   total_remaining -= partial_payment_amount;
+                   my->sign_transaction( trx, required_signatures );
+                   result.push_back( trx );
+                }
+                else
+                {
+                   share_type partial_payment_amount = total_remaining;
+                   trx.deposit_to_name( to_key, 
+                                        asset( partial_payment_amount, share_asset_record->id ),
+                                        from_identity_private_key,
+                                        memo_message,
+                                        my->get_new_delegate_vote()
+                                      );
+                   total_remaining -= partial_payment_amount;
+
+                   share_type change_amount = current_balance.balance - fees - partial_payment_amount;
+
+                   auto one_time_key = fc::ecc::private_key::generate(); //my->create_one_time_key();
+
+                   trx.deposit_to_name( from_identity_record->key, 
+                                        asset( change_amount,share_asset_record->id ),
+                                        from_identity_private_key,
+                                        "change",
+                                        my->get_new_delegate_vote()
+                                      );
+                   my->sign_transaction( trx, required_signatures );
+                   result.push_back( trx );
+                   break;
+                }
+             }
+          }
+       }
+       else // create one transaction with all the inputs
+       { 
+          FC_ASSERT( !"Identity transfer of non base assets not yet supported" );
+       }
+
+       // TODO: for each result, cache the memo for the transaction in the users
+       // transaction cache... 
+
+       return result;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("to_identity_name",to_identity_name)
+                                      ("shares_to_transfer", shares_to_transfer) 
+                                      ("share_symbol", share_symbol )
+                                      ("from_identity_name", from_identity_name)
+                                      ("memo_message", memo_message ) ) }
+
 
    // TODO: save memo
    invoice_summary  wallet::transfer( const std::string& to_account_name,
                                       const asset& amount,
                                       const std::string& from_account_name,
                                       const std::string& invoice_memo,
-                                      wallet_flag options )
+                                      const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       invoice_summary result;
@@ -1464,8 +1698,7 @@ namespace bts { namespace wallet {
          my->withdraw_to_transaction( trx, my->_priority_fee, required_sigs );
       }
 
-      // TODO: implement wallet voting algorithm
-      name_id_type delegate_id = rand()%BTS_BLOCKCHAIN_NUM_DELEGATES + 1;
+      name_id_type delegate_id = my->get_new_delegate_vote(); 
 
       // get next payment_address for to_account_name
       int32_t sending_invoice_index;
@@ -1474,7 +1707,10 @@ namespace bts { namespace wallet {
       my->get_new_payment_address_from_account( to_account_name, sending_invoice_index, last_sending_payment_index, payment_address );
 
       trx.deposit( payment_address, amount, delegate_id );
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+          my->sign_transaction( trx, required_sigs );
+      }
 
       result.payments[trx.id()]         = trx;
       result.from_account               = from_account_name;
@@ -1486,7 +1722,7 @@ namespace bts { namespace wallet {
                                   ("amount",amount)
                                   ("invoice_memo",invoice_memo)
                                   ("from_account",from_account_name)
-                                  ("options",options) ) }
+                                  ("sign",sign) ) }
 
 
    signed_transaction  wallet::create_asset( const std::string& symbol,
@@ -1495,7 +1731,7 @@ namespace bts { namespace wallet {
                                                 const fc::variant& data,
                                                 const std::string& issuer_name,
                                                 share_type maximum_share_supply,
-                                                wallet_flag options  )
+                                                const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       std::unordered_set<address> required_sigs;
@@ -1516,7 +1752,10 @@ namespace bts { namespace wallet {
       fees       *= my->_blockchain->get_fee_rate();
 
       my->withdraw_to_transaction( trx, fees, required_sigs );
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+        my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create asset ${symbol}", ("symbol",symbol)("asset_name",asset_name) ) }
@@ -1524,7 +1763,8 @@ namespace bts { namespace wallet {
 
    signed_transaction  wallet::issue_asset( share_type amount,
                                             const std::string& symbol,
-                                            const std::string& to_account_name )
+                                            const std::string& to_account_name,
+                                            const bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( amount > 0 );
@@ -1557,8 +1797,11 @@ namespace bts { namespace wallet {
       fees       *= my->_blockchain->get_fee_rate();
 
       my->withdraw_to_transaction( trx, fees, required_sigs );
-
-      my->sign_transaction( trx, required_sigs );
+       
+      if (sign)
+      {
+         my->sign_transaction( trx, required_sigs );
+      }
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("amount",amount)("account_name",to_account_name) ) }
 
@@ -1568,7 +1811,7 @@ namespace bts { namespace wallet {
                                            fc::optional<fc::variant> json_data,
                                            fc::optional<public_key_type> active,
                                            bool as_delegate,
-                                           wallet_flag flag )
+                                           const bool sign )
    { try {
       auto name_rec = my->_blockchain->get_name_record( name );
       FC_ASSERT( !!name_rec );
@@ -1602,7 +1845,10 @@ namespace bts { namespace wallet {
 
       my->withdraw_to_transaction( trx, total_fees, required_sigs );
       trx.update_name( name_rec->id, json_data, active, as_delegate );
-      my->sign_transaction( trx, required_sigs );
+      if (sign) 
+      {
+         my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("json",json_data)("active",active)("as_delegate",as_delegate) ) }
@@ -1610,7 +1856,7 @@ namespace bts { namespace wallet {
    signed_transaction wallet::reserve_name( const std::string& name,
                                             const fc::variant& json_data,
                                             bool as_delegate,
-                                            wallet_flag flag )
+                                            const bool sign )
    { try {
       FC_ASSERT( name_record::is_valid_name( name ), "", ("name",name) );
       auto name_rec = my->_blockchain->get_name_record( name );
@@ -1635,7 +1881,10 @@ namespace bts { namespace wallet {
       auto active_key = get_new_public_key();
       trx.reserve_name( name, json_data, owner_key, active_key, as_delegate );
 
-      my->sign_transaction( trx, required_sigs );
+      if (sign)
+      {
+        my->sign_transaction( trx, required_sigs );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name)("data",json_data)("delegate",as_delegate) ) }
@@ -1666,42 +1915,17 @@ namespace bts { namespace wallet {
                   auto deposit_op = op.as<deposit_operation>();
                   if( deposit_op.condition.type == withdraw_by_name_type )
                   {
-                     auto deposit_condition = deposit_op.condition.as<withdraw_by_name>();
+                     auto by_name_condition = deposit_op.condition.as<withdraw_by_name>();
                      for( auto priv_key : private_keys )
                      {
-                        fc::ecc::private_key p = priv_key;
-                        auto secret = p.get_shared_secret( deposit_condition.one_time_key );
-                        fc::ecc::private_key receive_private_key = priv_key.child( fc::sha256::hash( secret ) );
-                        fc::ecc::public_key  receive_public_key  = receive_private_key.get_public_key();
-                        address              receive_address( receive_public_key );
-
-                        if( deposit_condition.owner == receive_public_key )
+                        omemo_status status = by_name_condition.decrypt_memo_data( priv_key );
+                        if( status.valid() )
                         {
-                           auto memo = deposit_condition.decrypt_memo_data( secret );
-                           // TODO: import private key, log memo, add deposit record to our balance
-
-                           #if 0 // validate signature
-                            auto from_pub_key = lookup_identity( memo.from_address );
-                            if( from_pub_key.valid() )
-                            {// verify signature
-                               auto check_secret = receive_private_key->get_shared_secret( *from_pub_key );
-                               if( check_secret._hash[0] == memo.from_signature )
-                               {
-                                  // TODO: do something to indicate the signature passed
-                               }
-                               else
-                               {
-                                  // TODO: do something to indicate the signature failed
-                               }
-                               fc::ecc::extended_public_key from_ext_pub_key( from_pub_key );
-                           } 
-                           else
-                           {
-                              // TODO: do something to indicate that the signature has not been validated
-                              // because we did not have a public key for the address
-                           }
-                           #endif
-                        } // if my identity
+                           // TODO:
+                           // lookup account for key... 
+                           // add private key to wallet with account id + memo_status
+                           // index balance_id for use when constructing transactions
+                        }
                      } // for each identity private key
                   } // if withdraw by name
                } // if deposit
@@ -1718,7 +1942,7 @@ namespace bts { namespace wallet {
                                                const std::string& body,
                                                const std::string& proposal_type,
                                                const fc::variant& json_data,
-                                               wallet_flag /* flag */)
+                                               const bool sign )
    {
      try {
        auto name_rec = my->_blockchain->get_name_record(name);
@@ -1740,7 +1964,10 @@ namespace bts { namespace wallet {
        name_id_type delegate_id = name_rec->id;
        trx.submit_proposal(delegate_id, subject, body, proposal_type, json_data);
 
-       my->sign_transaction(trx, required_sigs);
+       if (sign)
+       {
+           my->sign_transaction(trx, required_sigs);
+       }
        return trx;
        //TODO fix rethrow
      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
@@ -1749,7 +1976,7 @@ namespace bts { namespace wallet {
    signed_transaction wallet::vote_proposal(const std::string& name, 
                                             proposal_id_type proposal_id,
                                             uint8_t vote,
-                                            wallet_flag /* flag */)
+                                            const bool sign)
    {
      try {
        auto name_rec = my->_blockchain->get_name_record(name);
@@ -1768,7 +1995,10 @@ namespace bts { namespace wallet {
        name_id_type voter_id = name_rec->id;
        trx.vote_proposal(voter_id, proposal_id, vote);
 
-       my->sign_transaction(trx, required_sigs);
+       if (sign)
+       {
+          my->sign_transaction(trx, required_sigs);
+       }
        return trx;
        //TODO fix rethrow
      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
