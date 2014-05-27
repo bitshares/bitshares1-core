@@ -1066,11 +1066,11 @@ namespace bts { namespace net {
           if (user_agent_properties.contains("bitshares_git_revision_sha"))
             originating_peer->bitshares_git_revision_sha = user_agent_properties["bitshares_git_revision_sha"].as_string();
           if (user_agent_properties.contains("bitshares_git_revision_unix_timestamp"))
-            originating_peer->bitshares_git_revision_unix_timestamp = user_agent_properties["bitshares_git_revision_unix_timestamp"].as<fc::time_point_sec>();
+            originating_peer->bitshares_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["bitshares_git_revision_unix_timestamp"].as<uint32_t>());
           if (user_agent_properties.contains("fc_git_revision_sha"))
             originating_peer->fc_git_revision_sha = user_agent_properties["fc_git_revision_sha"].as_string();
           if (user_agent_properties.contains("fc_git_revision_unix_timestamp"))
-            originating_peer->fc_git_revision_unix_timestamp = user_agent_properties["fc_git_revision_unix_timestamp"].as<fc::time_point_sec>();
+            originating_peer->fc_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["fc_git_revision_unix_timestamp"].as<uint32_t>());
           if (user_agent_properties.contains("platform"))
             originating_peer->platform = user_agent_properties["platform"].as_string();
         }
