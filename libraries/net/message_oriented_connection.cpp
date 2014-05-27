@@ -7,6 +7,7 @@
 
 #include <bts/net/message_oriented_connection.hpp>
 #include <bts/net/stcp_socket.hpp>
+#include <bts/net/config.hpp>
 
 namespace bts { namespace net {
   namespace detail

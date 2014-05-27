@@ -40,6 +40,7 @@
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/net/config.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <bts/net/message.hpp>
@@ -98,7 +99,7 @@ struct bts_xt_client_test_config
     boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_messages);
   }
 };
-fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/bts_xt/Debug/bts_xt_client.exe";
+fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/client/Debug/bitshares_client.exe";
 fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port  = 20100;
 uint16_t bts_xt_client_test_config::base_p2p_port  = 21100;
@@ -218,6 +219,8 @@ struct bts_client_process : managed_process
     std::ostringstream numbered_config_dir_name;
     numbered_config_dir_name << "BitSharesX_" << std::setw(3) << std::setfill('0') << process_number;
     config_dir = bts_xt_client_test_config::config_directory / numbered_config_dir_name.str();
+    fc::remove_all(config_dir);
+    fc::create_directories(config_dir);
   }
   void launch(uint32_t process_number,
               fc::optional<bts::blockchain::genesis_block_config> genesis_block);
@@ -229,12 +232,6 @@ void bts_client_process::launch(uint32_t process_number,
 {
   process = std::make_shared<fc::process>();
   std::vector<std::string> options;
-
-  std::ostringstream numbered_config_dir_name;
-  numbered_config_dir_name << "BitSharesX_" << std::setw(3) << std::setfill('0') << process_number;
-  fc::path numbered_config_dir = bts_xt_client_test_config::config_directory / numbered_config_dir_name.str();
-  fc::remove_all(numbered_config_dir);
-  fc::create_directories(numbered_config_dir);
 
 #if 0
   // create a wallet in that directory
@@ -250,7 +247,7 @@ void bts_client_process::launch(uint32_t process_number,
 #endif
 
   options.push_back("--data-dir");
-  options.push_back(numbered_config_dir.string());
+  options.push_back(config_dir.string());
 
   options.push_back("--server");
   options.push_back("--rpcuser=" RPC_USERNAME);
@@ -259,29 +256,29 @@ void bts_client_process::launch(uint32_t process_number,
   options.push_back(boost::lexical_cast<std::string>(rpc_port));
   options.push_back("--httpport");
   options.push_back(boost::lexical_cast<std::string>(http_port));
-  options.push_back("--port");
+  options.push_back("--p2p-port");
   options.push_back(boost::lexical_cast<std::string>(p2p_port));
 
   if (genesis_block)
   {
-    fc::path genesis_json(numbered_config_dir / "genesis.json");
+    fc::path genesis_json(config_dir / "genesis.json");
     fc::json::save_to_file(*genesis_block, genesis_json, true);
-    options.push_back("--genesis-json");
+    options.push_back("--genesis-config");
     options.push_back(genesis_json.string());
   }
 
   {
 #ifdef _MSC_VER
-    std::ofstream launch_script((numbered_config_dir / "launch.bat").string());
+    std::ofstream launch_script((config_dir / "launch.bat").string());
 #else
-    std::ofstream launch_script((numbered_config_dir / "launch.sh").string());;
+    std::ofstream launch_script((config_dir / "launch.sh").string());;
 #endif
     launch_script << bts_xt_client_test_config::bts_client_exe.string() << " " << boost::algorithm::join(options, " ") << "\n";
   }
 
-  process->exec(bts_xt_client_test_config::bts_client_exe, options, numbered_config_dir);
+  process->exec(bts_xt_client_test_config::bts_client_exe, options, config_dir);
 
-  log_stdout_stderr_to_file(numbered_config_dir / "stdouterr.txt");
+  log_stdout_stderr_to_file(config_dir / "stdouterr.txt");
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -476,7 +473,7 @@ void bts_client_launcher_fixture::import_initial_balances()
   {
     client_processes[i].rpc_client->wallet_import_private_key(key_to_wif(client_processes[i].private_key), "blah");
     client_processes[i].rpc_client->wallet_rescan_blockchain(0);
-    BOOST_REQUIRE_EQUAL(client_processes[i].rpc_client->wallet_get_balance()[0].first, client_processes[i].initial_balance);
+    BOOST_CHECK_EQUAL(client_processes[i].rpc_client->wallet_get_balance()[0].first, client_processes[i].initial_balance);
   }
 }
 
@@ -833,8 +830,8 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   launch_clients();
 
   establish_rpc_connections();
-  trigger_network_connections();
 
+  trigger_network_connections();
 
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
