@@ -9,318 +9,292 @@
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
 
-   enum wallet_record_type
+   enum wallet_record_type_enum
    {
       master_key_record_type     = 0,
       account_record_type        = 1,
-      transaction_record_type    = 2,
-      name_record_type           = 3,
-      asset_record_type          = 4,
-      balance_record_type        = 5,
-      private_key_record_type    = 6,
-      meta_record_type           = 7,
+      key_record_type            = 2,
+      transaction_record_type    = 3,
+      name_record_type           = 4,
+      asset_record_type          = 5,
+      balance_record_type        = 6,
+      property_record_type       = 7,
       identity_record_type       = 8,
       memo_record_type           = 9
    };
 
-   struct wallet_record
+   struct generic_wallet_record
    {
-       wallet_record():type(0){}
+       generic_wallet_record():type(0){}
 
        template<typename RecordType>
-       wallet_record( const RecordType& rec )
-       :type( RecordType::type ),json_data(rec)
-       {
-         // json_data = (rfc::json::to_string( rec );
-       }
+       generic_wallet_record( const RecordType& rec )
+       :type( int(RecordType::type) ),data(rec)
+       { }
 
        template<typename RecordType>
-       RecordType as()const;// { return json_data.as<RecordType>(); }
+       RecordType as()const;
 
-       fc::enum_type<uint8_t,wallet_record_type>   type;
-       fc::variant                                 json_data;
+       int32_t get_index()const 
+       { try {
+          FC_ASSERT( data.is_object() );
+          FC_ASSERT( data.get_object().contains( "index" ) );
+          return data.get_object()["index"].as_int64();
+       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+       fc::enum_type<uint8_t,wallet_record_type_enum>   type;
+       fc::variant                                      data;
    };
 
-   struct address_index
+   template<wallet_record_type_enum RecordType>
+   struct base_record 
    {
-      address_index( int32_t c = 0, int32_t i = 0, int32_t p = 0)
-         :account_number(c),invoice_number(i),payment_number(p){}
+      enum { type  = RecordType };
 
-      int32_t account_number;
-      int32_t invoice_number;
-      int32_t payment_number;
+      base_record( int32_t idx = 0 ):index(idx){}
+      int32_t index;
    };
 
-   enum meta_record_property_enum
+   enum property_enum
    {
       next_record_number,
-      last_account_number,
       default_transaction_fee,
-      last_scanned_block_number,
-      default_identity_name,
-      last_identity_scanned_block_number
+      next_child_key_index,
+      last_locked_scanned_block_number,
+      last_unlocked_scanned_block_number
    };
 
    /** Used to store key/value property pairs.
     */
-   struct wallet_meta_record
+   struct wallet_property
    {
-       static const uint32_t type;
+       wallet_property( property_enum k = next_record_number, 
+                        fc::variant v = fc::variant() )
+       :key(k),value(v){}
 
-       wallet_meta_record( int32_t i = 0, 
-                           meta_record_property_enum k = next_record_number, 
-                           fc::variant v = fc::variant() )
-       :index(i),key(k),value(v){}
-
-       int32_t                                           index;
-       fc::enum_type<int32_t, meta_record_property_enum> key;
-       fc::variant                                       value;
+       fc::enum_type<int32_t, property_enum> key;
+       fc::variant                           value;
    };
-
-   typedef int32_t invoice_index_type;
-   typedef int32_t payment_index_type;
 
    /**
     *  Contacts are tracked by the hash of their receive key
     */
-   struct wallet_account_record
+   struct account
    {
-       static const uint32_t type;
-     
-       int32_t               index;
-       /**
-        *  Negitive account numbers are sending accounts for which we cannot generate
-        *  private keys.
-        */
-       int32_t               account_number;
-       std::string           name;
-
-       address_index get_next_key_index( uint32_t invoice_number = 0 );
-       int32_t       get_next_invoice_index();
-       public_key_type get_key( int32_t invoice_number, int32_t payment_number )const;
-
-       /**
-        *  For receive accounts this can be generated using account_number, for sending accounts
-        *  this must be provided by the 3rd party.
-        */
-       extended_public_key                                                      extended_key;
-
-       /**
-        *  return the last address generated for each invoice 
-        */
-       std::map< invoice_index_type, payment_index_type >                       last_payment_index;
-
-       /** balances in the chain database */
-       std::unordered_map< asset_id_type, std::unordered_set<address> >         balances;
-       std::unordered_set<transaction_id_type>                                  transaction_history;
-   };
-
-   struct wallet_identity
-   {
-      std::string                               name;
-      public_key_type                           key;
-      std::vector<char>                         encrypted_private_key;
-      name_id_type                              registered_name_id;
-
-      std::unordered_set< transaction_id_type > transactions;
-      std::unordered_set< balance_id_type >     balances;
-
-      void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
-      fc::ecc::private_key      decrypt_private_key( const fc::sha512& password )const;
-   };
-   typedef fc::optional<wallet_identity> owallet_identity;
-
-   struct wallet_identity_record : public wallet_identity
-   {
-      static const uint32_t type;
-      wallet_identity_record():index(0){}
-      int32_t               index;
-   };
-   typedef fc::optional<wallet_identity_record> owallet_identity_record;
-
-   struct memo_record 
-   {
-      static const uint32_t           type;
-
-      memo_record()
-      :index(0),valid_from_signature(false){}
-
-      int32_t                         index;
-
-      /**
-       *  The ID of the balance record
-       */
-      balance_id_type                 balance_id;
-
-      /**
-       *  The address of the identity the funds were sent to
-       */
-      address                         to_address;
-      fc::optional<public_key_type>   from;
-      std::vector<char>               encrypted_private_key;
-      memo_data                       memo;
-      bool                            valid_from_signature;
-
-      void                      encrypt_private_key( const fc::sha512& password, const fc::ecc::private_key& );
-      fc::ecc::private_key      decrypt_private_key( const fc::sha512& password )const;
+       std::string    name;
+       name_id_type   registered_name_id;  
+       address        account_address;
    };
 
 
-   struct wallet_transaction_record
+   template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
+   struct wallet_record : public base_record<RecordTypeNumber>, public RecordTypeName
    {
-       static const uint32_t type;
-       wallet_transaction_record():transmit_count(0){}
+      wallet_record(){}
+      wallet_record( const RecordTypeName& rec, int32_t index = 0 )
+      :base_record<RecordTypeNumber>(index),RecordTypeName(rec){}
+   };
 
-       wallet_transaction_record( int32_t i, const signed_transaction& s )
-       :index(i),trx(s),transmit_count(0){}
 
-       int32_t                  index;
-       int32_t                  identity_index;
+   struct master_key
+   {
+       std::vector<char>              encrypted_key;
+       fc::sha512                     checksum;
+
+       bool                           validate_password( const fc::sha512& password )const;
+       extended_private_key           decrypt_key( const fc::sha512& password )const;
+       void                           encrypt_key( const fc::sha512& password, 
+                                                   const extended_private_key& k );
+   };
+
+   struct key_data
+   {
+       key_data(){}
+
+       address                  account_address;
+       public_key_type          public_key;
+       std::vector<char>        encrypted_private_key;
+       omemo_data               memo;
+
+       address                  get_address()const { return address( public_key ); }
+       bool                     has_private_key()const;
+       void                     encrypt_private_key( const fc::sha512& password, 
+                                                     const fc::ecc::private_key& );
+       fc::ecc::private_key     decrypt_private_key( const fc::sha512& password )const;
+   };
+
+   struct transaction_data
+   {
+       transaction_data():transmit_count(0){}
+       transaction_data( const signed_transaction& t ):trx(t),transmit_count(0){}
+
        signed_transaction       trx;
-       std::string              memo;
-       fc::time_point           received;
-       transaction_location     location;
+       std::string              memo_string;
+       fc::time_point           received_time;
        /** the number of times this transaction has been transmitted */
        uint32_t                 transmit_count;
    };
 
-   struct wallet_asset_record : public asset_record
+ 
+
+   /** cached blockchain data */
+   typedef wallet_record< bts::blockchain::asset_record,   asset_record_type       >  wallet_asset_record;
+   typedef wallet_record< bts::blockchain::name_record,    name_record_type        >  wallet_name_record;
+   typedef wallet_record< bts::blockchain::balance_record, balance_record_type     >  wallet_balance_record;
+
+   /** records unique to the wallet */
+   typedef wallet_record< transaction_data,                transaction_record_type >  wallet_transaction_record;
+   typedef wallet_record< master_key,                      master_key_record_type  >  wallet_master_key_record;
+   typedef wallet_record< key_data,                        key_record_type         >  wallet_key_record;
+   typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
+   typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
+
+   namespace detail { class wallet_db_impl; }
+
+   class wallet_db
    {
-       static const uint32_t type;
-       int32_t               index;
-       int32_t               identity_index;
+      public:
+         wallet_db();
+         ~wallet_db();
+         
+         void open( const fc::path& wallet_file );
+         void close();
+         
+         bool is_open()const;
 
-       wallet_asset_record():index(0){}
-       wallet_asset_record( int32_t idx, const asset_record& rec )
-       :asset_record( rec ), index( idx ){}
-   };
+         template<typename T>
+         void store_record( T t )
+         {
+            if( t.index == 0 ) 
+               t.index = new_index();
+            store_generic_record( t.index, generic_wallet_record( t ) );
+         }
+         int32_t              new_index();
+         int32_t              new_key_child_index();
+         fc::ecc::private_key new_private_key( const fc::sha512& password, 
+                                               const address& parent_account_address = address() );
 
-   struct wallet_name_record : public name_record
-   {
-       static const uint32_t type;
-       int32_t               index;
-       int32_t               identity_index;
+         void        set_property( property_enum property_id, const fc::variant& v );
+         fc::variant get_property( property_enum property_id );
 
-       wallet_name_record():index(0){}
-       wallet_name_record( int32_t idx, const name_record& rec )
-       :name_record( rec ), index( idx ){}
+         void store_key( const key_data& k );
+         void store_transaction( const transaction_data& t );
+         void cache_balance( const bts::blockchain::balance_record );
 
-   };
+         fc::optional<wallet_account_record> lookup_account( const address& address_of_public_key );
+         fc::optional<wallet_account_record> lookup_account( const std::string& account_name );
+         fc::optional<fc::ecc::private_key>  lookup_private_key( const address& address, 
+                                                                 const fc::sha512& password );
+         fc::optional<wallet_key_record>     lookup_key( const address& address );
 
-   struct wallet_balance_record : public balance_record
-   {
-       static const uint32_t type;
+         bool has_private_key( const address& a )const;
 
-       wallet_balance_record( int32_t idx, const balance_record& rec )
-       :balance_record( rec ), index( idx ){}
+         void add_account( const std::string& new_account_name, 
+                           const public_key_type& new_account_key );
 
-       wallet_balance_record():index(0){}
+         void rename_account( const std::string& old_account_name,
+                              const std::string& new_account_name );
 
-       int32_t               index;
-       int32_t               identity_index;
-   };
 
-   struct master_key_record 
-   {
-       static const uint32_t          type;
-    
-       int32_t                        index;
-       extended_private_key  get_extended_private_key( const fc::sha512& password )const;
-       std::vector<char>              encrypted_key;
-       fc::sha512                     checksum;
-   };
+         fc::optional<wallet_master_key_record>                 wallet_master_key;
 
-   /**
-    *  Used to store extra private keys that are not derived from the hierarchial master
-    *  key.
-    */
-   struct private_key_record
-   {
-       static const uint32_t          type;
+         std::unordered_map<address,wallet_key_record>          keys;
+         std::unordered_map<address,int32_t>                    address_to_account;
+         std::unordered_map<name_id_type,int32_t>               name_id_to_account;
+         std::map<std::string,int32_t>                          name_to_account;
 
-       private_key_record():index(0),account_number(0),extra_key_index(0){}
-       private_key_record( int32_t index, 
-                           int32_t contact_idx, 
-                           int32_t extra_index,
-                           const fc::ecc::private_key&, 
-                           const fc::sha512& password );
+         std::unordered_map<int32_t,wallet_account_record>      accounts;
+         std::unordered_map<int32_t,wallet_transaction_record>  transactions;
+         std::unordered_map<address,wallet_balance_record>      balances;
+         std::map<std::string,wallet_name_record>               names;
+         std::map<std::string,wallet_asset_record>              assets;
+         std::map<property_enum, wallet_property_record>        properties;
 
-       fc::ecc::private_key get_private_key( const fc::sha512& password )const;
+         void export_to_json( const fc::path& export_file_name ) const;
 
-       int32_t                        index;
-       int32_t                        account_number;
-       int32_t                        extra_key_index;
-       int32_t                        identity_index;
-       std::vector<char>              encrypted_key;
+         void create_from_json( const fc::path& file_to_import, 
+                                const fc::path& wallet_to_create );
+
+      private:
+        void store_generic_record( int32_t index, const generic_wallet_record& r );
+        std::unique_ptr<detail::wallet_db_impl> my;
    };
 
 } } // bts::wallet
 
-FC_REFLECT_ENUM( bts::wallet::meta_record_property_enum,
+FC_REFLECT_ENUM( bts::wallet::property_enum,
                     (next_record_number)
-                    (last_account_number)
                     (default_transaction_fee)
-                    (last_scanned_block_number)
-                    (last_identity_scanned_block_number)
-                    (default_identity_name)
-                )
+                    (next_child_key_index)
+                    (last_locked_scanned_block_number)
+                    (last_unlocked_scanned_block_number)
+               )
 
-FC_REFLECT_ENUM( bts::wallet::wallet_record_type, 
+FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum, 
                    (master_key_record_type)
+                   (key_record_type)
                    (account_record_type)
                    (transaction_record_type)
                    (balance_record_type)
                    (name_record_type)
-                   (private_key_record_type)
                    (asset_record_type)
-                   (meta_record_type)
-                   (identity_record_type)
-                   (memo_record_type)
+                   (property_record_type)
                 )
+FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
+FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
+FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
+FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
+FC_REFLECT( bts::wallet::transaction_data, (trx)(memo_string)(received_time)(transmit_count) )
+FC_REFLECT( bts::wallet::account, (name)(registered_name_id)(account_address) )
 
-FC_REFLECT( bts::wallet::wallet_meta_record, (index)(key)(value) )
-FC_REFLECT( bts::wallet::wallet_record, (type)(json_data) )
-FC_REFLECT( bts::wallet::address_index, (account_number)(invoice_number)(payment_number) )
-FC_REFLECT( bts::wallet::wallet_account_record,
-            (index)
-            (account_number)
-            (name)
-            (extended_key)
-            (last_payment_index)
-            (balances)
-            (transaction_history)
-          )
 
-FC_REFLECT( bts::wallet::wallet_transaction_record,
-            (index)
-            (trx)
-            (memo)
-            (received)
-            (location) 
-            (transmit_count)
-          )
+/**
+ *  Implement generic reflection for wallet record types
+ */
+namespace fc {
 
-FC_REFLECT_DERIVED( bts::wallet::wallet_asset_record, (bts::blockchain::asset_record), (index) )
-FC_REFLECT_DERIVED( bts::wallet::wallet_balance_record, (bts::blockchain::balance_record), (index) )
-FC_REFLECT_DERIVED( bts::wallet::wallet_name_record, (bts::blockchain::name_record), (index) )
-FC_REFLECT( bts::wallet::master_key_record,  (index)(encrypted_key)(checksum) )
-FC_REFLECT( bts::wallet::private_key_record,  (index)(account_number)(extra_key_index)(encrypted_key) )
+   template<typename T, bts::wallet::wallet_record_type_enum N> 
+   struct get_typename< bts::wallet::wallet_record<T,N> > 
+   { 
+      static const char* name() 
+      { 
+         static std::string _name =  get_typename<T>::name() + std::string("_record"); 
+         return _name.c_str();
+      }
+   };
 
-FC_REFLECT( bts::wallet::wallet_identity, (name)(key)(encrypted_private_key)(registered_name_id)(balances)(transactions) )
-FC_REFLECT_DERIVED( bts::wallet::wallet_identity_record, (bts::wallet::wallet_identity), (index) )
+   template<typename Type, bts::wallet::wallet_record_type_enum N> 
+   struct reflector<bts::wallet::wallet_record<Type,N>> 
+   {
+      typedef bts::wallet::wallet_record<Type,N>  type;
+      typedef fc::true_type is_defined;
+      typedef fc::false_type is_enum; 
+      enum member_count_enum {
+         local_member_count = 1,
+         total_member_count = local_member_count + reflector<Type>::total_member_count
+      };
 
-FC_REFLECT( bts::wallet::memo_record, (index)(to_address)(from)(balance_id)(encrypted_private_key)(memo)(valid_from_signature) )
+      template<typename Visitor> 
+      static void visit( const Visitor& visitor )
+      {
+          { 
+            typedef decltype(((bts::wallet::base_record<N>*)nullptr)->index) member_type;  
+            visitor.TEMPLATE operator()<member_type,bts::wallet::base_record<N>,&bts::wallet::base_record<N>::index>( "index" ); 
+          }
+          
+          fc::reflector<Type>::visit( visitor );
+      }
+   };
+} // namespace fc
 
 namespace bts { namespace wallet {
        template<typename RecordType>
-       RecordType wallet_record::as()const
+       RecordType generic_wallet_record::as()const
        {
-          FC_ASSERT( (wallet_record_type)type == RecordType::type, "", 
+          FC_ASSERT( (wallet_record_type_enum)type == RecordType::type, "", 
                      ("type",type)
-                     ("WithdrawType",RecordType::type) );
+                     ("WithdrawType",(wallet_record_type_enum)RecordType::type) );
        
-          return json_data.as<RecordType>();
-          //fc::variant v = fc::json::from_string(json_data);
-          //return v.as<RecordType>();
+          return data.as<RecordType>();
        }
 } }
