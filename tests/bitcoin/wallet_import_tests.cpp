@@ -21,12 +21,12 @@ using namespace bts::blockchain;
 
 const std::array<std::array<std::string, 4>, 6> wallets = 
 {{
-    {{"bitcoin", "wallet-unencrypted.dat", "", "PekgH7fspAH4SYoxn8JU38xYtEhNkKfDpt"}},
-    {{"bitcoin", "wallet-encrypted.dat", "1234password", "PekgH7fspAH4SYoxn8JU38xYtEhNkKfDpt"}},
-    {{"electrum", "electrum-wallet-unencrypted.dat", "", "PYDyNCfUvvv3y5JgY5v1rvRSRHPm3nCwDU"}},
-    {{"electrum", "electrum-wallet-encrypted.dat", "1234password", "PYDyNCfUvvv3y5JgY5v1rvRSRHPm3nCwDU"}},
-    {{"multibit", "multibit-unencrypted.wallet", "", "PYkCymYWjVRQb5pCCCPChkDSNVbtWQdFP7"}},
-    {{"multibit", "multibit-encrypted.wallet", "1234password", "PYkCymYWjVRQb5pCCCPChkDSNVbtWQdFP7"}}
+    {{"bitcoin", "bitcoin.dat", "", "PekgH7fspAH4SYoxn8JU38xYtEhNkKfDpt"}},
+    {{"bitcoin", "bitcoin_encrypted.dat", "1234password", "PekgH7fspAH4SYoxn8JU38xYtEhNkKfDpt"}},
+    {{"electrum", "electrum.dat", "", "PYDyNCfUvvv3y5JgY5v1rvRSRHPm3nCwDU"}},
+    {{"electrum", "electrum_encrypted.dat", "1234password", "PYDyNCfUvvv3y5JgY5v1rvRSRHPm3nCwDU"}},
+    {{"multibit", "multibit.wallet", "", "PYkCymYWjVRQb5pCCCPChkDSNVbtWQdFP7"}},
+    {{"multibit", "multibit_encrypted.wallet", "1234password", "PYkCymYWjVRQb5pCCCPChkDSNVbtWQdFP7"}}
 }};
 
 // TODO: check more than 1 address
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE( import_multibit_wallet_test_encrypted_wrong_pass )
 #if 0
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 {
-    printf("Testing unecrypted wallet\n");
+    printf("Testing unencrypted wallet\n");
     std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "armory_pv6Mmjdh_decrypt.wallet" ), "" );
     printf("found %d keys\n", (int)keys.size());
     BOOST_REQUIRE( (keys.size() == 104) );
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_unencrypted )
 
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted )
 {
-    printf("Testing ecrypted wallet - good password\n");
+    printf("Testing encrypted wallet - good password\n");
     std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "armory_pv6Mmjdh_encrypt.wallet" ), "armory" );
 
     printf("found %d keys\n", (int)keys.size());
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted )
 
 BOOST_AUTO_TEST_CASE( import_armory_wallet_test_encrypted_wrong_pass )
 {
-    printf("Testing ecrypted wallet - bad password\n");
+    printf("Testing encrypted wallet - bad password\n");
     std::vector<fc::ecc::private_key> keys = bts::bitcoin::import_armory_wallet( fc::path ( "armory_pv6Mmjdh_encrypt.wallet" ), "notthepassword" );
 
     printf("found %d keys\n", (int)keys.size());
