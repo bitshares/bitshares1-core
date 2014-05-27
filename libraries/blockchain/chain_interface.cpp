@@ -10,21 +10,19 @@ namespace bts{ namespace blockchain {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
+
    /** returns 0 if asset id is not condition.asset_id */
-   asset     balance_record::get_balance( asset_id_type id )const
-   {
-      if( id != condition.asset_id ) return asset( 0, id );
-      return asset( balance, id );
-   }
-   /** returns 0 if asset id is not condition.asset_id */
-   asset     balance_record::get_balance(  )const
+   asset     balance_record::get_balance()const
    {
       return asset( balance, condition.asset_id );
    }
+
    address balance_record::owner()const
    {
       if( condition.type == withdraw_signature_type )
          return condition.as<withdraw_with_signature>().owner;
+      else if ( condition.type == withdraw_by_name_type )
+         return condition.as<withdraw_by_name>().owner;
       return address();
    }
 

@@ -21,6 +21,15 @@ namespace bts { namespace rpc {
 
     class rpc_client_api
     {
+        public:
+         enum generate_transaction_flag
+         {
+            sign_and_broadcast    = 0,
+            do_not_broadcast      = 1,
+            do_not_sign           = 2
+         };
+
+        private:
          //TODO? help()
          //TODO? fc::variant get_info()
          virtual bts::blockchain::block_id_type blockchain_get_blockhash(int32_t block_number) const = 0;
@@ -38,20 +47,54 @@ namespace bts { namespace rpc {
          virtual                  void wallet_change_passphrase(const std::string& new_password) = 0;
          virtual      extended_address wallet_create_receive_account(const std::string& account_name) = 0;
          virtual                  void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) = 0;
+
+
          virtual       invoice_summary wallet_transfer( int64_t amount,
                                                         const std::string& to_account_name,
                                                          const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                          const std::string& from_account_name = std::string("*"),
-                                                         const std::string& invoice_memo = std::string()) = 0;
+                                                         const std::string& invoice_memo = std::string(),
+                                                         generate_transaction_flag flag = sign_and_broadcast) = 0;
         virtual             signed_transaction wallet_asset_create(const std::string& symbol,
                                                                    const std::string& asset_name,
                                                                    const std::string& description,
                                                                    const fc::variant& data,
                                                                    const std::string& issuer_name,
-                                                                   share_type maximum_share_supply) = 0;
+                                                                   share_type maximum_share_supply,
+                                                                   generate_transaction_flag flag = sign_and_broadcast) = 0;
         virtual             signed_transaction wallet_asset_issue(share_type amount,
                                                                   const std::string& symbol,
-                                                                  const std::string& to_account_name) = 0;
+                                                                  const std::string& to_account_name,
+                                                                  generate_transaction_flag flag = sign_and_broadcast) = 0;
+
+         /**
+          *  Reserve a name
+          */
+        virtual signed_transaction wallet_reserve_name( const std::string& name, 
+                                                         const fc::variant& json_data,
+                                                         generate_transaction_flag flag = sign_and_broadcast ) = 0;
+        virtual signed_transaction wallet_update_name( const std::string& name,
+                                                        const fc::variant& json_data,
+                                                        generate_transaction_flag flag = sign_and_broadcast) = 0;
+        virtual signed_transaction wallet_register_delegate(const std::string& name,
+                                                             const fc::variant& json_data,
+                                                             generate_transaction_flag = sign_and_broadcast) = 0;
+
+         /**
+         *  Submit and vote on proposals
+         */
+         virtual signed_transaction wallet_submit_proposal(const std::string& name,
+                                                     const std::string& subject,
+                                                     const std::string& body,
+                                                     const std::string& proposal_type,
+                                                     const fc::variant& json_data,
+                                                     generate_transaction_flag = sign_and_broadcast) = 0;
+         virtual signed_transaction wallet_vote_proposal( const std::string& name,
+                                                           proposal_id_type proposal_id,
+                                                           uint8_t vote,
+                                                           generate_transaction_flag = sign_and_broadcast) = 0;
+
+
         virtual std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const = 0;
         virtual                std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const = 0;
         virtual                                    void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) = 0;
@@ -66,26 +109,6 @@ namespace bts { namespace rpc {
         virtual                  oasset_record blockchain_get_asset_record(const std::string& symbol) const = 0;
         virtual                  oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const = 0;
 
-
-         /**
-          *  Reserve a name and broadcast it to the network.
-          */
-        virtual transaction_id_type wallet_reserve_name( const std::string& name, const fc::variant& json_data ) = 0;
-        virtual transaction_id_type wallet_update_name( const std::string& name,
-                                                        const fc::variant& json_data) = 0;
-        virtual transaction_id_type wallet_register_delegate(const std::string& name, const fc::variant& json_data) = 0;
-
-         /**
-         *  Submit and vote on proposals by broadcasting to the network.
-         */
-         virtual transaction_id_type wallet_submit_proposal(const std::string& name,
-                                                     const std::string& subject,
-                                                     const std::string& body,
-                                                     const std::string& proposal_type,
-                                                     const fc::variant& json_data) = 0;
-         virtual transaction_id_type wallet_vote_proposal( const std::string& name,
-                                                   proposal_id_type proposal_id,
-                                                   uint8_t vote) = 0;
 
          virtual void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) = 0;
          virtual bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const = 0;
@@ -151,20 +174,53 @@ namespace bts { namespace rpc {
                                    void wallet_change_passphrase(const std::string& new_password) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                        extended_address wallet_create_receive_account(const std::string& account_name) override;
                                    void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) override;
-                        invoice_summary wallet_transfer( int64_t amount,
+
+                     invoice_summary wallet_transfer( int64_t amount,
                                                          const std::string& to_account_name,
                                                          const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                          const std::string& from_account_name = std::string("*"),
-                                                         const std::string& invoice_memo = std::string()) override;
+                                                         const std::string& invoice_memo = std::string(),
+                                                         generate_transaction_flag flag = sign_and_broadcast) override;
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,
                                                             const fc::variant& data,
                                                             const std::string& issuer_name,
-                                                            share_type maximum_share_supply) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                                                            share_type maximum_share_supply,
+                                                            generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                      signed_transaction wallet_asset_issue(share_type amount,
                                                           const std::string& symbol,
-                                                          const std::string& to_account_name) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                                                          const std::string& to_account_name,
+                                                          generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+
+                     /**
+                      *  Reserve a name
+                      */
+                     signed_transaction wallet_reserve_name( const std::string& name,
+                                                              const fc::variant& json_data,
+                                                              generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                     signed_transaction wallet_update_name( const std::string& name,
+                                                             const fc::variant& json_data,
+                                                             generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                     signed_transaction wallet_register_delegate(const std::string& name,
+                                                                  const fc::variant& json_data,
+                                                                  generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+
+                     /**
+                     *  Submit and vote on proposals
+                     */
+                     signed_transaction wallet_submit_proposal(const std::string& name,
+                                                                 const std::string& subject,
+                                                                 const std::string& body,
+                                                                 const std::string& proposal_type,
+                                                                 const fc::variant& json_data,
+                                                                 generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                     signed_transaction wallet_vote_proposal( const std::string& name,
+                                                               proposal_id_type proposal_id,
+                                                               uint8_t vote,
+                                                               generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+
+
          std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                             void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
@@ -181,26 +237,7 @@ namespace bts { namespace rpc {
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
 
-         /**
-          *  Reserve a name and broadcast it to the network.
-          */
-         transaction_id_type wallet_reserve_name( const std::string& name, const fc::variant& json_data ) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         transaction_id_type wallet_update_name( const std::string& name,
-                                                 const fc::variant& json_data) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         transaction_id_type wallet_register_delegate(const std::string& name, const fc::variant& json_data) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
-         /**
-         *  Submit and vote on proposals by broadcasting to the network.
-         */
-         transaction_id_type wallet_submit_proposal(const std::string& name,
-                                                     const std::string& subject,
-                                                     const std::string& body,
-                                                     const std::string& proposal_type,
-                                                     const fc::variant& json_data) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         transaction_id_type wallet_vote_proposal( const std::string& name,
-                                                   proposal_id_type proposal_id,
-                                                   uint8_t vote) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
+                 
          void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
          bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
          std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };

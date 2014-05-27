@@ -9,6 +9,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 
+#include <bts/rpc/rpc_client.hpp>
+
 #include <iostream>
 
 namespace bts { namespace client {
@@ -401,14 +403,19 @@ namespace bts { namespace client {
                                             const std::string& to_account_name,
                                             const std::string& asset_symbol,
                                             const std::string& from_account_name,
-                                            const std::string& invoice_memo)
+                                            const std::string& invoice_memo,
+                                            generate_transaction_flag flag)
     {
       auto asset_rec = get_chain()->get_asset_record(asset_symbol);
       FC_ASSERT(asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol", asset_symbol));
+      bool sign = (flag != do_not_sign);
       bts::wallet::invoice_summary summary = 
-           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account_name, invoice_memo);
-      for (auto trx : summary.payments)
-        broadcast_transaction(trx.second);
+           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account_name, invoice_memo, sign);
+      if (flag == sign_and_broadcast)
+      {
+         for (auto trx : summary.payments)
+            broadcast_transaction(trx.second);
+      }
       return summary;
     }
 
@@ -417,22 +424,114 @@ namespace bts { namespace client {
                                                     const std::string& description,
                                                     const fc::variant& data,
                                                     const std::string& issuer_name,
-                                                    share_type maximum_share_supply)
+                                                    share_type maximum_share_supply,
+                                                    generate_transaction_flag flag)
     {
+      bool sign = (flag != do_not_sign);
       auto create_asset_trx = 
-        get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply);
-      broadcast_transaction(create_asset_trx);
+        get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
+      if (flag == sign_and_broadcast)
+      {
+          broadcast_transaction(create_asset_trx);
+      }
       return create_asset_trx;
     }
 
     signed_transaction  client::wallet_asset_issue(share_type amount,
                                                    const std::string& symbol,
-                                                   const std::string& to_account_name)
+                                                   const std::string& to_account_name,
+                                                   generate_transaction_flag flag)
     {
-      auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name);
-      broadcast_transaction(issue_asset_trx);
+      bool sign = (flag != do_not_sign);
+      auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name, sign);
+      if (flag == sign_and_broadcast)
+      {
+          broadcast_transaction(issue_asset_trx);
+      }
       return issue_asset_trx;
     }
+
+    signed_transaction client::wallet_reserve_name(const std::string& name,
+                                                   const fc::variant& data,
+                                                   generate_transaction_flag flag)
+    {
+      try {
+        bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->reserve_name(name, data, sign);
+        if (flag == sign_and_broadcast)
+        {
+            broadcast_transaction(trx);
+        }
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    signed_transaction client::wallet_update_name(const std::string& name,
+                                                  const fc::variant& data,
+                                                  generate_transaction_flag flag)
+    {
+      FC_ASSERT(!"Not implemented")
+      return signed_transaction();
+    }
+    /*
+    try {
+    auto trx = get_wallet()->update_name(name, data);
+    broadcast_transaction(trx);
+    return trx.id();
+    } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+    */
+    signed_transaction client::wallet_register_delegate(const std::string& name,
+                                                        const fc::variant& data,
+                                                        generate_transaction_flag flag)
+    {
+      try {
+        bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->reserve_name(name, data, true, sign);
+        if (flag == sign_and_broadcast)
+        {
+            broadcast_transaction( trx );
+        }
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
+    }
+
+    signed_transaction 
+    client::wallet_submit_proposal(const std::string& name,
+                                   const std::string& subject,
+                                   const std::string& body,
+                                   const std::string& proposal_type,
+                                   const fc::variant& json_data,
+                                   generate_transaction_flag flag)
+    {
+      try {
+        bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data, sign);
+        if (flag == sign_and_broadcast)
+        {
+            broadcast_transaction(trx);
+        }
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
+    }
+
+    signed_transaction client::wallet_vote_proposal(const std::string& name,
+                                                     proposal_id_type proposal_id,
+                                                     uint8_t vote,
+                                                     generate_transaction_flag flag)
+    {
+      try {
+        bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->vote_proposal(name, proposal_id, vote, sign);
+        if (flag == sign_and_broadcast)
+        {
+            broadcast_transaction(trx);
+        }
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
+    }
+
+
 
     std::map<std::string, extended_address> client::wallet_list_sending_accounts(uint32_t start, uint32_t count) const
     {
@@ -504,37 +603,6 @@ namespace bts { namespace client {
       return get_chain()->get_asset_record(asset_id);
     }
 
-    transaction_id_type client::wallet_reserve_name(const std::string& name, const fc::variant& data)
-    {
-      try {
-        auto trx = get_wallet()->reserve_name(name, data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
-    }
-
-    transaction_id_type client::wallet_update_name(const std::string& name, const fc::variant& data)
-    {
-      FC_ASSERT("Not implemented")
-      return transaction_id_type();
-    }
-    /*
-    try {
-    auto trx = get_wallet()->update_name(name, data);
-    broadcast_transaction(trx);
-    return trx.id();
-    } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
-    }
-    */
-    transaction_id_type client::wallet_register_delegate(const std::string& name, const fc::variant& data)
-    {
-      try {
-        auto trx = get_wallet()->reserve_name(name, data, true);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("data", data))
-    }
-
     void client::wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)
     {
       try {
@@ -564,30 +632,6 @@ namespace bts { namespace client {
       return get_wallet()->list_delegate_trust_status();
     }
 
-    transaction_id_type 
-    client::wallet_submit_proposal(const std::string& name,
-                                   const std::string& subject,
-                                   const std::string& body,
-                                   const std::string& proposal_type,
-                                   const fc::variant& json_data)
-    {
-      try {
-        auto trx = get_wallet()->submit_proposal(name, subject, body, proposal_type, json_data);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("subject", subject))
-    }
-
-    transaction_id_type client::wallet_vote_proposal(const std::string& name,
-                                                     proposal_id_type proposal_id,
-                                                     uint8_t vote)
-    {
-      try {
-        auto trx = get_wallet()->vote_proposal(name, proposal_id, vote);
-        broadcast_transaction(trx);
-        return trx.id();
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
-    }
 
     osigned_transaction client::blockchain_get_transaction(const transaction_id_type& transaction_id) const
     {

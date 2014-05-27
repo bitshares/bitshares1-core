@@ -311,9 +311,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {
       if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
-      wlog("${op}",("op",fc::json::to_pretty_string(op)));
       obalance_record arec = _current_state->get_balance_record( op.balance_id );
-      wlog("arec: ${op}",("op",fc::json::to_pretty_string(arec)));
       if( !arec.valid() )
       {
          fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
@@ -707,6 +705,29 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
+
+   void transaction::deposit_to_name( fc::ecc::public_key receiver_key,
+                                      asset amount,
+                                      fc::ecc::private_key from_key,
+                                      const std::string& memo_message,
+                                      name_id_type delegate_id )
+   {
+      fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
+
+      withdraw_by_name by_name;
+      by_name.encrypt_memo_data( one_time_private_key,
+                                 receiver_key,
+                                 from_key,
+                                 memo_message );
+
+      deposit_operation op;
+      op.amount = amount.amount;
+      op.condition = withdraw_condition( by_name, amount.asset_id, delegate_id );
+
+      operations.push_back( op );
+   }
+
+
    void transaction::reserve_name( const std::string& name, 
                                    const fc::variant& json_data, 
                                    const public_key_type& master, 
