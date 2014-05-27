@@ -2144,7 +2144,7 @@ namespace bts { namespace net {
             revision_string += " (same as ours)";
           else
             revision_string += " (different from ours)";
-          peer_details["bitshares_git_revision_sha"] = *peer->bitshares_git_revision_sha;
+          peer_details["bitshares_git_revision_sha"] = revision_string;
 
         }
         if (peer->bitshares_git_revision_unix_timestamp)
@@ -2167,7 +2167,7 @@ namespace bts { namespace net {
             revision_string += " (same as ours)";
           else
             revision_string += " (different from ours)";
-          peer_details["fc_git_revision_sha"] = *peer->fc_git_revision_sha;
+          peer_details["fc_git_revision_sha"] = revision_string;
 
         }
         if (peer->fc_git_revision_unix_timestamp)
