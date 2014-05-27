@@ -29,6 +29,7 @@
 #include <fc/thread/thread.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/network/ip.hpp>
+#include <fc/network/tcp_socket.hpp>
 #include <fc/io/json.hpp>
 
 #include <fc/interprocess/process.hpp>
@@ -40,6 +41,10 @@
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/utilities/key_conversion.hpp>
+
+#include <bts/net/message.hpp>
+#include <bts/net/config.hpp>
+
 using namespace bts::utilities;
 using namespace bts::blockchain;
 using namespace bts::wallet;
@@ -1398,5 +1403,64 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].rpc_client->stop();
 }
+
+
+
+
+bts::net::message garbage_message(int size)
+{
+    std::vector<char> data;
+    data.reserve(size);
+    for( int i = 0; i < size; i++ )
+    {
+        data[i] = rand() % sizeof(unsigned char);
+    }
+    auto msg = bts::net::message();
+    msg.data = data;
+    return msg;
+}
+
+
+BOOST_AUTO_TEST_CASE( oversize_message_test )
+{
+    client_processes.resize(3);
+
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+    {
+        client_processes[i].set_process_number(i);
+        client_processes[i].initial_balance = INITIAL_BALANCE;
+    }
+
+    create_delegates_and_genesis_block();
+    launch_clients();
+    establish_rpc_connections();
+    trigger_network_connections();
+
+    fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+    auto oversize = garbage_message( MAX_MESSAGE_SIZE + 1 ) ;
+
+    auto endpoint = fc::ip::endpoint( fc::ip::address("127.0.0.1"), client_processes[0].rpc_port );
+    auto socket = std::make_shared<fc::tcp_socket>();
+    try 
+    {
+        socket->connect_to(endpoint);
+    }
+    catch ( const fc::exception& e )
+    {
+        elog( "fatal: error opening RPC socket to endpoint ${endpoint}: ${e}", ("endpoint", endpoint)("e", e.to_detail_string() ) );
+        throw;
+    }
+
+    fc::buffered_istream_ptr buffered_istream = std::make_shared<fc::buffered_istream>(socket);
+    fc::buffered_ostream_ptr buffered_ostream = std::make_shared<fc::buffered_ostream>(socket);
+
+    *buffered_ostream << fc::variant( oversize.data ).as_string();
+    buffered_ostream->flush();
+}
+
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
