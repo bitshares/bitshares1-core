@@ -517,7 +517,7 @@ namespace bts { namespace rpc {
 
     static rpc_server::method_data help_metadata{"help", nullptr,
         /* description */ "Lists commands or detailed help for specified command",
-        /* returns: */    "bool",
+        /* returns: */    "string",
         /* params:          name       type      classification                   default value */
                          {{ "command", "string", rpc_server::optional_positional, fc::ovariant() } },
       /* prerequisites */ rpc_server::no_prerequisites,
@@ -549,7 +549,8 @@ Result:
         if (itr != _method_map.end())
         {
           rpc_server::method_data method_data = itr->second;
-          help_string = make_short_description(method_data);
+          help_string += "Usage:\n";
+          help_string += make_short_description(method_data);
           help_string += method_data.detailed_description;
           if (method_data.aliases.size() > 0)
           {
@@ -708,6 +709,7 @@ Result:
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_open_file(const fc::variants& params)
@@ -732,6 +734,7 @@ Wallets exist in the wallet data directory
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )",
     /* aliases */ { "open" } 
@@ -758,6 +761,7 @@ Wallets exist in the wallet data directory
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()}},
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
