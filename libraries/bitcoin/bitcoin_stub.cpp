@@ -1,13 +1,13 @@
 #include <algorithm>
 
-#include <bts/import_bitcoin_wallet.hpp>
-
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger.hpp>
 
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/hex.hpp>
+#include <fc/crypto/elliptic.hpp>
+#include <fc/filesystem.hpp>
 
 namespace bts { namespace bitcoin {
 
