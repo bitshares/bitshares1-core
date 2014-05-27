@@ -359,6 +359,8 @@ namespace bts { namespace net {
       uint32_t calculate_unsynced_block_count_from_all_peers();
       void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, const item_id& last_item_id_seen);
 
+      void parse_user_agent_string_for_peer(peer_connection* originating_peer, const std::string& user_agent);
+
       void on_message(peer_connection* originating_peer, const message& received_message);
       void on_hello_message(peer_connection* originating_peer, const hello_message& hello_message_received);
       void on_hello_reply_message(peer_connection* originating_peer, const hello_reply_message& hello_reply_message_received);
@@ -1031,6 +1033,37 @@ namespace bts { namespace net {
       }
     }
 
+    void node_impl::parse_user_agent_string_for_peer(peer_connection* originating_peer, const std::string& user_agent)
+    {
+      // try to parse data out of the user_agent string
+      try
+      {
+        fc::variant user_agent_variant = fc::json::from_string(user_agent);
+        if (user_agent_variant.is_object())
+        {
+          fc::variant_object user_agent_properties = user_agent_variant.get_object();
+          if (user_agent_properties.contains("name"))
+            originating_peer->user_agent = user_agent_properties["name"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_sha"))
+            originating_peer->bitshares_git_revision_sha = user_agent_properties["bitshares_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("bitshares_git_revision_unix_timestamp"))
+            originating_peer->bitshares_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["bitshares_git_revision_unix_timestamp"].as<uint32_t>());
+          if (user_agent_properties.contains("fc_git_revision_sha"))
+            originating_peer->fc_git_revision_sha = user_agent_properties["fc_git_revision_sha"].as_string();
+          if (user_agent_properties.contains("fc_git_revision_unix_timestamp"))
+            originating_peer->fc_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["fc_git_revision_unix_timestamp"].as<uint32_t>());
+          if (user_agent_properties.contains("platform"))
+            originating_peer->platform = user_agent_properties["platform"].as_string();
+        }
+        else
+          originating_peer->user_agent = user_agent;
+      }
+      catch (const fc::exception&)
+      {
+        originating_peer->user_agent = user_agent;
+      }
+    }
+
     void node_impl::on_hello_message(peer_connection* originating_peer, const hello_message& hello_message_received)
     {
       bool already_connected_to_this_peer = is_already_connected_to_id(hello_message_received.node_id);
@@ -1054,33 +1087,7 @@ namespace bts { namespace net {
         originating_peer->inbound_endpoint = fc::ip::endpoint(originating_peer->get_socket().remote_endpoint().get_address(),
                                                               originating_peer->inbound_endpoint.port());
 
-      // try to parse data out of the user_agent string
-      try
-      {
-        fc::variant user_agent_variant = fc::json::from_string(hello_message_received.user_agent);
-        if (user_agent_variant.is_object())
-        {
-          fc::variant_object user_agent_properties = user_agent_variant.get_object();
-          if (user_agent_properties.contains("name"))
-            originating_peer->user_agent = user_agent_properties["name"].as_string();
-          if (user_agent_properties.contains("bitshares_git_revision_sha"))
-            originating_peer->bitshares_git_revision_sha = user_agent_properties["bitshares_git_revision_sha"].as_string();
-          if (user_agent_properties.contains("bitshares_git_revision_unix_timestamp"))
-            originating_peer->bitshares_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["bitshares_git_revision_unix_timestamp"].as<uint32_t>());
-          if (user_agent_properties.contains("fc_git_revision_sha"))
-            originating_peer->fc_git_revision_sha = user_agent_properties["fc_git_revision_sha"].as_string();
-          if (user_agent_properties.contains("fc_git_revision_unix_timestamp"))
-            originating_peer->fc_git_revision_unix_timestamp = fc::time_point_sec(user_agent_properties["fc_git_revision_unix_timestamp"].as<uint32_t>());
-          if (user_agent_properties.contains("platform"))
-            originating_peer->platform = user_agent_properties["platform"].as_string();
-        }
-        else
-          originating_peer->user_agent = hello_message_received.user_agent;
-      }
-      catch (const fc::exception&)
-      {
-        originating_peer->user_agent = hello_message_received.user_agent;
-      }
+      parse_user_agent_string_for_peer(originating_peer, hello_message_received.user_agent);
 
       // now decide what to do with it
       if( originating_peer->state == peer_connection::secure_connection_established && 
@@ -1148,7 +1155,8 @@ namespace bts { namespace net {
       // store off the data provided in the hello message
       originating_peer->node_id = hello_reply_message_received.node_id;
       originating_peer->core_protocol_version = hello_reply_message_received.core_protocol_version;
-      originating_peer->user_agent = hello_reply_message_received.user_agent;
+
+      parse_user_agent_string_for_peer(originating_peer, hello_reply_message_received.user_agent);
 
       if (originating_peer->state == peer_connection::hello_sent && 
           originating_peer->direction == peer_connection_direction::outbound)
