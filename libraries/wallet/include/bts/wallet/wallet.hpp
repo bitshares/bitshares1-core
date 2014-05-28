@@ -60,6 +60,7 @@ namespace bts { namespace wallet {
          fc::time_point unlocked_until()const;
          ///@}
 
+         void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1 );
          uint32_t  get_last_scanned_block_number()const;
 

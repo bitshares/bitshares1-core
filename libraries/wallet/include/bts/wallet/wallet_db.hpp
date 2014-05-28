@@ -70,6 +70,7 @@ namespace bts { namespace wallet {
          fc::optional<wallet_master_key_record>                 wallet_master_key;
 
          std::unordered_map<address,wallet_key_record>          keys;
+         std::unordered_map<address,address>                    btc_to_bts_address;
          std::unordered_map<address,int32_t>                    address_to_account;
          std::unordered_map<name_id_type,int32_t>               name_id_to_account;
          std::map<std::string,int32_t>                          name_to_account;

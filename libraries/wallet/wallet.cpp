@@ -35,7 +35,45 @@ namespace bts { namespace wallet {
              bool scan_deposit( const deposit_operation& op, 
                                  const private_keys& keys );
              void cache_balance( const balance_id_type& balance_id );
+
+             void scan_balances();
+             void scan_registered_accounts();
       };
+
+      void wallet_impl::scan_balances()
+      {
+         ilog( "my_keys: ${keys}", ("keys",_wallet_db.keys ) );
+         _blockchain->scan_balances( [=]( const balance_record& bal_rec )
+         {
+             ilog( "scan ${bal_rec}", ("bal_rec",bal_rec) );
+             ilog( "owner: ${owner}", ("owner",bal_rec.owner() ) );
+                    
+              auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
+              ilog( "key:${key}", ("key",key_rec) );
+              if( key_rec.valid() && key_rec->has_private_key() )
+              {
+                wlog( "found ${b}", ("b",bal_rec) );
+                _wallet_db.cache_balance( bal_rec );
+              }
+         } );
+      }
+      void wallet_impl::scan_registered_accounts()
+      {
+         ilog( "my_keys: ${keys}", ("keys",_wallet_db.keys ) );
+         _blockchain->scan_names( [=]( const name_record& bal_rec )
+         {
+             ilog( "scan ${bal_rec}", ("bal_rec",bal_rec) );
+                    
+              auto key_rec =_wallet_db.lookup_key( bal_rec.active_key );
+              ilog( "key:${key}", ("key",key_rec) );
+              if( key_rec.valid() && key_rec->has_private_key() )
+              {
+                wlog( "found ${b}", ("b",bal_rec) );
+                //_wallet_db.cache_balance( bal_rec );
+              }
+         } );
+      }
+
 
       secret_hash_type wallet_impl::get_secret( uint32_t block_num, 
                                                 const fc::ecc::private_key& delegate_key )const
@@ -653,9 +691,43 @@ namespace bts { namespace wallet {
 
    asset wallet::get_balance( const std::string& symbol, 
                               const std::string& account_name )const
-   { 
-      FC_ASSERT( !"Not Implemented" );
-   }
+   { try {
+      auto opt_asset_record = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol ${s}", ("s",symbol) );
+
+
+      if( account_name == std::string() )
+      {
+         asset total_balance( 0, opt_asset_record->id );
+         for( auto b : my->_wallet_db.balances )
+         {
+            if( opt_asset_record->id == b.second.asset_id() )
+            {
+               total_balance += b.second.get_balance();
+            }
+         };
+         return total_balance;
+      }
+      else
+      {
+          auto war = my->_wallet_db.lookup_account( account_name );
+          FC_ASSERT( war.valid(), "Unable to find Wallet Account '${account_name}'", ("account_name",account_name) );
+
+          asset total_balance( 0, opt_asset_record->id );
+          for( auto b : my->_wallet_db.balances )
+          {
+             if( opt_asset_record->id == b.second.asset_id() )
+             {
+                auto key_rec = my->_wallet_db.lookup_key( b.second.owner() );
+                if( key_rec.valid() && key_rec->account_address == war->account_address )
+                {
+                   total_balance += b.second.get_balance();
+                }
+             }
+          };
+          return total_balance;
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
    std::vector<asset>   wallet::get_all_balances( const std::string& account_name )const
    {
       FC_ASSERT( !"Not Implemented" );
@@ -678,6 +750,11 @@ namespace bts { namespace wallet {
    std::map<std::string, public_key_type> wallet::list_receive_accounts() const
    {
       FC_ASSERT( !"Not Implemented" );
+   }
+   void  wallet::scan_state()
+   {
+      my->scan_balances();
+      my->scan_registered_accounts();
    }
 
 } } // bts::wallet

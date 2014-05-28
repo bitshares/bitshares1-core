@@ -50,7 +50,22 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_key_itr == self->keys.end(), "key should be unique" );
 
               self->keys[key_address] = key_to_load;
+
+              auto key = key_to_load.public_key;
+              auto bts_addr = key_to_load.get_address();
+              self->btc_to_bts_address[ address(key) ] = bts_addr;
+              self->btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
+              self->btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
+              self->btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
+              self->btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("key_to_load",key_to_load) ) }
+
+
+           void load_balance_record( const wallet_balance_record& rec )
+           { try {
+              // TODO: check for duplicates...
+              self->balances[ rec.id() ] = rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
      };
 
    } // namespace detail
@@ -73,7 +88,7 @@ namespace bts{ namespace wallet {
       while( current_record_itr.valid() )
       {
          auto current_record = current_record_itr.value();
-         ilog( "load: ${r}", ("r",current_record) );
+       //  ilog( "load: ${r}", ("r",current_record) );
          try 
          {
             switch( (wallet_record_type_enum)current_record.type )
@@ -86,6 +101,9 @@ namespace bts{ namespace wallet {
                   break;
                case key_record_type:
                   my->load_key_record( current_record.as<wallet_key_record>() );
+                  break;
+               case balance_record_type:
+                  my->load_balance_record( current_record.as<wallet_balance_record>() );
                   break;
             }
          } 
@@ -203,7 +221,16 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         store_record( wallet_key_record( key_to_store ) );
+         auto r = wallet_key_record( key_to_store, new_index() );
+         store_record( keys[key_to_store.get_address()] = r );
+         
+         auto key = key_to_store.public_key;
+         auto bts_addr = key_to_store.get_address();
+         btc_to_bts_address[ address(key) ] = bts_addr;
+         btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
+         btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
+         btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
+         btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
       }
    }
 
@@ -276,8 +303,12 @@ namespace bts{ namespace wallet {
 
    owallet_key_record     wallet_db::lookup_key( const address& address )
    {
-      auto itr = keys.find( address );
-      if( itr != keys.end() ) return itr->second;
+      auto btc_to_bts_itr = btc_to_bts_address.find(address);
+      if( btc_to_bts_itr != btc_to_bts_address.end() )
+      {
+         auto itr = keys.find( btc_to_bts_itr->second ); //address );
+         if( itr != keys.end() ) return itr->second;
+      }
       return owallet_key_record();
    }
 

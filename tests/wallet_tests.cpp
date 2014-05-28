@@ -32,9 +32,9 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       fc::temp_directory my_dir;
       fc::temp_directory your_dir;
       chain_database_ptr my_blockchain = std::make_shared<chain_database>();
-      my_blockchain->open( my_dir.path(), "genesis.dat" );
+      my_blockchain->open( my_dir.path(), "genesis2.json" );
       chain_database_ptr your_blockchain = std::make_shared<chain_database>();
-      your_blockchain->open( your_dir.path(), "genesis.dat" );
+      your_blockchain->open( your_dir.path(), "genesis2.json" );
       std::string password = "123456789";
 
       wallet  my_wallet( my_blockchain );
@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       my_wallet.open( "my_wallet" );
       my_wallet.unlock( password );
 
-      auto result = my_wallet.create_account( "account1" );
-      auto result2 = my_wallet.create_account( "account2" );
-      ilog( "account1: ${a}", ("a",result) );
-      ilog( "account2: ${a}", ("a",result2) );
+      auto result = my_wallet.create_account( "my1" );
+      auto result2 = my_wallet.create_account( "my2" );
+      ilog( "my1: ${a}", ("a",result) );
+      ilog( "my2: ${a}", ("a",result2) );
 
 
       wallet  your_wallet( your_blockchain );
@@ -57,7 +57,30 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       your_wallet.create(  "your_wallet", password );
       your_wallet.unlock( password );
 
-   //   my_wallet.unlock( fc::seconds(999999999), "012345679" );
+      auto your_account2 = my_wallet.create_account( "your1" );
+      auto your_account3 = my_wallet.create_account( "your2" );
+      ilog( "your1: ${a}", ("a",result) );
+      ilog( "your2: ${a}", ("a",result2) );
+
+      auto keys = fc::json::from_string( test_keys ).as<std::vector<fc::ecc::private_key> >();
+      for( auto key: keys )
+      {
+         my_wallet.import_private_key( key, "my1" );
+      }
+
+      my_wallet.scan_state();
+
+      ilog( "Produce Next Block at: ${b}", ("b",my_wallet.next_block_production_time() ) );
+      my_wallet.close();
+      ilog( "Produce Next Block at: ${b}", ("b",my_wallet.next_block_production_time() ) );
+      my_wallet.open( "my_wallet" );
+      ilog( "Produce Next Block at: ${b}", ("b",my_wallet.next_block_production_time() ) );
+
+      ilog( "balance: * ${b}", ("b",my_wallet.get_balance() ) );
+      ilog( "balance: my1 ${b}", ("b",my_wallet.get_balance("XTS", "my1") ) );
+      ilog( "balance: my2 ${b}", ("b",my_wallet.get_balance("XTS", "my2") ) );
+
+      //my_wallet.scan_state();
 
    } catch ( const fc::exception& e )
    {
