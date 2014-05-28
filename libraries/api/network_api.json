@@ -5,7 +5,10 @@
         "type_name" : "ip_endpoint",
         "cpp_parameter_type" : "const fc::ip::endpoint&",
         "cpp_return_type" : "fc::ip::endpoint",
-        "cpp_include_file" : "fc/network/ip.hpp"
+        "cpp_include_file" : "fc/network/ip.hpp",
+        "to_variant_function" : "bts::api::fc_ip_endpoint_to_variant",
+        "from_variant_function" : "bts::api::variant_to_fc_ip_endpoint",
+        "default_example" : "192.168.1.5:5678"
       },
       {
         "type_name" : "block_id_type",
@@ -25,7 +28,7 @@
             { 
               "name" : "node", 
               "type" : "ip_endpoint", 
-              "description" : "the node to add",
+              "description" : "The node (see network_get_peer_info for nodes)",
               "example" : "192.168.1.5:5678"
             },
             { 

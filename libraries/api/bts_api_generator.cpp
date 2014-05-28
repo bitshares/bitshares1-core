@@ -20,6 +20,8 @@ class type_mapping
 {
 private:
   std::string _type_name;
+  std::string _to_variant_function;
+  std::string _from_variant_function;
 public:
   type_mapping(const std::string& type_name) :
     _type_name(type_name)
@@ -27,8 +29,30 @@ public:
   std::string get_type_name() { return _type_name; }
   virtual std::string get_cpp_parameter_type() = 0;
   virtual std::string get_cpp_return_type() = 0;
+  virtual void set_to_variant_function(const std::string& to_variant_function) { _to_variant_function = to_variant_function; }
+  virtual void set_from_variant_function(const std::string& from_variant_function) { _from_variant_function = from_variant_function; }
+  virtual std::string convert_object_of_type_to_variant(const std::string& object_name);
+  virtual std::string convert_variant_to_object_of_type(const std::string& variant_name);
 };
 typedef std::shared_ptr<type_mapping> type_mapping_ptr;
+
+std::string type_mapping::convert_object_of_type_to_variant(const std::string& object_name)
+{
+  if (_to_variant_function.empty())
+    return std::string("fc::variant(") + object_name + ")";
+  else
+    return _to_variant_function + "(" + object_name + ")";
+}
+
+std::string type_mapping::convert_variant_to_object_of_type(const std::string& variant_name)
+{
+  if (_from_variant_function.empty())
+    return variant_name + ".as<" + get_cpp_return_type() + ">()";
+  else
+    return _from_variant_function + "(" + variant_name + ")";
+}
+
+
 
 class void_type_mapping : public type_mapping
 {
@@ -176,13 +200,15 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
     FC_ASSERT(json_type.contains("type_name"));
     std::string json_type_name = json_type["type_name"].as_string();
 
+    type_mapping_ptr mapping;
+
     if (json_type.contains("cpp_parameter_type") && 
         json_type.contains("cpp_return_type"))
     {
       std::string parameter_type = json_type["cpp_parameter_type"].as_string();
       std::string return_type = json_type["cpp_return_type"].as_string();
-      fundamental_type_mapping_ptr mapping = std::make_shared<fundamental_type_mapping>(json_type_name, parameter_type, return_type);
-      _type_map.insert(type_map_type::value_type(json_type_name, mapping));
+      fundamental_type_mapping_ptr fundamental_mapping = std::make_shared<fundamental_type_mapping>(json_type_name, parameter_type, return_type);
+      mapping = fundamental_mapping;
     }
     else if (json_type.contains("container_type"))
     {
@@ -192,8 +218,8 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
         FC_ASSERT(json_type.contains("contained_type"));
         std::string contained_type_name = json_type["contained_type"].as_string();
         type_mapping_ptr contained_type = lookup_type_mapping(contained_type_name);
-        sequence_type_mapping_ptr mapping = std::make_shared<sequence_type_mapping>(json_type_name, contained_type);
-        _type_map.insert(type_map_type::value_type(json_type_name, mapping));
+        sequence_type_mapping_ptr sequence_mapping = std::make_shared<sequence_type_mapping>(json_type_name, contained_type);
+        mapping = sequence_mapping;
       }
       else if (container_type_string == "dictionary")
       {
@@ -203,14 +229,21 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
         std::string value_type_name = json_type["value_type"].as_string();
         type_mapping_ptr key_type = lookup_type_mapping(key_type_name);
         type_mapping_ptr value_type = lookup_type_mapping(value_type_name);
-        dictionary_type_mapping_ptr mapping = std::make_shared<dictionary_type_mapping>(json_type_name, key_type, value_type);
-        _type_map.insert(type_map_type::value_type(json_type_name, mapping));
+        dictionary_type_mapping_ptr dictionary_mapping = std::make_shared<dictionary_type_mapping>(json_type_name, key_type, value_type);
+        mapping = dictionary_mapping;
       }
       else
         FC_THROW("invalid container_type for type ${type}", ("type", json_type_name));
     }
     else
       FC_THROW("malformed type map entry for type ${type}", ("type", json_type_name));
+
+    if (json_type.contains("to_variant_function"))
+      mapping->set_to_variant_function(json_type["to_variant_function"].as_string());
+    if (json_type.contains("from_variant_function"))
+      mapping->set_from_variant_function(json_type["from_variant_function"].as_string());
+
+    _type_map.insert(type_map_type::value_type(json_type_name, mapping));
 
     if (json_type.contains("cpp_include_file"))
       _include_files.insert(json_type["cpp_include_file"].as_string());
@@ -370,6 +403,7 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
 
 
   cpp_file << "#include <bts/rpc_stubs/" << client_classname << ".hpp>\n";
+  cpp_file << "#include <bts/api/conversion_functions.hpp>\n\n";
   cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
   for (const method_description& method : _methods)
@@ -377,17 +411,13 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
     cpp_file << generate_signature_for_method(method, client_classname, false) << "\n";
     cpp_file << "{\n";
 
-    if (std::dynamic_pointer_cast<void_type_mapping>(method.return_type))    
-      cpp_file << "  get_json_connection()->async_call(";
-    else
-      cpp_file << "  return get_json_connection()->call<" << method.return_type->get_cpp_return_type() << ">(";
-    cpp_file << "\"" << method.name << "\"";
+    cpp_file << "  fc::variant result = get_json_connection()->async_call(\"" << method.name << "\"";
     for (const parameter_description& parameter : method.parameters)
-      cpp_file << ", fc::variant(" << parameter.name << ")";
-    cpp_file << ")";
-    if (std::dynamic_pointer_cast<void_type_mapping>(method.return_type))    
-      cpp_file << ".wait()";
-    cpp_file << ";\n";
+      cpp_file << ", " << parameter.type->convert_object_of_type_to_variant(parameter.name);
+    cpp_file << ").wait();\n";
+
+    if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+      cpp_file << "  return " << method.return_type->convert_variant_to_object_of_type("result") << ";\n";
     cpp_file << "}\n";
   }
   cpp_file << "\n";
