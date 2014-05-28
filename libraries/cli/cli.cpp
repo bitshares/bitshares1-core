@@ -369,6 +369,44 @@ namespace bts { namespace cli {
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
+              else if(command == "wallet_rescan_blockchain")
+              {
+                  if ( ! _client->get_wallet()->is_open() )
+                      interactive_open_wallet();
+                  std::cout << "Rescanning blockchain...\n";
+                  uint32_t start;
+                  if (arguments.size() == 0)
+                      start = 1;
+                  else
+                      start = arguments[0].as<uint32_t>();
+                  while(true)
+                  {
+                      try {
+                          for(int i = 0; i < 100; i++)
+                              std::cout << "-";
+                          std::cout << "\n";
+                          uint32_t next_step = 0;
+                          auto cb = [start, next_step](uint32_t cur,
+                                                       uint32_t last,
+                                                       uint32_t cur_trx,
+                                                       uint32_t last_trx) mutable {
+                              if (((100*(cur - start)) / (last - start)) > next_step)
+                              {
+                                  //std::cout << ((100*(cur - start)) / (last - start));
+                                  std::cout << "=";
+                                  next_step++;
+                              }
+                          };
+                          _client->get_wallet()->scan_chain(start, cb);
+                          std::cout << "\n";
+                          return fc::variant("Scan complete.");
+                      }
+                      catch( const rpc_wallet_open_needed_exception& )
+                      {
+                          interactive_open_wallet();
+                      }
+                  }
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
