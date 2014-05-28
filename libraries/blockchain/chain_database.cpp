@@ -645,6 +645,8 @@ namespace bts { namespace blockchain {
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
+         if( _observer ) _observer->state_changed(undo_state.shared_from_this());
+
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail

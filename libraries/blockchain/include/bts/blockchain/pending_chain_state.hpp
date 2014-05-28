@@ -3,7 +3,7 @@
 
 namespace bts { namespace blockchain {
 
-   class pending_chain_state : public chain_interface
+   class pending_chain_state : public chain_interface, public std::enable_shared_from_this<pending_chain_state>
    {
       public:
          pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
