@@ -46,7 +46,7 @@ namespace bts { namespace cli {
 
             std::string get_prompt()const
             {
-              std::string wallet_name =  _client->get_wallet()->get_name();
+              std::string wallet_name =  _client->get_wallet()->get_wallet_name();
               std::string prompt = wallet_name;
               if( prompt == "" )
               {

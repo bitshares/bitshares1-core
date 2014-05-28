@@ -145,6 +145,7 @@ namespace bts { namespace wallet {
                                                const bool sign = true );
 
 
+         wallet_account_record    get_account( const std::string& account_name );
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
@@ -190,8 +191,8 @@ namespace bts { namespace wallet {
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
 
          bool                                       is_sending_address( const address& addr )const;
-         bool                                       is_receive_address( const address& addr )const;
          */
+         bool                                       is_receive_address( const address& addr )const;
 
 
 

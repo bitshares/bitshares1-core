@@ -49,12 +49,14 @@ namespace bts { namespace rpc {
          virtual                  void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) = 0;
 
 
+         /*
          virtual       invoice_summary wallet_transfer( int64_t amount,
                                                         const std::string& to_account_name,
                                                          const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                          const std::string& from_account_name = std::string("*"),
                                                          const std::string& invoice_memo = std::string(),
                                                          generate_transaction_flag flag = sign_and_broadcast) = 0;
+                                                         */
         virtual             signed_transaction wallet_asset_create(const std::string& symbol,
                                                                    const std::string& asset_name,
                                                                    const std::string& description,
@@ -95,10 +97,10 @@ namespace bts { namespace rpc {
                                                            generate_transaction_flag = sign_and_broadcast) = 0;
 
 
-        virtual std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const = 0;
+        virtual std::map<std::string, public_key_type> wallet_list_sending_accounts() const = 0;
         virtual                std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const = 0;
         virtual                                    void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) = 0;
-        virtual std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const = 0;
+        virtual std::map<std::string, public_key_type> wallet_list_receive_accounts() const = 0;
 
         virtual          wallet_account_record wallet_get_account(const std::string& account_name) const = 0;
         virtual                       balances wallet_get_balance(const std::string& asset_symbol = std::string(BTS_ADDRESS_PREFIX), const std::string& account_name = std::string("*")) const = 0;
@@ -111,8 +113,8 @@ namespace bts { namespace rpc {
 
 
          virtual void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) = 0;
-         virtual bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const = 0;
-         virtual std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const = 0;
+         //virtual bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const = 0;
+         //virtual std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const = 0;
 
          virtual               osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const = 0;
          virtual                        full_block blockchain_get_block(const block_id_type& block_id) const = 0;
@@ -120,7 +122,7 @@ namespace bts { namespace rpc {
 
          virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) = 0;
          virtual              void wallet_rescan_blockchain_state() = 0;
-         virtual              void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase) = 0;
+         virtual              void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase, const std::string& account_name ) = 0;
          virtual              void wallet_import_private_key(const std::string& wif_key_to_import, 
                                                               const std::string& account_name,
                                                               bool wallet_rescan_blockchain = false) = 0;
@@ -175,12 +177,13 @@ namespace bts { namespace rpc {
                        extended_address wallet_create_receive_account(const std::string& account_name) override;
                                    void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) override;
 
-                     invoice_summary wallet_transfer( int64_t amount,
+                     /*invoice_summary wallet_transfer( int64_t amount,
                                                          const std::string& to_account_name,
                                                          const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                          const std::string& from_account_name = std::string("*"),
                                                          const std::string& invoice_memo = std::string(),
                                                          generate_transaction_flag flag = sign_and_broadcast) override;
+                                                         */
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,
@@ -221,10 +224,14 @@ namespace bts { namespace rpc {
                                                                generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
 
-         std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                        std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                                            void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         std::map<std::string, public_key_type> wallet_list_sending_accounts() const override 
+         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override 
+         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override 
+         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         std::map<std::string, public_key_type> wallet_list_receive_accounts() const override 
+         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                 balances wallet_get_balance(const std::string& symbol = BTS_ADDRESS_PREFIX, const std::string& account_name = "*") const override;
@@ -239,8 +246,8 @@ namespace bts { namespace rpc {
 
                  
          void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+         //std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                         osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                  full_block blockchain_get_block(const block_id_type& block_id) const override;
@@ -248,7 +255,7 @@ namespace bts { namespace rpc {
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0) override;
                        void wallet_rescan_blockchain_state() override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                       void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase) override;
+                       void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase, const std::string& account_name) override;
                        void wallet_import_private_key(const std::string& wif_key_to_import, 
                                                       const std::string& account_name,
                                                       bool wallet_rescan_blockchain = false) override;

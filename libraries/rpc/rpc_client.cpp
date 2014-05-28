@@ -28,19 +28,21 @@ namespace bts { namespace rpc {
       extended_address wallet_create_receive_account(const std::string& account_name);
       void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key);
       std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1);
+      /*
       bts::wallet::invoice_summary wallet_transfer(int64_t amount, 
                                                    const std::string& to_account_name,                                                   
                                                    const std::string& asset_symbol,
                                                    const std::string& from_account = "*",
                                                    const std::string& invoice_memo = "",
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast);
+                                                   */
       balances wallet_get_balance(const std::string& account_name = "*", const std::string& asset_symbol = "");
       std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
       full_block blockchain_get_block(const block_id_type& block_id);
       full_block blockchain_get_block_by_number(uint32_t block_number);
       bool validate_address(bts::blockchain::address address);
       void wallet_rescan_blockchain(uint32_t starting_block_number);
-      void wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password);
+      void wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name );
       void wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name = "default", bool wallet_rescan_blockchain = false);
       void wallet_open(const std::string& wallet_name, const std::string& wallet_passphrase);
       void wallet_create(const std::string& wallet_name, const std::string& wallet_passphrase);
@@ -107,6 +109,7 @@ namespace bts { namespace rpc {
       //return _json_connection->call<std::vector<std::string> >("wallet_list_receive_accounts", fc::variant(start), fc::variant(count));
     }
 
+    /*
     bts::wallet::invoice_summary rpc_client_impl::wallet_transfer(int64_t amount, 
                                                                   const std::string& to_account_name,
                                                                   const std::string& asset_symbol,
@@ -120,6 +123,7 @@ namespace bts { namespace rpc {
       named_params["invoice_memo"] = invoice_memo;
       return _json_connection->call<bts::wallet::invoice_summary>("wallet_transfer", fc::variant(amount), fc::variant(to_account_name), named_params);
     }
+    */
 
     balances rpc_client_impl::wallet_get_balance(const std::string& asset_symbol, 
                                                  const std::string& account_name)
@@ -152,9 +156,9 @@ namespace bts { namespace rpc {
       _json_connection->async_call("wallet_rescan_blockchain", fc::variant(starting_block_number)).wait();
     }
 
-    void rpc_client_impl::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password)
+    void rpc_client_impl::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name )
     {
-      _json_connection->async_call("wallet_import_bitcoin", wallet_filename.string(), password).wait();
+      _json_connection->async_call("wallet_import_bitcoin", wallet_filename.string(), password, account_name ).wait();
     }
 
     void rpc_client_impl::wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name, bool rescan_blockchain)
@@ -261,7 +265,6 @@ namespace bts { namespace rpc {
     FC_ASSERT(false)
     //return my->wallet_list_receive_accounts(start, count);
   }
-  */
   invoice_summary rpc_client::wallet_transfer(int64_t amount, 
                                               const std::string& to_account_name,
                                               const std::string& asset_symbol,
@@ -271,6 +274,7 @@ namespace bts { namespace rpc {
   {
     return my->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo, flag);
   }
+  */
 
   balances rpc_client::wallet_get_balance(const std::string& asset_symbol, 
                                        const std::string& account_name) const
@@ -303,9 +307,9 @@ namespace bts { namespace rpc {
     my->wallet_rescan_blockchain(starting_block_number);
   }
 
-  void rpc_client::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password)
+  void rpc_client::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name)
   {
-    my->wallet_import_bitcoin(wallet_filename, password);
+    my->wallet_import_bitcoin(wallet_filename, password, account_name );
   }
 
   void rpc_client::wallet_import_private_key(const std::string& wif_key_to_import,

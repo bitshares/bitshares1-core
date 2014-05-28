@@ -60,7 +60,6 @@ namespace bts { namespace rpc {
              (wallet_list_reserved_names)\
              (wallet_get_account)\
              (wallet_rename_account)\
-             (wallet_transfer)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
              (wallet_get_balance)\
@@ -948,7 +947,7 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_get_pretty_transaction(const fc::variants& params)
     {
       bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
-      auto rec = wallet_transaction_record( -1, transaction );
+      auto rec = wallet_transaction_record( transaction );
       auto pretty = _client->get_wallet()->to_pretty_trx( rec );
       return fc::variant(pretty);
     }
@@ -968,6 +967,7 @@ Wallets exist in the wallet data directory.
       return fc::variant(transaction.id());
     }
 
+#if 0 
     static rpc_server::method_data wallet_transfer_metadata{"wallet_transfer", nullptr,
             /* description */ "Sends given amount to the given address, assumes shares in DAC",
             /* returns: */    "invoice_summary",
@@ -992,6 +992,7 @@ Wallets exist in the wallet data directory.
          _client->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
        return fc::variant(summary);
     }
+#endif
 
     static rpc_server::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
@@ -1047,16 +1048,13 @@ Wallets exist in the wallet data directory.
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
             /* params:          name     type    classification                   default value */
-                              {{"start", "int",  rpc_server::optional_positional, 0},
-                               {"count", "int",  rpc_server::optional_positional, -1}},
+                              {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_sending_accounts(const fc::variants& params)
     {  try {
-      int32_t start = params[0].as<int32_t>();
-      uint32_t count = params[1].as<uint32_t>();
-      auto accounts = _client->wallet_list_sending_accounts(start,count);
+      auto accounts = _client->wallet_list_sending_accounts();
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
@@ -1098,16 +1096,13 @@ Wallets exist in the wallet data directory.
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
             /* params:          name     type    classification                   default value */
-                              {{"start", "int",  rpc_server::optional_positional, 0},
-                               {"count", "int",  rpc_server::optional_positional, -1}},
+                              {},
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_receive_accounts(const fc::variants& params)
     {  try {
-      int32_t start = params[0].as<int32_t>();
-      uint32_t count = params[1].as<uint32_t>();
-      auto accounts = _client->wallet_list_receive_accounts(start,count);
+      auto accounts = _client->wallet_list_receive_accounts();
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
@@ -1122,10 +1117,13 @@ Wallets exist in the wallet data directory.
     fc::variant rpc_server_impl::wallet_get_account(const fc::variants& params)
     {  try {
       auto account_record = _client->wallet_get_account(params[0].as_string());
+      return fc::variant( account_record );
+      /*
       fc::mutable_variant_object result;
       result["name"] = account_record.name;
       result["extended_address"] = extended_address( account_record.extended_key );
       return fc::variant( std::move(result) );
+      */
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
@@ -1340,7 +1338,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_get_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->wallet_get_delegate_trust_status(params[0].as_string()));
+      return fc::variant();//_client->wallet_get_delegate_trust_status(params[0].as_string()));
     }
 
     static rpc_server::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
@@ -1353,7 +1351,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant(_client->wallet_list_delegate_trust_status());
+      return fc::variant();//_client->wallet_list_delegate_trust_status());
     }
 
     static rpc_server::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
@@ -1466,8 +1464,11 @@ Examples:
             /* description */ "Import a BTC/PTS wallet",
             /* returns: */    "void",
             /* params:          name           type      classification                          default_value */
-                              {{"filename",   "path",   rpc_server::required_positional,        fc::ovariant()},
-                               {"passphrase", "string", rpc_server::required_positional_hidden, fc::ovariant()}},
+                              {
+                               {"filename",   "path",   rpc_server::required_positional,        fc::ovariant()},
+                               {"account_name", "string", rpc_server::required_positional,      fc::ovariant()},
+                               {"passphrase", "string", rpc_server::required_positional_hidden, fc::ovariant()}
+                              },
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
           R"(
      )" };
@@ -1475,9 +1476,10 @@ Examples:
     {
         auto filename = params[0].as<fc::path>();
         auto passphrase = params[1].as<std::string>();
+        auto account_name = params[2].as<std::string>();
         try
         {
-          _client->wallet_import_bitcoin( filename, passphrase );
+          _client->wallet_import_bitcoin( filename, passphrase, account_name );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {

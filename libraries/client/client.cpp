@@ -337,12 +337,12 @@ namespace bts { namespace client {
 
     void client::wallet_open_file(const fc::path wallet_filename, const std::string& password)
     {
-      get_wallet()->open_file(wallet_filename, password );
+      get_wallet()->open_file( wallet_filename );
     }
 
     void client::wallet_open(const std::string& wallet_name, const std::string& password)
     {
-      get_wallet()->open(wallet_name, password);
+      get_wallet()->open(wallet_name);
     }
 
     void client::wallet_create(const std::string& wallet_name, const std::string& password)
@@ -352,7 +352,7 @@ namespace bts { namespace client {
 
     std::string client::wallet_get_name() const
     {
-      return get_wallet()->get_name();
+      return get_wallet()->get_wallet_name();
     }
 
     void client::wallet_close()
@@ -385,39 +385,7 @@ namespace bts { namespace client {
       get_wallet()->change_passphrase(new_password);
     }
 
-    extended_address client::wallet_create_receive_account(const std::string& account_name)
-    {
-      auto receive_account_record = get_wallet()->create_receive_account(account_name);
-      return extended_address(receive_account_record.extended_key);
-    }
 
-    void client::wallet_create_sending_account(const std::string& account_name,
-                                               const extended_address& account_public_key)
-    {
-      return get_wallet()->create_sending_account(account_name, account_public_key);
-    }
-
-    //TODO Skipping _RPC calls for now, classify and implement later
-
-    invoice_summary client::wallet_transfer(int64_t amount, 
-                                            const std::string& to_account_name,
-                                            const std::string& asset_symbol,
-                                            const std::string& from_account_name,
-                                            const std::string& invoice_memo,
-                                            generate_transaction_flag flag)
-    {
-      auto asset_rec = get_chain()->get_asset_record(asset_symbol);
-      FC_ASSERT(asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol", asset_symbol));
-      bool sign = (flag != do_not_sign);
-      bts::wallet::invoice_summary summary = 
-           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account_name, invoice_memo, sign);
-      if (flag == sign_and_broadcast)
-      {
-         for (auto trx : summary.payments)
-            broadcast_transaction(trx.second);
-      }
-      return summary;
-    }
 
     signed_transaction client::wallet_asset_create(const std::string& symbol,
                                                     const std::string& asset_name,
@@ -533,9 +501,9 @@ namespace bts { namespace client {
 
 
 
-    std::map<std::string, extended_address> client::wallet_list_sending_accounts(uint32_t start, uint32_t count) const
+    std::map<std::string, public_key_type> client::wallet_list_sending_accounts() const
     {
-      return get_wallet()->list_sending_accounts(start, count);
+      return get_wallet()->list_sending_accounts();
     }
 
     std::vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
@@ -555,9 +523,9 @@ namespace bts { namespace client {
     }
 
     
-    std::map<std::string, extended_address> client::wallet_list_receive_accounts(uint32_t start, uint32_t count) const
+    std::map<std::string, public_key_type> client::wallet_list_receive_accounts()const
     {
-      return get_wallet()->list_receive_accounts(start, count);
+      return get_wallet()->list_receive_accounts();
     }
 
     wallet_account_record client::wallet_get_account(const std::string& account_name) const
@@ -609,13 +577,14 @@ namespace bts { namespace client {
         auto name_record = get_chain()->get_name_record(delegate_name);
         FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+        FC_ASSERT( !"Not Implemented" );
 
-        get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+        //get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level))
     }
 
-    bts::wallet::delegate_trust_status 
-    client::wallet_get_delegate_trust_status(const std::string& delegate_name) const
+    /*
+    bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const std::string& delegate_name) const
     {
       try {
         auto name_record = get_chain()->get_name_record(delegate_name);
@@ -626,11 +595,11 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
     }
 
-    std::map<std::string, bts::wallet::delegate_trust_status> 
-    client::wallet_list_delegate_trust_status() const
+    std::map<std::string, bts::wallet::delegate_trust_status> client::wallet_list_delegate_trust_status() const
     {
       return get_wallet()->list_delegate_trust_status();
     }
+    */
 
 
     osigned_transaction client::blockchain_get_transaction(const transaction_id_type& transaction_id) const
@@ -655,13 +624,14 @@ namespace bts { namespace client {
 
     void client::wallet_rescan_blockchain_state()
     {
-      get_wallet()->scan_state();
+      // get_wallet()->scan_state();
     }
 
     void client::wallet_import_bitcoin(const fc::path& filename,
-                                       const std::string& passphrase)
+                                       const std::string& passphrase,
+                                       const std::string& account_name )
     {
-      get_wallet()->import_bitcoin_wallet(filename,passphrase);
+      get_wallet()->import_bitcoin_wallet(filename,passphrase,account_name);
     }
 
     void client::wallet_import_private_key(const std::string& wif_key_to_import, 

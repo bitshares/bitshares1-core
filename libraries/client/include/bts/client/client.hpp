@@ -64,12 +64,13 @@ namespace bts { namespace client {
          extended_address       wallet_create_receive_account(const std::string& account_name) override;
          void                   wallet_create_sending_account(const std::string& account_name, 
                                                              const extended_address& account_pub_key) override;
-         invoice_summary        wallet_transfer( int64_t amount,
+         /*invoice_summary        wallet_transfer( int64_t amount,
                                                  const std::string& to_account_name,
                                                  const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
                                                  const std::string& from_account_name = std::string("*"),
                                                  const std::string& invoice_memo = std::string(),
                                                  generate_transaction_flag flag = sign_and_broadcast) override;
+                                                 */
          signed_transaction         wallet_asset_create(const std::string& symbol,
                                                         const std::string& asset_name,
                                                         const std::string& description,
@@ -109,10 +110,10 @@ namespace bts { namespace client {
                                                    generate_transaction_flag flag = sign_and_broadcast) override;
 
 
-         std::map<std::string, extended_address> wallet_list_sending_accounts(uint32_t start, uint32_t count) const override;
+         std::map<std::string, public_key_type> wallet_list_sending_accounts() const override;
                         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override;
                                             void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override;
-         std::map<std::string, extended_address> wallet_list_receive_accounts(uint32_t start = 0, uint32_t count = -1) const override;
+         std::map<std::string, public_key_type> wallet_list_receive_accounts() const override;
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override;
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 
@@ -126,8 +127,8 @@ namespace bts { namespace client {
 
 
          void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) override;
-         bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override;
-         std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override;
+         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override;
+        // std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override;
 
                         osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const override;
                                  full_block blockchain_get_block(const block_id_type& block_id) const override;
@@ -135,7 +136,11 @@ namespace bts { namespace client {
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0) override;
                        void wallet_rescan_blockchain_state() override;
-                       void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase) override;
+
+                       void wallet_import_bitcoin(const fc::path& filename, 
+                                                  const std::string& passphrase, 
+                                                  const std::string& account_name ) override;
+
                        void wallet_import_private_key(const std::string& wif_key_to_import, 
                                                       const std::string& account_name,
                                                       bool wallet_rescan_blockchain = false) override;
