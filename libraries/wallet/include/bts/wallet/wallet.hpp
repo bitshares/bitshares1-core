@@ -60,7 +60,8 @@ namespace bts { namespace wallet {
          fc::time_point unlocked_until()const;
          ///@}
 
-         void scan_chain( uint32_t start = 0, uint32_t end = -1 );
+         void      scan_chain( uint32_t start = 0, uint32_t end = -1 );
+         uint32_t  get_last_scanned_block_number()const;
 
          ///@{ account management
          public_key_type  create_account( const std::string& account_name );
@@ -85,14 +86,11 @@ namespace bts { namespace wallet {
           **/
          fc::variant get_info()const;
 
-         
-
 
          /**
           *  Block Generation API
           */
          ///@{
-         uint32_t           get_last_scanned_block_number()const;
 
          /**
           *  If this wallet has any delegate keys, this method will return the time
@@ -114,7 +112,6 @@ namespace bts { namespace wallet {
          std::map<std::string,public_key_type> list_receive_accounts()const;
          std::map<std::string,public_key_type> list_sending_accounts()const;
 
-
          void import_bitcoin_wallet( const fc::path& wallet_dat,
                                      const std::string& wallet_dat_passphrase,
                                      const std::string& account_name );
@@ -131,6 +128,7 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
+        /*
          signed_transaction       create_asset( const std::string& symbol,
                                                 const std::string& asset_name,
                                                 const std::string& description,
@@ -143,7 +141,7 @@ namespace bts { namespace wallet {
                                                const std::string& symbol,                                               
                                                const std::string& to_account_name,
                                                const bool sign = true );
-
+        */
 
          wallet_account_record    get_account( const std::string& account_name );
 
@@ -152,17 +150,18 @@ namespace bts { namespace wallet {
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         signed_transaction reserve_name( const std::string& name,
-                                          const fc::variant& json_data,
-                                          bool as_delegate = false,
-                                          const bool sign = true );
+         signed_transaction register_account( const std::string& name,
+                                              const fc::variant& json_data,
+                                              bool as_delegate = false,
+                                              const bool sign = true );
 
-         signed_transaction update_name( const std::string& name,
-                                         fc::optional<fc::variant> json_data,
-                                         fc::optional<public_key_type> active = fc::optional<public_key_type>(),
-                                         bool as_delegate = false,
-                                         const bool sign = true );
+         signed_transaction update_registered_account( const std::string& name,
+                                                       fc::optional<fc::variant> json_data,
+                                                       fc::optional<public_key_type> active = fc::optional<public_key_type>(),
+                                                       bool as_delegate = false,
+                                                       const bool sign = true );
 
+         /*
          signed_transaction submit_proposal( const std::string& name,
                                              const std::string& subject,
                                              const std::string& body,
@@ -174,51 +173,56 @@ namespace bts { namespace wallet {
                                            proposal_id_type proposal_id, 
                                            uint8_t vote,
                                            const bool sign = true);
+         */
 
 
          ///@} Transaction Generation Methods
  
+         /*
          pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
                                                                 int number = 0 );
+                                                                */
 
 
 
-         std::string  get_symbol( asset_id_type asset_id )const;
+         // std::string  get_symbol( asset_id_type asset_id )const;
 
          /*
          void                                         set_delegate_trust_status(const std::string& delegate_name, fc::optional<int32_t> trust_level);
          delegate_trust_status                        get_delegate_trust_status(const std::string& delegate_name) const;
          std::map<std::string, delegate_trust_status> list_delegate_trust_status() const;
+         */
 
          bool                                       is_sending_address( const address& addr )const;
-         */
          bool                                       is_receive_address( const address& addr )const;
-
 
 
          /**
           *  Bitcoin compatiblity
           */
          ///@{
-         address                                    get_new_address( const std::string& account_name = "", uint32_t invoice = 0 );
-         public_key_type                            get_new_public_key( const std::string& account_name = "", uint32_t invoice = 0 );
-         extended_public_key                        get_new_extended_public_key( const std::string& account_name = "" );
+         //address                                    get_new_address( const std::string& account_name );
+         //public_key_type                            get_new_public_key( const std::string& account_name );
 
+         /*
          std::unordered_map<address,std::string>    get_receive_addresses()const;
          std::unordered_map<address,std::string>    get_send_addresses()const;
+         */
 
          asset                                      get_balance( const std::string& symbol = BTS_ADDRESS_PREFIX,
-                                                                 const std::string& account_name = "*" );
+                                                                 const std::string& account_name  = std::string() )const;
 
-         std::vector<asset>                         get_all_balances( const std::string& account_name = "*" );
+         std::vector<asset>                         get_all_balances( const std::string& account_name = std::string() )const;
          ///@}
 
-         std::vector<wallet_transaction_record>     get_transaction_history( unsigned count = 0 )const;
+         std::vector<wallet_transaction_record>     get_transaction_history()const;
 
+         /*
          fc::optional<address>                      get_owning_address( const balance_id_type& id )const;
          fc::optional<wallet_account_record>        get_account_record( const address& addr)const;
 
          std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const std::string& account_name = std::string() )const;
+         */
 
          /*
          std::unordered_map<name_id_type,       wallet_name_record>         names( const std::string& account_name = "*" )const;
@@ -227,7 +231,7 @@ namespace bts { namespace wallet {
 
          /** signs transaction with the specified keys for the specified addresses */
          void  sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs );
-         fc::ecc::private_key get_private_key( const address& addr );
+         fc::ecc::private_key get_private_key( const address& addr )const;
 
       private:
          std::unique_ptr<detail::wallet_impl> my;

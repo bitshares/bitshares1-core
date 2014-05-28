@@ -1,6 +1,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
@@ -23,6 +24,9 @@ namespace bts { namespace wallet {
              fc::sha512         _wallet_password;
 
 
+             secret_hash_type get_secret( uint32_t block_num,
+                                          const fc::ecc::private_key& delegate_key )const;
+
              void scan_block( uint32_t block_num, 
                               const std::vector<fc::ecc::private_key>& keys );
 
@@ -32,6 +36,25 @@ namespace bts { namespace wallet {
                                  const private_keys& keys );
              void cache_balance( const balance_id_type& balance_id );
       };
+
+      secret_hash_type wallet_impl::get_secret( uint32_t block_num, 
+                                                const fc::ecc::private_key& delegate_key )const
+      {
+         block_id_type header_id;
+         if( block_num != uint32_t(-1) && block_num > 1 )
+         {
+            auto block_header = _blockchain->get_block_header( block_num - 1 );
+            header_id = block_header.id();
+         }
+
+         fc::sha512::encoder key_enc;
+         fc::raw::pack( key_enc, delegate_key );
+         fc::sha512::encoder enc;
+         fc::raw::pack( enc, key_enc.result() );
+         fc::raw::pack( enc, header_id );
+
+         return fc::ripemd160::hash( enc.result() );
+      }
 
       void wallet_impl::scan_block( uint32_t block_num, 
                                     const private_keys& keys )
@@ -471,7 +494,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("req_sigs",req_sigs) ) }
 
-   fc::ecc::private_key wallet::get_private_key( const address& addr )
+   fc::ecc::private_key wallet::get_private_key( const address& addr )const
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -483,14 +506,66 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
 
+   std::vector<wallet_transaction_record>    wallet::get_transaction_history()const
+   { try {
+      FC_ASSERT( is_open() );
 
-   std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name  )const
-   {
-      // TODO: figure out how to filter transactions by account
-      // probably involves updating scan_transaction to take the full list of pre-filtered keys rather
-      // and rescanning the transaction to see if we should cache it... perhaps a light weight scan?
-      return my->_wallet_db.transactions;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+   /**
+    *  If this wallet has any delegate keys, this method will return the time
+    *  at which this wallet may produce a block.
+    */
+   fc::time_point_sec wallet::next_block_production_time()const
+   { try {
+      auto now = fc::time_point(bts::blockchain::now());
+      uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      if( next_block_time == my->_blockchain->now().sec_since_epoch() )
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+      uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+      while( next_block_time < last_block_time )
+      {
+         auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
+         auto delegate_record = my->_blockchain->get_name_record( id );
+         auto key = my->_wallet_db.lookup_key( delegate_record->active_key );
+         if( key.valid() && key->has_private_key() )
+         {
+            wlog( "next block time:  ${t}", ("t",fc::time_point_sec( next_block_time ) ) );
+            return fc::time_point_sec( next_block_time ); 
+         }
+         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      }
+      return fc::time_point_sec();
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::sign_block( signed_block_header& header )const
+   { try {
+      FC_ASSERT( is_unlocked() );
+      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
+      auto delegate_rec = my->_blockchain->get_name_record( signing_delegate_id );
+
+      auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
+      auto delegate_key = get_private_key( address(delegate_pub_key) );
+      FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
+
+      header.previous_secret = my->get_secret( 
+                                      delegate_rec->delegate_info->last_block_num_produced,
+                                      delegate_key );
+
+      auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
+      header.next_secret_hash = fc::ripemd160::hash( next_secret );
+
+      header.sign(delegate_key);
+      FC_ASSERT( header.validate_signee( delegate_pub_key ) );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
+
+
+
 
 } } // bts::wallet
 
