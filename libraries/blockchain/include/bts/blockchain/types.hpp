@@ -31,17 +31,19 @@ namespace bts { namespace blockchain {
            :key_data( data ) {};
        public_key_type( fc::ecc::public_key pubkey )
            :key_data( pubkey ) {};
-       /*
        operator fc::ecc::public_key_data() const
        {
           return key_data;    
        };
-       */
        operator fc::ecc::public_key() const
        {
           return fc::ecc::public_key( key_data );
        };
 
+       operator bts::blockchain::address() const
+       {
+          return bts::blockchain::address( key_data );
+       }
 //     operator std::string() const;
 
        inline friend bool operator ==(public_key_type p1, public_key_type p2)

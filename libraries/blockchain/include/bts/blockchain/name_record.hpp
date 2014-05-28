@@ -73,7 +73,7 @@ namespace bts { namespace blockchain {
          return delegate_info->votes_against;
       }
       bool is_retracted()const { return active_key == public_key_type(); }
-      address active_address()const { return address( fc::ecc::public_key(active_key) ); }
+      address active_address()const { return address( fc::ecc::public_key_data(active_key) ); }
 
       name_id_type                 id;
       std::string                  name;
