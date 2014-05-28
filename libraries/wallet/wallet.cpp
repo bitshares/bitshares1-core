@@ -422,25 +422,45 @@ namespace bts { namespace wallet {
                auto itr = _balances.find( id );
                if( itr == _balances.end() )
                {
+                  if ( balance.is_null() )
+                  {
+                      return;
+                  }
                   _balances[id] = wallet_balance_record( get_new_index(), balance );
                   itr = _balances.find( id );
                }
                else
                {
+                  if ( balance.is_null() )
+                  {
+                     _wallet_db.remove( itr->second.index );
+                     _balances.erase(id);
+                     return;
+                  }
                   itr->second = wallet_balance_record( itr->second.index, balance );
                }
                store_record( itr->second );
             }
 
-            void index_name( const address_index& idx, const name_record& name )
+            void index_name( /*const address_index& idx,*/ const name_record& name )
             {
                 auto itr = _names.find( name.id );
                 if( itr != _names.end() )
                 {
+                   if ( name.is_null() )
+                   {
+                       return;
+                   }
                    itr->second = wallet_name_record( itr->second.index, name );
                 }
                 else
                 {
+                   if ( name.is_null() )
+                   {
+                       _wallet_db.remove( itr->second.index );
+                       _names.erase(name.id);
+                       return;
+                   }
                    _names[name.id] = wallet_name_record( get_new_index(), name );
                    itr = _names.find( name.id );
                 }
@@ -452,10 +472,20 @@ namespace bts { namespace wallet {
                 auto itr = _assets.find( a.id );
                 if( itr != _assets.end() )
                 {
+                   if ( a.is_null() )
+                   {
+                       return;
+                   }
                    itr->second = wallet_asset_record( itr->second.index, a );
                 }
                 else
                 {
+                   if ( a.is_null() )
+                   {
+                       _wallet_db.remove( itr->second.index );
+                       _assets.erase( a.id );
+                       return;
+                   }
                    _assets[a.id] = wallet_asset_record( get_new_index(), a );
                    itr = _assets.find( a.id );
                 }
@@ -546,29 +576,27 @@ namespace bts { namespace wallet {
             {
                 if( _names.find( current_asset.issuer_name_id ) != _names.end() )
                 {
-
+                    index_asset(current_asset);
                 }
             }
 
             void scan_name( const name_record& name )
             {
-               auto current_itr = _names.find( name.id );
-               if( current_itr != _names.end() )
-               {
-                  // do we still own it or has it been transferred to someone else.
-               }
-               else
-               {
-                  if( self->is_receive_address( address( name.owner_key ) ) || self->is_receive_address( name.active_address() ) )
-                  {
-                     _names[name.id] = wallet_name_record( get_new_index(), name );
-                     store_record( _names[name.id] );
-                  }
-                  else
-                  {
+                if( self->is_receive_address( address( name.owner_key ) ) || self->is_receive_address( name.active_address() ) )
+                {
+                    index_name(name);
+                }
+                else
+                {
+                    auto current_itr = _names.find( name.id );
+                    if( current_itr != _names.end() )
+                    {
+                        // do we no longer own it and has it been transferred to someone else.
+                        _wallet_db.remove(current_itr->second.index);
+                        _names.erase(name.id);
+                    }
                     //wlog( "not our name ${r}", ("r",name) );
-                  }
-               }
+                }
             }
 
             bool scan_withdraw( const withdraw_operation& op )

@@ -545,10 +545,10 @@ Result:
       else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
       { //display detailed description of requested command
         std::string command = params[0].as_string();
-        auto itr = _method_map.find(command);
-        if (itr != _method_map.end())
+        auto itr = _alias_map.find(command);
+        if (itr != _alias_map.end())
         {
-          rpc_server::method_data method_data = itr->second;
+          rpc_server::method_data method_data = _method_map[itr->second];
           help_string += "Usage:\n";
           help_string += make_short_description(method_data);
           help_string += method_data.detailed_description;
@@ -571,7 +571,7 @@ Result:
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
           std::vector<std::string> match_commands;
-          for (itr = _method_map.lower_bound(command);
+          for (auto itr = _method_map.lower_bound(command);
                itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
                ++itr)
             match_commands.push_back(itr->first);
