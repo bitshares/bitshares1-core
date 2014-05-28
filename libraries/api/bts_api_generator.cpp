@@ -6,8 +6,10 @@
 #include <fc/exception/exception.hpp>
 
 #include <boost/program_options.hpp>
-
+#include <iostream>
 #include <fstream>
+#include <list>
+#include <set>
 
 namespace bts { namespace api {
 
