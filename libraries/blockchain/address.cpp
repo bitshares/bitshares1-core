@@ -74,17 +74,28 @@ namespace bts {
         return BTS_ADDRESS_PREFIX + fc::to_base58( bin_addr.data, sizeof(bin_addr) );
    }
 
+
+
 } } // namespace bts::blockchain
 
 
 namespace fc 
 { 
-   void to_variant( const bts::blockchain::address& var,  variant& vo )
-   {
+    void to_variant( const bts::blockchain::address& var,  variant& vo )
+    {
         vo = std::string(var);
-   }
-   void from_variant( const variant& var,  bts::blockchain::address& vo )
-   {
+    }
+    void from_variant( const variant& var,  bts::blockchain::address& vo )
+    {
         vo = bts::blockchain::address( var.as_string() );
-   }
+    }
+
+    void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo )
+    {
+        FC_ASSERT(!"Unimplemented, TODO toast!!");
+    }
+    void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo )
+    {
+        FC_ASSERT(!"Unimplemented, TODO toast!!");
+    }
 }

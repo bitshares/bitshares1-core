@@ -13,7 +13,6 @@ namespace bts { namespace blockchain {
    typedef fc::sha256                       digest_type;
    typedef std::vector<transaction_id_type> transaction_ids;
    typedef fc::ecc::compact_signature       signature_type;
-   typedef fc::ecc::public_key_data         public_key_type;
    typedef fc::ecc::private_key             private_key_type;
    typedef address                          balance_id_type;
    typedef fc::signed_int                   asset_id_type;
@@ -22,6 +21,39 @@ namespace bts { namespace blockchain {
    typedef uint32_t                         tapos_type; 
    typedef int64_t                          share_type;
    typedef int64_t                          bip_type;
+
+   struct public_key_type 
+   {
+       fc::ecc::public_key_data key_data;
+
+       public_key_type():key_data(){};
+       public_key_type( fc::ecc::public_key_data data )
+           :key_data( data ) {};
+       public_key_type( fc::ecc::public_key pubkey )
+           :key_data( pubkey ) {};
+       /*
+       operator fc::ecc::public_key_data() const
+       {
+          return key_data;    
+       };
+       */
+       operator fc::ecc::public_key() const
+       {
+          return fc::ecc::public_key( key_data );
+       };
+
+//     operator std::string() const;
+
+       inline friend bool operator ==(public_key_type p1, public_key_type p2)
+       {
+          return p1.key_data == p2.key_data;
+       }
+       inline friend bool operator !=(public_key_type p1, public_key_type p2)
+       {
+          return p1.key_data != p2.key_data;
+       }
+
+   };
 
    struct proposal_vote_id_type
    {
@@ -52,5 +84,15 @@ namespace bts { namespace blockchain {
    #define BASE_ASSET_ID  (asset_id_type())
 
 } } // bts::blockchain
+
+
+namespace fc
+{
+    void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo );
+    void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo );
+}
+
+
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )
+FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
