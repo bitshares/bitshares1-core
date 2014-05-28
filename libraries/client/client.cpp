@@ -335,12 +335,12 @@ namespace bts { namespace client {
       return get_chain()->get_head_block_num();
     }
 
-    void client::wallet_open_file(const fc::path wallet_filename, const std::string& password)
+    void client::wallet_open_file(const fc::path wallet_filename)
     {
       get_wallet()->open_file( wallet_filename );
     }
 
-    void client::wallet_open(const std::string& wallet_name, const std::string& password)
+    void client::wallet_open(const std::string& wallet_name)
     {
       get_wallet()->open(wallet_name);
     }

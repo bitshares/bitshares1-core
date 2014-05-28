@@ -19,6 +19,7 @@ namespace bts{ namespace wallet {
            { try {
               FC_ASSERT( !self->wallet_master_key.valid() );
               self->wallet_master_key = key;
+              ilog( "master: ${M}", ("M",key) );
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
            void load_account_record( const wallet_account_record& account_to_load )
@@ -72,6 +73,7 @@ namespace bts{ namespace wallet {
       while( current_record_itr.valid() )
       {
          auto current_record = current_record_itr.value();
+         ilog( "load: ${r}", ("r",current_record) );
          try 
          {
             switch( (wallet_record_type_enum)current_record.type )
@@ -119,6 +121,7 @@ namespace bts{ namespace wallet {
       int32_t next_rec_number = 0;
       if( next_rec_num.is_null() )
       {
+         wlog( "first rec..." );
          next_rec_number = 1;
       }
       else
@@ -174,7 +177,12 @@ namespace bts{ namespace wallet {
       if( property_itr != properties.end() ) property_itr->second.value = v;
       else properties[property_id] = wallet_property( property_id, v );
 
-      store_record( properties[property_id] );
+      if( property_id == property_enum::next_record_number )
+         store_record( wallet_property_record( wallet_property(property_id,v), 1 ) );
+      else
+      {
+         store_record( properties[property_id] );
+      }
    }
 
    fc::variant wallet_db::get_property( property_enum property_id )
@@ -277,11 +285,11 @@ namespace bts{ namespace wallet {
                                         const public_key_type& new_account_key )
    {
       auto current_account_itr = name_to_account.find( new_account_name );
-      FC_ASSERT( current_account_itr != name_to_account.end(), 
+      FC_ASSERT( current_account_itr == name_to_account.end(), 
                  "Account with name ${name} already exists", 
                  ("name",new_account_name) );
       auto current_address_itr = address_to_account.find( new_account_key );
-      FC_ASSERT( current_address_itr != address_to_account.end(), 
+      FC_ASSERT( current_address_itr == address_to_account.end(), 
                  "Account with address ${address} already exists", 
                  ("name",new_account_key) );
 

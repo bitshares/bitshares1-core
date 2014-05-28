@@ -712,7 +712,7 @@ Wallets exist in the wallet data directory
     {
         try
         {
-            _client->wallet_open_file( params[0].as_string(), params[1].as_string() );
+            _client->wallet_open_file( params[0].as_string() );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
@@ -726,8 +726,9 @@ Wallets exist in the wallet data directory
      /* description */ "Opens the wallet of the given name",
      /* returns: */    "void",
      /* params:          name             type      classification                          default value */
-                       {{"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()},
-                        {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
+                       {
+                          {"wallet_name",   "string", rpc_server::required_positional,        fc::ovariant()}
+                       },
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
 Wallets exist in the wallet data directory
@@ -738,7 +739,7 @@ Wallets exist in the wallet data directory
     {
         try
         {
-            _client->wallet_open( params[0].as_string(), params[1].as_string() );
+            _client->wallet_open( params[0].as_string() );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
@@ -760,6 +761,7 @@ Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
     { try {
+        ilog( "args: ${args}", ("args",params));
         _client->wallet_create( params[0].as_string(), params[1].as_string() );
         return fc::variant();
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -850,8 +852,10 @@ Wallets exist in the wallet data directory
           /* description */ "Unlock the private keys in the wallet to enable spending operations",
           /* returns: */    "null",
           /* params:          name             type        classification                          default value */
-                            {{"timeout",       "unsigned", rpc_server::required_positional,        fc::ovariant()},
-                             {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} },
+                            {
+                             {"timeout",       "int",      rpc_server::required_positional,        fc::ovariant()},
+                             {"passphrase",    "string",   rpc_server::required_positional_hidden, fc::ovariant()} 
+                            },
         /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
      )",
@@ -859,7 +863,8 @@ Wallets exist in the wallet data directory
     };
     fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
     {
-        unsigned timeout_sec = params[0].as<unsigned>();
+       ilog( "${args}", ("args",params) );
+        auto timeout_sec = params[0].as_uint64();
         std::string passphrase = params[1].as_string();
         try
         {

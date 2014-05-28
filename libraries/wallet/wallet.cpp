@@ -161,7 +161,7 @@ namespace bts { namespace wallet {
                         const std::string& brainkey  )
    { try {
       create_file( fc::absolute(my->_data_directory) / wallet_name, password, brainkey ); 
-   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${name}' in ${data_dir}", 
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}' in ${data_dir}", 
                             ("wallet_name",wallet_name)("data_dir",fc::absolute(my->_data_directory)) ) }
 
 
@@ -170,10 +170,11 @@ namespace bts { namespace wallet {
                         const std::string& brainkey  )
    { try {
       FC_ASSERT( !fc::exists( wallet_file_path ) );
-      FC_ASSERT( password.size() > 8 );
+      FC_ASSERT( password.size() > 8, "password size: ${size}", ("size",password.size()) );
       my->_wallet_db.open( wallet_file_path );
       
-      auto password_hash = fc::sha512::hash( password.c_str(), password.size() );
+      my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
+      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
 
       master_key new_master_key;
       if( brainkey.size() )
@@ -184,16 +185,17 @@ namespace bts { namespace wallet {
          for( uint32_t i = 0; i < 100ll*1000ll; ++i )
             base = fc::sha512::hash( base );
 
-         new_master_key.encrypt_key( password_hash, extended_private_key( base ) );
+         new_master_key.encrypt_key( my->_wallet_password, extended_private_key( base ) );
       }
       else
       {
          extended_private_key epk( fc::ecc::private_key::generate() );
-         new_master_key.encrypt_key( password_hash, epk );
+         new_master_key.encrypt_key( my->_wallet_password, epk );
       }
-
+    
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key ) );
 
+      wlog( "closing and reopening, just for good measure" );
       my->_wallet_db.close();
       my->_wallet_db.open( wallet_file_path );
 
@@ -256,13 +258,15 @@ namespace bts { namespace wallet {
       FC_ASSERT( !"Not Implemented" );
    }
 
-   void wallet::unlock( const fc::microseconds& timeout, const std::string& password )
+   void wallet::unlock( const std::string& password, const fc::microseconds& timeout )
    { try {
+      ilog( "password: ${p}", ("p",password ) );
       FC_ASSERT( password.size() > BTS_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
+      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
       if( !my->_wallet_db.wallet_master_key->validate_password( my->_wallet_password ) )
       {
          lock();

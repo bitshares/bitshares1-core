@@ -294,32 +294,14 @@ namespace bts { namespace cli {
                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
-                  return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
+                  // TODO: positional pass phrase with optional bran key!
+                  return execute_wallet_command_with_passphrase_query( command, { arguments.front() }, "new passphrase", true );
               }
               else if ( command == "unlock" || 
-                        command == "open"   || 
-                        command == "wallet_open" || 
-                        command == "wallet_open_file" || command == "wallet_unlock")
+                        command == "wallet_unlock")
               {
-                  if( command == "wallet_open" || command == "open" )
-                  {
-                      auto wallet_name = arguments[0].as_string();
-                      if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                      {
-                        std::cout << "Wallet \"" << wallet_name << "\" not found\n";
-                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                      }
-                  }
-                  else if( command == "wallet_open_file" )
-                  {
-                      auto filename = arguments[0].as<fc::path>();
-                      if( !fc::exists( filename ) )
-                      {
-                         std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                      }
-                  }
-                  return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
+                  ilog( "arguments: ${args}", ("args", arguments) );
+                  return execute_wallet_command_with_passphrase_query( command, {arguments.front()}, "passphrase" );
               }
               else if (command == "wallet_import_bitcoin")
               {
@@ -403,7 +385,9 @@ namespace bts { namespace cli {
                                                                bool verify = false )
             {
                 auto new_arguments = arguments;
+                ilog( "initial args: ${new_args}", ("new_args",new_arguments) );
                 new_arguments.push_back( fc::variant( passphrase ) );
+                ilog( "test args: ${new_args}", ("new_args",new_arguments) );
 
                 while( true )
                 {
@@ -420,6 +404,7 @@ namespace bts { namespace cli {
                     }
 
                     new_arguments.back() = fc::variant( passphrase );
+                    ilog( "passphrase: ${p}", ("p",new_arguments) );
 
                     try
                     {
