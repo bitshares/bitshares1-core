@@ -738,7 +738,28 @@ namespace bts { namespace cli {
       if (start == 0)
         return rl_completion_matches(text, &json_command_completion_generator_function);
       else
+      {
+        std::string command_line_to_parse(rl_line_buffer, start);
+        std::string trimmed_command_to_parse(boost::algorithm::trim_copy(command_line_to_parse));
+        
+        if (!trimmed_command_to_parse.empty())
+        {
+          try
+          {
+            const rpc_server::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
+            if (method_data.name == "help")
+            {
+                return rl_completion_matches(text, &json_command_completion_generator_function);
+            }
+          }
+          catch( const fc::key_not_found_exception& )
+          {
+            // do nothing
+          }
+        }
+        
         return rl_completion_matches(text, &json_argument_completion_generator_function);
+      }
     }
 
 #endif
