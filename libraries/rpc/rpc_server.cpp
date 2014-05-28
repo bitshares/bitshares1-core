@@ -55,7 +55,7 @@ namespace bts { namespace rpc {
              (wallet_add_contact_account) \
              (wallet_import_private_key)\
              (wallet_import_bitcoin)\
-             (wallet_list_sending_accounts)\
+             (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
              (wallet_list_reserved_names)\
              (wallet_get_account)\
@@ -1041,7 +1041,7 @@ Wallets exist in the wallet data directory.
        return fc::variant(issue_asset_trx);
     }
 
-    static rpc_server::method_data wallet_list_sending_accounts_metadata{"wallet_list_sending_accounts", nullptr,
+    static rpc_server::method_data wallet_list_contact_accounts_metadata{"wallet_list_contact_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
             /* params:          name     type    classification                   default value */
@@ -1049,9 +1049,9 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
           R"(
      )" };
-    fc::variant rpc_server_impl::wallet_list_sending_accounts(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_list_contact_accounts(const fc::variants& params)
     {  try {
-      auto accounts = _client->wallet_list_sending_accounts();
+      auto accounts = _client->wallet_list_contact_accounts();
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 

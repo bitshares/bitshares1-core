@@ -109,7 +109,7 @@ namespace bts { namespace wallet {
 
    struct key_data
    {
-       key_data(){}
+       key_data():valid_from_signature(false){}
 
        address                  account_address;
        public_key_type          public_key;

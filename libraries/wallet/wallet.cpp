@@ -333,7 +333,7 @@ namespace bts { namespace wallet {
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
       auto new_pub_key  = new_priv_key.get_public_key();
 
-      my->_wallet_db.add_account( account_name, new_pub_key );
+      my->_wallet_db.add_contact_account( account_name, new_pub_key );
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -355,7 +355,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->_wallet_db.add_account( account_name, imported_public_key );
+         my->_wallet_db.add_contact_account( account_name, imported_public_key );
          import_wif_private_key( wif_private_key, account_name );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -400,7 +400,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->_wallet_db.add_account( account_name, key );
+         my->_wallet_db.add_contact_account( account_name, key );
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
@@ -643,6 +643,35 @@ namespace bts { namespace wallet {
    void wallet::import_bitcoin_wallet( const fc::path& wallet_dat,
                                      const std::string& wallet_dat_passphrase,
                                      const std::string& account_name )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   asset wallet::get_balance( const std::string& symbol, 
+                              const std::string& account_name )const
+   { 
+      FC_ASSERT( !"Not Implemented" );
+   }
+   std::vector<asset>   wallet::get_all_balances( const std::string& account_name )const
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+   bool  wallet::is_sending_address( const address& addr )const
+   {
+      return !is_receive_address( addr );
+   }
+   bool  wallet::is_receive_address( const address& addr )const
+   { 
+      auto key_rec = my->_wallet_db.lookup_key( addr );
+      if( key_rec.valid() )
+         return key_rec->has_private_key();
+      return false;
+   }
+   std::map<std::string, public_key_type> wallet::list_contact_accounts() const
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+   std::map<std::string, public_key_type> wallet::list_receive_accounts() const
    {
       FC_ASSERT( !"Not Implemented" );
    }

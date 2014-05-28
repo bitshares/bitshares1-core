@@ -123,10 +123,11 @@ namespace bts { namespace client {
                                                    generate_transaction_flag flag = sign_and_broadcast) ;
 
 
-         std::map<std::string, public_key_type> wallet_list_sending_accounts() const ;
+         std::map<std::string, public_key_type> wallet_list_contact_accounts() const;
+         std::map<std::string, public_key_type> wallet_list_receive_accounts() const;
+
                         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const ;
                                             void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) ;
-         std::map<std::string, public_key_type> wallet_list_receive_accounts() const ;
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const ;
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 

@@ -481,9 +481,13 @@ namespace bts { namespace client {
 
 
 
-    std::map<std::string, public_key_type> client::wallet_list_sending_accounts() const
+    std::map<std::string, public_key_type> client::wallet_list_contact_accounts() const
     {
-      return get_wallet()->list_sending_accounts();
+      return get_wallet()->list_contact_accounts();
+    }
+    std::map<std::string, public_key_type> client::wallet_list_receive_accounts() const
+    {
+      return get_wallet()->list_receive_accounts();
     }
 
     std::vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
@@ -505,11 +509,6 @@ namespace bts { namespace client {
       get_wallet()->rename_account(current_account_name, new_account_name);
     }
 
-    
-    std::map<std::string, public_key_type> client::wallet_list_receive_accounts()const
-    {
-      return get_wallet()->list_receive_accounts();
-    }
 
     wallet_account_record client::wallet_get_account(const std::string& account_name) const
     { try {

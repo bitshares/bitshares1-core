@@ -266,4 +266,90 @@ namespace bts{ namespace wallet {
       return itr->second;
    }
 
+   owallet_key_record     wallet_db::lookup_key( const address& address )
+   {
+      auto itr = keys.find( address );
+      if( itr != keys.end() ) return itr->second;
+      return owallet_key_record();
+   }
+
+   void wallet_db::add_contact_account( const std::string& new_account_name, 
+                                        const public_key_type& new_account_key )
+   {
+      auto current_account_itr = name_to_account.find( new_account_name );
+      FC_ASSERT( current_account_itr != name_to_account.end(), 
+                 "Account with name ${name} already exists", 
+                 ("name",new_account_name) );
+      auto current_address_itr = address_to_account.find( new_account_key );
+      FC_ASSERT( current_address_itr != address_to_account.end(), 
+                 "Account with address ${address} already exists", 
+                 ("name",new_account_key) );
+
+      wallet_account_record war; 
+      war.name = new_account_name;
+      war.registered_name_id = 0;
+      war.account_address = address( new_account_key );
+
+      auto current_key = lookup_key( new_account_key );
+      if( current_key )
+      {  
+         current_key->account_address = address(new_account_key);
+         store_record( *current_key );
+      }
+      else
+      {
+         wallet_key_record new_key;
+         new_key.index = new_index();
+         new_key.account_address = address(new_account_key);
+         new_key.public_key = new_account_key;
+         store_key( new_key );
+         my->load_key_record( new_key );
+      }
+
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+   }
+   owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )
+   {
+      auto address_index_itr = address_to_account.find( address_of_public_key );
+      if( address_index_itr != address_to_account.end() )
+      {
+         auto account_itr = accounts.find( address_index_itr->second );
+         FC_ASSERT( account_itr != accounts.end(),
+                    "wallet database in inconsistant state" ); 
+         return account_itr->second;
+      }
+      return owallet_account_record();
+   }
+
+   owallet_account_record wallet_db::lookup_account( const std::string& account_name )
+   {
+      auto name_index_itr = name_to_account.find( account_name );
+      if( name_index_itr != name_to_account.end() )
+      {
+         auto account_itr = accounts.find( name_index_itr->second );
+         FC_ASSERT( account_itr != accounts.end(),
+                    "wallet database in inconsistant state" ); 
+         return account_itr->second;
+      }
+      return owallet_account_record();
+   }
+   void wallet_db::cache_balance( const bts::blockchain::balance_record& balance_to_cache )
+   {
+      owallet_balance_record current_bal = lookup_balance(balance_to_cache.id());
+      if( !current_bal ) store_record( wallet_balance_record( balance_to_cache ) );
+   }
+
+   void wallet_db::rename_account( const std::string& old_account_name, 
+                                   const std::string& new_account_name )
+   {
+       FC_ASSERT( !"Not Implemented" );
+   }
+
+   void wallet_db::store_transaction( const transaction_data& trx_to_store )
+   {
+       FC_ASSERT( !"Not Implemented" );
+   }
+
 } } // bts::wallet

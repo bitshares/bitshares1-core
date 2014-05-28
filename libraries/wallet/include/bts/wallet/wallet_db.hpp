@@ -43,7 +43,7 @@ namespace bts { namespace wallet {
 
          void store_key( const key_data& k );
          void store_transaction( const transaction_data& t );
-         void cache_balance( const bts::blockchain::balance_record& );
+         void cache_balance( const bts::blockchain::balance_record& b );
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
@@ -59,8 +59,8 @@ namespace bts { namespace wallet {
 
          bool has_private_key( const address& a )const;
 
-         void add_account( const std::string& new_account_name, 
-                           const public_key_type& new_account_key );
+         void add_contact_account( const std::string& new_account_name, 
+                                   const public_key_type& new_account_key );
 
          void rename_account( const std::string& old_account_name,
                               const std::string& new_account_name );

@@ -109,7 +109,7 @@ namespace bts { namespace wallet {
          ///@{
 
          std::map<std::string,public_key_type> list_receive_accounts()const;
-         std::map<std::string,public_key_type> list_sending_accounts()const;
+         std::map<std::string,public_key_type> list_contact_accounts()const;
 
          void import_bitcoin_wallet( const fc::path& wallet_dat,
                                      const std::string& wallet_dat_passphrase,

@@ -1471,6 +1471,12 @@ namespace bts { namespace blockchain {
       else
          my->_collateral_db.store( key, collateral );
    }
+   std::string  chain_database::get_asset_symbol( asset_id_type asset_id )const
+   { try {
+      auto asset_rec = get_asset_record( asset_id );
+      FC_ASSERT( asset_rec.valid(), "Unknown Asset ID: ${id}", ("asset_id",asset_id) );
+      return asset_rec->symbol;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
 
 
 } } // namespace bts::blockchain
