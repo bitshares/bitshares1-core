@@ -218,13 +218,16 @@ namespace bts { namespace wallet {
          fc::optional<address>                      get_owning_address( const balance_id_type& id )const;
          fc::optional<wallet_account_record>        get_account_record( const address& addr)const;
 
-         std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const std::string& account_name = "*" )const;
+         std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const std::string& account_name = std::string() )const;
+
+         /*
          std::unordered_map<name_id_type,       wallet_name_record>         names( const std::string& account_name = "*" )const;
-         std::unordered_map<balance_id_type,    wallet_balance_record>      balances( const std::string& account_name = "*" )const;
          std::unordered_map<asset_id_type,      wallet_asset_record>        assets( const std::string& account_name = "*" )const;
+         */
 
          /** signs transaction with the specified keys for the specified addresses */
          void  sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs );
+         fc::ecc::private_key get_private_key( const address& addr );
 
       private:
          std::unique_ptr<detail::wallet_impl> my;

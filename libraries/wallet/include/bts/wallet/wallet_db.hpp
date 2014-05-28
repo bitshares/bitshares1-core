@@ -220,12 +220,12 @@ namespace bts { namespace wallet {
          std::unordered_map<name_id_type,int32_t>               name_id_to_account;
          std::map<std::string,int32_t>                          name_to_account;
 
-         std::unordered_map<int32_t,wallet_account_record>         accounts;
-         std::unordered_map<int32_t,wallet_transaction_record>     transactions;
-         std::unordered_map<balance_id_type,wallet_balance_record> balances;
-         std::map<std::string,wallet_name_record>                  names;
-         std::map<std::string,wallet_asset_record>                 assets;
-         std::map<property_enum, wallet_property_record>        properties;
+         std::unordered_map< int32_t,wallet_account_record >                   accounts;
+         std::unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
+         std::unordered_map< balance_id_type,wallet_balance_record >           balances;
+         std::map<std::string,wallet_name_record>                            names;
+         std::map<std::string,wallet_asset_record>                           assets;
+         std::map<property_enum, wallet_property_record>                     properties;
 
          void export_to_json( const fc::path& export_file_name ) const;
 

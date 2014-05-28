@@ -463,6 +463,34 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
 
+   void  wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
+   { try {
+      for( auto addr : req_sigs )
+      {
+         trx.sign( get_private_key( addr ), my->_blockchain->chain_id()  );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("req_sigs",req_sigs) ) }
+
+   fc::ecc::private_key wallet::get_private_key( const address& addr )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto key = my->_wallet_db.lookup_key( addr );
+      FC_ASSERT( key.valid() );
+      FC_ASSERT( key->has_private_key() );
+      return key->decrypt_private_key( my->_wallet_password );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
+
+
+
+   std::unordered_map<transaction_id_type,wallet_transaction_record>  wallet::transactions( const std::string& account_name  )const
+   {
+      // TODO: figure out how to filter transactions by account
+      // probably involves updating scan_transaction to take the full list of pre-filtered keys rather
+      // and rescanning the transaction to see if we should cache it... perhaps a light weight scan?
+      return my->_wallet_db.transactions;
+   }
 
 } } // bts::wallet
 
