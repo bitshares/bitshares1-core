@@ -59,7 +59,8 @@ namespace bts { namespace wallet {
          bool           is_locked()const;
          fc::time_point unlocked_until()const;
          ///@}
-         
+
+         void scan_chain( uint32_t start = 0, uint32_t end = -1 );
 
          ///@{ account management
          public_key_type  create_account( const std::string& account_name );

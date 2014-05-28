@@ -21,7 +21,94 @@ namespace bts { namespace wallet {
              fc::time_point     _scheduled_lock_time;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
+
+
+             void scan_block( uint32_t block_num, 
+                              const std::vector<fc::ecc::private_key>& keys );
+
+             bool scan_withdraw( const withdraw_operation& op );
+
+             bool scan_deposit( const deposit_operation& op, 
+                                 const private_keys& keys );
+             void cache_balance( const balance_id_type& balance_id );
       };
+
+      void wallet_impl::scan_block( uint32_t block_num, 
+                                    const private_keys& keys )
+      {
+         auto current_block = _blockchain->get_block( block_num );
+         for( auto trx : current_block.user_transactions )
+         {
+            bool cache_trx = false;
+            for( auto op : trx.operations )
+            {
+               switch( (operation_type_enum)op.type )
+               {
+                  case withdraw_op_type:
+                     cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
+                     break;
+                  case deposit_op_type:
+                     cache_trx |= scan_deposit( op.as<deposit_operation>(), keys );
+                     break;
+               }
+            }
+            if( cache_trx )
+               _wallet_db.store_transaction( trx );
+         }
+      }
+      bool wallet_impl::scan_withdraw( const withdraw_operation& op )
+      {
+         auto current_balance = _wallet_db.lookup_balance( op.balance_id );
+         if( current_balance.valid() )
+            cache_balance( op.balance_id );
+         return current_balance.valid();
+      }
+
+      bool wallet_impl::scan_deposit( const deposit_operation& op, 
+                                      const private_keys& keys )
+      {
+          bool cache_deposit = false; 
+          switch( (withdraw_condition_types) op.condition.type )
+          {
+             case withdraw_signature_type:
+                cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
+                break;
+             case withdraw_by_account_type:
+             {
+                for( auto key : keys )
+                {
+                   auto deposit = op.condition.as<withdraw_by_account>();
+                   omemo_status status = deposit.decrypt_memo_data( key );
+                   if( status.valid() )
+                   {
+                      _wallet_db.cache_memo( *status, key, _wallet_password );
+                      cache_deposit = true;
+                      break;
+                   }
+                }
+                break;
+             }
+             // TODO: support other withdraw types here..
+          }
+          if( cache_deposit )
+             cache_balance( op.balance_id() );
+          return cache_deposit;
+      } // wallet_impl::scan_deposit 
+
+      void wallet_impl::cache_balance( const balance_id_type& balance_id )
+      {
+         auto bal_rec = _blockchain->get_balance_record( balance_id );
+         if( !bal_rec.valid() )
+         {
+            wlog( "blockchain doesn't know about balance id: ${balance_id}",
+                  ("balance_id",balance_id) );
+         }
+         else
+         {
+            _wallet_db.cache_balance( *bal_rec );
+         }
+      }
+
 
    } // detail 
 
@@ -357,6 +444,24 @@ namespace bts { namespace wallet {
       FC_ASSERT( !"Error parsing WIF private key" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+
+   void  wallet::scan_chain( uint32_t start, uint32_t end  )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
+      FC_ASSERT( min_end >= start );
+
+      auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+      for( auto block_num = start; block_num <= min_end; ++block_num )
+      {
+         my->scan_block( block_num, account_priv_keys );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
+
 
 
 } } // bts::wallet

@@ -270,4 +270,37 @@ namespace bts{ namespace wallet {
       return false; 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
 
+   void wallet_db::cache_memo( const memo_status& memo, 
+                               const fc::ecc::private_key& account_key, 
+                               const fc::sha512& password )
+   {
+      key_data data;
+      data.account_address = address(account_key.get_public_key());
+      data.memo = memo_data(memo);
+      data.valid_from_signature = memo.has_valid_signature;
+      data.encrypt_private_key( password, memo.owner_private_key );
+
+      store_key( data );
+   }
+
+   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )
+   {
+       private_keys keys;
+       keys.reserve( accounts.size() );
+       for( auto item : accounts )
+       {
+          auto key_rec = lookup_key(item.second.account_address);
+          if( key_rec.valid() )
+             keys.push_back( key_rec->decrypt_private_key( password ) );
+       }
+       return keys;
+   }
+   
+   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )
+   {
+      auto itr = balances.find( balance_id );
+      if( itr == balances.end() ) return fc::optional<wallet_balance_record>();
+      return itr->second;
+   }
+
 } } // bts::wallet

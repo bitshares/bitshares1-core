@@ -21,8 +21,8 @@ namespace bts{ namespace blockchain {
    {
       if( condition.type == withdraw_signature_type )
          return condition.as<withdraw_with_signature>().owner;
-      else if ( condition.type == withdraw_by_name_type )
-         return condition.as<withdraw_by_name>().owner;
+      else if ( condition.type == withdraw_by_account_type )
+         return condition.as<withdraw_by_account>().owner;
       return address();
    }
 

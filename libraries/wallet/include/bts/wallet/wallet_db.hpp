@@ -1,6 +1,7 @@
 #pragma once
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/extended_address.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -8,6 +9,8 @@
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
+
+   typedef std::vector<fc::ecc::private_key> private_keys;
 
    enum wallet_record_type_enum
    {
@@ -114,6 +117,7 @@ namespace bts { namespace wallet {
        address                  account_address;
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
+       bool                     valid_from_signature;
        omemo_data               memo;
 
        address                  get_address()const { return address( public_key ); }
@@ -149,6 +153,13 @@ namespace bts { namespace wallet {
    typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
 
+   typedef fc::optional<wallet_transaction_record>     owallet_transaction_record;
+   typedef fc::optional<wallet_master_key_record>      owallet_master_key_record;
+   typedef fc::optional<wallet_key_record>             owallet_key_record;
+   typedef fc::optional<wallet_account_record>         owallet_account_record;
+   typedef fc::optional<wallet_property_record>        owallet_property_record;
+   typedef fc::optional<wallet_balance_record>         owallet_balance_record;
+
    namespace detail { class wallet_db_impl; }
 
    class wallet_db
@@ -179,13 +190,19 @@ namespace bts { namespace wallet {
 
          void store_key( const key_data& k );
          void store_transaction( const transaction_data& t );
-         void cache_balance( const bts::blockchain::balance_record );
+         void cache_balance( const bts::blockchain::balance_record& );
+         void cache_memo( const memo_status& memo, 
+                          const fc::ecc::private_key& account_key,
+                          const fc::sha512& password );
 
-         fc::optional<wallet_account_record> lookup_account( const address& address_of_public_key );
-         fc::optional<wallet_account_record> lookup_account( const std::string& account_name );
+         private_keys get_account_private_keys( const fc::sha512& password );
+
+         owallet_account_record lookup_account( const address& address_of_public_key );
+         owallet_account_record lookup_account( const std::string& account_name );
          fc::optional<fc::ecc::private_key>  lookup_private_key( const address& address, 
                                                                  const fc::sha512& password );
-         fc::optional<wallet_key_record>     lookup_key( const address& address );
+         owallet_balance_record lookup_balance( const balance_id_type& balance_id );
+         owallet_key_record     lookup_key( const address& address );
 
          bool has_private_key( const address& a )const;
 
@@ -203,11 +220,11 @@ namespace bts { namespace wallet {
          std::unordered_map<name_id_type,int32_t>               name_id_to_account;
          std::map<std::string,int32_t>                          name_to_account;
 
-         std::unordered_map<int32_t,wallet_account_record>      accounts;
-         std::unordered_map<int32_t,wallet_transaction_record>  transactions;
-         std::unordered_map<address,wallet_balance_record>      balances;
-         std::map<std::string,wallet_name_record>               names;
-         std::map<std::string,wallet_asset_record>              assets;
+         std::unordered_map<int32_t,wallet_account_record>         accounts;
+         std::unordered_map<int32_t,wallet_transaction_record>     transactions;
+         std::unordered_map<balance_id_type,wallet_balance_record> balances;
+         std::map<std::string,wallet_name_record>                  names;
+         std::map<std::string,wallet_asset_record>                 assets;
          std::map<property_enum, wallet_property_record>        properties;
 
          void export_to_json( const fc::path& export_file_name ) const;

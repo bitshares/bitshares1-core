@@ -325,9 +325,9 @@ namespace bts { namespace blockchain {
             add_required_signature( arec->condition.as<withdraw_with_signature>().owner );
             break;
          }
-         case withdraw_by_name_type:  
+         case withdraw_by_account_type:  
          {
-            add_required_signature( arec->condition.as<withdraw_by_name>().owner );
+            add_required_signature( arec->condition.as<withdraw_by_account>().owner );
             break;
          }
 
@@ -714,15 +714,15 @@ namespace bts { namespace blockchain {
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
 
-      withdraw_by_name by_name;
-      by_name.encrypt_memo_data( one_time_private_key,
+      withdraw_by_account by_account;
+      by_account.encrypt_memo_data( one_time_private_key,
                                  receiver_key,
                                  from_key,
                                  memo_message );
 
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( by_name, amount.asset_id, delegate_id );
+      op.condition = withdraw_condition( by_account, amount.asset_id, delegate_id );
 
       operations.push_back( op );
    }
