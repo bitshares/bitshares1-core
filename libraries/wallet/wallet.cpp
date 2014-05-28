@@ -251,6 +251,10 @@ namespace bts { namespace wallet {
    {
       my->_wallet_db.export_to_json( export_file_name );
    }
+   void  wallet::create_from_json(const fc::path& path, const std::string& name )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
 
    void wallet::unlock( const fc::microseconds& timeout, const std::string& password )
    { try {
@@ -384,8 +388,8 @@ namespace bts { namespace wallet {
     *  @param key - the public key that will be used for sending TITAN transactions
     *               to the account.
     */
-   void  wallet::add_contact( const std::string& account_name, 
-                              const public_key_type& key )
+   void  wallet::add_contact_account( const std::string& account_name, 
+                                      const public_key_type& key )
    { try {
       FC_ASSERT( is_open() );
       auto current_account = my->_wallet_db.lookup_account( account_name );
@@ -400,6 +404,11 @@ namespace bts { namespace wallet {
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
+   owallet_account_record    wallet::get_account( const std::string& account_name )
+   {
+      FC_ASSERT( is_open() );
+      return my->_wallet_db.lookup_account( account_name );
+   }
 
 
    void  wallet::rename_account( const std::string& old_account_name, 
@@ -506,9 +515,13 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
 
+   /** 
+    * @return the list of all transactions related to this wallet
+    */
    std::vector<wallet_transaction_record>    wallet::get_transaction_history()const
    { try {
       FC_ASSERT( is_open() );
+      FC_ASSERT( !"Not Implemented" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -565,7 +578,74 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
 
+   signed_transaction  wallet::create_asset( const std::string& symbol,
+                                          const std::string& asset_name,
+                                          const std::string& description,
+                                          const fc::variant& data,
+                                          const std::string& issuer_name,
+                                          share_type max_share_supply, 
+                                          const bool sign  )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
 
+   signed_transaction  wallet::issue_asset( share_type amount, 
+                                         const std::string& symbol,                                               
+                                         const std::string& to_account_name,
+                                         const bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   signed_transaction wallet::register_account( const std::string& account_name,
+                                        const fc::variant& json_data,
+                                        bool as_delegate,
+                                        const bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   signed_transaction wallet::update_registered_account( const std::string& account_name,
+                                                 fc::optional<fc::variant> json_data,
+                                                 fc::optional<public_key_type> active,
+                                                 bool as_delegate,
+                                                 const bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   signed_transaction wallet::create_proposal( const std::string& delegate_account_name,
+                                       const std::string& subject,
+                                       const std::string& body,
+                                       const std::string& proposal_type,
+                                       const fc::variant& data,
+                                       const bool sign  )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   signed_transaction wallet::vote_proposal( const std::string& name, 
+                                     proposal_id_type proposal_id, 
+                                     uint8_t vote,
+                                     const bool sign )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   /**
+    *  @todo what does number mean??
+    */
+   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec, int number  )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
+
+   void wallet::import_bitcoin_wallet( const fc::path& wallet_dat,
+                                     const std::string& wallet_dat_passphrase,
+                                     const std::string& account_name )
+   {
+      FC_ASSERT( !"Not Implemented" );
+   }
 
 } } // bts::wallet
 

@@ -39,8 +39,7 @@ namespace bts { namespace wallet {
          void           export_to_json( const fc::path& export_file_name ) const;
 
          void           create_from_json( const fc::path& path, 
-                                          const std::string& name, 
-                                          const std::string& passphrase );
+                                          const std::string& name );
 
          bool           is_open()const;
          std::string    get_wallet_name()const;
@@ -74,8 +73,8 @@ namespace bts { namespace wallet {
          /**
           *  A contact is an account for which we do not have the private key.
           */
-         void             add_contact( const std::string& account_name, 
-                                       const public_key_type& key );
+         void             add_contact_account( const std::string& account_name, 
+                                               const public_key_type& key );
 
          void             rename_account( const std::string& old_contact_name, 
                                            const std::string& new_contact_name );
@@ -128,7 +127,6 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
-        /*
          signed_transaction       create_asset( const std::string& symbol,
                                                 const std::string& asset_name,
                                                 const std::string& description,
@@ -141,47 +139,42 @@ namespace bts { namespace wallet {
                                                const std::string& symbol,                                               
                                                const std::string& to_account_name,
                                                const bool sign = true );
-        */
 
-         wallet_account_record    get_account( const std::string& account_name );
+         owallet_account_record    get_account( const std::string& account_name );
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         signed_transaction register_account( const std::string& name,
+         signed_transaction register_account( const std::string& account_name,
                                               const fc::variant& json_data,
                                               bool as_delegate = false,
                                               const bool sign = true );
 
-         signed_transaction update_registered_account( const std::string& name,
+         signed_transaction update_registered_account( const std::string& account_name,
                                                        fc::optional<fc::variant> json_data,
                                                        fc::optional<public_key_type> active = fc::optional<public_key_type>(),
                                                        bool as_delegate = false,
                                                        const bool sign = true );
 
-         /*
-         signed_transaction submit_proposal( const std::string& name,
+         signed_transaction create_proposal( const std::string& delegate_account_name,
                                              const std::string& subject,
                                              const std::string& body,
                                              const std::string& proposal_type,
                                              const fc::variant& data,
                                              const bool sign = true );
 
-         signed_transaction vote_proposal( const std::string& name, 
+         signed_transaction vote_proposal( const std::string& delegate_account_name, 
                                            proposal_id_type proposal_id, 
                                            uint8_t vote,
                                            const bool sign = true);
-         */
 
 
          ///@} Transaction Generation Methods
  
-         /*
          pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
                                                                 int number = 0 );
-                                                                */
 
 
 

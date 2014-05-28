@@ -600,9 +600,16 @@ namespace bts { namespace cli {
                                 == std::string("withdraw"))
                         {
                             auto withdraw_op = op.as<pretty_withdraw_op>();
+                            /*
+                             *  This section should be asking which account, not which address owns the balance
+                             *  that is being withdrawn from.
+                             *
+                             *
                             auto owner = _client->get_wallet()->get_owning_address( withdraw_op.owner.first );
                             if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
-                            if (!withdraw_op.owner.second.empty())
+                           
+                            */
+                            if (false)//!withdraw_op.owner.second.empty())
                             {
                                 std::cout << std::setw( 37 ) << withdraw_op.owner.second;
                             } else {

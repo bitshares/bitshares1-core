@@ -51,8 +51,8 @@ namespace bts { namespace rpc {
              (wallet_lock)\
              (wallet_unlock)\
              (wallet_change_passphrase)\
-             (wallet_create_receive_account) \
-             (wallet_create_sending_account) \
+             (wallet_create_account) \
+             (wallet_add_contact_account) \
              (wallet_import_private_key)\
              (wallet_import_bitcoin)\
              (wallet_list_sending_accounts)\
@@ -67,8 +67,7 @@ namespace bts { namespace rpc {
              (wallet_get_transaction_history_summary)\
              (wallet_rescan_blockchain)\
              (wallet_rescan_blockchain_state)\
-             (wallet_reserve_name)\
-             (wallet_register_delegate)\
+             (wallet_register_account)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
@@ -813,8 +812,7 @@ Wallets exist in the wallet data directory
       /* returns: */    "void",
       /* params:         name           type     classification                          default_value */
                       {{"filename",    "path",   rpc_server::required_positional,        fc::ovariant()},
-                       {"wallet_name", "string", rpc_server::required_positional,        fc::ovariant()},
-                       {"passphrase",  "string", rpc_server::required_positional_hidden, fc::ovariant()}},
+                       {"wallet_name", "string", rpc_server::required_positional,        fc::ovariant()}},
       /* prerequisites */ rpc_server::json_authenticated,
     R"(
     )" };
@@ -822,10 +820,9 @@ Wallets exist in the wallet data directory
     {
         auto filename = params[0].as<fc::path>();
         auto wallet_name = params[1].as_string();
-        auto passphrase = params[2].as_string();
         try
         {
-            _client->wallet_create_from_json( filename, wallet_name, passphrase );
+            _client->wallet_create_from_json( filename, wallet_name );
         }
         catch( const fc::exception& e ) // TODO: see wallet_unlock()
         {
@@ -907,7 +904,7 @@ Wallets exist in the wallet data directory.
        } FC_RETHROW_EXCEPTIONS( warn, "" )
     }
 
-    static rpc_server::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
+    static rpc_server::method_data wallet_create_account_metadata{"wallet_create_account", nullptr,
             /* description */ "Add new account for receiving payments",
             /* returns: */    "extended_address",
             /* params:          name             type      classification                   default value */
@@ -915,13 +912,13 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
      )"};
-    fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
+    fc::variant rpc_server_impl::wallet_create_account( const fc::variants& params )
     {
-       extended_address receive_address = _client->wallet_create_receive_account( params[0].as_string() );
+       auto receive_address = _client->wallet_create_account( params[0].as_string() );
        return fc::variant(receive_address);
     }
 
-    static rpc_server::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
+    static rpc_server::method_data wallet_add_contact_account_metadata{"wallet_add_contact_account", nullptr,
             /* description */ "Add new account for sending payments",
             /* returns: */    "null",
             /* params:          name             type                classification                   default value */
@@ -930,9 +927,9 @@ Wallets exist in the wallet data directory.
           /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
     R"(
      )"};
-    fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
+    fc::variant rpc_server_impl::wallet_add_contact_account( const fc::variants& params )
     {
-       _client->wallet_create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
+       _client->wallet_add_contact_account( params[0].as_string(), params[1].as<public_key_type>() );
        return fc::variant();
     }
 
@@ -1238,34 +1235,22 @@ Wallets exist in the wallet data directory.
       return fc::variant();
     }
 
-    static rpc_server::method_data wallet_reserve_name_metadata{"wallet_reserve_name", nullptr,
-            /* description */ "Reserve a name in the blockchain",
-            /* returns: */    "name_record",
-            /* params:          name          type       classification                   default_value */
-                              {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
-                               {"data",       "variant", rpc_server::optional_positional, fc::ovariant()}},
+    static rpc_server::method_data wallet_register_account_metadata{"wallet_register_account", nullptr,
+            /* description */ "Register an account with the blockchain", 
+            /* returns: */    "signed_transaction",
+            /* params:          name             type       classification                   default_value */
+                              {{"name",          "string",  rpc_server::required_positional, fc::ovariant()},
+                               {"data",          "variant", rpc_server::optional_positional, fc::ovariant()},
+                               {"as_delegate",   "bool",    rpc_server::optional_positional, fc::variant(false)}},
             /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
           R"(
           )"
      };
-    fc::variant rpc_server_impl::wallet_reserve_name(const fc::variants& params)
+    fc::variant rpc_server_impl::wallet_register_account(const fc::variants& params)
     {
-       return fc::variant( _client->wallet_reserve_name(params[0].as_string(), params[1]) );
+       return fc::variant( _client->wallet_register_account(params[0].as_string(), params[1]) );
     }
 
-    static rpc_server::method_data wallet_register_delegate_metadata{"wallet_register_delegate", nullptr,
-            /* description */ "Registers a delegate to be voted upon by shareholders",
-            /* returns: */    "name_record",
-            /* params:          name          type       classification                   default_value */
-                              {{"name",       "string",  rpc_server::required_positional, fc::ovariant()},
-                               {"data",       "variant", rpc_server::required_positional, fc::ovariant()}},
-            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_register_delegate(const fc::variants& params)
-    {
-       return fc::variant( _client->wallet_register_delegate(params[0].as_string(), params[1]) );
-    }
 
     static rpc_server::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
       /* description */ "Submit a proposal to the delegates for voting",
