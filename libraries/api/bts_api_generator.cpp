@@ -112,6 +112,7 @@ struct method_description
   type_mapping_ptr return_type;
   parameter_description_list parameters;
   method_prerequisites prerequisites; // actually, a bitmask of method_prerequisites
+  std::vector<std::string> aliases;
 };
 typedef std::list<method_description> method_description_list;
 
@@ -134,6 +135,11 @@ public:
   void generate_server_files(const fc::path& rpc_server_output_dir);
 private:
   void write_includes_to_stream(std::ostream& stream);
+  void generate_prerequisite_checkes_to_stream(const method_description& method, std::ostream& stream);
+  void generate_positional_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
+  void generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
+  void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
+
   type_mapping_ptr lookup_type_mapping(const std::string& type_string);
   void initialize_type_map_with_fundamental_types();
   void load_type_map(const fc::variants& json_type_map);
@@ -264,6 +270,9 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
       FC_ASSERT(json_method_description.contains("prerequisites"));
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
 
+      if (json_method_description.contains("aliases"))
+        method.aliases = json_method_description["aliases"].as<std::vector<std::string> >();
+
       _methods.push_back(method);
     }
     FC_RETHROW_EXCEPTIONS(warn, "error encountered parsing method description for method \"${method_name}\"", ("method_name", method_name));
@@ -336,7 +345,7 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
 {
   std::string client_classname = _api_classname + "_client";
 
-  fc::path client_header_path = rpc_client_output_dir / "include" / "bts" / "rpc_stub";
+  fc::path client_header_path = rpc_client_output_dir / "include" / "bts" / "rpc_stubs";
   fc::create_directories(client_header_path); // creates dirs for both header and cpp
   fc::path client_header_filename = client_header_path / (client_classname + ".hpp");
   fc::path client_cpp_filename = rpc_client_output_dir / (client_classname + ".cpp");
@@ -346,22 +355,22 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   header_file << "#pragma once\n\n";
   header_file << "#include <fc/rpc/json_connection.hpp>\n";
   header_file << "#include <bts/api/" << _api_classname << ".hpp>\n\n";
-  header_file << "namespace bts { namespace rpc_stub {\n\n";
+  header_file << "namespace bts { namespace rpc_stubs {\n\n";
   header_file << "  class " << client_classname << " : public bts::api::" << _api_classname << "\n";
   header_file << "  {\n";
   header_file << "  public:\n";
-  header_file << "    virtual fc::rpc::json_connection_ptr get_json_connection() const = 0;\n";
+  header_file << "    virtual fc::rpc::json_connection_ptr get_json_connection() const = 0;\n\n";
   for (const method_description& method : _methods)
   {
     header_file << "    " << generate_signature_for_method(method, "", true) << " override;\n";
   }
 
   header_file << "  };\n\n";
-  header_file << "} } // end namespace bts::rpc_stub\n";
+  header_file << "} } // end namespace bts::rpc_stubs\n";
 
 
-  cpp_file << "#include <bts/rpc_stub/" << client_classname << ".hpp>\n";
-  cpp_file << "namespace bts { namespace rpc_stub {\n\n";
+  cpp_file << "#include <bts/rpc_stubs/" << client_classname << ".hpp>\n";
+  cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
   for (const method_description& method : _methods)
   {
@@ -382,14 +391,120 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
     cpp_file << "}\n";
   }
   cpp_file << "\n";
-  cpp_file << "} } // end namespace bts::rpc_stub\n";
+  cpp_file << "} } // end namespace bts::rpc_stubs\n";
+}
+
+void api_generator::generate_prerequisite_checkes_to_stream(const method_description& method, std::ostream& stream)
+{
+  if (method.prerequisites == no_prerequisites)
+    stream << "  // this method has no prerequisites\n\n";
+  else
+    stream << "  // check all of this method's prerequisites\n";
+
+  if (method.prerequisites & json_authenticated)
+    stream << "  verify_json_connection_is_authenticated(json_connection);\n";
+  if (method.prerequisites & wallet_open)
+    stream << "  verify_wallet_is_open();\n";
+  if (method.prerequisites & wallet_unlocked)
+    stream << "  verify_wallet_is_unlocked();\n";
+  if (method.prerequisites & connected_to_network)
+    stream << "  verify_connected_to_network();\n";
+
+  if (method.prerequisites != no_prerequisites)
+    stream << "  // done checking prerequisites\n\n";
+}
+
+void api_generator::generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream)
+{
+  stream << "\n";
+  stream << "  ";
+  if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+    stream << method.return_type->get_cpp_return_type() << " result = ";
+  stream << "get_client()->" << method.name << "(";
+  bool first_parameter = true;
+  for (const parameter_description& parameter : method.parameters)
+  {
+    if (first_parameter)
+      first_parameter = false;
+    else
+      stream << ", ";
+    stream << parameter.name;
+  }
+  stream << ");\n";
+
+  if (std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+    stream << "  return fc::variant();\n";
+  else
+    stream << "  return fc::variant(result);\n";
+}
+
+void api_generator::generate_positional_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream)
+{
+  stream << "fc::variant " << server_classname << "::" << method.name << "_positional(const fc::rpc::json_connection_ptr& json_connection, const fc::variants& parameters)\n";
+  stream << "{\n";
+
+  generate_prerequisite_checkes_to_stream(method, stream);
+
+  unsigned parameter_index = 0;
+  for (const parameter_description& parameter : method.parameters)
+  {
+    if (parameter.default_value)
+    {
+      stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
+                  " = (parameters.size() <= " << parameter_index << ") ?\n";
+      stream << "    (" << *parameter.default_value << ") :\n";
+      stream << "    parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+    }
+    else
+    {
+      // parameter is required
+      stream << "  if (parameters.size() <= " << parameter_index << ")\n";
+      stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter " << (parameter_index + 1) << " (" << parameter.name << ")\");\n";
+      stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
+                  " = parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+    }
+    ++parameter_index;
+  }
+
+  generate_server_call_to_client_to_stream(method, stream);
+  stream << "}\n\n";
+}
+
+void api_generator::generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream)
+{
+  stream << "fc::variant " << server_classname << "::" << method.name << "_named(const fc::rpc::json_connection_ptr& json_connection, const fc::variant_object& parameters)\n";
+  stream << "{\n";
+
+  generate_prerequisite_checkes_to_stream(method, stream);
+
+  for (const parameter_description& parameter : method.parameters)
+  {
+    if (parameter.default_value)
+    {
+      stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
+                  " = parameters.contains(\"" << parameter.name << "\") ? \n";
+      stream << "    (" << *parameter.default_value << ") :\n";
+      stream << "    parameters[\"" << parameter.name << "\"].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+    }
+    else
+    {
+      // parameter is required
+      stream << "  if (!parameters.contains(\"" << parameter.name << "\"))\n";
+      stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter '" <<  parameter.name << "'\");\n";
+      stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
+                  " = parameters[\"" << parameter.name << "\"].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+    }
+  }
+
+  generate_server_call_to_client_to_stream(method, stream);
+  stream << "}\n\n";
 }
 
 void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
 {
   std::string server_classname = _api_classname + "_server";
 
-  fc::path server_header_path = rpc_server_output_dir / "include" / "bts" / "rpc_stub";
+  fc::path server_header_path = rpc_server_output_dir / "include" / "bts" / "rpc_stubs";
   fc::create_directories(server_header_path); // creates dirs for both header and cpp
   fc::path server_header_filename = server_header_path / (server_classname + ".hpp");
   fc::path server_cpp_filename = rpc_server_output_dir / (server_classname + ".cpp");
@@ -398,96 +513,60 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
 
   header_file << "#pragma once\n\n";
   header_file << "#include <bts/client/client.hpp>\n";
-  header_file << "namespace bts { namespace rpc_stub {\n\n";
+  header_file << "#include <fc/rpc/json_connection.hpp>\n\n";
+  header_file << "namespace bts { namespace rpc_stubs {\n\n";
   header_file << "  class " << server_classname << "\n";
   header_file << "  {\n";
   header_file << "  public:\n";
   header_file << "    virtual bts::client::client_ptr get_client() const = 0;\n";
-  header_file << "    virtual void verify_json_connection_is_authenticated() const = 0;\n";
+  header_file << "    virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const = 0;\n";
   header_file << "    virtual void verify_wallet_is_open() const = 0;\n";
   header_file << "    virtual void verify_wallet_is_unlocked() const = 0;\n";
   header_file << "    virtual void verify_connected_to_network() const = 0;\n\n";
-
+  header_file << "    void register_" << _api_classname << "_methods(const fc::rpc::json_connection_ptr& json_connection);\n\n";
   for (const method_description& method : _methods)
   {
-    header_file << "    fc::variant " << method.name << "_positional(const fc::variants& parameters);\n";
-    header_file << "    fc::variant " << method.name << "_named(const fc::variant_object& parameters);\n";
+    header_file << "    fc::variant " << method.name << "_positional(const fc::rpc::json_connection_ptr& json_connection, const fc::variants& parameters);\n";
+    header_file << "    fc::variant " << method.name << "_named(const fc::rpc::json_connection_ptr& json_connection, const fc::variant_object& parameters);\n";
   }
 
   header_file << "  };\n\n";
-  header_file << "} } // end namespace bts::rpc_stub\n";
+  header_file << "} } // end namespace bts::rpc_stubs\n";
 
-  cpp_file << "#include <bts/rpc_stub/" << server_classname << ".hpp>\n";
-  cpp_file << "namespace bts { namespace rpc_stub {\n\n";
+  cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
+  cpp_file << "#include <boost/bind.hpp>\n";
+  cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
   for (const method_description& method : _methods)
   {
-    cpp_file << "fc::variant " << server_classname << "::" << method.name << "_positional(const fc::variants& parameters)\n";
-    cpp_file << "{\n";
-
-    if (method.prerequisites == no_prerequisites)
-      cpp_file << "  // this method has no prerequisites\n\n";
-    else
-      cpp_file << "  // check all of this method's prerequisites\n";
-
-    if (method.prerequisites & json_authenticated)
-      cpp_file << "  verify_json_connection_is_authenticated();\n";
-    if (method.prerequisites & wallet_open)
-      cpp_file << "  verify_wallet_is_open();\n";
-    if (method.prerequisites & wallet_unlocked)
-      cpp_file << "  verify_wallet_is_unlocked();\n";
-    if (method.prerequisites & connected_to_network)
-      cpp_file << "  verify_connected_to_network();\n";
-
-    if (method.prerequisites != no_prerequisites)
-      cpp_file << "  // done checking prerequisites\n\n";
-
-    unsigned parameter_index = 0;
-    for (const parameter_description& parameter : method.parameters)
-    {
-      if (parameter.default_value)
-      {
-        cpp_file << "  if (parameters.size() <= " << parameter_index << ")\n";
-        cpp_file << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
-                    " = (parameters.size() <= " << parameter_index << ") ?\n";
-        cpp_file << "    (" << *parameter.default_value << ") :\n";
-        cpp_file << "    parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
-      }
-      else
-      {
-        // parameter is required
-        cpp_file << "  if (parameters.size() <= " << parameter_index << ")\n";
-        cpp_file << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter " << (parameter_index + 1) << " (" << parameter.name << ")\");\n";
-        cpp_file << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
-                    " = parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
-      }
-      ++parameter_index;
-    }
-
-    cpp_file << "\n";
-    cpp_file << "  ";
-    if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
-      cpp_file << method.return_type->get_cpp_return_type() << " result = ";
-    cpp_file << "get_client()->" << method.name << "(";
-    bool first_parameter = true;
-    for (const parameter_description& parameter : method.parameters)
-    {
-      if (first_parameter)
-        first_parameter = false;
-      else
-        cpp_file << ", ";
-      cpp_file << parameter.name;
-    }
-    cpp_file << ");\n";
-
-    if (std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
-      cpp_file << "  return fc::variant();\n";
-    else
-      cpp_file << "  return fc::variant(result);\n";
-    cpp_file << "}\n";
+    generate_positional_server_implementation_to_stream(method, server_classname, cpp_file);
+    generate_named_server_implementation_to_stream(method, server_classname, cpp_file);
   }
+
+  cpp_file << "void " << server_classname << "::register_" << _api_classname << "_methods(const fc::rpc::json_connection_ptr& json_connection)\n";
+  cpp_file << "{\n";
+  cpp_file << "  fc::rpc::json_connection::method bound_positional_method;\n";
+  cpp_file << "  fc::rpc::json_connection::named_param_method bound_named_method;\n\n";
+  for (const method_description& method : _methods)
+  {
+    cpp_file << "  // register method " << method.name << "\n";
+    cpp_file << "  bound_positional_method = boost::bind(&" << server_classname << "::" << method.name << "_positional, \n";
+    cpp_file << "                                        this, json_connection, _1);\n";
+    cpp_file << "  json_connection->add_method(\"" << method.name << "\", bound_positional_method);\n";
+    for (const std::string& alias : method.aliases)
+      cpp_file << "  json_connection->add_method(\"" << alias << "\", bound_positional_method);\n";
+    cpp_file << "  bound_named_method = boost::bind(&" << server_classname << "::" << method.name << "_named, \n";
+    cpp_file << "                                        this, json_connection, _1);\n";
+    cpp_file << "  json_connection->add_named_param_method(\"" << method.name << "\", bound_named_method);\n";
+    for (const std::string& alias : method.aliases)
+      cpp_file << "  json_connection->add_named_param_method(\"" << alias << "\", bound_named_method);\n";
+    cpp_file << "\n";
+  }
+
+  cpp_file << "}\n";
+
   cpp_file << "\n";
-  cpp_file << "} } // end namespace bts::rpc_stub\n";
+  cpp_file << "} } // end namespace bts::rpc_stubs\n";
 }
 
 void api_generator::initialize_type_map_with_fundamental_types()

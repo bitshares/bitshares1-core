@@ -16,16 +16,16 @@ target_link_libraries( bts_api_generator fc bts_utilities leveldb )
 set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json")
 
 set(generated_api_files "${CMAKE_CURRENT_BINARY_DIR}/include/bts/api/common_api.hpp")
-set(rpc_stub_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stub")
-set(generated_rpc_stub_files "${rpc_stub_output_dir}/common_api_server.cpp" 
-                             "${rpc_stub_output_dir}/common_api_client.cpp" 
-                             "${rpc_stub_output_dir}/include/bts/rpc_stub/common_api_server.hpp" 
-                             "${rpc_stub_output_dir}/include/bts/rpc_stub/common_api_client.hpp")
+set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
+set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_server.cpp" 
+                             "${rpc_stubs_output_dir}/common_api_client.cpp" 
+                             "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_server.hpp" 
+                             "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp")
 
-add_custom_command(OUTPUT ${generated_api_files} ${generated_rpc_stub_files}
+add_custom_command(OUTPUT ${generated_api_files} ${generated_rpc_stubs_files}
                    COMMAND bts_api_generator "--api-classname=common_api" 
                                              "--api-interface-output-dir=${CMAKE_CURRENT_BINARY_DIR}"
-                                             "--rpc-stub-output-dir=${rpc_stub_output_dir}" ${json_description_files}
+                                             "--rpc-stub-output-dir=${rpc_stubs_output_dir}" ${json_description_files}
                    DEPENDS bts_api_generator ${json_description_files} )
 
 # add an empty c++ file to the target to make cmake happy.  when we hit cmake 3.0, we can change this to
@@ -36,7 +36,7 @@ target_include_directories(bts_api
 #set_target_properties(bts_api PROPERTIES LINKER_LANGUAGE CXX)
 
 
-add_library(bts_rpc_stubs ${generated_rpc_stub_files})
+add_library(bts_rpc_stubs ${generated_rpc_stubs_files})
 target_link_libraries( bts_rpc_stubs bts_client fc)
 target_include_directories(bts_rpc_stubs
-                           PUBLIC "${rpc_stub_output_dir}/include")
+                           PUBLIC "${rpc_stubs_output_dir}/include")

@@ -106,13 +106,6 @@ namespace bts { namespace rpc {
 
     const method_data& get_method_data(const std::string& method_name);
 
-    /** can be called for methods that require the user to be logged in via
-    *  RPC.
-    */
-    void check_connected_to_network();
-    void check_wallet_unlocked();
-    void check_wallet_is_open();
-
     void wait_on_quit();
 
   protected:

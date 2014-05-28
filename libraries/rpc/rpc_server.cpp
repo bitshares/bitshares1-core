@@ -19,6 +19,8 @@
 #include <limits>
 #include <sstream>
 
+#include <bts/rpc_stubs/common_api_server.hpp>
+
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
@@ -84,7 +86,7 @@ namespace bts { namespace rpc {
 
   namespace detail
   {
-    class rpc_server_impl
+    class rpc_server_impl : public bts::rpc_stubs::common_api_server
     {
        public:
          rpc_server::config                _config;
@@ -103,6 +105,12 @@ namespace bts { namespace rpc {
 
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
+
+         virtual bts::client::client_ptr get_client() const override;
+         virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const override;
+         virtual void verify_wallet_is_open() const override;
+         virtual void verify_wallet_is_unlocked() const override;
+         virtual void verify_connected_to_network() const override;
 
          std::string make_short_description(const rpc_server::method_data& method_data)
          {
@@ -370,10 +378,10 @@ namespace bts { namespace rpc {
                                                         this, capture_con, method.second, _1);
               con->add_method(method.first, bind_method);
               for ( auto alias : method.second.aliases )
-              {
                   con->add_method(alias, bind_method);
-              }
             }
+
+            register_common_api_methods(con);
          } // register methods
 
         fc::variant dispatch_method_from_json_connection(fc::rpc::json_connection* con,
@@ -392,11 +400,11 @@ namespace bts { namespace rpc {
         {
           //ilog("method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",arguments_from_caller));
           if (method_data.prerequisites & rpc_server::wallet_open)
-            check_wallet_is_open();
+            verify_wallet_is_open();
           if (method_data.prerequisites & rpc_server::wallet_unlocked)
-            check_wallet_unlocked();
+            verify_wallet_is_unlocked();
           if (method_data.prerequisites & rpc_server::connected_to_network)
-            check_connected_to_network();
+            verify_connected_to_network();
 
           fc::variants modified_positional_arguments;
           fc::mutable_variant_object modified_named_arguments;
@@ -463,34 +471,7 @@ namespace bts { namespace rpc {
           return dispatch_authenticated_method(_method_map[iter->second], arguments);
         }
 
-        void check_connected_to_network()
-        {
-          if (!_client->is_connected())
-            throw rpc_client_not_connected_exception(FC_LOG_MESSAGE(error, "The client must be connected to the network to execute this command"));
-        }
-
-        void check_json_connection_authenticated( fc::rpc::json_connection* con )
-        {
-          if( con && _authenticated_connection_set.find( con ) == _authenticated_connection_set.end() )
-          {
-            FC_THROW_EXCEPTION( exception, "not logged in" );
-          }
-        }
-
-        void check_wallet_unlocked()
-        {
-          if (_client->get_wallet()->is_locked())
-            throw rpc_wallet_unlock_needed_exception(FC_LOG_MESSAGE(error, "The wallet's spending key must be unlocked before executing this command"));
-        }
-
-        void check_wallet_is_open()
-        {
-          if (!_client->get_wallet()->is_open())
-            throw rpc_wallet_open_needed_exception(FC_LOG_MESSAGE(error, "The wallet must be open before executing this command"));
-        }
-
         fc::variant login( fc::rpc::json_connection* json_connection, const fc::variants& params );
-
 
 #define DECLARE_RPC_METHOD( r, visitor, elem )  fc::variant elem( const fc::variants& );
 #define DECLARE_RPC_METHODS( METHODS ) BOOST_PP_SEQ_FOR_EACH( DECLARE_RPC_METHOD, v, METHODS )
@@ -498,6 +479,33 @@ namespace bts { namespace rpc {
  #undef DECLARE_RPC_METHOD
  #undef DECLARE_RPC_METHODS
     };
+
+
+    bts::client::client_ptr rpc_server_impl::get_client() const
+    {
+      return _client;
+    }
+    void rpc_server_impl::verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const
+    {
+      if (json_connection && 
+          _authenticated_connection_set.find(json_connection.get()) == _authenticated_connection_set.end())
+        FC_THROW("The RPC connection must be logged in before executing this command");
+    }
+    void rpc_server_impl::verify_wallet_is_open() const
+    {
+      if (!_client->get_wallet()->is_open())
+        throw rpc_wallet_open_needed_exception(FC_LOG_MESSAGE(error, "The wallet must be open before executing this command"));
+    }
+    void rpc_server_impl::verify_wallet_is_unlocked() const
+    {
+      if (_client->get_wallet()->is_locked())
+        throw rpc_wallet_unlock_needed_exception(FC_LOG_MESSAGE(error, "The wallet's spending key must be unlocked before executing this command"));
+    }
+    void rpc_server_impl::verify_connected_to_network() const
+    {
+      if (!_client->is_connected())
+        throw rpc_client_not_connected_exception(FC_LOG_MESSAGE(error, "The client must be connected to the network to execute this command"));
+    }
 
     //register_method(method_data{"login", JSON_METHOD_IMPL(login),
     //          /* description */ "authenticate JSON-RPC connection",
@@ -1922,21 +1930,6 @@ Result:
         my->_alias_map[alias] = data.name;
     }
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
-  }
-
-  void rpc_server::check_connected_to_network()
-  {
-    my->check_connected_to_network();
-  }
-
-  void rpc_server::check_wallet_unlocked()
-  {
-    my->check_wallet_unlocked();
-  }
-
-  void rpc_server::check_wallet_is_open()
-  {
-    my->check_wallet_is_open();
   }
 
   void rpc_server::wait_on_quit()

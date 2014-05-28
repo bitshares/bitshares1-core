@@ -10,6 +10,6 @@ add_library( bts_rpc
              ${HEADERS}
            )
 
-target_link_libraries( bts_rpc bts_api bts_client fc bts_db bts_blockchain bts_utilities leveldb )
+target_link_libraries( bts_rpc bts_rpc_stubs bts_api bts_client fc bts_db bts_blockchain bts_utilities leveldb )
 target_include_directories( bts_rpc 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )

@@ -10,16 +10,19 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/thread/future.hpp>
 
+#include <bts/rpc_stubs/common_api_client.hpp>
 
 namespace bts { namespace rpc { 
 
   namespace detail 
   {
-    class rpc_client_impl
+    class rpc_client_impl : public bts::rpc_stubs::common_api_client
     {
-    public:      
+    public:
       fc::rpc::json_connection_ptr _json_connection;
       fc::future<void> _json_exec_loop_complete;
+
+      virtual fc::rpc::json_connection_ptr get_json_connection() const override { return _json_connection; }
 
       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
