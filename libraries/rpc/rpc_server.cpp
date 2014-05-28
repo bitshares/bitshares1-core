@@ -28,7 +28,6 @@ namespace bts { namespace rpc {
              (get_info)\
              (stop)\
              (validate_address)\
-             (blockchain_get_blockhash)\
              (blockchain_get_blockcount)\
              (blockchain_get_transaction)\
              (blockchain_get_block)\
@@ -42,7 +41,6 @@ namespace bts { namespace rpc {
              (blockchain_get_names)\
              (network_get_connection_count)\
              (network_get_peer_info)\
-             (network_add_node)\
              (wallet_open_file)\
              (wallet_create)\
              (wallet_open)\
@@ -111,7 +109,7 @@ namespace bts { namespace rpc {
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
          virtual void verify_connected_to_network() const override;
-         virtual void register_method_metadata(const bts::api::method_data& method_metadata);
+         virtual void store_method_metadata(const bts::api::method_data& method_metadata);
 
          std::string make_short_description(const bts::api::method_data& method_data)
          {
@@ -403,6 +401,11 @@ namespace bts { namespace rpc {
         fc::variant dispatch_authenticated_method(const bts::api::method_data& method_data,
                                                   const fc::variants& arguments_from_caller)
         {
+          if (!method_data.method)
+          {
+            // then this is a method using our new generated code
+            return direct_invoke_positional_method(method_data.name, arguments_from_caller);
+          }
           //ilog("method: ${method_name}, arguments: ${params}", ("method_name", method_data.name)("params",arguments_from_caller));
           if (method_data.prerequisites & bts::api::wallet_open)
             verify_wallet_is_open();
@@ -511,7 +514,7 @@ namespace bts { namespace rpc {
       if (!_client->is_connected())
         throw rpc_client_not_connected_exception(FC_LOG_MESSAGE(error, "The client must be connected to the network to execute this command"));
     }
-    void rpc_server_impl::register_method_metadata(const bts::api::method_data& method_metadata)
+    void rpc_server_impl::store_method_metadata(const bts::api::method_data& method_metadata)
     {
       _self->register_method(method_metadata);
     }
@@ -687,21 +690,6 @@ Result:
 
        return fc::variant( std::move(info) );
     }
-
-    static bts::api::method_data blockchain_get_blockhash_metadata{"blockchain_get_blockhash", nullptr,
-                                     /* description */ "Returns hash of block in best-block-chain at index provided",
-                                     /* returns: */    "block_id_type",
-                                     /* params:          name         type   classification                   default value */
-                                                       {{"block_number", "int", bts::api::required_positional, fc::ovariant()} },
-                                      /* prerequisites */ bts::api::no_prerequisites,
-                                      R"(
-    )",
-        /*aliases*/ { "bitcoin_getblockhash", "getblockhash" }};
-    fc::variant rpc_server_impl::blockchain_get_blockhash(const fc::variants& params)
-    {
-      return fc::variant(_client->blockchain_get_blockhash( (uint32_t)params[0].as_int64() ) );
-    }
-
 
     static bts::api::method_data blockchain_get_blockcount_metadata{"blockchain_get_blockcount", nullptr,
                                      /* description */ "Returns the number of blocks in the longest block chain",
@@ -1690,32 +1678,6 @@ null
       return fc::variant();
     }
 
-    static bts::api::method_data network_add_node_metadata{"network_add_node", nullptr,
-            /* description */ "Attempts add or remove <node> from the peer list or try a connection to <node> once",
-            /* returns: */    "null",
-            /* params:          name      type       classification                   default value */
-                              {{"node",   "string",  bts::api::required_positional, fc::ovariant()},
-                               {"command","string",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-network_add_node "node" "add|remove|onetry"
-
-Attempts add or remove a node from the network_add_node list.
-Or try a connection to a node once.
-
-Arguments:
-1. "node" (string, required) The node (see network_get_peer_info for nodes)
-2. "command" (string, required) 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once
-
-Examples:
-> bitcoin-cli network_add_node "192.168.0.6:8333" "onetry"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "network_add_node", "params": ["192.168.0.6:8333", "onetry"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-)" };
-    fc::variant rpc_server_impl::network_add_node(const fc::variants& params)
-    {
-      _client->network_add_node(fc::ip::endpoint::from_string(params[0].as_string()), params[1].as_string());
-      return fc::variant();
-    }
 
     static bts::api::method_data stop_metadata{"stop", nullptr,
             /* description */ "Stop BitShares server",
@@ -1825,6 +1787,7 @@ Result:
 
  #undef REGISTER_RPC_METHODS
  #undef REGISTER_RPC_METHOD
+    my->register_common_api_method_metadata();
   }
 
   rpc_server::~rpc_server()

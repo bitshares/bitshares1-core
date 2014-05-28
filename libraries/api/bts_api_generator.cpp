@@ -554,8 +554,10 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   header_file << "    virtual void verify_wallet_is_open() const = 0;\n";
   header_file << "    virtual void verify_wallet_is_unlocked() const = 0;\n";
   header_file << "    virtual void verify_connected_to_network() const = 0;\n\n";
-  header_file << "    virtual void register_method_metadata(const bts::api::method_data& method_metadata) = 0;\n";
+  header_file << "    virtual void store_method_metadata(const bts::api::method_data& method_metadata) = 0;\n";
+  header_file << "    fc::variant direct_invoke_positional_method(const std::string& method_name, const fc::variants& parameters);\n";
   header_file << "    void register_" << _api_classname << "_methods(const fc::rpc::json_connection_ptr& json_connection);\n\n";
+  header_file << "    void register_" << _api_classname << "_method_metadata();\n\n";
   for (const method_description& method : _methods)
   {
     header_file << "    fc::variant " << method.name << "_positional(const fc::rpc::json_connection_ptr& json_connection, const fc::variants& parameters);\n";
@@ -582,7 +584,6 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   cpp_file << "{\n";
   cpp_file << "  fc::rpc::json_connection::method bound_positional_method;\n";
   cpp_file << "  fc::rpc::json_connection::named_param_method bound_named_method;\n";
-  cpp_file << "  bts::api::method_data method_metadata;\n\n";
   for (const method_description& method : _methods)
   {
     cpp_file << "  // register method " << method.name << "\n";
@@ -597,8 +598,16 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
     for (const std::string& alias : method.aliases)
       cpp_file << "  json_connection->add_named_param_method(\"" << alias << "\", bound_named_method);\n";
     cpp_file << "\n";
+  }
+  cpp_file << "}\n\n";
 
-    cpp_file << "  method_metadata = bts::api::method_data{\"" << method.name << "\", nullptr,\n";
+  // generate a function that registers all method metadata
+  cpp_file << "void " << server_classname << "::register_" << _api_classname << "_method_metadata()\n";
+  cpp_file << "{\n";
+  for (const method_description& method : _methods)
+  {
+    cpp_file << "  // register method " << method.name << "\n";
+    cpp_file << "  bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
     cpp_file << "    /* description */ " << fc::json::to_string(method.brief_description) << ",\n";
     cpp_file << "    /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
     cpp_file << "    /* params: */ {";
@@ -617,11 +626,20 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
     }
     cpp_file <<  "},\n";
     cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \"long description\"};\n";
-    cpp_file << "  register_method_metadata(method_metadata);\n\n";
+    cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
   }
+  cpp_file << "}\n\n";
+
+  // generate a function for directly invoking a method, probably a stop-gap until we finish migrating all methods to this code
+  cpp_file << "fc::variant " << server_classname << "::direct_invoke_positional_method(const std::string& method_name, const fc::variants& parameters)\n";
+  cpp_file << "{\n";
+  for (const method_description& method : _methods)
+  {
+    cpp_file << "  if (method_name == \"" << method.name << "\")\n";
+    cpp_file << "    return " << method.name << "_positional(nullptr, parameters);\n";
+  }
+  cpp_file << "  FC_ASSERT(false, \"shouldn't happen\");\n";
   cpp_file << "}\n";
-
-
 
   cpp_file << "\n";
   cpp_file << "} } // end namespace bts::rpc_stubs\n";
