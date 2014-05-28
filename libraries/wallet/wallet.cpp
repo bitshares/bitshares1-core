@@ -433,19 +433,28 @@ namespace bts { namespace wallet {
    void  wallet::add_contact_account( const std::string& account_name, 
                                       const public_key_type& key )
    { try {
+      ilog( "${name}  ${key}", ("name",account_name)("key",key) );
       FC_ASSERT( is_open() );
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
       {
+         wlog( "current account is valid... ${name}", ("name", *current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
       }
       else
       {
+         auto account_key = my->_wallet_db.lookup_key( address(key) );
+         FC_ASSERT( !account_key.valid() );
          my->_wallet_db.add_contact_account( account_name, key );
+         account_key = my->_wallet_db.lookup_key( address(key) );
+         FC_ASSERT( account_key.valid() );
+         ilog( "account key:${a}}", ("a", account_key ) );
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
+
+
    owallet_account_record    wallet::get_account( const std::string& account_name )
    {
       FC_ASSERT( is_open() );
@@ -712,6 +721,11 @@ namespace bts { namespace wallet {
       {
           auto war = my->_wallet_db.lookup_account( account_name );
           FC_ASSERT( war.valid(), "Unable to find Wallet Account '${account_name}'", ("account_name",account_name) );
+
+          auto account_key = my->_wallet_db.lookup_key( war->account_address );
+          FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
+          ilog( "account: ${war}", ("war",war) );
+          ilog( "account key: ${key}", ("key",account_key) );
 
           asset total_balance( 0, opt_asset_record->id );
           for( auto b : my->_wallet_db.balances )

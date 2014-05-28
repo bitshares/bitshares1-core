@@ -315,6 +315,7 @@ namespace bts{ namespace wallet {
    void wallet_db::add_contact_account( const std::string& new_account_name, 
                                         const public_key_type& new_account_key )
    {
+      ilog( "${name}", ("name", new_account_name)  );
       auto current_account_itr = name_to_account.find( new_account_name );
       FC_ASSERT( current_account_itr == name_to_account.end(), 
                  "Account with name ${name} already exists", 
@@ -332,16 +333,19 @@ namespace bts{ namespace wallet {
       auto current_key = lookup_key( new_account_key );
       if( current_key )
       {  
+         wlog( "key exists... ..." );
          current_key->account_address = address(new_account_key);
          store_record( *current_key );
       }
       else
       {
+         wlog( "new wallet key exists... ..." );
          wallet_key_record new_key;
          new_key.index = new_index();
          new_key.account_address = address(new_account_key);
          new_key.public_key = new_account_key;
          store_key( new_key );
+         wlog( "store_key: ${key}", ("key",new_key) );
          my->load_key_record( new_key );
       }
 

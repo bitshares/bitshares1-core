@@ -57,8 +57,9 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       your_wallet.create(  "your_wallet", password );
       your_wallet.unlock( password );
 
-      auto your_account2 = my_wallet.create_account( "your1" );
-      auto your_account3 = my_wallet.create_account( "your2" );
+      auto your_account2 = your_wallet.create_account( "your1" );
+      auto your_account3 = your_wallet.create_account( "your2" );
+      auto your_account4 = your_wallet.create_account( "your4" );
       ilog( "your1: ${a}", ("a",result) );
       ilog( "your2: ${a}", ("a",result2) );
 
@@ -79,6 +80,10 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       ilog( "balance: * ${b}", ("b",my_wallet.get_balance() ) );
       ilog( "balance: my1 ${b}", ("b",my_wallet.get_balance("XTS", "my1") ) );
       ilog( "balance: my2 ${b}", ("b",my_wallet.get_balance("XTS", "my2") ) );
+
+      wlog( "adding your4..\n\n" );
+      my_wallet.add_contact_account( "your4", your_account4 );
+      ilog( "balance: your4 ${b}", ("b",my_wallet.get_balance("XTS", "your4") ) );
 
       //my_wallet.scan_state();
 
