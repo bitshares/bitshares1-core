@@ -1465,6 +1465,7 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
 
     fc::usleep(fc::seconds(1));
     BOOST_TEST_MESSAGE("Success, client didn't crash.\n");
+    socket->close();
     for (unsigned i = 0; i < client_processes.size(); ++i)
         client_processes[i].rpc_client->stop();
 
