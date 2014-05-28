@@ -54,7 +54,7 @@ upnp_service::~upnp_service()
          my->map_port_complete.wait();
       }
   } 
-  catch ( const fc::canceled_exception& e )
+  catch ( const fc::canceled_exception& )
   {} // expected
   catch ( const fc::exception& e )
   {

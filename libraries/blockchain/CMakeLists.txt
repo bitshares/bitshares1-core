@@ -1,6 +1,3 @@
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/../db/include" )
-
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
@@ -21,3 +18,5 @@ add_library( bts_blockchain
            )
 
 target_link_libraries( bts_blockchain fc bts_db leveldb )
+target_include_directories( bts_blockchain 
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )

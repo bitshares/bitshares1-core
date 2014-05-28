@@ -10,6 +10,7 @@
 #include <fc/log/logger.hpp>
 
 #include <bts/rpc/rpc_client.hpp>
+#include <bts/api/common_api.hpp>
 
 #include <iostream>
 

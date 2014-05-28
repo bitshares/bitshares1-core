@@ -4,7 +4,14 @@
       {
         "type_name" : "ip_endpoint",
         "cpp_parameter_type" : "const fc::ip::endpoint&",
-        "cpp_return_type" : "fc::ip::endpoint"
+        "cpp_return_type" : "fc::ip::endpoint",
+        "cpp_include_file" : "fc/network/ip.hpp"
+      },
+      {
+        "type_name" : "block_id_type",
+        "cpp_parameter_type" : "const bts::blockchain::block_id_type&",
+        "cpp_return_type" : "bts::blockchain::block_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
       }
     ],
   "methods" :
@@ -29,6 +36,21 @@
             }
           ],
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_blockhash",
+        "description": "Returns hash of block in best-block-chain at index provided",
+        "return_type": "block_id_type",
+        "parameters" : 
+          [
+            { 
+              "name" : "block_number", 
+              "type" : "uint32_t", 
+              "description" : "index of the block",
+              "example" : "42"
+            }
+          ],
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }
