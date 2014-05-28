@@ -18,10 +18,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifndef WIN32
-#define HAVE_READLINE
-#endif
-
 #ifdef HAVE_READLINE
 #include <readline/history.h>
 #include <readline/readline.h>
