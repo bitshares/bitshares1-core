@@ -1435,7 +1435,10 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
 
     fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
 
-    auto oversize = garbage_message( MAX_MESSAGE_SIZE + 1 ) ;
+
+    client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[0].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
 
     auto endpoint = fc::ip::endpoint( fc::ip::address("127.0.0.1"), client_processes[0].rpc_port );
     auto socket = std::make_shared<fc::tcp_socket>();
@@ -1452,8 +1455,19 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
     fc::buffered_istream_ptr buffered_istream = std::make_shared<fc::buffered_istream>(socket);
     fc::buffered_ostream_ptr buffered_ostream = std::make_shared<fc::buffered_ostream>(socket);
 
+    auto oversize = garbage_message( MAX_MESSAGE_SIZE * 500 ) ;
     *buffered_ostream << fc::variant( oversize.data ).as_string();
     buffered_ostream->flush();
+
+    fc::usleep(fc::seconds(1));
+
+    BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
+
+    fc::usleep(fc::seconds(1));
+    BOOST_TEST_MESSAGE("Success, client didn't crash.\n");
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+        client_processes[i].rpc_client->stop();
+
 }
 
 
