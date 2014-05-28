@@ -1,5 +1,7 @@
 #pragma once
 
+#define BTS_NET_PROTOCOL_VERSION 100
+
 /** 
  * Define this to enable debugging code in the p2p network interface.
  * This is code that would never be executed in normal operation, but is

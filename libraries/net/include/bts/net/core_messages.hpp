@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bts/net/net_config.hpp>
+#include <bts/net/config.hpp>
 
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/sha256.hpp>
