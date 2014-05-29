@@ -39,7 +39,7 @@ namespace bts { namespace wallet {
        { try {
           FC_ASSERT( data.is_object() );
           FC_ASSERT( data.get_object().contains( "index" ) );
-          return data.get_object()["index"].as_int64();
+          return data.get_object()["index"].as<int32_t>();
        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
        fc::enum_type<uint8_t,wallet_record_type_enum>   type;

@@ -40,17 +40,6 @@ namespace bts { namespace rpc {
              (blockchain_get_names)\
              (network_get_connection_count)\
              (network_get_peer_info)\
-             (network_add_node)\
-             (wallet_open_file)\
-             (wallet_create)\
-             (wallet_open)\
-             (wallet_get_name)\
-             (wallet_close)\
-             (wallet_export_to_json)\
-             (wallet_create_from_json)\
-             (wallet_lock)\
-             (wallet_unlock)\
-             (wallet_change_passphrase)\
              (wallet_create_account) \
              (wallet_add_contact_account) \
              (wallet_import_private_key)\
@@ -689,6 +678,36 @@ Result:
        return fc::variant( std::move(info) );
     }
     
+
+    static bts::api::method_data wallet_create_account_metadata{"wallet_create_account", nullptr,
+            /* description */ "Add new account for receiving payments",
+            /* returns: */    "extended_address",
+            /* params:          name             type      classification                   default value */
+                              {{"account_name", "string",  bts::api::required_positional, fc::ovariant()}},
+          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
+    R"(
+     )"};
+    fc::variant rpc_server_impl::wallet_create_account( const fc::variants& params )
+    {
+       auto receive_address = _client->wallet_create_account( params[0].as_string() );
+       return fc::variant(receive_address);
+    }
+
+    static bts::api::method_data wallet_add_contact_account_metadata{"wallet_add_contact_account", nullptr,
+            /* description */ "Add new account for sending payments",
+            /* returns: */    "null",
+            /* params:          name             type                classification                   default value */
+                              {{"account_name",  "string",           bts::api::required_positional, fc::ovariant()},
+                               {"account_key",   "extended_address", bts::api::required_positional, fc::ovariant()}},
+          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
+    R"(
+     )"};
+    fc::variant rpc_server_impl::wallet_add_contact_account( const fc::variants& params )
+    {
+       _client->wallet_add_contact_account( params[0].as_string(), params[1].as<public_key_type>() );
+       return fc::variant();
+    }
+
     static bts::api::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
@@ -754,12 +773,12 @@ Result:
        return fc::variant(issue_asset_trx);
     }
 
-    static rpc_server::method_data wallet_list_contact_accounts_metadata{"wallet_list_contact_accounts", nullptr,
+    static bts::api::method_data wallet_list_contact_accounts_metadata{"wallet_list_contact_accounts", nullptr,
             /* description */ "Lists all foreign addresses and their labels associated with this wallet",
             /* returns: */    "map<string,extended_address>",
             /* params:          name     type    classification                   default value */
                               {},
-          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_contact_accounts(const fc::variants& params)
@@ -807,7 +826,7 @@ Result:
             /* returns: */    "map<string,extended_address>",
             /* params:          name     type    classification                   default value */
                               {},
-          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open,
+          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_list_receive_accounts(const fc::variants& params)
@@ -948,14 +967,14 @@ Result:
       return fc::variant();
     }
 
-    static rpc_server::method_data wallet_register_account_metadata{"wallet_register_account", nullptr,
+    static bts::api::method_data wallet_register_account_metadata{"wallet_register_account", nullptr,
             /* description */ "Register an account with the blockchain", 
             /* returns: */    "signed_transaction",
             /* params:          name             type       classification                   default_value */
-                              {{"name",          "string",  rpc_server::required_positional, fc::ovariant()},
-                               {"data",          "variant", rpc_server::optional_positional, fc::ovariant()},
-                               {"as_delegate",   "bool",    rpc_server::optional_positional, fc::variant(false)}},
-            /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked | rpc_server::connected_to_network,
+                              {{"name",          "string",  bts::api::required_positional, fc::ovariant()},
+                               {"data",          "variant", bts::api::optional_positional, fc::ovariant()},
+                               {"as_delegate",   "bool",    bts::api::optional_positional, fc::variant(false)}},
+            /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
           R"(
           )"
      };
@@ -1163,11 +1182,11 @@ Examples:
             /* returns: */    "void",
             /* params:          name           type      classification                          default_value */
                               {
-                               {"filename",   "path",   rpc_server::required_positional,        fc::ovariant()},
-                               {"account_name", "string", rpc_server::required_positional,      fc::ovariant()},
-                               {"passphrase", "string", rpc_server::required_positional_hidden, fc::ovariant()}
+                               {"filename",   "path",   bts::api::required_positional,        fc::ovariant()},
+                               {"account_name", "string", bts::api::required_positional,      fc::ovariant()},
+                               {"passphrase", "string", bts::api::required_positional_hidden, fc::ovariant()}
                               },
-          /* prerequisites */ rpc_server::json_authenticated | rpc_server::wallet_open | rpc_server::wallet_unlocked,
+          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
           R"(
      )" };
     fc::variant rpc_server_impl::wallet_import_bitcoin(const fc::variants& params)

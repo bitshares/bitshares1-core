@@ -39,7 +39,6 @@ namespace bts { namespace rpc {
          //TODO? fc::variant get_info()
          fc::variant_object get_info();
 
-                                                         */
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,
@@ -51,19 +50,6 @@ namespace bts { namespace rpc {
                                                           const std::string& symbol,
                                                           const std::string& to_account_name,
                                                           generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
-                     /**
-                      *  Reserve a name
-                      */
-                     signed_transaction wallet_reserve_name( const std::string& name,
-                                                              const fc::variant& json_data,
-                                                              generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                     signed_transaction wallet_update_name( const std::string& name,
-                                                             const fc::variant& json_data,
-                                                             generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                     signed_transaction wallet_register_delegate(const std::string& name,
-                                                                  const fc::variant& json_data,
-                                                                  generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                      /**
                      *  Submit and vote on proposals
@@ -80,8 +66,6 @@ namespace bts { namespace rpc {
                                                                generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
 
-         std::map<std::string, public_key_type> wallet_list_sending_accounts() const override 
-         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
          std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override 
          { FC_ASSERT(false, "NOT IMPLEMENTED"); };
          void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override 

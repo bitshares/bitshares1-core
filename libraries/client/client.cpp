@@ -366,7 +366,7 @@ namespace bts { namespace client {
       get_wallet()->export_to_json(path);
     }
 
-    void client::wallet_create_from_json(const fc::path& path, const std::string& name )
+    void client::wallet_create_from_json(const fc::path& path, const std::string& name)
     {
       get_wallet()->create_from_json(path,name);
     }
@@ -386,11 +386,26 @@ namespace bts { namespace client {
       get_wallet()->change_passphrase(new_password);
     }
 
+    bts::blockchain::extended_address client::wallet_create_receive_account(const std::string& account_name)
+    {
+      FC_ASSERT(false, "Not implemented");
+    }
+
+    void client::wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key)
+    {
+      FC_ASSERT(false, "Not implemented");
+    }
+
+    std::vector<bts::blockchain::signed_transaction> client::wallet_transfer(int64_t amount_to_transfer, const std::string& to_account_name, const std::string& asset_symbol, const std::string& from_account_name, const std::string& memo_message)
+    {
+      FC_ASSERT(false, "Not implemented");
+    }
+
 
 
     bts::wallet::pretty_transaction client::wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const
     {
-      return get_wallet()->to_pretty_trx(wallet_transaction_record(-1, transaction));
+      return get_wallet()->to_pretty_trx(wallet_transaction_record(transaction));
     }
     signed_transaction client::wallet_asset_create(const std::string& symbol,
                                                     const std::string& asset_name,
@@ -398,7 +413,7 @@ namespace bts { namespace client {
                                                     const fc::variant& data,
                                                     const std::string& issuer_name,
                                                     share_type maximum_share_supply,
-                                                    generate_transaction_flag flag)
+                                                    rpc_client_api::generate_transaction_flag flag)
     {
       bool sign = (flag != do_not_sign);
       auto create_asset_trx = 
@@ -413,7 +428,7 @@ namespace bts { namespace client {
     signed_transaction  client::wallet_asset_issue(share_type amount,
                                                    const std::string& symbol,
                                                    const std::string& to_account_name,
-                                                   generate_transaction_flag flag)
+                                                   rpc_client_api::generate_transaction_flag flag)
     {
       bool sign = (flag != do_not_sign);
       auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name, sign);
@@ -427,7 +442,7 @@ namespace bts { namespace client {
     signed_transaction client::wallet_register_account( const std::string& account_name,
                                                         const fc::variant& data,
                                                         bool as_delegate,
-                                                        generate_transaction_flag flag)
+                                                        rpc_client_api::generate_transaction_flag flag)
     {
       try {
         bool sign = (flag != do_not_sign);
@@ -443,7 +458,7 @@ namespace bts { namespace client {
     signed_transaction client::wallet_update_registered_account( const std::string& registered_account_name,
                                                                  const fc::variant& data,
                                                                  bool as_delegate,
-                                                                 generate_transaction_flag flag )
+                                                                 rpc_client_api::generate_transaction_flag flag )
     {
       FC_ASSERT(!"Not implemented")
       return signed_transaction();
@@ -455,7 +470,7 @@ namespace bts { namespace client {
                                                        const std::string& body,
                                                        const std::string& proposal_type,
                                                        const fc::variant& json_data,
-                                                       generate_transaction_flag flag)
+                                                       rpc_client_api::generate_transaction_flag flag)
     {
       try {
         bool sign = (flag != do_not_sign);
@@ -471,7 +486,7 @@ namespace bts { namespace client {
     signed_transaction client::wallet_vote_proposal(const std::string& name,
                                                      proposal_id_type proposal_id,
                                                      uint8_t vote,
-                                                     generate_transaction_flag flag)
+                                                     rpc_client_api::generate_transaction_flag flag)
     {
       try {
         bool sign = (flag != do_not_sign);
@@ -497,7 +512,7 @@ namespace bts { namespace client {
 
     std::vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
     {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT(false, "Not Implemented" );
       /*
       auto names = get_wallet()->accounts(account_name);
       std::vector<name_record> name_records;
@@ -520,7 +535,7 @@ namespace bts { namespace client {
       auto opt_account = get_wallet()->get_account(account_name);
       if( opt_account.valid() )
          return *opt_account;
-      FC_ASSERT( !"Invalid Account Name", "${account_name}", ("account_name",account_name) );
+      FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     std::vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const

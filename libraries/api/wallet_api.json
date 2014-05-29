@@ -62,6 +62,12 @@
         "default_example" : "TODO"        
       },
       {
+        "type_name" : "signed_transaction_list",
+        "container_type" : "sequence",
+        "contained_type" : "signed_transaction",
+        "default_example" : "TODO"      
+      },
+      {
         "type_name" : "pretty_transaction",
         "cpp_parameter_type" : "const bts::wallet::pretty_transaction&",
         "cpp_return_type" : "bts::wallet::pretty_transaction",
@@ -117,11 +123,6 @@
               "type" : "filename", 
               "description" : "the full path and filename of the wallet to open",
               "example" : "/path/to/wallet.dat"
-            },
-            { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for unlocking the wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -136,11 +137,6 @@
               "name" : "wallet_name", 
               "type" : "wallet_name", 
               "description" : "the name of the wallet to open"
-            },
-            { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for unlocking the wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"],
@@ -213,11 +209,6 @@
               "name" : "wallet_name", 
               "type" : "wallet_name", 
               "description" : "name of the wallet to create"
-            },
-            { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for encrypting the wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -318,11 +309,11 @@
       {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given address, assumes shares in DAC",
-        "return_type": "invoice_summary",
+        "return_type": "signed_transaction_list",
         "parameters" : 
           [
             {
-              "name" : "amount", 
+              "name" : "amount_to_transfer", 
               "type" : "amount", 
               "description" : "the amount of shares to transfer"
             },
@@ -338,13 +329,13 @@
               "default_value" : "XTS"
             },
             {
-              "name" : "from_account", 
+              "name" : "from_account_name", 
               "type" : "sending_account_name", 
               "description" : "the source account(s) to draw the shares from",
               "default_value" : "*"
             },
             {
-              "name" : "invoice_memo", 
+              "name" : "memo_message", 
               "type" : "std::string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
