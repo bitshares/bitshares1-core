@@ -344,9 +344,9 @@ namespace bts{ namespace wallet {
          new_key.index = new_index();
          new_key.account_address = address(new_account_key);
          new_key.public_key = new_account_key;
-         store_key( new_key );
          wlog( "store_key: ${key}", ("key",new_key) );
          my->load_key_record( new_key );
+         store_key( new_key );
       }
 
       war.index = new_index();

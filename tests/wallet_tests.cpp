@@ -32,9 +32,9 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       fc::temp_directory my_dir;
       fc::temp_directory your_dir;
       chain_database_ptr my_blockchain = std::make_shared<chain_database>();
-      my_blockchain->open( my_dir.path(), "genesis2.json" );
+      my_blockchain->open( my_dir.path(), "genesis.json" );
       chain_database_ptr your_blockchain = std::make_shared<chain_database>();
-      your_blockchain->open( your_dir.path(), "genesis2.json" );
+      your_blockchain->open( your_dir.path(), "genesis.json" );
       std::string password = "123456789";
 
       wallet  my_wallet( my_blockchain );
