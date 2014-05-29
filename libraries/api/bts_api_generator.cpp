@@ -6,12 +6,14 @@
 #include <fc/variant_object.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/log/logger.hpp>
 
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <fstream>
 #include <list>
 #include <set>
+
 
 namespace bts { namespace api {
 
@@ -325,12 +327,19 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
 
 void api_generator::load_api_description(const fc::path& api_description_filename)
 {
-  FC_ASSERT(fc::exists(api_description_filename));
-  fc::variant_object api_description = fc::json::from_file(api_description_filename).get_object();
-  if (api_description.contains("type_map"))
-    load_type_map(api_description["type_map"].get_array());
-  FC_ASSERT(api_description.contains("methods"));
-  load_method_descriptions(api_description["methods"].get_array());
+   try {
+     FC_ASSERT(fc::exists(api_description_filename));
+     fc::variant_object api_description = fc::json::from_file(api_description_filename).get_object();
+     if (api_description.contains("type_map"))
+       load_type_map(api_description["type_map"].get_array());
+     FC_ASSERT(api_description.contains("methods"));
+     load_method_descriptions(api_description["methods"].get_array());
+   } 
+   catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e", e.to_detail_string() ) );
+      throw;
+   }
 }
 
 std::string api_generator::generate_signature_for_method(const method_description& method, const std::string& class_name, bool include_default_parameters)

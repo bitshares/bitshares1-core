@@ -41,11 +41,11 @@
         "default_example" : 300
       },
       {
-        "type_name" : "extended_address",
-        "cpp_parameter_type" : "const bts::blockchain::extended_address&",
-        "cpp_return_type" : "bts::blockchain::extended_address",
-        "cpp_include_file" : "bts/blockchain/extended_address.hpp",
-        "default_example" : "XTS2AeWFQ3QAbZQ5pvFyVBaQVkDL12B8oMJT6oWxdfxkXbMTFmtV6YMyZfgAMPTVkRLtcVDYSYJRpq293BkRUpVXPSYo8XR5a"
+        "type_name" : "public_key",
+        "cpp_parameter_type" : "const bts::blockchain::public_key_type&",
+        "cpp_return_type" : "bts::blockchain::public_key_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
       },
       {
         "type_name" : "account_name",
@@ -257,9 +257,9 @@
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
-        "method_name": "wallet_create_receive_account",
+        "method_name": "wallet_create_account",
         "description": "Add new account for receiving payments",
-        "return_type": "extended_address",
+        "return_type": "public_key",
         "parameters" : 
           [
             { 
@@ -272,7 +272,7 @@
         "prerequisites" : ["json_authenticated", "wallet_open"]
       },
       {
-        "method_name": "wallet_create_sending_account",
+        "method_name": "wallet_add_contact_account",
         "description": "Add new account for sending payments",
         "return_type": "void",
         "parameters" : 
@@ -285,7 +285,7 @@
             },
             { 
               "name" : "account_key", 
-              "type" : "extended_address", 
+              "type" : "public_key", 
               "description" : "the key associated with this sending account"
             }
           ],

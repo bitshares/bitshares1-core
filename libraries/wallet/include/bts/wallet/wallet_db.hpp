@@ -57,8 +57,10 @@ namespace bts { namespace wallet {
 
          owallet_account_record lookup_account( const address& address_of_public_key );
          owallet_account_record lookup_account( const string& account_name );
-         fc::optional<fc::ecc::private_key>  lookup_private_key( const address& address, 
-                                                                 const fc::sha512& password );
+
+         oprivate_key           lookup_private_key( const address& address, 
+                                                    const fc::sha512& password );
+
          owallet_balance_record lookup_balance( const balance_id_type& balance_id );
          owallet_key_record     lookup_key( const address& address )const;
 

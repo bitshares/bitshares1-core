@@ -69,8 +69,6 @@ namespace bts { namespace client {
         void wallet_lock() override;
         void wallet_unlock(const fc::microseconds& timeout, const string& passphrase) override;
         void wallet_change_passphrase(const string& passphrase) override;
-        bts::blockchain::extended_address wallet_create_receive_account(const string& account_name) override;
-        void wallet_create_sending_account(const string& account_name, const bts::blockchain::extended_address& account_key) override;
         bts::wallet::pretty_transaction wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const override;
         vector<signed_transaction> wallet_transfer(int64_t amount_to_transfer, 
                                                        const string& asset_symbol, 
