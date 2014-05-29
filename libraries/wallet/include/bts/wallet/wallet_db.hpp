@@ -11,8 +11,7 @@
 
 namespace bts { namespace wallet {
 
-   typedef std::vector<fc::ecc::private_key> private_keys;
-   using std::string;
+   typedef vector<fc::ecc::private_key> private_keys;
 
    namespace detail { class wallet_db_impl; }
 
@@ -61,7 +60,7 @@ namespace bts { namespace wallet {
          fc::optional<fc::ecc::private_key>  lookup_private_key( const address& address, 
                                                                  const fc::sha512& password );
          owallet_balance_record lookup_balance( const balance_id_type& balance_id );
-         owallet_key_record     lookup_key( const address& address );
+         owallet_key_record     lookup_key( const address& address )const;
 
          bool has_private_key( const address& a )const;
 
@@ -74,18 +73,18 @@ namespace bts { namespace wallet {
 
          fc::optional<wallet_master_key_record>                 wallet_master_key;
 
-         std::unordered_map<address,wallet_key_record>          keys;
-         std::unordered_map<address,address>                    btc_to_bts_address;
-         std::unordered_map<address,int32_t>                    address_to_account;
-         std::unordered_map<name_id_type,int32_t>               name_id_to_account;
-         std::map<string,int32_t>                          name_to_account;
+         unordered_map<address,wallet_key_record>                         keys;
+         unordered_map<address,address>                                   btc_to_bts_address;
+         unordered_map<address,int32_t>                                   address_to_account;
+         unordered_map<name_id_type,int32_t>                              name_id_to_account;
+         map<string,int32_t>                                              name_to_account;
 
-         std::unordered_map< int32_t,wallet_account_record >                   accounts;
-         std::unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
-         std::unordered_map< balance_id_type,wallet_balance_record >           balances;
-         std::map<string,wallet_name_record>                              names;
-         std::map<string,wallet_asset_record>                             assets;
-         std::map<property_enum, wallet_property_record>                       properties;
+         unordered_map< int32_t,wallet_account_record >                   accounts;
+         unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
+         unordered_map< balance_id_type,wallet_balance_record >           balances;
+         map<string,wallet_name_record>                                   registered_accounts;
+         map<string,wallet_asset_record>                                  assets;
+         map<property_enum, wallet_property_record>                       properties;
 
          void export_to_json( const fc::path& export_file_name ) const;
 
@@ -94,7 +93,7 @@ namespace bts { namespace wallet {
 
       private:
         void store_generic_record( int32_t index, const generic_wallet_record& r );
-        std::unique_ptr<detail::wallet_db_impl> my;
+        unique_ptr<detail::wallet_db_impl> my;
    };
 
 } } // bts::wallet

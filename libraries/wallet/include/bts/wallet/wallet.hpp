@@ -71,7 +71,7 @@ namespace bts { namespace wallet {
          /**
           *  @returns the priority fee paid denominated in the given asset symbol.
           */
-         asset   get_priority_fee( const string& symbol )const;
+         asset   get_priority_fee( const string& symbol = BTS_ADDRESS_PREFIX )const;
          ///@}
 
          /**
@@ -127,7 +127,7 @@ namespace bts { namespace wallet {
           *  If this wallet has any delegate keys, this method will return the time
           *  at which this wallet may produce a block.
           */
-         fc::time_point_sec next_block_production_time()const;
+         time_point_sec next_block_production_time()const;
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void               sign_block( signed_block_header& header )const;
@@ -140,8 +140,8 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         std::map<string,public_key_type> list_receive_accounts()const;
-         std::map<string,public_key_type> list_contact_accounts()const;
+         map<string,public_key_type> list_receive_accounts()const;
+         map<string,public_key_type> list_contact_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
@@ -160,11 +160,11 @@ namespace bts { namespace wallet {
           */
          ///@{
          vector<signed_transaction> transfer( share_type amount_to_transfer,
-                                                   const string& amount_to_transfer_symbol,
-                                                   const string& from_account_name,
-                                                   const string& to_account_name,
-                                                   const string& memo_message,
-                                                   bool sign );
+                                              const string& amount_to_transfer_symbol,
+                                              const string& from_account_name,
+                                              const string& to_account_name,
+                                              const string& memo_message,
+                                              bool sign );
 
          signed_transaction       create_asset( const string& symbol,
                                                 const string& asset_name,
@@ -188,7 +188,8 @@ namespace bts { namespace wallet {
           */
          signed_transaction register_account( const string& account_name,
                                               const variant& json_data,
-                                              bool  as_delegate = false,
+                                              bool  as_delegate, 
+                                              const string& pay_with_account_name,
                                               const bool sign = true );
 
          signed_transaction update_registered_account( const string& account_name,
@@ -222,7 +223,7 @@ namespace bts { namespace wallet {
          /*
          void                                         set_delegate_trust_status(const string& delegate_name, optional<int32_t> trust_level);
          delegate_trust_status                        get_delegate_trust_status(const string& delegate_name) const;
-         std::map<string, delegate_trust_status> list_delegate_trust_status() const;
+         map<string, delegate_trust_status> list_delegate_trust_status() const;
          */
 
          bool                                       is_sending_address( const address& addr )const;

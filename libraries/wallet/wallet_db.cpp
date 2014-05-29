@@ -126,7 +126,7 @@ namespace bts{ namespace wallet {
       accounts.clear();
       transactions.clear();
       balances.clear();
-      names.clear();
+      registered_accounts.clear();
       assets.clear();
       properties.clear();
    }
@@ -301,7 +301,7 @@ namespace bts{ namespace wallet {
       return itr->second;
    }
 
-   owallet_key_record     wallet_db::lookup_key( const address& address )
+   owallet_key_record     wallet_db::lookup_key( const address& address )const
    {
       auto btc_to_bts_itr = btc_to_bts_address.find(address);
       if( btc_to_bts_itr != btc_to_bts_address.end() )
