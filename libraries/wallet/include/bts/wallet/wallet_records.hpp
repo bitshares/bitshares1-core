@@ -130,7 +130,8 @@ namespace bts { namespace wallet {
        transaction_data( const signed_transaction& t ):trx(t),transmit_count(0){}
 
        signed_transaction       trx;
-       std::string              memo_string;
+       public_key_type          to_account;
+       std::string              memo_message;
        fc::time_point           received_time;
        /** the number of times this transaction has been transmitted */
        uint32_t                 transmit_count;
@@ -181,7 +182,7 @@ FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
-FC_REFLECT( bts::wallet::transaction_data, (trx)(memo_string)(received_time)(transmit_count) )
+FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(received_time)(transmit_count) )
 FC_REFLECT( bts::wallet::account, (name)(registered_name_id)(account_address) )
 
 

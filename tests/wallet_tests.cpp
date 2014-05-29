@@ -100,7 +100,39 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
 
       wlog( "adding your4..\n\n" );
       my_wallet.add_contact_account( "your4", your_account4 );
-      ilog( "balance: your4 ${b}", ("b",my_wallet.get_balance("XTS", "your4") ) );
+      BOOST_CHECK_THROW( my_wallet.get_balance("XTS", "your4"), fc::exception );
+
+      auto transfer_trxs = my_wallet.transfer( 5000000, "XTS", "my1", "your4", "testa", true );
+      ilog( "${trxs}", ("trxs", fc::json::to_pretty_string(transfer_trxs)) );
+      ilog( "size: ${size}", ("size", fc::raw::pack_size( transfer_trxs[0] )) );
+
+      for( auto trx : transfer_trxs )
+      {
+        my_blockchain->store_pending_transaction( trx );
+      }
+
+
+      auto next_block_time = my_wallet.next_block_production_time();
+      auto sleep_time = next_block_time - bts::blockchain::now(); //fc::time_point::now();
+      ilog( "waiting: ${t}s", ("t",sleep_time.count()/1000000) );
+      bts::blockchain::advance_time((uint32_t)(sleep_time.count() / 1000000));
+
+      full_block next_block = my_blockchain->generate_block( next_block_time );
+      my_wallet.sign_block( next_block );
+
+      my_blockchain->push_block( next_block );
+      your_blockchain->push_block( next_block );
+      your_wallet.scan_chain(1);
+      ilog( "your balance; ${b}", ("b", your_wallet.get_balance() ) );
+      your_wallet.close();
+      your_wallet.open("your_wallet");
+
+      ilog( "your balance; ${b}", ("b", your_wallet.get_balance() ) );
+      ilog( "your1: ${b}", ("b", your_wallet.get_balance("XTS","your1") ) );
+      ilog( "your2: ${b}", ("b", your_wallet.get_balance("XTS","your2") ) );
+      ilog( "your4: ${b}", ("b", your_wallet.get_balance("XTS","your4") ) );
+
+
 
       //my_wallet.scan_state();
 

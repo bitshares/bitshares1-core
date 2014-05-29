@@ -637,12 +637,12 @@ namespace bts { namespace wallet {
     *  secure.
     *
     */
-   vector<signed_transaction> wallet::transfer( share_type amount_to_transfer,
-                                                     const string& amount_to_transfer_symbol,
-                                                     const string& from_account_name,
-                                                     const string& to_account_name,
-                                                     const string& memo_message,
-                                                     bool sign )
+   vector<signed_transaction> wallet::transfer( share_type    amount_to_transfer,
+                                                const string& amount_to_transfer_symbol,
+                                                const string& from_account_name,
+                                                const string& to_account_name,
+                                                const string& memo_message,
+                                                bool          sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );

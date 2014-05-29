@@ -380,8 +380,20 @@ namespace bts{ namespace wallet {
    }
    void wallet_db::cache_balance( const bts::blockchain::balance_record& balance_to_cache )
    {
-      owallet_balance_record current_bal = lookup_balance(balance_to_cache.id());
-      if( !current_bal ) store_record( wallet_balance_record( balance_to_cache ) );
+      auto balance_id = balance_to_cache.id();
+      owallet_balance_record current_bal = lookup_balance(balance_id);
+      if( !current_bal.valid() )
+      {
+         wallet_balance_record new_rec( balance_to_cache, new_index() );
+         store_record( new_rec );
+         balances[balance_id] = new_rec;
+      }
+      else
+      {
+         *current_bal = balance_to_cache;
+         store_record( *current_bal );
+         balances[balance_id] = *current_bal;
+      }
    }
 
    void wallet_db::rename_account( const string& old_account_name, 
@@ -390,14 +402,34 @@ namespace bts{ namespace wallet {
        FC_ASSERT( !"Not Implemented" );
    }
 
-   void wallet_db::store_transaction( const transaction_data& trx_to_store )
-   {
-       FC_ASSERT( !"Not Implemented" );
-   }
+   void wallet_db::store_transaction( const signed_transaction& trx_to_store )
+   { try {
+      auto trx_id = trx_to_store.id();
+      auto itr = transactions.find( trx_id );
+      if( itr != transactions.end() ) return;
+
+      wallet_transaction_record data;
+      data.index = new_index();
+      data.trx = trx_to_store;
+      store_record( data );
+      transactions[trx_id] = data;
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
    void wallet_db::cache_transaction( const signed_transaction& trx,
                                       const string& memo_message,
                                       const public_key_type& to )
    { try {
+      auto trx_id = trx.id();
+      auto itr = transactions.find( trx_id );
+      if( itr != transactions.end() ) return;
+
+      wallet_transaction_record data;
+      data.index = new_index();
+      data.trx = trx;
+      data.to_account = to;
+      data.memo_message = memo_message;
+      store_record( data );
+      transactions[trx_id] = data;
        
        //transaction_data data
    } FC_RETHROW_EXCEPTIONS( warn, "", 

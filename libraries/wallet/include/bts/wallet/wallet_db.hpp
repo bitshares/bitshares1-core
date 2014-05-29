@@ -44,7 +44,7 @@ namespace bts { namespace wallet {
          fc::variant get_property( property_enum property_id );
 
          void store_key( const key_data& k );
-         void store_transaction( const transaction_data& t );
+         void store_transaction( const signed_transaction& t );
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
