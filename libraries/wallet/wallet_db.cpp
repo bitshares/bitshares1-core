@@ -189,7 +189,7 @@ namespace bts{ namespace wallet {
        my->_records.store( index, record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record",record) ) }
 
-   void        wallet_db::set_property( property_enum property_id, const fc::variant& v )
+   void        wallet_db::set_property( property_enum property_id, const variant& v )
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) property_itr->second.value = v;
@@ -203,11 +203,11 @@ namespace bts{ namespace wallet {
       }
    }
 
-   fc::variant wallet_db::get_property( property_enum property_id )
+   variant wallet_db::get_property( property_enum property_id )
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) return property_itr->second.value;
-      return fc::variant();
+      return variant();
    }
 
    void wallet_db::store_key( const key_data& key_to_store )
@@ -312,7 +312,7 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
-   void wallet_db::add_contact_account( const std::string& new_account_name, 
+   void wallet_db::add_contact_account( const string& new_account_name, 
                                         const public_key_type& new_account_key )
    {
       ilog( "${name}", ("name", new_account_name)  );
@@ -366,7 +366,7 @@ namespace bts{ namespace wallet {
       return owallet_account_record();
    }
 
-   owallet_account_record wallet_db::lookup_account( const std::string& account_name )
+   owallet_account_record wallet_db::lookup_account( const string& account_name )
    {
       auto name_index_itr = name_to_account.find( account_name );
       if( name_index_itr != name_to_account.end() )
@@ -384,8 +384,8 @@ namespace bts{ namespace wallet {
       if( !current_bal ) store_record( wallet_balance_record( balance_to_cache ) );
    }
 
-   void wallet_db::rename_account( const std::string& old_account_name, 
-                                   const std::string& new_account_name )
+   void wallet_db::rename_account( const string& old_account_name, 
+                                   const string& new_account_name )
    {
        FC_ASSERT( !"Not Implemented" );
    }
@@ -394,5 +394,15 @@ namespace bts{ namespace wallet {
    {
        FC_ASSERT( !"Not Implemented" );
    }
+   void wallet_db::cache_transaction( const signed_transaction& trx,
+                                      const string& memo_message,
+                                      const public_key_type& to )
+   { try {
+       
+       //transaction_data data
+   } FC_RETHROW_EXCEPTIONS( warn, "", 
+            ("trx",trx)
+            ("memo_message",memo_message)
+            ("to",to) ) }
 
 } } // bts::wallet

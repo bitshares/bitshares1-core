@@ -158,8 +158,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map< balance_id_type, balance_record >               _balance_db;
             bts::db::level_map< name_id_type, name_record >                     _name_db;
 
-            bts::db::level_map< std::string, name_id_type >                     _name_index_db;
-            bts::db::level_map< std::string, asset_id_type >                    _symbol_index_db;
+            bts::db::level_map< string, name_id_type >                     _name_index_db;
+            bts::db::level_map< string, asset_id_type >                    _symbol_index_db;
             bts::db::level_pod_map< vote_del, int >                             _delegate_vote_index_db;
 
 
@@ -843,7 +843,7 @@ namespace bts { namespace blockchain {
       return  sorted_delegates[delegate_pos];
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec",sec) ) }
 
-   fc::ecc::public_key chain_database::get_signing_delegate_key( fc::time_point_sec sec )const
+   public_key_type chain_database::get_signing_delegate_key( fc::time_point_sec sec )const
    { try {
       auto delegate_record = get_name_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
@@ -962,7 +962,19 @@ namespace bts { namespace blockchain {
       return my->_name_db.fetch_optional( name_id );
    }
 
-   oasset_record        chain_database::get_asset_record( const std::string& symbol )const
+   asset_id_type        chain_database::get_asset_id( const string& symbol )const
+   { try {
+      auto arec = get_asset_record( symbol );
+      FC_ASSERT( arec.valid() );
+      return arec->id;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
+
+   bool                 chain_database::is_valid_symbol( const string& symbol )const
+   {
+      return get_asset_record(symbol).valid();
+   }
+   
+   oasset_record        chain_database::get_asset_record( const string& symbol )const
    { try {
        auto symbol_id_itr = my->_symbol_index_db.find( symbol );
        if( symbol_id_itr.valid() )
@@ -974,7 +986,7 @@ namespace bts { namespace blockchain {
        return oasset_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
 
-   oname_record         chain_database::get_name_record( const std::string& name )const
+   oname_record         chain_database::get_name_record( const string& name )const
    { try {
        auto name_id_itr = my->_name_index_db.find( name );
        if( name_id_itr.valid() )
@@ -1056,7 +1068,7 @@ namespace bts { namespace blockchain {
       return block_data.user_transactions[ trx_loc->trx_num ];
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_id",trx_id) ) }
 
-   void    chain_database::scan_assets( const std::function<void( const asset_record& )>& callback )
+   void    chain_database::scan_assets( function<void( const asset_record& )> callback )
    {
         auto asset_itr = my->_asset_db.begin();
         while( asset_itr.valid() )
@@ -1066,7 +1078,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void    chain_database::scan_balances( const std::function<void( const balance_record& )>& callback )
+   void    chain_database::scan_balances( function<void( const balance_record& )> callback )
    {
         auto balances = my->_balance_db.begin();
         while( balances.valid() )
@@ -1075,7 +1087,7 @@ namespace bts { namespace blockchain {
            ++balances;
         }
    }
-   void    chain_database::scan_names( const std::function<void( const name_record& )>& callback )
+   void    chain_database::scan_names( function<void( const name_record& )> callback )
    {
         auto name_itr = my->_name_db.begin();
         while( name_itr.valid() )
@@ -1295,7 +1307,7 @@ namespace bts { namespace blockchain {
     {
        return my->_head_block_id;
     }
-    std::vector<name_record> chain_database::get_names( const std::string& first, uint32_t count )const
+    std::vector<name_record> chain_database::get_names( const string& first, uint32_t count )const
     { try {
        auto itr = my->_name_index_db.lower_bound(first);
        std::vector<name_record> names;
@@ -1308,7 +1320,7 @@ namespace bts { namespace blockchain {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
 
 
-    std::vector<asset_record> chain_database::get_assets( const std::string& first_symbol, uint32_t count )const
+    std::vector<asset_record> chain_database::get_assets( const string& first_symbol, uint32_t count )const
     { try {
        auto itr = my->_symbol_index_db.lower_bound(first_symbol);
        std::vector<asset_record> assets;
@@ -1332,10 +1344,10 @@ namespace bts { namespace blockchain {
              ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
              for( auto next : fork_data.next_blocks )
              {
-                out << '"' << std::string ( fork_itr.key() ).substr(0,5) <<"\" "
+                out << '"' << string ( fork_itr.key() ).substr(0,5) <<"\" "
                     << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
                     << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
-                out << '"' << std::string ( next ).substr(0,5) <<"\" -> \"" << std::string( fork_itr.key() ).substr(0,5) << "\";\n";
+                out << '"' << string ( next ).substr(0,5) <<"\" -> \"" << string( fork_itr.key() ).substr(0,5) << "\";\n";
             }
              ++fork_itr;
           }
@@ -1471,7 +1483,7 @@ namespace bts { namespace blockchain {
       else
          my->_collateral_db.store( key, collateral );
    }
-   std::string  chain_database::get_asset_symbol( asset_id_type asset_id )const
+   string  chain_database::get_asset_symbol( asset_id_type asset_id )const
    { try {
       auto asset_rec = get_asset_record( asset_id );
       FC_ASSERT( asset_rec.valid(), "Unknown Asset ID: ${id}", ("asset_id",asset_id) );

@@ -4,6 +4,13 @@
 #include <bts/blockchain/address.hpp>
 #include <fc/io/varint.hpp>
 
+namespace fc { 
+   class path; 
+   class microseconds;
+   class time_point;
+   class time_point_sec;
+}
+
 namespace bts { namespace blockchain {
 
    typedef fc::ripemd160                    block_id_type;
@@ -24,6 +31,25 @@ namespace bts { namespace blockchain {
    typedef uint32_t                         tapos_type; 
    typedef int64_t                          share_type;
    typedef int64_t                          bip_type;
+
+   using std::string;
+   using std::function;
+   using fc::variant;
+   using fc::optional;
+   using std::map;
+   using std::unordered_map;
+   using std::unordered_set;
+   using std::vector;
+   using fc::path;
+   using fc::sha512;
+   using fc::sha256;
+   using std::unique_ptr;
+   using std::shared_ptr;
+   using fc::time_point_sec;
+   using fc::time_point;
+   using fc::microseconds;
+
+   typedef const string& cr_string;
 
    struct proposal_vote_id_type
    {
