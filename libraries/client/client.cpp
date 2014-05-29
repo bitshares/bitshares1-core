@@ -386,24 +386,23 @@ namespace bts { namespace client {
       get_wallet()->change_passphrase(new_password);
     }
 
-    bts::blockchain::extended_address client::wallet_create_receive_account(const string& account_name)
-    {
-      FC_ASSERT(false, "Not implemented");
-    }
 
-    void client::wallet_create_sending_account(const string& account_name, const bts::blockchain::extended_address& account_key)
-    {
-      FC_ASSERT(false, "Not implemented");
-    }
+    vector<signed_transaction> client::wallet_transfer(int64_t amount_to_transfer, 
+                                                       const string& asset_symbol, 
+                                                       const string& from_account_name, 
+                                                       const string& to_account_name, 
+                                                       const string& memo_message)
+    { try {
+         auto trxs = get_wallet()->transfer( amount_to_transfer, asset_symbol, 
+                                             from_account_name, to_account_name, 
+                                             memo_message, true );
+         for( auto trx : trxs )
+         {
+            broadcast_transaction( trx );
+         }
 
-    vector<bts::blockchain::signed_transaction> client::wallet_transfer(int64_t amount_to_transfer, 
-                                                                             const string& asset_symbol, 
-                                                                             const string& from_account_name, 
-                                                                             const string& to_account_name, 
-                                                                             const string& memo_message)
-    {
-      FC_ASSERT(false, "Not implemented");
-    }
+         return trxs;
+    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
 
