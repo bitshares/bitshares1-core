@@ -8,6 +8,8 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
 
+#include <functional>
+
 namespace fc { 
    class path; 
    class microseconds;

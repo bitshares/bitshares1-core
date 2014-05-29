@@ -8,6 +8,8 @@
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace wallet {
 
    namespace detail {
