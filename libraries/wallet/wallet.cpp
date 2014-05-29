@@ -529,7 +529,8 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
-   void  wallet::scan_chain( uint32_t start, uint32_t end  )
+   void  wallet::scan_chain( uint32_t start, uint32_t end, 
+                             scan_progress_callback progress_callback )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -542,6 +543,8 @@ namespace bts { namespace wallet {
       for( auto block_num = start; block_num <= min_end; ++block_num )
       {
          my->scan_block( block_num, account_priv_keys );
+         if( progress_callback )
+            progress_callback( block_num, min_end );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
