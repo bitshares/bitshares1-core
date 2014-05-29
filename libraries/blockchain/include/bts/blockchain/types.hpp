@@ -52,8 +52,17 @@ namespace bts { namespace blockchain {
    using fc::time_point;
    using fc::microseconds;
 
+//   typedef fc::ecc::public_key_data public_key_type;
+
    struct public_key_type 
    {
+       struct binary_key
+       {
+          binary_key():check(0){}
+          uint32_t                 check;
+          fc::ecc::public_key_data data;
+       };
+
        fc::ecc::public_key_data key_data;
 
        public_key_type():key_data(){};
@@ -66,13 +75,13 @@ namespace bts { namespace blockchain {
 
        public_key_type( const std::string& base58str )
        {
-            FC_ASSERT( base58str.size() > strlen(BTS_ADDRESS_PREFIX) );
-            FC_ASSERT( base58str.substr( 0, strlen(BTS_ADDRESS_PREFIX) ) == BTS_ADDRESS_PREFIX );
-            std::vector<char> bin_dat = fc::from_base58( base58str.substr( strlen(BTS_ADDRESS_PREFIX ) ) );
-            FC_ASSERT( bin_dat.size() == 37 );
-            auto checksum = fc::ripemd160::hash( bin_dat.data(), bin_dat.size() - 4 );
-            FC_ASSERT( 0 == memcmp( bin_dat.data()+33, (char*)checksum._hash, 4), "public_key_type checksum fail");
-            memcpy( (char*)&key_data, (char*)&bin_dat, 33 ); 
+          static const size_t prefix_len = strlen(BTS_ADDRESS_PREFIX);
+          FC_ASSERT( base58str.size() > prefix_len );
+          FC_ASSERT( base58str.substr( 0, prefix_len ) == BTS_ADDRESS_PREFIX );
+          auto bin = fc::from_base58( base58str.substr( prefix_len ) );
+          auto bin_key = fc::raw::unpack<binary_key>(bin);
+          key_data = bin_key.data;
+          FC_ASSERT( fc::ripemd160::hash( key_data.data, key_data.size() )._hash[0] == bin_key.check );
        };
 
        operator fc::ecc::public_key_data() const
@@ -86,12 +95,11 @@ namespace bts { namespace blockchain {
 
        operator std::string() const
        {
-          FC_ASSERT(37 == key_data.size() + 4);
-          fc::array<char, 37> bin_data;
-          memcpy( (char*)&bin_data, (char*)&key_data, sizeof(key_data) );
-          auto checksum = fc::ripemd160::hash( (char*)&key_data, sizeof(key_data) );
-          memcpy( (char*)&bin_data + 33, (char*)checksum._hash, 4);
-          return BTS_ADDRESS_PREFIX + fc::to_base58( bin_data.data, sizeof(bin_data) );
+          binary_key k;
+          k.data = key_data;
+          k.check = fc::ripemd160::hash( k.data.data, k.data.size() )._hash[0];
+          auto data = fc::raw::pack( k );
+          return BTS_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
        }
        inline friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2)
        {
@@ -107,6 +115,7 @@ namespace bts { namespace blockchain {
           return p1.key_data != p2.key_data;
        }
    };
+
 
    struct proposal_vote_id_type
    {
@@ -149,3 +158,4 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
+FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) )

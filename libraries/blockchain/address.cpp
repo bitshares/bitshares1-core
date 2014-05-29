@@ -8,6 +8,7 @@
 
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
+#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 

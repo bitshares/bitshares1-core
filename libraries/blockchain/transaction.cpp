@@ -266,7 +266,7 @@ namespace bts { namespace blockchain {
           case fire_delegate_operation::invalid_testimony:
           {
              auto testimony = fc::raw::unpack<signed_delegate_testimony>( op.data );
-             FC_ASSERT( testimony.signee() == delegate_record->active_address() );
+             FC_ASSERT( address(testimony.signee()) == delegate_record->active_address() );
              auto trx_loc = _current_state->get_transaction_location( testimony.transaction_id );
 
              if( testimony.valid || !!trx_loc  )
@@ -536,7 +536,7 @@ namespace bts { namespace blockchain {
       if( cur_record->is_retracted() ) fail( BTS_NAME_RETRACTED, fc::variant(op) );
 
       if( !!op.active_key && *op.active_key != cur_record->active_key )
-         add_required_signature( cur_record->owner_key );
+         add_required_signature( address(cur_record->owner_key) );
       else
          add_required_signature( cur_record->active_address() );
 
