@@ -2,7 +2,8 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
-#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_client_api.hpp>
+#include <bts/api/common_api.hpp>
 
 namespace bts { namespace client {
 
@@ -18,7 +19,8 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client //TODO : public api::core_api
+    class client : public bts::rpc::rpc_client_api,
+                   public bts::api::common_api
     {
        public:
          enum generate_transaction_flag
@@ -53,20 +55,25 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
          //TODO? fc::variant get_info()
-         block_id_type          blockchain_get_blockhash(int32_t block_number) const ;
-         uint32_t               blockchain_get_blockcount() const ;
-         void                   wallet_open_file(const fc::path wallet_filename );
-         void                   wallet_open(const std::string& wallet_name );
-         void                   wallet_create(const std::string& wallet_name, const std::string& password) ;
-         std::string            wallet_get_name() const ;
-         void                   wallet_close() ;
-         void                   wallet_export_to_json(const fc::path& path) const ;
-         void                   wallet_create_from_json(const fc::path& path, 
-                                                        const std::string& name );
-         void                   wallet_lock();
-         void                   wallet_unlock( const fc::microseconds& timeout, 
-                                               const std::string& password) ;
-         void                   wallet_change_passphrase( const std::string& new_password ) ;
+
+        void network_add_node(const fc::ip::endpoint& node, const std::string& command) override;
+        bts::blockchain::block_id_type blockchain_get_blockhash(uint32_t block_number) const override;
+        uint32_t blockchain_get_blockcount() const override;
+        void wallet_open_file(const fc::path& wallet_file) override;
+        void wallet_open(const std::string& wallet_name) override;
+        void wallet_create(const std::string& wallet_name, const std::string& passphrase) override;
+        fc::optional<std::string> wallet_get_name() const override;
+        void wallet_close() override;
+        void wallet_export_to_json(const fc::path& json_filename) const override;
+        void wallet_create_from_json(const fc::path& json_filename, const std::string& wallet_name) override;
+        void wallet_lock() override;
+        void wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase) override;
+        void wallet_change_passphrase(const std::string& passphrase) override;
+        bts::blockchain::extended_address wallet_create_receive_account(const std::string& account_name) override;
+        void wallet_create_sending_account(const std::string& account_name, const bts::blockchain::extended_address& account_key) override;
+        bts::wallet::pretty_transaction wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const override;
+        std::vector<bts::blockchain::signed_transaction> wallet_transfer(int64_t amount_to_transfer, const std::string& to_account_name, const std::string& asset_symbol = fc::variant("XTS").as<std::string>(), const std::string& from_account_name = fc::variant("*").as<std::string>(), const std::string& memo_message = fc::variant("").as<std::string>()) override;
+
 
          public_key_type        wallet_create_account( const std::string& account_name);
          void                   wallet_add_contact_account( const std::string& account_name, 
@@ -87,24 +94,24 @@ namespace bts { namespace client {
                                                   const fc::variant& data,
                                                   const std::string& issuer_name,
                                                   share_type maximum_share_supply,
-                                                  generate_transaction_flag flag = sign_and_broadcast) ;
+                                                  rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
 
          signed_transaction  wallet_asset_issue( share_type amount,
                                                  const std::string& symbol,
                                                  const std::string& to_account_name,
-                                                 generate_transaction_flag flag = sign_and_broadcast) ;
+                                                 rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
          /**
           *  Reserve a name and broadcast it to the network.
           */
          signed_transaction  wallet_register_account( const std::string& account_name, 
                                                       const fc::variant& json_data = fc::variant(),
                                                       bool as_delegate = false,
-                                                      generate_transaction_flag flag = sign_and_broadcast );
+                                                      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast );
 
          signed_transaction wallet_update_registered_account( const std::string& registered_account_name,
                                                               const fc::variant& json_data = fc::variant(),
                                                               bool as_delegate = false,
-                                                              generate_transaction_flag flag = sign_and_broadcast); 
+                                                              rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast); 
 
 
 
@@ -116,64 +123,63 @@ namespace bts { namespace client {
                                                      const std::string& body,
                                                      const std::string& proposal_type,
                                                      const fc::variant& json_data,
-                                                     generate_transaction_flag flag = sign_and_broadcast) ;
+                                                     rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
          signed_transaction wallet_vote_proposal( const std::string& name,
                                                    proposal_id_type proposal_id,
                                                    uint8_t vote,
-                                                   generate_transaction_flag flag = sign_and_broadcast) ;
+                                                   rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
 
 
          std::map<std::string, public_key_type> wallet_list_contact_accounts() const;
-         std::map<std::string, public_key_type> wallet_list_receive_accounts() const;
+         std::map<std::string, public_key_type> wallet_list_receive_accounts() const override;
 
-                        std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const ;
-                                            void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) ;
+                        std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const  override;
+                                            void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name)  override;
 
-                  wallet_account_record wallet_get_account(const std::string& account_name) const ;
+                  wallet_account_record wallet_get_account(const std::string& account_name) const  override;
                  balances               wallet_get_balance( const std::string& asset_symbol = BTS_ADDRESS_PREFIX, 
-                                                            const std::string& account_name = "*" ) const ;
-         std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const ;
-         std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const ;
-                           oname_record blockchain_get_name_record(const std::string& name) const ;
-                           oname_record blockchain_get_name_record_by_id(name_id_type name_id) const ;
-                          oasset_record blockchain_get_asset_record(const std::string& symbol) const ;
-                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const ;
+                                                            const std::string& account_name = "*" ) const  override;
+         std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const  override;
+         std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const  override;
+                           oname_record blockchain_get_name_record(const std::string& name) const  override;
+                           oname_record blockchain_get_name_record_by_id(name_id_type name_id) const  override;
+                          oasset_record blockchain_get_asset_record(const std::string& symbol) const  override;
+                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
 
 
-         void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) ;
-         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const ;
-        // std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const ;
+         void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level)  override;
+         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const  override;
+        // std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const  override;
 
-                        osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const ;
-                                 full_block blockchain_get_block(const block_id_type& block_id) const ;
-                                 full_block blockchain_get_block_by_number(uint32_t block_number) const ;
+                        osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const  override;
+                                 full_block blockchain_get_block(const block_id_type& block_id) const  override;
+                                 full_block blockchain_get_block_by_number(uint32_t block_number) const  override;
 
-                       void wallet_rescan_blockchain(uint32_t starting_block_number = 0) ;
-                       void wallet_rescan_blockchain_state() ;
+                       void wallet_rescan_blockchain(uint32_t starting_block_number = 0)  override;
+                       void wallet_rescan_blockchain_state()  override;
 
                        void wallet_import_bitcoin(const fc::path& filename, 
                                                   const std::string& passphrase, 
-                                                  const std::string& account_name ) ;
+                                                  const std::string& account_name )  override;
 
                        void wallet_import_private_key(const std::string& wif_key_to_import, 
                                                       const std::string& account_name,
-                                                      bool wallet_rescan_blockchain = false) ;
+                                                      bool wallet_rescan_blockchain = false)  override;
 
-     std::vector<name_record> blockchain_get_names(const std::string& first, uint32_t count) const ;
-    std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const ;
-     std::vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const ;
+     std::vector<name_record> blockchain_get_names(const std::string& first, uint32_t count) const  override;
+    std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const  override;
+     std::vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
 
-                         void stop() ;
+                         void stop()  override;
 
-                  uint32_t network_get_connection_count() const ;
-              fc::variants network_get_peer_info() const ;
-                      void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers) ;
-                      void network_set_advanced_node_parameters(const fc::variant_object& params) ;
-                      fc::variant_object network_get_advanced_node_parameters() ;
-                      void network_add_node(const fc::ip::endpoint& node, const std::string& command) ;
+                  uint32_t network_get_connection_count() const  override;
+              fc::variants network_get_peer_info() const  override;
+                      void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)  override;
+                      void network_set_advanced_node_parameters(const fc::variant_object& params)  override;
+                      fc::variant_object network_get_advanced_node_parameters()  override;
 
-         bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id) ;
-         bts::net::message_propagation_data network_get_block_propagation_data(const block_id_type& block_id) ;
+         bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id)  override;
+         bts::net::message_propagation_data network_get_block_propagation_data(const block_id_type& block_id)  override;
 
          fc::path                            get_data_dir() const;
 

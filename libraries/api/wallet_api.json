@@ -1,0 +1,347 @@
+{
+  "category": "Wallet Methods",
+  "type_map":
+    [
+      {
+        "type_name" : "filename",
+        "cpp_parameter_type" : "const fc::path&",
+        "cpp_return_type" : "fc::path",
+        "cpp_include_file" : "fc/filesystem.hpp",
+        "default_example" : "some_filename.txt"
+      },
+      {
+        "type_name" : "passphrase",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "my_password",
+        "obscure_in_log_files": true
+      },
+      {
+        "type_name" : "wallet_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Alice"
+      },
+      {
+        "type_name" : "optional_wallet_name",
+        "cpp_parameter_type" : "const fc::optional<std::string>&",
+        "cpp_return_type" : "fc::optional<std::string>",
+        "cpp_include_file" : "fc/optional.hpp",
+        "default_example" : "Alice"
+      },
+      {
+        "type_name" : "time_interval_in_seconds",
+        "cpp_parameter_type" : "const fc::microseconds&",
+        "cpp_return_type" : "fc::microseconds",
+        "cpp_include_file" : "fc/time.hpp",
+        "to_variant_function" : "bts::api::time_interval_in_seconds_to_variant",
+        "from_variant_function" : "bts::api::variant_to_time_interval_in_seconds",
+        "default_example" : 300
+      },
+      {
+        "type_name" : "extended_address",
+        "cpp_parameter_type" : "const bts::blockchain::extended_address&",
+        "cpp_return_type" : "bts::blockchain::extended_address",
+        "cpp_include_file" : "bts/blockchain/extended_address.hpp",
+        "default_example" : "XTS2AeWFQ3QAbZQ5pvFyVBaQVkDL12B8oMJT6oWxdfxkXbMTFmtV6YMyZfgAMPTVkRLtcVDYSYJRpq293BkRUpVXPSYo8XR5a"
+      },
+      {
+        "type_name" : "account_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Bob"
+      },
+      {
+        "type_name" : "signed_transaction",
+        "cpp_parameter_type" : "const bts::blockchain::signed_transaction&",
+        "cpp_return_type" : "bts::blockchain::signed_transaction",
+        "cpp_include_file" : "bts/blockchain/transaction.hpp",
+        "default_example" : "TODO"        
+      },
+      {
+        "type_name" : "signed_transaction_list",
+        "container_type" : "sequence",
+        "contained_type" : "signed_transaction",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "pretty_transaction",
+        "cpp_parameter_type" : "const bts::wallet::pretty_transaction&",
+        "cpp_return_type" : "bts::wallet::pretty_transaction",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "amount",
+        "cpp_parameter_type" : "int64_t",
+        "cpp_return_type" : "int64_t",
+        "cpp_include_file" : "stdint.h",
+        "default_example" : 10000
+      },
+      {
+        "type_name" : "receive_account_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Bob"
+      },
+      {
+        "type_name" : "sending_account_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Alice"
+      },
+      {
+        "type_name" : "asset_symbol",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "XTS"
+      },
+      {
+        "type_name" : "invoice_summary",
+        "cpp_parameter_type" : "const bts::wallet::invoice_summary&",
+        "cpp_return_type" : "bts::wallet::invoice_summary",
+        "cpp_include_file" : "bts/wallet/wallet.hpp",
+        "default_example" : "TODO"
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "wallet_open_file",
+        "description": "Opens the wallet at the given path",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wallet_file", 
+              "type" : "filename", 
+              "description" : "the full path and filename of the wallet to open",
+              "example" : "/path/to/wallet.dat"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_open",
+        "description": "Opens the wallet of the given name",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wallet_name", 
+              "type" : "wallet_name", 
+              "description" : "the name of the wallet to open"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["open"]
+      },
+      {
+        "method_name": "wallet_create",
+        "description": "Creates a wallet with the given name",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wallet_name", 
+              "type" : "wallet_name", 
+              "description" : "name of the wallet to create"
+            },
+            { 
+              "name" : "passphrase", 
+              "type" : "passphrase", 
+              "description" : "the passphrase for encrypting the wallet"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_get_name",
+        "description": "Returns the wallet name passed to wallet_open",
+        "return_type": "optional_wallet_name",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "wallet_close",
+        "description": "Closes the curent wallet if one is open",
+        "return_type": "void",
+        "parameters" : [],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["close"]
+      },
+      {
+        "method_name": "wallet_export_to_json",
+        "description": "Exports the current wallet to a JSON file",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "json_filename", 
+              "type" : "filename", 
+              "description" : "the full path and filename of JSON file to generate",
+              "example" : "/path/to/exported_wallet.json"
+            }
+          ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated", "wallet_open"]
+      },
+      {
+        "method_name": "wallet_create_from_json",
+        "description": "Creates a new wallet from an exported JSON file",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "json_filename", 
+              "type" : "filename", 
+              "description" : "the full path and filename of JSON wallet to import",
+              "example" : "/path/to/exported_wallet.json"
+            },
+            { 
+              "name" : "wallet_name", 
+              "type" : "wallet_name", 
+              "description" : "name of the wallet to create"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_lock",
+        "description": "Lock the private keys in wallet, disables spending commands until unlocked",
+        "return_type": "void",
+        "parameters" : [],
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : ["bitcoin_walletlock", "walletlock", "lock"]
+      },
+      {
+        "method_name": "wallet_unlock",
+        "description": "Unlock the private keys in the wallet to enable spending operations",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "timeout", 
+              "type" : "time_interval_in_seconds", 
+              "description" : "the number of seconds to keep the wallet unlocked"
+            },
+            { 
+              "name" : "passphrase", 
+              "type" : "passphrase", 
+              "description" : "the passphrase for encrypting the wallet"
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : ["unlock"]
+      },
+      {
+        "method_name": "wallet_change_passphrase",
+        "description": "Change the password of the current wallet",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "passphrase", 
+              "type" : "passphrase", 
+              "description" : "the passphrase for encrypting the wallet"
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+        "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
+      },
+      {
+        "method_name": "wallet_create_receive_account",
+        "description": "Add new account for receiving payments",
+        "return_type": "extended_address",
+        "parameters" : 
+          [
+            { 
+              "name" : "account_name", 
+              "type" : "account_name", 
+              "description" : "the name you will use to refer to this receive account",
+              "enable_autocomplete" : false
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open"]
+      },
+      {
+        "method_name": "wallet_create_sending_account",
+        "description": "Add new account for sending payments",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "account_name", 
+              "type" : "account_name", 
+              "description" : "the name you will use to refer to this sending account",
+              "enable_autocomplete" : false
+            },
+            { 
+              "name" : "account_key", 
+              "type" : "extended_address", 
+              "description" : "the key associated with this sending account"
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open"]
+      },
+      {
+        "method_name": "wallet_get_pretty_transaction",
+        "description": "Return a pretty JSON representation of a transaction",
+        "return_type": "pretty_transaction",
+        "parameters" : 
+          [
+            { 
+              "name" : "transaction", 
+              "type" : "signed_transaction", 
+              "description" : "the transaction to pretty-print"
+            }
+          ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_transfer",
+        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "return_type": "signed_transaction_list",
+        "parameters" : 
+          [
+            {
+              "name" : "amount_to_transfer", 
+              "type" : "amount", 
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "to_account_name", 
+              "type" : "receive_account_name", 
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "asset_symbol", 
+              "type" : "asset_symbol", 
+              "description" : "the asset to transfer",
+              "default_value" : "XTS"
+            },
+            {
+              "name" : "from_account_name", 
+              "type" : "sending_account_name", 
+              "description" : "the source account(s) to draw the shares from",
+              "default_value" : "*"
+            },
+            {
+              "name" : "memo_message", 
+              "type" : "std::string", 
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network"]
+      }
+    ]
+}
