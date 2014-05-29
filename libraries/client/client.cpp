@@ -440,13 +440,14 @@ namespace bts { namespace client {
     }
 
     signed_transaction client::wallet_register_account( const std::string& account_name,
+                                                        const std::string& pay_with_account,
                                                         const fc::variant& data,
                                                         bool as_delegate,
                                                         rpc_client_api::generate_transaction_flag flag)
     {
       try {
         bool sign = (flag != do_not_sign);
-        auto trx = get_wallet()->register_account(account_name, data, sign);
+        auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, sign);
         if( flag == sign_and_broadcast )
         {
             broadcast_transaction(trx);

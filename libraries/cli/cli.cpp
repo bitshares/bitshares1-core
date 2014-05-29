@@ -773,7 +773,7 @@ namespace bts { namespace cli {
         {
           try
           {
-            const rpc_server::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
+            const bts::api::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
             if (method_data.name == "help")
             {
                 return rl_completion_matches(text, &json_command_completion_generator_function);
