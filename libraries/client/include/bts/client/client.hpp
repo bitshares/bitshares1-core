@@ -50,10 +50,12 @@ namespace bts { namespace client {
          //TODO? fc::variant get_info()
          block_id_type          blockchain_get_blockhash(uint32_t block_number) const override;
          uint32_t               blockchain_get_blockcount() const override;
+         pretty_transaction wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const override;
+
          void                   wallet_open_file(const fc::path& wallet_filename, const std::string& password) override;
          void                   wallet_open(const std::string& wallet_name, const std::string& password) override;
          void                   wallet_create(const std::string& wallet_name, const std::string& password) override;
-         std::string            wallet_get_name() const override;
+         fc::optional<std::string> wallet_get_name() const override;
          void                   wallet_close() override;
          void                   wallet_export_to_json(const fc::path& path) const override;
          void                   wallet_create_from_json(const fc::path& path, 
@@ -66,12 +68,13 @@ namespace bts { namespace client {
          extended_address       wallet_create_receive_account(const std::string& account_name) override;
          void                   wallet_create_sending_account(const std::string& account_name, 
                                                              const extended_address& account_pub_key) override;
-         invoice_summary        wallet_transfer( int64_t amount,
-                                                 const std::string& to_account_name,
-                                                 const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
-                                                 const std::string& from_account_name = std::string("*"),
-                                                 const std::string& invoice_memo = std::string(),
-                                                 generate_transaction_flag flag = sign_and_broadcast) override;
+
+         bts::wallet::invoice_summary wallet_transfer(int64_t amount, 
+                                                      const std::string& to_account_name, 
+                                                      const std::string& asset_symbol = fc::variant("XTS").as<std::string>(), 
+                                                      const std::string& from_account = fc::variant("*").as<std::string>(), 
+                                                      const std::string& invoice_memo = fc::variant("").as<std::string>()) override;
+
          signed_transaction         wallet_asset_create(const std::string& symbol,
                                                         const std::string& asset_name,
                                                         const std::string& description,

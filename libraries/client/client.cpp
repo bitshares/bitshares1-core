@@ -351,9 +351,9 @@ namespace bts { namespace client {
       get_wallet()->create(wallet_name,password);
     }
 
-    std::string client::wallet_get_name() const
+    fc::optional<std::string> client::wallet_get_name() const
     {
-      return get_wallet()->get_name();
+      return get_wallet()->is_open() ? get_wallet()->get_name() : fc::optional<std::string>();
     }
 
     void client::wallet_close()
@@ -398,21 +398,24 @@ namespace bts { namespace client {
       return get_wallet()->create_sending_account(account_name, account_public_key);
     }
 
-    //TODO Skipping _RPC calls for now, classify and implement later
+    bts::wallet::pretty_transaction client::wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const
+    {
+      return get_wallet()->to_pretty_trx(wallet_transaction_record(-1, transaction));
+    }
 
-    invoice_summary client::wallet_transfer(int64_t amount, 
-                                            const std::string& to_account_name,
-                                            const std::string& asset_symbol,
-                                            const std::string& from_account_name,
-                                            const std::string& invoice_memo,
-                                            generate_transaction_flag flag)
+    //TODO Skipping _RPC calls for now, classify and implement later
+    bts::wallet::invoice_summary client::wallet_transfer(int64_t amount, 
+                                                         const std::string& to_account_name, 
+                                                         const std::string& asset_symbol /* = fc::variant("XTS").as<std::string>() */, 
+                                                         const std::string& from_account /* = fc::variant("*").as<std::string>() */, 
+                                                         const std::string& invoice_memo /* = fc::variant("").as<std::string>() */)
     {
       auto asset_rec = get_chain()->get_asset_record(asset_symbol);
       FC_ASSERT(asset_rec.valid(), "Asset symbol'${symbol}' is unknown.", ("symbol", asset_symbol));
-      bool sign = (flag != do_not_sign);
+      bool sign = (sign_and_broadcast != do_not_sign);
       bts::wallet::invoice_summary summary = 
-           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account_name, invoice_memo, sign);
-      if (flag == sign_and_broadcast)
+           get_wallet()->transfer(to_account_name, asset(amount, asset_rec->id), from_account, invoice_memo, sign);
+      if (sign_and_broadcast == sign_and_broadcast)
       {
          for (auto trx : summary.payments)
             broadcast_transaction(trx.second);

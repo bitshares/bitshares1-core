@@ -38,24 +38,7 @@ namespace bts { namespace rpc {
          //TODO? help()
          //TODO? fc::variant get_info()
          fc::variant_object get_info();
-                                   void wallet_open(const std::string& wallet_name, const std::string& password) override;
-                                   void wallet_create(const std::string& wallet_name, const std::string& password) override;
-                            std::string wallet_get_name() const override;
-                                   void wallet_close() override;
-                                   void wallet_export_to_json(const fc::path& path) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                                   void wallet_create_from_json(const fc::path& path, const std::string& name, const std::string& passphrase) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                                   void wallet_lock() override;
-                                   void wallet_unlock(const fc::microseconds& timeout, const std::string& password) override;
-                                   void wallet_change_passphrase(const std::string& new_password) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                       extended_address wallet_create_receive_account(const std::string& account_name) override;
-                                   void wallet_create_sending_account(const std::string& account_name, const extended_address& account_pub_key) override;
 
-                     invoice_summary wallet_transfer( int64_t amount,
-                                                         const std::string& to_account_name,
-                                                         const std::string& asset_symbol = BTS_ADDRESS_PREFIX,
-                                                         const std::string& from_account_name = std::string("*"),
-                                                         const std::string& invoice_memo = std::string(),
-                                                         generate_transaction_flag flag = sign_and_broadcast) override;
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
                                                             const std::string& description,

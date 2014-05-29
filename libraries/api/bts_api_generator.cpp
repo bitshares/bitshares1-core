@@ -35,6 +35,7 @@ public:
   virtual void set_from_variant_function(const std::string& from_variant_function) { _from_variant_function = from_variant_function; }
   virtual std::string convert_object_of_type_to_variant(const std::string& object_name);
   virtual std::string convert_variant_to_object_of_type(const std::string& variant_name);
+  virtual std::string create_value_of_type_from_variant(const fc::variant& value);
 };
 typedef std::shared_ptr<type_mapping> type_mapping_ptr;
 
@@ -54,6 +55,12 @@ std::string type_mapping::convert_variant_to_object_of_type(const std::string& v
     return _from_variant_function + "(" + variant_name + ")";
 }
 
+std::string type_mapping::create_value_of_type_from_variant(const fc::variant& value)
+{
+  std::ostringstream default_value_as_variant;
+  default_value_as_variant << "fc::variant(" << fc::json::to_string(value.as_string()) << ")";
+  return convert_variant_to_object_of_type(default_value_as_variant.str());
+}
 
 
 class void_type_mapping : public type_mapping
@@ -117,8 +124,8 @@ struct parameter_description
   std::string name;
   type_mapping_ptr type;
   std::string description;
-  fc::optional<std::string> default_value;
-  fc::optional<std::string> example;
+  fc::optional<fc::variant> default_value;
+  fc::optional<fc::variant> example;
 };
 typedef std::list<parameter_description> parameter_description_list;
 
@@ -259,9 +266,9 @@ parameter_description_list api_generator::load_parameters(const fc::variants& js
     FC_ASSERT(json_parameter_description.contains("type"));
     parameter.type = lookup_type_mapping(json_parameter_description["type"].as_string());
     if (json_parameter_description.contains("default_value"))
-      parameter.default_value = json_parameter_description["default_value"].as_string();
+      parameter.default_value = json_parameter_description["default_value"];
     if (json_parameter_description.contains("example"))
-      parameter.example = json_parameter_description["example"].as_string();
+      parameter.example = json_parameter_description["example"];
 
     parameters.push_back(parameter);
   }
@@ -345,7 +352,7 @@ std::string api_generator::generate_signature_for_method(const method_descriptio
     {
       if (!include_default_parameters)
         method_signature << " /*";
-      method_signature << " = " << *parameter.default_value;
+      method_signature << " = " << parameter.type->create_value_of_type_from_variant(*parameter.default_value);
       if (!include_default_parameters)
         method_signature << " */";
     }
@@ -484,12 +491,15 @@ void api_generator::generate_positional_server_implementation_to_stream(const me
   unsigned parameter_index = 0;
   for (const parameter_description& parameter : method.parameters)
   {
+    std::ostringstream this_parameter;
+    this_parameter << "parameters[" << parameter_index << "]";
+
     if (parameter.default_value)
     {
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
                   " = (parameters.size() <= " << parameter_index << ") ?\n";
-      stream << "    (" << *parameter.default_value << ") :\n";
-      stream << "    parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+      stream << "    (" << parameter.type->create_value_of_type_from_variant(*parameter.default_value) << ") :\n";
+      stream << "    " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }
     else
     {
@@ -497,7 +507,7 @@ void api_generator::generate_positional_server_implementation_to_stream(const me
       stream << "  if (parameters.size() <= " << parameter_index << ")\n";
       stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter " << (parameter_index + 1) << " (" << parameter.name << ")\");\n";
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
-                  " = parameters[" << parameter_index << "].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+                  " = " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }
     ++parameter_index;
   }
@@ -515,12 +525,15 @@ void api_generator::generate_named_server_implementation_to_stream(const method_
 
   for (const parameter_description& parameter : method.parameters)
   {
+    std::ostringstream this_parameter;
+    this_parameter << "parameters[\"" << parameter.name << "\"]";
+
     if (parameter.default_value)
     {
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
                   " = parameters.contains(\"" << parameter.name << "\") ? \n";
-      stream << "    (" << *parameter.default_value << ") :\n";
-      stream << "    parameters[\"" << parameter.name << "\"].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+      stream << "    (" << parameter.type->create_value_of_type_from_variant(*parameter.default_value) << ") :\n";
+      stream << "    " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }
     else
     {
@@ -528,7 +541,7 @@ void api_generator::generate_named_server_implementation_to_stream(const method_
       stream << "  if (!parameters.contains(\"" << parameter.name << "\"))\n";
       stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter '" <<  parameter.name << "'\");\n";
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
-                  " = parameters[\"" << parameter.name << "\"].as<" << parameter.type->get_cpp_return_type() << ">();\n";
+                  " = " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }
   }
 
@@ -575,6 +588,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
 
   cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/api_metadata.hpp>\n";
+  cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
   cpp_file << "#include <boost/bind.hpp>\n";
   write_includes_to_stream(cpp_file);
   cpp_file << "\n";
@@ -628,7 +642,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
         cpp_file << ",\n  ";
       cpp_file << "    {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
       if (parameter.default_value)
-        cpp_file << "optional_positional, " << parameter.type->convert_object_of_type_to_variant(*parameter.default_value) << "}";
+        cpp_file << "optional_positional, fc::variant(" << fc::json::to_string(parameter.default_value->as_string()) << ")}";
       else
         cpp_file << "required_positional, fc::ovariant()}";
     }

@@ -40,16 +40,6 @@ namespace bts { namespace rpc {
              (blockchain_get_names)\
              (network_get_connection_count)\
              (network_get_peer_info)\
-             (wallet_create)\
-             (wallet_get_name)\
-             (wallet_close)\
-             (wallet_export_to_json)\
-             (wallet_create_from_json)\
-             (wallet_lock)\
-             (wallet_unlock)\
-             (wallet_change_passphrase)\
-             (wallet_create_receive_account) \
-             (wallet_create_sending_account) \
              (wallet_import_private_key)\
              (wallet_import_bitcoin)\
              (wallet_list_sending_accounts)\
@@ -57,7 +47,6 @@ namespace bts { namespace rpc {
              (wallet_list_reserved_names)\
              (wallet_get_account)\
              (wallet_rename_account)\
-             (wallet_transfer)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
              (wallet_get_balance)\
@@ -75,7 +64,6 @@ namespace bts { namespace rpc {
              (network_get_block_propagation_data)\
              (network_get_transaction_propagation_data)\
              (_list_json_commands)\
-             (wallet_get_pretty_transaction)\
              (network_broadcast_transaction)\
              (network_set_advanced_node_parameters)
 
@@ -687,209 +675,7 @@ Result:
 
        return fc::variant( std::move(info) );
     }
-    static bts::api::method_data wallet_create_metadata{"wallet_create", nullptr,
-     /* description */ "Opens the wallet of the given name",
-     /* returns: */    "void",
-     /* params:          name             type      classification                          default value */
-                       {{"wallet_name",   "string", bts::api::required_positional,        fc::ovariant()},
-                        {"passphrase",    "string", bts::api::required_positional_hidden, fc::ovariant()}},
-   /* prerequisites */ bts::api::json_authenticated,
-   R"(
-Wallets exist in the wallet data directory
-   )"};
-    fc::variant rpc_server_impl::wallet_create(const fc::variants& params)
-    { try {
-        _client->wallet_create( params[0].as_string(), params[1].as_string() );
-        return fc::variant();
-    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-
-    static bts::api::method_data wallet_get_name_metadata{"wallet_get_name", nullptr,
-        /* description */ "Returns the wallet name passed to wallet_open",
-        /* returns: */    "string",
-        /* params:     */ {},
-        /* prerequisites */ bts::api::no_prerequisites,
-      R"(
-      )" };
-    fc::variant rpc_server_impl::wallet_get_name(const fc::variants& params)
-    {
-       if( !_client->get_wallet()->is_open() )
-          return fc::variant(nullptr);
-       return fc::variant(_client->wallet_get_name());
-    }
-
-    static bts::api::method_data wallet_close_metadata{"wallet_close", nullptr,
-      /* description */ "Closes the curent wallet if one is open",
-      /* returns: */    "void",
-      /* params:     */ {},
-      /* prerequisites */ bts::api::no_prerequisites,
-    R"(
-    )",
-      /* aliases */ { "close" } };
-    fc::variant rpc_server_impl::wallet_close(const fc::variants& params)
-    {
-       _client->wallet_close();
-       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_export_to_json_metadata{"wallet_export_to_json", nullptr,
-      /* description */ "Exports the current wallet to a JSON file",
-      /* returns: */    "void",
-      /* params:         name           type     classification                          default_value */
-                      {{"filename",    "path",   bts::api::required_positional,        fc::ovariant()}},
-      /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-    )" };
-    fc::variant rpc_server_impl::wallet_export_to_json(const fc::variants& params)
-    {
-       auto filename = params[0].as<fc::path>();
-       _client->wallet_export_to_json( filename );
-       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_create_from_json_metadata{"wallet_create_from_json", nullptr,
-      /* description */ "Creates a new wallet from an exported JSON file",
-      /* returns: */    "void",
-      /* params:         name           type     classification                          default_value */
-                      {{"filename",    "path",   bts::api::required_positional,        fc::ovariant()},
-                       {"wallet_name", "string", bts::api::required_positional,        fc::ovariant()},
-                       {"passphrase",  "string", bts::api::required_positional_hidden, fc::ovariant()}},
-      /* prerequisites */ bts::api::json_authenticated,
-    R"(
-    )" };
-    fc::variant rpc_server_impl::wallet_create_from_json(const fc::variants& params)
-    {
-        auto filename = params[0].as<fc::path>();
-        auto wallet_name = params[1].as_string();
-        auto passphrase = params[2].as_string();
-        try
-        {
-            _client->wallet_create_from_json( filename, wallet_name, passphrase );
-        }
-        catch( const fc::exception& e ) // TODO: see wallet_unlock()
-        {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
-        }
-        return fc::variant();
-    }
-
-    static bts::api::method_data wallet_lock_metadata{"wallet_lock", nullptr,
-         /* description */ "Lock the private keys in wallet, disables spending commands until unlocked",
-         /* returns: */    "void",
-         /* params:     */ {},
-       /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-       R"(
-        )",
-        /*aliases*/ { "bitcoin_walletlock", "walletlock", "lock"  }};
-    fc::variant rpc_server_impl::wallet_lock(const fc::variants& params)
-    {
-       _client->wallet_lock();
-       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_unlock_metadata{"wallet_unlock", nullptr,
-          /* description */ "Unlock the private keys in the wallet to enable spending operations",
-          /* returns: */    "null",
-          /* params:          name             type        classification                          default value */
-                            {{"timeout",       "unsigned", bts::api::required_positional,        fc::ovariant()},
-                             {"passphrase",    "string",   bts::api::required_positional_hidden, fc::ovariant()} },
-        /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-     )",
-        /** aliases */ { "unlock" }
-    };
-    fc::variant rpc_server_impl::wallet_unlock(const fc::variants& params)
-    {
-        unsigned timeout_sec = params[0].as<unsigned>();
-        std::string passphrase = params[1].as_string();
-        try
-        {
-            _client->wallet_unlock(fc::seconds(timeout_sec), passphrase);
-        }
-        catch( const fc::exception& e )
-        {
-            /*
-             * TODO: this is an invalid conversion to rpc_wallet_passphrase exception...
-             * if the problem is 'file not found' or 'invalid user' or 'permission denined'
-             * or some other filesystem error then it should be properly reported.
-             */
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
-        }
-        return fc::variant();
-    }
-
-    static bts::api::method_data wallet_change_passphrase_metadata{"wallet_change_passphrase", nullptr,
-          /* description */ "Change the password of the current wallet",
-          /* returns: */    "void",
-          /* params:          name             type        classification                          default value */
-                            { {"passphrase",    "string",   bts::api::required_positional_hidden, fc::ovariant()} },
-        /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
-    R"(
-Changes the wallet password.
-This will change the wallet's spending passphrase, please make sure you remember it.
-
-Arguments:
-1. "passphrase" (string, required) The wallet new spending passphrase
-
-Note:
-Wallets exist in the wallet data directory.
-     )"};
-    fc::variant rpc_server_impl::wallet_change_passphrase(const fc::variants& params)
-    {
-       std::string passphrase = params[0].as_string();
-       try
-       {
-         _client->wallet_change_passphrase( passphrase );
-         return fc::variant();
-       } FC_RETHROW_EXCEPTIONS( warn, "" )
-    }
-
-    static bts::api::method_data wallet_create_receive_account_metadata{"wallet_create_receive_account", nullptr,
-            /* description */ "Add new account for receiving payments",
-            /* returns: */    "extended_address",
-            /* params:          name             type      classification                   default value */
-                              {{"account_name", "string",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-     )"};
-    fc::variant rpc_server_impl::wallet_create_receive_account( const fc::variants& params )
-    {
-       extended_address receive_address = _client->wallet_create_receive_account( params[0].as_string() );
-       return fc::variant(receive_address);
-    }
-
-    static bts::api::method_data wallet_create_sending_account_metadata{"wallet_create_sending_account", nullptr,
-            /* description */ "Add new account for sending payments",
-            /* returns: */    "null",
-            /* params:          name             type                classification                   default value */
-                              {{"account_name",  "string",           bts::api::required_positional, fc::ovariant()},
-                               {"account_key",   "extended_address", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-     )"};
-    fc::variant rpc_server_impl::wallet_create_sending_account( const fc::variants& params )
-    {
-       _client->wallet_create_sending_account( params[0].as_string(), params[1].as<extended_address>() );
-       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_get_pretty_transaction_metadata{"wallet_get_pretty_transaction", nullptr,
-            /* description */ "Return a pretty json representation of a transaction",
-            /* returns: */    "pretty_transaction",
-            /* params:          name                  type                   classification                   default_value */
-                              {{"signed_transaction", "signed_transaction",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_pretty_transaction(const fc::variants& params)
-    {
-      bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
-      auto rec = wallet_transaction_record( -1, transaction );
-      auto pretty = _client->get_wallet()->to_pretty_trx( rec );
-      return fc::variant(pretty);
-    }
-
+    
     static bts::api::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
@@ -904,32 +690,7 @@ Wallets exist in the wallet data directory.
       _client->broadcast_transaction(transaction);
       return fc::variant(transaction.id());
     }
-
-    static bts::api::method_data wallet_transfer_metadata{"wallet_transfer", nullptr,
-            /* description */ "Sends given amount to the given address, assumes shares in DAC",
-            /* returns: */    "invoice_summary",
-            /* params:          name                    type        classification                   default value */
-                              {{"amount",               "int64",    bts::api::required_positional, fc::ovariant()},
-                               {"to_account_name",      "string",   bts::api::required_positional, fc::ovariant()},
-                               {"asset_symbol",         "string",   bts::api::optional_named,      fc::variant(BTS_ADDRESS_PREFIX)},
-                               {"from_account",         "string",   bts::api::optional_named,      fc::variant("*")},
-                               {"invoice_memo",         "string",   bts::api::optional_named,      fc::variant("")}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-          R"(
-          )" };
-    fc::variant rpc_server_impl::wallet_transfer(const fc::variants& params)
-    {
-       auto          amount     = params[0].as_int64();
-       std::string   to_account_name = params[1].as_string();
-       fc::variant_object named_params = params[2].get_object();
-       std::string   asset_symbol = named_params["asset_symbol"].as_string();
-       std::string   from_account_name = named_params["from_account"].as_string();
-       std::string   invoice_memo = named_params["invoice_memo"].as_string();
-       bts::wallet::invoice_summary summary = 
-         _client->wallet_transfer(amount, to_account_name, asset_symbol, from_account_name, invoice_memo);
-       return fc::variant(summary);
-    }
-
+    
     static bts::api::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
             /* returns: */    "invoice_summary",
