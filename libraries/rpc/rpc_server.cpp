@@ -515,7 +515,7 @@ namespace bts { namespace rpc {
 
     static rpc_server::method_data help_metadata{"help", nullptr,
         /* description */ "Lists commands or detailed help for specified command",
-        /* returns: */    "bool",
+        /* returns: */    "string",
         /* params:          name       type      classification                   default value */
                          {{ "command", "string", rpc_server::optional_positional, fc::ovariant() } },
       /* prerequisites */ rpc_server::no_prerequisites,
@@ -543,11 +543,12 @@ Result:
       else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
       { //display detailed description of requested command
         std::string command = params[0].as_string();
-        auto itr = _method_map.find(command);
-        if (itr != _method_map.end())
+        auto itr = _alias_map.find(command);
+        if (itr != _alias_map.end())
         {
-          rpc_server::method_data method_data = itr->second;
-          help_string = make_short_description(method_data);
+          rpc_server::method_data method_data = _method_map[itr->second];
+          help_string += "Usage:\n";
+          help_string += make_short_description(method_data);
           help_string += method_data.detailed_description;
           if (method_data.aliases.size() > 0)
           {
@@ -568,7 +569,7 @@ Result:
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
           std::vector<std::string> match_commands;
-          for (itr = _method_map.lower_bound(command);
+          for (auto itr = _method_map.lower_bound(command);
                itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
                ++itr)
             match_commands.push_back(itr->first);
@@ -706,6 +707,7 @@ Result:
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()} },
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_open_file(const fc::variants& params)
@@ -731,6 +733,7 @@ Wallets exist in the wallet data directory
                        },
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )",
     /* aliases */ { "open" } 
@@ -757,6 +760,7 @@ Wallets exist in the wallet data directory
                         {"passphrase",    "string", rpc_server::required_positional_hidden, fc::ovariant()}},
    /* prerequisites */ rpc_server::json_authenticated,
    R"(
+Note:
 Wallets exist in the wallet data directory
    )"};
     fc::variant rpc_server_impl::wallet_create(const fc::variants& params)

@@ -7,6 +7,7 @@
 
 #include <bts/net/message_oriented_connection.hpp>
 #include <bts/net/stcp_socket.hpp>
+#include <bts/net/config.hpp>
 
 namespace bts { namespace net {
   namespace detail
@@ -90,6 +91,8 @@ namespace bts { namespace net {
           _sock.read(buffer, BUFFER_SIZE);
           _bytes_received += BUFFER_SIZE;
           memcpy((char*)&m, buffer, sizeof(message_header));
+
+          assert( m.size <= MAX_MESSAGE_SIZE );
 
           size_t remaining_bytes_with_padding = 16 * ((m.size - LEFTOVER + 15) / 16);
           m.data.resize(LEFTOVER + remaining_bytes_with_padding); //give extra 16 bytes to allow for padding added in send call

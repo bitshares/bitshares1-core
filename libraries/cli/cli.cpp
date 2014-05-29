@@ -95,13 +95,16 @@ namespace bts { namespace cli {
                     arguments = _self->parse_interactive_command(buffered_argument_stream, command);
                     command_is_valid = true;
                   }
-                  catch (fc::key_not_found_exception&)
+                  catch( const fc::key_not_found_exception& )
                   {
                     std::cout << "Error: invalid command \"" << command << "\"\n";
                   }
-                  catch (fc::exception& e)
+                  catch( const fc::exception& )
                   {
-                    std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                    //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                    arguments = fc::variants { command };
+                    auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
+                    std::cout << usage << "\n";
                   }
 
                   if (command_is_valid)
@@ -111,12 +114,12 @@ namespace bts { namespace cli {
                       fc::variant result = _self->execute_interactive_command(command, arguments);
                       _self->format_and_print_result(command, result);
                     }
-                    catch ( const fc::canceled_exception& )
+                    catch( const fc::canceled_exception& )
                     {
                       if( command != "quit" ) std::cout << "Command aborted\n";
                       else return;
                     }
-                    catch ( const fc::exception& e )
+                    catch( const fc::exception& e )
                     {
                       std::cout << e.to_detail_string() << "\n";
                     }
@@ -166,7 +169,7 @@ namespace bts { namespace cli {
                 const rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
                 return _self->parse_recognized_interactive_command(argument_stream, method_data);
               }
-              catch (fc::key_not_found_exception&)
+              catch( const fc::key_not_found_exception& )
               {
                 return _self->parse_unrecognized_interactive_command(argument_stream, command);
               }
@@ -182,7 +185,7 @@ namespace bts { namespace cli {
                 {
                   arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
-                catch (const fc::eof_exception& e)
+                catch( const fc::eof_exception& e )
                 {
                   if (method_data.parameters[i].classification != rpc_server::required_positional)
                     return arguments;
@@ -190,7 +193,7 @@ namespace bts { namespace cli {
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
                              ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
                 }
-                catch (fc::parse_error_exception& e)
+                catch( fc::parse_error_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
@@ -226,12 +229,12 @@ namespace bts { namespace cli {
                   fc::variant amount_as_variant = fc::json::from_stream(argument_stream);
                   amount_as_int = amount_as_variant.as_uint64();
                 }
-                catch ( fc::bad_cast_exception& e)
+                catch( fc::bad_cast_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 }
-                catch ( fc::parse_error_exception& e)
+                catch( fc::parse_error_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -259,7 +262,7 @@ namespace bts { namespace cli {
                 {
                   bts::blockchain::address::is_valid(address_string);
                 }
-                catch ( fc::exception& e)
+                catch( fc::exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
@@ -348,6 +351,45 @@ namespace bts { namespace cli {
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
+              else if(command == "wallet_rescan_blockchain")
+              {
+                  if ( ! _client->get_wallet()->is_open() )
+                      interactive_open_wallet();
+                  std::cout << "Rescanning blockchain...\n";
+                  uint32_t start;
+                  if (arguments.size() == 0)
+                      start = 1;
+                  else
+                      start = arguments[0].as<uint32_t>();
+                  while(true)
+                  {
+                      try {
+                          for(int i = 0; i < 100; i++)
+                              std::cout << "-";
+                          std::cout << "\n";
+                          uint32_t next_step = 0;
+                          auto cb = [start, next_step](uint32_t cur,
+                                                       uint32_t last,
+                                                       uint32_t cur_trx,
+                                                       uint32_t last_trx) mutable {
+                              if (((100*(cur - start)) / (last - start)) > next_step)
+                              {
+                                  //std::cout << ((100*(cur - start)) / (last - start));
+                                  std::cout << "=";
+                                  next_step++;
+                              }
+                          };
+                          // TODO: restore callback here...
+                          // _client->get_wallet()->scan_chain(start, cb);
+                          std::cout << "\n";
+                          return fc::variant("Scan complete.");
+                      }
+                      catch( const rpc_wallet_open_needed_exception& )
+                      {
+                          interactive_open_wallet();
+                      }
+                  }
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -367,11 +409,11 @@ namespace bts { namespace cli {
                 {
                     return _rpc_server->direct_invoke_method(command, arguments);
                 }
-                catch (const rpc_wallet_open_needed_exception&)
+                catch( const rpc_wallet_open_needed_exception& )
                 {
                     interactive_open_wallet();
                 }
-                catch (const rpc_wallet_unlock_needed_exception&)
+                catch( const rpc_wallet_unlock_needed_exception& )
                 {
                     fc::variants arguments { 60 * 5 }; // default to five minute timeout
                     execute_interactive_command( "wallet_unlock", arguments );
@@ -410,7 +452,7 @@ namespace bts { namespace cli {
                     {
                         return execute_command( command, new_arguments );
                     }
-                    catch( const rpc_wallet_passphrase_incorrect_exception&)
+                    catch( const rpc_wallet_passphrase_incorrect_exception& )
                     {
                         std::cout << "Incorrect passphrase, try again\n";
                     }
@@ -496,11 +538,11 @@ namespace bts { namespace cli {
                 auto method_data = _rpc_server->get_method_data(command);
                 method_name = method_data.name;
               }
-              catch (fc::key_not_found_exception&)
+              catch( const fc::key_not_found_exception& )
               {
                  elog( " KEY NOT FOUND " );
               }
-              catch (...)
+              catch( ... )
               {
                  elog( " unexpected exception " );
               }
@@ -534,12 +576,12 @@ namespace bts { namespace cli {
                   else
                     std::cout << fc::json::to_pretty_string(result) << "\n";
                 }
-                catch (fc::key_not_found_exception&)
+                catch( const fc::key_not_found_exception& )
                 {
-                 elog( " KEY NOT FOUND " );
+                   elog( " KEY NOT FOUND " );
                    std::cout << "key not found \n";
                 }
-                catch (...)
+                catch( ... )
                 {
                    std::cout << "unexpected exception \n";
                 }
@@ -727,7 +769,28 @@ namespace bts { namespace cli {
       if (start == 0)
         return rl_completion_matches(text, &json_command_completion_generator_function);
       else
+      {
+        std::string command_line_to_parse(rl_line_buffer, start);
+        std::string trimmed_command_to_parse(boost::algorithm::trim_copy(command_line_to_parse));
+        
+        if (!trimmed_command_to_parse.empty())
+        {
+          try
+          {
+            const rpc_server::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
+            if (method_data.name == "help")
+            {
+                return rl_completion_matches(text, &json_command_completion_generator_function);
+            }
+          }
+          catch( const fc::key_not_found_exception& )
+          {
+            // do nothing
+          }
+        }
+        
         return rl_completion_matches(text, &json_argument_completion_generator_function);
+      }
     }
 
 #endif
@@ -749,7 +812,7 @@ namespace bts { namespace cli {
     {
       wait();
     }
-    catch ( const fc::exception& e )
+    catch( const fc::exception& e )
     {
        wlog( "${e}", ("e",e.to_detail_string()) );
     }
