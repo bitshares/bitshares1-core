@@ -10,7 +10,10 @@ add_library( bts_cli
 
 if (READLINE_FOUND)
   target_compile_definitions (bts_cli PRIVATE HAVE_READLINE)
-  set(readline_libraries ${Readline_LIBRARY} ${CURSES_LIBRARY})
+  set(readline_libraries ${Readline_LIBRARY})
+  if (CURSES_FOUND)
+    list(APPEND readline_libraries ${CURSES_LIBRARY})
+  endif()
   set(readline_includes ${Readline_INCLUDE_DIR})
 endif()
 target_link_libraries( bts_cli 
