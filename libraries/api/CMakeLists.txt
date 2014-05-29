@@ -15,7 +15,10 @@ target_include_directories( bts_api_generator
 target_link_libraries( bts_api_generator fc bts_utilities leveldb )
 
 
-set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json")
+set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json")
+source_group("JSON Files" FILES ${json_description_files})
 
 set(generated_api_files "${CMAKE_CURRENT_BINARY_DIR}/include/bts/api/common_api.hpp")
 set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
@@ -30,10 +33,10 @@ add_custom_command(OUTPUT ${generated_api_files} ${generated_rpc_stubs_files}
                                              "--rpc-stub-output-dir=${rpc_stubs_output_dir}" ${json_description_files}
                    DEPENDS bts_api_generator ${json_description_files} )
 
-add_library(bts_api STATIC ${HEADERS} "conversion_functions.cpp")
+add_library(bts_api STATIC ${HEADERS} "conversion_functions.cpp" ${json_description_files})
 target_include_directories(bts_api
-                           INTERFACE "${CMAKE_CURRENT_BINARY_DIR}/include" 
-                           PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+                           PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include" 
+                                  "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 add_library(bts_rpc_stubs ${generated_rpc_stubs_files})
 target_link_libraries( bts_rpc_stubs bts_client fc)

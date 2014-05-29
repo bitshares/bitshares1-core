@@ -326,7 +326,7 @@ namespace bts { namespace client {
     }
 
     //JSON-RPC Method Implementations START
-    bts::blockchain::block_id_type client::blockchain_get_blockhash(int32_t block_number) const
+    bts::blockchain::block_id_type client::blockchain_get_blockhash(uint32_t block_number) const
     {
       return get_chain()->get_block(block_number).id();
     }
@@ -336,9 +336,9 @@ namespace bts { namespace client {
       return get_chain()->get_head_block_num();
     }
 
-    void client::wallet_open_file(const fc::path wallet_filename, const std::string& password)
+    void client::wallet_open_file(const fc::path& wallet_filename, const std::string& password)
     {
-      get_wallet()->open_file(wallet_filename, password );
+      get_wallet()->open_file(wallet_filename, password);
     }
 
     void client::wallet_open(const std::string& wallet_name, const std::string& password)

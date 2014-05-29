@@ -1,4 +1,5 @@
 {
+  "category": "Network Methods",
   "type_map":
     [
       {
@@ -9,12 +10,6 @@
         "to_variant_function" : "bts::api::fc_ip_endpoint_to_variant",
         "from_variant_function" : "bts::api::variant_to_fc_ip_endpoint",
         "default_example" : "192.168.1.5:5678"
-      },
-      {
-        "type_name" : "block_id_type",
-        "cpp_parameter_type" : "const bts::blockchain::block_id_type&",
-        "cpp_return_type" : "bts::blockchain::block_id_type",
-        "cpp_include_file" : "bts/blockchain/types.hpp"
       }
     ],
   "methods" :
@@ -39,21 +34,6 @@
             }
           ],
         "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "blockchain_get_blockhash",
-        "description": "Returns hash of block in best-block-chain at index provided",
-        "return_type": "block_id_type",
-        "parameters" : 
-          [
-            { 
-              "name" : "block_number", 
-              "type" : "uint32_t", 
-              "description" : "index of the block",
-              "example" : "42"
-            }
-          ],
-        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

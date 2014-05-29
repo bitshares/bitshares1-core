@@ -129,6 +129,7 @@ struct method_description
   std::string detailed_description;
   type_mapping_ptr return_type;
   parameter_description_list parameters;
+  bool is_const;
   bts::api::method_prerequisites prerequisites; // actually, a bitmask of method_prerequisites
   std::vector<std::string> aliases;
 };
@@ -294,6 +295,9 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
       FC_ASSERT(json_method_description.contains("parameters"));
       method.parameters = load_parameters(json_method_description["parameters"].get_array());
 
+      method.is_const = json_method_description.contains("is_const") && 
+                               json_method_description["is_const"].as_bool();
+
       FC_ASSERT(json_method_description.contains("prerequisites"));
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
 
@@ -347,6 +351,8 @@ std::string api_generator::generate_signature_for_method(const method_descriptio
     }
   }
   method_signature << ")";
+  if (method.is_const)
+    method_signature << " const";
   return method_signature.str();
 }
 

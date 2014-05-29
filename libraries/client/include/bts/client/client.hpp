@@ -2,7 +2,8 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
-#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_client_api.hpp>
+#include <bts/api/common_api.hpp>
 
 namespace bts { namespace client {
 
@@ -18,7 +19,8 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc::rpc_client_api
+    class client : public bts::rpc::rpc_client_api,
+                   public bts::api::common_api
     {
        public:
          client( const chain_database_ptr& chain_db );
@@ -46,9 +48,9 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
          //TODO? fc::variant get_info()
-         block_id_type          blockchain_get_blockhash(int32_t block_number) const override;
+         block_id_type          blockchain_get_blockhash(uint32_t block_number) const override;
          uint32_t               blockchain_get_blockcount() const override;
-         void                   wallet_open_file(const fc::path wallet_filename, const std::string& password) override;
+         void                   wallet_open_file(const fc::path& wallet_filename, const std::string& password) override;
          void                   wallet_open(const std::string& wallet_name, const std::string& password) override;
          void                   wallet_create(const std::string& wallet_name, const std::string& password) override;
          std::string            wallet_get_name() const override;

@@ -1,0 +1,73 @@
+{
+  "category": "Wallet Methods",
+  "type_map":
+    [
+      {
+        "type_name" : "filename",
+        "cpp_parameter_type" : "const fc::path&",
+        "cpp_return_type" : "fc::path",
+        "cpp_include_file" : "fc/filesystem.hpp",
+        "default_example" : "some_filename.txt"
+      },
+      {
+        "type_name" : "passphrase",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "my_password",
+        "obscure_in_log_files": true
+      },
+      {
+        "type_name" : "wallet_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Alice"
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "wallet_open_file",
+        "description": "Opens the wallet at the given path",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wallet_file", 
+              "type" : "filename", 
+              "description" : "the full path and filename of the wallet to open",
+              "example" : "/path/to/wallet.dat"
+            },
+            { 
+              "name" : "passphrase", 
+              "type" : "passphrase", 
+              "description" : "the passphrase for unlocking the wallet",
+              "example" : "add"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_open",
+        "description": "Opens the wallet of the given name",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wallet_name", 
+              "type" : "wallet_name", 
+              "description" : "the full path and filename of the wallet to open"
+            },
+            { 
+              "name" : "passphrase", 
+              "type" : "passphrase", 
+              "description" : "the passphrase for unlocking the wallet",
+              "example" : "add"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["open"]
+      }
+    ]
+}

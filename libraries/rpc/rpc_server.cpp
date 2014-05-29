@@ -28,7 +28,6 @@ namespace bts { namespace rpc {
              (get_info)\
              (stop)\
              (validate_address)\
-             (blockchain_get_blockcount)\
              (blockchain_get_transaction)\
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
@@ -41,9 +40,7 @@ namespace bts { namespace rpc {
              (blockchain_get_names)\
              (network_get_connection_count)\
              (network_get_peer_info)\
-             (wallet_open_file)\
              (wallet_create)\
-             (wallet_open)\
              (wallet_get_name)\
              (wallet_close)\
              (wallet_export_to_json)\
@@ -690,71 +687,6 @@ Result:
 
        return fc::variant( std::move(info) );
     }
-
-    static bts::api::method_data blockchain_get_blockcount_metadata{"blockchain_get_blockcount", nullptr,
-                                     /* description */ "Returns the number of blocks in the longest block chain",
-                                     /* returns: */    "int",
-                                     /* params:  */    { },
-                                   /* prerequisites */ bts::api::no_prerequisites,
-         R"(
-         )",
-         /*aliases*/ { "bitcoin_getblockcount", "getblockcount" }} ;
-    fc::variant rpc_server_impl::blockchain_get_blockcount(const fc::variants& params)
-    {
-      return fc::variant(_client->blockchain_get_blockcount());
-    }
-
-
-    static bts::api::method_data wallet_open_file_metadata{"wallet_open_file", nullptr,
-     /* description */ "Opens the wallet at the given path",
-     /* returns: */    "void",
-     /* params:          name             type      classification                          default value */
-                       {{"wallet_file",   "path",   bts::api::required_positional,        fc::ovariant()},
-                        {"passphrase",    "string", bts::api::required_positional_hidden, fc::ovariant()} },
-   /* prerequisites */ bts::api::json_authenticated,
-   R"(
-Wallets exist in the wallet data directory
-   )"};
-    fc::variant rpc_server_impl::wallet_open_file(const fc::variants& params)
-    {
-        try
-        {
-            _client->wallet_open_file( params[0].as_string(), params[1].as_string() );
-        }
-        catch( const fc::exception& e ) // TODO: see wallet_unlock()
-        {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
-        }
-        return fc::variant( true );
-    }
-
-    static bts::api::method_data wallet_open_metadata{"wallet_open", nullptr,
-     /* description */ "Opens the wallet of the given name",
-     /* returns: */    "void",
-     /* params:          name             type      classification                          default value */
-                       {{"wallet_name",   "string", bts::api::required_positional,        fc::ovariant()},
-                        {"passphrase",    "string", bts::api::required_positional_hidden, fc::ovariant()} },
-   /* prerequisites */ bts::api::json_authenticated,
-   R"(
-Wallets exist in the wallet data directory
-   )",
-    /* aliases */ { "open" } 
-    };
-    fc::variant rpc_server_impl::wallet_open(const fc::variants& params)
-    {
-        try
-        {
-            _client->wallet_open( params[0].as_string(), params[1].as_string() );
-        }
-        catch( const fc::exception& e ) // TODO: see wallet_unlock()
-        {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
-            throw rpc_wallet_passphrase_incorrect_exception();
-        }
-        return fc::variant();
-    }
-
     static bts::api::method_data wallet_create_metadata{"wallet_create", nullptr,
      /* description */ "Opens the wallet of the given name",
      /* returns: */    "void",

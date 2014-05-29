@@ -243,6 +243,11 @@ namespace bts { namespace rpc {
     return my->login(username, password);
   }
   
+  fc::rpc::json_connection_ptr rpc_client::get_json_connection() const
+  {
+    return my->_json_connection;
+  }
+
   void rpc_client::wallet_unlock(const fc::microseconds& timeout, const std::string& passphrase)
   {
     my->wallet_unlock(timeout, passphrase);
@@ -369,10 +374,6 @@ namespace bts { namespace rpc {
   void rpc_client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
   {
     return my->network_set_allowed_peers(allowed_peers);
-  }
-  void rpc_client::network_add_node(const fc::ip::endpoint& node, const std::string& command)
-  {
-    my->network_add_node(node, command);
   }
   void rpc_client::stop()
   {
