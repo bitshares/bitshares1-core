@@ -10,6 +10,7 @@
 #include <fc/log/logger.hpp>
 
 #include <bts/rpc/rpc_client.hpp>
+#include <bts/api/common_api.hpp>
 
 #include <iostream>
 
@@ -325,7 +326,7 @@ namespace bts { namespace client {
     }
 
     //JSON-RPC Method Implementations START
-    bts::blockchain::block_id_type client::blockchain_get_blockhash(int32_t block_number) const
+    bts::blockchain::block_id_type client::blockchain_get_blockhash(uint32_t block_number) const
     {
       return get_chain()->get_block(block_number).id();
     }
@@ -335,7 +336,7 @@ namespace bts { namespace client {
       return get_chain()->get_head_block_num();
     }
 
-    void client::wallet_open_file(const fc::path wallet_filename)
+    void client::wallet_open_file(const fc::path& wallet_filename)
     {
       get_wallet()->open_file( wallet_filename );
     }
@@ -350,9 +351,9 @@ namespace bts { namespace client {
       get_wallet()->create(wallet_name,password);
     }
 
-    std::string client::wallet_get_name() const
+    fc::optional<std::string> client::wallet_get_name() const
     {
-      return get_wallet()->get_wallet_name();
+      return get_wallet()->is_open() ? get_wallet()->get_wallet_name() : fc::optional<std::string>();
     }
 
     void client::wallet_close()
@@ -387,6 +388,10 @@ namespace bts { namespace client {
 
 
 
+    bts::wallet::pretty_transaction client::wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const
+    {
+      return get_wallet()->to_pretty_trx(wallet_transaction_record(-1, transaction));
+    }
     signed_transaction client::wallet_asset_create(const std::string& symbol,
                                                     const std::string& asset_name,
                                                     const std::string& description,

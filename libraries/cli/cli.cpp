@@ -18,10 +18,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifndef WIN32
-#define HAVE_READLINE
-#endif
-
 #ifdef HAVE_READLINE
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -166,7 +162,7 @@ namespace bts { namespace cli {
             {
               try
               {
-                const rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
+                const bts::api::method_data& method_data = _rpc_server->get_method_data(command);
                 return _self->parse_recognized_interactive_command(argument_stream, method_data);
               }
               catch( const fc::key_not_found_exception& )
@@ -176,7 +172,7 @@ namespace bts { namespace cli {
             }
 
             fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
-                                                               const rpc_server::method_data& method_data)
+                                                               const bts::api::method_data& method_data)
             {
               fc::variants arguments;
               for (unsigned i = 0; i < method_data.parameters.size(); ++i)
@@ -187,7 +183,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::eof_exception& e )
                 {
-                  if (method_data.parameters[i].classification != rpc_server::required_positional)
+                  if (method_data.parameters[i].classification != bts::api::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
@@ -199,7 +195,7 @@ namespace bts { namespace cli {
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
 
-                if (method_data.parameters[i].classification == rpc_server::optional_named)
+                if (method_data.parameters[i].classification == bts::api::optional_named)
                   break;
               }
               return arguments;
@@ -216,10 +212,10 @@ namespace bts { namespace cli {
             }
 
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
-                                                      const rpc_server::method_data& method_data,
+                                                      const bts::api::method_data& method_data,
                                                       unsigned parameter_index)
             {
-              const rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
+              const bts::api::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
               {
                 // for now, accept plain int, assume it's always in the base asset
@@ -564,7 +560,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const rpc_server::method_data& method_data = _rpc_server->get_method_data(method_name);
+                  const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")
@@ -834,7 +830,7 @@ namespace bts { namespace cli {
   }
 
   fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,
-                                                const rpc_server::method_data& method_data,
+                                                const bts::api::method_data& method_data,
                                                 unsigned parameter_index)
   {
     return my->parse_argument_of_known_type(argument_stream, method_data, parameter_index);
@@ -845,7 +841,7 @@ namespace bts { namespace cli {
     return my->parse_unrecognized_interactive_command(argument_stream, command);
   }
   fc::variants cli::parse_recognized_interactive_command(fc::buffered_istream& argument_stream,
-                                                         const rpc_server::method_data& method_data)
+                                                         const bts::api::method_data& method_data)
   {
     return my->parse_recognized_interactive_command(argument_stream, method_data);
   }

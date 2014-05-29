@@ -1,0 +1,41 @@
+{
+  "category": "Blockchain Methods",
+  "type_map":
+    [
+      {
+        "type_name" : "block_id_type",
+        "cpp_parameter_type" : "const bts::blockchain::block_id_type&",
+        "cpp_return_type" : "bts::blockchain::block_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "blockchain_get_blockhash",
+        "description": "Returns hash of block in best-block-chain at index provided",
+        "return_type": "block_id_type",
+        "parameters" : 
+          [
+            { 
+              "name" : "block_number", 
+              "type" : "uint32_t", 
+              "description" : "index of the block",
+              "example" : "42"
+            }
+          ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["bitcoin_getblockhash", "getblockhash"]
+      },
+      {
+        "method_name": "blockchain_get_blockcount",
+        "description": "Returns the number of blocks in the longest block chain",
+        "return_type": "uint32_t",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["bitcoin_getblockcount", "getblockcount"]
+      }
+    ]
+}

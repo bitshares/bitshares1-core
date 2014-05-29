@@ -2,7 +2,8 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
-#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_client_api.hpp>
+#include <bts/api/common_api.hpp>
 
 namespace bts { namespace client {
 
@@ -18,7 +19,8 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client //TODO : public api::core_api
+    class client : public bts::rpc::rpc_client_api,
+                   public bts::api::common_api
     {
        public:
          enum generate_transaction_flag
@@ -53,20 +55,22 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
          //TODO? fc::variant get_info()
-         block_id_type          blockchain_get_blockhash(int32_t block_number) const ;
-         uint32_t               blockchain_get_blockcount() const ;
-         void                   wallet_open_file(const fc::path wallet_filename );
-         void                   wallet_open(const std::string& wallet_name );
-         void                   wallet_create(const std::string& wallet_name, const std::string& password) ;
-         std::string            wallet_get_name() const ;
-         void                   wallet_close() ;
-         void                   wallet_export_to_json(const fc::path& path) const ;
+         block_id_type          blockchain_get_blockhash(uint32_t block_number) const override;
+         uint32_t               blockchain_get_blockcount() const override;
+         pretty_transaction wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const override;
+
+         void                   wallet_open_file(const fc::path& wallet_filename, const std::string& password) override;
+         void                   wallet_open(const std::string& wallet_name, const std::string& password) override;
+         void                   wallet_create(const std::string& wallet_name, const std::string& password) override;
+         fc::optional<std::string> wallet_get_name() const override;
+         void                   wallet_close() override;
+         void                   wallet_export_to_json(const fc::path& path) const override;
          void                   wallet_create_from_json(const fc::path& path, 
                                                         const std::string& name );
          void                   wallet_lock();
          void                   wallet_unlock( const fc::microseconds& timeout, 
-                                               const std::string& password) ;
-         void                   wallet_change_passphrase( const std::string& new_password ) ;
+                                               const std::string& password) override;
+         void                   wallet_change_passphrase( const std::string& new_password ) override;
 
          public_key_type        wallet_create_account( const std::string& account_name);
          void                   wallet_add_contact_account( const std::string& account_name, 
