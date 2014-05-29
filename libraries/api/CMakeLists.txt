@@ -39,6 +39,8 @@ target_include_directories(bts_api
                                   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 add_library(bts_rpc_stubs ${generated_rpc_stubs_files})
-target_link_libraries( bts_rpc_stubs bts_client fc)
+target_link_libraries( bts_rpc_stubs 
+                       PRIVATE fc
+                       PUBLIC bts_api)
 target_include_directories(bts_rpc_stubs
                            PUBLIC "${rpc_stubs_output_dir}/include")

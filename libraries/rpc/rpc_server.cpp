@@ -101,7 +101,7 @@ namespace bts { namespace rpc {
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
 
-         virtual bts::client::client_ptr get_client() const override;
+         virtual bts::api::common_api* get_client() const override;
          virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const override;
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
@@ -486,9 +486,9 @@ namespace bts { namespace rpc {
     };
 
 
-    bts::client::client_ptr rpc_server_impl::get_client() const
+    bts::api::common_api* rpc_server_impl::get_client() const
     {
-      return _client;
+      return _client.get();
     }
     void rpc_server_impl::verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const
     {

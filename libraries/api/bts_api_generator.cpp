@@ -547,15 +547,15 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   std::ofstream header_file(server_header_filename.string());
   std::ofstream cpp_file(server_cpp_filename.string());
 
-  header_file << "#pragma once\n\n";
-  header_file << "#include <bts/client/client.hpp>\n";
+  header_file << "#pragma once\n";
   header_file << "#include <bts/api/api_metadata.hpp>\n";
+  header_file << "#include <bts/api/common_api.hpp>\n";
   header_file << "#include <fc/rpc/json_connection.hpp>\n\n";
-  header_file << "namespace bts { namespace rpc_stubs {\n\n";
+  header_file << "namespace bts { namespace rpc_stubs {\n";
   header_file << "  class " << server_classname << "\n";
   header_file << "  {\n";
   header_file << "  public:\n";
-  header_file << "    virtual bts::client::client_ptr get_client() const = 0;\n";
+  header_file << "    virtual bts::api::common_api* get_client() const = 0;\n";
   header_file << "    virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const = 0;\n";
   header_file << "    virtual void verify_wallet_is_open() const = 0;\n";
   header_file << "    virtual void verify_wallet_is_unlocked() const = 0;\n";
@@ -576,6 +576,8 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/api_metadata.hpp>\n";
   cpp_file << "#include <boost/bind.hpp>\n";
+  write_includes_to_stream(cpp_file);
+  cpp_file << "\n";
   cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
   // Generate the method bodies
