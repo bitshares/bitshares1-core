@@ -64,6 +64,12 @@ namespace bts {
    {
        addr = fc::ripemd160::hash( fc::sha512::hash( pub.data, sizeof(pub) ) );
    }
+   
+   address::address( const bts::blockchain::public_key_type& pub )
+   {
+       addr = fc::ripemd160::hash( fc::sha512::hash( pub.key_data.data, sizeof(pub.key_data) ) );
+   }
+
 
    address::operator std::string()const
    {
@@ -92,10 +98,11 @@ namespace fc
 
     void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo )
     {
-        FC_ASSERT(!"Unimplemented, TODO toast!!");
+        vo = std::string(var);
     }
+
     void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo )
     {
-        FC_ASSERT(!"Unimplemented, TODO toast!!");
+        vo = bts::blockchain::public_key_type( var.as_string() );
     }
 }

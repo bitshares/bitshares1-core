@@ -1,8 +1,12 @@
 #pragma once
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/elliptic.hpp>
-#include <bts/blockchain/address.hpp>
+#include <fc/crypto/base58.hpp>
 #include <fc/io/varint.hpp>
+#include <fc/exception/exception.hpp>
+
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/address.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -27,10 +31,24 @@ namespace bts { namespace blockchain {
        fc::ecc::public_key_data key_data;
 
        public_key_type():key_data(){};
-       public_key_type( fc::ecc::public_key_data data )
+
+       public_key_type( const fc::ecc::public_key_data& data )
            :key_data( data ) {};
-       public_key_type( fc::ecc::public_key pubkey )
+
+       public_key_type( const fc::ecc::public_key& pubkey )
            :key_data( pubkey ) {};
+
+       public_key_type( const std::string& base58str )
+       {
+            FC_ASSERT( base58str.size() > strlen(BTS_ADDRESS_PREFIX) );
+            FC_ASSERT( base58str.substr( 0, strlen(BTS_ADDRESS_PREFIX) ) == BTS_ADDRESS_PREFIX );
+            std::vector<char> bin_dat = fc::from_base58( base58str.substr( strlen(BTS_ADDRESS_PREFIX ) ) );
+            FC_ASSERT( bin_dat.size() == 37 );
+            auto checksum = fc::ripemd160::hash( bin_dat.data(), bin_dat.size() - 4 );
+            FC_ASSERT( 0 == memcmp( bin_dat.data()+33, (char*)checksum._hash, 4), "public_key_type checksum fail");
+            memcpy( (char*)&key_data, (char*)&bin_dat, 33 ); 
+       };
+
        operator fc::ecc::public_key_data() const
        {
           return key_data;    
@@ -40,21 +58,24 @@ namespace bts { namespace blockchain {
           return fc::ecc::public_key( key_data );
        };
 
-       operator bts::blockchain::address() const
+       operator std::string() const
        {
-          return bts::blockchain::address( key_data );
+          FC_ASSERT(37 == key_data.size() + 4);
+          fc::array<char, 37> bin_data;
+          memcpy( (char*)&bin_data, (char*)&key_data, sizeof(key_data) );
+          auto checksum = fc::ripemd160::hash( (char*)&key_data, sizeof(key_data) );
+          memcpy( (char*)&bin_data + 33, (char*)checksum._hash, 4);
+          return BTS_ADDRESS_PREFIX + fc::to_base58( bin_data.data, sizeof(bin_data) );
        }
-//     operator std::string() const;
 
-       inline friend bool operator ==(public_key_type p1, public_key_type p2)
+       inline friend bool operator == ( const public_key_type& p1, const public_key_type& p2)
        {
           return p1.key_data == p2.key_data;
        }
-       inline friend bool operator !=(public_key_type p1, public_key_type p2)
+       inline friend bool operator != ( const public_key_type& p1, const public_key_type& p2)
        {
           return p1.key_data != p2.key_data;
        }
-
    };
 
    struct proposal_vote_id_type
