@@ -62,8 +62,8 @@
         "default_example" : "TODO"        
       },
       {
-        "type_name" : "signed_transaction_list",
-        "container_type" : "sequence",
+        "type_name" : "signed_transaction_array",
+        "container_type" : "array",
         "contained_type" : "signed_transaction",
         "default_example" : "TODO"      
       },
@@ -309,7 +309,7 @@
       {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given address, assumes shares in DAC",
-        "return_type": "signed_transaction_list",
+        "return_type": "signed_transaction_array",
         "parameters" : 
           [
             {
@@ -318,21 +318,19 @@
               "description" : "the amount of shares to transfer"
             },
             {
-              "name" : "to_account_name", 
-              "type" : "receive_account_name", 
-              "description" : "the account to transfer the shares to"
-            },
-            {
               "name" : "asset_symbol", 
               "type" : "asset_symbol", 
-              "description" : "the asset to transfer",
-              "default_value" : "XTS"
+              "description" : "the asset to transfer"
             },
             {
               "name" : "from_account_name", 
               "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from",
-              "default_value" : "*"
+              "description" : "the source account(s) to draw the shares from"
+            },
+            {
+              "name" : "to_account_name", 
+              "type" : "receive_account_name", 
+              "description" : "the account to transfer the shares to"
             },
             {
               "name" : "memo_message", 

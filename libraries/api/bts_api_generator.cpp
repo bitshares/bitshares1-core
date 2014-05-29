@@ -215,7 +215,7 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
     else if (json_type.contains("container_type"))
     {
       std::string container_type_string = json_type["container_type"].as_string();
-      if (container_type_string == "sequence")
+      if (container_type_string == "array")
       {
         FC_ASSERT(json_type.contains("contained_type"));
         std::string contained_type_name = json_type["contained_type"].as_string();
