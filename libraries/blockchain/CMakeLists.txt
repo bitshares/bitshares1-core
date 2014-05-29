@@ -9,6 +9,7 @@ add_library( bts_blockchain
              address.cpp
              pts_address.cpp
              asset.cpp
+             types.cpp
              operations.cpp
              withdraw_types.cpp
              pending_chain_state.cpp

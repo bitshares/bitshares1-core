@@ -52,8 +52,6 @@ namespace bts { namespace blockchain {
    using fc::time_point;
    using fc::microseconds;
 
-//   typedef fc::ecc::public_key_data public_key_type;
-
    struct public_key_type 
    {
        struct binary_key
@@ -64,56 +62,17 @@ namespace bts { namespace blockchain {
        };
 
        fc::ecc::public_key_data key_data;
-
-       public_key_type():key_data(){};
-
-       public_key_type( const fc::ecc::public_key_data& data )
-           :key_data( data ) {};
-
-       public_key_type( const fc::ecc::public_key& pubkey )
-           :key_data( pubkey ) {};
-
-       public_key_type( const std::string& base58str )
-       {
-          static const size_t prefix_len = strlen(BTS_ADDRESS_PREFIX);
-          FC_ASSERT( base58str.size() > prefix_len );
-          FC_ASSERT( base58str.substr( 0, prefix_len ) == BTS_ADDRESS_PREFIX );
-          auto bin = fc::from_base58( base58str.substr( prefix_len ) );
-          auto bin_key = fc::raw::unpack<binary_key>(bin);
-          key_data = bin_key.data;
-          FC_ASSERT( fc::ripemd160::hash( key_data.data, key_data.size() )._hash[0] == bin_key.check );
-       };
-
-       operator fc::ecc::public_key_data() const
-       {
-          return key_data;    
-       };
-       operator fc::ecc::public_key() const
-       {
-          return fc::ecc::public_key( key_data );
-       };
-
-       operator std::string() const
-       {
-          binary_key k;
-          k.data = key_data;
-          k.check = fc::ripemd160::hash( k.data.data, k.data.size() )._hash[0];
-          auto data = fc::raw::pack( k );
-          return BTS_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
-       }
-       inline friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2)
-       {
-          return p1.key_data == p2.serialize();
-       }
-
-       inline friend bool operator == ( const public_key_type& p1, const public_key_type& p2)
-       {
-          return p1.key_data == p2.key_data;
-       }
-       inline friend bool operator != ( const public_key_type& p1, const public_key_type& p2)
-       {
-          return p1.key_data != p2.key_data;
-       }
+ 
+       public_key_type();
+       public_key_type( const fc::ecc::public_key_data& data );
+       public_key_type( const fc::ecc::public_key& pubkey );
+       public_key_type( const std::string& base58str );
+       operator fc::ecc::public_key_data() const;
+       operator fc::ecc::public_key() const;
+       operator std::string() const;
+       friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2);
+       friend bool operator == ( const public_key_type& p1, const public_key_type& p2);
+       friend bool operator != ( const public_key_type& p1, const public_key_type& p2);
    };
 
 

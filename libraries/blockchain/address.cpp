@@ -96,14 +96,4 @@ namespace fc
     {
         vo = bts::blockchain::address( var.as_string() );
     }
-
-    void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo )
-    {
-        vo = std::string(var);
-    }
-
-    void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo )
-    {
-        vo = bts::blockchain::public_key_type( var.as_string() );
-    }
 }
