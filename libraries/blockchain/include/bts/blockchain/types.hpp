@@ -17,7 +17,9 @@ namespace bts { namespace blockchain {
    typedef fc::ecc::private_key             private_key_type;
    typedef address                          balance_id_type;
    typedef fc::signed_int                   asset_id_type;
+   /** @deprecated use account_id_type instead */
    typedef fc::signed_int                   name_id_type;
+   typedef fc::signed_int                   account_id_type;
    typedef fc::signed_int                   proposal_id_type;
    typedef uint32_t                         tapos_type; 
    typedef int64_t                          share_type;

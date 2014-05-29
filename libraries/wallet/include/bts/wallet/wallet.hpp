@@ -45,6 +45,35 @@ namespace bts { namespace wallet {
          std::string    get_wallet_name()const;
          fc::path       get_wallet_filename()const;
          ///@}
+         
+         /**
+          *  @name Utility Methods
+          */
+         ///@{ 
+         account_id_type select_delegate_vote()const;
+
+         bool is_valid_symbol( const std::string& asset_symbol )const;
+         bool is_receive_account( const std::string& account_name )const;
+
+         /**
+          *  A valid account is any named account registered in the blockchain or
+          *  any local named account.
+          */
+         bool is_valid_account( const std::string& account_name )const;
+
+         /**
+          * Account names are limited the same way as domain names.
+          */
+         bool is_valid_account_name( const std::string& account_name )const;
+
+         fc::ecc::private_key get_account_private_key( const std::string& account_name )const;
+         public_key_type      get_account_public_key( const std::string& account_name )const;
+         
+         /**
+          *  @returns the priority fee paid denominated in the given asset symbol.
+          */
+         asset                get_priority_fee( const std::string& symbol )const;
+         ///@}
 
          /**
           *  Lock management & security

@@ -706,7 +706,7 @@ namespace bts { namespace blockchain {
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
 
-   void transaction::deposit_to_name( fc::ecc::public_key receiver_key,
+   void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
                                       asset amount,
                                       fc::ecc::private_key from_key,
                                       const std::string& memo_message,

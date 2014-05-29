@@ -120,6 +120,7 @@ namespace bts { namespace blockchain {
                                                           const fc::variant& property_value )override;
 
          std::string                        get_asset_symbol( asset_id_type asset_id )const;
+         asset_id_type                      get_asset_id( const std::string& asset_sybmol )const;
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
          virtual oname_record               get_name_record( name_id_type id )const override;

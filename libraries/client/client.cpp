@@ -377,7 +377,7 @@ namespace bts { namespace client {
 
     void client::wallet_unlock(const fc::microseconds& timeout, const std::string& password)
     {
-      get_wallet()->unlock(timeout,password);
+      get_wallet()->unlock(password,timeout);
     }
 
     void client::wallet_change_passphrase(const std::string& new_password)

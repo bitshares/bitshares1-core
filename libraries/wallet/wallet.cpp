@@ -647,16 +647,16 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_receive_account( from_account_name ) );
        FC_ASSERT( is_valid_account( to_account_name ) );
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
-       FC_ASSERT( amount_to_transfer > get_priority_fee( symbol ) );
+       FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ) );
 
-       auto asset_id = get_asset_id( amount_to_transfer_symbol );
+       auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
 
        std::vector<signed_transaction> trxs;
 
        public_key_type      receiver_public_key = get_account_public_key( to_account_name );
        fc::ecc::private_key sender_private_key  = get_account_private_key( from_account_name );
        
-       asset total_fee = get_priority_fee( amount_to_transfer.asset_id );
+       asset total_fee = get_priority_fee( amount_to_transfer_symbol );
 
        asset amount_collected( 0, asset_id );
        for( auto balance_item : my->_wallet_db.balances )
@@ -675,8 +675,8 @@ namespace bts { namespace wallet {
              if( from_balance < total_fee )
                 continue; // next balance_item
 
-             asset amount_to_deposit( 0, amount_to_transfer.asset_id );
-             asset amount_of_change( 0, amount_to_transfer.asset_id );
+             asset amount_to_deposit( 0, asset_id );
+             asset amount_of_change( 0, asset_id );
 
              if( amount_collected + from_balance > amount_to_transfer )
              {
@@ -715,14 +715,14 @@ namespace bts { namespace wallet {
 
              // set the balance of this item to 0 so that we do not
              // attempt to spend it again.
-             balance_item.balance = 0;
-             my->_wallet_db.store_record( balance_item );
+             balance_item.second.balance = 0;
+             my->_wallet_db.store_record( balance_item.second );
 
 
              if( sign )
              {
                 auto owner_private_key = get_private_key( balance_item.second.owner() );
-                trx.sign( owner_private_key );
+                trx.sign( owner_private_key, my->_blockchain->chain_id() );
              }
 
              trxs.emplace_back( trx );
