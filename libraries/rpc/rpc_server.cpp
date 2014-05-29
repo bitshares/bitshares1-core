@@ -38,8 +38,6 @@ namespace bts { namespace rpc {
              (blockchain_get_assets)\
              (blockchain_get_delegates)\
              (blockchain_get_names)\
-             (network_get_connection_count)\
-             (network_get_peer_info)\
              (wallet_create_account) \
              (wallet_add_contact_account) \
              (wallet_import_private_key)\
@@ -1313,67 +1311,6 @@ Arguments:
       uint32_t count = params[1].as<uint32_t>();
       std::vector<name_record> delegate_records = _client->blockchain_get_delegates(first, count);
       return fc::variant(delegate_records);
-    }
-
-    static bts::api::method_data network_get_connection_count_metadata{"network_get_connection_count", nullptr,
-            /* description */ "Returns the number of connections to other nodes",
-            /* returns: */    "bool",
-            /* params:     */ {},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-Result:
-n (numeric) The connection count
-
-Examples:
-> bitshares-cli network_get_connection_count
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "network_get_connection_count", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-
-)" };
-    fc::variant rpc_server_impl::network_get_connection_count(const fc::variants&)
-    {
-      return fc::variant(_client->network_get_connection_count());
-    }
-
-    static bts::api::method_data network_get_peer_info_metadata{"network_get_peer_info", nullptr,
-            /* description */ "Returns data about each connected node",
-            /* returns: */    "vector<jsonobject>",
-            /* params:     */ {},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-network_get_peer_info
-
-Returns data about each connected network node as a json array of objects.
-
-bResult:
-[
-{
-"addr":"host:port", (string) The ip address and port of the peer
-"addrlocal":"ip:port", (string) local address
-"services":"00000001", (string) The services
-"lastsend": ttt, (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last send
-"lastrecv": ttt, (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last receive
-"bytessent": n, (numeric) The total bytes sent
-"bytesrecv": n, (numeric) The total bytes received
-"conntime": ttt, (numeric) The connection time in seconds since epoch (Jan 1 1970 GMT)
-"pingtime": n, (numeric) ping time
-"pingwait": n, (numeric) ping wait
-"version": v, (numeric) The peer version, such as 7001
-"subver": "/Satoshi:0.8.5/", (string) The string version
-"inbound": true|false, (boolean) Inbound (true) or Outbound (false)
-"startingheight": n, (numeric) The starting height (block) of the peer
-"banscore": n, (numeric) The ban score (stats.nMisbehavior)
-"syncnode" : true|false (boolean) if sync node
-}
-,...
-}
-
-Examples:
-> bitcoin-cli network_get_peer_info
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "network_get_peer_info", "params": [] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-)" };
-    fc::variant rpc_server_impl::network_get_peer_info(const fc::variants&)
-    {
-      return _client->network_get_peer_info();
     }
 
     static bts::api::method_data network_set_advanced_node_parameters_metadata{"network_set_advanced_node_parameters", nullptr,

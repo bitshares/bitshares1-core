@@ -140,8 +140,6 @@ namespace bts { namespace client {
 
                          void stop()  override;
 
-                  uint32_t network_get_connection_count() const  override;
-              fc::variants network_get_peer_info() const  override;
                       void network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)  override;
                       void network_set_advanced_node_parameters(const fc::variant_object& params)  override;
                       fc::variant_object network_get_advanced_node_parameters()  override;
