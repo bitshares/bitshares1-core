@@ -26,6 +26,23 @@ const char* test_keys = R"([
   "90ef5e50773c90368597e46eaf1b563f76f879aa8969c2e7a2198847f93324c4"
 ])";
 
+BOOST_AUTO_TEST_CASE( public_key_type_test )
+{
+   try { 
+    auto k1 = fc::ecc::private_key::generate().get_public_key();
+    auto k2 = fc::ecc::private_key::generate().get_public_key();
+    auto k3 = fc::ecc::private_key::generate().get_public_key();
+
+    FC_ASSERT( public_key_type( std::string( public_key_type(k1) ) ) == k1);
+    FC_ASSERT( public_key_type( std::string( public_key_type(k2) ) ) == k2);
+    FC_ASSERT( public_key_type( std::string( public_key_type(k3) ) ) == k3);
+  } catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string()) );
+      throw;
+   }
+}
+
 BOOST_AUTO_TEST_CASE( wallet_tests )
 {
    try {
@@ -94,3 +111,4 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
    }
 
 }
+
