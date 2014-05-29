@@ -371,10 +371,10 @@ namespace bts { namespace cli {
                           auto cb = [start, next_step](uint32_t cur,
                                                        uint32_t last,
                                                        uint32_t cur_trx,
-                                                       uint32_t last_trx) mutable {
+                                                       uint32_t last_trx) mutable
+                          {
                               if (((100*(cur - start)) / (last - start)) > next_step)
                               {
-                                  //std::cout << ((100*(cur - start)) / (last - start));
                                   std::cout << "=";
                                   next_step++;
                               }
