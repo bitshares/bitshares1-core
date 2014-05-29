@@ -980,7 +980,7 @@ Result:
      };
     fc::variant rpc_server_impl::wallet_register_account(const fc::variants& params)
     {
-       FC_ASSERT( !"Not Implemented" );
+       FC_ASSERT( false, "Not Implemented" );
     }
 
 

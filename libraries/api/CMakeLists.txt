@@ -25,7 +25,8 @@ set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
 set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_server.cpp" 
                              "${rpc_stubs_output_dir}/common_api_client.cpp" 
                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_server.hpp" 
-                             "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp")
+                             "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp"
+                             "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
 
 add_custom_command(OUTPUT ${generated_api_files} ${generated_rpc_stubs_files}
                    COMMAND bts_api_generator "--api-classname=common_api" 

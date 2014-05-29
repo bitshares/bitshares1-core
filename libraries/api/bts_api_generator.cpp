@@ -404,8 +404,10 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   fc::create_directories(client_header_path); // creates dirs for both header and cpp
   fc::path client_header_filename = client_header_path / (client_classname + ".hpp");
   fc::path client_cpp_filename = rpc_client_output_dir / (client_classname + ".cpp");
+  fc::path method_overrides_filename = client_header_path / (_api_classname + "_overrides.ipp");
   std::ofstream header_file(client_header_filename.string());
   std::ofstream cpp_file(client_cpp_filename.string());
+  std::ofstream method_overrides_file(method_overrides_filename.string());
 
   header_file << "#pragma once\n\n";
   header_file << "#include <fc/rpc/json_connection.hpp>\n";
@@ -418,6 +420,7 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   for (const method_description& method : _methods)
   {
     header_file << "    " << generate_signature_for_method(method, "", true) << " override;\n";
+    method_overrides_file << "    " << generate_signature_for_method(method, "", true) << " override;\n";
   }
 
   header_file << "  };\n\n";

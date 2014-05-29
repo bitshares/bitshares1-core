@@ -20,6 +20,6 @@ set(SOURCES node.cpp
 
 add_library( bts_net ${SOURCES} ${HEADERS} )
 
-target_link_libraries( bts_net fc bts_db bts_utilities leveldb bts_api)
+target_link_libraries( bts_net fc bts_db bts_utilities leveldb bts_api bts_rpc_stubs)
 target_include_directories( bts_net 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )

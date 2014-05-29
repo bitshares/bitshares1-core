@@ -53,43 +53,8 @@ namespace bts { namespace client {
          signed_transactions    get_pending_transactions()const;
 
          //-------------------------------------------------- JSON-RPC Method Implementations
-         //TODO? help()
-         //TODO? fc::variant get_info()
+#include <bts/rpc_stubs/common_api_overrides.ipp>
 
-        void network_add_node(const fc::ip::endpoint& node, const string& command) override;
-        bts::blockchain::block_id_type blockchain_get_blockhash(uint32_t block_number) const override;
-        uint32_t blockchain_get_blockcount() const override;
-        void wallet_open_file(const fc::path& wallet_file) override;
-        void wallet_open(const string& wallet_name) override;
-        void wallet_create(const string& wallet_name, const string& passphrase) override;
-        fc::optional<string> wallet_get_name() const override;
-        void wallet_close() override;
-        void wallet_export_to_json(const fc::path& json_filename) const override;
-        void wallet_create_from_json(const fc::path& json_filename, const string& wallet_name) override;
-        void wallet_lock() override;
-        void wallet_unlock(const fc::microseconds& timeout, const string& passphrase) override;
-        void wallet_change_passphrase(const string& passphrase) override;
-        bts::wallet::pretty_transaction wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const override;
-        vector<signed_transaction> wallet_transfer(int64_t amount_to_transfer, 
-                                                       const string& asset_symbol, 
-                                                       const string& from_account_name, 
-                                                       const string& to_account_name, 
-                                                       const string& memo_message = std::string() );
-
-
-         public_key_type        wallet_create_account( const string& account_name);
-         void                   wallet_add_contact_account( const string& account_name, 
-                                                            const public_key_type& );
-
-
-
-         /*invoice_summary        wallet_transfer( int64_t amount,
-                                                 const string& to_account_name,
-                                                 const string& asset_symbol = BTS_ADDRESS_PREFIX,
-                                                 const string& from_account_name = string("*"),
-                                                 const string& invoice_memo = string(),
-                                                 generate_transaction_flag flag = sign_and_broadcast) ;
-                                                 */
          signed_transaction  wallet_asset_create( const string& symbol,
                                                   const string& asset_name,
                                                   const string& description,
