@@ -49,6 +49,10 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
 
+         void cache_transaction( const signed_transaction& trx,
+                                 const std::string& memo_message,
+                                 const public_key_type& to );
+
          private_keys get_account_private_keys( const fc::sha512& password );
 
          owallet_account_record lookup_account( const address& address_of_public_key );

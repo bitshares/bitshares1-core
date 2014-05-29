@@ -628,6 +628,120 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
+   /**
+    *  This method assumes that fees can be paid in the same asset type as the 
+    *  asset being transferred so that the account can be kept private and 
+    *  secure.
+    *
+    */
+   std::vector<signed_transaction> wallet::transfer( share_type amount_to_transfer,
+                                                     const std::string& amount_to_transfer_symbol,
+                                                     const std::string& from_account_name,
+                                                     const std::string& to_account_name,
+                                                     const std::string& memo_message,
+                                                     bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( is_valid_symbol( amount_to_transfer_symbol ) );
+       FC_ASSERT( is_receive_account( from_account_name ) );
+       FC_ASSERT( is_valid_account( to_account_name ) );
+       FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
+       FC_ASSERT( amount_to_transfer > get_priority_fee( symbol ) );
+
+       auto asset_id = get_asset_id( amount_to_transfer_symbol );
+
+       std::vector<signed_transaction> trxs;
+
+       public_key_type      receiver_public_key = get_account_public_key( to_account_name );
+       fc::ecc::private_key sender_private_key  = get_account_private_key( from_account_name );
+       
+       asset total_fee = get_priority_fee( amount_to_transfer.asset_id );
+
+       asset amount_collected( 0, asset_id );
+       for( auto balance_item : my->_wallet_db.balances )
+       {
+          if( balance_item.second.asset_id() == asset_id )
+          {
+             signed_transaction trx;
+
+             auto from_balance = balance_item.second.get_balance();
+             trx.withdraw( balance_item.first,
+                           from_balance.amount );
+
+             from_balance -= total_fee;
+
+             /** make sure there is at least something to withdraw at the other side */
+             if( from_balance < total_fee )
+                continue; // next balance_item
+
+             asset amount_to_deposit( 0, amount_to_transfer.asset_id );
+             asset amount_of_change( 0, amount_to_transfer.asset_id );
+
+             if( amount_collected + from_balance > amount_to_transfer )
+             {
+                amount_to_deposit = amount_to_transfer - amount_collected;
+                amount_of_change  = from_balance - amount_to_deposit;
+                amount_collected += amount_to_deposit;
+             }
+             else
+             {
+                amount_to_deposit = from_balance;
+             }
+
+             if( amount_to_deposit.amount > 0 )
+             {
+                trx.deposit_to_account( receiver_public_key,
+                                        amount_to_deposit,
+                                        sender_private_key,
+                                        memo_message,
+                                        select_delegate_vote() );
+             }
+             if( amount_of_change > total_fee )
+             {
+                trx.deposit_to_account( sender_private_key.get_public_key(),
+                                        amount_of_change,
+                                        sender_private_key,
+                                        "change",
+                                        select_delegate_vote() );
+
+                /** randomly shuffle change to prevent analysis */
+                if( rand() % 2 ) 
+                {
+                   FC_ASSERT( trx.operations.size() >= 3 )
+                   std::swap( trx.operations[1], trx.operations[2] );
+                }
+             }
+
+             // set the balance of this item to 0 so that we do not
+             // attempt to spend it again.
+             balance_item.balance = 0;
+             my->_wallet_db.store_record( balance_item );
+
+
+             if( sign )
+             {
+                auto owner_private_key = get_private_key( balance_item.second.owner() );
+                trx.sign( owner_private_key );
+             }
+
+             trxs.emplace_back( trx );
+             if( amount_collected >= asset( amount_to_transfer, asset_id ) )
+                break;
+          } // if asset id matches
+       } // for each balance_item
+
+       for( auto t : trxs )
+          my->_wallet_db.cache_transaction( t, memo_message, receiver_public_key );
+
+       return trxs;
+      
+   } FC_RETHROW_EXCEPTIONS( warn, "", 
+         ("amount_to_transfer",amount_to_transfer)
+         ("amount_to_transfer_symbol",amount_to_transfer_symbol)
+         ("from_account_name",from_account_name)
+         ("to_account_name",to_account_name)
+         ("memo_message",memo_message) ) }
 
    signed_transaction  wallet::create_asset( const std::string& symbol,
                                           const std::string& asset_name,

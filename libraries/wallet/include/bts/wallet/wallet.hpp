@@ -129,6 +129,13 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
+         std::vector<signed_transaction> transfer( share_type amount_to_transfer,
+                                                   const std::string& amount_to_transfer_symbol,
+                                                   const std::string& from_account_name,
+                                                   const std::string& to_account_name,
+                                                   const std::string& memo_message,
+                                                   bool sign );
+
          signed_transaction       create_asset( const std::string& symbol,
                                                 const std::string& asset_name,
                                                 const std::string& description,
