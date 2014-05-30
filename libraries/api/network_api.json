@@ -126,10 +126,7 @@
               "description" : "the id of the transaction"
             }
           ],
-        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this transaction.
-The data in the message cache is only kept for a few blocks, so you can only use this to ask
-about recent transactions. This is intended to be used to track message propagation delays
-in our test network.",
+        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this transaction. The data in the message cache is only kept for a few blocks, so you can only use this to ask about recent transactions. This is intended to be used to track message propagation delays in our test network.",
         "prerequisites" : ["json_authenticated"]
       },
       {
@@ -144,10 +141,7 @@ in our test network.",
               "description" : "the id of the block"
             }
           ],
-        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this block.
-The data in the message cache is only kept for a few blocks, so you can only use this to ask
-about recent transactions. This is intended to be used to track message propagation delays
-in our test network.",
+        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this block. The data in the message cache is only kept for a few blocks, so you can only use this to ask about recent transactions. This is intended to be used to track message propagation delays in our test network.",
         "prerequisites" : ["json_authenticated"]
       },
       {
@@ -163,8 +157,7 @@ in our test network.",
             }
           ],
         "prerequisites" : ["json_authenticated"],
-        "detailed_description" : "This function sets the list of peers we're allowed to connect to.
-It is used during testing to force network splits or other weird topologies."
+        "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
       }
     ]
 }

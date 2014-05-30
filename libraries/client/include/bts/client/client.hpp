@@ -5,6 +5,11 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 
+namespace bts { namespace rpc {
+  class rpc_server;
+  typedef std::shared_ptr<rpc_server> rpc_server_ptr;
+} }
+
 namespace bts { namespace client {
 
     using namespace bts::blockchain;
@@ -44,11 +49,12 @@ namespace bts { namespace client {
 
          chain_database_ptr     get_chain()const;
          wallet_ptr             get_wallet()const;
+         bts::rpc::rpc_server_ptr get_rpc_server() const;
          bts::net::node_ptr     get_node()const;
          signed_transactions    get_pending_transactions()const;
 
          //-------------------------------------------------- JSON-RPC Method Implementations
-         #include <bts/rpc_stubs/common_api_overrides.ipp>
+#include <bts/rpc_stubs/common_api_overrides.ipp>
 
          signed_transaction  wallet_asset_create( const string& symbol,
                                                   const string& asset_name,
@@ -132,8 +138,6 @@ namespace bts { namespace client {
      vector<name_record> blockchain_get_names(const string& first, uint32_t count) const  override;
     vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
      vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
-
-                         void stop()  override;
 
          fc::path                            get_data_dir() const;
 

@@ -6,9 +6,11 @@
 #include <bts/client/client.hpp>
 #include <bts/api/api_metadata.hpp>
 
-namespace bts { namespace rpc {
-  using namespace bts::client;
+namespace bts { namespace client {
+  class client;
+} }
 
+namespace bts { namespace rpc {
   namespace detail { class rpc_server_impl; }
 
   /**
@@ -34,11 +36,9 @@ namespace bts { namespace rpc {
       bool is_valid() const; /* Currently just checks if rpc port is set */
     };
 
-    rpc_server();
+    rpc_server(bts::client::client* client);
     virtual ~rpc_server();
 
-    client_ptr  get_client()const;
-    void        set_client( const client_ptr& c );
     bool        configure( const config& cfg );
 
     /// used to invoke json methods from the cli without going over the network
@@ -47,7 +47,7 @@ namespace bts { namespace rpc {
     const bts::api::method_data& get_method_data(const std::string& method_name);
 
     void wait_on_quit();
-
+    void shutdown_rpc_server();
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 

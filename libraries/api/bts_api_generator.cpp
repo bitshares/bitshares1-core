@@ -664,7 +664,23 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
         cpp_file << "required_positional, fc::ovariant()}";
     }
     cpp_file <<  "},\n";
-    cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \"long description\"};\n";
+    cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
+    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(method.detailed_description)) << ",\n";
+    cpp_file << "    /* aliases */ {";
+    if (!method.aliases.empty())
+    {
+      bool first = true;
+      for (const std::string& alias : method.aliases)
+      {
+        if (first)
+          first = false;
+        else
+          cpp_file << ", ";
+        cpp_file << "\"" << alias << "\"";
+      }
+    }
+    cpp_file << "}};\n";
+      
     cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
   }
   cpp_file << "}\n\n";
