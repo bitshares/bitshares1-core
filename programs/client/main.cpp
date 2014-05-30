@@ -13,6 +13,7 @@
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/git_revision.hpp>
+#include <fc/io/json.hpp>
 
 #include <iostream>
 #include <iomanip>
@@ -100,6 +101,7 @@ int main( int argc, char** argv )
       ::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
+      std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
 
       load_and_configure_chain_database(datadir, option_variables);
 
@@ -116,21 +118,25 @@ int main( int argc, char** argv )
       {
         // the user wants us to launch the RPC server.
         // First, override any config parameters they
-        bts::rpc::rpc_server::config rpc_config(cfg.rpc);
+       // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
         if (option_variables.count("rpcuser"))
-          rpc_config.rpc_user = option_variables["rpcuser"].as<std::string>();
+          cfg.rpc.rpc_user = option_variables["rpcuser"].as<std::string>();
         if (option_variables.count("rpcpassword"))
-          rpc_config.rpc_password = option_variables["rpcpassword"].as<std::string>();
+           cfg.rpc.rpc_password = option_variables["rpcpassword"].as<std::string>();
         // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
-          rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["rpcport"].as<uint16_t>());
+        {
+           cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+        }
         else
-          rpc_config.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), uint16_t(9988));
+          cfg.rpc.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), uint16_t(9988));
         if (option_variables.count("httpport"))
-          rpc_config.httpd_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), option_variables["httpport"].as<uint16_t>());
-        std::cout<<"Starting json rpc server on "<< std::string( rpc_config.rpc_endpoint ) <<"\n";
-        std::cout<<"Starting http json rpc server on "<< std::string( rpc_config.httpd_endpoint ) <<"\n";
-        bool rpc_success = rpc_server->configure(rpc_config);
+        {
+           cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
+        }
+        std::cout<<"Starting json rpc server on "<< std::string( cfg.rpc.rpc_endpoint ) <<"\n";
+        std::cout<<"Starting http json rpc server on "<< std::string( cfg.rpc.httpd_endpoint ) <<"\n";
+        bool rpc_success = rpc_server->configure(cfg.rpc);
         if (!rpc_success)
         {
             std::cerr << "Error starting rpc server\n\n";
