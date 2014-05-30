@@ -15,9 +15,9 @@ target_include_directories( bts_api_generator
 target_link_libraries( bts_api_generator fc bts_utilities leveldb )
 
 
-set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json")
+set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json")
 source_group("JSON Files" FILES ${json_description_files})
 
 set(generated_api_files "${CMAKE_CURRENT_BINARY_DIR}/include/bts/api/common_api.hpp")
@@ -42,6 +42,6 @@ target_include_directories(bts_api
 add_library(bts_rpc_stubs ${generated_rpc_stubs_files})
 target_link_libraries( bts_rpc_stubs 
                        PRIVATE fc
-                       PUBLIC bts_api bts_wallet bts_blockchain)
+                       PUBLIC bts_api bts_wallet bts_net bts_blockchain)
 target_include_directories(bts_rpc_stubs
                            PUBLIC "${rpc_stubs_output_dir}/include")

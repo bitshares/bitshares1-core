@@ -45,6 +45,7 @@ namespace bts { namespace wallet {
          void store_key( const key_data& k );
          void store_transaction( const signed_transaction& t );
          void cache_balance( const bts::blockchain::balance_record& b );
+         void cache_account( const wallet_account_record& );
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
@@ -78,7 +79,7 @@ namespace bts { namespace wallet {
          unordered_map<address,wallet_key_record>                         keys;
          unordered_map<address,address>                                   btc_to_bts_address;
          unordered_map<address,int32_t>                                   address_to_account;
-         unordered_map<name_id_type,int32_t>                              name_id_to_account;
+         unordered_map<account_id_type,int32_t>                           account_id_to_account;
          map<string,int32_t>                                              name_to_account;
 
          unordered_map< int32_t,wallet_account_record >                   accounts;

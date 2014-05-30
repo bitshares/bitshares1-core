@@ -20,10 +20,10 @@ using namespace bts::blockchain;
 
 struct vote_del
 {
-   vote_del( int64_t v = 0, name_id_type del = 0 )
+   vote_del( int64_t v = 0, account_id_type del = 0 )
    :votes(v),delegate_id(del){}
    int64_t votes;
-   name_id_type delegate_id;
+   account_id_type delegate_id;
    friend bool operator == ( const vote_del& a, const vote_del& b )
    {
       return a.votes == b.votes && a.delegate_id == b.delegate_id;
@@ -156,9 +156,9 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >                   _asset_db;
             bts::db::level_map< balance_id_type, balance_record >               _balance_db;
-            bts::db::level_map< name_id_type, name_record >                     _name_db;
+            bts::db::level_map< account_id_type, name_record >                     _name_db;
 
-            bts::db::level_map< string, name_id_type >                     _name_index_db;
+            bts::db::level_map< string, account_id_type >                     _name_index_db;
             bts::db::level_map< string, asset_id_type >                    _symbol_index_db;
             bts::db::level_pod_map< vote_del, int >                             _delegate_vote_index_db;
 
@@ -659,8 +659,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<reserve_name_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
@@ -682,7 +682,7 @@ namespace bts { namespace blockchain {
          wlog( "unexpected exception closing database\n" );
       }
    }
-   std::vector<name_id_type> chain_database::next_round_active_delegates()const
+   std::vector<account_id_type> chain_database::next_round_active_delegates()const
    {
       return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
@@ -690,10 +690,10 @@ namespace bts { namespace blockchain {
    /**
     *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */
-   std::vector<name_id_type> chain_database::get_delegates_by_vote(uint32_t first, uint32_t count )const
+   std::vector<account_id_type> chain_database::get_delegates_by_vote(uint32_t first, uint32_t count )const
    { try {
       auto del_vote_itr = my->_delegate_vote_index_db.begin();
-      std::vector<name_id_type> sorted_delegates;
+      std::vector<account_id_type> sorted_delegates;
       uint32_t pos = 0;
       while( sorted_delegates.size() < count && del_vote_itr.valid() )
       {
@@ -833,7 +833,7 @@ namespace bts { namespace blockchain {
       my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   name_id_type chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
+   account_id_type chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
    { try {
       FC_ASSERT( sec >= my->_head_block_header.timestamp );
 
@@ -959,9 +959,9 @@ namespace bts { namespace blockchain {
       return my->_balance_db.fetch_optional( balance_id );
    }
 
-   oname_record         chain_database::get_account_record( name_id_type name_id )const
+   oname_record         chain_database::get_account_record( account_id_type account_id )const
    {
-      return my->_name_db.fetch_optional( name_id );
+      return my->_name_db.fetch_optional( account_id );
    }
 
    asset_id_type        chain_database::get_asset_id( const string& symbol )const
@@ -990,9 +990,9 @@ namespace bts { namespace blockchain {
 
    oname_record         chain_database::get_account_record( const string& name )const
    { try {
-       auto name_id_itr = my->_name_index_db.find( name );
-       if( name_id_itr.valid() )
-          return get_account_record( name_id_itr.value() );
+       auto account_id_itr = my->_name_index_db.find( name );
+       if( account_id_itr.valid() )
+          return get_account_record( account_id_itr.value() );
        return oname_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name) ) }
 
@@ -1233,19 +1233,19 @@ namespace bts { namespace blockchain {
       base_asset.symbol = BTS_ADDRESS_PREFIX;
       base_asset.name = "BitShares XTS";
       base_asset.description = "Shares in the DAC";
-      base_asset.issuer_name_id = god.id;
+      base_asset.issuer_account_id = god.id;
       base_asset.current_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
       base_asset.collected_fees = 0;
       self->store_asset_record( base_asset );
 
       fc::time_point_sec timestamp = config.timestamp;
-      std::vector<name_id_type> delegate_ids;
-      int32_t name_id = 1;
+      std::vector<account_id_type> delegate_ids;
+      int32_t account_id = 1;
       for( auto name : config.names )
       {
          name_record rec;
-         rec.id                = name_id;
+         rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
          rec.active_key        = name.owner;
@@ -1255,10 +1255,10 @@ namespace bts { namespace blockchain {
          {
             rec.delegate_info = delegate_stats();
             rec.delegate_info->votes_for  = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
-            delegate_ids.push_back( name_id );
+            delegate_ids.push_back( account_id );
          }
          self->store_name_record( rec );
-         ++name_id;
+         ++account_id;
       }
 
       for( auto item : config.balances )
@@ -1280,7 +1280,7 @@ namespace bts { namespace blockchain {
 
       self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
       self->set_property( chain_property_enum::last_asset_id, 0 );
-      self->set_property( chain_property_enum::last_name_id, uint64_t(config.names.size()) );
+      self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
    }
 

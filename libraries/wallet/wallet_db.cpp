@@ -30,11 +30,11 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_index_itr == self->address_to_account.end() );
               self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
               
-              if( account_to_load.registered_name_id != 0 )
+              if( account_to_load.registered_account_id != 0 )
               {
-                auto current_name_id_itr = self->name_id_to_account.find( account_to_load.registered_name_id );
-                FC_ASSERT( current_name_id_itr == self->name_id_to_account.end() );
-                self->name_id_to_account[ account_to_load.registered_name_id ] = account_to_load.index;
+                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.registered_account_id );
+                FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
+                self->account_id_to_account[ account_to_load.registered_account_id ] = account_to_load.index;
               }
 
               auto current_name_itr = self->name_to_account.find( account_to_load.name );
@@ -59,6 +59,25 @@ namespace bts{ namespace wallet {
               self->btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("key_to_load",key_to_load) ) }
+
+           void load_transaction_record( const wallet_transaction_record& rec )
+           { try {
+              auto itr = self->transactions.find( rec.trx.id() );
+              FC_ASSERT( itr == self->transactions.end(), "Duplicate Transaction found in Wallet" )
+              self->transactions[ rec.trx.id() ] = rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
+
+           void load_property_record( const wallet_property_record& property_rec )
+           { try {
+              auto itr = self->properties.find( property_rec.key );
+              FC_ASSERT( itr == self->properties.end(), "Duplicate Property Record" );
+              self->properties[property_rec.key] = property_rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("property_record",property_rec )) }
+
+           void load_asset_record( const wallet_asset_record& asset_rec )
+           { try {
+              FC_ASSERT( !"Not Implemented" );
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_record",asset_rec )) }
 
 
            void load_balance_record( const wallet_balance_record& rec )
@@ -102,8 +121,14 @@ namespace bts{ namespace wallet {
                case key_record_type:
                   my->load_key_record( current_record.as<wallet_key_record>() );
                   break;
+               case property_record_type:
+                  my->load_property_record( current_record.as<wallet_property_record>() );
+                  break;
                case balance_record_type:
                   my->load_balance_record( current_record.as<wallet_balance_record>() );
+                  break;
+               case transaction_record_type:
+                  my->load_transaction_record( current_record.as<wallet_transaction_record>() );
                   break;
             }
          } 
@@ -121,7 +146,7 @@ namespace bts{ namespace wallet {
       keys.clear();
       wallet_master_key.reset();
       address_to_account.clear();
-      name_id_to_account.clear();
+      account_id_to_account.clear();
       name_to_account.clear();
       accounts.clear();
       transactions.clear();
@@ -327,7 +352,7 @@ namespace bts{ namespace wallet {
 
       wallet_account_record war; 
       war.name = new_account_name;
-      war.registered_name_id = 0;
+      war.registered_account_id = 0;
       war.account_address = address( new_account_key );
 
       auto current_key = lookup_key( new_account_key );
@@ -436,5 +461,15 @@ namespace bts{ namespace wallet {
             ("trx",trx)
             ("memo_message",memo_message)
             ("to",to) ) }
+
+   void wallet_db::cache_account( const wallet_account_record& war )
+   {
+      accounts[war.index] = war;
+      if( war.registered_account_id != 0 )
+      {
+         account_id_to_account[war.registered_account_id] = war.index;
+      }
+      store_record( war );
+   }
 
 } } // bts::wallet

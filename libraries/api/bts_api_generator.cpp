@@ -700,7 +700,9 @@ void api_generator::initialize_type_map_with_fundamental_types()
     _type_map.insert(type_map_type::value_type(by_value_type, std::make_shared<fundamental_type_mapping>(by_value_type, by_value_type, by_value_type)));
   for (const char* by_value_type : pass_by_reference_types)
     _type_map.insert(type_map_type::value_type(by_value_type, std::make_shared<fundamental_type_mapping>(by_value_type, std::string("const ") + by_value_type + "&", by_value_type)));
-  _type_map.insert(type_map_type::value_type("json_object", std::make_shared<fundamental_type_mapping>("json_object", "const fc::variant&", "fc::variant")));
+  _type_map.insert(type_map_type::value_type("json_variant", std::make_shared<fundamental_type_mapping>("json_variant", "const fc::variant&", "fc::variant")));
+  _type_map.insert(type_map_type::value_type("json_variant_array", std::make_shared<sequence_type_mapping>("json_variant_array", _type_map["json_variant"])));
+  _type_map.insert(type_map_type::value_type("json_object", std::make_shared<fundamental_type_mapping>("json_object", "const fc::variant_object&", "fc::variant_object")));
   _type_map.insert(type_map_type::value_type("json_object_array", std::make_shared<sequence_type_mapping>("json_object_array", _type_map["json_object"])));
 }
 

@@ -36,6 +36,10 @@ namespace bts { namespace wallet {
 
              bool scan_deposit( const deposit_operation& op, 
                                  const private_keys& keys );
+
+             bool scan_register_account( const register_account_operation& op );
+             bool scan_update_account( const update_account_operation& op );
+
              void cache_balance( const balance_id_type& balance_id );
 
              void scan_balances();
@@ -155,6 +159,9 @@ namespace bts { namespace wallet {
                   case deposit_op_type:
                      cache_trx |= scan_deposit( op.as<deposit_operation>(), keys );
                      break;
+                  case register_account_op_type:
+                     cache_trx |= scan_register_account( op.as<register_account_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -167,6 +174,33 @@ namespace bts { namespace wallet {
          if( current_balance.valid() )
             cache_balance( op.balance_id );
          return current_balance.valid();
+      }
+
+      bool wallet_impl::scan_register_account( const register_account_operation& op )
+      {
+          auto opt_key_rec = _wallet_db.lookup_key( op.owner_key );
+
+          if( !opt_key_rec.valid() ) 
+             return false;
+
+          auto opt_account = _wallet_db.lookup_account( address( op.owner_key ) );
+          if( !opt_account.valid() )
+          {
+             wlog( "We have the key but no account for registration operation" );
+             return false;
+          }
+
+          auto account_name_rec = _blockchain->get_account_record( op.name );
+          FC_ASSERT( account_name_rec.valid() );
+
+          opt_account->registered_account_id = account_name_rec->id;
+          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
+
+          return false;
+      }
+      bool wallet_impl::scan_update_account( const update_account_operation& op )
+      {
+        return false;
       }
 
       bool wallet_impl::scan_deposit( const deposit_operation& op, 
@@ -337,7 +371,7 @@ namespace bts { namespace wallet {
    }
    void  wallet::create_from_json(const path& path, const string& name )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    void wallet::unlock( const string& password, microseconds timeout )
@@ -578,7 +612,7 @@ namespace bts { namespace wallet {
       if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
          return import_private_key( key, account_name );
       
-      FC_ASSERT( !"Error parsing WIF private key" );
+      FC_ASSERT( false, "Error parsing WIF private key" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
@@ -845,7 +879,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      trx.reserve_name( account_to_register, json_data,
+      trx.register_account( account_to_register, json_data,
                         account_public_key, // master
                         account_public_key, // active
                         as_delegate );
@@ -881,7 +915,7 @@ namespace bts { namespace wallet {
                                              const bool sign  )
    {
       FC_ASSERT( is_valid_account_name( issuer_account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction  wallet::issue_asset( share_type amount, 
@@ -890,7 +924,7 @@ namespace bts { namespace wallet {
                                          const bool sign )
    {
       FC_ASSERT( is_valid_account_name( to_account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
 
@@ -901,7 +935,7 @@ namespace bts { namespace wallet {
                                                  const bool sign )
    {
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -911,7 +945,7 @@ namespace bts { namespace wallet {
                                        const variant& data,
                                        const bool sign  )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction wallet::vote_proposal( const string& name, 
@@ -919,7 +953,7 @@ namespace bts { namespace wallet {
                                      uint8_t vote,
                                      const bool sign )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    asset wallet::get_priority_fee( const string& symbol )const
@@ -1084,7 +1118,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -1140,7 +1174,7 @@ namespace bts { namespace wallet {
 
    vector<asset>   wallet::get_all_balances( const string& account_name )const
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    bool  wallet::is_sending_address( const address& addr )const
@@ -1159,6 +1193,7 @@ namespace bts { namespace wallet {
 
    map<string, public_key_type> wallet::list_contact_accounts() const
    {
+<<<<<<< HEAD
       map<string, public_key_type> contact_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1171,10 +1206,14 @@ namespace bts { namespace wallet {
       }
       
       return contact_accs;
+=======
+      FC_ASSERT( false, "Not Implemented" );
+>>>>>>> d75b7fc492c1f37245a967d5bcb2ff052f71347d
    }
 
    map<string, public_key_type> wallet::list_receive_accounts() const
    {
+<<<<<<< HEAD
       map<string, public_key_type> rec_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1187,6 +1226,9 @@ namespace bts { namespace wallet {
       }
       
       return rec_accs;
+=======
+      FC_ASSERT( false, "Not Implemented" );
+>>>>>>> d75b7fc492c1f37245a967d5bcb2ff052f71347d
    }
 
 

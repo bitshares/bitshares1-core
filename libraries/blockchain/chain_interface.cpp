@@ -5,7 +5,7 @@
 #include <sstream>
 
 namespace bts{ namespace blockchain {
-   balance_record::balance_record( const address& owner, const asset& balance_arg, name_id_type delegate_id )
+   balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
@@ -66,15 +66,15 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
-   name_id_type   chain_interface::last_name_id()const
+   account_id_type   chain_interface::last_account_id()const
    {
-       return get_property( chain_property_enum::last_name_id ).as<name_id_type>();
+       return get_property( chain_property_enum::last_account_id ).as<account_id_type>();
    }
 
-   name_id_type   chain_interface::new_name_id()
+   account_id_type   chain_interface::new_account_id()
    {
-      auto next_id = last_name_id() + 1;
-      set_property( chain_property_enum::last_name_id, next_id );
+      auto next_id = last_account_id() + 1;
+      set_property( chain_property_enum::last_account_id, next_id );
       return next_id;
    }
 
@@ -90,17 +90,17 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
-   std::vector<name_id_type> chain_interface::get_active_delegates()const
+   std::vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
-      return get_property( active_delegate_list_id ).as<std::vector<name_id_type> >();
+      return get_property( active_delegate_list_id ).as<std::vector<account_id_type> >();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void                      chain_interface::set_active_delegates( const std::vector<name_id_type>& delegate_ids )
+   void                      chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
       set_property( active_delegate_list_id, fc::variant(delegate_ids) );
    }
 
-   bool                      chain_interface::is_active_delegate( name_id_type delegate_id ) const
+   bool                      chain_interface::is_active_delegate( account_id_type delegate_id ) const
    { try {
       auto active = get_active_delegates();
       return active.end() != std::find( active.begin(), active.end(), delegate_id );

@@ -257,7 +257,7 @@ namespace bts { namespace wallet {
          */
 
          /*
-         std::unordered_map<name_id_type,       wallet_name_record>         names( const string& account_name = "*" )const;
+         std::unordered_map<account_id_type,       wallet_name_record>         names( const string& account_name = "*" )const;
          std::unordered_map<asset_id_type,      wallet_asset_record>        assets( const string& account_name = "*" )const;
          */
 

@@ -312,13 +312,15 @@ namespace bts { namespace client {
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
     signed_transactions client::get_pending_transactions()const { return my->get_pending_transactions(); }
 
-    void client::broadcast_transaction( const signed_transaction& trx )
+    bts::blockchain::transaction_id_type client::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
-      ilog("broadcasting transaction with id ${id} : ${transaction}", ("id", trx.id())("transaction", trx));
+      ilog("broadcasting transaction with id ${id} : ${transaction}", 
+           ("id", transaction_to_broadcast.id())("transaction", transaction_to_broadcast));
 
       // p2p doesn't send messages back to the originator
-      my->on_new_transaction(trx);
-      my->_p2p_node->broadcast(trx_message(trx));
+      my->on_new_transaction(transaction_to_broadcast);
+      my->_p2p_node->broadcast(trx_message(transaction_to_broadcast));
+      return transaction_to_broadcast.id();
     }
 
     //JSON-RPC Method Implementations START
@@ -394,7 +396,7 @@ namespace bts { namespace client {
                                              memo_message, true );
          for( auto trx : trxs )
          {
-            broadcast_transaction( trx );
+            network_broadcast_transaction( trx );
          }
 
          return trxs;
@@ -419,7 +421,7 @@ namespace bts { namespace client {
         get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
       if (flag == sign_and_broadcast)
       {
-          broadcast_transaction(create_asset_trx);
+          network_broadcast_transaction(create_asset_trx);
       }
       return create_asset_trx;
     }
@@ -433,7 +435,7 @@ namespace bts { namespace client {
       auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name, sign);
       if (flag == sign_and_broadcast)
       {
-          broadcast_transaction(issue_asset_trx);
+          network_broadcast_transaction(issue_asset_trx);
       }
       return issue_asset_trx;
     }
@@ -449,7 +451,7 @@ namespace bts { namespace client {
         auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, sign);
         if( flag == sign_and_broadcast )
         {
-            broadcast_transaction(trx);
+            network_broadcast_transaction(trx);
         }
         return trx;
       } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
@@ -477,7 +479,7 @@ namespace bts { namespace client {
         auto trx = get_wallet()->create_proposal(delegate_account_name, subject, body, proposal_type, json_data, sign);
         if (flag == sign_and_broadcast)
         {
-            broadcast_transaction(trx);
+            network_broadcast_transaction(trx);
         }
         return trx;
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_account_name", delegate_account_name)("subject", subject))
@@ -493,7 +495,7 @@ namespace bts { namespace client {
         auto trx = get_wallet()->vote_proposal(name, proposal_id, vote, sign);
         if (flag == sign_and_broadcast)
         {
-            broadcast_transaction(trx);
+            network_broadcast_transaction(trx);
         }
         return trx;
       } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
@@ -668,15 +670,13 @@ namespace bts { namespace client {
         delegate_records.push_back( *get_chain()->get_account_record( delegate_id ) );
       return delegate_records;
     }
-
-    fc::variants client::network_get_peer_info() const
+    
+    std::vector<fc::variant_object> client::network_get_peer_info() const
     {
-      fc::variants results;
+      std::vector<fc::variant_object> results;
       vector<bts::net::peer_status> peer_statuses = my->_p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-      {
         results.push_back(peer_status.info);
-      }
       return results;
     }
 
@@ -693,7 +693,7 @@ namespace bts { namespace client {
       my->_p2p_node->set_advanced_node_parameters(params);
     }
 
-    fc::variant_object client::network_get_advanced_node_parameters()
+    fc::variant_object client::network_get_advanced_node_parameters() const
     {
       return my->_p2p_node->get_advanced_node_parameters();
     }

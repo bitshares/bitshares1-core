@@ -14,8 +14,8 @@ namespace bts { namespace blockchain {
       deposit_op_type             = 2,
 
       /** name operations */
-      reserve_name_op_type        = 3,
-      update_name_op_type         = 4,
+      register_account_op_type        = 3,
+      update_account_op_type         = 4,
 
       /** asset operations */
       create_asset_op_type        = 5,
@@ -95,8 +95,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (deposit_op_type)
                  (create_asset_op_type)
                  (update_asset_op_type)
-                 (reserve_name_op_type)
-                 (update_name_op_type)
+                 (register_account_op_type)
+                 (update_account_op_type)
                  (issue_asset_op_type)
                  (submit_proposal_op_type)
                  (vote_proposal_op_type)

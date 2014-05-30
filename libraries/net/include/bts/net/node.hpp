@@ -103,7 +103,7 @@ namespace bts { namespace net {
       fc::ip::endpoint host;
       /** info contains the fields required by bitcoin-rpc's getpeerinfo call, we will likely
           extend it with our own fields. */
-      fc::variant      info;
+      fc::variant_object info;
    };
 
    /**
