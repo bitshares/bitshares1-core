@@ -34,9 +34,6 @@ namespace bts { namespace client {
          virtual ~client();
          void open( const path& data_dir, const path& genesis_dat );
 
-         /** verifies and then broadcasts the transaction */
-         void broadcast_transaction( const signed_transaction& trx );
-
          /**
           *  Produces a block every 30 seconds if there is at least
           *  once transaction.
@@ -139,11 +136,6 @@ namespace bts { namespace client {
                          void stop()  override;
 
                       void network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)  override;
-                      void network_set_advanced_node_parameters(const fc::variant_object& params)  override;
-                      fc::variant_object network_get_advanced_node_parameters()  override;
-
-         bts::net::message_propagation_data network_get_transaction_propagation_data(const transaction_id_type& transaction_id)  override;
-         bts::net::message_propagation_data network_get_block_propagation_data(const block_id_type& block_id)  override;
 
          fc::path                            get_data_dir() const;
 
