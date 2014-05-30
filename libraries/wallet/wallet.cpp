@@ -1062,10 +1062,14 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      // TODO: lookup in blockchain as well..
-
 
       auto opt_account = my->_wallet_db.lookup_account( account_name );
+      if( !opt_account.valid() )
+      {
+         auto registered_account = my->_blockchain->get_account_record( account_name );
+         if( registered_account.valid() )
+            return registered_account->active_key;
+      }
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'", 
                 ("name",account_name) );
 
