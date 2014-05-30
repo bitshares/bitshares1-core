@@ -135,8 +135,6 @@ namespace bts { namespace client {
 
                          void stop()  override;
 
-                      void network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)  override;
-
          fc::path                            get_data_dir() const;
 
          // returns true if the client is connected to the network (either server or p2p)
