@@ -24,8 +24,6 @@ namespace bts { namespace client {
             client_impl( const chain_database_ptr& chain_db )
             :_chain_db(chain_db)
             {
-                _p2p_node = std::make_shared<bts::net::node>();
-                _p2p_node->set_delegate(this);
             }
 
             virtual ~client_impl()override {}
@@ -287,6 +285,9 @@ namespace bts { namespace client {
         my->_chain_db->open( data_dir / "chain", genesis_dat );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
+
+        my->_p2p_node = std::make_shared<bts::net::node>();
+        my->_p2p_node->set_delegate(my.get());
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir)
                              ("genesis_dat", fc::absolute(genesis_dat)) ) }
 
