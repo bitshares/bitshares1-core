@@ -915,6 +915,29 @@ namespace bts { namespace wallet {
                                              const bool sign  )
    {
       FC_ASSERT( is_valid_account_name( issuer_account_name ) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      //address from_account_address( get_account_public_key( pay_with_account_name ) );
+/*
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      // TODO: adjust fee based upon blockchain price per byte and
+      // the size of trx... 'recursivey'
+
+      my->withdraw_to_transaction( required_fees.amount,
+                                   required_fees.asset_id,
+                                   from_account_address,
+                                   trx, required_signatures );
+      if( sign )
+         sign_transaction( trx, required_signatures );
+
+      return trx;
+
+*/
       FC_ASSERT( false, "Not Implemented" );
    }
 
@@ -1020,7 +1043,7 @@ namespace bts { namespace wallet {
                   // TODO
                   name_id_type vote = deposit_op.condition.delegate_id;
                   name_id_type pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
-                  int32_t delegate_account_num = my->_wallet_db.name_id_to_account[pos_delegate_id];
+                  int32_t delegate_account_num = my->_wallet_db.account_id_to_account[pos_delegate_id];
                   oname_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
                   string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";
                   pretty_op.vote = std::make_pair(vote, delegate_name);
@@ -1046,16 +1069,16 @@ namespace bts { namespace wallet {
                   pretty_trx.add_operation(pretty_op);
                   break;
               }
-              case( reserve_name_op_type ):
+              case( register_account_op_type ):
               {
-                  //auto reserve_name_op = op.as<reserve_name_operation>();
+                  auto reserve_name_op = op.as<register_account_operation>();
                   auto pretty_op = pretty_reserve_name_op();
                   pretty_trx.add_operation( pretty_op );
                   break;
               }
-              case( update_name_op_type ):
+              case( update_account_op_type ):
               {
-                  //auto update_name_op = op.as<update_name_operation>();
+                  auto update_name_op = op.as<update_account_operation>();
                   auto pretty_op = pretty_update_name_op();
                   pretty_trx.add_operation( pretty_op );
                   break;
@@ -1193,7 +1216,6 @@ namespace bts { namespace wallet {
 
    map<string, public_key_type> wallet::list_contact_accounts() const
    {
-<<<<<<< HEAD
       map<string, public_key_type> contact_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1206,14 +1228,10 @@ namespace bts { namespace wallet {
       }
       
       return contact_accs;
-=======
-      FC_ASSERT( false, "Not Implemented" );
->>>>>>> d75b7fc492c1f37245a967d5bcb2ff052f71347d
    }
 
    map<string, public_key_type> wallet::list_receive_accounts() const
    {
-<<<<<<< HEAD
       map<string, public_key_type> rec_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1226,9 +1244,6 @@ namespace bts { namespace wallet {
       }
       
       return rec_accs;
-=======
-      FC_ASSERT( false, "Not Implemented" );
->>>>>>> d75b7fc492c1f37245a967d5bcb2ff052f71347d
    }
 
 
