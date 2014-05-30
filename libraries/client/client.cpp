@@ -845,7 +845,7 @@ namespace bts { namespace client {
       info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
       info["fc_revision"]                    = fc::git_revision_sha;
       info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at "__TIME__;
+      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
       return info;
     }
 
