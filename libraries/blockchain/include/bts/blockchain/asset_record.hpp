@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
       std::string         name;
       std::string         description;
       fc::variant         json_data;
-      account_id_type        issuer_account_id;
+      account_id_type     issuer_account_id;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
       share_type          current_share_supply;

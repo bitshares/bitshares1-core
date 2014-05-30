@@ -279,8 +279,7 @@ namespace bts { namespace wallet {
       if (is_open())
         close();
       create_file( fc::absolute(my->_data_directory) / wallet_name, password, brainkey ); 
-      open( wallet_name )
-
+      open( wallet_name );
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}' in ${data_dir}", 
                             ("wallet_name",wallet_name)("data_dir",fc::absolute(my->_data_directory)) ) }
 
@@ -961,12 +960,24 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_valid_account_name( to_account_name ) );
       FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
 
-      signed_transaction        trx;
+      signed_transaction         trx;
       unordered_set<address>     required_signatures;
-/* TODO
+      
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
-      auto issuer_record = my->_blockchain->get_asset_record( symbol );
-      */
+
+      auto asset_record = my->_blockchain->get_asset_record( symbol );
+      FC_ASSERT(asset_record.valid(), "no such asset record");
+      auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
+      FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
+
+      my->withdraw_to_transaction( required_fees.amount,
+                                   required_fees.asset_id,
+                                   get_account_public_key( issuer_account->name ),
+                                   trx, required_signatures );
+     
+      trx.issue( asset( asset_record->id, amount ) );
+      required_signatures.insert( issuer_account->active_key );
+
 
       if( sign )
           sign_transaction( trx, required_signatures );
