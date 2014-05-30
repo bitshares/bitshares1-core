@@ -371,7 +371,7 @@ namespace bts { namespace wallet {
    }
    void  wallet::create_from_json(const path& path, const string& name )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    void wallet::unlock( const string& password, microseconds timeout )
@@ -612,7 +612,7 @@ namespace bts { namespace wallet {
       if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
          return import_private_key( key, account_name );
       
-      FC_ASSERT( !"Error parsing WIF private key" );
+      FC_ASSERT( false, "Error parsing WIF private key" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
@@ -668,7 +668,7 @@ namespace bts { namespace wallet {
    vector<wallet_transaction_record>    wallet::get_transaction_history()const
    { try {
       FC_ASSERT( is_open() );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -898,7 +898,7 @@ namespace bts { namespace wallet {
                                              const bool sign  )
    {
       FC_ASSERT( is_valid_account_name( issuer_account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction  wallet::issue_asset( share_type amount, 
@@ -907,7 +907,7 @@ namespace bts { namespace wallet {
                                          const bool sign )
    {
       FC_ASSERT( is_valid_account_name( to_account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
 
@@ -918,7 +918,7 @@ namespace bts { namespace wallet {
                                                  const bool sign )
    {
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -928,7 +928,7 @@ namespace bts { namespace wallet {
                                        const variant& data,
                                        const bool sign  )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction wallet::vote_proposal( const string& name, 
@@ -936,7 +936,7 @@ namespace bts { namespace wallet {
                                      uint8_t vote,
                                      const bool sign )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    asset wallet::get_priority_fee( const string& symbol )const
@@ -950,7 +950,7 @@ namespace bts { namespace wallet {
     */
    pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec, int number  )
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    void wallet::import_bitcoin_wallet( const path& wallet_dat,
@@ -960,7 +960,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -1016,7 +1016,7 @@ namespace bts { namespace wallet {
 
    vector<asset>   wallet::get_all_balances( const string& account_name )const
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    bool  wallet::is_sending_address( const address& addr )const
@@ -1035,12 +1035,12 @@ namespace bts { namespace wallet {
 
    map<string, public_key_type> wallet::list_contact_accounts() const
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
    map<string, public_key_type> wallet::list_receive_accounts() const
    {
-      FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( false, "Not Implemented" );
    }
 
 

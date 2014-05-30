@@ -58,11 +58,7 @@ namespace bts { namespace rpc {
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
              (wallet_list_delegate_trust_status)\
-             (network_get_block_propagation_data)\
-             (network_get_transaction_propagation_data)\
-             (_list_json_commands)\
-             (network_broadcast_transaction)\
-             (network_set_advanced_node_parameters)
+             (_list_json_commands)
 
   namespace detail
   {
@@ -675,21 +671,6 @@ Result:
     }
     
 
-    static bts::api::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
-            /* description */ "Broadcast a previously-created signed transaction to the network",
-            /* returns: */    "transaction_id",
-            /* params:          name                  type                   classification                   default_value */
-                              {{"signed_transaction", "signed_transaction",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::connected_to_network,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::network_broadcast_transaction(const fc::variants& params)
-    {
-      bts::blockchain::signed_transaction transaction = params[0].as<bts::blockchain::signed_transaction>();
-      _client->broadcast_transaction(transaction);
-      return fc::variant(transaction.id());
-    }
-    
     static bts::api::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
             /* returns: */    "invoice_summary",
@@ -736,7 +717,7 @@ Result:
               params[0].as_int64(),
               params[1].as_string(),
               params[2].as_string() );
-       _client->broadcast_transaction( issue_asset_trx );
+       _client->network_broadcast_transaction( issue_asset_trx );
        return fc::variant(issue_asset_trx);
     }
 
@@ -1282,23 +1263,6 @@ Arguments:
       return fc::variant(delegate_records);
     }
 
-    static bts::api::method_data network_set_advanced_node_parameters_metadata{"network_set_advanced_node_parameters", nullptr,
-            /* description */ "Sets advanced node parameters, used for setting up automated tests",
-            /* returns: */    "null",
-            /* params:          name      type         classification                   default value */
-                              {{"params", "jsonobject",bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-  R"(
-Result:
-null
-  )" };
-    fc::variant rpc_server_impl::network_set_advanced_node_parameters(const fc::variants& params)
-    {
-      _client->network_set_advanced_node_parameters(params[0].get_object());
-      return fc::variant();
-    }
-
-
     static bts::api::method_data stop_metadata{"stop", nullptr,
             /* description */ "Stop BitShares server",
             /* returns: */    "null",
@@ -1315,48 +1279,6 @@ Stop BitShares server.
         _on_quit_promise->set_value();
       _client->stop();
       return fc::variant();
-    }
-
-    static bts::api::method_data network_get_transaction_propagation_data_metadata{"network_get_transaction_propagation_data", nullptr,
-            /* description */ "Returns the time the transaction was first seen by this client",
-            /* returns: */    "bts::net::message_propagation_data",
-            /* params:          name              type             classification                   default value */
-                              {{"transaction_id", "transaction_id",bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-network_get_transaction_propagation_data <transaction_id>
-
-Returns the time the transaction was first seen by this client.
-
-This interrogates the p2p node's message cache to find out when it first saw this transaction.
-The data in the message cache is only kept for a few blocks, so you can only use this to ask
-about recent transactions. This is intended to be used to track message propagation delays
-in our test network.
-)" };
-    fc::variant rpc_server_impl::network_get_transaction_propagation_data(const fc::variants& params)
-    {
-      return fc::variant(_client->network_get_transaction_propagation_data(params[0].as<transaction_id_type>()));
-    }
-
-    static bts::api::method_data network_get_block_propagation_data_metadata{"network_get_block_propagation_data", nullptr,
-            /* description */ "Returns the time the block was first seen by this client",
-            /* returns: */    "bts::net::message_propagation_data",
-            /* params:          name              type             classification                   default value */
-                              {{"block_hash",     "block_id_type", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-network_get_block_propagation_data <block_hash>
-
-Returns the time the block was first seen by this client.
-
-This interrogates the p2p node's message cache to find out when it first saw this transaction.
-The data in the message cache is only kept for a few blocks, so you can only use this to ask
-about recent transactions. This is intended to be used to track message propagation delays
-in our test network.
-)" };
-    fc::variant rpc_server_impl::network_get_block_propagation_data(const fc::variants& params)
-    {
-      return fc::variant(_client->network_get_block_propagation_data(params[0].as<block_id_type>()));
     }
 
     static bts::api::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
