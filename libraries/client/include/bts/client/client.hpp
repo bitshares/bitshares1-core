@@ -100,8 +100,8 @@ namespace bts { namespace client {
                                             void wallet_rename_account(const string& current_account_name, const string& new_account_name)  override;
 
                   wallet_account_record wallet_get_account(const string& account_name) const  override;
-                 balances               wallet_get_balance( const string& asset_symbol = BTS_ADDRESS_PREFIX, 
-                                                            const string& account_name = "" ) const  override;
+              //   balances               wallet_get_balance( const string& asset_symbol = BTS_ADDRESS_PREFIX, 
+               //                                             const string& account_name = "" ) const  override;
          vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const  override;
          vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const  override;
                            oname_record blockchain_get_account_record(const string& name) const  override;

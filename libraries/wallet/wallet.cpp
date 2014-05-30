@@ -8,23 +8,44 @@
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
+#include <iostream>
+
 #include <algorithm>
 
 namespace bts { namespace wallet {
 
    namespace detail {
 
-      class wallet_impl
+      class wallet_impl : public chain_observer
       {
          public:
+             wallet*            self;
              wallet_db          _wallet_db;
              chain_database_ptr _blockchain;
-             path           _data_directory;
-             path           _current_wallet_path;
+             path               _data_directory;
+             path               _current_wallet_path;
              fc::time_point     _scheduled_lock_time;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
 
+            /**
+             * This method is called anytime the blockchain state changes including
+             * undo operations.
+             */
+            void state_changed( const pending_chain_state_ptr& state )
+            {
+            }
+            /**
+             *  This method is called anytime a block is applied to the chain.
+             */
+            void block_applied( const block_summary& summary ) override
+            {
+               if( self->is_unlocked() )
+               {
+                  auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+                  scan_block( summary.block_data.block_num, account_priv_keys );
+               }
+            }
 
              secret_hash_type get_secret( uint32_t block_num,
                                           const private_key_type& delegate_key )const;
@@ -145,9 +166,12 @@ namespace bts { namespace wallet {
       void wallet_impl::scan_block( uint32_t block_num, 
                                     const private_keys& keys )
       {
+         std::cout << "scanning block number " << block_num << "    keys: " << keys.size() << "    \r";
          auto current_block = _blockchain->get_block( block_num );
          for( auto trx : current_block.user_transactions )
          {
+            std::cout << "scanning block number " << block_num << "    \n";
+            std::cout << "    scanning trx: " << fc::json::to_string( trx) << "    \n";
             bool cache_trx = false;
             for( auto op : trx.operations )
             {
@@ -254,7 +278,9 @@ namespace bts { namespace wallet {
    wallet::wallet( chain_database_ptr blockchain )
    :my( new detail::wallet_impl() )
    {
+      my->self = this;
       my->_blockchain = blockchain;
+      my->_blockchain->set_observer( my.get() );
    }
 
    wallet::~wallet()

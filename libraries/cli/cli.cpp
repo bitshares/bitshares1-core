@@ -365,18 +365,14 @@ namespace bts { namespace cli {
                           std::cout << "\n";
                           uint32_t next_step = 0;
                           auto cb = [start, next_step](uint32_t cur,
-                                                       uint32_t last,
-                                                       uint32_t cur_trx,
-                                                       uint32_t last_trx) mutable
+                                                       uint32_t last
+                                                       ) mutable
                           {
-                              if (((100*(cur - start)) / (last - start)) > next_step)
-                              {
-                                  std::cout << "=";
+                                  std::cout << cur << "   \r";
                                   next_step++;
-                              }
                           };
                           // TODO: restore callback here...
-                          // _client->get_wallet()->scan_chain(start, cb);
+                          _client->get_wallet()->scan_chain(start, -1, cb);
                           std::cout << "\n";
                           return fc::variant("Scan complete.");
                       }
