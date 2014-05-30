@@ -69,10 +69,10 @@ namespace bts { namespace blockchain {
        public_key_type();
        public_key_type( const fc::ecc::public_key_data& data );
        public_key_type( const fc::ecc::public_key& pubkey );
-       public_key_type( const std::string& base58str );
+       explicit public_key_type( const std::string& base58str );
        operator fc::ecc::public_key_data() const;
        operator fc::ecc::public_key() const;
-       operator std::string() const;
+       explicit operator std::string() const;
        friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2);
        friend bool operator == ( const public_key_type& p1, const public_key_type& p2);
        friend bool operator != ( const public_key_type& p1, const public_key_type& p2);

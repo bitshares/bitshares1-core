@@ -1220,26 +1220,26 @@ namespace bts { namespace wallet {
 
 
    vector<asset>   wallet::get_all_balances( const string& account_name )const
-   {
+   { try {
       FC_ASSERT( false, "Not Implemented" );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    bool  wallet::is_sending_address( const address& addr )const
-   {
+   { try {
       return !is_receive_address( addr );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
    bool  wallet::is_receive_address( const address& addr )const
-   { 
+   {  try {
       auto key_rec = my->_wallet_db.lookup_key( addr );
       if( key_rec.valid() )
          return key_rec->has_private_key();
       return false;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    map<string, public_key_type> wallet::list_contact_accounts() const
-   {
+   { try {
       map<string, public_key_type> contact_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1247,15 +1247,15 @@ namespace bts { namespace wallet {
          auto acc = iter->second;
          if ( ! my->_wallet_db.has_private_key( acc.account_address ) )
          {
-             contact_accs[acc.name] = public_key_type( acc.account_address.addr );
+             contact_accs[acc.name] = get_account_public_key( acc.name ); 
          }
       }
       
       return contact_accs;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    map<string, public_key_type> wallet::list_receive_accounts() const
-   {
+   { try {
       map<string, public_key_type> rec_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
@@ -1263,12 +1263,12 @@ namespace bts { namespace wallet {
          auto acc = iter->second;
          if ( my->_wallet_db.has_private_key( acc.account_address ) )
          {
-             rec_accs[acc.name] = public_key_type( acc.account_address.addr );
+             rec_accs[acc.name] = get_account_public_key( acc.name ); 
          }
       }
       
       return rec_accs;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
    void  wallet::scan_state()

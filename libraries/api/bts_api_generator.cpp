@@ -123,11 +123,14 @@ typedef std::shared_ptr<dictionary_type_mapping> dictionary_type_mapping_ptr;
 
 struct parameter_description
 {
+  parameter_description():prompt(false){}
+
   std::string name;
   type_mapping_ptr type;
   std::string description;
   fc::optional<fc::variant> default_value;
   fc::optional<fc::variant> example;
+  bool                      prompt;
 };
 typedef std::list<parameter_description> parameter_description_list;
 
@@ -267,6 +270,8 @@ parameter_description_list api_generator::load_parameters(const fc::variants& js
     parameter.description = json_parameter_description["description"].as_string();
     FC_ASSERT(json_parameter_description.contains("type"));
     parameter.type = lookup_type_mapping(json_parameter_description["type"].as_string());
+    if( json_parameter_description.contains( "prompt" ) )
+       parameter.prompt = json_parameter_description["prompt"].as_bool();
     if (json_parameter_description.contains("default_value"))
       parameter.default_value = json_parameter_description["default_value"];
     if (json_parameter_description.contains("example"))
