@@ -60,6 +60,25 @@ namespace bts{ namespace wallet {
               self->btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("key_to_load",key_to_load) ) }
 
+           void load_transaction_record( const wallet_transaction_record& rec )
+           { try {
+              auto itr = self->transactions.find( rec.trx.id() );
+              FC_ASSERT( itr == self->transactions.end(), "Duplicate Transaction found in Wallet" )
+              self->transactions[ rec.trx.id() ] = rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
+
+           void load_property_record( const wallet_property_record& property_rec )
+           { try {
+              auto itr = self->properties.find( property_rec.key );
+              FC_ASSERT( itr == self->properties.end(), "Duplicate Property Record" );
+              self->properties[property_rec.key] = property_rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("property_record",property_rec )) }
+
+           void load_asset_record( const wallet_asset_record& asset_rec )
+           { try {
+              FC_ASSERT( !"Not Implemented" );
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_record",asset_rec )) }
+
 
            void load_balance_record( const wallet_balance_record& rec )
            { try {
@@ -102,8 +121,14 @@ namespace bts{ namespace wallet {
                case key_record_type:
                   my->load_key_record( current_record.as<wallet_key_record>() );
                   break;
+               case property_record_type:
+                  my->load_property_record( current_record.as<wallet_property_record>() );
+                  break;
                case balance_record_type:
                   my->load_balance_record( current_record.as<wallet_balance_record>() );
+                  break;
+               case transaction_record_type:
+                  my->load_transaction_record( current_record.as<wallet_transaction_record>() );
                   break;
             }
          } 

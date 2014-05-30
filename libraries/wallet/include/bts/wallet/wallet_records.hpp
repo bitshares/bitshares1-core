@@ -19,8 +19,6 @@ namespace bts { namespace wallet {
       asset_record_type          = 5,
       balance_record_type        = 6,
       property_record_type       = 7,
-      identity_record_type       = 8,
-      memo_record_type           = 9
    };
 
    struct generic_wallet_record
@@ -81,9 +79,21 @@ namespace bts { namespace wallet {
     */
    struct account
    {
+       account():trust_level(0){}
+
        std::string       name;
        account_id_type   registered_account_id;  
        address           account_address;
+
+       /** 
+        * If registered account id is a delegate ID then 
+        * this trust level indicates whether the user wants to
+        * vote for, against, or neutral for a given delegate.
+        *
+        * The assumption is that if the delegate is in the
+        * users wallet then they are a potential canidate.
+        */
+       int32_t           trust_level;
    };
 
 
@@ -183,7 +193,7 @@ FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
 FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(received_time)(transmit_count) )
-FC_REFLECT( bts::wallet::account, (name)(registered_account_id)(account_address) )
+FC_REFLECT( bts::wallet::account, (name)(registered_account_id)(account_address)(trust_level) )
 
 
 
