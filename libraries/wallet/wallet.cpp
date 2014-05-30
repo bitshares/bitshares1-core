@@ -309,7 +309,7 @@ namespace bts { namespace wallet {
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
     
-      my->_wallet_db.store_record( wallet_master_key_record( new_master_key ) );
+      my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
       wlog( "closing and reopening, just for good measure" );
       my->_wallet_db.close();
@@ -339,7 +339,7 @@ namespace bts { namespace wallet {
    }
 
    void wallet::close()
-   {
+   { try {
       my->_wallet_db.close();
       if( my->_wallet_relocker_done.valid() )
       {
@@ -348,7 +348,7 @@ namespace bts { namespace wallet {
          if( my->_wallet_relocker_done.ready() ) 
            my->_wallet_relocker_done.wait();
       }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    string wallet::get_wallet_name()const
    {
@@ -366,17 +366,18 @@ namespace bts { namespace wallet {
    }
 
    void wallet::export_to_json( const path& export_file_name ) const
-   {
+   { try {
       my->_wallet_db.export_to_json( export_file_name );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("export_file_name",export_file_name) ) }
+
    void  wallet::create_from_json(const path& path, const string& name )
-   {
-      FC_ASSERT( false, "Not Implemented" );
-   }
+   { try {
+      FC_ASSERT( !"Not Implemented" );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::unlock( const string& password, microseconds timeout )
    { try {
-      ilog( "password: ${p}", ("p",password ) );
       FC_ASSERT( password.size() > BTS_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
