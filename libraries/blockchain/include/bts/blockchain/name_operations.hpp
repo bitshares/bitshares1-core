@@ -26,10 +26,10 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type; 
 
-      update_account_operation():name_id(0),is_delegate(false){}
+      update_account_operation():account_id(0),is_delegate(false){}
 
       /** this should be 0 for creating a new name */
-      name_id_type                      name_id;
+      account_id_type                   account_id;
       fc::optional<fc::variant>         json_data;
       fc::optional<public_key_type>     active_key;
       bool                              is_delegate;
@@ -38,4 +38,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(json_data)(owner_key)(active_key)(is_delegate) )
-FC_REFLECT( bts::blockchain::update_account_operation, (name_id)(json_data)(active_key)(is_delegate) )
+FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(json_data)(active_key)(is_delegate) )

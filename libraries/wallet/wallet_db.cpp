@@ -30,11 +30,11 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_index_itr == self->address_to_account.end() );
               self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
               
-              if( account_to_load.registered_name_id != 0 )
+              if( account_to_load.registered_account_id != 0 )
               {
-                auto current_name_id_itr = self->name_id_to_account.find( account_to_load.registered_name_id );
-                FC_ASSERT( current_name_id_itr == self->name_id_to_account.end() );
-                self->name_id_to_account[ account_to_load.registered_name_id ] = account_to_load.index;
+                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.registered_account_id );
+                FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
+                self->account_id_to_account[ account_to_load.registered_account_id ] = account_to_load.index;
               }
 
               auto current_name_itr = self->name_to_account.find( account_to_load.name );
@@ -121,7 +121,7 @@ namespace bts{ namespace wallet {
       keys.clear();
       wallet_master_key.reset();
       address_to_account.clear();
-      name_id_to_account.clear();
+      account_id_to_account.clear();
       name_to_account.clear();
       accounts.clear();
       transactions.clear();
@@ -327,7 +327,7 @@ namespace bts{ namespace wallet {
 
       wallet_account_record war; 
       war.name = new_account_name;
-      war.registered_name_id = 0;
+      war.registered_account_id = 0;
       war.account_address = address( new_account_key );
 
       auto current_key = lookup_key( new_account_key );
@@ -436,5 +436,15 @@ namespace bts{ namespace wallet {
             ("trx",trx)
             ("memo_message",memo_message)
             ("to",to) ) }
+
+   void wallet_db::cache_account( const wallet_account_record& war )
+   {
+      accounts[war.index] = war;
+      if( war.registered_account_id != 0 )
+      {
+         account_id_to_account[war.registered_account_id] = war.index;
+      }
+      store_record( war );
+   }
 
 } } // bts::wallet

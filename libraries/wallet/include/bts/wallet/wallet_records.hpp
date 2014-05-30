@@ -81,9 +81,9 @@ namespace bts { namespace wallet {
     */
    struct account
    {
-       std::string    name;
-       name_id_type   registered_name_id;  
-       address        account_address;
+       std::string       name;
+       account_id_type   registered_account_id;  
+       address           account_address;
    };
 
 
@@ -183,7 +183,7 @@ FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
 FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(received_time)(transmit_count) )
-FC_REFLECT( bts::wallet::account, (name)(registered_name_id)(account_address) )
+FC_REFLECT( bts::wallet::account, (name)(registered_account_id)(account_address) )
 
 
 

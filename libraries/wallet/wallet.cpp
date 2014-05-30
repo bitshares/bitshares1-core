@@ -178,7 +178,25 @@ namespace bts { namespace wallet {
 
       bool wallet_impl::scan_register_account( const register_account_operation& op )
       {
-        return false;
+          auto opt_key_rec = _wallet_db.lookup_key( op.owner_key );
+
+          if( !opt_key_rec.valid() ) 
+             return false;
+
+          auto opt_account = _wallet_db.lookup_account( address( op.owner_key ) );
+          if( !opt_account.valid() )
+          {
+             wlog( "We have the key but no account for registration operation" );
+             return false;
+          }
+
+          auto account_name_rec = _blockchain->get_account_record( op.name );
+          FC_ASSERT( account_name_rec.valid() );
+
+          opt_account->registered_account_id = account_name_rec->id;
+          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
+
+          return false;
       }
       bool wallet_impl::scan_update_account( const update_account_operation& op )
       {

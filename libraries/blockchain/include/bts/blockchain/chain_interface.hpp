@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
    enum chain_property_enum
    {
       last_asset_id            = 0,
-      last_name_id             = 1,
+      last_account_id             = 1,
       last_proposal_id         = 2,
       last_random_seed_id      = 3,
       active_delegate_list_id  = 4,
@@ -81,8 +81,8 @@ namespace bts { namespace blockchain {
          virtual asset_id_type              last_asset_id()const;
          virtual asset_id_type              new_asset_id(); 
 
-         virtual account_id_type               last_name_id()const;
-         virtual account_id_type               new_name_id();
+         virtual account_id_type               last_account_id()const;
+         virtual account_id_type               new_account_id();
 
          virtual proposal_id_type           last_proposal_id()const;
          virtual proposal_id_type           new_proposal_id();
@@ -91,5 +91,5 @@ namespace bts { namespace blockchain {
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_name_id)(last_proposal_id)(last_random_seed_id)(chain_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_account_id)(last_proposal_id)(last_random_seed_id)(chain_id) )
 

@@ -75,7 +75,7 @@ namespace bts { namespace blockchain {
       bool is_retracted()const { return active_key == public_key_type(); }
       address active_address()const { return address(active_key); }
 
-      name_id_type                 id;
+      account_id_type              id;
       std::string                  name;
       fc::variant                  json_data;
       public_key_type              owner_key;

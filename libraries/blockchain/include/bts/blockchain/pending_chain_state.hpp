@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oname_record               get_account_record( name_id_type id )const override;
+         virtual oname_record               get_account_record( account_id_type id )const override;
          virtual otransaction_location      get_transaction_location( const transaction_id_type& )const override;
 
          virtual oasset_record              get_asset_record( const std::string& symbol )const override;
@@ -74,9 +74,9 @@ namespace bts { namespace blockchain {
 
 
          std::unordered_map< asset_id_type,         asset_record>         assets;
-         std::unordered_map< name_id_type,          name_record>          names;
+         std::unordered_map< account_id_type,       name_record>          names;
          std::unordered_map< balance_id_type,       balance_record>       balances;
-         std::unordered_map< std::string,           name_id_type>         name_id_index;
+         std::unordered_map< std::string,           account_id_type>      account_id_index;
          std::unordered_map< std::string,           asset_id_type>        symbol_id_index;
          std::unordered_map< transaction_id_type,   transaction_location> unique_transactions;
          std::unordered_map< chain_property_type,   fc::variant>          properties; 
@@ -95,5 +95,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-            (assets)(names)(balances)(name_id_index)(symbol_id_index)(unique_transactions)
+            (assets)(names)(balances)(account_id_index)(symbol_id_index)(unique_transactions)
             (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral) )
