@@ -24,8 +24,6 @@ namespace bts { namespace client {
             client_impl( const chain_database_ptr& chain_db )
             :_chain_db(chain_db)
             {
-                _p2p_node = std::make_shared<bts::net::node>();
-                _p2p_node->set_delegate(this);
             }
 
             virtual ~client_impl()override {}
@@ -287,6 +285,9 @@ namespace bts { namespace client {
         my->_chain_db->open( data_dir / "chain", genesis_dat );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
+
+        my->_p2p_node = std::make_shared<bts::net::node>();
+        my->_p2p_node->set_delegate(my.get());
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir)
                              ("genesis_dat", fc::absolute(genesis_dat)) ) }
 
@@ -552,7 +553,7 @@ namespace bts { namespace client {
 
         for( auto tx_rec : tx_recs)
         {
-            result.push_back( get_wallet()->to_pretty_trx( tx_rec, result.size() + 1 ) );
+            result.push_back( get_wallet()->to_pretty_trx( tx_rec ) );
         }
 
         return result;
@@ -682,10 +683,7 @@ namespace bts { namespace client {
 
     void client::network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)
     {
-      if (my->_p2p_node)
-        my->_p2p_node->set_allowed_peers(allowed_peers);      
-      else
-        FC_THROW_EXCEPTION(invalid_operation_exception, "set_allowed_peers only valid in p2p mode");
+      my->_p2p_node->set_allowed_peers(allowed_peers);      
     }
 
     void client::network_set_advanced_node_parameters(const fc::variant_object& params)
