@@ -278,10 +278,17 @@ namespace bts { namespace client {
 
     }
 
-    client::client( const chain_database_ptr& chain_db )
-    :my( new detail::client_impl( chain_db ) )
+    client::client( )
+    :my( new detail::client_impl( std::make_shared<chain_database>() ) )
     {
     }
+    void client::open( const path& data_dir, const path& genesis_dat )
+    { try {
+        my->_chain_db->open( data_dir / "chain", genesis_dat );
+        my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
+        my->_wallet->set_data_directory( data_dir / "wallets" );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir)
+                             ("genesis_dat", fc::absolute(genesis_dat)) ) }
 
     client::~client()
     {
@@ -298,17 +305,6 @@ namespace bts { namespace client {
        {
           wlog( "${e}", ("e",e.to_detail_string() ) );
        }
-    }
-
-    void client::set_chain( const chain_database_ptr& ptr )
-    {
-       my->_chain_db = ptr;
-    }
-
-    void client::set_wallet( const wallet_ptr& wall )
-    {
-       FC_ASSERT( my->_chain_db );
-       my->_wallet = wall;
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
@@ -560,14 +556,14 @@ namespace bts { namespace client {
         return result;
     }
 
-    oname_record client::blockchain_get_name_record(const string& name) const
+    oname_record client::blockchain_get_account_record(const string& name) const
     {
-      return get_chain()->get_name_record(name);
+      return get_chain()->get_account_record(name);
     }
 
-    oname_record client::blockchain_get_name_record_by_id(name_id_type name_id) const
+    oname_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
     {
-      return get_chain()->get_name_record(name_id);
+      return get_chain()->get_account_record(name_id);
     }
 
     oasset_record client::blockchain_get_asset_record(const string& symbol) const
@@ -583,7 +579,7 @@ namespace bts { namespace client {
     void client::wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)
     {
       try {
-        auto name_record = get_chain()->get_name_record(delegate_name);
+        auto name_record = get_chain()->get_account_record(delegate_name);
         FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
         FC_ASSERT( !"Not Implemented" );
@@ -596,7 +592,7 @@ namespace bts { namespace client {
     bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const string& delegate_name) const
     {
       try {
-        auto name_record = get_chain()->get_name_record(delegate_name);
+        auto name_record = get_chain()->get_account_record(delegate_name);
         FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
 
@@ -669,7 +665,7 @@ namespace bts { namespace client {
       vector<name_record> delegate_records;
       delegate_records.reserve( delegates.size() );
       for( auto delegate_id : delegates )
-        delegate_records.push_back( *get_chain()->get_name_record( delegate_id ) );
+        delegate_records.push_back( *get_chain()->get_account_record( delegate_id ) );
       return delegate_records;
     }
 

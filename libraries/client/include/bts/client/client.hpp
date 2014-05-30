@@ -30,11 +30,9 @@ namespace bts { namespace client {
             do_not_sign           = 2
          };
 
-         client( const chain_database_ptr& chain_db );
+         client();
          virtual ~client();
-
-         void set_chain( const chain_database_ptr& chain );
-         void set_wallet( const wallet_ptr& wall );
+         void open( const path& data_dir, const path& genesis_dat );
 
          /** verifies and then broadcasts the transaction */
          void broadcast_transaction( const signed_transaction& trx );
@@ -109,8 +107,8 @@ namespace bts { namespace client {
                                                             const string& account_name = "*" ) const  override;
          vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const  override;
          vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const  override;
-                           oname_record blockchain_get_name_record(const string& name) const  override;
-                           oname_record blockchain_get_name_record_by_id(name_id_type name_id) const  override;
+                           oname_record blockchain_get_account_record(const string& name) const  override;
+                           oname_record blockchain_get_account_record_by_id(name_id_type name_id) const  override;
                           oasset_record blockchain_get_asset_record(const string& symbol) const  override;
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
 

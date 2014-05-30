@@ -31,15 +31,13 @@ namespace bts { namespace rpc {
              (blockchain_get_transaction)\
              (blockchain_get_block)\
              (blockchain_get_block_by_number)\
-             (blockchain_get_name_record)\
-             (blockchain_get_name_record_by_id)\
+             (blockchain_get_account_record)\
+             (blockchain_get_account_record_by_id)\
              (blockchain_get_asset_record)\
              (blockchain_get_asset_record_by_id)\
              (blockchain_get_assets)\
              (blockchain_get_delegates)\
              (blockchain_get_names)\
-             (wallet_create_account) \
-             (wallet_add_contact_account) \
              (wallet_import_private_key)\
              (wallet_import_bitcoin)\
              (wallet_list_contact_accounts)\
@@ -677,35 +675,6 @@ Result:
     }
     
 
-    static bts::api::method_data wallet_create_account_metadata{"wallet_create_account", nullptr,
-            /* description */ "Add new account for receiving payments",
-            /* returns: */    "extended_address",
-            /* params:          name             type      classification                   default value */
-                              {{"account_name", "string",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-     )"};
-    fc::variant rpc_server_impl::wallet_create_account( const fc::variants& params )
-    {
-       auto receive_address = _client->wallet_create_account( params[0].as_string() );
-       return fc::variant(receive_address);
-    }
-
-    static bts::api::method_data wallet_add_contact_account_metadata{"wallet_add_contact_account", nullptr,
-            /* description */ "Add new account for sending payments",
-            /* returns: */    "null",
-            /* params:          name             type                classification                   default value */
-                              {{"account_name",  "string",           bts::api::required_positional, fc::ovariant()},
-                               {"account_key",   "extended_address", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-    R"(
-     )"};
-    fc::variant rpc_server_impl::wallet_add_contact_account( const fc::variants& params )
-    {
-       _client->wallet_add_contact_account( params[0].as_string(), params[1].as<public_key_type>() );
-       return fc::variant();
-    }
-
     static bts::api::method_data network_broadcast_transaction_metadata{"network_broadcast_transaction", nullptr,
             /* description */ "Broadcast a previously-created signed transaction to the network",
             /* returns: */    "transaction_id",
@@ -899,7 +868,7 @@ Result:
       return fc::variant( _client->wallet_get_transaction_history_summary( count ) );
     }
 
-    static bts::api::method_data blockchain_get_name_record_metadata{"blockchain_get_name_record", nullptr,
+    static bts::api::method_data blockchain_get_account_record_metadata{"blockchain_get_account_record", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
@@ -909,12 +878,12 @@ Result:
           )",
           /* aliases */{ "blockchain_get_name" } //deprecated name
           };
-    fc::variant rpc_server_impl::blockchain_get_name_record(const fc::variants& params)
+    fc::variant rpc_server_impl::blockchain_get_account_record(const fc::variants& params)
     {
-      return fc::variant( _client->blockchain_get_name_record(params[0].as_string()) );
+      return fc::variant( _client->blockchain_get_account_record(params[0].as_string()) );
     }
 
-    static bts::api::method_data blockchain_get_name_record_by_id_metadata{"blockchain_get_name_record_by_id", nullptr,
+    static bts::api::method_data blockchain_get_account_record_by_id_metadata{"blockchain_get_account_record_by_id", nullptr,
             /* description */ "Retrieves the name record for the given name_id",
             /* returns: */    "name_record",
             /* params:          name          type      classification                   default_value */
@@ -924,9 +893,9 @@ Result:
           )",
           /* aliases */{ "blockchain_get_name_by_id" } //deprecated name
           };
-    fc::variant rpc_server_impl::blockchain_get_name_record_by_id(const fc::variants& params)
+    fc::variant rpc_server_impl::blockchain_get_account_record_by_id(const fc::variants& params)
     {
-      return fc::variant( _client->blockchain_get_name_record_by_id(params[0].as<int32_t>()) );
+      return fc::variant( _client->blockchain_get_account_record_by_id(params[0].as<int32_t>()) );
     }
 
     static bts::api::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
