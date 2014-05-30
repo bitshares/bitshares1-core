@@ -75,6 +75,8 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
       ilog( "----" );
 
+      my_client->get_wallet()->list_receive_accounts();
+
 
    } catch ( const fc::exception& e )
    {
