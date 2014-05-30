@@ -115,13 +115,13 @@ namespace bts { namespace net {
     *    we don't have enough info to start synchronizing until sync_from() is called,
     *    would we have any reason to connect before that?
     */
-   class node
+   class node : public std::enable_shared_from_this<node>
    {
       public:
         node();
         ~node();
 
-        void      set_delegate( node_delegate* del );
+        void      set_node_delegate( node_delegate* del );
 
         void      load_configuration( const fc::path& configuration_directory );
 
@@ -189,7 +189,23 @@ namespace bts { namespace net {
         std::unique_ptr<detail::node_impl> my;
    };
 
+    class simulated_network : public node
+    {
+      std::vector<bts::net::node_delegate*> network_nodes;
+    public:
+      void broadcast(const message& item_to_broadcast)
+      {
+        for(node_delegate* network_node : network_nodes)
+          network_node->handle_message(item_to_broadcast);
+      }
+
+      void add_node_delegate(node_delegate* node_delegate_to_add) { network_nodes.push_back(node_delegate_to_add); }      
+    };
+
+
+
    typedef std::shared_ptr<node> node_ptr;
+   typedef std::shared_ptr<simulated_network> simulated_network_ptr;
 
 } } // bts::net
 

@@ -14,6 +14,8 @@ namespace bts { namespace client {
 
     using namespace bts::rpc;
 
+
+
     /**
      * @class client
      * @brief integrates the network, wallet, and blockchain
@@ -30,7 +32,8 @@ namespace bts { namespace client {
             do_not_sign           = 2
          };
 
-         client();
+                  client();
+                  client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
          void open( const path& data_dir, const path& genesis_dat );
 
