@@ -158,11 +158,11 @@ namespace bts { namespace blockchain {
          case deposit_op_type:
             evaluate_deposit( op.as<deposit_operation>() );
             break;
-         case reserve_name_op_type:
-            evaluate_reserve_name( op.as<reserve_name_operation>() );
+         case register_account_op_type:
+            evaluate_register_account( op.as<register_account_operation>() );
             break;
-         case update_name_op_type:
-            evaluate_update_name( op.as<update_name_operation>() );
+         case update_account_op_type:
+            evaluate_update_account( op.as<update_account_operation>() );
             break;
          case create_asset_op_type:
             evaluate_create_asset( op.as<create_asset_operation>() );
@@ -495,7 +495,7 @@ namespace bts { namespace blockchain {
          balance_itr->second += amount.amount;
    }
 
-   void transaction_evaluation_state::evaluate_reserve_name( const reserve_name_operation& op )
+   void transaction_evaluation_state::evaluate_register_account( const register_account_operation& op )
    { try {
       FC_ASSERT( name_record::is_valid_name( op.name ) );
 
@@ -529,7 +529,7 @@ namespace bts { namespace blockchain {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
-   void transaction_evaluation_state::evaluate_update_name( const update_name_operation& op )
+   void transaction_evaluation_state::evaluate_update_account( const update_account_operation& op )
    { try {
       auto cur_record = _current_state->get_account_record( op.name_id );
       if( !cur_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
@@ -728,18 +728,18 @@ namespace bts { namespace blockchain {
    }
 
 
-   void transaction::reserve_name( const std::string& name, 
+   void transaction::register_account( const std::string& name, 
                                    const fc::variant& json_data, 
                                    const public_key_type& master, 
                                    const public_key_type& active, bool as_delegate  )
    {
-      operations.push_back( reserve_name_operation( name, json_data, master, active, as_delegate ) );
+      operations.push_back( register_account_operation( name, json_data, master, active, as_delegate ) );
    }
-   void transaction::update_name( account_id_type name_id, 
+   void transaction::update_account( account_id_type name_id, 
                                   const fc::optional<fc::variant>& json_data, 
                                   const fc::optional<public_key_type>& active, bool as_delegate   )
    {
-      update_name_operation op;
+      update_account_operation op;
       op.name_id = name_id;
       op.json_data = json_data;
       op.active_key = active;

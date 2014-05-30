@@ -36,6 +36,10 @@ namespace bts { namespace wallet {
 
              bool scan_deposit( const deposit_operation& op, 
                                  const private_keys& keys );
+
+             bool scan_register_account( const register_account_operation& op );
+             bool scan_update_account( const update_account_operation& op );
+
              void cache_balance( const balance_id_type& balance_id );
 
              void scan_balances();
@@ -155,6 +159,9 @@ namespace bts { namespace wallet {
                   case deposit_op_type:
                      cache_trx |= scan_deposit( op.as<deposit_operation>(), keys );
                      break;
+                  case register_account_op_type:
+                     cache_trx |= scan_register_account( op.as<register_account_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -167,6 +174,15 @@ namespace bts { namespace wallet {
          if( current_balance.valid() )
             cache_balance( op.balance_id );
          return current_balance.valid();
+      }
+
+      bool wallet_impl::scan_register_account( const register_account_operation& op )
+      {
+        return false;
+      }
+      bool wallet_impl::scan_update_account( const update_account_operation& op )
+      {
+        return false;
       }
 
       bool wallet_impl::scan_deposit( const deposit_operation& op, 
@@ -828,7 +844,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      trx.reserve_name( account_to_register, json_data,
+      trx.register_account( account_to_register, json_data,
                         account_public_key, // master
                         account_public_key, // active
                         as_delegate );

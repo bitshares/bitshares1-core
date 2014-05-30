@@ -659,8 +659,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<reserve_name_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_name_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
