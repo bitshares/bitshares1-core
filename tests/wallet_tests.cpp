@@ -2,6 +2,7 @@
 #include <boost/test/unit_test.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/client/client.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
@@ -12,6 +13,7 @@
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
+using namespace bts::client;
 
 const char* test_keys = R"([
   "dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f",
@@ -39,6 +41,44 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
   } catch ( const fc::exception& e )
    {
       elog( "${e}", ("e",e.to_detail_string()) );
+      throw;
+   }
+}
+
+BOOST_AUTO_TEST_CASE( client_tests )
+{
+   try {
+      std::string password = "123456789";
+      fc::temp_directory my_dir;
+      fc::temp_directory your_dir;
+
+      auto my_client = std::make_shared<client>();
+      my_client->open( my_dir.path(), "genesis.json" );
+
+      auto your_client = std::make_shared<client>();
+      your_client->open( your_dir.path(), "genesis.json" );
+
+      my_client->wallet_create( "my_wallet", password );
+      my_client->wallet_unlock( fc::seconds(999999999), password );
+      your_client->wallet_create( "your_wallet", password );
+      your_client->wallet_unlock( fc::seconds(999999999), password );
+
+      auto my_account1 = my_client->wallet_create_account( "account1" );
+      std::string wif_key = "5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn";
+      my_client->wallet_import_private_key( wif_key, "account1", true /*rescan*/ );
+
+      auto bal = my_client->wallet_get_balance();
+      ilog( "${bal}", ("bal",bal ) );
+
+      auto trx = my_client->get_wallet()->register_account( "account1", variant(), false, "account1" );
+      ilog( "----" );
+      ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
+      ilog( "----" );
+
+
+   } catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string() ) );
       throw;
    }
 }
