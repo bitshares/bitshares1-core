@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
       static bool is_valid_json( const std::string& str );
 
       bool is_null()const { return owner_key == public_key_type(); }
-      name_record make_null()const    { name_record cpy(*this); cpy.owner_key = public_key_type(); return cpy;      }
+      name_record make_null()const { name_record cpy(*this); cpy.owner_key = public_key_type(); return cpy; }
 
       share_type delegate_pay_balance()const
       { // TODO: move to cpp
