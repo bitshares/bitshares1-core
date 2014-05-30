@@ -94,20 +94,24 @@ namespace bts { namespace wallet {
             if( balance_item.second.asset_id() == asset_id && 
                 address_in_account( owner, from_account_address ) )
             {
-                if( remaining >= balance_item.second.balance )
+                if( remaining > balance_item.second.balance )
                 {
+                   ilog( "-" );
                    trx.withdraw( balance_item.first, balance_item.second.balance );
                    balance_item.second.balance = 0;
                    remaining -= balance_item.second.balance;
                    required_signatures.insert( balance_item.second.owner() );
-                   return;
+                   _wallet_db.store_record( balance_item.second );
                 }
                 else
                 {
+                   ilog( "." );
                    trx.withdraw( balance_item.first, remaining );
                    balance_item.second.balance -= remaining;
-                   remaining -= balance_item.second.balance;
+                   remaining = 0;
+                   _wallet_db.store_record( balance_item.second );
                    required_signatures.insert( balance_item.second.owner() );
+                   return;
                 }
             }
          }
@@ -531,6 +535,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
+      FC_ASSERT( is_valid_account( account_name ), "${account_name}", ("account_name",account_name) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
 
@@ -584,8 +589,13 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
+      if( start == 0 )
+      {
+         scan_state();
+         ++start;
+      }
+
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
-      FC_ASSERT( min_end >= start );
 
       auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
 
@@ -816,7 +826,7 @@ namespace bts { namespace wallet {
          ("memo_message",memo_message) ) }
 
 
-   signed_transaction wallet::register_account( const string& account_name,
+   signed_transaction wallet::register_account( const string& account_to_register,
                                                 const variant& json_data,
                                                 bool as_delegate,
                                                 const string& pay_with_account_name,
@@ -824,18 +834,18 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
+      FC_ASSERT( is_valid_account_name( account_to_register ) );
 
       address from_account_address( get_account_public_key( pay_with_account_name ) );
 
-      auto opt_account = get_account( account_name );
+      auto opt_account = get_account( account_to_register );
       FC_ASSERT( opt_account.valid() );
-      auto account_public_key = get_account_public_key( opt_account->account_address );
+      auto account_public_key = get_account_public_key( account_to_register );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      trx.reserve_name( account_name, json_data,
+      trx.reserve_name( account_to_register, json_data,
                         account_public_key, // master
                         account_public_key, // active
                         as_delegate );
@@ -852,8 +862,11 @@ namespace bts { namespace wallet {
       if( sign )
          sign_transaction( trx, required_signatures );
 
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)
+      return trx;
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("json_data", json_data)
+                                      ("pay_with_account_name", pay_with_account_name) 
                                       ("as_delegate",as_delegate) ) }
 
 
