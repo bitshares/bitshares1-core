@@ -29,9 +29,9 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec         now()const                                                       = 0;
                                                                                                              
-         std::vector<name_id_type>          get_active_delegates()const;
-         void                               set_active_delegates( const std::vector<name_id_type>& id );
-         bool                               is_active_delegate( name_id_type ) const;
+         std::vector<account_id_type>          get_active_delegates()const;
+         void                               set_active_delegates( const std::vector<account_id_type>& id );
+         bool                               is_active_delegate( account_id_type ) const;
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
@@ -58,11 +58,11 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record              get_asset_record( asset_id_type id )const                       = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
-         virtual oname_record               get_name_record( name_id_type id )const                         = 0;
+         virtual oname_record               get_account_record( account_id_type id )const                         = 0;
          virtual otransaction_location      get_transaction_location( const transaction_id_type& )const     = 0;
                                                                                                           
          virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
-         virtual oname_record               get_name_record( const std::string& name )const                 = 0;
+         virtual oname_record               get_account_record( const std::string& name )const                 = 0;
                                                                                                           
          virtual void                       store_proposal_record( const proposal_record& r )               = 0;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const                 = 0;
@@ -81,8 +81,8 @@ namespace bts { namespace blockchain {
          virtual asset_id_type              last_asset_id()const;
          virtual asset_id_type              new_asset_id(); 
 
-         virtual name_id_type               last_name_id()const;
-         virtual name_id_type               new_name_id();
+         virtual account_id_type               last_name_id()const;
+         virtual account_id_type               new_name_id();
 
          virtual proposal_id_type           last_proposal_id()const;
          virtual proposal_id_type           new_proposal_id();

@@ -53,7 +53,7 @@ namespace bts { namespace client {
          signed_transactions    get_pending_transactions()const;
 
          //-------------------------------------------------- JSON-RPC Method Implementations
-#include <bts/rpc_stubs/common_api_overrides.ipp>
+         #include <bts/rpc_stubs/common_api_overrides.ipp>
 
          signed_transaction  wallet_asset_create( const string& symbol,
                                                   const string& asset_name,

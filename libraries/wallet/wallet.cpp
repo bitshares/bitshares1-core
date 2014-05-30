@@ -646,7 +646,7 @@ namespace bts { namespace wallet {
       while( next_block_time < last_block_time )
       {
          auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
-         auto delegate_record = my->_blockchain->get_name_record( id );
+         auto delegate_record = my->_blockchain->get_account_record( id );
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key );
          if( key.valid() && key->has_private_key() )
          {
@@ -662,7 +662,7 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_unlocked() );
       auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
-      auto delegate_rec = my->_blockchain->get_name_record( signing_delegate_id );
+      auto delegate_rec = my->_blockchain->get_account_record( signing_delegate_id );
 
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = get_private_key( address(delegate_pub_key) );
@@ -1054,10 +1054,16 @@ namespace bts { namespace wallet {
       return opt_key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+   /**
+    *  Looks up the public key for an account whether local or in the blockchain, with
+    *  the local name taking priority.
+    */
    public_key_type  wallet::get_account_public_key( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
       // TODO: lookup in blockchain as well..
+
 
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'", 

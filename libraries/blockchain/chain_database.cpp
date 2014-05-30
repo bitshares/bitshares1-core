@@ -389,7 +389,7 @@ namespace bts { namespace blockchain {
                                                share_type amount, 
                                                const pending_chain_state_ptr& pending_state )
       { try {
-            auto delegate_record = pending_state->get_name_record( self->get_signing_delegate_id( time_slot ) );
+            auto delegate_record = pending_state->get_account_record( self->get_signing_delegate_id( time_slot ) );
             FC_ASSERT( !!delegate_record );
             FC_ASSERT( delegate_record->is_delegate() );
             delegate_record->delegate_info->pay_balance += amount;
@@ -457,7 +457,7 @@ namespace bts { namespace blockchain {
           // validate secret
           {
              auto delegate_id = self->get_signing_delegate_id( produced_block.timestamp );
-             auto delegate_rec = pending_state->get_name_record( delegate_id );
+             auto delegate_rec = pending_state->get_account_record( delegate_id );
 
              if( delegate_rec->delegate_info->blocks_produced > 0 )
              {
@@ -486,7 +486,7 @@ namespace bts { namespace blockchain {
               headblock_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
               auto delegate_id = self->get_signing_delegate_id( headblock_timestamp );
-              auto delegate_rec = pending_state->get_name_record( delegate_id );
+              auto delegate_rec = pending_state->get_account_record( delegate_id );
 
               if( headblock_timestamp != produced_block.timestamp )
                   delegate_rec->delegate_info->blocks_missed += 1;
@@ -716,7 +716,7 @@ namespace bts { namespace blockchain {
       while( sorted_delegates.size() < count && del_vote_itr.valid() )
       {
          if( pos >= first )
-            sorted_delegates.push_back( *get_name_record(del_vote_itr.value()) );
+            sorted_delegates.push_back( *get_account_record(del_vote_itr.value()) );
          ++pos;
          ++del_vote_itr;
       }
@@ -847,7 +847,7 @@ namespace bts { namespace blockchain {
 
    public_key_type chain_database::get_signing_delegate_key( fc::time_point_sec sec )const
    { try {
-      auto delegate_record = get_name_record( get_signing_delegate_id( sec ) );
+      auto delegate_record = get_account_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
       return delegate_record->active_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec", sec) ) }
@@ -959,7 +959,7 @@ namespace bts { namespace blockchain {
       return my->_balance_db.fetch_optional( balance_id );
    }
 
-   oname_record         chain_database::get_name_record( name_id_type name_id )const
+   oname_record         chain_database::get_account_record( name_id_type name_id )const
    {
       return my->_name_db.fetch_optional( name_id );
    }
@@ -988,11 +988,11 @@ namespace bts { namespace blockchain {
        return oasset_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
 
-   oname_record         chain_database::get_name_record( const string& name )const
+   oname_record         chain_database::get_account_record( const string& name )const
    { try {
        auto name_id_itr = my->_name_index_db.find( name );
        if( name_id_itr.valid() )
-          return get_name_record( name_id_itr.value() );
+          return get_account_record( name_id_itr.value() );
        return oname_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name) ) }
 
@@ -1027,7 +1027,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_name_record( const name_record& r )
    { try {
-       auto old_rec = get_name_record( r.id );
+       auto old_rec = get_account_record( r.id );
        if( r.is_null() )
        {
           my->_name_db.remove( r.id );
@@ -1315,7 +1315,7 @@ namespace bts { namespace blockchain {
        std::vector<name_record> names;
        while( itr.valid() && names.size() < count )
        {
-          names.push_back( *get_name_record( itr.value() ) );
+          names.push_back( *get_account_record( itr.value() ) );
           ++itr;
        }
        return names;

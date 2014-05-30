@@ -46,10 +46,10 @@ namespace bts { namespace blockchain {
 
          void set_observer( chain_observer* observer );
 
-         transaction_evaluation_state_ptr              store_pending_transaction( const signed_transaction& trx );
-         vector<transaction_evaluation_state_ptr>      get_pending_transactions()const;
-         bool                                          is_known_transaction( const transaction_id_type& trx_id );
-         void                                          export_fork_graph( const fc::path& filename )const;
+         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx );
+         vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
+         bool                                     is_known_transaction( const transaction_id_type& trx_id );
+         void                                     export_fork_graph( const fc::path& filename )const;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -66,7 +66,7 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                 get_current_random_seed()const override;
          public_key_type               get_signing_delegate_key( time_point_sec )const;
-         name_id_type                  get_signing_delegate_id( time_point_sec )const;
+         account_id_type                  get_signing_delegate_id( time_point_sec )const;
          uint32_t                      get_block_num( const block_id_type& )const;
          signed_block_header           get_block_header( const block_id_type& )const;
          signed_block_header           get_block_header( uint32_t block_num )const;
@@ -104,9 +104,9 @@ namespace bts { namespace blockchain {
          virtual int64_t                    get_delegate_pay_rate()const override;
 
          /** top delegates by current vote, projected to be active in the next round */
-         vector<name_id_type>               next_round_active_delegates()const;
+         vector<account_id_type>               next_round_active_delegates()const;
                                             
-         vector<name_id_type>               get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
+         vector<account_id_type>               get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
          vector<name_record>                get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
@@ -124,10 +124,10 @@ namespace bts { namespace blockchain {
          asset_id_type                      get_asset_id( const string& asset_sybmol )const;
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oname_record               get_name_record( name_id_type id )const override;
+         virtual oname_record               get_account_record( account_id_type id )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
-         virtual oname_record               get_name_record( const string& name )const override;
+         virtual oname_record               get_account_record( const string& name )const override;
 
          virtual void                       store_asset_record( const asset_record& r )override;
          virtual void                       store_balance_record( const balance_record& r )override;

@@ -20,11 +20,11 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oname_record               get_name_record( name_id_type id )const override;
+         virtual oname_record               get_account_record( name_id_type id )const override;
          virtual otransaction_location      get_transaction_location( const transaction_id_type& )const override;
 
          virtual oasset_record              get_asset_record( const std::string& symbol )const override;
-         virtual oname_record               get_name_record( const std::string& name )const override;
+         virtual oname_record               get_account_record( const std::string& name )const override;
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;

@@ -74,7 +74,7 @@ namespace bts { namespace blockchain {
 
       for( auto record : names )
       {
-         auto prev_name = _prev_state->get_name_record( record.first );
+         auto prev_name = _prev_state->get_account_record( record.first );
          if( !!prev_name ) undo_state->store_name_record( *prev_name );
          else undo_state->store_name_record( record.second.make_null() );
       }
@@ -204,23 +204,23 @@ namespace bts { namespace blockchain {
       return obalance_record();
    }
 
-   oname_record         pending_chain_state::get_name_record( name_id_type name_id )const
+   oname_record         pending_chain_state::get_account_record( name_id_type name_id )const
    {
       auto itr = names.find( name_id );
       if( itr != names.end() ) 
         return itr->second;
       else if( _prev_state ) 
-        return _prev_state->get_name_record( name_id );
+        return _prev_state->get_account_record( name_id );
       return oname_record();
    }
 
-   oname_record         pending_chain_state::get_name_record( const std::string& name )const
+   oname_record         pending_chain_state::get_account_record( const std::string& name )const
    {
       auto itr = name_id_index.find( name );
       if( itr != name_id_index.end() ) 
-        return get_name_record( itr->second );
+        return get_account_record( itr->second );
       else if( _prev_state ) 
-        return _prev_state->get_name_record( name );
+        return _prev_state->get_account_record( name );
       return oname_record();
    }
 
