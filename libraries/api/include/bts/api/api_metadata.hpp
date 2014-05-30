@@ -54,6 +54,14 @@ namespace bts { namespace api {
       classification(classification),
       default_value(default_value)
     {}
+    parameter_data& operator=(const parameter_data& rhs)
+    {
+      name = rhs.name;
+      type = rhs.type;
+      classification = rhs.classification;
+      default_value = rhs.default_value;
+      return *this;
+    }
   };
 
   typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
