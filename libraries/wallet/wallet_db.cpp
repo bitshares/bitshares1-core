@@ -218,7 +218,7 @@ namespace bts{ namespace wallet {
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) property_itr->second.value = v;
-      else properties[property_id] = wallet_property( property_id, v );
+      else properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
 
       if( property_id == property_enum::next_record_number )
          store_record( wallet_property_record( wallet_property(property_id,v), 1 ) );
