@@ -111,8 +111,7 @@ int main( int argc, char** argv )
 
       client->run_delegate();
 
-      bts::rpc::rpc_server_ptr rpc_server = std::make_shared<bts::rpc::rpc_server>();
-      rpc_server->set_client(client);
+      bts::rpc::rpc_server_ptr rpc_server = client->get_rpc_server();
 
       if( option_variables.count("server") )
       {

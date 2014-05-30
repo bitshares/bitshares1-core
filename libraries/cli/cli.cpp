@@ -112,8 +112,9 @@ namespace bts { namespace cli {
                     }
                     catch( const fc::canceled_exception& )
                     {
-                      if( command != "quit" ) std::cout << "Command aborted\n";
-                      else return;
+                      if( command == "quit" ) 
+                        break;
+                      std::cout << "Command aborted\n";
                     }
                     catch( const fc::exception& e )
                     {
@@ -123,6 +124,9 @@ namespace bts { namespace cli {
                 }
                 line = _self->get_line( get_prompt()  );
               }
+              // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
+              // Tell the RPC server to close, which will allow the process to exit.
+              _rpc_server->shutdown_rpc_server();
             }
 
             std::string get_line( const std::string& prompt, bool no_echo )
@@ -474,9 +478,10 @@ namespace bts { namespace cli {
                 return result;
             }
 
-            fc::variant interactive_open_wallet()
+            void interactive_open_wallet()
             {
-              if( _client->get_wallet()->is_open() ) return fc::variant( true );
+              if( _client->get_wallet()->is_open() ) 
+                return;
 
               std::cout << "A wallet must be open to execute this command. You can:\n";
               std::cout << "(o) Open an existing wallet\n";
@@ -488,12 +493,13 @@ namespace bts { namespace cli {
               if (choice == "c")
               {
                 std::string wallet_name = _self->get_line("new wallet name [default]: ");
-                if (wallet_name.empty()) wallet_name = "default";
+                if (wallet_name.empty()) 
+                  wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
                 try
                 {
-                    return execute_interactive_command( "wallet_create", arguments );
+                    execute_interactive_command( "wallet_create", arguments );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -502,12 +508,13 @@ namespace bts { namespace cli {
               else if (choice == "o")
               {
                 std::string wallet_name = _self->get_line("wallet name [default]: ");
-                if (wallet_name.empty()) wallet_name = "default";
+                if (wallet_name.empty()) 
+                  wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
                 try
                 {
-                    return execute_interactive_command( "wallet_open", arguments );
+                    execute_interactive_command( "wallet_open", arguments );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -521,8 +528,6 @@ namespace bts { namespace cli {
               {
                   std::cout << "Wrong answer!\n";
               }
-
-              return fc::variant( false );
             }
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
@@ -817,7 +822,7 @@ namespace bts { namespace cli {
 
   void cli::wait()
   {
-    my->_cin_complete.wait();
+    my->_rpc_server->wait_on_quit();
   }
 
   void cli::quit()

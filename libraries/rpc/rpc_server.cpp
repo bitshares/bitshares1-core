@@ -26,7 +26,6 @@ namespace bts { namespace rpc {
 #define RPC_METHOD_LIST\
              (help)\
              (get_info)\
-             (stop)\
              (validate_address)\
              (blockchain_get_transaction)\
              (blockchain_get_block)\
@@ -66,7 +65,7 @@ namespace bts { namespace rpc {
     {
        public:
          rpc_server::config                _config;
-         client_ptr                        _client;
+         bts::client::client*              _client;
          fc::http::server                  _httpd;
          fc::tcp_server                    _tcp_serv;
          fc::future<void>                  _accept_loop_complete;
@@ -82,12 +81,20 @@ namespace bts { namespace rpc {
          /** the set of connections that have successfully logged in */
          std::unordered_set<fc::rpc::json_connection*> _authenticated_connection_set;
 
+         rpc_server_impl(bts::client::client* client) :
+           _client(client),
+           _on_quit_promise(new fc::promise<void>("rpc_quit"))
+         {}
+
+         void shutdown_rpc_server();
+
          virtual bts::api::common_api* get_client() const override;
          virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const override;
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
          virtual void verify_connected_to_network() const override;
          virtual void store_method_metadata(const bts::api::method_data& method_metadata);
+
 
          std::string make_short_description(const bts::api::method_data& method_data)
          {
@@ -466,10 +473,9 @@ namespace bts { namespace rpc {
  #undef DECLARE_RPC_METHODS
     };
 
-
     bts::api::common_api* rpc_server_impl::get_client() const
     {
-      return _client.get();
+      return _client;
     }
     void rpc_server_impl::verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const
     {
@@ -1263,22 +1269,10 @@ Arguments:
       return fc::variant(delegate_records);
     }
 
-    static bts::api::method_data stop_metadata{"stop", nullptr,
-            /* description */ "Stop BitShares server",
-            /* returns: */    "null",
-            /* params:     */ {},
-          /* prerequisites */ bts::api::json_authenticated,
-R"(
-stop
-
-Stop BitShares server.
-)" };
-    fc::variant rpc_server_impl::stop(const fc::variants& params)
+    void rpc_server_impl::shutdown_rpc_server()
     {
-      if (_on_quit_promise)
+      if (!_on_quit_promise->ready())
         _on_quit_promise->set_value();
-      _client->stop();
-      return fc::variant();
     }
 
     static bts::api::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
@@ -1311,8 +1305,8 @@ Result:
     return true;
   }
 
-  rpc_server::rpc_server() :
-    my(new detail::rpc_server_impl)
+  rpc_server::rpc_server(bts::client::client* client) :
+    my(new detail::rpc_server_impl(client))
   {
     my->_self = this;
 
@@ -1335,7 +1329,7 @@ Result:
   rpc_server::~rpc_server()
   {
      try {
-         if( my->_on_quit_promise && !my->_on_quit_promise->ready() )
+         if(!my->_on_quit_promise->ready() )
             my->_on_quit_promise->set_value();
          my->_tcp_serv.close();
          if( my->_accept_loop_complete.valid() )
@@ -1349,16 +1343,6 @@ Result:
      {
         wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
      }
-  }
-
-  client_ptr rpc_server::get_client()const
-  {
-     return my->_client;
-  }
-
-  void rpc_server::set_client( const client_ptr& c )
-  {
-     my->_client = c;
   }
 
   bool rpc_server::configure( const rpc_server::config& cfg )
@@ -1448,9 +1432,15 @@ Result:
 
   void rpc_server::wait_on_quit()
   {
-     my->_on_quit_promise.reset( new fc::promise<void>("rpc_quit") );
-     my->_on_quit_promise->wait();
+    if (!my->_on_quit_promise->ready())
+      my->_on_quit_promise->wait();
   }
+
+  void rpc_server::shutdown_rpc_server()
+  {
+    my->shutdown_rpc_server();
+  }
+
 
   exception::exception(fc::log_message&& m) :
     fc::exception(fc::move(m)) {}
