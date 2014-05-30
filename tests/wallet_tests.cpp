@@ -54,12 +54,12 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       auto network = std::make_shared<bts::net::simulated_network>();
 
-      //auto my_client = std::make_shared<client>(network);
-      auto my_client = std::make_shared<client>();
+      auto my_client = std::make_shared<client>(network);
+      //auto my_client = std::make_shared<client>();
       my_client->open( my_dir.path(), "genesis.json" );
 
-      //auto your_client = std::make_shared<client>(network);
-      auto your_client = std::make_shared<client>();
+      auto your_client = std::make_shared<client>(network);
+      //auto your_client = std::make_shared<client>();
       your_client->open( your_dir.path(), "genesis.json" );
 
       my_client->wallet_create( "my_wallet", password );
@@ -71,6 +71,10 @@ BOOST_AUTO_TEST_CASE( client_tests )
       std::string wif_key = "5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn";
       my_client->wallet_import_private_key( wif_key, "account1", true /*rescan*/ );
 
+      my_client->wallet_close();
+      my_client->wallet_open("my_wallet");
+      my_client->wallet_unlock( fc::seconds(999999999), password );
+
       auto bal = my_client->wallet_get_balance();
       ilog( "${bal}", ("bal",bal ) );
 
@@ -78,6 +82,11 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "----" );
       ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
       ilog( "----" );
+
+      my_client->wallet_close();
+      my_client->wallet_open("my_wallet");
+      my_client->wallet_unlock( fc::seconds(999999999), password );
+      my_client->get_wallet()->list_receive_accounts();
 
 
    } catch ( const fc::exception& e )
@@ -111,6 +120,9 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
       auto result2 = my_wallet.create_account( "my2" );
       ilog( "my1: ${a}", ("a",result) );
       ilog( "my2: ${a}", ("a",result2) );
+      my_wallet.close();
+      my_wallet.open( "my_wallet" );
+      my_wallet.unlock( password );
 
 
       wallet  your_wallet( your_blockchain );

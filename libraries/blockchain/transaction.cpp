@@ -315,7 +315,7 @@ namespace bts { namespace blockchain {
       if( !arec.valid() )
       {
          fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
-         FC_ASSERT( !"I shouldn't get here" );
+         FC_ASSERT( !"Evaluating withdraw, but unable to find balance record", "", ("op",op) );
       }
 
       switch( (withdraw_condition_types)arec->condition.type )

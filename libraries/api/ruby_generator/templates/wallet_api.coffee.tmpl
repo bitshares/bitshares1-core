@@ -1,0 +1,14 @@
+class Wallet
+
+  constructor: (@q, @log, @rpc, @error_service, @interval) ->
+    @log.info "---- Wallet Constructor ----"
+
+<% wallet_api['methods'].each do |m| %>
+  # <%= m['description'] %>
+  <%= m['method_name'].gsub('wallet_', '') %>: <%= js_method_params(m) %> ->
+    @rpc.request('<%= m['method_name'] %>'<%= js_pass_params(m) %>).then (response) ->
+      response.result
+<% end %>
+
+
+angular.module("app").service("WalletAPI", ["$q", "$log", "RpcService", "ErrorService", "$interval", Wallet])

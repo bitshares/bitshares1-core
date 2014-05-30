@@ -68,6 +68,18 @@
         "default_example" : "TODO"      
       },
       {
+        "type_name" : "asset",
+        "cpp_parameter_type" : "const std::pair<bts::blockchain::share_type,std::string>&",
+        "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
+        "default_example" : "TODO"        
+      },
+      {
+        "type_name" : "asset_array",
+        "container_type" : "array",
+        "contained_type" : "asset",
+        "default_example" : "TODO"      
+      },
+      {
         "type_name" : "pretty_transaction",
         "cpp_parameter_type" : "const bts::wallet::pretty_transaction&",
         "cpp_return_type" : "bts::wallet::pretty_transaction",
@@ -305,6 +317,29 @@
           ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_get_balance",
+        "description": "",
+        "return_type": "asset_array",
+        "parameters" : 
+          [
+            { 
+              "name" : "symbol", 
+              "type" : "asset_symbol", 
+              "description" : "The type of account, ie: XTS, GLD, USD",
+              "default_value" : "XTS"
+            },
+            { 
+              "name" : "account_name", 
+              "type" : "receive_account_name", 
+              "description" : "The account to list the balance of.",
+              "default_value" : ""
+            }
+          ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : [ "balance" ]
       },
       {
         "method_name": "wallet_transfer",

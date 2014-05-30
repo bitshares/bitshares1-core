@@ -66,7 +66,7 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                 get_current_random_seed()const override;
          public_key_type               get_signing_delegate_key( time_point_sec )const;
-         account_id_type                  get_signing_delegate_id( time_point_sec )const;
+         account_id_type               get_signing_delegate_id( time_point_sec )const;
          uint32_t                      get_block_num( const block_id_type& )const;
          signed_block_header           get_block_header( const block_id_type& )const;
          signed_block_header           get_block_header( uint32_t block_num )const;

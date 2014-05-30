@@ -12,6 +12,11 @@
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/api/common_api.hpp>
 
+#include <bts/rpc/rpc_server.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <fc/git_revision.hpp>
+
 #include <iostream>
 
 namespace bts { namespace client {
@@ -21,8 +26,10 @@ namespace bts { namespace client {
        class client_impl : public bts::net::node_delegate
        {
           public:
-            client_impl( const chain_database_ptr& chain_db )
-            :_chain_db(chain_db)
+            client_impl(bts::client::client* self) :
+              _self(self),
+              _chain_db(std::make_shared<chain_database>()),
+              _rpc_server(std::make_shared<rpc_server>(self))
             {
             }
 
@@ -54,10 +61,11 @@ namespace bts { namespace client {
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
             /// @}
-
+            bts::client::client*                                        _self;
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
 
+            bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
             chain_database_ptr                                          _chain_db;
             unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
@@ -276,13 +284,13 @@ namespace bts { namespace client {
 
     }
 
-    client::client( )
-    : my( new detail::client_impl( std::make_shared<chain_database>() ) )
+    client::client()
+    :my( new detail::client_impl(this))
     {
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
-    : my( new detail::client_impl( std::make_shared<chain_database>() ) )
+    : my( new detail::client_impl(this) )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
@@ -322,6 +330,7 @@ namespace bts { namespace client {
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
+    bts::rpc::rpc_server_ptr client::get_rpc_server() const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
     signed_transactions client::get_pending_transactions()const { return my->get_pending_transactions(); }
 
@@ -719,8 +728,8 @@ namespace bts { namespace client {
 
     void client::stop()
     {
+      my->_rpc_server->shutdown_rpc_server();
     }
-
 
     uint32_t client::network_get_connection_count() const
     {
@@ -839,6 +848,17 @@ namespace bts { namespace client {
     public_key_type client::wallet_create_account( const string& account_name )
     {
        return get_wallet()->create_account( account_name );
+    }
+
+    fc::variant_object client::about() const
+    {
+      fc::mutable_variant_object info;
+      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
+      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
+      info["fc_revision"]                    = fc::git_revision_sha;
+      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
+      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
+      return info;
     }
 
 } } // bts::client

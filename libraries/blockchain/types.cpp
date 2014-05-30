@@ -9,6 +9,9 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
 
+//TODO tmp debug
+#include <iostream>
+
 
 namespace bts { namespace blockchain {
 
@@ -26,7 +29,8 @@ namespace bts { namespace blockchain {
     {
        static const size_t prefix_len = strlen(BTS_ADDRESS_PREFIX);
        FC_ASSERT( base58str.size() > prefix_len );
-       FC_ASSERT( base58str.substr( 0, prefix_len ) == BTS_ADDRESS_PREFIX );
+       std::cout << base58str.substr(0, prefix_len) << "\n";
+       FC_ASSERT( base58str.substr( 0, prefix_len ) == BTS_ADDRESS_PREFIX, "", ("base58str", base58str) );
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack<binary_key>(bin);
        key_data = bin_key.data;

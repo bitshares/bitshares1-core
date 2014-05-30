@@ -123,11 +123,14 @@ typedef std::shared_ptr<dictionary_type_mapping> dictionary_type_mapping_ptr;
 
 struct parameter_description
 {
+  parameter_description():prompt(false){}
+
   std::string name;
   type_mapping_ptr type;
   std::string description;
   fc::optional<fc::variant> default_value;
   fc::optional<fc::variant> example;
+  bool                      prompt;
 };
 typedef std::list<parameter_description> parameter_description_list;
 
@@ -157,7 +160,7 @@ private:
 public:
   api_generator(const std::string& classname); 
 
-  void load_api_description(const fc::path& api_description_filename);
+  void load_api_description(const fc::path& api_description_filename, bool load_types);
   void generate_interface_file(const fc::path& api_description_output_dir);
   void generate_client_files(const fc::path& rpc_client_output_dir);
   void generate_server_files(const fc::path& rpc_server_output_dir);
@@ -201,7 +204,7 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
   for (const fc::variant& json_type_variant : json_type_map)
   {
     fc::variant_object json_type = json_type_variant.get_object();
-    FC_ASSERT(json_type.contains("type_name"));
+    FC_ASSERT(json_type.contains("type_name"), "type map entry is missing a \"type_name\" attribute");
     std::string json_type_name = json_type["type_name"].as_string();
 
     type_mapping_ptr mapping;
@@ -219,7 +222,7 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
       std::string container_type_string = json_type["container_type"].as_string();
       if (container_type_string == "array")
       {
-        FC_ASSERT(json_type.contains("contained_type"));
+        FC_ASSERT(json_type.contains("contained_type"), "arrays must specify a \"contained_type\"");
         std::string contained_type_name = json_type["contained_type"].as_string();
         type_mapping_ptr contained_type = lookup_type_mapping(contained_type_name);
         sequence_type_mapping_ptr sequence_mapping = std::make_shared<sequence_type_mapping>(json_type_name, contained_type);
@@ -227,8 +230,8 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
       }
       else if (container_type_string == "dictionary")
       {
-        FC_ASSERT(json_type.contains("key_type"));
-        FC_ASSERT(json_type.contains("value_type"));
+        FC_ASSERT(json_type.contains("key_type"), "dictionaries must specify a \"key_type\"");
+        FC_ASSERT(json_type.contains("value_type"), "dictionaries must specify a \"value_type\"");
         std::string key_type_name = json_type["key_type"].as_string();
         std::string value_type_name = json_type["value_type"].as_string();
         type_mapping_ptr key_type = lookup_type_mapping(key_type_name);
@@ -261,17 +264,22 @@ parameter_description_list api_generator::load_parameters(const fc::variants& js
   {
     fc::variant_object json_parameter_description = parameter_description_variant.get_object();
     parameter_description parameter;
-    FC_ASSERT(json_parameter_description.contains("name"));
+    FC_ASSERT(json_parameter_description.contains("name"), "parameter is missing \"name\"");
     parameter.name = json_parameter_description["name"].as_string();
-    FC_ASSERT(json_parameter_description.contains("description"));
-    parameter.description = json_parameter_description["description"].as_string();
-    FC_ASSERT(json_parameter_description.contains("type"));
-    parameter.type = lookup_type_mapping(json_parameter_description["type"].as_string());
-    if (json_parameter_description.contains("default_value"))
-      parameter.default_value = json_parameter_description["default_value"];
-    if (json_parameter_description.contains("example"))
-      parameter.example = json_parameter_description["example"];
-
+    try
+    {
+      FC_ASSERT(json_parameter_description.contains("description"), "parameter is missing \"description\"");
+      parameter.description = json_parameter_description["description"].as_string();
+      FC_ASSERT(json_parameter_description.contains("type"), "parameter is missing \"type\"");
+      parameter.type = lookup_type_mapping(json_parameter_description["type"].as_string());
+      if( json_parameter_description.contains( "prompt" ) )
+         parameter.prompt = json_parameter_description["prompt"].as_bool();
+      if (json_parameter_description.contains("default_value"))
+        parameter.default_value = json_parameter_description["default_value"];
+      if (json_parameter_description.contains("example"))
+        parameter.example = json_parameter_description["example"];
+    }
+    FC_RETHROW_EXCEPTIONS(error, "error processing parameter ${name}", ("name", parameter.name));
     parameters.push_back(parameter);
   }
   return parameters;
@@ -291,23 +299,23 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
   for (const fc::variant& method_description_variant : method_descriptions)
   {
     fc::variant_object json_method_description = method_description_variant.get_object();
-    FC_ASSERT(json_method_description.contains("method_name"));
+    FC_ASSERT(json_method_description.contains("method_name"), "method entry missing \"method_name\"");
     std::string method_name = json_method_description["method_name"].as_string();
     try
     {
       method_description method;
       method.name = method_name;
-      FC_ASSERT(json_method_description.contains("return_type"));
+      FC_ASSERT(json_method_description.contains("return_type"), "method entry missing \"return_type\"");
       std::string return_type_name = json_method_description["return_type"].as_string();
       method.return_type = lookup_type_mapping(return_type_name);
       
-      FC_ASSERT(json_method_description.contains("parameters"));
+      FC_ASSERT(json_method_description.contains("parameters"), "method entry missing \"parameters\"");
       method.parameters = load_parameters(json_method_description["parameters"].get_array());
 
       method.is_const = json_method_description.contains("is_const") && 
                                json_method_description["is_const"].as_bool();
 
-      FC_ASSERT(json_method_description.contains("prerequisites"));
+      FC_ASSERT(json_method_description.contains("prerequisites"), "method entry missing \"prerequisites\"");
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
 
       if (json_method_description.contains("aliases"))
@@ -325,21 +333,25 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
   }
 }
 
-void api_generator::load_api_description(const fc::path& api_description_filename)
+void api_generator::load_api_description(const fc::path& api_description_filename, bool load_types)
 {
-   try {
-     FC_ASSERT(fc::exists(api_description_filename));
-     fc::variant_object api_description = fc::json::from_file(api_description_filename).get_object();
-     if (api_description.contains("type_map"))
-       load_type_map(api_description["type_map"].get_array());
-     FC_ASSERT(api_description.contains("methods"));
-     load_method_descriptions(api_description["methods"].get_array());
-   } 
-   catch ( const fc::exception& e )
-   {
-      elog( "${e}", ("e", e.to_detail_string() ) );
-      throw;
-   }
+  try 
+  {
+    FC_ASSERT(fc::exists(api_description_filename), "Input file ${filename} does not exist", ("filename", api_description_filename));
+    fc::variant_object api_description = fc::json::from_file(api_description_filename).get_object();
+    if (load_types)
+    {
+      if (api_description.contains("type_map"))
+        load_type_map(api_description["type_map"].get_array());
+      return;
+    }
+    else
+    {
+      if (api_description.contains("methods"))
+        load_method_descriptions(api_description["methods"].get_array());
+    }
+  } 
+  FC_RETHROW_EXCEPTIONS(error, "Error parsing API description file ${filename}", ("filename", api_description_filename));
 }
 
 std::string api_generator::generate_signature_for_method(const method_description& method, const std::string& class_name, bool include_default_parameters)
@@ -659,7 +671,23 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
         cpp_file << "required_positional, fc::ovariant()}";
     }
     cpp_file <<  "},\n";
-    cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \"long description\"};\n";
+    cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
+    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(method.detailed_description)) << ",\n";
+    cpp_file << "    /* aliases */ {";
+    if (!method.aliases.empty())
+    {
+      bool first = true;
+      for (const std::string& alias : method.aliases)
+      {
+        if (first)
+          first = false;
+        else
+          cpp_file << ", ";
+        cpp_file << "\"" << alias << "\"";
+      }
+    }
+    cpp_file << "}};\n";
+      
     cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
   }
   cpp_file << "}\n\n";
@@ -753,18 +781,29 @@ int main(int argc, char*argv[])
     return 1;    
   }
 
-  std::vector<std::string> api_description_filenames = option_variables["api-description"].as<std::vector<std::string> >();
-  for (const std::string& api_description_filename : api_description_filenames)
-    generator.load_api_description(api_description_filename);
-
-  if (option_variables.count("api-interface-output-dir"))
-    generator.generate_interface_file(option_variables["api-interface-output-dir"].as<std::string>());
-
-  if (option_variables.count("rpc-stub-output-dir"))
+  try
   {
-    generator.generate_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
-    generator.generate_server_files(option_variables["rpc-stub-output-dir"].as<std::string>());
-  }
+    std::vector<std::string> api_description_filenames = option_variables["api-description"].as<std::vector<std::string> >();
+    // make two passes, first loading all types, second loading all methods.  This allows methods in one file
+    // to use types that might be declared in a file loaded later
+    for (const std::string& api_description_filename : api_description_filenames)
+      generator.load_api_description(api_description_filename, true);
+    for (const std::string& api_description_filename : api_description_filenames)
+      generator.load_api_description(api_description_filename, false);
 
+    if (option_variables.count("api-interface-output-dir"))
+      generator.generate_interface_file(option_variables["api-interface-output-dir"].as<std::string>());
+
+    if (option_variables.count("rpc-stub-output-dir"))
+    {
+      generator.generate_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
+      generator.generate_server_files(option_variables["rpc-stub-output-dir"].as<std::string>());
+    }
+  }
+  catch (const fc::exception& e)
+  {
+    elog("Caught while generating API: ${msg}", ("msg", e.to_detail_string()));
+    return 1;
+  }
   return 0;
 }

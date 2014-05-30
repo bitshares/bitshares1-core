@@ -5,6 +5,11 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 
+namespace bts { namespace rpc {
+  class rpc_server;
+  typedef std::shared_ptr<rpc_server> rpc_server_ptr;
+} }
+
 namespace bts { namespace client {
 
     using namespace bts::blockchain;
@@ -47,6 +52,7 @@ namespace bts { namespace client {
 
          chain_database_ptr     get_chain()const;
          wallet_ptr             get_wallet()const;
+         bts::rpc::rpc_server_ptr get_rpc_server() const;
          bts::net::node_ptr     get_node()const;
          signed_transactions    get_pending_transactions()const;
 
@@ -103,8 +109,8 @@ namespace bts { namespace client {
                                             void wallet_rename_account(const string& current_account_name, const string& new_account_name)  override;
 
                   wallet_account_record wallet_get_account(const string& account_name) const  override;
-                 balances               wallet_get_balance( const string& asset_symbol = BTS_ADDRESS_PREFIX, 
-                                                            const string& account_name = "" ) const  override;
+              //   balances               wallet_get_balance( const string& asset_symbol = BTS_ADDRESS_PREFIX, 
+               //                                             const string& account_name = "" ) const  override;
          vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const  override;
          vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const  override;
                            oname_record blockchain_get_account_record(const string& name) const  override;
@@ -135,8 +141,6 @@ namespace bts { namespace client {
      vector<name_record> blockchain_get_names(const string& first, uint32_t count) const  override;
     vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
      vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
-
-                         void stop()  override;
 
          fc::path                            get_data_dir() const;
 

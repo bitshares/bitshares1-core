@@ -19,7 +19,7 @@ namespace bts{ namespace wallet {
            { try {
               FC_ASSERT( !self->wallet_master_key.valid() );
               self->wallet_master_key = key;
-              ilog( "master: ${M}", ("M",key) );
+              wlog( "master: ${M}", ("M",key) );
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
            void load_account_record( const wallet_account_record& account_to_load )
@@ -107,7 +107,7 @@ namespace bts{ namespace wallet {
       while( current_record_itr.valid() )
       {
          auto current_record = current_record_itr.value();
-       //  ilog( "load: ${r}", ("r",current_record) );
+         ilog( "load: ${r}", ("r",current_record) );
          try 
          {
             switch( (wallet_record_type_enum)current_record.type )
@@ -161,11 +161,10 @@ namespace bts{ namespace wallet {
    int32_t wallet_db::new_index()
    {
       auto next_rec_num = get_property( next_record_number );
-      int32_t next_rec_number = 0;
+      int32_t next_rec_number = 2;
       if( next_rec_num.is_null() )
       {
-         wlog( "first rec..." );
-         next_rec_number = 1;
+         next_rec_number = 2;
       }
       else
       {
@@ -211,6 +210,7 @@ namespace bts{ namespace wallet {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( index != 0 );
+       ilog( "${record}", ("record",record) );
        my->_records.store( index, record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record",record) ) }
 
@@ -218,14 +218,14 @@ namespace bts{ namespace wallet {
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) property_itr->second.value = v;
-      else properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
-
-      if( property_id == property_enum::next_record_number )
-         store_record( wallet_property_record( wallet_property(property_id,v), 1 ) );
-      else
+      else 
       {
-         store_record( properties[property_id] );
+          if( property_id == property_enum::next_record_number )
+              properties[property_id] = wallet_property_record( wallet_property(property_id, v), 1 );
+          else
+              properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
       }
+      store_record( properties[property_id] );
    }
 
    variant wallet_db::get_property( property_enum property_id )
