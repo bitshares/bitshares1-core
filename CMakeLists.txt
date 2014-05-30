@@ -2,6 +2,10 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    MESSAGE(FATAL_ERROR "32 bit architecture not yet supported.")
+endif()
+
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
