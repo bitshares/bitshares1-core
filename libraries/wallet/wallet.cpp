@@ -276,7 +276,11 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey  )
    { try {
+      if (is_open())
+        close();
       create_file( fc::absolute(my->_data_directory) / wallet_name, password, brainkey ); 
+      open( wallet_name )
+
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}' in ${data_dir}", 
                             ("wallet_name",wallet_name)("data_dir",fc::absolute(my->_data_directory)) ) }
 
@@ -959,9 +963,10 @@ namespace bts { namespace wallet {
 
       signed_transaction        trx;
       unordered_set<address>     required_signatures;
-
+/* TODO
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
       auto issuer_record = my->_blockchain->get_asset_record( symbol );
+      */
 
       if( sign )
           sign_transaction( trx, required_signatures );
