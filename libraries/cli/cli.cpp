@@ -600,11 +600,12 @@ namespace bts { namespace cli {
                 std::cout << "\n----------------------------------------------------------------------------------------------";
                 std::cout <<   "----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right; 
-
+                
+                int count = 1;
                 for( auto tx : txs )
                 {
                     /* Print index */
-                    std::cout << std::setw( 3 ) << tx.number;
+                    std::cout << std::setw( 3 ) << count; count++;
 
                     /* Print block and transaction numbers */
                     std::cout << std::setw( 7 ) << tx.block_num << ".";

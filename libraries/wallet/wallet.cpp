@@ -624,7 +624,24 @@ namespace bts { namespace wallet {
    vector<wallet_transaction_record>    wallet::get_transaction_history()const
    { try {
       FC_ASSERT( is_open() );
-      FC_ASSERT( !"Not Implemented" );
+
+      std::vector<wallet_transaction_record> recs;
+      auto my_trxs = my->_wallet_db.transactions;
+      recs.reserve( my_trxs.size() );
+
+      for( auto iter = my_trxs.begin(); iter != my_trxs.end(); iter++)
+      {
+         recs.push_back(iter->second);
+      }
+
+      std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
+                                             const wallet_transaction_record& b)
+                                           -> bool
+               {
+                   return a.received_time < b.received_time;
+               });
+
+      return recs;
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -898,12 +915,153 @@ namespace bts { namespace wallet {
       return asset( 100000, 0 ); // TODO: actually read the value set
    }
 
-   /**
-    *  @todo what does number mean??
-    */
-   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec, int number  )
+   
+   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec )
    {
-      FC_ASSERT( !"Not Implemented" );
+      auto pretty_trx = pretty_transaction();
+     
+      auto trx = trx_rec.trx;
+      auto loc = my->_blockchain->get_transaction_location( trx.id() );
+   
+      if (loc)
+      {
+          pretty_trx.block_num = loc->block_num;
+          pretty_trx.trx_num = loc->trx_num;
+      } 
+      else /* to_pretty_trx will often be called for transactions that are not in the chain yet */ 
+      { 
+          pretty_trx.block_num = -1;
+          pretty_trx.trx_num = -1;
+      }
+
+      pretty_trx.trx_id = trx.id();
+      pretty_trx.timestamp = time_t( trx_rec.received_time.sec_since_epoch() );
+      
+      pretty_trx.totals_in[BTS_ADDRESS_PREFIX] = 0;
+      pretty_trx.totals_out[BTS_ADDRESS_PREFIX] = 0;
+      pretty_trx.fees[BTS_ADDRESS_PREFIX] = 0;
+
+      for( auto op : trx.operations )
+      {
+          switch( operation_type_enum( op.type ) )
+          {
+              case (withdraw_op_type):
+              {
+                  auto pretty_op = pretty_withdraw_op();
+                  auto withdraw_op = op.as<withdraw_operation>();
+                  auto balance_rec = my->_blockchain->get_balance_record( withdraw_op.balance_id );
+                  FC_ASSERT(balance_rec, "no balance record for id");
+                  address owner = balance_rec->owner();
+
+                  auto name = std::string("");
+                  owallet_account_record acc_rec = my->_wallet_db.lookup_account( owner );
+                  
+                  if ( acc_rec )
+                      name = acc_rec->name;
+                  
+                  pretty_op.owner = std::make_pair(owner, name);
+                  pretty_op.amount = withdraw_op.amount;
+                  pretty_trx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
+                  pretty_trx.add_operation(pretty_op);
+                  break;
+              }
+              case (deposit_op_type):
+              {
+                  auto pretty_op = pretty_deposit_op();
+                  auto deposit_op = op.as<deposit_operation>();
+
+                  // TODO
+                  name_id_type vote = deposit_op.condition.delegate_id;
+                  name_id_type pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                  int32_t delegate_account_num = my->_wallet_db.name_id_to_account[pos_delegate_id];
+                  oname_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
+                  string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";
+                  pretty_op.vote = std::make_pair(vote, delegate_name);
+
+                  if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
+                  {
+                      auto name = std::string("");
+                      auto condition = deposit_op.condition.as<withdraw_with_signature>();
+                      auto acc_rec = my->_wallet_db.lookup_account( condition.owner );
+                      if ( acc_rec )
+                          name = acc_rec->name;
+                      pretty_op.owner = std::make_pair( condition.owner, name );
+                  }
+                  else
+                  {
+                      FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
+                                      ("c", deposit_op.condition.type));
+                  }
+
+                  pretty_op.amount = deposit_op.amount;
+                  pretty_trx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
+
+                  pretty_trx.add_operation(pretty_op);
+                  break;
+              }
+              case( reserve_name_op_type ):
+              {
+                  //auto reserve_name_op = op.as<reserve_name_operation>();
+                  auto pretty_op = pretty_reserve_name_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( update_name_op_type ):
+              {
+                  //auto update_name_op = op.as<update_name_operation>();
+                  auto pretty_op = pretty_update_name_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( create_asset_op_type ):
+              {
+                  //auto create_asset_op = op.as<create_asset_operation>();
+                  auto pretty_op = pretty_create_asset_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( update_asset_op_type ):
+              {
+                  //auto update_asset_op = op.as<update_asset_operation>();
+                  auto pretty_op = pretty_update_asset_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( issue_asset_op_type ):
+              {
+                  //auto issue_asset_op = op.as<issue_asset_operation>();
+                  auto pretty_op = pretty_issue_asset_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( submit_proposal_op_type ):
+              {
+                  //auto submit_proposal_op = op.as<submit_proposal_operation>();
+                  auto pretty_op = pretty_submit_proposal_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              case( vote_proposal_op_type ):
+              {
+                  //auto vote_proposal_op = op.as<vote_proposal_operation>();
+                  auto pretty_op = pretty_vote_proposal_op();
+                  pretty_trx.add_operation( pretty_op );
+                  break;
+              }
+              default:
+              {
+                  FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
+                  break;
+              }
+          } // switch op_type
+      } // for op in trx
+    
+      for (auto pair : pretty_trx.totals_in)
+      {
+          pretty_trx.fees[pair.first] = pair.second - pretty_trx.totals_out[pair.first] ;
+      }
+      
+      return pretty_trx;
    }
 
    void wallet::import_bitcoin_wallet( const path& wallet_dat,
@@ -988,12 +1146,34 @@ namespace bts { namespace wallet {
 
    map<string, public_key_type> wallet::list_contact_accounts() const
    {
-      FC_ASSERT( !"Not Implemented" );
+      map<string, public_key_type> contact_accs;
+      unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
+      for (auto iter = accs.begin(); iter != accs.end(); iter++)
+      {
+         auto acc = iter->second;
+         if ( ! my->_wallet_db.has_private_key( acc.account_address ) )
+         {
+             contact_accs[acc.name] = public_key_type( acc.account_address.addr );
+         }
+      }
+      
+      return contact_accs;
    }
 
    map<string, public_key_type> wallet::list_receive_accounts() const
    {
-      FC_ASSERT( !"Not Implemented" );
+      map<string, public_key_type> rec_accs;
+      unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
+      for (auto iter = accs.begin(); iter != accs.end(); iter++)
+      {
+         auto acc = iter->second;
+         if ( my->_wallet_db.has_private_key( acc.account_address ) )
+         {
+             rec_accs[acc.name] = public_key_type( acc.account_address.addr );
+         }
+      }
+      
+      return rec_accs;
    }
 
 

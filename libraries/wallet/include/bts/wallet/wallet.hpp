@@ -213,8 +213,7 @@ namespace bts { namespace wallet {
 
          ///@} Transaction Generation Methods
  
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec,
-                                                                int number = 0 );
+         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec );
 
 
 
