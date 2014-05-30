@@ -1132,5 +1132,40 @@ namespace bts { namespace wallet {
       return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
    }
 
+   void      wallet::set_delegate_trust_level( const string& delegate_name, 
+                                               int32_t trust_level)
+   { try {
+      FC_ASSERT( is_open() );
+      auto war = my->_wallet_db.lookup_account( delegate_name );
+      if( war.valid() )
+      {
+         war->trust_level = trust_level;
+         my->_wallet_db.cache_account( *war );
+      }
+      else
+      {
+         auto reg_account = my->_blockchain->get_account_record( delegate_name );
+         if( !reg_account.valid() )
+         {
+            FC_ASSERT( !"Not a Registered Account" );
+         }
+         if( !reg_account->is_delegate() )
+         {
+            FC_ASSERT( !"Account not registered as a delegate" );
+         }
+         add_contact_account( delegate_name, reg_account->active_key );
+         set_delegate_trust_level( delegate_name, trust_level );
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
+                                      ("trust_level",  trust_level) ) }
+
+   int32_t   wallet::get_delegate_trust_level( const string& delegate_name) const
+   { try {
+      FC_ASSERT( is_open() );
+      auto war = my->_wallet_db.lookup_account( delegate_name );
+      if( war.valid() )
+         return war->trust_level;
+      return 0;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 } } // bts::wallet
 

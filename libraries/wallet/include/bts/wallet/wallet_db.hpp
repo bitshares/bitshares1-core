@@ -73,6 +73,10 @@ namespace bts { namespace wallet {
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
 
+         void export_to_json( const fc::path& export_file_name ) const;
+
+         void create_from_json( const fc::path& file_to_import, 
+                                const fc::path& wallet_to_create );
 
          fc::optional<wallet_master_key_record>                 wallet_master_key;
 
@@ -88,11 +92,6 @@ namespace bts { namespace wallet {
          map<string,wallet_name_record>                                   registered_accounts;
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
-
-         void export_to_json( const fc::path& export_file_name ) const;
-
-         void create_from_json( const fc::path& file_to_import, 
-                                const fc::path& wallet_to_create );
 
       private:
         void store_generic_record( int32_t index, const generic_wallet_record& r );

@@ -217,17 +217,13 @@ namespace bts { namespace wallet {
                                                                 int number = 0 );
 
 
+         void      set_delegate_trust_level(const string& delegate_name, 
+                                            int32_t trust_level);
 
-         // string  get_symbol( asset_id_type asset_id )const;
+         int32_t   get_delegate_trust_level(const string& delegate_name) const;
 
-         /*
-         void                                         set_delegate_trust_status(const string& delegate_name, optional<int32_t> trust_level);
-         delegate_trust_status                        get_delegate_trust_status(const string& delegate_name) const;
-         map<string, delegate_trust_status> list_delegate_trust_status() const;
-         */
-
-         bool                                       is_sending_address( const address& addr )const;
-         bool                                       is_receive_address( const address& addr )const;
+         bool      is_sending_address( const address& addr )const;
+         bool      is_receive_address( const address& addr )const;
 
 
          /**
