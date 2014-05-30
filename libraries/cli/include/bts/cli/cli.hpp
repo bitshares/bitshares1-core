@@ -45,5 +45,5 @@ namespace bts { namespace cli {
       private:
           std::unique_ptr<detail::cli_impl> my;
    };
-
+   typedef std::shared_ptr<cli> cli_ptr;
 } } // bts::cli

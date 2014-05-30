@@ -62,8 +62,7 @@ void client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& a
       }
     ],
   "prerequisites" : ["json_authenticated"],
-  "detailed_description" : "This function sets the list of peers we're allowed to connect to.
-It is used during testing to force network splits or other weird topologies."
+  "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
 }
 ~~~~~~~~~~~~~~~~~~~~~
    Some notes on the method description: 
