@@ -218,14 +218,14 @@ namespace bts{ namespace wallet {
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) property_itr->second.value = v;
-      else properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
-
-      if( property_id == property_enum::next_record_number )
-         store_record( wallet_property_record( wallet_property(property_id,v), 1 ) );
-      else
+      else 
       {
-         store_record( properties[property_id] );
+          if( property_id == property_enum::next_record_number )
+              properties[property_id] = wallet_property_record( wallet_property(property_id, v), 1 );
+          else
+              properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
       }
+      store_record( properties[property_id] );
    }
 
    variant wallet_db::get_property( property_enum property_id )

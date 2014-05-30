@@ -914,31 +914,37 @@ namespace bts { namespace wallet {
                                              share_type max_share_supply, 
                                              const bool sign  )
    {
-      FC_ASSERT( is_valid_account_name( issuer_account_name ) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( issuer_account_name ) );
+      FC_ASSERT( ! my->_blockchain->is_valid_symbol( symbol ) ); // not yet registered
+      //TODO rename "is_valid_symbol" to "is_registered_symbol"
+      //TODO "is_valid_symbol" will actually check if the string is valid for symbol name
 
-      //address from_account_address( get_account_public_key( pay_with_account_name ) );
-/*
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto from_account_address = get_account_public_key( issuer_account_name );
+      auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
+      FC_ASSERT( oname_rec.valid() );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    from_account_address,
                                    trx, required_signatures );
+    
+      trx.create_asset( symbol, asset_name,
+                        description, data,
+                        oname_rec->id, max_share_supply );
+
       if( sign )
          sign_transaction( trx, required_signatures );
 
       return trx;
-
-*/
-      FC_ASSERT( false, "Not Implemented" );
    }
 
    signed_transaction  wallet::issue_asset( share_type amount, 
@@ -946,8 +952,21 @@ namespace bts { namespace wallet {
                                          const string& to_account_name,
                                          const bool sign )
    {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( to_account_name ) );
-      FC_ASSERT( false, "Not Implemented" );
+      FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
+
+      signed_transaction        trx;
+      unordered_set<address>     required_signatures;
+
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto issuer_record = my->_blockchain->get_asset_record( symbol );
+
+      if( sign )
+          sign_transaction( trx, required_signatures );
+
+      return trx;
    }
 
 
