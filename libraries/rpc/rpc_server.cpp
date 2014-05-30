@@ -24,7 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (help)\
              (get_info)\
              (validate_address)\
              (blockchain_get_transaction)\
@@ -52,8 +51,7 @@ namespace bts { namespace rpc {
              (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
-             (wallet_list_delegate_trust_status)\
-             (_list_json_commands)
+             (wallet_list_delegate_trust_status)
 
   namespace detail
   {
@@ -91,8 +89,9 @@ namespace bts { namespace rpc {
          virtual void verify_connected_to_network() const override;
          virtual void store_method_metadata(const bts::api::method_data& method_metadata);
 
+         std::string help(const std::string& command_name) const;
 
-         std::string make_short_description(const bts::api::method_data& method_data)
+         std::string make_short_description(const bts::api::method_data& method_data) const
          {
            std::string help_string;
            std::stringstream sstream;
@@ -514,24 +513,10 @@ namespace bts { namespace rpc {
       return fc::variant( true );
     }
 
-    static bts::api::method_data help_metadata{"help", nullptr,
-        /* description */ "Lists commands or detailed help for specified command",
-        /* returns: */    "string",
-        /* params:          name       type      classification                   default value */
-                         {{ "command", "string", bts::api::optional_positional, fc::ovariant() } },
-      /* prerequisites */ bts::api::no_prerequisites,
-      R"(
-Arguments:
-1. "command" (string, optional) The command to get help on
-
-Result:
-"text" (string) The help text
-       )",
-        /*aliases*/ { "h" }};
-    fc::variant rpc_server_impl::help(const fc::variants& params)
+    std::string rpc_server_impl::help(const std::string& command_name) const
     {
       std::string help_string;
-      if (params.size() == 0) //if no arguments, display list of commands with short description
+      if (command_name.empty()) //if no arguments, display list of commands with short description
       {
         for (const method_map_type::value_type& method_data_pair : _method_map)
         {
@@ -541,28 +526,33 @@ Result:
           }
         }
       }
-      else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
+      else
       { //display detailed description of requested command
-        std::string command = params[0].as_string();
-        auto itr = _alias_map.find(command);
-        if (itr != _alias_map.end())
+        auto alias_iter = _alias_map.find(command_name);
+        if (alias_iter != _alias_map.end())
         {
-          bts::api::method_data method_data = _method_map[itr->second];
-          help_string += "Usage:\n";
-          help_string += make_short_description(method_data);
-          help_string += method_data.detailed_description;
-          if (method_data.aliases.size() > 0)
+          auto method_iter = _method_map.find(alias_iter->second);
+          if (method_iter != _method_map.end())
           {
-            std::stringstream ss;
-            ss << "\naliases: ";
-            for (size_t i = 0; i < method_data.aliases.size(); ++i)
+            const bts::api::method_data& method_data = method_iter->second;
+            help_string += "Usage:\n";
+            help_string += make_short_description(method_data);
+            help_string += method_data.detailed_description;
+            if (method_data.aliases.size() > 0)
             {
-              if (i != 0)
-                ss << ", ";
-              ss << method_data.aliases[i];
+              std::stringstream ss;
+              ss << "\naliases: ";
+              for (size_t i = 0; i < method_data.aliases.size(); ++i)
+              {
+                if (i != 0)
+                  ss << ", ";
+                ss << method_data.aliases[i];
+              }
+              help_string += ss.str();
             }
-            help_string += ss.str();
           }
+          else
+            FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
         }
         else
         {
@@ -570,13 +560,13 @@ Result:
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
           std::vector<std::string> match_commands;
-          for (auto itr = _method_map.lower_bound(command);
-               itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
+          for (auto itr = _method_map.lower_bound(command_name);
+               itr != _method_map.end() && itr->first.compare(0, command_name.size(), command_name) == 0;
                ++itr)
             match_commands.push_back(itr->first);
           // If they give us a alias(or its prefix), give them the list of real command names, eliminating duplication
-          for (auto alias_itr = _alias_map.lower_bound(command);
-                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command.size(), command) == 0;
+          for (auto alias_itr = _alias_map.lower_bound(command_name);
+                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command_name.size(), command_name) == 0;
                   ++alias_itr)
           {
             if (std::find(match_commands.begin(), match_commands.end(), alias_itr->second) == match_commands.end())
@@ -585,14 +575,19 @@ Result:
             }
           }
           for (auto c : match_commands)
-            help_string += make_short_description(_method_map[c]);
+          {
+            auto method_iter = _method_map.find(alias_iter->second);
+            if (method_iter != _method_map.end())
+              help_string += make_short_description(method_iter->second);
+            else
+              FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
+          }
           if (help_string.empty())
-            throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
+            throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command_name)));
         }
       }
 
-      boost::algorithm::trim(help_string);
-      return fc::variant(help_string);
+      return boost::algorithm::trim_copy(help_string);
     }
 
     static bts::api::method_data get_info_metadata{"get_info", nullptr,
@@ -1161,23 +1156,6 @@ Arguments:
         _on_quit_promise->set_value();
     }
 
-    static bts::api::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
-        /* description */ "Lists commands",
-        /* returns: */    "vector<string>",
-        /* params:     */ {},
-      /* prerequisites */ bts::api::no_prerequisites,
-      R"(
-Result:
-"commands" (array of strings) The names of all supported json commands
-       )"};
-    fc::variant rpc_server_impl::_list_json_commands(const fc::variants& params)
-    {
-      std::vector<std::string> commands;
-      for (const method_map_type::value_type& method_data_pair : _method_map)
-        commands.push_back(method_data_pair.first);
-      return fc::variant(commands);
-    }
-
   } // detail
 
   bool rpc_server::config::is_valid() const
@@ -1265,6 +1243,14 @@ Result:
     FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
   }
 
+  std::vector<bts::api::method_data> rpc_server::get_all_method_data() const
+  {
+    std::vector<bts::api::method_data> result;
+    for (const detail::rpc_server_impl::method_map_type::value_type& value : my->_method_map)
+      result.emplace_back(value.second);
+    return result;
+  }
+
   void rpc_server::validate_method_data(bts::api::method_data method)
   {
     bool encountered_default_argument = false;
@@ -1347,6 +1333,10 @@ Result:
     my->shutdown_rpc_server();
   }
 
+  std::string rpc_server::help(const std::string& command_name) const
+  {
+    return my->help(command_name);
+  }
 
   exception::exception(fc::log_message&& m) :
     fc::exception(fc::move(m)) {}

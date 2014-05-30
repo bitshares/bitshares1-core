@@ -45,9 +45,11 @@ namespace bts { namespace rpc {
     fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);
 
     const bts::api::method_data& get_method_data(const std::string& method_name);
+    std::vector<bts::api::method_data> get_all_method_data() const;
 
     void wait_on_quit();
     void shutdown_rpc_server();
+    std::string help(const std::string& command_name) const;
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 

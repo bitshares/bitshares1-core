@@ -861,4 +861,9 @@ namespace bts { namespace client {
       return info;
     }
 
+    std::string client::help(const std::string& command_name) const
+    {
+      return get_rpc_server()->help(command_name);
+    }
+
 } } // bts::client
