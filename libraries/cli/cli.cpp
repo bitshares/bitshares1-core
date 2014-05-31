@@ -386,6 +386,7 @@ namespace bts { namespace cli {
                           };
                           _client->get_wallet()->scan_chain(start, -1, cb);
                           std::cout << "|\n";
+                          std::cout << "Scan complete.\n";
                           return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
