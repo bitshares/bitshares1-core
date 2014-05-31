@@ -232,7 +232,7 @@ namespace bts { namespace wallet {
 
       bool wallet_impl::scan_deposit( const deposit_operation& op, 
                                       const private_keys& keys )
-      {
+      { try {
           bool cache_deposit = false; 
           switch( (withdraw_condition_types) op.condition.type )
           {
@@ -259,7 +259,7 @@ namespace bts { namespace wallet {
           if( cache_deposit )
              cache_balance( op.balance_id() );
           return cache_deposit;
-      } // wallet_impl::scan_deposit 
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
       void wallet_impl::cache_balance( const balance_id_type& balance_id )
       {
@@ -410,7 +410,7 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, microseconds timeout )
    { try {
-      FC_ASSERT( password.size() > BTS_MIN_PASSWORD_LENGTH ) 
+      FC_ASSERT( password.size() >= BTS_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
@@ -815,6 +815,10 @@ namespace bts { namespace wallet {
              signed_transaction trx;
 
              auto from_balance = balance_item.second.get_balance();
+
+             if( from_balance.amount <= 0 ) 
+                continue;
+
              trx.withdraw( balance_item.first,
                            from_balance.amount );
 

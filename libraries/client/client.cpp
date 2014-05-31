@@ -915,5 +915,9 @@ namespace bts { namespace client {
 
        return info;
     }
+    void client::wallet_rescan_blockchain( int64_t start, int64_t count) 
+    { try {
+       get_wallet()->scan_chain( start, start + count );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
 } } // bts::client

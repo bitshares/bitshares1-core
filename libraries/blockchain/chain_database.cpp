@@ -535,10 +535,10 @@ namespace bts { namespace blockchain {
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
          auto block_id = block_data.id();
+         block_summary summary;
          try {
             verify_header( block_data );
 
-            block_summary summary;
             summary.block_data = block_data;
 
             /* Create a pending state to track changes that would apply as we evaluate the block */
@@ -577,13 +577,18 @@ namespace bts { namespace blockchain {
             clear_pending( block_data );
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
-            if( _observer ) _observer->block_applied( summary );
          }
          catch ( const fc::exception& e )
          {
             wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
             mark_invalid( block_id );
             throw;
+         }
+         if( _observer ) try { 
+            _observer->block_applied( summary );
+         } catch ( const fc::exception& e )
+         {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
@@ -657,9 +662,10 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
       bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();

@@ -307,17 +307,25 @@ namespace bts{ namespace wallet {
    }
 
    private_keys wallet_db::get_account_private_keys( const fc::sha512& password )
-   {
+   { try {
        private_keys keys;
        keys.reserve( accounts.size() );
        for( auto item : accounts )
        {
           auto key_rec = lookup_key(item.second.account_address);
-          if( key_rec.valid() )
-             keys.push_back( key_rec->decrypt_private_key( password ) );
+          if( key_rec.valid() && key_rec->has_private_key() )
+          {
+             try {
+                keys.push_back( key_rec->decrypt_private_key( password ) );
+             } catch ( const fc::exception& e )
+             {
+                wlog( "error decrypting private key: ${e}", ("e", e.to_detail_string() ) );
+                throw; // TODO... don't thtrow here, just log
+             }
+          }
        }
        return keys;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )
    {

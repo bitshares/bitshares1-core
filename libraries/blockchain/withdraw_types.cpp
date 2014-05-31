@@ -54,7 +54,7 @@ namespace bts { namespace blockchain {
       if( owner != address(secret_public_key) )
          return omemo_status();
 
-      ilog( "" );
+      ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
       auto memo = decrypt_memo_data( secret );
       ilog( "" );
       auto check_secret = secret_private_key.get_shared_secret( memo.from );

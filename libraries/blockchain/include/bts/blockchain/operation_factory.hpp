@@ -46,6 +46,8 @@ namespace bts { namespace blockchain {
           template<typename OperationType>
           void   register_operation()
           {
+             FC_ASSERT( _converters.find( OperationType::type ) == _converters.end(), 
+                        "Operation ID already Registered ${id}", ("id",OperationType::type) );
             _converters[OperationType::type] = std::make_shared< operation_converter<OperationType> >(); 
           }
 
