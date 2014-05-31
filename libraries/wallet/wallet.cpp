@@ -126,7 +126,6 @@ namespace bts { namespace wallet {
             {
                 if( remaining > balance_item.second.balance )
                 {
-                   ilog( "-" );
                    trx.withdraw( balance_item.first, balance_item.second.balance );
                    balance_item.second.balance = 0;
                    remaining -= balance_item.second.balance;
@@ -135,7 +134,6 @@ namespace bts { namespace wallet {
                 }
                 else
                 {
-                   ilog( "." );
                    trx.withdraw( balance_item.first, remaining );
                    balance_item.second.balance -= remaining;
                    remaining = 0;
