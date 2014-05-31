@@ -1331,7 +1331,17 @@ namespace bts { namespace wallet {
 
    vector<asset>   wallet::get_all_balances( const string& account_name )const
    { try {
-      FC_ASSERT( false, "Not Implemented" );
+       FC_ASSERT( is_open() );
+       vector<asset> balances;
+       for ( auto pair : my->_wallet_db.balances )
+       {
+           auto balance_rec = pair.second;
+           if( my->_wallet_db.has_private_key( balance_rec.owner() ) )
+           {
+               balances.push_back(balance_rec.balance); 
+           }
+       }
+       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    bool  wallet::is_sending_address( const address& addr )const
