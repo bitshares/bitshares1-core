@@ -8,6 +8,7 @@
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/filesystem.hpp>
+#include <bts/utilities/key_conversion.hpp>
 
 #include <iostream>
 
@@ -79,7 +80,10 @@ int main( int argc, char** argv )
    }
 
    fc::json::save_to_file( config, fc::path("genesis.json"), true );
-   fc::json::save_to_file( keys, fc::path("genesis_private.json"), true );
+   std::vector<std::string> wif_keys;
+   for( auto k : keys )
+      wif_keys.push_back( bts::utilities::key_to_wif( k ) );
+   fc::json::save_to_file( wif_keys, fc::path("genesis_private.json"), true );
 
    std::cout << "saving genesis.json\n";
    std::cout << "saving genesis_private.json\n";
