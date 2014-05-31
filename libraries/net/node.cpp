@@ -15,6 +15,7 @@
 #include <boost/multi_index/tag.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+#include <boost/logic/tribool.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -74,7 +75,10 @@ namespace bts { namespace net {
       fc::optional<std::string> fc_git_revision_sha;
       fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
       fc::optional<std::string> platform;
-      fc::ip::endpoint inbound_endpoint;
+      fc::ip::address inbound_address;
+      uint16_t inbound_port;
+      uint16_t outbound_port;
+      boost::tribool peer_is_firewalled;
       /// @}
 
       typedef std::unordered_map<item_id, fc::time_point> item_to_time_map_type;
@@ -104,7 +108,8 @@ namespace bts { namespace net {
         state(disconnected),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
-        we_need_sync_items_from_peer(true)
+        we_need_sync_items_from_peer(true),
+        peer_is_firewalled(boost::indeterminate)
       {}
       ~peer_connection() {}
 
@@ -1071,11 +1076,9 @@ namespace bts { namespace net {
       originating_peer->user_agent = hello_message_received.user_agent;
       originating_peer->node_id = hello_message_received.node_id;
       originating_peer->core_protocol_version = hello_message_received.core_protocol_version;
-      originating_peer->inbound_endpoint = hello_message_received.inbound_endpoint;
-      // hack: right now, a peer listening on all interfaces will tell us it is listening on 0.0.0.0, patch that up here:
-      if (originating_peer->inbound_endpoint.get_address() == fc::ip::address())
-        originating_peer->inbound_endpoint = fc::ip::endpoint(originating_peer->get_socket().remote_endpoint().get_address(),
-                                                              originating_peer->inbound_endpoint.port());
+      originating_peer->inbound_address = hello_message_received.inbound_address;
+      originating_peer->inbound_port = hello_message_received.inbound_port;
+      originating_peer->outbound_port = hello_message_received.outbound_port;
 
       parse_hello_user_data_for_peer(originating_peer, hello_message_received.user_data);
 
@@ -1083,20 +1086,14 @@ namespace bts { namespace net {
       if( originating_peer->state == peer_connection::secure_connection_established && 
           originating_peer->direction == peer_connection_direction::inbound )
       {
-        if( !is_accepting_new_connections() )
+        if( already_connected_to_this_peer )
         {
           connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
           originating_peer->state = peer_connection::connection_rejected_sent;
           originating_peer->send_message(message(connection_rejected));
-          ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", 
-               ("peer", originating_peer->get_remote_endpoint()));
-        }
-        else if( already_connected_to_this_peer )
-        {
-          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
-          originating_peer->state = peer_connection::connection_rejected_sent;
-          originating_peer->send_message(message(connection_rejected));
-          ilog("Received a hello_message from peer ${peer} that I'm already connected to, rejection", ("peer", originating_peer->get_remote_endpoint()));
+          ilog("Received a hello_message from peer ${peer} that I'm already connected to (with id ${id}), rejection", 
+               ("peer", originating_peer->get_remote_endpoint())
+               ("id", hello_message_received.node_id));
         }
 #ifdef ENABLE_P2P_DEBUGGING_API
         else if( !_allowed_peers.empty() && 
@@ -1110,19 +1107,57 @@ namespace bts { namespace net {
 #endif // ENABLE_P2P_DEBUGGING_API        
         else
         {
-          // they've told us what their public IP/endpoint is, add it to our peer database
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(originating_peer->inbound_endpoint);
-          _potential_peer_db.update_entry(updated_peer_record);
+          // whether we're planning on accepting them as a peer or not, they seem to be a valid node,
+          // so add them to our database if they're not firewalled
 
-          hello_reply_message hello_reply(_user_agent_string, 
-                                          core_protocol_version, 
-                                          originating_peer->get_socket().remote_endpoint(), 
-                                          _node_id, 
-                                          _chain_id, 
-                                          generate_hello_user_data());
-          originating_peer->state = peer_connection::hello_reply_sent;
-          originating_peer->send_message(message(hello_reply));
-          ilog("Received a hello_message from peer ${peer}, sending reply to accept connection", ("peer", originating_peer->get_remote_endpoint()));
+          // in the hello message, the peer sent us the IP address and port it thought it was connecting from.
+          // If they match the IP and port we see, we assume that they're actually on the internet and they're not 
+          // firewalled.
+          fc::ip::endpoint peers_actual_outbound_endpoint = originating_peer->get_socket().remote_endpoint();
+          if (peers_actual_outbound_endpoint.get_address() == originating_peer->inbound_address &&
+              peers_actual_outbound_endpoint.port() == originating_peer->outbound_port)
+          {
+            if (originating_peer->inbound_port == 0)
+            {
+              ilog("peer does not appear to be firewalled, but they did not give an inbound port so I'm treating them as if they are.");
+              originating_peer->peer_is_firewalled = true;
+            }
+            else
+            {
+              fc::ip::endpoint peers_inbound_endpoint(originating_peer->inbound_address, originating_peer->inbound_port);
+              potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(peers_inbound_endpoint);
+              _potential_peer_db.update_entry(updated_peer_record);
+              originating_peer->peer_is_firewalled = false;
+            }
+          }
+          else
+          {
+            ilog("peer is firewalled: they think their outbound endpoing is ${reported_endpoint}, but I see it as ${actual_endpoint}",
+                 ("reported_endpoint", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
+                 ("actual_endpoint", peers_actual_outbound_endpoint));
+            originating_peer->peer_is_firewalled = true;
+          }
+
+          if( !is_accepting_new_connections() )
+          {
+            connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+            originating_peer->state = peer_connection::connection_rejected_sent;
+            originating_peer->send_message(message(connection_rejected));
+            ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", 
+                 ("peer", originating_peer->get_remote_endpoint()));
+          }
+          else
+          {
+            hello_reply_message hello_reply(_user_agent_string, 
+                                            core_protocol_version, 
+                                            originating_peer->get_socket().remote_endpoint(), 
+                                            _node_id, 
+                                            _chain_id, 
+                                            generate_hello_user_data());
+            originating_peer->state = peer_connection::hello_reply_sent;
+            originating_peer->send_message(message(hello_reply));
+            ilog("Received a hello_message from peer ${peer}, sending reply to accept connection", ("peer", originating_peer->get_remote_endpoint()));
+          }
         }
       }
       else
@@ -1929,15 +1964,21 @@ namespace bts { namespace net {
 
         throw except;
       }
+
+      fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
       hello_message hello(_user_agent_string, 
                           core_protocol_version, 
-                          _node_configuration.listen_endpoint, 
+                          local_endpoint.get_address(),
+                          _node_configuration.listen_endpoint.port(), 
+                          local_endpoint.port(),
                           _node_id, 
                           _chain_id, 
                           generate_hello_user_data());
       new_peer->state = peer_connection::hello_sent;
       new_peer->send_message(message(hello));
-      ilog("Sent \"hello\" to remote peer ${peer}", ("peer", new_peer->get_remote_endpoint()));
+      ilog("Sent \"hello\" to peer ${peer}", ("peer", new_peer->get_remote_endpoint()));
+      ilog("The hello message I just sent contains connection information: my_ip: ${ip}, my_outbound_port: ${out_port}, my_inbound_port: ${in_port}", 
+           ("ip", hello.inbound_address)("out_port", hello.outbound_port)("in_port", hello.inbound_port));
     }
 
     // methods implementing node's public interface

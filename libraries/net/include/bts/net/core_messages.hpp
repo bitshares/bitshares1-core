@@ -123,7 +123,9 @@ namespace bts { namespace net {
 
     std::string        user_agent;
     uint32_t           core_protocol_version;
-    fc::ip::endpoint   inbound_endpoint;
+    fc::ip::address    inbound_address;
+    uint16_t           inbound_port;
+    uint16_t           outbound_port;
     fc::uint160_t      node_id;
     fc::sha256         chain_id;
     fc::variant_object user_data;
@@ -131,13 +133,17 @@ namespace bts { namespace net {
     hello_message() {}
     hello_message(const std::string& user_agent, 
                   uint32_t core_protocol_version, 
-                  fc::ip::endpoint inbound_endpoint, 
+                  const fc::ip::address& inbound_address,
+                  uint16_t inbound_port,
+                  uint16_t outbound_port,
                   const fc::uint160_t& node_id_arg, 
                   const fc::sha256& chain_id_arg,
                   const fc::variant_object& user_data ) :
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
-      inbound_endpoint(inbound_endpoint),
+      inbound_address(inbound_address),
+      inbound_port(inbound_port),
+      outbound_port(outbound_port),
       node_id(node_id_arg),
       chain_id(chain_id_arg),
       user_data(user_data)
@@ -222,7 +228,7 @@ FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_it
 FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (last_item_seen) )
 FC_REFLECT( bts::net::fetch_items_message, (item_type)(items_to_fetch) )
 FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
-FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_endpoint)(node_id)(chain_id)(user_data) )
+FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_address)(inbound_port)(outbound_port)(node_id)(chain_id)(user_data) )
 FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id)(chain_id)(user_data) )
 FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint) )
 FC_REFLECT_EMPTY( bts::net::address_request_message )
