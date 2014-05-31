@@ -141,7 +141,7 @@ namespace bts { namespace blockchain {
          del_rec->adjust_votes_against( del_vote.second.votes_against );
          if( del_rec->votes_for() > max_votes || del_rec->votes_against() > max_votes )
             fail( BTS_DELEGATE_MAX_VOTE_LIMIT, fc::variant() );
-         _current_state->store_name_record( *del_rec );
+         _current_state->store_account_record( *del_rec );
       }
    }
 
@@ -260,7 +260,7 @@ namespace bts { namespace blockchain {
 
              // then fire the delegate
              delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
-             _current_state->store_name_record( *delegate_record );
+             _current_state->store_account_record( *delegate_record );
              break;
           }
           case fire_delegate_operation::invalid_testimony:
@@ -273,7 +273,7 @@ namespace bts { namespace blockchain {
              {
                 // then fire the delegate
                 delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
-                _current_state->store_name_record( *delegate_record );
+                _current_state->store_account_record( *delegate_record );
              }
 
              break;
@@ -497,13 +497,13 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_register_account( const register_account_operation& op )
    { try {
-      FC_ASSERT( name_record::is_valid_name( op.name ) );
+      FC_ASSERT( account_record::is_valid_name( op.name ) );
 
       auto cur_record = _current_state->get_account_record( op.name );
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
          fail( BTS_NAME_ALREADY_REGISTERED, fc::variant(op) );
 
-      name_record new_record;
+      account_record new_record;
       new_record.id            = _current_state->new_account_id();
       new_record.name          = op.name;
       new_record.json_data     = op.json_data;
@@ -525,7 +525,7 @@ namespace bts { namespace blockchain {
          sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
       }
 
-      _current_state->store_name_record( new_record );
+      _current_state->store_account_record( new_record );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
@@ -555,7 +555,7 @@ namespace bts { namespace blockchain {
          cur_record->delegate_info = delegate_stats();
       }
 
-      _current_state->store_name_record( *cur_record );
+      _current_state->store_account_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
@@ -566,9 +566,9 @@ namespace bts { namespace blockchain {
 
       if( op.issuer_account_id != asset_record::market_issued_asset  )
       {
-         auto issuer_name_record = _current_state->get_account_record( op.issuer_account_id );
-         if( op.issuer_account_id > 0 && !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-         add_required_signature(issuer_name_record->active_address());
+         auto issuer_account_record = _current_state->get_account_record( op.issuer_account_id );
+         if( op.issuer_account_id > 0 && !issuer_account_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+         add_required_signature(issuer_account_record->active_address());
       }
 
       sub_balance( balance_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
@@ -594,16 +594,16 @@ namespace bts { namespace blockchain {
    { try {
       auto cur_record = _current_state->get_asset_record( op.asset_id );
       if( !cur_record ) fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
-      auto issuer_name_record = _current_state->get_account_record( cur_record->issuer_account_id );
-      if( !issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+      auto issuer_account_record = _current_state->get_account_record( cur_record->issuer_account_id );
+      if( !issuer_account_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 
-      add_required_signature(issuer_name_record->active_address());  
+      add_required_signature(issuer_account_record->active_address());  
 
       if( op.issuer_account_id != cur_record->issuer_account_id )
       {
-          auto new_issuer_name_record = _current_state->get_account_record( op.issuer_account_id );
-          if( !new_issuer_name_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-          add_required_signature(new_issuer_name_record->active_address()); 
+          auto new_issuer_account_record = _current_state->get_account_record( op.issuer_account_id );
+          if( !new_issuer_account_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+          add_required_signature(new_issuer_account_record->active_address()); 
       }
 
       cur_record->description    = op.description;
@@ -622,11 +622,11 @@ namespace bts { namespace blockchain {
       if( !cur_record ) 
          fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
 
-      auto issuer_name_record = _current_state->get_account_record( cur_record->issuer_account_id );
-      if( !issuer_name_record ) 
+      auto issuer_account_record = _current_state->get_account_record( cur_record->issuer_account_id );
+      if( !issuer_account_record ) 
          fail( BTS_INVALID_NAME_ID, fc::variant(op) );
 
-      add_required_signature( issuer_name_record->active_address() );
+      add_required_signature( issuer_account_record->active_address() );
 
       if( !cur_record->can_issue( op.amount ) )
          fail( BTS_INSUFFICIENT_FUNDS, fc::variant(op) );

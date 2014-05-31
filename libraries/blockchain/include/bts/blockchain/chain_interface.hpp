@@ -2,7 +2,7 @@
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/transaction.hpp>
-#include <bts/blockchain/name_record.hpp>
+#include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
@@ -58,11 +58,11 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record              get_asset_record( asset_id_type id )const                       = 0;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
-         virtual oname_record               get_account_record( account_id_type id )const                         = 0;
+         virtual oaccount_record            get_account_record( account_id_type id )const                         = 0;
          virtual otransaction_location      get_transaction_location( const transaction_id_type& )const     = 0;
                                                                                                           
          virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
-         virtual oname_record               get_account_record( const std::string& name )const                 = 0;
+         virtual oaccount_record            get_account_record( const std::string& name )const                 = 0;
                                                                                                           
          virtual void                       store_proposal_record( const proposal_record& r )               = 0;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const                 = 0;
@@ -72,7 +72,7 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_asset_record( const asset_record& r )                     = 0;
          virtual void                       store_balance_record( const balance_record& r )                 = 0;
-         virtual void                       store_name_record( const name_record& r )                       = 0;
+         virtual void                       store_account_record( const account_record& r )                       = 0;
          virtual void                       store_transaction_location( const transaction_id_type&,
                                                                         const transaction_location& loc )   = 0;
 

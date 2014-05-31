@@ -88,7 +88,7 @@ namespace bts { namespace wallet {
       }
       void wallet_impl::scan_registered_accounts()
       {
-         _blockchain->scan_names( [=]( const name_record& bal_rec )
+         _blockchain->scan_accounts( [=]( const blockchain::account_record& bal_rec )
          {
               auto key_rec =_wallet_db.lookup_key( bal_rec.active_key );
               if( key_rec.valid() && key_rec->has_private_key() )
@@ -217,7 +217,7 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
-          opt_account->registered_account_id = account_name_rec->id;
+          opt_account->blockchain_account_id = account_name_rec->id;
           _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
 
           return false;
@@ -1178,7 +1178,7 @@ namespace bts { namespace wallet {
                   name_id_type vote = deposit_op.condition.delegate_id;
                   name_id_type pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
                   int32_t delegate_account_num = my->_wallet_db.account_id_to_account[pos_delegate_id];
-                  oname_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
+                  blockchain::oaccount_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
                   string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";
                   pretty_op.vote = std::make_pair(vote, delegate_name);
 
@@ -1392,10 +1392,11 @@ namespace bts { namespace wallet {
 
 
    void  wallet::scan_state()
-   {
+   { try {
+      wlog( "scan state" );
       my->scan_balances();
       my->scan_registered_accounts();
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" )  }
 
    /**
     *  A valid account is any named account registered in the blockchain or
@@ -1427,7 +1428,7 @@ namespace bts { namespace wallet {
     */
    bool wallet::is_valid_account_name( const string& account_name )const
    {
-      return name_record::is_valid_name( account_name );
+      return blockchain::account_record::is_valid_name( account_name );
    }
 
 

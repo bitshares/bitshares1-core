@@ -30,13 +30,6 @@ namespace bts { namespace client {
                    public bts::api::common_api
     {
        public:
-         enum generate_transaction_flag
-         {
-            sign_and_broadcast    = 0,
-            do_not_broadcast      = 1,
-            do_not_sign           = 2
-         };
-
                   client();
                   client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
@@ -50,11 +43,11 @@ namespace bts { namespace client {
 
          void add_node( const string& ep );
 
-         chain_database_ptr     get_chain()const;
-         wallet_ptr             get_wallet()const;
-         bts::rpc::rpc_server_ptr get_rpc_server() const;
-         bts::net::node_ptr     get_node()const;
-         signed_transactions    get_pending_transactions()const;
+         chain_database_ptr         get_chain()const;
+         wallet_ptr                 get_wallet()const;
+         bts::rpc::rpc_server_ptr   get_rpc_server() const;
+         bts::net::node_ptr         get_node()const;
+         signed_transactions        get_pending_transactions()const;
 
          //-------------------------------------------------- JSON-RPC Method Implementations
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations
@@ -65,12 +58,14 @@ namespace bts { namespace client {
                                                   const fc::variant& data,
                                                   const string& issuer_name,
                                                   share_type maximum_share_supply,
-                                                  rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
+                                                  rpc_client_api::generate_transaction_flag flag = 
+                                                         rpc_client_api::sign_and_broadcast)  override;
 
          signed_transaction  wallet_asset_issue( share_type amount,
                                                  const string& symbol,
                                                  const string& to_account_name,
-                                                 rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
+                                                 rpc_client_api::generate_transaction_flag flag = 
+                                                         rpc_client_api::sign_and_broadcast)  override;
          /**
           *  Reserve a name and broadcast it to the network.
           */
@@ -78,12 +73,14 @@ namespace bts { namespace client {
                                                       const string& pay_with_account,
                                                       const fc::variant& json_data = fc::variant(),
                                                       bool as_delegate = false,
-                                                      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast );
+                                                      rpc_client_api::generate_transaction_flag flag = 
+                                                                      rpc_client_api::sign_and_broadcast );
 
          signed_transaction wallet_update_registered_account( const string& registered_account_name,
                                                               const fc::variant& json_data = fc::variant(),
                                                               bool as_delegate = false,
-                                                              rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast); 
+                                                              rpc_client_api::generate_transaction_flag flag = 
+                                                                             rpc_client_api::sign_and_broadcast); 
 
 
 
@@ -105,16 +102,17 @@ namespace bts { namespace client {
          map<string, public_key_type> wallet_list_contact_accounts() const;
          map<string, public_key_type> wallet_list_receive_accounts() const override;
 
-                        vector<name_record> wallet_list_reserved_names(const string& account_name) const  override;
-                                            void wallet_rename_account(const string& current_account_name, const string& new_account_name)  override;
 
-                  wallet_account_record wallet_get_account(const string& account_name) const  override;
+         void                   wallet_rename_account(const string& current_account_name, 
+                                                      const string& new_account_name);
+
+         wallet_account_record wallet_get_account(const string& account_name) const  override;
               //   balances               wallet_get_balance( const string& asset_symbol = BTS_ADDRESS_PREFIX, 
                //                                             const string& account_name = "" ) const  override;
          vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const  override;
          vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const  override;
-                           oname_record blockchain_get_account_record(const string& name) const  override;
-                           oname_record blockchain_get_account_record_by_id(name_id_type name_id) const  override;
+                           oaccount_record blockchain_get_account_record(const string& name) const  override;
+                           oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const  override;
                           oasset_record blockchain_get_asset_record(const string& symbol) const  override;
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
 
@@ -138,9 +136,8 @@ namespace bts { namespace client {
                                                       const string& account_name,
                                                       bool wallet_rescan_blockchain = false)  override;
 
-     vector<name_record> blockchain_get_names(const string& first, uint32_t count) const  override;
-    vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
-     vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
+     vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
+     vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
 
          fc::path                            get_data_dir() const;
 

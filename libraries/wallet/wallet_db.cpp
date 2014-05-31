@@ -30,11 +30,11 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_index_itr == self->address_to_account.end() );
               self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
               
-              if( account_to_load.registered_account_id != 0 )
+              if( account_to_load.blockchain_account_id != 0 )
               {
-                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.registered_account_id );
+                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.blockchain_account_id );
                 FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
-                self->account_id_to_account[ account_to_load.registered_account_id ] = account_to_load.index;
+                self->account_id_to_account[ account_to_load.blockchain_account_id ] = account_to_load.index;
               }
 
               auto current_name_itr = self->name_to_account.find( account_to_load.name );
@@ -151,7 +151,7 @@ namespace bts{ namespace wallet {
       accounts.clear();
       transactions.clear();
       balances.clear();
-      registered_accounts.clear();
+      blockchain_accounts.clear();
       assets.clear();
       properties.clear();
    }
@@ -352,7 +352,7 @@ namespace bts{ namespace wallet {
 
       wallet_account_record war; 
       war.name = new_account_name;
-      war.registered_account_id = 0;
+      war.blockchain_account_id = 0;
       war.account_address = address( new_account_key );
 
       auto current_key = lookup_key( new_account_key );
@@ -465,9 +465,9 @@ namespace bts{ namespace wallet {
    void wallet_db::cache_account( const wallet_account_record& war )
    {
       accounts[war.index] = war;
-      if( war.registered_account_id != 0 )
+      if( war.blockchain_account_id != 0 )
       {
-         account_id_to_account[war.registered_account_id] = war.index;
+         account_id_to_account[war.blockchain_account_id] = war.index;
       }
       store_record( war );
    }

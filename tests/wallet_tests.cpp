@@ -3,6 +3,7 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/client/client.hpp>
+#include <bts/client/messages.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
@@ -56,11 +57,11 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       auto my_client = std::make_shared<client>(network);
       //auto my_client = std::make_shared<client>();
-      my_client->open( my_dir.path(), "genesis.json" );
+      my_client->open( my_dir.path(), "genesis2.json" );
 
       auto your_client = std::make_shared<client>(network);
       //auto your_client = std::make_shared<client>();
-      your_client->open( your_dir.path(), "genesis.json" );
+      your_client->open( your_dir.path(), "genesis2.json" );
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
@@ -70,15 +71,19 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto my_account1 = my_client->wallet_create_account( "account1" );
       std::string wif_key = "5KVZgENbXXvTp3Pvps6uijX84Tka5TQK1vCxXLyx74ir9Hqmvbn";
       my_client->wallet_import_private_key( wif_key, "account1", true /*rescan*/ );
+      auto bal = my_client->wallet_get_balance();
+      ilog( "${bal}", ("bal",bal ) );
+      FC_ASSERT( bal[0].first > 0 );
 
       my_client->wallet_close();
       my_client->wallet_open("my_wallet");
       my_client->wallet_unlock( fc::seconds(999999999), password );
 
-      auto bal = my_client->wallet_get_balance();
+      bal = my_client->wallet_get_balance();
       ilog( "${bal}", ("bal",bal ) );
+      FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->get_wallet()->register_account( "account1", variant(), false, "account1" );
+      auto trx = my_client->wallet_register_account( "account1", "account1" ); //variant(), false, "account1" );
       ilog( "----" );
       ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
       ilog( "----" );
@@ -86,7 +91,20 @@ BOOST_AUTO_TEST_CASE( client_tests )
       my_client->wallet_close();
       my_client->wallet_open("my_wallet");
       my_client->wallet_unlock( fc::seconds(999999999), password );
-      my_client->get_wallet()->list_receive_accounts();
+      auto recv_accounts = my_client->get_wallet()->list_receive_accounts();
+      ilog( "receive accounts: ${r}", ("r",recv_accounts) );
+
+      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
+      bts::blockchain::advance_time( (next_block_production_time - bts::blockchain::now()).count()/1000000 );
+      auto b = my_client->get_chain()->generate_block(next_block_production_time);
+      my_client->get_wallet()->sign_block( b );
+      ilog( "block: ${b}", ("b",b));
+      ilog( "\n\nBROADCASTING\n\n" );
+      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+
+      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
+      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
+      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
 
 
    } catch ( const fc::exception& e )
@@ -160,7 +178,12 @@ BOOST_AUTO_TEST_CASE( wallet_tests )
 
       auto transfer_trxs = my_wallet.transfer( 5000000, "XTS", "my1", "your4", "testa", true );
       ilog( "${trxs}", ("trxs", fc::json::to_pretty_string(transfer_trxs)) );
-      ilog( "size: ${size}", ("size", fc::raw::pack_size( transfer_trxs[0] )) );
+      if( transfer_trxs.size() > 0 )
+         ilog( "size: ${size}", ("size", fc::raw::pack_size( transfer_trxs[0] )) );
+      else
+         FC_ASSERT( transfer_trxs.size() > 0  );
+
+     
 
       for( auto trx : transfer_trxs )
       {

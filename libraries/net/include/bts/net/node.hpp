@@ -162,7 +162,7 @@ namespace bts { namespace net {
          *  Add message to outgoing inventory list, notify peers that
          *  I have a message ready.
          */
-        void      broadcast( const message& item_to_broadcast );
+        virtual void  broadcast( const message& item_to_broadcast );
 
         /**
          *  Node starts the process of fetching all items after item_id of the
@@ -191,17 +191,12 @@ namespace bts { namespace net {
 
     class simulated_network : public node
     {
-      std::vector<bts::net::node_delegate*> network_nodes;
-    public:
-      void broadcast(const message& item_to_broadcast)
-      {
-        for(node_delegate* network_node : network_nodes)
-          network_node->handle_message(item_to_broadcast);
-      }
-
-      void add_node_delegate(node_delegate* node_delegate_to_add) { network_nodes.push_back(node_delegate_to_add); }      
+       public:
+         void broadcast(const message& item_to_broadcast) override;
+         void add_node_delegate(node_delegate* node_delegate_to_add);
+       private:
+         std::vector<bts::net::node_delegate*> network_nodes;
     };
-
 
 
    typedef std::shared_ptr<node> node_ptr;

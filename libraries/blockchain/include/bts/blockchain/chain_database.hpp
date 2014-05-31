@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
          osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
-         vector<name_record > get_names( const string& first, uint32_t count )const;
+         vector<account_record > get_accounts( const string& first, uint32_t count )const;
          vector<asset_record> get_assets( const string& first_symbol, uint32_t count )const;
 
          /** should perform any chain reorganization required
@@ -107,13 +107,13 @@ namespace bts { namespace blockchain {
          vector<account_id_type>               next_round_active_delegates()const;
                                             
          vector<account_id_type>               get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
-         vector<name_record>                get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
+         vector<account_record>                get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
 
          void                               scan_assets( function<void( const asset_record& )> callback );
          void                               scan_balances( function<void( const balance_record& )> callback );
-         void                               scan_names( function<void( const name_record& )> callback );
+         void                               scan_accounts( function<void( const account_record& )> callback );
 
          virtual variant                    get_property( chain_property_enum property_id )const override;
          virtual void                       set_property( chain_property_enum property_id, 
@@ -124,14 +124,14 @@ namespace bts { namespace blockchain {
          asset_id_type                      get_asset_id( const string& asset_sybmol )const;
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oname_record               get_account_record( account_id_type id )const override;
+         virtual oaccount_record               get_account_record( account_id_type id )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
-         virtual oname_record               get_account_record( const string& name )const override;
+         virtual oaccount_record               get_account_record( const string& name )const override;
 
          virtual void                       store_asset_record( const asset_record& r )override;
          virtual void                       store_balance_record( const balance_record& r )override;
-         virtual void                       store_name_record( const name_record& r )override;
+         virtual void                       store_account_record( const account_record& r )override;
          virtual void                       store_transaction_location( const transaction_id_type&,
                                                                   const transaction_location& loc )override;
 

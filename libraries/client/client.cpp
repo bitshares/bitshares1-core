@@ -4,6 +4,7 @@
 #include <bts/client/messages.hpp>
 #include <bts/net/node.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <fc/thread/thread.hpp>
@@ -534,19 +535,6 @@ namespace bts { namespace client {
       return get_wallet()->list_receive_accounts();
     }
 
-    vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
-    {
-      FC_ASSERT(false, "Not Implemented" );
-      /*
-      auto names = get_wallet()->accounts(account_name);
-      vector<name_record> name_records;
-      name_records.reserve(names.size());
-      for (auto name : names)
-        name_records.push_back(name_record(name.second));
-      return name_records;
-      */
-    }
-
     void client::wallet_rename_account(const string& current_account_name,
                                        const string& new_account_name)
     {
@@ -580,12 +568,12 @@ namespace bts { namespace client {
         return result;
     }
 
-    oname_record client::blockchain_get_account_record(const string& name) const
+    oaccount_record client::blockchain_get_account_record(const string& name) const
     {
       return get_chain()->get_account_record(name);
     }
 
-    oname_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
+    oaccount_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
     {
       return get_chain()->get_account_record(name_id);
     }
@@ -603,9 +591,9 @@ namespace bts { namespace client {
     void client::wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)
     {
       try {
-        auto name_record = get_chain()->get_account_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+        auto account_record = get_chain()->get_account_record(delegate_name);
+        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
         FC_ASSERT( !"Not Implemented" );
 
         //get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
@@ -616,9 +604,9 @@ namespace bts { namespace client {
     bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const string& delegate_name) const
     {
       try {
-        auto name_record = get_chain()->get_account_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+        auto account_record = get_chain()->get_account_record(delegate_name);
+        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
 
         return get_wallet()->get_delegate_trust_status(delegate_name);
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
@@ -672,10 +660,9 @@ namespace bts { namespace client {
         get_wallet()->scan_chain(0);
     }
 
-    vector<name_record> client::blockchain_get_names(const std::string& first,
-                                                          uint32_t count) const
+    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int64_t count) const
     {
-      return get_chain()->get_names(first, count);
+      return get_chain()->get_accounts(first, count);
     }
 
     vector<asset_record> client::blockchain_get_assets(const std::string& first_symbol, uint32_t count) const
@@ -683,10 +670,10 @@ namespace bts { namespace client {
       return get_chain()->get_assets(first_symbol,count);
     }
 
-    vector<name_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
+    vector<account_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
     {
       auto delegates = get_chain()->get_delegates_by_vote(first, count);
-      vector<name_record> delegate_records;
+      vector<account_record> delegate_records;
       delegate_records.reserve( delegates.size() );
       for( auto delegate_id : delegates )
         delegate_records.push_back( *get_chain()->get_account_record( delegate_id ) );
@@ -864,6 +851,69 @@ namespace bts { namespace client {
     std::string client::help(const std::string& command_name) const
     {
       return get_rpc_server()->help(command_name);
+    }
+     
+    variant_object client::get_info() const
+    {
+       fc::mutable_variant_object info;
+       auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
+       auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
+       auto advanced_params = network_get_advanced_node_parameters();
+       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance().amount : 0;
+
+       info["blockchain_block_num"]                 = get_chain()->get_head_block_num();
+       info["network_num_connections"]              = network_get_connection_count();
+       info["wallet_balance"]                       = wallet_balance_shares;
+       info["wallet_unlocked_seconds_remaining"]    =  (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+       info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
+
+       info["blockchain_bips_per_share"]            = bips_per_share;
+
+       info["blockchain_block_fee_min"]             = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+       info["blockchain_block_interval"]            = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blockchain_block_size_max"]            = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["blockchain_block_size_target"]         = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+
+       info["blockchain_delegate_fire_votes_min"]   = BTS_BLOCKCHAIN_FIRE_VOTES;
+       info["blockchain_delegate_num"]              = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["blockchain_delegate_reg_fee"]          = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
+       info["blockchain_delegate_reward_min"]       = BTS_BLOCKCHAIN_MIN_REWARD;
+
+       info["blockchain_id"]                        = get_chain()->chain_id();
+
+       info["blockchain_name_size_max"]             = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["blockchain_name_data_size_max"]        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+
+       info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
+
+       info["blockchain_shares"]                    = current_share_supply;
+
+       info["blockchain_size_max"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
+       info["blockchain_symbol"]                    = BTS_ADDRESS_PREFIX;
+
+       info["blockchain_version"]                   = BTS_BLOCKCHAIN_VERSION;
+
+   //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
+
+    //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+
+       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
+
+       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+
+       info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
+
+       info["wallet_open"]                          = get_wallet()->is_open();
+
+       info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
+                                                    ? std::string( get_wallet()->unlocked_until() )
+                                                    : "";
+       info["wallet_version"]                       = BTS_WALLET_VERSION;
+
+       return info;
     }
 
 } } // bts::client

@@ -36,8 +36,6 @@ namespace bts { namespace rpc {
 
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
-         //TODO? fc::variant get_info()
-         fc::variant_object get_info();
 
                      signed_transaction wallet_asset_create(const std::string& symbol,
                                                             const std::string& asset_name,
@@ -66,20 +64,14 @@ namespace bts { namespace rpc {
                                                                generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
 
-         std::vector<name_record> wallet_list_reserved_names(const std::string& account_name) const override 
-         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         void wallet_rename_account(const std::string& current_account_name, const std::string& new_account_name) override 
-         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         std::map<std::string, public_key_type> wallet_list_receive_accounts() const override 
-         { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                 balances wallet_get_balance(const std::string& symbol = BTS_ADDRESS_PREFIX, const std::string& account_name = "*") const override;
 
          std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const override;
          std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                           oname_record blockchain_get_account_record(const std::string& name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                           oname_record blockchain_get_account_record_by_id(name_id_type name_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                           oaccount_record blockchain_get_account_record(const std::string& name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+                           oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                           oasset_record blockchain_get_asset_record(const std::string& symbol) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
@@ -100,9 +92,9 @@ namespace bts { namespace rpc {
                                                       const std::string& account_name,
                                                       bool wallet_rescan_blockchain = false) override;
 
-     std::vector<name_record> blockchain_get_names(const std::string& first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+     //std::vector<account_record> blockchain_list_registered_accounts(const std::string& first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
     std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-     std::vector<name_record> blockchain_get_delegates(uint32_t first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
+     std::vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                          void stop() override;
 

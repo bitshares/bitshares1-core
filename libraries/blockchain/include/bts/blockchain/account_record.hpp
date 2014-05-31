@@ -30,16 +30,16 @@ namespace bts { namespace blockchain {
       share_type                     pay_balance;
    };
 
-   struct name_record
+   struct account_record
    {
-      name_record()
+      account_record()
       :id(0){}
 
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
 
       bool is_null()const { return owner_key == public_key_type(); }
-      name_record make_null()const { name_record cpy(*this); cpy.owner_key = public_key_type(); return cpy; }
+      account_record make_null()const { account_record cpy(*this); cpy.owner_key = public_key_type(); return cpy; }
 
       share_type delegate_pay_balance()const
       { // TODO: move to cpp
@@ -84,10 +84,10 @@ namespace bts { namespace blockchain {
       fc::time_point_sec           last_update;
       fc::optional<delegate_stats> delegate_info;
    };
-   typedef fc::optional<name_record> oname_record;
+   typedef fc::optional<account_record> oaccount_record;
 } }
 
-FC_REFLECT( bts::blockchain::name_record,
+FC_REFLECT( bts::blockchain::account_record,
             (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, 

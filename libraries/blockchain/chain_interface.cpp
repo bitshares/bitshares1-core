@@ -35,7 +35,7 @@ namespace bts{ namespace blockchain {
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
    }
 
-   bool name_record::is_valid_name( const std::string& str )
+   bool account_record::is_valid_name( const std::string& str )
    {
       if( str.size() == 0 ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
@@ -49,7 +49,7 @@ namespace bts{ namespace blockchain {
       }
       return true;
    }
-   bool name_record::is_valid_json( const std::string& str )
+   bool account_record::is_valid_json( const std::string& str )
    {
       return fc::json::is_valid( str );
    }
