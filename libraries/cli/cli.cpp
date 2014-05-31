@@ -354,6 +354,12 @@ namespace bts { namespace cli {
               {
                   if ( ! _client->get_wallet()->is_open() )
                       interactive_open_wallet();
+                  if( ! _client->get_wallet()->is_unlocked() )
+                  {
+                      fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                      execute_interactive_command( "wallet_unlock", arguments );
+                  } 
+
                   std::cout << "Rescanning blockchain...\n";
                   uint32_t start;
                   if (arguments.size() == 0)
@@ -385,7 +391,13 @@ namespace bts { namespace cli {
                       catch( const rpc_wallet_open_needed_exception& )
                       {
                           interactive_open_wallet();
+                      }                
+                      catch( const rpc_wallet_unlock_needed_exception& )
+                      {
+                          fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                          execute_interactive_command( "wallet_unlock", arguments );
                       }
+ 
                   }
               }
               else if(command == "quit")
