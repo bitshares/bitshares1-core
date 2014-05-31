@@ -364,7 +364,7 @@ namespace bts { namespace net {
       uint32_t calculate_unsynced_block_count_from_all_peers();
       void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, const item_id& last_item_id_seen);
 
-      fc::variant_object node_impl::generate_hello_user_data();
+      fc::variant_object generate_hello_user_data();
       void parse_hello_user_data_for_peer(peer_connection* originating_peer, const fc::variant_object& user_data);
 
       void on_message(peer_connection* originating_peer, const message& received_message);
