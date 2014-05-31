@@ -378,7 +378,7 @@ namespace bts { namespace cli {
                                                        uint32_t last
                                                        ) mutable
                           {
-                              if (((100*(cur - start)) / (last - start)) > next_step)
+                              if (((100*(1 + cur - start)) / (1 + last - start)) > next_step)
                               {
                                   std::cout << "=";
                                   next_step++;
