@@ -664,7 +664,7 @@ namespace bts { namespace cli {
                             ss << std::setw( 15 ) << trust;
                         else
                             ss << std::setw( 15 ) << "N/A";
-                        std::cout << ss;
+                        std::cout << ss.str();
                     }
 
                     std::cout << "\n";
