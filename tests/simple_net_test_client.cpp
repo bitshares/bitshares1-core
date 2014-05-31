@@ -172,7 +172,7 @@ simple_net_test_miner::simple_net_test_miner() :
   _remaining_items_to_sync(0),
   _listening_port(6543)
 {
-  _node.set_delegate(this);
+  _node.set_node_delegate(this);
   _config_dir = fc::app_path() / "simple_net_test_miner";
   push_valid_signed_block(generate_fake_genesis_block());
 }

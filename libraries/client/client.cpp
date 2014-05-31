@@ -288,14 +288,26 @@ namespace bts { namespace client {
     :my( new detail::client_impl(this))
     {
     }
+
+    client::client(bts::net::simulated_network_ptr network_to_connect_to)
+    : my( new detail::client_impl(this) )
+    {
+      network_to_connect_to->add_node_delegate(my.get());
+      my->_p2p_node = network_to_connect_to;
+    }
+
     void client::open( const path& data_dir, const path& genesis_dat )
     { try {
         my->_chain_db->open( data_dir / "chain", genesis_dat );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
-        my->_p2p_node = std::make_shared<bts::net::node>();
-        my->_p2p_node->set_delegate(my.get());
+        //if we are using a simulated network, _p2p_node will already be set by client's constructor
+        if (!my->_p2p_node)
+        {
+          my->_p2p_node = std::make_shared<bts::net::node>();
+        }
+        my->_p2p_node->set_node_delegate(my.get());
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir)
                              ("genesis_dat", fc::absolute(genesis_dat)) ) }
 
@@ -845,8 +857,13 @@ namespace bts { namespace client {
       info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
       info["fc_revision"]                    = fc::git_revision_sha;
       info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at "__TIME__;
+      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
       return info;
+    }
+
+    std::string client::help(const std::string& command_name) const
+    {
+      return get_rpc_server()->help(command_name);
     }
 
 } } // bts::client

@@ -1,7 +1,15 @@
 {
   "category": "General Methods",
   "type_map":
-    [],
+    [
+      {
+        "type_name" : "method_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "wallet_transfer"
+      }
+    ],
   "methods" :
     [
       {
@@ -18,6 +26,23 @@
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "help",
+        "description": "display a list of commands, or detailed help on an individual command",
+        "return_type": "std::string",
+        "parameters" : 
+          [
+            { 
+              "name" : "command_name", 
+              "type" : "method_name", 
+              "description" : "the name of the method to get detailed help, or omit this for a list of commands",
+              "default_value" : ""
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["h"]
       }
     ]
 }

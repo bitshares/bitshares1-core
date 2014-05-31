@@ -52,10 +52,14 @@ BOOST_AUTO_TEST_CASE( client_tests )
       fc::temp_directory my_dir;
       fc::temp_directory your_dir;
 
-      auto my_client = std::make_shared<client>();
+      auto network = std::make_shared<bts::net::simulated_network>();
+
+      auto my_client = std::make_shared<client>(network);
+      //auto my_client = std::make_shared<client>();
       my_client->open( my_dir.path(), "genesis.json" );
 
-      auto your_client = std::make_shared<client>();
+      auto your_client = std::make_shared<client>(network);
+      //auto your_client = std::make_shared<client>();
       your_client->open( your_dir.path(), "genesis.json" );
 
       my_client->wallet_create( "my_wallet", password );

@@ -24,7 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (help)\
              (get_info)\
              (validate_address)\
              (blockchain_get_transaction)\
@@ -34,11 +33,8 @@ namespace bts { namespace rpc {
              (blockchain_get_account_record_by_id)\
              (blockchain_get_asset_record)\
              (blockchain_get_asset_record_by_id)\
-             (blockchain_get_assets)\
              (blockchain_get_delegates)\
-             (blockchain_get_names)\
              (wallet_import_private_key)\
-             (wallet_import_bitcoin)\
              (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
              (wallet_list_reserved_names)\
@@ -46,7 +42,6 @@ namespace bts { namespace rpc {
              (wallet_rename_account)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
-             (wallet_get_balance)\
              (wallet_get_transaction_history)\
              (wallet_get_transaction_history_summary)\
              (wallet_rescan_blockchain)\
@@ -56,8 +51,7 @@ namespace bts { namespace rpc {
              (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
              (wallet_get_delegate_trust_status)\
-             (wallet_list_delegate_trust_status)\
-             (_list_json_commands)
+             (wallet_list_delegate_trust_status)
 
   namespace detail
   {
@@ -95,12 +89,12 @@ namespace bts { namespace rpc {
          virtual void verify_connected_to_network() const override;
          virtual void store_method_metadata(const bts::api::method_data& method_metadata);
 
+         std::string help(const std::string& command_name) const;
 
-         std::string make_short_description(const bts::api::method_data& method_data)
+         std::string make_short_description(const bts::api::method_data& method_data) const
          {
            std::string help_string;
            std::stringstream sstream;
-           //format into columns
            sstream << std::setw(100) << std::left;
            help_string = method_data.name + " ";
            for (const bts::api::parameter_data& parameter : method_data.parameters)
@@ -519,24 +513,10 @@ namespace bts { namespace rpc {
       return fc::variant( true );
     }
 
-    static bts::api::method_data help_metadata{"help", nullptr,
-        /* description */ "Lists commands or detailed help for specified command",
-        /* returns: */    "string",
-        /* params:          name       type      classification                   default value */
-                         {{ "command", "string", bts::api::optional_positional, fc::ovariant() } },
-      /* prerequisites */ bts::api::no_prerequisites,
-      R"(
-Arguments:
-1. "command" (string, optional) The command to get help on
-
-Result:
-"text" (string) The help text
-       )",
-        /*aliases*/ { "h" }};
-    fc::variant rpc_server_impl::help(const fc::variants& params)
+    std::string rpc_server_impl::help(const std::string& command_name) const
     {
       std::string help_string;
-      if (params.size() == 0) //if no arguments, display list of commands with short description
+      if (command_name.empty()) //if no arguments, display list of commands with short description
       {
         for (const method_map_type::value_type& method_data_pair : _method_map)
         {
@@ -546,28 +526,33 @@ Result:
           }
         }
       }
-      else if (params.size() == 1 && !params[0].is_null() && !params[0].as_string().empty())
+      else
       { //display detailed description of requested command
-        std::string command = params[0].as_string();
-        auto itr = _alias_map.find(command);
-        if (itr != _alias_map.end())
+        auto alias_iter = _alias_map.find(command_name);
+        if (alias_iter != _alias_map.end())
         {
-          bts::api::method_data method_data = _method_map[itr->second];
-          help_string += "Usage:\n";
-          help_string += make_short_description(method_data);
-          help_string += method_data.detailed_description;
-          if (method_data.aliases.size() > 0)
+          auto method_iter = _method_map.find(alias_iter->second);
+          if (method_iter != _method_map.end())
           {
-            std::stringstream ss;
-            ss << "\naliases: ";
-            for (size_t i = 0; i < method_data.aliases.size(); ++i)
+            const bts::api::method_data& method_data = method_iter->second;
+            help_string += "Usage:\n";
+            help_string += make_short_description(method_data);
+            help_string += method_data.detailed_description;
+            if (method_data.aliases.size() > 0)
             {
-              if (i != 0)
-                ss << ", ";
-              ss << method_data.aliases[i];
+              std::stringstream ss;
+              ss << "\naliases: ";
+              for (size_t i = 0; i < method_data.aliases.size(); ++i)
+              {
+                if (i != 0)
+                  ss << ", ";
+                ss << method_data.aliases[i];
+              }
+              help_string += ss.str();
             }
-            help_string += ss.str();
           }
+          else
+            FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
         }
         else
         {
@@ -575,13 +560,13 @@ Result:
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
           std::vector<std::string> match_commands;
-          for (auto itr = _method_map.lower_bound(command);
-               itr != _method_map.end() && itr->first.compare(0, command.size(), command) == 0;
+          for (auto itr = _method_map.lower_bound(command_name);
+               itr != _method_map.end() && itr->first.compare(0, command_name.size(), command_name) == 0;
                ++itr)
             match_commands.push_back(itr->first);
           // If they give us a alias(or its prefix), give them the list of real command names, eliminating duplication
-          for (auto alias_itr = _alias_map.lower_bound(command);
-                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command.size(), command) == 0;
+          for (auto alias_itr = _alias_map.lower_bound(command_name);
+                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command_name.size(), command_name) == 0;
                   ++alias_itr)
           {
             if (std::find(match_commands.begin(), match_commands.end(), alias_itr->second) == match_commands.end())
@@ -590,14 +575,19 @@ Result:
             }
           }
           for (auto c : match_commands)
-            help_string += make_short_description(_method_map[c]);
+          {
+            auto method_iter = _method_map.find(alias_iter->second);
+            if (method_iter != _method_map.end())
+              help_string += make_short_description(method_iter->second);
+            else
+              FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
+          }
           if (help_string.empty())
-            throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command)));
+            throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command_name)));
         }
       }
 
-      boost::algorithm::trim(help_string);
-      return fc::variant(help_string);
+      return boost::algorithm::trim_copy(help_string);
     }
 
     static bts::api::method_data get_info_metadata{"get_info", nullptr,
@@ -809,23 +799,6 @@ Result:
       */
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
-
-    static bts::api::method_data wallet_get_balance_metadata{"wallet_get_balance", nullptr,
-            /* description */ "Returns the wallet's current balance",
-            /* returns: */    "balances",
-            /* params:          name                  type      classification                   default_value */
-                              {
-                               {"asset_symbol",       "string", bts::api::optional_positional, fc::variant(BTS_ADDRESS_PREFIX)},
-                               {"account_name",       "string", bts::api::optional_positional, fc::variant("*")}
-                              },
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )",
-    /*aliases*/ { "bitcoin_getbalance", "getbalance", "balance" }};
-    fc::variant rpc_server_impl::wallet_get_balance(const fc::variants& params)
-    {
-      return fc::variant(_client->wallet_get_balance( params[0].as_string(), params[1].as_string() ));
-    }
 
     static bts::api::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
             /* description */ "Retrieves all transactions into or out of this wallet",
@@ -1131,34 +1104,6 @@ Examples:
       return fc::variant();
     }
 
-    static bts::api::method_data wallet_import_bitcoin_metadata{"wallet_import_bitcoin", nullptr,
-            /* description */ "Import a BTC/PTS wallet",
-            /* returns: */    "void",
-            /* params:          name           type      classification                          default_value */
-                              {
-                               {"filename",   "path",   bts::api::required_positional,        fc::ovariant()},
-                               {"account_name", "string", bts::api::required_positional,      fc::ovariant()},
-                               {"passphrase", "string", bts::api::required_positional_hidden, fc::ovariant()}
-                              },
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_import_bitcoin(const fc::variants& params)
-    {
-        auto filename = params[0].as<fc::path>();
-        auto passphrase = params[1].as<std::string>();
-        auto account_name = params[2].as<std::string>();
-        try
-        {
-          _client->wallet_import_bitcoin( filename, passphrase, account_name );
-        }
-        catch( const fc::exception& e ) // TODO: see wallet_unlock()
-        {
-          wlog( "${e}", ("e",e.to_detail_string() ) );
-          throw rpc_wallet_passphrase_incorrect_exception();
-        }
-        return fc::variant();
-    }
 
     // TODO: get account argument
     static bts::api::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
@@ -1169,31 +1114,7 @@ Examples:
                                {"account_name", "string",      bts::api::optional_positional, fc::variant("default")},
                                {"rescan",       "bool",        bts::api::optional_positional, false}},
           /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
-          R"(
-wallet_import_private_key "bitcoinprivkey" ( "account" wallet_rescan_blockchain "address_label")
-
-Adds a private key (as returned by dumpprivkey) to your wallet.
-
-Arguments:
-1. "bitcoinprivkey" (string, required) The private key (see dumpprivkey)
-2. "account" (string, optional) the name of the account to put this key in
-3. wallet_rescan_blockchain (boolean, optional, default=true) Rescan the wallet for transactions
-4. "address_label" (string,optional) assigns a label to the address being imported
-
-Examples:
-
-Dump a private key from Bitcoin wallet
-> bitshares-cli dumpprivkey "myaddress"
-
-Import the private key to BitShares wallet
-> bitshares-cli wallet_import_private_key "mykey"
-
-Import using an account name
-> bitshares-cli wallet_import_private_key "mykey" "testing" false "address_label"
-
-As a json rpc call
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "wallet_import_private_key", "params": ["mykey", "testing", false] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
-     )" };
+          R"()" };
     fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
     {
       auto key_to_import   =  params[0].as_string();
@@ -1201,46 +1122,6 @@ As a json rpc call
       bool wallet_rescan_blockchain = params[2].as_bool();
       _client->wallet_import_private_key(key_to_import, account_name, wallet_rescan_blockchain);
       return fc::variant();
-    }
-
-    static bts::api::method_data blockchain_get_names_metadata{"blockchain_get_names", nullptr,
-            /* description */ "Returns the list of reserved names sorted alphabetically",
-            /* returns: */    "vector<name_record>",
-            /* params:          name     type      classification                   default value */
-                              {{"first", "string", bts::api::optional_positional, fc::variant("")},
-                               {"count", "int",    bts::api::optional_positional, -1}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-blockchain_get_names (first, count)
-
-Returns up to count reserved names that follow first alphabetically.
-             )" };
-    fc::variant rpc_server_impl::blockchain_get_names(const fc::variants& params)
-    {
-      std::string first = params[0].as_string();
-      uint32_t count = params[1].as<uint32_t>();
-      return fc::variant(_client->blockchain_get_names( first, count ) );
-    }
-
-
-
-    static bts::api::method_data blockchain_get_assets_metadata{"blockchain_get_assets", nullptr,
-            /* description */ "Returns the list of reserved assets sorted alphabetically",
-            /* returns: */    "vector<asset_record>",
-            /* params:          name     type      classification                   default value */
-                              {{"first_symbol", "string", bts::api::optional_positional, fc::variant("")},
-                               {"count", "int",    bts::api::optional_positional, -1}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-blockchain_get_assets (first, count)
-
-Returns up to count reserved assets that follow first alphabetically.
-             )" };
-    fc::variant rpc_server_impl::blockchain_get_assets(const fc::variants& params)
-    {
-      std::string first_symbol = params[0].as_string();
-      uint32_t count = params[1].as<uint32_t>();
-      return fc::variant( _client->blockchain_get_assets(first_symbol, count) );
     }
 
 
@@ -1273,23 +1154,6 @@ Arguments:
     {
       if (!_on_quit_promise->ready())
         _on_quit_promise->set_value();
-    }
-
-    static bts::api::method_data _list_json_commands_metadata{"_list_json_commands", nullptr,
-        /* description */ "Lists commands",
-        /* returns: */    "vector<string>",
-        /* params:     */ {},
-      /* prerequisites */ bts::api::no_prerequisites,
-      R"(
-Result:
-"commands" (array of strings) The names of all supported json commands
-       )"};
-    fc::variant rpc_server_impl::_list_json_commands(const fc::variants& params)
-    {
-      std::vector<std::string> commands;
-      for (const method_map_type::value_type& method_data_pair : _method_map)
-        commands.push_back(method_data_pair.first);
-      return fc::variant(commands);
     }
 
   } // detail
@@ -1379,6 +1243,14 @@ Result:
     FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
   }
 
+  std::vector<bts::api::method_data> rpc_server::get_all_method_data() const
+  {
+    std::vector<bts::api::method_data> result;
+    for (const detail::rpc_server_impl::method_map_type::value_type& value : my->_method_map)
+      result.emplace_back(value.second);
+    return result;
+  }
+
   void rpc_server::validate_method_data(bts::api::method_data method)
   {
     bool encountered_default_argument = false;
@@ -1387,9 +1259,28 @@ Result:
 
     for (const bts::api::parameter_data& parameter : method.parameters)
     {
+       /*
       switch (parameter.classification)
       {
           case bts::api::required_positional:
+          case bts::api::required_positional_hidden:
+            // can't have any required arguments after an optional argument
+            FC_ASSERT(!encountered_optional_argument);
+            // required arguments can't have a default value
+            FC_ASSERT(!parameter.default_value);
+            break;
+          case bts::api::optional_positional:
+            // can't have any positional optional arguments after a named argument
+            FC_ASSERT(!encountered_named_argument);
+            // if previous arguments have a default value, this one must too
+            if (encountered_default_argument)
+              FC_ASSERT(parameter.default_value);
+            encountered_optional_argument = true;
+            if( parameter.default_value.valid() )
+              encountered_default_argument = true;
+            break;
+          case bts::api::optional_named:
+            encountered_optional_argument = true;
           case bts::api::required_positional_hidden:
             // can't have any required arguments after an optional argument
             FC_ASSERT(!encountered_optional_argument);
@@ -1414,6 +1305,7 @@ Result:
             FC_ASSERT(false, "Invalid parameter classification");
             break;
       }
+      */
     }
   }
 
@@ -1441,6 +1333,10 @@ Result:
     my->shutdown_rpc_server();
   }
 
+  std::string rpc_server::help(const std::string& command_name) const
+  {
+    return my->help(command_name);
+  }
 
   exception::exception(fc::log_message&& m) :
     fc::exception(fc::move(m)) {}

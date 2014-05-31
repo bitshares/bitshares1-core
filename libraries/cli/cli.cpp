@@ -36,7 +36,6 @@ namespace bts { namespace cli {
             fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
-            std::set<std::string>       _json_command_list;
 
             cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server );
 
@@ -369,18 +368,14 @@ namespace bts { namespace cli {
                           std::cout << "\n";
                           uint32_t next_step = 0;
                           auto cb = [start, next_step](uint32_t cur,
-                                                       uint32_t last,
-                                                       uint32_t cur_trx,
-                                                       uint32_t last_trx) mutable
+                                                       uint32_t last
+                                                       ) mutable
                           {
-                              if (((100*(cur - start)) / (last - start)) > next_step)
-                              {
-                                  std::cout << "=";
+                                  std::cout << cur << "   \r";
                                   next_step++;
-                              }
                           };
                           // TODO: restore callback here...
-                          // _client->get_wallet()->scan_chain(start, cb);
+                          _client->get_wallet()->scan_chain(start, -1, cb);
                           std::cout << "\n";
                           return fc::variant("Scan complete.");
                       }
@@ -708,8 +703,16 @@ namespace bts { namespace cli {
             }
 
 #ifdef HAVE_READLINE
+            typedef std::map<std::string, bts::api::method_data> method_data_map_type;
+            method_data_map_type _method_data_map;
+            typedef std::map<std::string, std::string>  method_alias_map_type;
+            method_alias_map_type _method_alias_map;
+            method_alias_map_type::iterator _command_completion_generator_iter;
+            bool _method_data_is_initialized;
+            void initialize_method_data_if_necessary();
             char* json_command_completion_generator(const char* text, int state);
             char* json_argument_completion_generator(const char* text, int state);
+            char** json_completion(const char* text, int start, int end);
 #endif
       };
 
@@ -724,40 +727,28 @@ namespace bts { namespace cli {
 	  {
 #ifdef HAVE_READLINE
       cli_impl_instance = this;
+      _method_data_is_initialized = false;
       rl_attempted_completion_function = &json_completion_function;
 #endif
     }
 
 #ifdef HAVE_READLINE
-    // implement json command completion (for function names only)
-    char* cli_impl::json_command_completion_generator(const char* text, int state)
+    void cli_impl::initialize_method_data_if_necessary()
     {
-      static bool first = true;
-      if (first)
+      if (!_method_data_is_initialized)
       {
-        first = false;
-        fc::variant result = execute_command("_list_json_commands", fc::variants());
-        std::vector<std::string> _unsorted_json_commands = result.as<std::vector<std::string> >();
-        _json_command_list.insert(_unsorted_json_commands.begin(), _unsorted_json_commands.end());
+        _method_data_is_initialized = true;
+        std::vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
+        for (const bts::api::method_data& method_data : method_data_list)
+        {
+          _method_data_map[method_data.name] = method_data;
+          _method_alias_map[method_data.name] = method_data.name;
+          for (const std::string& alias : method_data.aliases)
+            _method_alias_map[alias] = method_data.name;
+        }
       }
-
-      static std::set<std::string>::iterator iter;
-      if (state == 0)
-        iter = _json_command_list.lower_bound(text);
-      else
-        ++iter;
-      if (iter != _json_command_list.end() &&
-          iter->compare(0, strlen(text), text) == 0)
-        return strdup(iter->c_str());
-
-      rl_attempted_completion_over = 1; // suppress default filename completion
-      return 0;
     }
-    char* cli_impl::json_argument_completion_generator(const char* text, int state)
-    {
-      rl_attempted_completion_over = 1; // suppress default filename completion
-      return 0;
-    }
+
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {
       return cli_impl_instance->json_command_completion_generator(text, state);
@@ -768,15 +759,51 @@ namespace bts { namespace cli {
     }
     extern "C" char** json_completion_function(const char* text, int start, int end)
     {
-      if (start == 0)
+      return cli_impl_instance->json_completion(text, start, end);
+    }
+
+    // implement json command completion (for function names only)
+    char* cli_impl::json_command_completion_generator(const char* text, int state)
+    {
+      initialize_method_data_if_necessary();
+
+      if (state == 0)
+        _command_completion_generator_iter = _method_alias_map.lower_bound(text);
+      else
+        ++_command_completion_generator_iter;
+      if (_command_completion_generator_iter != _method_alias_map.end() &&
+          _command_completion_generator_iter->second.compare(0, strlen(text), text) == 0)
+        return strdup(_command_completion_generator_iter->second.c_str());
+
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    char* cli_impl::json_argument_completion_generator(const char* text, int state)
+    {
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    char** cli_impl::json_completion(const char* text, int start, int end)
+    {
+      if (start == 0) // beginning of line, match a command
         return rl_completion_matches(text, &json_command_completion_generator_function);
       else
       {
+        // not the beginning of a line.  figure out what the type of this argument is 
+        // and whether we can complete it.  First, look up the method
         std::string command_line_to_parse(rl_line_buffer, start);
         std::string trimmed_command_to_parse(boost::algorithm::trim_copy(command_line_to_parse));
         
         if (!trimmed_command_to_parse.empty())
         {
+          auto alias_iter = _method_alias_map.find(trimmed_command_to_parse);
+          if (alias_iter != _method_alias_map.end())
+          {
+            auto method_data_iter = _method_data_map.find(alias_iter->second);
+            if (method_data_iter != _method_data_map.end())
+            {
+            }
+          }
           try
           {
             const bts::api::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
