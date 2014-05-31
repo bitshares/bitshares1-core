@@ -988,13 +988,36 @@ namespace bts { namespace wallet {
 
 
    signed_transaction wallet::update_registered_account( const string& account_name,
-                                                 optional<variant> json_data,
-                                                 optional<public_key_type> active,
-                                                 bool as_delegate,
-                                                 const bool sign )
+                                                         optional<variant> json_data,
+                                                         optional<public_key_type> active,
+                                                         bool as_delegate,
+                                                         const bool sign )
    {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( false, "Not Implemented" );
+      //TODO validate json_data
+
+      signed_transaction trx;
+      unordered_set<address>     required_signatures;
+
+      auto account = my->_blockchain->get_account_record( account_name );
+      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_name));
+      
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      my->withdraw_to_transaction( required_fees.amount,
+                                   required_fees.asset_id,
+                                   get_account_public_key( account->name ),
+                                   trx, required_signatures );
+     
+      required_signatures.insert( account->active_key ); 
+    
+      trx.update_account( account->id, json_data, active, as_delegate );
+       
+      if (sign)
+          sign_transaction( trx, required_signatures );
+
+      return trx;
    }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -1004,15 +1027,64 @@ namespace bts { namespace wallet {
                                        const variant& data,
                                        const bool sign  )
    {
-      FC_ASSERT( false, "Not Implemented" );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( delegate_account_name ) );
+      // TODO validate subject, body, and data
+
+      signed_transaction trx;
+      unordered_set<address>     required_signatures;
+
+      auto delegate_account = my->_blockchain->get_account_record( delegate_account_name );
+      FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
+      
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      my->withdraw_to_transaction( required_fees.amount,
+                                   required_fees.asset_id,
+                                   get_account_public_key( delegate_account->name ),
+                                   trx, required_signatures );
+     
+      required_signatures.insert( delegate_account->active_key ); 
+    
+      trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
+       
+      if (sign)
+          sign_transaction( trx, required_signatures );
+
+      return trx;
    }
 
    signed_transaction wallet::vote_proposal( const string& name, 
-                                     proposal_id_type proposal_id, 
-                                     uint8_t vote,
-                                     const bool sign )
+                                             proposal_id_type proposal_id, 
+                                             uint8_t vote,
+                                             const bool sign )
    {
-      FC_ASSERT( false, "Not Implemented" );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( name ) );
+      // TODO validate subject, body, and data
+
+      signed_transaction trx;
+      unordered_set<address>     required_signatures;
+
+      auto account = my->_blockchain->get_account_record( name );
+      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account));
+      
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      my->withdraw_to_transaction( required_fees.amount,
+                                   required_fees.asset_id,
+                                   get_account_public_key( account->name ),
+                                   trx, required_signatures );
+     
+      required_signatures.insert( account->active_key ); 
+    
+      trx.vote_proposal( proposal_id, account->id, vote );
+       
+      if (sign)
+          sign_transaction( trx, required_signatures );
+
+      return trx;
+
    }
 
    asset wallet::get_priority_fee( const string& symbol )const
