@@ -104,6 +104,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
       ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
+      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
 
 
    } catch ( const fc::exception& e )

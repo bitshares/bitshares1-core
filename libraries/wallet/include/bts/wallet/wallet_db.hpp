@@ -89,7 +89,7 @@ namespace bts { namespace wallet {
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
          unordered_map< balance_id_type,wallet_balance_record >           balances;
-         map<string,wallet_name_record>                                   registered_accounts;
+         map<string,blockchain_account_record>                            blockchain_accounts;
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
 

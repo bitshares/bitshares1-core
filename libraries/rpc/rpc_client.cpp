@@ -43,7 +43,6 @@ namespace bts { namespace rpc {
       void wallet_rescan_blockchain(uint32_t starting_block_number);
       void wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name );
       void wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name = "default", bool wallet_rescan_blockchain = false);
-      fc::variant_object get_info();
       bts::net::message_propagation_data network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
       bts::net::message_propagation_data network_get_block_propagation_data(const bts::blockchain::block_id_type& block_id);
       void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
@@ -134,10 +133,6 @@ namespace bts { namespace rpc {
     void rpc_client_impl::wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name, bool rescan_blockchain)
     {
       _json_connection->async_call("wallet_import_private_key", wif_key_to_import, account_name, rescan_blockchain).wait();
-    }
-    fc::variant_object rpc_client_impl::get_info()
-    {
-      return _json_connection->async_call("get_info").wait().get_object();
     }
     bts::net::message_propagation_data rpc_client_impl::network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id)
     {
@@ -237,10 +232,6 @@ namespace bts { namespace rpc {
     my->wallet_import_private_key(wif_key_to_import, account_name, wallet_rescan_blockchain);
   }
 
-  fc::variant_object rpc_client::get_info()
-  {
-    return my->get_info();
-  }
   void rpc_client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
   {
     return my->network_set_allowed_peers(allowed_peers);

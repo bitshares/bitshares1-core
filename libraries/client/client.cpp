@@ -535,19 +535,6 @@ namespace bts { namespace client {
       return get_wallet()->list_receive_accounts();
     }
 
-    vector<name_record> client::wallet_list_reserved_names(const std::string& account_name) const
-    {
-      FC_ASSERT(false, "Not Implemented" );
-      /*
-      auto names = get_wallet()->accounts(account_name);
-      vector<name_record> name_records;
-      name_records.reserve(names.size());
-      for (auto name : names)
-        name_records.push_back(name_record(name.second));
-      return name_records;
-      */
-    }
-
     void client::wallet_rename_account(const string& current_account_name,
                                        const string& new_account_name)
     {
@@ -581,12 +568,12 @@ namespace bts { namespace client {
         return result;
     }
 
-    oname_record client::blockchain_get_account_record(const string& name) const
+    oaccount_record client::blockchain_get_account_record(const string& name) const
     {
       return get_chain()->get_account_record(name);
     }
 
-    oname_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
+    oaccount_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
     {
       return get_chain()->get_account_record(name_id);
     }
@@ -604,9 +591,9 @@ namespace bts { namespace client {
     void client::wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)
     {
       try {
-        auto name_record = get_chain()->get_account_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+        auto account_record = get_chain()->get_account_record(delegate_name);
+        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
         FC_ASSERT( !"Not Implemented" );
 
         //get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
@@ -617,9 +604,9 @@ namespace bts { namespace client {
     bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const string& delegate_name) const
     {
       try {
-        auto name_record = get_chain()->get_account_record(delegate_name);
-        FC_ASSERT(name_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(name_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
+        auto account_record = get_chain()->get_account_record(delegate_name);
+        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
+        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
 
         return get_wallet()->get_delegate_trust_status(delegate_name);
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
@@ -673,10 +660,9 @@ namespace bts { namespace client {
         get_wallet()->scan_chain(0);
     }
 
-    vector<name_record> client::blockchain_get_names(const std::string& first,
-                                                          uint32_t count) const
+    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int64_t count) const
     {
-      return get_chain()->get_names(first, count);
+      return get_chain()->get_accounts(first, count);
     }
 
     vector<asset_record> client::blockchain_get_assets(const std::string& first_symbol, uint32_t count) const
@@ -684,10 +670,10 @@ namespace bts { namespace client {
       return get_chain()->get_assets(first_symbol,count);
     }
 
-    vector<name_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
+    vector<account_record> client::blockchain_get_delegates(uint32_t first, uint32_t count) const
     {
       auto delegates = get_chain()->get_delegates_by_vote(first, count);
-      vector<name_record> delegate_records;
+      vector<account_record> delegate_records;
       delegate_records.reserve( delegates.size() );
       for( auto delegate_id : delegates )
         delegate_records.push_back( *get_chain()->get_account_record( delegate_id ) );

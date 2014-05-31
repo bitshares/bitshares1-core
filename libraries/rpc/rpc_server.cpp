@@ -36,7 +36,6 @@ namespace bts { namespace rpc {
              (wallet_import_private_key)\
              (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
-             (wallet_list_reserved_names)\
              (wallet_get_account)\
              (wallet_rename_account)\
              (wallet_asset_create)\
@@ -654,21 +653,6 @@ namespace bts { namespace rpc {
       return fc::variant( accounts );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
-    static bts::api::method_data wallet_list_reserved_names_metadata{"wallet_list_reserved_names", nullptr,
-            /* description */ "Lists all reserved names controlled by this wallet, filtered by account",
-            /* returns: */    "vector<name_record>",
-            /* params:          name            type       classification                   default value */
-                              {{"account_name", "string",  bts::api::optional_positional, fc::variant("*")}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_list_reserved_names(const fc::variants& params)
-    {  try {
-      std::string account_name = params[0].as_string();
-      std::vector<name_record> name_records = _client->wallet_list_reserved_names(account_name);
-      return fc::variant( name_records );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
     static bts::api::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
             /* description */ "Rename an account in wallet",
             /* returns: */    "void",
@@ -753,7 +737,7 @@ namespace bts { namespace rpc {
 
     static bts::api::method_data blockchain_get_account_record_metadata{"blockchain_get_account_record", nullptr,
             /* description */ "Retrieves the name record",
-            /* returns: */    "name_record",
+            /* returns: */    "account_record",
             /* params:          name          type      classification                   default_value */
                               {{"name",       "string", bts::api::required_positional, fc::ovariant()}},
           /* prerequisites */ bts::api::json_authenticated,
@@ -768,7 +752,7 @@ namespace bts { namespace rpc {
 
     static bts::api::method_data blockchain_get_account_record_by_id_metadata{"blockchain_get_account_record_by_id", nullptr,
             /* description */ "Retrieves the name record for the given name_id",
-            /* returns: */    "name_record",
+            /* returns: */    "account_record",
             /* params:          name          type      classification                   default_value */
                               {{"name_id",    "int", bts::api::required_positional, fc::ovariant()}},
           /* prerequisites */ bts::api::json_authenticated,
@@ -1050,7 +1034,7 @@ Examples:
 
     static bts::api::method_data blockchain_get_delegates_metadata{"blockchain_get_delegates", nullptr,
             /* description */ "Returns the list of delegates sorted by vote",
-            /* returns: */    "vector<name_record>",
+            /* returns: */    "vector<account_record>",
             /* params:          name     type      classification                   default value */
                               {{"first", "int",    bts::api::optional_positional, 0},
                                {"count", "int",    bts::api::optional_positional, -1}},
@@ -1069,7 +1053,7 @@ Arguments:
     {
       uint32_t first = params[0].as<uint32_t>();;
       uint32_t count = params[1].as<uint32_t>();
-      std::vector<name_record> delegate_records = _client->blockchain_get_delegates(first, count);
+      std::vector<account_record> delegate_records = _client->blockchain_get_delegates(first, count);
       return fc::variant(delegate_records);
     }
 

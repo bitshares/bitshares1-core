@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
       withdraw_op_type            = 1,
       deposit_op_type             = 2,
 
-      /** name operations */
+      /** account operations */
       register_account_op_type        = 3,
       update_account_op_type         = 4,
 
@@ -117,6 +117,6 @@ namespace fc {
 
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/name_operations.hpp>
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>

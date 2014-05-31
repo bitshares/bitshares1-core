@@ -156,7 +156,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >                   _asset_db;
             bts::db::level_map< balance_id_type, balance_record >               _balance_db;
-            bts::db::level_map< account_id_type, name_record >                     _name_db;
+            bts::db::level_map< account_id_type, account_record >                     _name_db;
 
             bts::db::level_map< string, account_id_type >                     _name_index_db;
             bts::db::level_map< string, asset_id_type >                    _symbol_index_db;
@@ -393,7 +393,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( !!delegate_record );
             FC_ASSERT( delegate_record->is_delegate() );
             delegate_record->delegate_info->pay_balance += amount;
-            pending_state->store_name_record( *delegate_record );
+            pending_state->store_account_record( *delegate_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
@@ -471,7 +471,7 @@ namespace bts { namespace blockchain {
 
              delegate_rec->delegate_info->next_secret_hash         = produced_block.next_secret_hash;
              delegate_rec->delegate_info->last_block_num_produced  = produced_block.block_num;
-             pending_state->store_name_record( *delegate_rec );
+             pending_state->store_account_record( *delegate_rec );
           }
 
           auto headblock_timestamp = _head_block_header.timestamp;
@@ -493,7 +493,7 @@ namespace bts { namespace blockchain {
               else
                   delegate_rec->delegate_info->blocks_produced += 1;
 
-              pending_state->store_name_record( *delegate_rec );
+              pending_state->store_account_record( *delegate_rec );
           }
           while( headblock_timestamp != produced_block.timestamp );
       }
@@ -708,10 +708,10 @@ namespace bts { namespace blockchain {
    /**
     *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */
-   std::vector<name_record> chain_database::get_delegate_records_by_vote(uint32_t first, uint32_t count )const
+   std::vector<account_record> chain_database::get_delegate_records_by_vote(uint32_t first, uint32_t count )const
    { try {
       auto del_vote_itr = my->_delegate_vote_index_db.begin();
-      std::vector<name_record> sorted_delegates;
+      std::vector<account_record> sorted_delegates;
       uint32_t pos = 0;
       while( sorted_delegates.size() < count && del_vote_itr.valid() )
       {
@@ -959,7 +959,7 @@ namespace bts { namespace blockchain {
       return my->_balance_db.fetch_optional( balance_id );
    }
 
-   oname_record         chain_database::get_account_record( account_id_type account_id )const
+   oaccount_record         chain_database::get_account_record( account_id_type account_id )const
    {
       return my->_name_db.fetch_optional( account_id );
    }
@@ -988,12 +988,12 @@ namespace bts { namespace blockchain {
        return oasset_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
 
-   oname_record         chain_database::get_account_record( const string& name )const
+   oaccount_record         chain_database::get_account_record( const string& name )const
    { try {
        auto account_id_itr = my->_name_index_db.find( name );
        if( account_id_itr.valid() )
           return get_account_record( account_id_itr.value() );
-       return oname_record();
+       return oaccount_record();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name) ) }
 
 
@@ -1025,7 +1025,7 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
-   void chain_database::store_name_record( const name_record& r )
+   void chain_database::store_account_record( const account_record& r )
    { try {
        auto old_rec = get_account_record( r.id );
        if( r.is_null() )
@@ -1089,7 +1089,7 @@ namespace bts { namespace blockchain {
            ++balances;
         }
    }
-   void    chain_database::scan_names( function<void( const name_record& )> callback )
+   void    chain_database::scan_accounts( function<void( const account_record& )> callback )
    {
         auto name_itr = my->_name_db.begin();
         while( name_itr.valid() )
@@ -1225,8 +1225,8 @@ namespace bts { namespace blockchain {
                  "genesis.json does not contain enough initial delegates",
                  ("required",BTS_BLOCKCHAIN_NUM_DELEGATES)("provided",delegate_config.size()) );
 
-      name_record god; god.id = 0; god.name = "god";
-      self->store_name_record( god );
+      account_record god; god.id = 0; god.name = "god";
+      self->store_account_record( god );
 
       asset_record base_asset;
       base_asset.id = 0;
@@ -1244,7 +1244,7 @@ namespace bts { namespace blockchain {
       int32_t account_id = 1;
       for( auto name : config.names )
       {
-         name_record rec;
+         account_record rec;
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
@@ -1257,7 +1257,7 @@ namespace bts { namespace blockchain {
             rec.delegate_info->votes_for  = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
             delegate_ids.push_back( account_id );
          }
-         self->store_name_record( rec );
+         self->store_account_record( rec );
          ++account_id;
       }
 
@@ -1309,10 +1309,10 @@ namespace bts { namespace blockchain {
     {
        return my->_head_block_id;
     }
-    std::vector<name_record> chain_database::get_names( const string& first, uint32_t count )const
+    std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
     { try {
        auto itr = my->_name_index_db.lower_bound(first);
-       std::vector<name_record> names;
+       std::vector<account_record> names;
        while( itr.valid() && names.size() < count )
        {
           names.push_back( *get_account_record( itr.value() ) );
