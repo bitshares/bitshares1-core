@@ -45,20 +45,20 @@ namespace bts { namespace blockchain {
                     const asset& amount, 
                     name_id_type delegate_id );
 
-      void deposit_to_name( fc::ecc::public_key receiver_key,
-                            asset amount,
-                            fc::ecc::private_key from_key,
-                            const std::string& memo_message,
-                            name_id_type delegate_id );
+      void deposit_to_account( fc::ecc::public_key receiver_key,
+                                asset amount,
+                                fc::ecc::private_key from_key,
+                                const std::string& memo_message,
+                                name_id_type delegate_id );
 
 
-      void reserve_name( const std::string& name, 
+      void register_account( const std::string& name, 
                          const fc::variant& json_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
                          bool as_delegate = false );
 
-      void update_name( name_id_type name_id, 
+      void update_account( name_id_type name_id, 
                         const fc::optional<fc::variant>& json_data, 
                         const fc::optional<public_key_type>& active, 
                         bool as_delegate = false );
@@ -172,8 +172,8 @@ namespace bts { namespace blockchain {
          
          virtual void evaluate_withdraw( const withdraw_operation& op );
          virtual void evaluate_deposit( const deposit_operation& op );
-         virtual void evaluate_reserve_name( const reserve_name_operation& op );
-         virtual void evaluate_update_name( const update_name_operation& op );
+         virtual void evaluate_register_account( const register_account_operation& op );
+         virtual void evaluate_update_account( const update_account_operation& op );
          virtual void evaluate_create_asset( const create_asset_operation& op );
          virtual void evaluate_update_asset( const update_asset_operation& op );
          virtual void evaluate_issue_asset( const issue_asset_operation& op );

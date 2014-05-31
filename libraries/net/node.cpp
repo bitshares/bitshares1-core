@@ -398,7 +398,7 @@ namespace bts { namespace net {
       void disconnect_from_peer(peer_connection* originating_peer);
 
       // methods implementing node's public interface
-      void set_delegate(node_delegate* del);
+      void set_node_delegate(node_delegate* del);
       void load_configuration(const fc::path& configuration_directory);
       void connect_to_p2p_network();
       void add_node(const fc::ip::endpoint& ep);
@@ -1934,7 +1934,7 @@ namespace bts { namespace net {
     }
 
     // methods implementing node's public interface
-    void node_impl::set_delegate(node_delegate* del)
+    void node_impl::set_node_delegate(node_delegate* del)
     {
       _delegate = del;
       if (_delegate)
@@ -2305,9 +2305,9 @@ namespace bts { namespace net {
   {
   }
 
-  void node::set_delegate(node_delegate* del)
+  void node::set_node_delegate(node_delegate* del)
   {
-    my->set_delegate(del);
+    my->set_node_delegate(del);
   }
 
   void node::load_configuration(const fc::path& configuration_directory)
@@ -2352,6 +2352,7 @@ namespace bts { namespace net {
 
   void node::broadcast(const message& msg)
   {
+     ilog( "..." );
     my->broadcast(msg);
   }
 
@@ -2395,4 +2396,17 @@ namespace bts { namespace net {
   {
     my->clear_peer_database();
   }
+
+
+  void simulated_network::broadcast( const message& item_to_broadcast )
+  {
+      ilog( "broadcast: ${b}", ("b",item_to_broadcast) );
+      for(node_delegate* network_node : network_nodes)
+        network_node->handle_message(item_to_broadcast);
+  }
+
+  void simulated_network::add_node_delegate(node_delegate* node_delegate_to_add)
+  { 
+     network_nodes.push_back(node_delegate_to_add);
+  }      
 } } // end namespace bts::net

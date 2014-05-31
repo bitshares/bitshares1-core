@@ -4,10 +4,13 @@
 #include <fc/exception/exception.hpp>
 #include <fc/log/log_message.hpp>
 #include <bts/client/client.hpp>
+#include <bts/api/api_metadata.hpp>
+
+namespace bts { namespace client {
+  class client;
+} }
 
 namespace bts { namespace rpc {
-  using namespace bts::client;
-
   namespace detail { class rpc_server_impl; }
 
   /**
@@ -33,93 +36,25 @@ namespace bts { namespace rpc {
       bool is_valid() const; /* Currently just checks if rpc port is set */
     };
 
-    enum method_prerequisites
-    {
-      no_prerequisites     = 0,
-      json_authenticated   = 1,
-      wallet_open          = 2,
-      wallet_unlocked      = 4,
-      connected_to_network = 8,
-    };
-
-    enum parameter_classification
-    {
-      required_positional,
-      required_positional_hidden, /* Hide in help e.g. interactive password entry */
-      optional_positional,
-      optional_named
-    };
-
-    struct parameter_data
-    {
-      std::string name;
-      std::string type;
-      parameter_classification classification;
-      fc::ovariant default_value;
-      parameter_data(const parameter_data& rhs) :
-        name(rhs.name),
-        type(rhs.type),
-        classification(rhs.classification),
-        default_value(rhs.default_value)
-      {}
-      parameter_data(const parameter_data&& rhs) :
-        name(std::move(rhs.name)),
-        type(std::move(rhs.type)),
-        classification(std::move(rhs.classification)),
-        default_value(std::move(rhs.default_value))
-      {}
-      parameter_data(std::string name,
-                     std::string type,
-                     parameter_classification classification,
-                     fc::ovariant default_value) :
-        name(name),
-        type(type),
-        classification(classification),
-        default_value(default_value)
-      {}
-    };
-
-    typedef std::function<fc::variant(const fc::variants& params)> json_api_method_type;
-
-    struct method_data
-    {
-      std::string                 name;
-      json_api_method_type        method;
-      std::string                 description;
-      std::string                 return_type;
-      std::vector<parameter_data> parameters;
-      uint32_t                    prerequisites;
-      std::string                 detailed_description;
-      std::vector<std::string>    aliases;
-    };
-
-
-    rpc_server();
+    rpc_server(bts::client::client* client);
     virtual ~rpc_server();
 
-    client_ptr  get_client()const;
-    void        set_client( const client_ptr& c );
     bool        configure( const config& cfg );
 
     /// used to invoke json methods from the cli without going over the network
     fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);
 
-    const method_data& get_method_data(const std::string& method_name);
-
-    /** can be called for methods that require the user to be logged in via
-    *  RPC.
-    */
-    void check_connected_to_network();
-    void check_wallet_unlocked();
-    void check_wallet_is_open();
+    const bts::api::method_data& get_method_data(const std::string& method_name);
+    std::vector<bts::api::method_data> get_all_method_data() const;
 
     void wait_on_quit();
-
+    void shutdown_rpc_server();
+    std::string help(const std::string& command_name) const;
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
-    void validate_method_data(method_data method);
-    void register_method(method_data method);
+    void validate_method_data(bts::api::method_data method);
+    void register_method(bts::api::method_data method);
 
   private:
       std::unique_ptr<detail::rpc_server_impl> my;

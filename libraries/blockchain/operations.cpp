@@ -10,8 +10,8 @@ namespace bts { namespace blockchain {
    const operation_type_enum create_asset_operation::type      = create_asset_op_type;
    const operation_type_enum update_asset_operation::type      = update_asset_op_type;
    const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
-   const operation_type_enum reserve_name_operation::type      = reserve_name_op_type;
-   const operation_type_enum update_name_operation::type       = update_name_op_type;
+   const operation_type_enum register_account_operation::type  = register_account_op_type;
+   const operation_type_enum update_account_operation::type    = update_account_op_type;
    const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
    const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
    const operation_type_enum bid_operation::type               = bid_op_type;
@@ -36,7 +36,7 @@ namespace bts { namespace blockchain {
       condition = withdraw_condition( withdraw_with_signature( owner ), amnt.asset_id, delegate_id );
    }
 
-   reserve_name_operation::reserve_name_operation( const std::string& n, 
+   register_account_operation::register_account_operation( const std::string& n, 
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
                                                    const public_key_type& active, bool as_delegate )

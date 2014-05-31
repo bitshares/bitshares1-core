@@ -1,0 +1,82 @@
+{
+  "category": "Blockchain Methods",
+  "type_map":
+    [
+      {
+        "type_name" : "block_id_type",
+        "cpp_parameter_type" : "const bts::blockchain::block_id_type&",
+        "cpp_return_type" : "bts::blockchain::block_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "account_name",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Bob"
+      },
+      {
+        "type_name" : "account_record",
+        "cpp_parameter_type" : "const bts::blockchain::account_record&",
+        "cpp_return_type" : "bts::blockchain::account_record",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "account_record_array",
+        "container_type" : "array",
+        "contained_type" : "account_record",
+        "default_example" : "TODO"      
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "blockchain_get_blockhash",
+        "description": "Returns hash of block in best-block-chain at index provided",
+        "return_type": "block_id_type",
+        "parameters" : 
+          [
+            { 
+              "name" : "block_number", 
+              "type" : "uint32_t", 
+              "description" : "index of the block",
+              "example" : "42"
+            }
+          ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["bitcoin_getblockhash", "getblockhash"]
+      },
+      {
+        "method_name": "blockchain_get_blockcount",
+        "description": "Returns the number of blocks in the longest block chain",
+        "return_type": "uint32_t",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["bitcoin_getblockcount", "getblockcount"]
+      }
+      {
+        "method_name": "blockchain_list_registered_accounts",
+        "description": "Returns registered accounts starting with a given name upto a the limite provided",
+        "return_type": "account_record_array",
+        "parameters" : [
+            {
+              "name" : "first_account_name", 
+              "type" : "account_name", 
+              "description" : "the first account name to include",
+              "default" : ""
+            },
+            {
+              "name" : "limit", 
+              "type" : "int64_t", 
+              "description" : "the maximum number of items to list",
+              "default" : -1
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      }
+    ]
+}

@@ -18,10 +18,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifndef WIN32
-#define HAVE_READLINE
-#endif
-
 #ifdef HAVE_READLINE
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -40,13 +36,12 @@ namespace bts { namespace cli {
             fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
-            std::set<std::string>       _json_command_list;
 
             cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server );
 
             std::string get_prompt()const
             {
-              std::string wallet_name =  _client->get_wallet()->get_name();
+              std::string wallet_name =  _client->get_wallet()->get_wallet_name();
               std::string prompt = wallet_name;
               if( prompt == "" )
               {
@@ -116,8 +111,9 @@ namespace bts { namespace cli {
                     }
                     catch( const fc::canceled_exception& )
                     {
-                      if( command != "quit" ) std::cout << "Command aborted\n";
-                      else return;
+                      if( command == "quit" ) 
+                        break;
+                      std::cout << "Command aborted\n";
                     }
                     catch( const fc::exception& e )
                     {
@@ -127,6 +123,9 @@ namespace bts { namespace cli {
                 }
                 line = _self->get_line( get_prompt()  );
               }
+              // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
+              // Tell the RPC server to close, which will allow the process to exit.
+              _rpc_server->shutdown_rpc_server();
             }
 
             std::string get_line( const std::string& prompt, bool no_echo )
@@ -166,7 +165,7 @@ namespace bts { namespace cli {
             {
               try
               {
-                const rpc_server::method_data& method_data = _rpc_server->get_method_data(command);
+                const bts::api::method_data& method_data = _rpc_server->get_method_data(command);
                 return _self->parse_recognized_interactive_command(argument_stream, method_data);
               }
               catch( const fc::key_not_found_exception& )
@@ -176,7 +175,7 @@ namespace bts { namespace cli {
             }
 
             fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
-                                                               const rpc_server::method_data& method_data)
+                                                               const bts::api::method_data& method_data)
             {
               fc::variants arguments;
               for (unsigned i = 0; i < method_data.parameters.size(); ++i)
@@ -187,7 +186,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::eof_exception& e )
                 {
-                  if (method_data.parameters[i].classification != rpc_server::required_positional)
+                  if (method_data.parameters[i].classification != bts::api::required_positional)
                     return arguments;
                   else
                     FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
@@ -199,7 +198,7 @@ namespace bts { namespace cli {
                                         ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                 }
 
-                if (method_data.parameters[i].classification == rpc_server::optional_named)
+                if (method_data.parameters[i].classification == bts::api::optional_named)
                   break;
               }
               return arguments;
@@ -216,10 +215,10 @@ namespace bts { namespace cli {
             }
 
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
-                                                      const rpc_server::method_data& method_data,
+                                                      const bts::api::method_data& method_data,
                                                       unsigned parameter_index)
             {
-              const rpc_server::parameter_data& this_parameter = method_data.parameters[parameter_index];
+              const bts::api::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
               {
                 // for now, accept plain int, assume it's always in the base asset
@@ -297,32 +296,14 @@ namespace bts { namespace cli {
                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
                       }
                   }
-                  return execute_wallet_command_with_passphrase_query( command, arguments, "new passphrase", true );
+                  // TODO: positional pass phrase with optional bran key!
+                  return execute_wallet_command_with_passphrase_query( command, { arguments.front() }, "new passphrase", true );
               }
               else if ( command == "unlock" || 
-                        command == "open"   || 
-                        command == "wallet_open" || 
-                        command == "wallet_open_file" || command == "wallet_unlock")
+                        command == "wallet_unlock")
               {
-                  if( command == "wallet_open" || command == "open" )
-                  {
-                      auto wallet_name = arguments[0].as_string();
-                      if( !fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                      {
-                        std::cout << "Wallet \"" << wallet_name << "\" not found\n";
-                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                      }
-                  }
-                  else if( command == "wallet_open_file" )
-                  {
-                      auto filename = arguments[0].as<fc::path>();
-                      if( !fc::exists( filename ) )
-                      {
-                         std::cout << "File \"" << filename.generic_string() << "\" not found\n";
-                         FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                      }
-                  }
-                  return execute_wallet_command_with_passphrase_query( command, arguments, "passphrase" );
+                  ilog( "arguments: ${args}", ("args", arguments) );
+                  return execute_wallet_command_with_passphrase_query( command, {arguments.front()}, "passphrase" );
               }
               else if (command == "wallet_import_bitcoin")
               {
@@ -373,6 +354,12 @@ namespace bts { namespace cli {
               {
                   if ( ! _client->get_wallet()->is_open() )
                       interactive_open_wallet();
+                  if( ! _client->get_wallet()->is_unlocked() )
+                  {
+                      fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                      execute_interactive_command( "wallet_unlock", arguments );
+                  } 
+
                   std::cout << "Rescanning blockchain...\n";
                   uint32_t start;
                   if (arguments.size() == 0)
@@ -382,14 +369,14 @@ namespace bts { namespace cli {
                   while(true)
                   {
                       try {
+                          std::cout << "|";
                           for(int i = 0; i < 100; i++)
                               std::cout << "-";
-                          std::cout << "\n";
+                          std::cout << "|\n|";
                           uint32_t next_step = 0;
                           auto cb = [start, next_step](uint32_t cur,
-                                                       uint32_t last,
-                                                       uint32_t cur_trx,
-                                                       uint32_t last_trx) mutable
+                                                       uint32_t last
+                                                       ) mutable
                           {
                               if (((100*(cur - start)) / (last - start)) > next_step)
                               {
@@ -397,14 +384,20 @@ namespace bts { namespace cli {
                                   next_step++;
                               }
                           };
-                          _client->get_wallet()->scan_chain(start, cb);
-                          std::cout << "\n";
+                          _client->get_wallet()->scan_chain(start, -1, cb);
+                          std::cout << "|\n";
                           return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
                       {
                           interactive_open_wallet();
+                      }                
+                      catch( const rpc_wallet_unlock_needed_exception& )
+                      {
+                          fc::variants arguments { 60 * 5 }; // default to five minute timeout
+                          execute_interactive_command( "wallet_unlock", arguments );
                       }
+ 
                   }
               }
               else if(command == "quit")
@@ -444,7 +437,9 @@ namespace bts { namespace cli {
                                                                bool verify = false )
             {
                 auto new_arguments = arguments;
+                ilog( "initial args: ${new_args}", ("new_args",new_arguments) );
                 new_arguments.push_back( fc::variant( passphrase ) );
+                ilog( "test args: ${new_args}", ("new_args",new_arguments) );
 
                 while( true )
                 {
@@ -461,6 +456,7 @@ namespace bts { namespace cli {
                     }
 
                     new_arguments.back() = fc::variant( passphrase );
+                    ilog( "passphrase: ${p}", ("p",new_arguments) );
 
                     try
                     {
@@ -492,9 +488,10 @@ namespace bts { namespace cli {
                 return result;
             }
 
-            fc::variant interactive_open_wallet()
+            void interactive_open_wallet()
             {
-              if( _client->get_wallet()->is_open() ) return fc::variant( true );
+              if( _client->get_wallet()->is_open() ) 
+                return;
 
               std::cout << "A wallet must be open to execute this command. You can:\n";
               std::cout << "(o) Open an existing wallet\n";
@@ -506,12 +503,13 @@ namespace bts { namespace cli {
               if (choice == "c")
               {
                 std::string wallet_name = _self->get_line("new wallet name [default]: ");
-                if (wallet_name.empty()) wallet_name = "default";
+                if (wallet_name.empty()) 
+                  wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
                 try
                 {
-                    return execute_interactive_command( "wallet_create", arguments );
+                    execute_interactive_command( "wallet_create", arguments );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -520,12 +518,13 @@ namespace bts { namespace cli {
               else if (choice == "o")
               {
                 std::string wallet_name = _self->get_line("wallet name [default]: ");
-                if (wallet_name.empty()) wallet_name = "default";
+                if (wallet_name.empty()) 
+                  wallet_name = "default";
 
                 fc::variants arguments { wallet_name };
                 try
                 {
-                    return execute_interactive_command( "wallet_open", arguments );
+                    execute_interactive_command( "wallet_open", arguments );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -539,8 +538,6 @@ namespace bts { namespace cli {
               {
                   std::cout << "Wrong answer!\n";
               }
-
-              return fc::variant( false );
             }
 
             void format_and_print_result(const std::string& command, const fc::variant& result)
@@ -578,7 +575,7 @@ namespace bts { namespace cli {
                 std::string result_type;
                 try
                 {
-                  const rpc_server::method_data& method_data = _rpc_server->get_method_data(method_name);
+                  const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
                   result_type = method_data.return_type;
 
                   if (result_type == "asset")
@@ -618,11 +615,12 @@ namespace bts { namespace cli {
                 std::cout << "\n----------------------------------------------------------------------------------------------";
                 std::cout <<   "----------------------------------------------------------------------------------------------\n";
                 std::cout << std::right; 
-
+                
+                int count = 1;
                 for( auto tx : txs )
                 {
                     /* Print index */
-                    std::cout << std::setw( 3 ) << tx.number;
+                    std::cout << std::setw( 3 ) << count; count++;
 
                     /* Print block and transaction numbers */
                     std::cout << std::setw( 7 ) << tx.block_num << ".";
@@ -641,9 +639,16 @@ namespace bts { namespace cli {
                                 == std::string("withdraw"))
                         {
                             auto withdraw_op = op.as<pretty_withdraw_op>();
+                            /*
+                             *  This section should be asking which account, not which address owns the balance
+                             *  that is being withdrawn from.
+                             *
+                             *
                             auto owner = _client->get_wallet()->get_owning_address( withdraw_op.owner.first );
                             if( owner.valid() ) sending |= _client->get_wallet()->is_receive_address( *owner );
-                            if (!withdraw_op.owner.second.empty())
+                           
+                            */
+                            if (false)//!withdraw_op.owner.second.empty())
                             {
                                 std::cout << std::setw( 37 ) << withdraw_op.owner.second;
                             } else {
@@ -713,8 +718,16 @@ namespace bts { namespace cli {
             }
 
 #ifdef HAVE_READLINE
+            typedef std::map<std::string, bts::api::method_data> method_data_map_type;
+            method_data_map_type _method_data_map;
+            typedef std::map<std::string, std::string>  method_alias_map_type;
+            method_alias_map_type _method_alias_map;
+            method_alias_map_type::iterator _command_completion_generator_iter;
+            bool _method_data_is_initialized;
+            void initialize_method_data_if_necessary();
             char* json_command_completion_generator(const char* text, int state);
             char* json_argument_completion_generator(const char* text, int state);
+            char** json_completion(const char* text, int start, int end);
 #endif
       };
 
@@ -729,40 +742,28 @@ namespace bts { namespace cli {
 	  {
 #ifdef HAVE_READLINE
       cli_impl_instance = this;
+      _method_data_is_initialized = false;
       rl_attempted_completion_function = &json_completion_function;
 #endif
     }
 
 #ifdef HAVE_READLINE
-    // implement json command completion (for function names only)
-    char* cli_impl::json_command_completion_generator(const char* text, int state)
+    void cli_impl::initialize_method_data_if_necessary()
     {
-      static bool first = true;
-      if (first)
+      if (!_method_data_is_initialized)
       {
-        first = false;
-        fc::variant result = execute_command("_list_json_commands", fc::variants());
-        std::vector<std::string> _unsorted_json_commands = result.as<std::vector<std::string> >();
-        _json_command_list.insert(_unsorted_json_commands.begin(), _unsorted_json_commands.end());
+        _method_data_is_initialized = true;
+        std::vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
+        for (const bts::api::method_data& method_data : method_data_list)
+        {
+          _method_data_map[method_data.name] = method_data;
+          _method_alias_map[method_data.name] = method_data.name;
+          for (const std::string& alias : method_data.aliases)
+            _method_alias_map[alias] = method_data.name;
+        }
       }
-
-      static std::set<std::string>::iterator iter;
-      if (state == 0)
-        iter = _json_command_list.lower_bound(text);
-      else
-        ++iter;
-      if (iter != _json_command_list.end() &&
-          iter->compare(0, strlen(text), text) == 0)
-        return strdup(iter->c_str());
-
-      rl_attempted_completion_over = 1; // suppress default filename completion
-      return 0;
     }
-    char* cli_impl::json_argument_completion_generator(const char* text, int state)
-    {
-      rl_attempted_completion_over = 1; // suppress default filename completion
-      return 0;
-    }
+
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {
       return cli_impl_instance->json_command_completion_generator(text, state);
@@ -773,18 +774,54 @@ namespace bts { namespace cli {
     }
     extern "C" char** json_completion_function(const char* text, int start, int end)
     {
-      if (start == 0)
+      return cli_impl_instance->json_completion(text, start, end);
+    }
+
+    // implement json command completion (for function names only)
+    char* cli_impl::json_command_completion_generator(const char* text, int state)
+    {
+      initialize_method_data_if_necessary();
+
+      if (state == 0)
+        _command_completion_generator_iter = _method_alias_map.lower_bound(text);
+      else
+        ++_command_completion_generator_iter;
+      if (_command_completion_generator_iter != _method_alias_map.end() &&
+          _command_completion_generator_iter->second.compare(0, strlen(text), text) == 0)
+        return strdup(_command_completion_generator_iter->second.c_str());
+
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    char* cli_impl::json_argument_completion_generator(const char* text, int state)
+    {
+      rl_attempted_completion_over = 1; // suppress default filename completion
+      return 0;
+    }
+    char** cli_impl::json_completion(const char* text, int start, int end)
+    {
+      if (start == 0) // beginning of line, match a command
         return rl_completion_matches(text, &json_command_completion_generator_function);
       else
       {
+        // not the beginning of a line.  figure out what the type of this argument is 
+        // and whether we can complete it.  First, look up the method
         std::string command_line_to_parse(rl_line_buffer, start);
         std::string trimmed_command_to_parse(boost::algorithm::trim_copy(command_line_to_parse));
         
         if (!trimmed_command_to_parse.empty())
         {
+          auto alias_iter = _method_alias_map.find(trimmed_command_to_parse);
+          if (alias_iter != _method_alias_map.end())
+          {
+            auto method_data_iter = _method_data_map.find(alias_iter->second);
+            if (method_data_iter != _method_data_map.end())
+            {
+            }
+          }
           try
           {
-            const rpc_server::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
+            const bts::api::method_data& method_data = cli_impl_instance->_rpc_server->get_method_data(trimmed_command_to_parse);
             if (method_data.name == "help")
             {
                 return rl_completion_matches(text, &json_command_completion_generator_function);
@@ -827,7 +864,7 @@ namespace bts { namespace cli {
 
   void cli::wait()
   {
-    my->_cin_complete.wait();
+    my->_rpc_server->wait_on_quit();
   }
 
   void cli::quit()
@@ -841,7 +878,7 @@ namespace bts { namespace cli {
   }
 
   fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,
-                                                const rpc_server::method_data& method_data,
+                                                const bts::api::method_data& method_data,
                                                 unsigned parameter_index)
   {
     return my->parse_argument_of_known_type(argument_stream, method_data, parameter_index);
@@ -852,7 +889,7 @@ namespace bts { namespace cli {
     return my->parse_unrecognized_interactive_command(argument_stream, command);
   }
   fc::variants cli::parse_recognized_interactive_command(fc::buffered_istream& argument_stream,
-                                                         const rpc_server::method_data& method_data)
+                                                         const bts::api::method_data& method_data)
   {
     return my->parse_recognized_interactive_command(argument_stream, method_data);
   }

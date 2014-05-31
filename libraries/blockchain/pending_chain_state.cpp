@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
       if( !_prev_state ) return;
       for( auto item   : properties )     _prev_state->set_property( (chain_property_enum)item.first, item.second );
       for( auto record : assets )         _prev_state->store_asset_record( record.second );
-      for( auto record : names )          _prev_state->store_name_record( record.second );
+      for( auto record : accounts )          _prev_state->store_account_record( record.second );
       for( auto record : balances )       _prev_state->store_balance_record( record.second );
       for( auto record : proposals )      _prev_state->store_proposal_record( record.second );
       for( auto record : proposal_votes ) _prev_state->store_proposal_vote( record.second );
@@ -72,11 +72,11 @@ namespace bts { namespace blockchain {
          else undo_state->store_asset_record( record.second.make_null() );
       }
 
-      for( auto record : names )
+      for( auto record : accounts )
       {
-         auto prev_name = _prev_state->get_name_record( record.first );
-         if( !!prev_name ) undo_state->store_name_record( *prev_name );
-         else undo_state->store_name_record( record.second.make_null() );
+         auto prev_name = _prev_state->get_account_record( record.first );
+         if( !!prev_name ) undo_state->store_account_record( *prev_name );
+         else undo_state->store_account_record( record.second.make_null() );
       }
 
       for( auto record : proposals )
@@ -204,24 +204,24 @@ namespace bts { namespace blockchain {
       return obalance_record();
    }
 
-   oname_record         pending_chain_state::get_name_record( name_id_type name_id )const
+   oaccount_record         pending_chain_state::get_account_record( account_id_type account_id )const
    {
-      auto itr = names.find( name_id );
-      if( itr != names.end() ) 
+      auto itr = accounts.find( account_id );
+      if( itr != accounts.end() ) 
         return itr->second;
       else if( _prev_state ) 
-        return _prev_state->get_name_record( name_id );
-      return oname_record();
+        return _prev_state->get_account_record( account_id );
+      return oaccount_record();
    }
 
-   oname_record         pending_chain_state::get_name_record( const std::string& name )const
+   oaccount_record         pending_chain_state::get_account_record( const std::string& name )const
    {
-      auto itr = name_id_index.find( name );
-      if( itr != name_id_index.end() ) 
-        return get_name_record( itr->second );
+      auto itr = account_id_index.find( name );
+      if( itr != account_id_index.end() ) 
+        return get_account_record( itr->second );
       else if( _prev_state ) 
-        return _prev_state->get_name_record( name );
-      return oname_record();
+        return _prev_state->get_account_record( name );
+      return oaccount_record();
    }
 
    void        pending_chain_state::store_asset_record( const asset_record& r )
@@ -234,10 +234,10 @@ namespace bts { namespace blockchain {
       balances[r.id()] = r;
    }
 
-   void         pending_chain_state::store_name_record( const name_record& r )
+   void         pending_chain_state::store_account_record( const account_record& r )
    {
-      names[r.id] = r;
-      name_id_index[r.name] = r.id;
+      accounts[r.id] = r;
+      account_id_index[r.name] = r.id;
    }
 
    fc::variant  pending_chain_state::get_property( chain_property_enum property_id )const

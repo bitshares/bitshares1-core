@@ -35,7 +35,7 @@ namespace bts { namespace blockchain {
         *  Assets can only be issued by individuals that
         *  have registered a name.
         */
-       name_id_type        issuer_name_id;
+       account_id_type        issuer_account_id;
 
        /** The maximum number of shares that may be allocated */
        share_type          maximum_share_supply;
@@ -53,7 +53,7 @@ namespace bts { namespace blockchain {
        std::string          name;
        std::string          description;
        fc::variant          json_data;
-       name_id_type         issuer_name_id;
+       account_id_type         issuer_account_id;
    };
 
    /**
@@ -73,6 +73,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_name_id)(maximum_share_supply) )
-FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_name_id) )
+FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_account_id)(maximum_share_supply) )
+FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_account_id) )
 FC_REFLECT( bts::blockchain::issue_asset_operation, (amount) )

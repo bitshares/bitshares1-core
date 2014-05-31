@@ -103,7 +103,7 @@ namespace bts { namespace net {
       fc::ip::endpoint host;
       /** info contains the fields required by bitcoin-rpc's getpeerinfo call, we will likely
           extend it with our own fields. */
-      fc::variant      info;
+      fc::variant_object info;
    };
 
    /**
@@ -115,13 +115,13 @@ namespace bts { namespace net {
     *    we don't have enough info to start synchronizing until sync_from() is called,
     *    would we have any reason to connect before that?
     */
-   class node
+   class node : public std::enable_shared_from_this<node>
    {
       public:
         node();
         ~node();
 
-        void      set_delegate( node_delegate* del );
+        void      set_node_delegate( node_delegate* del );
 
         void      load_configuration( const fc::path& configuration_directory );
 
@@ -162,7 +162,7 @@ namespace bts { namespace net {
          *  Add message to outgoing inventory list, notify peers that
          *  I have a message ready.
          */
-        void      broadcast( const message& item_to_broadcast );
+        virtual void  broadcast( const message& item_to_broadcast );
 
         /**
          *  Node starts the process of fetching all items after item_id of the
@@ -189,7 +189,18 @@ namespace bts { namespace net {
         std::unique_ptr<detail::node_impl> my;
    };
 
+    class simulated_network : public node
+    {
+       public:
+         void broadcast(const message& item_to_broadcast) override;
+         void add_node_delegate(node_delegate* node_delegate_to_add);
+       private:
+         std::vector<bts::net::node_delegate*> network_nodes;
+    };
+
+
    typedef std::shared_ptr<node> node_ptr;
+   typedef std::shared_ptr<simulated_network> simulated_network_ptr;
 
 } } // bts::net
 

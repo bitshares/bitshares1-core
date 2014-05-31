@@ -11,12 +11,12 @@ set(sources key_conversion.cpp
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/git_revision.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/git_revision.cpp" @ONLY)
 list(APPEND sources "${CMAKE_CURRENT_BINARY_DIR}/git_revision.cpp")
 
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/utilities/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 
 
 add_library( bts_utilities 
              ${sources}
              ${HEADERS} )
-
 target_link_libraries( bts_utilities fc )
+target_include_directories( bts_utilities 
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )

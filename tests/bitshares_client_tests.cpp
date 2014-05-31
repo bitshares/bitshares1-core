@@ -31,6 +31,7 @@
 #include <fc/network/ip.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/io/json.hpp>
+#include <fc/crypto/elliptic.hpp>
 
 #include <fc/interprocess/process.hpp>
 
@@ -38,6 +39,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/net/config.hpp>
@@ -1471,6 +1473,17 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
 
 }
 
+
+
+BOOST_AUTO_TEST_CASE( public_key_type_test )
+{
+    auto k1 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
+    auto k2 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
+    auto k3 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
+    BOOST_CHECK_NO_THROW(k1 == bts::blockchain::public_key_type( std::string( k1 ) ));
+    BOOST_CHECK_NO_THROW(k2 == bts::blockchain::public_key_type( std::string( k2 ) ));
+    BOOST_CHECK_NO_THROW(k3 == bts::blockchain::public_key_type( std::string( k3 ) ));
+}
 
 
 

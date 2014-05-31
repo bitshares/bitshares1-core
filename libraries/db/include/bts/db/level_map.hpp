@@ -47,6 +47,7 @@ namespace bts { namespace db {
            _db.reset(ndb);
            try_upgrade_db( dir,ndb, fc::get_typename<Value>::name(),sizeof(Value) );
         }
+        bool is_open()const { return !!_db; }
 
         void close()
         {
