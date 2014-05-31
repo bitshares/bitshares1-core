@@ -4,6 +4,7 @@
 #include <bts/client/messages.hpp>
 #include <bts/net/node.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <fc/thread/thread.hpp>
@@ -864,6 +865,69 @@ namespace bts { namespace client {
     std::string client::help(const std::string& command_name) const
     {
       return get_rpc_server()->help(command_name);
+    }
+     
+    variant_object client::get_info() const
+    {
+       fc::mutable_variant_object info;
+       auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
+       auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
+       auto advanced_params = network_get_advanced_node_parameters();
+       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance().amount : 0;
+
+       info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
+
+       info["blockchain_bips_per_share"]            = bips_per_share;
+
+       info["blockchain_block_fee_min"]             = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+       info["blockchain_block_interval"]            = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["blockchain_block_num"]                 = get_chain()->get_head_block_num();
+       info["blockchain_block_size_max"]            = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["blockchain_block_size_target"]         = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+
+       info["blockchain_delegate_fire_votes_min"]   = BTS_BLOCKCHAIN_FIRE_VOTES;
+       info["blockchain_delegate_num"]              = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["blockchain_delegate_reg_fee"]          = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
+       info["blockchain_delegate_reward_min"]       = BTS_BLOCKCHAIN_MIN_REWARD;
+
+       info["blockchain_id"]                        = get_chain()->chain_id();
+
+       info["blockchain_name_size_max"]             = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["blockchain_name_data_size_max"]        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+
+       info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
+
+       info["blockchain_shares"]                    = current_share_supply;
+
+       info["blockchain_size_max"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
+       info["blockchain_symbol"]                    = BTS_ADDRESS_PREFIX;
+
+       info["blockchain_version"]                   = BTS_BLOCKCHAIN_VERSION;
+
+   //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
+
+    //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+
+       info["network_num_connections"]              = network_get_connection_count();
+       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
+
+       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+
+       info["wallet_balance"]                       = wallet_balance_shares;
+       info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
+
+       info["wallet_open"]                          = get_wallet()->is_open();
+
+       info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
+                                                    ? std::string( get_wallet()->unlocked_until() )
+                                                    : "";
+       info["wallet_unlocked_seconds_remaining"]    =  (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+       info["wallet_version"]                       = BTS_WALLET_VERSION;
+
+       return info;
     }
 
 } } // bts::client

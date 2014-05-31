@@ -24,7 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (get_info)\
              (validate_address)\
              (blockchain_get_transaction)\
              (blockchain_get_block)\
@@ -588,82 +587,6 @@ namespace bts { namespace rpc {
       }
 
       return boost::algorithm::trim_copy(help_string);
-    }
-
-    static bts::api::method_data get_info_metadata{"get_info", nullptr,
-                                     /* description */ "Provides common data, such as balance, block count, connections, and lock time",
-                                     /* returns: */    "info",
-                                     /* params:          name                 type      required */
-                                                       { },
-                                   /* prerequisites */ 0,
-                                   R"(
-                                       )",
-                                    /* aliases */ { "getinfo" } } ;
-    fc::variant rpc_server_impl::get_info(const fc::variants& /*params*/)
-    {
-       fc::mutable_variant_object info;
-       auto share_record = _client->get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
-       auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
-       auto advanced_params = _client->network_get_advanced_node_parameters();
-       auto wallet_balance_shares = _client->get_wallet()->is_open() ? _client->get_wallet()->get_balance().amount : 0;
-
-       info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
-       info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
-
-       info["blockchain_bips_per_share"]            = bips_per_share;
-
-       info["blockchain_block_fee_min"]             = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
-       info["blockchain_block_interval"]            = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blockchain_block_num"]                 = _client->get_chain()->get_head_block_num();
-       info["blockchain_block_size_max"]            = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["blockchain_block_size_target"]         = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-
-       info["blockchain_delegate_fire_votes_min"]   = BTS_BLOCKCHAIN_FIRE_VOTES;
-       info["blockchain_delegate_num"]              = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["blockchain_delegate_reg_fee"]          = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["blockchain_delegate_reward_min"]       = BTS_BLOCKCHAIN_MIN_REWARD;
-
-       info["blockchain_id"]                        = _client->get_chain()->chain_id();
-
-       info["blockchain_name_size_max"]             = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-       info["blockchain_name_data_size_max"]        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
-
-       info["blockchain_random_seed"]               = _client->get_chain()->get_current_random_seed();
-
-       info["blockchain_shares"]                    = current_share_supply;
-
-       info["blockchain_size_max"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-
-       info["blockchain_symbol"]                    = BTS_ADDRESS_PREFIX;
-
-       info["blockchain_version"]                   = BTS_BLOCKCHAIN_VERSION;
-
-       info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
-
-       info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
-
-       info["network_num_connections"]              = _client->network_get_connection_count();
-       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
-
-       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
-
-       info["wallet_balance"]                       = wallet_balance_shares;
-       info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
-
-       info["wallet_open"]                          = _client->get_wallet()->is_open();
-
-       info["wallet_unlocked_until"]                = _client->get_wallet()->is_open() && _client->get_wallet()->is_unlocked()
-                                                    ? boost::posix_time::to_iso_string( boost::posix_time::from_time_t( _client->get_wallet()->unlocked_until().sec_since_epoch() ) )
-                                                    : "";
-
-       info["wallet_version"]                       = BTS_WALLET_VERSION;
-
-       info["_bitshares_toolkit_revision"]          = bts::utilities::git_revision_sha;
-       info["_fc_revision"]                         = fc::git_revision_sha;
-       info["_network_node_id"]                     = _client->get_node_id();
-
-       return fc::variant( std::move(info) );
     }
     
 

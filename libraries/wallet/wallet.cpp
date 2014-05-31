@@ -1392,10 +1392,11 @@ namespace bts { namespace wallet {
 
 
    void  wallet::scan_state()
-   {
+   { try {
+      wlog( "scan state" );
       my->scan_balances();
       my->scan_registered_accounts();
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" )  }
 
    /**
     *  A valid account is any named account registered in the blockchain or

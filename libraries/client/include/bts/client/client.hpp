@@ -65,12 +65,14 @@ namespace bts { namespace client {
                                                   const fc::variant& data,
                                                   const string& issuer_name,
                                                   share_type maximum_share_supply,
-                                                  rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
+                                                  rpc_client_api::generate_transaction_flag flag = 
+                                                         rpc_client_api::sign_and_broadcast)  override;
 
          signed_transaction  wallet_asset_issue( share_type amount,
                                                  const string& symbol,
                                                  const string& to_account_name,
-                                                 rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
+                                                 rpc_client_api::generate_transaction_flag flag = 
+                                                         rpc_client_api::sign_and_broadcast)  override;
          /**
           *  Reserve a name and broadcast it to the network.
           */
@@ -78,12 +80,14 @@ namespace bts { namespace client {
                                                       const string& pay_with_account,
                                                       const fc::variant& json_data = fc::variant(),
                                                       bool as_delegate = false,
-                                                      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast );
+                                                      rpc_client_api::generate_transaction_flag flag = 
+                                                                      rpc_client_api::sign_and_broadcast );
 
          signed_transaction wallet_update_registered_account( const string& registered_account_name,
                                                               const fc::variant& json_data = fc::variant(),
                                                               bool as_delegate = false,
-                                                              rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast); 
+                                                              rpc_client_api::generate_transaction_flag flag = 
+                                                                             rpc_client_api::sign_and_broadcast); 
 
 
 
