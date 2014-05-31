@@ -7,6 +7,7 @@
 #include <fc/network/ip.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/time.hpp>
+#include <fc/variant_object.hpp>
 
 #include <vector>
 
@@ -35,7 +36,7 @@ namespace bts { namespace net {
     item_ids_inventory_message_type            = 5001,
     blockchain_item_ids_inventory_message_type = 5002,
     fetch_blockchain_item_ids_message_type     = 5003,
-    fetch_item_message_type                    = 5004,
+    fetch_items_message_type                   = 5004,
     item_not_available_message_type            = 5005,
     hello_message_type                         = 5006,
     hello_reply_message_type                   = 5007,
@@ -90,15 +91,17 @@ namespace bts { namespace net {
     {}
   };
 
-  struct fetch_item_message
+  struct fetch_items_message
   {
     static const core_message_type_enum type;
 
-    item_id item_to_fetch;
+    uint32_t item_type;
+    std::vector<item_hash_t> items_to_fetch;
 
-    fetch_item_message() {}
-    fetch_item_message(const item_id& item_to_fetch) :
-      item_to_fetch(item_to_fetch)
+    fetch_items_message() {}
+    fetch_items_message(uint32_t item_type, const std::vector<item_hash_t>& items_to_fetch) :
+      item_type(item_type),
+      items_to_fetch(items_to_fetch)
     {}
   };
 
@@ -118,23 +121,26 @@ namespace bts { namespace net {
   {
     static const core_message_type_enum type;
 
-    std::string      user_agent;
-    uint32_t         core_protocol_version;
-    fc::ip::endpoint inbound_endpoint;
-    fc::uint160_t    node_id;
-    fc::sha256       chain_id;
+    std::string        user_agent;
+    uint32_t           core_protocol_version;
+    fc::ip::endpoint   inbound_endpoint;
+    fc::uint160_t      node_id;
+    fc::sha256         chain_id;
+    fc::variant_object user_data;
 
     hello_message() {}
     hello_message(const std::string& user_agent, 
                   uint32_t core_protocol_version, 
                   fc::ip::endpoint inbound_endpoint, 
                   const fc::uint160_t& node_id_arg, 
-                  const fc::sha256& chain_id_arg ) :
+                  const fc::sha256& chain_id_arg,
+                  const fc::variant_object& user_data ) :
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
       inbound_endpoint(inbound_endpoint),
       node_id(node_id_arg),
-      chain_id(chain_id_arg)
+      chain_id(chain_id_arg),
+      user_data(user_data)
     {}
   };
 
@@ -142,23 +148,26 @@ namespace bts { namespace net {
   {
     static const core_message_type_enum type;
 
-    std::string      user_agent;
-    uint32_t         core_protocol_version;
-    fc::ip::endpoint remote_endpoint;
-    fc::uint160_t    node_id;
-    fc::sha256       chain_id;
+    std::string        user_agent;
+    uint32_t           core_protocol_version;
+    fc::ip::endpoint   remote_endpoint;
+    fc::uint160_t      node_id;
+    fc::sha256         chain_id;
+    fc::variant_object user_data;
 
     hello_reply_message() {}
     hello_reply_message(const std::string& user_agent, 
                         uint32_t core_protocol_version,
                         fc::ip::endpoint remote_endpoint, 
                         const fc::uint160_t& node_id_arg, 
-                        const fc::sha256& chain_id_arg ) :
+                        const fc::sha256& chain_id_arg,
+                        const fc::variant_object& user_data ) :
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
       remote_endpoint(remote_endpoint),
       node_id(node_id_arg),
-      chain_id(chain_id_arg)
+      chain_id(chain_id_arg),
+      user_data(user_data)
     {}
   };
 
@@ -206,15 +215,15 @@ namespace bts { namespace net {
 
 } } // bts::client
 
-FC_REFLECT_ENUM( bts::net::core_message_type_enum, (item_ids_inventory_message_type)(blockchain_item_ids_inventory_message_type)(fetch_blockchain_item_ids_message_type)(fetch_item_message_type)(hello_message_type)(address_request_message_type))
+FC_REFLECT_ENUM( bts::net::core_message_type_enum, (item_ids_inventory_message_type)(blockchain_item_ids_inventory_message_type)(fetch_blockchain_item_ids_message_type)(fetch_items_message_type)(hello_message_type)(address_request_message_type))
 FC_REFLECT( bts::net::item_id, (item_type)(item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_available) )
 FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)(item_type)(item_hashes_available) )
 FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (last_item_seen) )
-FC_REFLECT( bts::net::fetch_item_message, (item_to_fetch) )
+FC_REFLECT( bts::net::fetch_items_message, (item_type)(items_to_fetch) )
 FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
-FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_endpoint)(node_id)(chain_id) )
-FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id)(chain_id) )
+FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_endpoint)(node_id)(chain_id)(user_data) )
+FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id)(chain_id)(user_data) )
 FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint) )
 FC_REFLECT_EMPTY( bts::net::address_request_message )
 FC_REFLECT( bts::net::address_info, (remote_endpoint)(last_seen_time) )
