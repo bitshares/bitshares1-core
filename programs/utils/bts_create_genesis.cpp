@@ -22,6 +22,17 @@ struct founder
 
 FC_REFLECT( founder, (keyhotee_id_utf8)(balance)(public_key) )
 
+void transform_name( std::string& name )
+{
+   for( char& c : name )
+   {
+      if( c == ' ' ) c = '-';
+      if( c == '.' ) c = '-';
+      if( c == '_' ) c = '-';
+      if( c == '#' ) c = '-';
+   }
+}
+
 int main( int argc, char** argv )
 {
    genesis_block_config config;
@@ -54,7 +65,8 @@ int main( int argc, char** argv )
       for( auto f : founders )
       {
          config.names.resize( config.names.size() + 1 );
-         config.names.back().name = f.keyhotee_id_utf8;
+         config.names.back().name = fc::to_lower( f.keyhotee_id_utf8 );
+         transform_name( config.names.back().name  );
          config.names.back().is_delegate = false;
          config.names.back().owner = f.public_key;
 
