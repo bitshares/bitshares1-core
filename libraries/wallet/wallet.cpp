@@ -93,7 +93,12 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.active_key );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                //_wallet_db.cache_balance( bal_rec );
+                 auto a = _wallet_db.lookup_account( key_rec->account_address );
+                 if( a.valid() )
+                 {
+                    a->blockchain_account_id = bal_rec.id;
+                    _wallet_db.store_record( *a );
+                 }
               }
          } );
       }
@@ -121,7 +126,6 @@ namespace bts { namespace wallet {
             {
                 if( remaining > balance_item.second.balance )
                 {
-                   ilog( "-" );
                    trx.withdraw( balance_item.first, balance_item.second.balance );
                    balance_item.second.balance = 0;
                    remaining -= balance_item.second.balance;
@@ -130,7 +134,6 @@ namespace bts { namespace wallet {
                 }
                 else
                 {
-                   ilog( "." );
                    trx.withdraw( balance_item.first, remaining );
                    balance_item.second.balance -= remaining;
                    remaining = 0;

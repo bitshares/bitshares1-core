@@ -1,5 +1,6 @@
 #include <bts/blockchain/address.hpp>
 #include <bts/blockchain/pts_address.hpp>
+#include <bts/blockchain/types.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/io/json.hpp>
 #include <fc/reflect/variant.hpp>
@@ -7,11 +8,15 @@
 
 #include <iostream>
 
+using namespace bts::blockchain;
+
 int main( int argc, char** argv )
 {
    if( argc == 1 )
    {
       auto key = fc::ecc::private_key::generate();
+      std::cout << "public key: " 
+                << std::string( public_key_type(key.get_public_key()) ) <<"\n";
       std::cout << "private key: " 
                 << std::string( key.get_secret() ) <<"\n";
 
