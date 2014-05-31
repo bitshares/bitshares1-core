@@ -170,6 +170,7 @@ private:
   void generate_positional_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
+  std::string generate_detailed_description_for_method(const method_description& method);
 
   type_mapping_ptr lookup_type_mapping(const std::string& type_string);
   void initialize_type_map_with_fundamental_types();
@@ -573,6 +574,35 @@ void api_generator::generate_named_server_implementation_to_stream(const method_
   stream << "}\n\n";
 }
 
+std::string api_generator::generate_detailed_description_for_method(const method_description& method)
+{
+  std::ostringstream description;
+  description << method.brief_description << "\n";
+
+  if (!method.detailed_description.empty())
+    description << "\n" << method.detailed_description << "\n";
+
+  description << "\nParameters:\n";
+  if (method.parameters.empty())
+    description << "  (none)\n";
+  else
+  {
+    for (const parameter_description& parameter : method.parameters)
+    {
+      description << "  " << parameter.name << " (" << parameter.type->get_type_name() << ", ";
+      if (parameter.default_value)
+        description << "optional, defaults to " << fc::json::to_string(parameter.default_value);
+      else
+        description << "required";
+      description << "): " << parameter.description << "\n";
+    }
+  }
+
+  description << "\nReturns:\n";
+  description << "  " << method.return_type->get_type_name() << "\n";
+  return description.str();
+}
+
 void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
 {
   std::string server_classname = _api_classname + "_server";
@@ -672,7 +702,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
     }
     cpp_file <<  "},\n";
     cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
-    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(method.detailed_description)) << ",\n";
+    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(generate_detailed_description_for_method(method))) << ",\n";
     cpp_file << "    /* aliases */ {";
     if (!method.aliases.empty())
     {
