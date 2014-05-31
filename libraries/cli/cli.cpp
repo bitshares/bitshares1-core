@@ -378,6 +378,8 @@ namespace bts { namespace cli {
                                                        uint32_t last
                                                        ) mutable
                           {
+                              if (start > last || cur >= last) // if WTF
+                                  return;
                               if (((100*(1 + cur - start)) / (1 + last - start)) > next_step)
                               {
                                   std::cout << "=";
@@ -414,8 +416,24 @@ namespace bts { namespace cli {
                   else
                       count = 50;
 
-                  print_account_list( _client->get_chain()->get_accounts(start, count) );
+                  print_registered_account_list( _client->get_chain()->get_accounts(start, count) );
                   return fc::variant("Use 'blockchain_list_registered_accounts <startname> <number>' to see more.");
+              }
+              else if ( command == "wallet_list_receive_accounts" )
+              {
+                  if (! _client->get_wallet()->is_open() )
+                      interactive_open_wallet();
+                  auto accts = _client->get_wallet()->list_receive_accounts();
+                  print_receive_account_list( accts );
+                  return fc::variant("OK");
+              }
+              else if ( command == "wallet_list_contact_accounts" )
+              {
+                  if (! _client->get_wallet()->is_open() )
+                      interactive_open_wallet();
+                  auto accts = _client->get_wallet()->list_contact_accounts();
+                  print_contact_account_list( accts );
+                  return fc::variant("OK");
               }
               else if(command == "quit")
               {
@@ -617,7 +635,74 @@ namespace bts { namespace cli {
             }
 
 
-            void print_account_list(const std::vector<account_record> account_records )
+            void print_contact_account_list(const std::vector<account_record> account_records)
+            {
+                std::cout << std::setw( 25 ) << std::left << "NAME";
+                std::cout << std::setw( 64 ) << "KEY";
+                std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << "\n";
+
+                for( auto acct : account_records )
+                {
+                    if (acct.name.size() > 20)
+                    {
+                        std::cout << std::setw(20) << acct.name.substr(0, 20);
+                        std::cout << std::setw(5) << "...";
+                    }
+                    else
+                    {
+                        std::cout << std::setw(25) << acct.name;
+                    }
+
+                    std::cout << std::setw(64) << string( acct.active_key );
+
+                    if (acct.registration_date == fc::time_point_sec()) {
+                        std::cout << std::setw( 22 ) << "NO";
+                    } else {
+                        std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                             boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
+                    }
+                    std::cout << "\n";
+                }
+            }
+
+
+            void print_receive_account_list(const std::vector<account_record> account_records)
+            {
+                std::cout << std::setw( 25 ) << std::left << "NAME";
+                std::cout << std::setw( 15 ) << std::left << "BALANCE";
+                std::cout << std::setw( 64 ) << "KEY";
+                std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << "\n";
+
+                for( auto acct : account_records )
+                {
+                    if (acct.name.size() > 20)
+                    {
+                        std::cout << std::setw(20) << acct.name.substr(0, 20);
+                        std::cout << std::setw(5) << "...";
+                    }
+                    else
+                    {
+                        std::cout << std::setw(25) << acct.name;
+                    }
+
+                    auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
+                    std::cout << std::setw(15) << string( balance );
+
+                    std::cout << std::setw(64) << string( acct.active_key );
+
+                    if (acct.registration_date == fc::time_point_sec()) {
+                        std::cout << std::setw( 22 ) << "NO";
+                    } else {
+                        std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                             boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
+                    }
+                    std::cout << "\n";
+                }
+            }
+
+            void print_registered_account_list(const std::vector<account_record> account_records )
             {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 64 ) << "KEY";
