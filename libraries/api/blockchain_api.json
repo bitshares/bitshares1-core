@@ -66,13 +66,13 @@
               "name" : "first_account_name", 
               "type" : "account_name", 
               "description" : "the first account name to include",
-              "default" : ""
+              "default_value" : ""
             },
             {
               "name" : "limit", 
               "type" : "int64_t", 
               "description" : "the maximum number of items to list",
-              "default" : -1
+              "default_value" : -1
             }
         ],
         "is_const" : true,

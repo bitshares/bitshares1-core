@@ -401,6 +401,22 @@ namespace bts { namespace cli {
  
                   }
               }
+              else if( command == "blockchain_list_registered_accounts" )
+              {
+                  string start;
+                  int64_t count;
+                  if (arguments.size() > 0)
+                      start = arguments[0].as_string();
+                  else
+                      start = "";
+                  if (arguments.size() > 1)
+                      count = arguments[1].as<int64_t>();
+                  else
+                      count = 50;
+
+                  print_account_list( _client->get_chain()->get_accounts(start, count) );
+                  return fc::variant("Use 'blockchain_list_registered_accounts <startname> <number>' to see more.");
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -598,6 +614,61 @@ namespace bts { namespace cli {
                    std::cout << "unexpected exception \n";
                 }
               }
+            }
+
+
+            void print_account_list(const std::vector<account_record> account_records )
+            {
+                std::cout << std::setw( 25 ) << std::left << "NAME";
+                std::cout << std::setw( 64 ) << "KEY";
+                std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << std::setw( 15 ) << "VOTES FOR";
+                std::cout << std::setw( 15 ) << "VOTES AGAINST";
+                std::cout << std::setw( 15 ) << "TRUST LEVEL";
+
+                std::cout << "\n";
+                for( auto acct : account_records )
+                {
+                    if (acct.name.size() > 20)
+                    {
+                        std::cout << std::setw(20) << acct.name.substr(0, 20);
+                        std::cout << std::setw(5) << "...";
+                    }
+                    else
+                    {
+                        std::cout << std::setw(25) << acct.name;
+                    }
+                    std::cout << std::setw(64) << string( acct.active_key );
+                    std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                                    boost::posix_time::from_time_t( time_t( acct.registration_date.sec_since_epoch() ) ) );
+
+                    if ( acct.is_delegate() )
+                    {
+                        std::cout << std::setw(15) << acct.delegate_info->votes_for;
+                        std::cout << std::setw(15) << acct.delegate_info->votes_against;
+                    }
+                    else
+                    {
+                        std::cout << std::setw(15) << "N/A";
+                        std::cout << std::setw(15) << "N/A";
+                    }
+                    if ( ! _client->get_wallet()->is_open() )
+                    {
+                        std::cout << "?? (wallet closed)";
+                    }
+                    else
+                    {
+                        auto trust = _client->get_wallet()->get_delegate_trust_level( acct.name );
+                        std::stringstream ss;
+                        if( trust != 0 )
+                            ss << std::setw( 15 ) << trust;
+                        else
+                            ss << std::setw( 15 ) << "N/A";
+                        std::cout << ss;
+                    }
+
+                    std::cout << "\n";
+                }
             }
 
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
