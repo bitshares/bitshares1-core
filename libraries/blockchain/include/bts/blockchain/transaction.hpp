@@ -41,6 +41,9 @@ namespace bts { namespace blockchain {
       void withdraw( const balance_id_type& account, 
                      share_type amount );
 
+      void withdraw_pay( const account_id_type& account, 
+                     share_type amount );
+
       void deposit( const address& addr, 
                     const asset& amount, 
                     name_id_type delegate_id );
@@ -174,6 +177,7 @@ namespace bts { namespace blockchain {
          virtual void evaluate_deposit( const deposit_operation& op );
          virtual void evaluate_register_account( const register_account_operation& op );
          virtual void evaluate_update_account( const update_account_operation& op );
+         virtual void evaluate_withdraw_pay( const withdraw_pay_operation& op );
          virtual void evaluate_create_asset( const create_asset_operation& op );
          virtual void evaluate_update_asset( const update_asset_operation& op );
          virtual void evaluate_issue_asset( const issue_asset_operation& op );
