@@ -166,12 +166,12 @@ namespace bts { namespace wallet {
       void wallet_impl::scan_block( uint32_t block_num, 
                                     const private_keys& keys )
       {
-         std::cout << "scanning block number " << block_num << "    keys: " << keys.size() << "    \r";
+         //std::cout << "scanning block number " << block_num << "    keys: " << keys.size() << "    \r";
          auto current_block = _blockchain->get_block( block_num );
          for( auto trx : current_block.user_transactions )
          {
-            std::cout << "scanning block number " << block_num << "    \n";
-            std::cout << "    scanning trx: " << fc::json::to_string( trx) << "    \n";
+            //std::cout << "scanning block number " << block_num << "    \n";
+            //std::cout << "    scanning trx: " << fc::json::to_string( trx) << "    \n";
             bool cache_trx = false;
             for( auto op : trx.operations )
             {

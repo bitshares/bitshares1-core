@@ -363,20 +363,23 @@ namespace bts { namespace cli {
                   while(true)
                   {
                       try {
+                          std::cout << "|";
                           for(int i = 0; i < 100; i++)
                               std::cout << "-";
-                          std::cout << "\n";
+                          std::cout << "|\n|";
                           uint32_t next_step = 0;
                           auto cb = [start, next_step](uint32_t cur,
                                                        uint32_t last
                                                        ) mutable
                           {
-                                  std::cout << cur << "   \r";
+                              if (((100*(cur - start)) / (last - start)) > next_step)
+                              {
+                                  std::cout << "=";
                                   next_step++;
+                              }
                           };
-                          // TODO: restore callback here...
                           _client->get_wallet()->scan_chain(start, -1, cb);
-                          std::cout << "\n";
+                          std::cout << "|\n";
                           return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
