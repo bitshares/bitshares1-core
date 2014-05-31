@@ -99,9 +99,11 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto b = my_client->get_chain()->generate_block(next_block_production_time);
       my_client->get_wallet()->sign_block( b );
       ilog( "block: ${b}", ("b",b));
+      ilog( "\n\nBROADCASTING\n\n" );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
 
-      ilog( "my_client ${info}", ("info",my_client->get_info() ));
+      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
+      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
 
 
    } catch ( const fc::exception& e )

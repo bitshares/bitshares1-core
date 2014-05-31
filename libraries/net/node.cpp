@@ -2352,6 +2352,7 @@ namespace bts { namespace net {
 
   void node::broadcast(const message& msg)
   {
+     ilog( "..." );
     my->broadcast(msg);
   }
 
@@ -2395,4 +2396,17 @@ namespace bts { namespace net {
   {
     my->clear_peer_database();
   }
+
+
+  void simulated_network::broadcast( const message& item_to_broadcast )
+  {
+      ilog( "broadcast: ${b}", ("b",item_to_broadcast) );
+      for(node_delegate* network_node : network_nodes)
+        network_node->handle_message(item_to_broadcast);
+  }
+
+  void simulated_network::add_node_delegate(node_delegate* node_delegate_to_add)
+  { 
+     network_nodes.push_back(node_delegate_to_add);
+  }      
 } } // end namespace bts::net
