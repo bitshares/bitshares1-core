@@ -164,6 +164,8 @@ namespace bts { namespace blockchain {
          case update_account_op_type:
             evaluate_update_account( op.as<update_account_operation>() );
             break;
+         case withdraw_pay_op_type:
+            evaluate_withdraw_pay( op.as<withdraw_pay_operation>() );
          case create_asset_op_type:
             evaluate_create_asset( op.as<create_asset_operation>() );
             break;
@@ -307,6 +309,23 @@ namespace bts { namespace blockchain {
          required_deposits[balance_id] += amount;
       }
    }
+   void transaction_evaluation_state::evaluate_withdraw_pay( const withdraw_pay_operation& op )
+   { try {
+      if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
+
+      auto cur_record = _current_state->get_account_record( op.account_id );
+      if( !cur_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+      if( cur_record->is_retracted() ) fail( BTS_NAME_RETRACTED, fc::variant(op) );
+      FC_ASSERT( cur_record->is_delegate() );
+
+      add_required_signature( cur_record->active_address() );
+
+      FC_ASSERT( cur_record->delegate_info->pay_balance >= op.amount );
+      cur_record->delegate_info->pay_balance -= op.amount;
+
+      _current_state->store_account_record( *cur_record );
+      add_balance( asset(op.amount, 0) );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
    void transaction_evaluation_state::evaluate_withdraw( const withdraw_operation& op )
    { try {

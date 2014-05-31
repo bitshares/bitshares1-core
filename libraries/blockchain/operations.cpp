@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
    const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
    const operation_type_enum register_account_operation::type  = register_account_op_type;
    const operation_type_enum update_account_operation::type    = update_account_op_type;
+   const operation_type_enum withdraw_pay_operation::type      = withdraw_op_type;
    const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
    const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
    const operation_type_enum bid_operation::type               = bid_op_type;

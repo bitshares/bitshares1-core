@@ -35,7 +35,17 @@ namespace bts { namespace blockchain {
       bool                              is_delegate;
    };
 
+   struct withdraw_pay_operation
+   {
+      static const operation_type_enum type; 
+      withdraw_pay_operation():amount(0){}
+
+      share_type                       amount;
+      account_id_type                  account_id;
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(json_data)(owner_key)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(json_data)(active_key)(is_delegate) )
+FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )
