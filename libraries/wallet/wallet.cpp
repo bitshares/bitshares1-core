@@ -410,7 +410,7 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, microseconds timeout )
    { try {
-      FC_ASSERT( password.size() > BTS_MIN_PASSWORD_LENGTH ) 
+      FC_ASSERT( password.size() >= BTS_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
