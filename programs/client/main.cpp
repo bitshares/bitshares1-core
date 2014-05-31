@@ -20,12 +20,13 @@
 
 struct config
 {
-   config():ignore_console(false){}
+   config() : default_peers{{"107.170.30.182:8765"}}, ignore_console(false) {}
    bts::rpc::rpc_server::config rpc;
+   std::vector<std::string>     default_peers;
    bool                         ignore_console;
 };
 
-FC_REFLECT( config, (rpc)(ignore_console) )
+FC_REFLECT( config, (rpc)(default_peers)(ignore_console) )
 
 using namespace boost;
 
@@ -187,7 +188,8 @@ int main( int argc, char** argv )
       }
       else
       {
-            client->connect_to_peer( "107.170.30.182:5678" );
+        for (std::string default_peer : cfg.default_peers)
+          client->connect_to_peer(default_peer);
       }
 
       if( !option_variables.count("daemon") )

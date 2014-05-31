@@ -517,12 +517,8 @@ namespace bts { namespace rpc {
       if (command_name.empty()) //if no arguments, display list of commands with short description
       {
         for (const method_map_type::value_type& method_data_pair : _method_map)
-        {
           if (method_data_pair.second.name[0] != '_') // hide undocumented commands
-          {
             help_string += make_short_description(method_data_pair.second);
-          }
-        }
       }
       else
       { //display detailed description of requested command
@@ -530,55 +526,34 @@ namespace bts { namespace rpc {
         if (alias_iter != _alias_map.end())
         {
           auto method_iter = _method_map.find(alias_iter->second);
-          if (method_iter != _method_map.end())
-          {
-            const bts::api::method_data& method_data = method_iter->second;
-            help_string += "Usage:\n";
-            help_string += make_short_description(method_data);
-            help_string += method_data.detailed_description;
-            if (method_data.aliases.size() > 0)
-            {
-              std::stringstream ss;
-              ss << "\naliases: ";
-              for (size_t i = 0; i < method_data.aliases.size(); ++i)
-              {
-                if (i != 0)
-                  ss << ", ";
-                ss << method_data.aliases[i];
-              }
-              help_string += ss.str();
-            }
-          }
-          else
-            FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
+          FC_ASSERT(method_iter != _method_map.end(), "internal error, mismatch between _method_map and _alias_map");
+          const bts::api::method_data& method_data = method_iter->second;
+          help_string += "Usage:\n";
+          help_string += make_short_description(method_data);
+          help_string += method_data.detailed_description;
+          if (method_data.aliases.size() > 0)
+            help_string += "\naliases: " + boost::join(method_data.aliases, ", ");
         }
         else
         {
           // no exact matches for the command they requested.
           // If they give us a prefix, give them the list of commands that start
           // with that prefix (i.e. "help wallet" will return wallet_open, wallet_close, &c)
-          std::vector<std::string> match_commands;
-          for (auto itr = _method_map.lower_bound(command_name);
-               itr != _method_map.end() && itr->first.compare(0, command_name.size(), command_name) == 0;
-               ++itr)
-            match_commands.push_back(itr->first);
-          // If they give us a alias(or its prefix), give them the list of real command names, eliminating duplication
+          std::set<std::string> matching_commands;
+          for (auto method_iter = _method_map.lower_bound(command_name);
+               method_iter != _method_map.end() && method_iter->first.compare(0, command_name.size(), command_name) == 0;
+               ++method_iter)
+            matching_commands.insert(method_iter->first);
+          // If they give us an alias (or its prefix), give them the list of real command names, eliminating duplication
           for (auto alias_itr = _alias_map.lower_bound(command_name);
-                  alias_itr != _alias_map.end() && alias_itr->first.compare(0, command_name.size(), command_name) == 0;
-                  ++alias_itr)
+               alias_itr != _alias_map.end() && alias_itr->first.compare(0, command_name.size(), command_name) == 0;
+               ++alias_itr)
+            matching_commands.insert(alias_itr->second);
+          for (auto command : matching_commands)
           {
-            if (std::find(match_commands.begin(), match_commands.end(), alias_itr->second) == match_commands.end())
-            {
-              match_commands.push_back(alias_itr->second);
-            }
-          }
-          for (auto c : match_commands)
-          {
-            auto method_iter = _method_map.find(alias_iter->second);
-            if (method_iter != _method_map.end())
-              help_string += make_short_description(method_iter->second);
-            else
-              FC_ASSERT(false, "internal error, mismatch between _method_map and _alias_map");
+            auto method_iter = _method_map.find(command);
+            FC_ASSERT(method_iter != _method_map.end(), "internal error, mismatch between _method_map and _alias_map");
+            help_string += make_short_description(method_iter->second);
           }
           if (help_string.empty())
             throw rpc_misc_error_exception(FC_LOG_MESSAGE( error, "No help available for command \"${command}\"", ("command", command_name)));
