@@ -42,8 +42,6 @@ namespace bts { namespace rpc {
              (wallet_asset_issue)\
              (wallet_get_transaction_history)\
              (wallet_get_transaction_history_summary)\
-             (wallet_rescan_blockchain)\
-             (wallet_rescan_blockchain_state)\
              (wallet_register_account)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)\
@@ -955,35 +953,6 @@ Examples:
       {
         return fc::variant(false);
       }
-    }
-
-    static bts::api::method_data wallet_rescan_blockchain_metadata{"wallet_rescan_blockchain", nullptr,
-            /* description */ "Rescan the block chain from the given block number",
-            /* returns: */    "void",
-            /* params:          name              type   classification                   default_value */
-                              {{"starting_block_number", "int", bts::api::optional_positional, 0}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_rescan_blockchain(const fc::variants& params)
-    {
-      uint32_t starting_block_number = params[0].as<uint32_t>();;
-      _client->wallet_rescan_blockchain(starting_block_number);
-      return fc::variant();
-    }
-
-    static bts::api::method_data wallet_rescan_blockchain_state_metadata{"wallet_rescan_blockchain_state", nullptr,
-            /* description */ "Rescans the genesis block and state (not the transactions)",
-            /* returns: */    "void",
-            /* params:          name              type    required */
-                              {},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_rescan_blockchain_state(const fc::variants& params)
-    {
-      _client->wallet_rescan_blockchain_state();
-      return fc::variant();
     }
 
 

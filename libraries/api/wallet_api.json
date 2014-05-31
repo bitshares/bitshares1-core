@@ -22,14 +22,14 @@
         "cpp_parameter_type" : "const std::string&",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
-        "default_example" : "Alice"
+        "default_example" : "alice"
       },
       {
         "type_name" : "optional_wallet_name",
         "cpp_parameter_type" : "const fc::optional<std::string>&",
         "cpp_return_type" : "fc::optional<std::string>",
         "cpp_include_file" : "fc/optional.hpp",
-        "default_example" : "Alice"
+        "default_example" : "alice"
       },
       {
         "type_name" : "time_interval_in_seconds",
@@ -105,7 +105,7 @@
         "cpp_parameter_type" : "const std::string&",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
-        "default_example" : "Alice"
+        "default_example" : "alice"
       },
       {
         "type_name" : "asset_symbol",
@@ -374,7 +374,28 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network"]
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network"],
+        "aliases" : ["transfer"]
+      },
+      {
+        "method_name": "wallet_rescan_blockchain",
+        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "return_type": "void",
+        "parameters" : 
+          [
+            {
+              "name" : "first_block_number", 
+              "type" : "int64_t", 
+              "description" : "the first block to scan"
+            },
+            {
+              "name" : "num_blocks", 
+              "type" : "int64_t", 
+              "description" : "the number of blocks to scan"
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+        "aliases" : ["scan"]
       }
     ]
 }

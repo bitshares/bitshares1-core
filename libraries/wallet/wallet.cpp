@@ -815,6 +815,10 @@ namespace bts { namespace wallet {
              signed_transaction trx;
 
              auto from_balance = balance_item.second.get_balance();
+
+             if( from_balance.amount <= 0 ) 
+                continue;
+
              trx.withdraw( balance_item.first,
                            from_balance.amount );
 

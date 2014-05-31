@@ -714,10 +714,10 @@ namespace bts { namespace blockchain {
 
 
    void transaction::withdraw( const balance_id_type& account, share_type amount )
-   {
+   { try {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( withdraw_operation( account, amount ) );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
    void transaction::deposit( const address& owner, const asset& amount, account_id_type delegate_id )
    {
