@@ -171,6 +171,7 @@ private:
   void generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
   std::string generate_detailed_description_for_method(const method_description& method);
+  void write_generated_file_header(std::ostream& stream);
 
   type_mapping_ptr lookup_type_mapping(const std::string& type_string);
   void initialize_type_map_with_fundamental_types();
@@ -385,6 +386,26 @@ std::string api_generator::generate_signature_for_method(const method_descriptio
   return method_signature.str();
 }
 
+void api_generator::write_generated_file_header(std::ostream& stream)
+{
+  stream << "//                                   _           _    __ _ _      \n";
+  stream << "//                                  | |         | |  / _(_) |     \n";
+  stream << "//    __ _  ___ _ __   ___ _ __ __ _| |_ ___  __| | | |_ _| | ___ \n";
+  stream << "//   / _` |/ _ \\ '_ \\ / _ \\ '__/ _` | __/ _ \\/ _` | |  _| | |/ _ \\\n";
+  stream << "//  | (_| |  __/ | | |  __/ | | (_| | ||  __/ (_| | | | | | |  __/\n";
+  stream << "//   \\__, |\\___|_| |_|\\___|_|  \\__,_|\\__\\___|\\__,_| |_| |_|_|\\___|\n";
+  stream << "//    __/ |                                                       \n";
+  stream << "//   |___/                                                        \n";
+  stream << "//\n";
+  stream << "//\n";
+  stream << "// Warning: this is a generated file, any changes made here will be\n";
+  stream << "//          overwritten by the build process.  If you need to change what is\n";
+  stream << "//          generated here, you should either modify the input json files\n";
+  stream << "//          (network_api.json, wallet_api.json, etc) or modify the code\n";
+  stream << "//          generator (bts_api_generator.cpp) itself\n";
+  stream << "//\n";
+}
+
 void api_generator::generate_interface_file(const fc::path& api_description_output_dir)
 {
   fc::path api_description_header_path = api_description_output_dir / "include" / "bts" / "api";
@@ -392,6 +413,8 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   fc::path api_header_filename = api_description_header_path / (_api_classname + ".hpp");
 
   std::ofstream interface_file(api_header_filename.string());
+  write_generated_file_header(interface_file);
+
   interface_file << "#pragma once\n\n";
   write_includes_to_stream(interface_file);
   interface_file << "namespace bts { namespace api {\n\n";
@@ -422,6 +445,8 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   std::ofstream cpp_file(client_cpp_filename.string());
   std::ofstream method_overrides_file(method_overrides_filename.string());
 
+  write_generated_file_header(header_file);
+  write_generated_file_header(method_overrides_file);
   header_file << "#pragma once\n\n";
   header_file << "#include <fc/rpc/json_connection.hpp>\n";
   header_file << "#include <bts/api/" << _api_classname << ".hpp>\n\n";
@@ -439,7 +464,7 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   header_file << "  };\n\n";
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
-
+  write_generated_file_header(cpp_file);
   cpp_file << "#include <bts/rpc_stubs/" << client_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/conversion_functions.hpp>\n\n";
   cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
@@ -614,6 +639,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   std::ofstream header_file(server_header_filename.string());
   std::ofstream cpp_file(server_cpp_filename.string());
 
+  write_generated_file_header(header_file);
   header_file << "#pragma once\n";
   header_file << "#include <bts/api/api_metadata.hpp>\n";
   header_file << "#include <bts/api/common_api.hpp>\n";
@@ -640,6 +666,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   header_file << "  };\n\n";
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
+  write_generated_file_header(cpp_file);
   cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/api_metadata.hpp>\n";
   cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
