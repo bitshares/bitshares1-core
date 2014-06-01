@@ -51,7 +51,7 @@ int main( int argc, char** argv )
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
-                              ("daemon", "run in daemon mode with no CLI console")
+                              ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
                               ("rpcuser", "username for JSON-RPC") // default arguments are in config.json
                               ("rpcpassword", "password for JSON-RPC")
                               ("rpcport", "port to listen for JSON-RPC connections")
@@ -114,7 +114,7 @@ int main( int argc, char** argv )
 
       bts::rpc::rpc_server_ptr rpc_server = client->get_rpc_server();
 
-      if( option_variables.count("server") )
+      if( option_variables.count("server") || option_variables.count("daemon") )
       {
         // the user wants us to launch the RPC server.
         // First, override any config parameters they
@@ -190,13 +190,9 @@ int main( int argc, char** argv )
          auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
          cli->wait();
       }
-      else if( option_variables.count( "server" ) ) // daemon & server
+      else 
       {
          rpc_server->wait_on_quit();
-      }
-      else // daemon  !server
-      {
-         std::cerr << "You must start the rpc server in daemon mode\n";
       }
    }
    catch ( const fc::exception& e )
