@@ -52,10 +52,10 @@ int main( int argc, char** argv )
                               ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console")
-                              ("rpcuser", program_options::value<std::string>(), "username for JSON-RPC")
-                              ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
-                              ("rpcport", program_options::value<uint16_t>()->default_value(5679), "port to listen for JSON-RPC connections")
-                              ("httpport", program_options::value<uint16_t>()->default_value(5680), "port to listen for HTTP JSON-RPC connections")
+                              ("rpcuser", "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcpassword", "password for JSON-RPC")
+                              ("rpcport", "port to listen for JSON-RPC connections")
+                              ("httpport", "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
@@ -123,17 +123,10 @@ int main( int argc, char** argv )
           cfg.rpc.rpc_user = option_variables["rpcuser"].as<std::string>();
         if (option_variables.count("rpcpassword"))
            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<std::string>();
-        // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
-        {
            cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
-        }
-        else
-          cfg.rpc.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), uint16_t(9988));
         if (option_variables.count("httpport"))
-        {
            cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
-        }
         std::cout<<"Starting json rpc server on "<< std::string( cfg.rpc.rpc_endpoint ) <<"\n";
         std::cout<<"Starting http json rpc server on "<< std::string( cfg.rpc.httpd_endpoint ) <<"\n";
         bool rpc_success = rpc_server->configure(cfg.rpc);
