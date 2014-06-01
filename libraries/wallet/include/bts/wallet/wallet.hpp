@@ -140,8 +140,8 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         map<string,public_key_type> list_receive_accounts()const;
-         map<string,public_key_type> list_contact_accounts()const;
+         vector<account_record> list_receive_accounts()const;
+         vector<account_record> list_contact_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,

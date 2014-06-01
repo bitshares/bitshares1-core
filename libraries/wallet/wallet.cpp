@@ -917,9 +917,9 @@ namespace bts { namespace wallet {
       unordered_set<address> required_signatures;
 
       trx.register_account( account_to_register, json_data,
-                        account_public_key, // master
-                        account_public_key, // active
-                        as_delegate );
+                            account_public_key, // master
+                            account_public_key, // active
+                            as_delegate );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
@@ -1365,36 +1365,62 @@ namespace bts { namespace wallet {
       return false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   map<string, public_key_type> wallet::list_contact_accounts() const
+   vector<account_record> wallet::list_contact_accounts() const
    { try {
-      map<string, public_key_type> contact_accs;
+      vector<account_record> contact_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
       {
          auto acc = iter->second;
          if ( ! my->_wallet_db.has_private_key( acc.account_address ) )
          {
-             contact_accs[acc.name] = get_account_public_key( acc.name ); 
+             auto account_rec = my->_blockchain->get_account_record( acc.name ); 
+             if ( account_rec.valid() )
+             {
+                 contact_accs.push_back( *account_rec );
+             } else {
+                 auto dummy_rec = account_record();
+                 dummy_rec.id = acc.blockchain_account_id;
+                 dummy_rec.name = acc.name;
+                 auto key_rec = my->_wallet_db.lookup_key( acc.account_address );
+                 FC_ASSERT(key_rec.valid(), "No key for an account that exists!");
+                 dummy_rec.owner_key = key_rec->public_key;
+                 dummy_rec.active_key = key_rec->public_key;
+                 contact_accs.push_back( dummy_rec );
+             }
          }
       }
-      
       return contact_accs;
+
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   map<string, public_key_type> wallet::list_receive_accounts() const
+   vector<account_record> wallet::list_receive_accounts() const
    { try {
-      map<string, public_key_type> rec_accs;
+      vector<account_record> receive_accs;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       for (auto iter = accs.begin(); iter != accs.end(); iter++)
       {
          auto acc = iter->second;
          if ( my->_wallet_db.has_private_key( acc.account_address ) )
          {
-             rec_accs[acc.name] = get_account_public_key( acc.name ); 
+             auto account_rec = my->_blockchain->get_account_record( acc.name ); 
+             if ( account_rec.valid() )
+             {
+                 receive_accs.push_back( *account_rec );
+             } else {
+                 auto dummy_rec = account_record();
+                 dummy_rec.id = acc.blockchain_account_id;
+                 dummy_rec.name = acc.name;
+                 auto key_rec = my->_wallet_db.lookup_key( acc.account_address );
+                 FC_ASSERT(key_rec.valid(), "No key for an account that exists!");
+                 dummy_rec.owner_key = key_rec->public_key;
+                 dummy_rec.active_key = key_rec->public_key;
+                 receive_accs.push_back( dummy_rec );
+             }
          }
       }
-      
-      return rec_accs;
+      return receive_accs;
+
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 

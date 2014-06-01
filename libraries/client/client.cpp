@@ -526,11 +526,11 @@ namespace bts { namespace client {
 
 
 
-    map<std::string, public_key_type> client::wallet_list_contact_accounts() const
+    vector<account_record> client::wallet_list_contact_accounts() const
     {
       return get_wallet()->list_contact_accounts();
     }
-    map<std::string, public_key_type> client::wallet_list_receive_accounts() const
+    vector<account_record> client::wallet_list_receive_accounts() const
     {
       return get_wallet()->list_receive_accounts();
     }
