@@ -917,9 +917,9 @@ namespace bts { namespace wallet {
       unordered_set<address> required_signatures;
 
       trx.register_account( account_to_register, json_data,
-                        account_public_key, // master
-                        account_public_key, // active
-                        as_delegate );
+                            account_public_key, // master
+                            account_public_key, // active
+                            as_delegate );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 

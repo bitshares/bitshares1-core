@@ -787,7 +787,16 @@ namespace bts { namespace rpc {
      };
     fc::variant rpc_server_impl::wallet_register_account(const fc::variants& params)
     {
-       FC_ASSERT( false, "Not Implemented" );
+        string name = params[0].as_string();
+        fc::variant data;
+        bool as_delegate = false;
+        if (params.size() > 1)
+            data = params[1];
+        if (params.size() > 2)
+            as_delegate = params[2].as<bool>();
+        //TODO currently "pay with account" same as account you are trying to register...
+        auto trx_id = _client->wallet_register_account(name, name, data, as_delegate);
+        return fc::variant( trx_id );
     }
 
 
