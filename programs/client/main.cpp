@@ -185,18 +185,16 @@ int main( int argc, char** argv )
           client->connect_to_peer(default_peer);
       }
 
-      if( !option_variables.count("daemon") )
+      if( option_variables.count("daemon") || cfg.ignore_console )
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
-         cli->wait();
-      }
-      else if( option_variables.count( "server" ) ) // daemon & server
+          if (cfg.ignore_console)
+              std::cout << "Ignoring console, run with --server to run the rpc server";
+          rpc_server->wait_on_quit();
+      } 
+      else
       {
-         rpc_server->wait_on_quit();
-      }
-      else // daemon  !server
-      {
-         std::cerr << "You must start the rpc server in daemon mode\n";
+          auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
+          cli->wait();
       }
    }
    catch ( const fc::exception& e )
