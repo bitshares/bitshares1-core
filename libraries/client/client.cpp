@@ -862,10 +862,23 @@ namespace bts { namespace client {
        auto advanced_params = network_get_advanced_node_parameters();
        auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance().amount : 0;
 
-       info["blockchain_block_num"]                 = get_chain()->get_head_block_num();
+       info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
+       info["blockchain_head_block_time"]           = get_chain()->now();
        info["network_num_connections"]              = network_get_connection_count();
        info["wallet_balance"]                       = wallet_balance_shares;
-       info["wallet_unlocked_seconds_remaining"]    =  (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+       auto seconds_remaining = (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
+       if( get_wallet()->next_block_production_time() != fc::time_point_sec() )
+       {
+          info["wallet_next_block_production_time"] = get_wallet()->next_block_production_time();
+          info["wallet_seconds_until_next_block_production"] = (get_wallet()->next_block_production_time() - bts::blockchain::now()).count()/1000000;
+       }
+       else
+       {
+          info["wallet_next_block_production_time"] = variant();
+          info["wallet_seconds_until_next_block_production"] = variant();
+       }
+       info["wallet_local_time"]                    = bts::blockchain::now();
        info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
 
