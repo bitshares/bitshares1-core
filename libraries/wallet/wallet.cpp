@@ -797,7 +797,8 @@ namespace bts { namespace wallet {
 
        auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
 
-       vector<signed_transaction> trxs;
+       vector<signed_transaction>       trxs;
+       vector<wallet_balance_record>    balances_to_store; // records to cache if transfer succeeds
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
        private_key_type sender_private_key  = get_account_private_key( from_account_name );
@@ -869,7 +870,7 @@ namespace bts { namespace wallet {
              // set the balance of this item to 0 so that we do not
              // attempt to spend it again.
              balance_item.second.balance = 0;
-             my->_wallet_db.store_record( balance_item.second );
+             balances_to_store.push_back( balance_item.second );
 
 
              if( sign )
@@ -884,6 +885,14 @@ namespace bts { namespace wallet {
           } // if asset id matches
        } // for each balance_item
 
+       // If we went through all our balances and still don't have enough
+       if (amount_collected < asset( amount_to_transfer, asset_id ))
+       {
+          FC_ASSERT( !"Insufficient funds.");
+       }
+
+       for( auto rec : balances_to_store )
+           my->_wallet_db.store_record( rec );
        for( auto t : trxs )
           my->_wallet_db.cache_transaction( t, memo_message, receiver_public_key );
 
