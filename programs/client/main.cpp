@@ -185,15 +185,16 @@ int main( int argc, char** argv )
           client->connect_to_peer(default_peer);
       }
 
-      if( !option_variables.count("daemon") )
+      if( option_variables.count("daemon") || cfg.ignore_console )
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
-         cli->wait();
+          std::cout << "Runing in daemon mode, ignoring console\n";
+          rpc_server->wait_on_quit();
       }
       else 
       {
-         rpc_server->wait_on_quit();
-      }
+         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
+         cli->wait();
+      } 
    }
    catch ( const fc::exception& e )
    {
