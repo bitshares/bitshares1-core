@@ -691,7 +691,8 @@ namespace bts { namespace net {
       item_id item_id_to_request(bts::client::block_message_type, item_to_request);
       _active_sync_requests.insert(active_sync_requests_map::value_type(item_to_request, fc::time_point::now()));
       peer->sync_items_requested_from_peer.insert(peer_connection::item_to_time_map_type::value_type(item_id_to_request, fc::time_point::now()));
-      peer->send_message(fetch_items_message(item_id_to_request.item_type, std::vector<item_hash_t>{bts::client::block_message_type}));
+      std::vector<item_hash_t> items_to_fetch;
+      peer->send_message(fetch_items_message(item_id_to_request.item_type, std::vector<item_hash_t>{item_id_to_request.item_hash}));
     }
 
     void node_impl::fetch_sync_items_loop()
