@@ -1540,8 +1540,8 @@ namespace bts { namespace wallet {
       }
       if ( against_candidates.size() > 0 )
       {
-         for (auto against_acct : against_candidates)
-            for (auto delegate_id : active_delegates)
+         for (auto delegate_id : active_delegates)
+            for (auto against_acct : against_candidates)
                 if( against_acct.blockchain_account_id == delegate_id )
                     return -delegate_id;
       }
