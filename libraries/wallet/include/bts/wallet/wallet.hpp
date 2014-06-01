@@ -59,6 +59,7 @@ namespace bts { namespace wallet {
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
+         bool is_unique_account( const string& account_name )const;
 
          /**
           * Account names are limited the same way as domain names.

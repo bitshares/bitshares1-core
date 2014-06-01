@@ -799,6 +799,11 @@ namespace bts { namespace wallet {
        FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
        FC_ASSERT( is_receive_account( from_account_name ) );
        FC_ASSERT( is_valid_account( to_account_name ) );
+       FC_ASSERT( is_unique_account( to_account_name ), 
+                  "Local account name conflicts with registered name, "
+                  "please rename your local account before attempting a transfer",
+                  ("to_account_name",to_account_name) );
+
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
        FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ) );
 
@@ -1455,7 +1460,9 @@ namespace bts { namespace wallet {
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      return my->_wallet_db.lookup_account( account_name ).valid();
+      if( my->_wallet_db.lookup_account( account_name ).valid() )
+          return true;
+      return my->_blockchain->get_account_record( account_name ).valid();
    }
 
    /**
@@ -1497,6 +1504,15 @@ namespace bts { namespace wallet {
       FC_ASSERT( opt_key->has_private_key() );
       return opt_key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+   bool wallet::is_unique_account( const string& account_name )const
+   {
+      auto local_account      = my->_wallet_db.lookup_account( account_name );
+      auto registered_account = my->_blockchain->get_account_record( account_name );
+      if( local_account && registered_account )
+         return local_account->account_address == address( registered_account->active_key );
+      return local_account || registered_account;
+   }
 
    /**
     *  Looks up the public key for an account whether local or in the blockchain, with
