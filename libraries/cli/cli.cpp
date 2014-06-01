@@ -95,10 +95,10 @@ namespace bts { namespace cli {
                      {
                        std::cout << "Error: invalid command \"" << command << "\"\n";
                      }
-                  catch( const fc::canceled_exception& except)
-                  {
-                    std::cout << "Command aborted.\n";
-                  }
+                     catch( const fc::canceled_exception&)
+                     {
+                       std::cout << "Command aborted.\n";
+                     }
                      catch( const fc::exception& )
                      {
                        //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
@@ -130,7 +130,7 @@ namespace bts { namespace cli {
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
-              catch ( const fc::exception& e )
+              catch ( const fc::exception&)
               {
                  std::cout << "\nshutting down\n";
                  _rpc_server->shutdown_rpc_server();
