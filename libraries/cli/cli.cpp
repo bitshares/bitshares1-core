@@ -33,7 +33,7 @@ namespace bts { namespace cli {
             client_ptr                  _client;
             rpc_server_ptr              _rpc_server;
             bts::cli::cli*              _self;
-            fc::thread*                 _main_thread;
+//            fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
 
@@ -184,13 +184,34 @@ namespace bts { namespace cli {
                 {
                   arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
-                catch( const fc::eof_exception& e )
+                catch( const fc::eof_exception&)
                 {
                   if (method_data.parameters[i].classification != bts::api::required_positional)
                     return arguments;
-                  else
-                    FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                             ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
+                  else //if missing required argument, prompt for that argument
+                  {
+                    const bts::api::parameter_data& this_parameter = method_data.parameters[i];
+                    std::string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ":";
+                    bool no_echo = false;
+                    std::string prompt_answer = _self->get_line(prompt, no_echo );
+                    auto prompt_argument_stream = std::make_shared<fc::stringstream>(prompt_answer);
+                    fc::buffered_istream buffered_argument_stream(prompt_argument_stream);
+                    try
+                    {
+                      arguments.push_back(_self->parse_argument_of_known_type(buffered_argument_stream, method_data, i));
+                    }
+                    catch( const fc::eof_exception& e )
+                    {
+                        FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
+                                 ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
+                    }
+                    catch( fc::parse_error_exception& e )
+                    {
+                      FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
+                                            ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
+                    }
+
+                   } //end prompting for missing required argument
                 }
                 catch( fc::parse_error_exception& e )
                 {
@@ -917,7 +938,7 @@ namespace bts { namespace cli {
   :my( new detail::cli_impl(client, rpc_server) )
   {
     my->_self        = this;
-    my->_main_thread = &fc::thread::current();
+//    my->_main_thread = &fc::thread::current();
 
     my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
