@@ -118,29 +118,32 @@ namespace bts { namespace wallet {
                                                  unordered_set<address>& required_signatures )
       {
          share_type remaining = amount;
-         for( auto balance_item : _wallet_db.balances )
+         for( auto& balance_item : _wallet_db.balances )
          {
             auto owner = balance_item.second.owner();
             if( balance_item.second.asset_id() == asset_id && 
                 address_in_account( owner, from_account_address ) )
             {
-                if( remaining > balance_item.second.balance )
-                {
-                   trx.withdraw( balance_item.first, balance_item.second.balance );
-                   balance_item.second.balance = 0;
-                   remaining -= balance_item.second.balance;
-                   required_signatures.insert( balance_item.second.owner() );
-                   _wallet_db.store_record( balance_item.second );
-                }
-                else
-                {
-                   trx.withdraw( balance_item.first, remaining );
-                   balance_item.second.balance -= remaining;
-                   remaining = 0;
-                   _wallet_db.store_record( balance_item.second );
-                   required_signatures.insert( balance_item.second.owner() );
-                   return;
-                }
+               if( balance_item.second.balance > 0 )
+               {
+                  if( remaining > balance_item.second.balance )
+                  {
+                     trx.withdraw( balance_item.first, balance_item.second.balance );
+                     balance_item.second.balance = 0;
+                     remaining -= balance_item.second.balance;
+                     required_signatures.insert( balance_item.second.owner() );
+                     _wallet_db.store_record( balance_item.second );
+                  }
+                  else
+                  {
+                     trx.withdraw( balance_item.first, remaining );
+                     balance_item.second.balance -= remaining;
+                     remaining = 0;
+                     _wallet_db.store_record( balance_item.second );
+                     required_signatures.insert( balance_item.second.owner() );
+                     return;
+                  }
+              }
             }
          }
          FC_ASSERT( !"Insufficient Funds" );
@@ -268,6 +271,7 @@ namespace bts { namespace wallet {
          {
             wlog( "blockchain doesn't know about balance id: ${balance_id}",
                   ("balance_id",balance_id) );
+            _wallet_db.balances.erase( balance_id );
          }
          else
          {
@@ -360,15 +364,18 @@ namespace bts { namespace wallet {
    
 
    void wallet::open_file( const path& wallet_filename )
-   { 
-      try {
-         close();
-         my->_wallet_db.open( wallet_filename );
-         my->_current_wallet_path = wallet_filename;
-      } FC_RETHROW_EXCEPTIONS( warn, 
-             "Unable to open wallet ${filename}", 
-             ("filename",wallet_filename) ) 
-   }
+   { try {
+      close();
+      FC_ASSERT( fc::exists( wallet_filename ) );
+      my->_wallet_db.open( wallet_filename );
+      my->_current_wallet_path = wallet_filename;
+
+      auto tmp_balances = my->_wallet_db.balances;
+      for( auto item : tmp_balances )
+         my->cache_balance( item.first );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to open wallet ${filename}", 
+                                   ("filename",wallet_filename) ) }
 
    void wallet::close()
    { try {
