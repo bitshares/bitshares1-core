@@ -75,10 +75,13 @@ namespace bts { namespace net {
       fc::optional<std::string> fc_git_revision_sha;
       fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
       fc::optional<std::string> platform;
+
+      // for inbound connections, these fields record what the peer sent us in
+      // its hello message.  For outbound, they record what we sent the peer 
+      // in our hello message
       fc::ip::address inbound_address;
       uint16_t inbound_port;
       uint16_t outbound_port;
-      boost::tribool peer_is_firewalled;
       /// @}
 
       typedef std::unordered_map<item_id, fc::time_point> item_to_time_map_type;
@@ -108,8 +111,7 @@ namespace bts { namespace net {
         state(disconnected),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
-        we_need_sync_items_from_peer(true),
-        peer_is_firewalled(boost::indeterminate)
+        we_need_sync_items_from_peer(true)
       {}
       ~peer_connection() {}
 
@@ -259,6 +261,11 @@ namespace bts { namespace net {
 #define POTENTIAL_PEER_DATABASE_FILENAME "peers.leveldb"
       fc::path             _node_configuration_directory;
       node_configuration   _node_configuration;
+
+      /// stores the endpoint we're listening on.  This will be the same as 
+      // _node_configuration.listen_endpoint, unless that endpoint was already
+      // in use.
+      fc::ip::endpoint     _actual_listening_endpoint;
 
       /// used by the task that manages connecting to peers
       // @{
@@ -411,6 +418,7 @@ namespace bts { namespace net {
       void connect_to(const fc::ip::endpoint& ep);
       void listen_on_endpoint(const fc::ip::endpoint& ep);
       void listen_on_port(uint16_t port);
+      fc::ip::endpoint get_actual_listening_endpoint() const;
       std::vector<peer_status> get_connected_peers() const;
       uint32_t get_connection_count() const;
       void broadcast(const message& item_to_broadcast, const message_propagation_data& propagation_data);
@@ -458,10 +466,22 @@ namespace bts { namespace net {
         direction = outbound;
 
         _remote_endpoint = remote_endpoint;
-        if (local_endpoint.valid())
-          _message_connection.connect_to(remote_endpoint, *local_endpoint);
-        else
-          _message_connection.connect_to(remote_endpoint);
+        if (local_endpoint)
+        {
+          // the caller wants us to bind the local side of this socket to a specific ip/port
+          // This depends on the ip/port being unused, and on being able to set the 
+          // SO_REUSEADDR/SO_REUSEPORT flags, and either of these might fail, so we need to 
+          // detect if this fails.
+          try
+          {
+            _message_connection.bind(*local_endpoint);
+          }
+          catch (const fc::exception& except)
+          {
+            wlog("Error binding to desired local endpoint ${endpoint}: ${except}", ("endpoint", *local_endpoint)("except", except));
+          }
+        }
+        _message_connection.connect_to(remote_endpoint);
         state = peer_connection::secure_connection_established;
         ilog("established outbound connection to ${remote_endpoint}", ("remote_endpoint", remote_endpoint));
       }
@@ -1121,14 +1141,12 @@ namespace bts { namespace net {
             if (originating_peer->inbound_port == 0)
             {
               ilog("peer does not appear to be firewalled, but they did not give an inbound port so I'm treating them as if they are.");
-              originating_peer->peer_is_firewalled = true;
             }
             else
             {
               fc::ip::endpoint peers_inbound_endpoint(originating_peer->inbound_address, originating_peer->inbound_port);
               potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(peers_inbound_endpoint);
               _potential_peer_db.update_entry(updated_peer_record);
-              originating_peer->peer_is_firewalled = false;
             }
           }
           else
@@ -1136,7 +1154,6 @@ namespace bts { namespace net {
             ilog("peer is firewalled: they think their outbound endpoing is ${reported_endpoint}, but I see it as ${actual_endpoint}",
                  ("reported_endpoint", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
                  ("actual_endpoint", peers_actual_outbound_endpoint));
-            originating_peer->peer_is_firewalled = true;
           }
 
           if( !is_accepting_new_connections() )
@@ -1189,6 +1206,19 @@ namespace bts { namespace net {
       originating_peer->core_protocol_version = hello_reply_message_received.core_protocol_version;
       parse_hello_user_data_for_peer(originating_peer, hello_reply_message_received.user_data);
 
+      // report whether this peer will think we're behind a firewall
+      if (originating_peer->inbound_port != 0)
+      {
+        // if we sent inbound_port = 0 we were telling them that we're firewalled and don't accept incoming connections
+        if (originating_peer->inbound_address == hello_reply_message_received.remote_endpoint.get_address() &&
+            originating_peer->outbound_port == hello_reply_message_received.remote_endpoint.port())
+          ilog("peer ${peer} does not think we're behind a firewall", ("peer", originating_peer->get_remote_endpoint()));
+        else
+          ilog("peer ${peer} thinks we're firewalled (we think we were connecting from ${we_saw}, they saw ${they_saw})",
+               ("peer", originating_peer->get_remote_endpoint())
+               ("we_saw", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
+               ("they_saw", hello_reply_message_received.remote_endpoint));
+      }
       if (originating_peer->state == peer_connection::hello_sent && 
           originating_peer->direction == peer_connection_direction::outbound)
       {
@@ -1944,7 +1974,7 @@ namespace bts { namespace net {
 
       try
       {
-        new_peer->connect_to(remote_endpoint, _node_configuration.listen_endpoint);  // blocks until the connection is established and secure connection is negotiated
+        new_peer->connect_to(remote_endpoint, _actual_listening_endpoint);  // blocks until the connection is established and secure connection is negotiated
 
         // connection succeeded, we've started handshaking.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_handshaking_failed;
@@ -1967,11 +1997,15 @@ namespace bts { namespace net {
       }
 
       fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
+      new_peer->inbound_address = local_endpoint.get_address();
+      new_peer->inbound_port = _actual_listening_endpoint.port();
+      new_peer->outbound_port = local_endpoint.port();
+
       hello_message hello(_user_agent_string, 
                           core_protocol_version, 
-                          local_endpoint.get_address(),
-                          _node_configuration.listen_endpoint.port(), 
-                          local_endpoint.port(),
+                          new_peer->inbound_address,
+                          new_peer->inbound_port, 
+                          new_peer->outbound_port,
                           _node_id, 
                           _chain_id, 
                           generate_hello_user_data());
@@ -2030,25 +2064,93 @@ namespace bts { namespace net {
 
     void node_impl::connect_to_p2p_network()
     {
+      bool requested_endpoint_is_available = false;
+      if (_node_configuration.listen_endpoint.port() != 0)
+      {
+        // if the user specified a port, we only want to bind to it if it's not already
+        // being used by another application.  During normal operation, we set the
+        // SO_REUSEADDR/SO_REUSEPORT flags so that we can bind outbound sockets to the
+        // same local endpoint as we're listening on here.  On some platforms, setting 
+        // those flags will prevent us from detecting that other applications are 
+        // listening on that port.  We'd like to detect that, so we'll set up a temporary
+        // tcp server without that flag to see if we can listen on that port.
+        try
+        {
+          fc::tcp_server temporary_server;
+          if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
+            temporary_server.listen(_node_configuration.listen_endpoint);
+          else
+            temporary_server.listen(_node_configuration.listen_endpoint.port());
+          requested_endpoint_is_available = true;
+        }
+        catch (fc::exception&)
+        {
+          wlog("unable to bind on the requested endpoint ${endpoint}, which probably means that endpoint is already in use",
+               ("endpoint", _node_configuration.listen_endpoint));
+        }
+      }
+      else // port is 0
+      {
+        // if they requested a random port, we'll just assume it's available
+        // (it may not be due to ip address, but we'll detect that in the next step)
+        requested_endpoint_is_available = true;
+      }
+
+      bool server_is_listening = false;
+      _tcp_server.set_reuse_address();
+      if (requested_endpoint_is_available)
+      {
+        try
+        {
+          // first, try to listen on the exact ip & port the user specified, if any
+          if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
+            _tcp_server.listen(_node_configuration.listen_endpoint);
+          else
+            _tcp_server.listen(_node_configuration.listen_endpoint.port());
+          _actual_listening_endpoint = _tcp_server.get_local_endpoint();
+          ilog("listening for connections on endpoint ${endpoint} (our first choice)", 
+               ("endpoint", _actual_listening_endpoint));
+          server_is_listening = true;
+        }
+        catch (fc::exception& e)
+        {
+          if (_node_configuration.listen_endpoint.port() == 0)
+            FC_RETHROW_EXCEPTION(e, error, "unable to listen on ${endpoint}", ("endpoint",_node_configuration.listen_endpoint));
+        }
+      }
+      if (!server_is_listening)
+      {
+        // we weren't allowed to bind to our preferred endpoint.  We'll assume that 
+        // the error was that we were unable to bind to the desired port, and just
+        // ask the OS to choose a random port for us.  If the user gave us an IP address,
+        // they're doing something advanced, just fail.
+        fc::ip::endpoint second_choice_endpoint(_node_configuration.listen_endpoint.get_address(), 0);
+        try
+        {
+          if (second_choice_endpoint.get_address() != fc::ip::address())
+            _tcp_server.listen(second_choice_endpoint);
+          else
+            _tcp_server.listen(second_choice_endpoint.port());
+          _actual_listening_endpoint = _tcp_server.get_local_endpoint();
+          ilog("listening for connections on endpoint ${endpoint} (NOT our first choice, which was ${desired_endpoint})",
+                ("endpoint", _actual_listening_endpoint)
+                ("desired_endpoint",_node_configuration.listen_endpoint));
+          server_is_listening = true;
+        }
+        catch (fc::exception& e)
+        {
+          FC_RETHROW_EXCEPTION(e, error, "unable to listen on ${endpoint}, and also unable to listen on my fallback choice of ${fallback_endpoint}.  giving up.", 
+                                ("endpoint", _node_configuration.listen_endpoint)
+                                ("fallback_endpoint", second_choice_endpoint));
+        }
+      }
+      _accept_loop_complete = fc::async( [=](){ accept_loop(); });
+
       _p2p_network_connect_loop_done = fc::async([=]() { p2p_network_connect_loop(); });
       _fetch_sync_items_loop_done = fc::async([=]() { fetch_sync_items_loop(); });
       _fetch_item_loop_done = fc::async([=]() { fetch_items_loop(); });
       _advertise_inventory_loop_done = fc::async([=]() { advertise_inventory_loop(); });
       _terminate_inactive_connections_loop_done = fc::async([=]() { terminate_inactive_connections_loop(); });
-
-      if (!_accept_loop_complete.valid())
-      {
-        try
-        {
-          _tcp_server.set_reuse_address();
-          if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
-            _tcp_server.listen(_node_configuration.listen_endpoint);
-          else
-            _tcp_server.listen(_node_configuration.listen_endpoint.port());
-          ilog("listening for connections on endpoint ${endpoint}", ("endpoint", _node_configuration.listen_endpoint));
-          _accept_loop_complete = fc::async( [=](){ accept_loop(); });
-        } FC_RETHROW_EXCEPTIONS(warn, "unable to listen on ${endpoint}", ("endpoint",_node_configuration.listen_endpoint))
-      } 
     }
 
     void node_impl::add_node(const fc::ip::endpoint& ep)
@@ -2156,6 +2258,11 @@ namespace bts { namespace net {
     {
       _node_configuration.listen_endpoint = fc::ip::endpoint(fc::ip::address(), port);
       save_node_configuration();
+    }
+
+    fc::ip::endpoint node_impl::get_actual_listening_endpoint() const
+    {
+      return _actual_listening_endpoint;
     }
 
     std::vector<peer_status> node_impl::get_connected_peers() const
@@ -2387,6 +2494,11 @@ namespace bts { namespace net {
   void node::listen_on_port(uint16_t port)
   {
     my->listen_on_port(port);
+  }
+
+  fc::ip::endpoint node::get_actual_listening_endpoint() const
+  {
+    return my->get_actual_listening_endpoint();
   }
 
   std::vector<peer_status> node::get_connected_peers() const
