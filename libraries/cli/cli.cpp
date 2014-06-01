@@ -94,6 +94,10 @@ namespace bts { namespace cli {
                   {
                     std::cout << "Error: invalid command \"" << command << "\"\n";
                   }
+                  catch( const fc::canceled_exception& except)
+                  {
+                    std::cout << "Command aborted.\n";
+                  }
                   catch( const fc::exception& )
                   {
                     //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
@@ -191,8 +195,11 @@ namespace bts { namespace cli {
                   else //if missing required argument, prompt for that argument
                   {
                     const bts::api::parameter_data& this_parameter = method_data.parameters[i];
-                    std::string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ":";
-                    bool no_echo = false;
+                    std::string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ": ";
+
+                    //if we're prompting for a password, don't echo it to console
+                    bool no_echo = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");
+
                     std::string prompt_answer = _self->get_line(prompt, no_echo );
                     auto prompt_argument_stream = std::make_shared<fc::stringstream>(prompt_answer);
                     fc::buffered_istream buffered_argument_stream(prompt_argument_stream);
@@ -210,7 +217,16 @@ namespace bts { namespace cli {
                       FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
                                             ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                     }
-
+                    //if user is specifying a new password, ask him twice to be sure he typed it right
+                    if (this_parameter.type == "new_passphrase")
+                    {
+                      std::string prompt_answer2 = _self->get_line("new_passphrase (verify): ", no_echo );
+                      if (prompt_answer != prompt_answer2)
+                      {
+                        std::cout << "Passphrases do not match. ";
+                        FC_THROW_EXCEPTION(canceled_exception,"Passphrase mismatch");
+                      }
+                    }
                    } //end prompting for missing required argument
                 }
                 catch( fc::parse_error_exception& e )
@@ -306,25 +322,14 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create" || command == "wallet_change_passphrase")
+              if (command == "wallet_create")
               {
-                  if( command == "wallet_create" )
-                  {
-                      auto wallet_name = arguments[0].as_string();
-                      if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                      {
-                        std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
-                        FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                      }
-                  }
-                  // TODO: positional pass phrase with optional bran key!
-                  return execute_wallet_command_with_passphrase_query( command, { arguments.front() }, "new passphrase", true );
-              }
-              else if ( command == "unlock" || 
-                        command == "wallet_unlock")
-              {
-                  ilog( "arguments: ${args}", ("args", arguments) );
-                  return execute_wallet_command_with_passphrase_query( command, {arguments.front()}, "passphrase" );
+                auto wallet_name = arguments[0].as_string();
+                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                {
+                  std::cout << "Wallet \"" << wallet_name << "\" already exists\n";
+                  FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                }
               }
               else if (command == "wallet_import_bitcoin")
               {

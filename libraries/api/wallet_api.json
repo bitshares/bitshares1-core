@@ -10,6 +10,14 @@
         "default_example" : "some_filename.txt"
       },
       {
+        "type_name" : "new_passphrase",
+        "cpp_parameter_type" : "const std::string&",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "my_password",
+        "obscure_in_log_files": true
+      },
+      {
         "type_name" : "passphrase",
         "cpp_parameter_type" : "const std::string&",
         "cpp_return_type" : "std::string",
@@ -166,9 +174,9 @@
               "description" : "name of the wallet to create"
             },
             { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for encrypting the wallet"
+              "name" : "new_passphrase", 
+              "type" : "new_passphrase", 
+              "description" : "a passphrase for encrypting the wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
