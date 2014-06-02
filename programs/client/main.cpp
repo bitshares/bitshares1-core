@@ -46,7 +46,7 @@ int main( int argc, char** argv )
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
-                              ("p2p-port", program_options::value<uint16_t>()->default_value(8765), "set port to listen on")
+                              ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
@@ -152,7 +152,7 @@ int main( int argc, char** argv )
       if (option_variables.count("p2p-port"))
       {
          auto p2pport = option_variables["p2p-port"].as<uint16_t>();
-         std::cout << "Listening to P2P connections on port "<<p2pport<<"\n";
+         std::cout << "Listening to P2P connections on port " << p2pport << "\n";
          client->listen_on_port(p2pport);
 
          if( option_variables["upnp"].as<bool>() )
@@ -175,9 +175,7 @@ int main( int argc, char** argv )
       {
          std::vector<std::string> hosts = option_variables["connect-to"].as<std::vector<std::string>>();
          for( auto peer : hosts )
-         {
             client->connect_to_peer( peer );
-         }
       }
       else
       {

@@ -129,6 +129,17 @@ void client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& a
        - `dictionary` maps to `std::map`, and requires a `key_type` and `value_type`
 2. Build.  
 
+Command-Line Interface Prompting and Special Parameter Types
+------------------------------------------------------------
+The command line interface (CLI) will automatically prompt for missing required parameters. For example, if the user
+types the command "unlock", the CLI will prompt the user to enter the required parameters "timeout" and "passphrase".
+A CLI command can be aborted during prompted entry by pressing <ENTER> without entering any data.
+
+Currently the command-line interface recoognizes these special types when prompting for parameters:
+  
+- passphrase: this type should be used for any password that shouldn't be echoed to the console during prompted entry.
+- new_passphrase: this type should be used for any command that requires the user to specify a "new" password. In this case,
+                  the CLI will not echo the password AND it will prompt for the password twice to verify it's accurate entry.
 Old docs
 ========
 

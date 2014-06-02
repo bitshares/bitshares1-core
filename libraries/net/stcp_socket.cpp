@@ -45,10 +45,9 @@ void stcp_socket::connect_to( const fc::ip::endpoint& remote_endpoint )
   do_key_exchange();
 }
 
-void stcp_socket::connect_to( const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint )
+void stcp_socket::bind( const fc::ip::endpoint& local_endpoint )
 {
-  _sock.connect_to(remote_endpoint, local_endpoint);
-  do_key_exchange();
+  _sock.bind(local_endpoint);
 }
 
 /**
