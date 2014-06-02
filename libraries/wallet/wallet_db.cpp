@@ -445,6 +445,8 @@ namespace bts{ namespace wallet {
       transactions[trx_to_store.trx.id()] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
    void wallet_db::cache_transaction( const signed_transaction& trx,
+                                      const asset&  amount,
+                                      share_type fees,
                                       const string& memo_message,
                                       const public_key_type& to )
    { try {
@@ -455,6 +457,8 @@ namespace bts{ namespace wallet {
       wallet_transaction_record data;
       data.index = new_index();
       data.trx = trx;
+      data.amount = amount;
+      data.fees   = fees;
       data.to_account = to;
       data.memo_message = memo_message;
       store_record( data );

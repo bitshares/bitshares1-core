@@ -137,12 +137,14 @@ namespace bts { namespace wallet {
 
    struct transaction_data
    {
-       transaction_data():transmit_count(0){}
-       transaction_data( const signed_transaction& t ):trx(t),block_num(0),transmit_count(0){}
+       transaction_data():transmit_count(0),fees(0){}
+       transaction_data( const signed_transaction& t ):trx(t),fees(0),block_num(0),transmit_count(0){}
 
        signed_transaction        trx;
        optional<public_key_type> to_account;
        optional<public_key_type> from_account;
+       asset                     amount;
+       share_type                fees;
        std::string               memo_message;
        uint32_t                  block_num;
        fc::time_point            created_time;
@@ -195,7 +197,7 @@ FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
-FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(from_account)(memo_message)(created_time)(received_time)(block_num)(transmit_count) )
+FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(from_account)(amount)(fees)(memo_message)(created_time)(received_time)(block_num)(transmit_count) )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
 

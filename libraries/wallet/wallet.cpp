@@ -270,6 +270,7 @@ namespace bts { namespace wallet {
                       if( status->memo_flags == from_memo )
                       {
                          trx_rec.memo_message = status->get_message();
+                         trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
                       }
                       else
@@ -940,7 +941,7 @@ namespace bts { namespace wallet {
        for( auto rec : balances_to_store )
            my->_wallet_db.store_record( rec );
        for( auto t : trxs )
-          my->_wallet_db.cache_transaction( t, memo_message, receiver_public_key );
+          my->_wallet_db.cache_transaction( t, asset( amount_to_transfer, asset_id), total_fee.amount, memo_message, receiver_public_key );
 
        return trxs;
       

@@ -51,8 +51,10 @@ namespace bts { namespace wallet {
                           const fc::sha512& password );
 
          void cache_transaction( const signed_transaction& trx,
+                                 const asset& amount, share_type fees,
                                  const string& memo_message,
                                  const public_key_type& to );
+
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const
          {
             auto itr = transactions.find(trx_id);
