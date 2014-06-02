@@ -36,7 +36,6 @@ namespace bts { namespace rpc {
                                                    const std::string& invoice_memo = "",
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast);
                                                    */
-      std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
       full_block blockchain_get_block(const block_id_type& block_id);
       full_block blockchain_get_block_by_number(uint32_t block_number);
       bool validate_address(bts::blockchain::address address);
@@ -99,11 +98,6 @@ namespace bts { namespace rpc {
     }
     */
 
-
-    std::vector<wallet_transaction_record> rpc_client_impl::wallet_get_transaction_history(unsigned count)
-    {
-      return _json_connection->call<std::vector<wallet_transaction_record>>("wallet_get_transaction_history", fc::variant(count));
-    }
 
     full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
     {
@@ -195,10 +189,6 @@ namespace bts { namespace rpc {
     return my->wallet_get_balance(asset_symbol, account_name);
   }
 
-  std::vector<wallet_transaction_record> rpc_client::wallet_get_transaction_history(unsigned count) const
-  {
-    return my->wallet_get_transaction_history(count);
-  }
 
   full_block rpc_client::blockchain_get_block(const block_id_type& block_id) const
   {

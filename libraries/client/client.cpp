@@ -551,23 +551,11 @@ namespace bts { namespace client {
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
+    vector<wallet_transaction_record> client::wallet_account_transaction_history(const string& account) 
     {
-      return get_wallet()->get_transaction_history();
+      return get_wallet()->get_transaction_history(account);
     }
 
-    vector<pretty_transaction> client::wallet_get_transaction_history_summary(unsigned count) const
-    {
-        auto tx_recs = get_wallet()->get_transaction_history( );
-        auto result = vector<pretty_transaction>();
-
-        for( auto tx_rec : tx_recs)
-        {
-            result.push_back( get_wallet()->to_pretty_trx( tx_rec ) );
-        }
-
-        return result;
-    }
 
     oaccount_record client::blockchain_get_account_record(const string& name) const
     {

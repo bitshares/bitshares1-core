@@ -137,7 +137,7 @@ namespace bts { namespace wallet {
 
    struct transaction_data
    {
-       transaction_data():transmit_count(0),fees(0){}
+       transaction_data():fees(0),transmit_count(0){}
        transaction_data( const signed_transaction& t ):trx(t),fees(0),block_num(0),transmit_count(0){}
 
        signed_transaction        trx;
