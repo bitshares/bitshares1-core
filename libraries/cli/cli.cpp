@@ -728,7 +728,10 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        if( acct.is_delegate() )
+                           std::cout<< acct.name + " (delegate)";
+                        else
+                           std::cout<< acct.name;
                     }
 
                     std::cout << std::setw(64) << string( acct.active_key() );
@@ -755,6 +758,8 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 22 ) << "REGISTERED";
                 std::cout << "\n";
 
+                std::cout << fc::json::to_string( account_records ) << "\n";
+
                 for( auto acct : account_records )
                 {
                     if (acct.name.size() > 20)
@@ -764,7 +769,11 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        std::cout << std::setw(25);
+                        if( acct.is_delegate() )
+                           std::cout<< acct.name + " (delegate)";
+                        else
+                           std::cout<< acct.name;
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
@@ -804,7 +813,10 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        if( acct.is_delegate() )
+                           std::cout<< acct.name + " (delegate)";
+                        else
+                           std::cout<< acct.name;
                     }
                     std::cout << std::setw(64) << string( acct.active_key() );
                     std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
