@@ -865,53 +865,57 @@ namespace bts { namespace client {
 
     variant_object client::get_info() const
     {
-       fc::mutable_variant_object info;
-       auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
-       auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
-       auto advanced_params = network_get_advanced_node_parameters();
-       auto wallet_balance_shares = wallet_get_balance(); //get_wallet()->is_open() ? get_wallet()->get_balance("*","*"): balances();//[0].amount : 0;
+      fc::mutable_variant_object info;
+      auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+      auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
+      auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
+      auto advanced_params = network_get_advanced_node_parameters();
+      fc::variant wallet_balance_shares;
+      if (get_wallet()->is_open())
+        wallet_balance_shares = wallet_get_balance();
+      else
+        wallet_balance_shares = "[wallet is not open]";
 
-       info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
-       info["blockchain_head_block_time"]           = get_chain()->now();
-       info["network_num_connections"]              = network_get_connection_count();
-       info["wallet_balance"]                       = wallet_balance_shares;
-       auto seconds_remaining = (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
-       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
-       if( get_wallet()->next_block_production_time() != fc::time_point_sec() )
-       {
-          info["wallet_next_block_production_time"] = get_wallet()->next_block_production_time();
-          info["wallet_seconds_until_next_block_production"] = (get_wallet()->next_block_production_time() - bts::blockchain::now()).count()/1000000;
-       }
-       else
-       {
-          info["wallet_next_block_production_time"] = variant();
-          info["wallet_seconds_until_next_block_production"] = variant();
-       }
-       info["wallet_local_time"]                    = bts::blockchain::now();
-       info["blockchain_bips_per_share"]            = bips_per_share;
-       info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
+      info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
+      info["blockchain_head_block_time"]           = get_chain()->now();
+      info["network_num_connections"]              = network_get_connection_count();
+      info["wallet_balance"]                       = wallet_balance_shares;
+      auto seconds_remaining = (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+      info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
+      if( get_wallet()->next_block_production_time() != fc::time_point_sec() )
+      {
+        info["wallet_next_block_production_time"] = get_wallet()->next_block_production_time();
+        info["wallet_seconds_until_next_block_production"] = (get_wallet()->next_block_production_time() - bts::blockchain::now()).count()/1000000;
+      }
+      else
+      {
+        info["wallet_next_block_production_time"] = variant();
+        info["wallet_seconds_until_next_block_production"] = variant();
+      }
+      info["wallet_local_time"]                    = bts::blockchain::now();
+      info["blockchain_bips_per_share"]            = bips_per_share;
+      info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
 
-       info["blockchain_shares"]                    = current_share_supply;
+      info["blockchain_shares"]                    = current_share_supply;
 
-   //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
+  //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
 
-    //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+  //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
 
-       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
+      info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
 
-       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+      info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
 
-      // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
+    // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
 
-       info["wallet_open"]                          = get_wallet()->is_open();
+      info["wallet_open"]                          = get_wallet()->is_open();
 
-       info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
-                                                    ? std::string( get_wallet()->unlocked_until() )
-                                                    : "";
-       info["wallet_version"]                       = BTS_WALLET_VERSION;
+      info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
+                                                  ? std::string( get_wallet()->unlocked_until() )
+                                                  : "";
+      info["wallet_version"]                       = BTS_WALLET_VERSION;
 
-       return info;
+      return info;
     }
     void client::wallet_rescan_blockchain( int64_t start, int64_t count) 
     { try {
