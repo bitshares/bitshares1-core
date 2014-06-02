@@ -689,21 +689,22 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 64 ) << "KEY";
                 std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << std::setw( 15 ) << "TRUST LEVEL";
                 std::cout << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << (acct.name.substr(0, 20) + "...");
                     }
                     else
                     {
+                        std::cout << std::setw(25);
                         if( acct.is_delegate() )
-                           std::cout<< acct.name + " (delegate)";
+                           std::cout << acct.name + " (delegate)";
                         else
-                           std::cout<< acct.name;
+                           std::cout << acct.name;
                     }
 
                     std::cout << std::setw(64) << string( acct.active_key() );
@@ -717,6 +718,8 @@ namespace bts { namespace cli {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
+                    
+                    std::cout << std::setw( 10) << acct.trust_level;
                     std::cout << "\n";
                 }
             }
@@ -728,16 +731,16 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 15 ) << std::left << "BALANCE";
                 std::cout << std::setw( 64 ) << "KEY";
                 std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << std::setw( 15 ) << "TRUST LEVEL";
                 std::cout << "\n";
 
-                std::cout << fc::json::to_string( account_records ) << "\n";
+                //std::cout << fc::json::to_string( account_records ) << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << (acct.name.substr(0, 20) + "...");
                     }
                     else
                     {
@@ -762,6 +765,8 @@ namespace bts { namespace cli {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
+
+                    std::cout << std::setw( 15 ) << acct.trust_level;
                     std::cout << "\n";
                 }
             }
@@ -784,6 +789,7 @@ namespace bts { namespace cli {
                     }
                     else
                     {
+                        std::cout << std::setw(25);
                         if( acct.is_delegate() )
                            std::cout<< acct.name + " (delegate)";
                         else
@@ -810,12 +816,7 @@ namespace bts { namespace cli {
                     else
                     {
                         auto trust = _client->get_wallet()->get_delegate_trust_level( acct.name );
-                        std::stringstream ss;
-                        if( trust != 0 )
-                            ss << std::setw( 15 ) << trust;
-                        else
-                            ss << std::setw( 15 ) << "N/A";
-                        std::cout << ss.str();
+                        std::cout << std::setw( 15 ) << trust;
                     }
 
                     std::cout << "\n";
