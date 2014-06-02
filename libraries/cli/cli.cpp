@@ -482,6 +482,7 @@ namespace bts { namespace cli {
                   print_contact_account_list( accts );
                   return fc::variant("OK");
               }
+              /*
               else if ( command == "wallet_open" || command == "open" )
               {
                 auto wallet_name = arguments[0].as_string();
@@ -504,6 +505,7 @@ namespace bts { namespace cli {
                     }
                 }
               }
+              */
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
