@@ -1,146 +1,5 @@
 {
   "category": "Wallet Methods",
-  "type_map":
-    [
-      {
-        "type_name" : "filename",
-        "cpp_parameter_type" : "const fc::path&",
-        "cpp_return_type" : "fc::path",
-        "cpp_include_file" : "fc/filesystem.hpp",
-        "default_example" : "some_filename.txt"
-      },
-      {
-        "type_name" : "new_passphrase",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "my_password",
-        "obscure_in_log_files": true
-      },
-      {
-        "type_name" : "passphrase",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "my_password",
-        "obscure_in_log_files": true
-      },
-      {
-        "type_name" : "wallet_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "alice"
-      },
-      {
-        "type_name" : "transaction_record",
-        "cpp_parameter_type" : "const bts::wallet::wallet_transaction_record&",
-        "cpp_return_type" : "bts::wallet::wallet_transaction_record",
-        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
-      },
-      {
-        "type_name" : "transaction_record_array",
-        "container_type" : "array",
-        "contained_type" : "transaction_record"
-      },
-      {
-        "type_name" : "optional_wallet_name",
-        "cpp_parameter_type" : "const fc::optional<std::string>&",
-        "cpp_return_type" : "fc::optional<std::string>",
-        "cpp_include_file" : "fc/optional.hpp",
-        "default_example" : "alice"
-      },
-      {
-        "type_name" : "time_interval_in_seconds",
-        "cpp_parameter_type" : "const fc::microseconds&",
-        "cpp_return_type" : "fc::microseconds",
-        "cpp_include_file" : "fc/time.hpp",
-        "to_variant_function" : "bts::api::time_interval_in_seconds_to_variant",
-        "from_variant_function" : "bts::api::variant_to_time_interval_in_seconds",
-        "default_example" : 300
-      },
-      {
-        "type_name" : "public_key",
-        "cpp_parameter_type" : "const bts::blockchain::public_key_type&",
-        "cpp_return_type" : "bts::blockchain::public_key_type",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "account_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "Bob"
-      },
-      {
-        "type_name" : "signed_transaction",
-        "cpp_parameter_type" : "const bts::blockchain::signed_transaction&",
-        "cpp_return_type" : "bts::blockchain::signed_transaction",
-        "cpp_include_file" : "bts/blockchain/transaction.hpp",
-        "default_example" : "TODO"        
-      },
-      {
-        "type_name" : "signed_transaction_array",
-        "container_type" : "array",
-        "contained_type" : "signed_transaction",
-        "default_example" : "TODO"      
-      },
-      {
-        "type_name" : "asset",
-        "cpp_parameter_type" : "const std::pair<bts::blockchain::share_type,std::string>&",
-        "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
-        "default_example" : "TODO"        
-      },
-      {
-        "type_name" : "asset_array",
-        "container_type" : "array",
-        "contained_type" : "asset",
-        "default_example" : "TODO"      
-      },
-      {
-        "type_name" : "pretty_transaction",
-        "cpp_parameter_type" : "const bts::wallet::pretty_transaction&",
-        "cpp_return_type" : "bts::wallet::pretty_transaction",
-        "cpp_include_file" : "bts/wallet/pretty.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "amount",
-        "cpp_parameter_type" : "int64_t",
-        "cpp_return_type" : "int64_t",
-        "cpp_include_file" : "stdint.h",
-        "default_example" : 10000
-      },
-      {
-        "type_name" : "receive_account_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "Bob"
-      },
-      {
-        "type_name" : "sending_account_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "alice"
-      },
-      {
-        "type_name" : "asset_symbol",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "XTS"
-      },
-      {
-        "type_name" : "invoice_summary",
-        "cpp_parameter_type" : "const bts::wallet::invoice_summary&",
-        "cpp_return_type" : "bts::wallet::invoice_summary",
-        "cpp_include_file" : "bts/wallet/wallet.hpp",
-        "default_example" : "TODO"
-      }
-    ],
   "methods" :
     [
       {
@@ -247,7 +106,7 @@
       {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists all transactions for the specified account",
-        "return_type": "transaction_record_array",
+        "return_type": "pretty_transactions",
         "parameters" : 
           [
             { 
@@ -304,7 +163,7 @@
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
-        "method_name": "wallet_create_account",
+        "method_name": "wallet_account_create",
         "description": "Add new account for receiving payments",
         "return_type": "public_key",
         "parameters" : 
@@ -314,9 +173,16 @@
               "type" : "account_name", 
               "description" : "the name you will use to refer to this receive account",
               "enable_autocomplete" : false
+            },
+            { 
+              "name" : "private_data", 
+              "type" : "json_variant", 
+              "description" : "Extra data to store with this account record",
+              "default_value" : null
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"]
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {
         "method_name": "wallet_add_contact_account",
@@ -414,7 +280,7 @@
       },
       {
         "method_name": "wallet_rescan_blockchain",
-        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "description": "Scans the transaction history for operations relevant to this wallet.",
         "return_type": "void",
         "parameters" : 
           [
@@ -431,6 +297,69 @@
           ],
         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
         "aliases" : ["scan"]
+      },
+      {
+         "method_name" : "wallet_account_register",
+         "description" : "Updates the data published about a given account",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "pay_from_account"
+                  "type" : "account_name",
+                  "description" : "the account from which fees will be paid"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "json_variant",
+                  "description" : "public data about the account",
+                  "default_value" : null
+               },
+               {
+                  "name" : "as_delegate"
+                  "type" : "bool",
+                  "description" : "true if account_name should be upgraded to a delegate.",
+                  "default_value" : false
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "aliases" : [ "register" ]
+      },
+      {
+         "method_name" : "wallet_account_update_registration",
+         "description" : "Updates the data published about a given account",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "pay_from_account"
+                  "type" : "account_name",
+                  "description" : "the account from which fees will be paid"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "json_variant",
+                  "description" : "public data about the account",
+                  "default_value" : null
+               },
+               {
+                  "name" : "as_delegate"
+                  "type" : "bool",
+                  "description" : "true if account_name should be upgraded to a delegate.",
+                  "default_value" : false
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "aliases" : [ "update_registration" ]
       }
+
     ]
 }

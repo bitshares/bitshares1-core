@@ -1,15 +1,5 @@
 {
   "category": "General Methods",
-  "type_map":
-    [
-      {
-        "type_name" : "method_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "wallet_transfer"
-      }
-    ],
   "methods" :
     [
       {

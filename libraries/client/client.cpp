@@ -464,31 +464,6 @@ namespace bts { namespace client {
       return issue_asset_trx;
     }
 
-    signed_transaction client::wallet_register_account( const string& account_name,
-                                                        const string& pay_with_account,
-                                                        const fc::variant& data,
-                                                        bool as_delegate,
-                                                        rpc_client_api::generate_transaction_flag flag)
-    {
-      try {
-        bool sign = (flag != do_not_sign);
-        auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, sign);
-        if( flag == sign_and_broadcast )
-        {
-            network_broadcast_transaction(trx);
-        }
-        return trx;
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
-    }
-
-    signed_transaction client::wallet_update_registered_account( const string& registered_account_name,
-                                                                 const fc::variant& data,
-                                                                 bool as_delegate,
-                                                                 rpc_client_api::generate_transaction_flag flag )
-    {
-      FC_ASSERT(!"Not implemented")
-      return signed_transaction();
-    }
 
 
     signed_transaction client::wallet_submit_proposal( const string& delegate_account_name,
@@ -551,9 +526,10 @@ namespace bts { namespace client {
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<wallet_transaction_record> client::wallet_account_transaction_history(const string& account) 
+
+    vector<pretty_transaction> client::wallet_account_transaction_history(const string& account) 
     {
-      return get_wallet()->get_transaction_history(account);
+      return get_wallet()->get_pretty_transaction_history(account);
     }
 
 
@@ -794,7 +770,9 @@ namespace bts { namespace client {
       return fc::ecc::public_key(signature, digest());
     }
 
-    balances client::wallet_get_balance( const string& symbol, const std::string& account_name ) const
+
+    balances client::wallet_get_balance( const string& symbol, 
+                                         const std::string& account_name ) const
     { try {
         vector<asset> all_balances = get_wallet()->get_balance( symbol ,account_name);
        
@@ -809,13 +787,18 @@ namespace bts { namespace client {
         return all_results;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
-    void client::wallet_add_contact_account( const string& account_name, const public_key_type& contact_key )
+
+    void client::wallet_add_contact_account( const string& account_name, 
+                                             const public_key_type& contact_key )
     {
        get_wallet()->add_contact_account( account_name, contact_key );
     }
-    public_key_type client::wallet_create_account( const string& account_name )
+
+
+    public_key_type client::wallet_account_create( const string& account_name,
+                                                   const variant& private_data )
     {
-       return get_wallet()->create_account( account_name );
+       return get_wallet()->create_account( account_name, private_data );
     }
 
     fc::variant_object client::about() const
@@ -921,5 +904,45 @@ namespace bts { namespace client {
     { try {
        get_wallet()->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
+
+
+    wallet_transaction_record client::wallet_account_register( const string& account_name,
+                                                        const string& pay_with_account,
+                                                        const fc::variant& data,
+                                                        bool as_delegate ) 
+    {
+      try {
+        // bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, true);//sign);
+        network_broadcast_transaction( trx.trx );
+        /*
+        if( flag == sign_and_broadcast )
+        {
+            network_broadcast_transaction(trx);
+        }
+        */
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
+    }
+
+    wallet_transaction_record client::wallet_account_update_registration( const string& account_to_update,
+                                                                        const string& pay_from_account,
+                                                                        const variant& public_data,
+                                                                        bool as_delegate )
+    { try {
+       auto trx = get_wallet()->update_registered_account( account_to_update, 
+                                                           pay_from_account, 
+                                                           public_data, 
+                                                           optional<public_key_type>(),
+                                                           as_delegate, true );
+
+       network_broadcast_transaction( trx.trx );
+       return trx;
+    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+    fc::variant_object client::network_get_info() const
+    {
+      return get_node()->network_get_info();
+    }
 
 } } // bts::client

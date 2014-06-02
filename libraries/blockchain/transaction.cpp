@@ -522,6 +522,14 @@ namespace bts { namespace blockchain {
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
          fail( BTS_NAME_ALREADY_REGISTERED, fc::variant(op) );
 
+      auto account_with_same_key = _current_state->get_account_record( address(op.active_key) );
+      if( account_with_same_key.valid() )
+         FC_ASSERT( !"Account already registered using the requested key" );
+
+      account_with_same_key = _current_state->get_account_record( address(op.owner_key) );
+      if( account_with_same_key.valid() )
+         FC_ASSERT( !"Account already registered using the requested key" );
+
       account_record new_record;
       new_record.id            = _current_state->new_account_id();
       new_record.name          = op.name;
@@ -566,8 +574,13 @@ namespace bts { namespace blockchain {
 
       cur_record->last_update   = _current_state->now();
 
-      if( !!op.active_key )
+      if( op.active_key.valid() )
+      {
          cur_record->set_active_key( _current_state->now(), *op.active_key );
+         auto account_with_same_key = _current_state->get_account_record( address(*op.active_key) );
+         if( account_with_same_key.valid() )
+            FC_ASSERT( !"Account already registered using the requested key" );
+      }
 
       if ( !cur_record->is_delegate() && op.is_delegate )
       {

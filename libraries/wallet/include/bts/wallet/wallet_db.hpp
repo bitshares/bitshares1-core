@@ -50,7 +50,7 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
 
-         void cache_transaction( const signed_transaction& trx,
+         wallet_transaction_record  cache_transaction( const signed_transaction& trx,
                                  const asset& amount, share_type fees,
                                  const string& memo_message,
                                  const public_key_type& to,
@@ -77,7 +77,8 @@ namespace bts { namespace wallet {
          bool has_private_key( const address& a )const;
 
          void add_contact_account( const string& new_account_name, 
-                                   const public_key_type& new_account_key );
+                                   const public_key_type& new_account_key,
+                                   const variant& private_data = variant() );
 
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
