@@ -191,6 +191,7 @@ namespace bts { namespace wallet {
             }
             current_trx_record->block_num = block_num;
             current_trx_record->trx = trx;
+            current_trx_record->received_time = current_block.timestamp;
 
             for( auto op : trx.operations )
             {
@@ -738,7 +739,7 @@ namespace bts { namespace wallet {
    /** 
     * @return the list of all transactions related to this wallet
     */
-   vector<wallet_transaction_record>    wallet::get_transaction_history()const
+   vector<wallet_transaction_record>    wallet::get_transaction_history( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
 
@@ -746,9 +747,19 @@ namespace bts { namespace wallet {
       auto my_trxs = my->_wallet_db.transactions;
       recs.reserve( my_trxs.size() );
 
+
+      public_key_type account_pub;
+      if( account_name != string() )
+         get_account_public_key( account_name );
+
       for( auto iter = my_trxs.begin(); iter != my_trxs.end(); iter++)
       {
-         recs.push_back(iter->second);
+         if( account_name == string() ||
+             (iter->second.to_account && *iter->second.to_account == account_pub) ||
+             (iter->second.from_account && *iter->second.from_account == account_pub)  )
+         {
+            recs.push_back(iter->second);
+         }
       }
 
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
@@ -943,7 +954,7 @@ namespace bts { namespace wallet {
        for( auto rec : balances_to_store )
            my->_wallet_db.store_record( rec );
        for( uint32_t i =0 ; i < trxs.size(); ++i )
-          my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key );
+          my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key, bts::blockchain::now() );
 
        return trxs;
       

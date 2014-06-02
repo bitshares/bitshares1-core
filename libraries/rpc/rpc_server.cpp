@@ -40,8 +40,6 @@ namespace bts { namespace rpc {
              (wallet_rename_account)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
-             (wallet_get_transaction_history)\
-             (wallet_get_transaction_history_summary)\
              (wallet_register_account)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)\
@@ -679,34 +677,6 @@ namespace bts { namespace rpc {
       */
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
-
-    static bts::api::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
-            /* description */ "Retrieves all transactions into or out of this wallet",
-            /* returns: */    "std::vector<wallet_transaction_record>",
-            /* params:          name     type      classification                   default_value */
-                              {{"count", "unsigned",    bts::api::optional_positional, 0}},
-            /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_transaction_history(const fc::variants& params)
-    {
-      unsigned count = params[0].as<unsigned>();
-      return fc::variant( _client->wallet_get_transaction_history( count ) );
-    }
-
-    static bts::api::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
-     /* description */ "Returns a transaction history table for pretty printing",
-     /* returns: */ "std::vector<pretty_transaction>",
-     /* params: name type classification default_value */
-                       {{"count", "unsigned", bts::api::optional_positional, 0}},
-     /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-     R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
-    {
-      unsigned count = params[0].as<unsigned>();
-      return fc::variant( _client->wallet_get_transaction_history_summary( count ) );
-    }
 
     static bts::api::method_data blockchain_get_account_record_metadata{"blockchain_get_account_record", nullptr,
             /* description */ "Retrieves the name record",

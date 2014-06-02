@@ -33,6 +33,17 @@
         "default_example" : "alice"
       },
       {
+        "type_name" : "transaction_record",
+        "cpp_parameter_type" : "const bts::wallet::wallet_transaction_record&",
+        "cpp_return_type" : "bts::wallet::wallet_transaction_record",
+        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
+      },
+      {
+        "type_name" : "transaction_record_array",
+        "container_type" : "array",
+        "contained_type" : "transaction_record"
+      },
+      {
         "type_name" : "optional_wallet_name",
         "cpp_parameter_type" : "const fc::optional<std::string>&",
         "cpp_return_type" : "fc::optional<std::string>",
@@ -232,6 +243,22 @@
             }
           ],
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "wallet_account_transaction_history",
+        "description": "Lists all transactions for the specified account",
+        "return_type": "transaction_record_array",
+        "parameters" : 
+          [
+            { 
+              "name" : "account_name", 
+              "type" : "account_name", 
+              "description" : "the name of the account for which the transaction history will be returned",
+              "example" : "alice",
+              "default_value" : ""
+            }          ],
+        "prerequisites" : ["json_authenticated","wallet_open"],
+        "aliases" : ["history"]
       },
       {
         "method_name": "wallet_lock",

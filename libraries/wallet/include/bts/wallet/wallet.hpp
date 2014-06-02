@@ -244,7 +244,7 @@ namespace bts { namespace wallet {
          vector<asset>                         get_all_balances( const string& account_name = string() )const;
          ///@}
 
-         vector<wallet_transaction_record>     get_transaction_history()const;
+         vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
 
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;

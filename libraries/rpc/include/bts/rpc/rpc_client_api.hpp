@@ -77,8 +77,6 @@ namespace bts { namespace rpc {
 
         virtual          wallet_account_record wallet_get_account(const string& account_name) const = 0;
         virtual                       balances wallet_get_balance(const string& asset_symbol = string(BTS_ADDRESS_PREFIX), const string& account_name = string("*")) const = 0;
-        virtual vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const = 0;
-        virtual vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const = 0;
         virtual                   blockchain::oaccount_record blockchain_get_account_record(const string& name) const = 0;
         virtual                   blockchain::oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const = 0;
         virtual                  oasset_record blockchain_get_asset_record(const string& symbol) const = 0;

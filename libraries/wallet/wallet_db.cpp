@@ -448,7 +448,8 @@ namespace bts{ namespace wallet {
                                       const asset&  amount,
                                       share_type fees,
                                       const string& memo_message,
-                                      const public_key_type& to )
+                                      const public_key_type& to,
+                                      time_point_sec created )
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );
@@ -460,6 +461,7 @@ namespace bts{ namespace wallet {
       data.amount = amount;
       data.fees   = fees;
       data.to_account = to;
+      data.created_time = created;
       data.memo_message = memo_message;
       store_record( data );
       transactions[trx_id] = data;

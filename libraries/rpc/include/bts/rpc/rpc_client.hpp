@@ -68,8 +68,6 @@ namespace bts { namespace rpc {
                   wallet_account_record wallet_get_account(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                 balances wallet_get_balance(const std::string& symbol = BTS_ADDRESS_PREFIX, const std::string& account_name = "*") const override;
 
-         std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const override;
-         std::vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                            oaccount_record blockchain_get_account_record(const std::string& name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                            oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                           oasset_record blockchain_get_asset_record(const std::string& symbol) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
