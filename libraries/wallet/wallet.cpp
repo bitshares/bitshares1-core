@@ -1214,11 +1214,29 @@ namespace bts { namespace wallet {
       }
 
       pretty_trx.trx_id = trx.id();
-      pretty_trx.timestamp = time_t( trx_rec.received_time.sec_since_epoch() );
-      
-      pretty_trx.totals_in[BTS_ADDRESS_PREFIX] = 0;
-      pretty_trx.totals_out[BTS_ADDRESS_PREFIX] = 0;
-      pretty_trx.fees[BTS_ADDRESS_PREFIX] = 0;
+      pretty_trx.received_time = trx_rec.received_time.sec_since_epoch();
+      pretty_trx.created_time = trx_rec.created_time.sec_since_epoch();
+      pretty_trx.fees = trx_rec.fees;
+      pretty_trx.memo_message = trx_rec.memo_message;
+
+      pretty_trx.from_account = "";
+      if( trx_rec.from_account )
+      {
+          auto acct_record = my->_wallet_db.lookup_account( *trx_rec.from_account );
+          if (acct_record)
+              pretty_trx.from_account = acct_record->name;
+          else
+              pretty_trx.from_account = string( *trx_rec.from_account );
+      }
+      pretty_trx.to_account = "";
+      if( trx_rec.to_account )
+      {
+          auto acct_record = my->_wallet_db.lookup_account( *trx_rec.to_account );
+          if (acct_record)
+              pretty_trx.to_account = acct_record->name;
+          else
+              pretty_trx.to_account = string( *trx_rec.to_account );
+      }
 
       for( auto op : trx.operations )
       {
@@ -1240,7 +1258,6 @@ namespace bts { namespace wallet {
                   
                   pretty_op.owner = std::make_pair(owner, name);
                   pretty_op.amount = withdraw_op.amount;
-                  pretty_trx.totals_in[BTS_ADDRESS_PREFIX] += withdraw_op.amount;
                   pretty_trx.add_operation(pretty_op);
                   break;
               }
@@ -1273,7 +1290,6 @@ namespace bts { namespace wallet {
                   }
 
                   pretty_op.amount = deposit_op.amount;
-                  pretty_trx.totals_out[BTS_ADDRESS_PREFIX] += deposit_op.amount;
 
                   pretty_trx.add_operation(pretty_op);
                   break;
@@ -1334,12 +1350,7 @@ namespace bts { namespace wallet {
               }
           } // switch op_type
       } // for op in trx
-    
-      for (auto pair : pretty_trx.totals_in)
-      {
-          pretty_trx.fees[pair.first] = pair.second - pretty_trx.totals_out[pair.first] ;
-      }
-      
+     
       return pretty_trx;
    }
 

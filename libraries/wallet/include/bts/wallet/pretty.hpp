@@ -17,10 +17,14 @@ struct pretty_transaction
     uint32_t                                    block_num;
     uint32_t                                    trx_num;
     transaction_id_type                         trx_id;
-    uint32_t                                    timestamp;
-    std::map<std::string, share_type>           totals_in;
-    std::map<std::string, share_type>           totals_out;
-    std::map<std::string, share_type>           fees;
+    uint32_t                                    created_time;
+    uint32_t                                    received_time;
+    asset                                       amount;
+    share_type                                  fees;
+    string                                      to_account;
+    string                                      from_account;
+
+    string                                      memo_message;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -158,7 +162,7 @@ struct pretty_remove_collateral_op
 
 }} // bts::wallet
 
-FC_REFLECT( bts::wallet::pretty_transaction, (block_num)(trx_num)(timestamp)(fees)(trx_id) (operations)(totals_in)(totals_out)(fees));
+FC_REFLECT( bts::wallet::pretty_transaction, (block_num)(trx_num)(trx_id)(created_time)(received_time)(amount)(fees)(to_account)(from_account)(memo_message)(fees));
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));
