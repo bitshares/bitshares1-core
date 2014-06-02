@@ -167,7 +167,7 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         next_rec_number = next_rec_num.as_int64();
+         next_rec_number = next_rec_num.as<int32_t>();
       }
       set_property( property_enum::next_record_number, next_rec_number + 1 );
       return next_rec_number;
@@ -183,7 +183,7 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         next_child_index = next_child_idx.as_int64();
+         next_child_index = next_child_idx.as<int32_t>();
       }
       set_property( property_enum::next_child_key_index, next_child_index + 1 );
       return next_child_index;

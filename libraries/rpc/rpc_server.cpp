@@ -40,10 +40,7 @@ namespace bts { namespace rpc {
              (wallet_asset_create)\
              (wallet_asset_issue)\
              (wallet_submit_proposal)\
-             (wallet_vote_proposal)\
-             (wallet_set_delegate_trust_status)\
-             (wallet_get_delegate_trust_status)\
-             (wallet_list_delegate_trust_status)
+             (wallet_vote_proposal)
 
   namespace detail
   {
@@ -787,49 +784,6 @@ namespace bts { namespace rpc {
     }
 
 
-    static bts::api::method_data wallet_set_delegate_trust_status_metadata{ "wallet_set_delegate_trust_status", nullptr,
-      /* description */ "Sets the trust level for a delegate",
-      /* returns: */    "null",
-      /* params:          name          type       classification                   default_value */
-      { { "delegate_name", "string", bts::api::required_positional, fc::ovariant() },
-      { "trust_level", "integer", bts::api::required_positional, fc::ovariant() } },
-      /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-      R"(
-returns false if delegate is not recognized
-     )" };
-    fc::variant rpc_server_impl::wallet_set_delegate_trust_status(const fc::variants& params)
-    {
-      _client->wallet_set_delegate_trust_status(params[0].as_string(), params[1].as<int32_t>());
-      return fc::variant();
-    }
-
-    static bts::api::method_data wallet_get_delegate_trust_status_metadata{ "wallet_get_delegate_trust_status", nullptr,
-      /* description */ "Gets the trust level for a delegate",
-      /* returns: */    "delegate_trust_status",
-      /* params:          name          type       classification                   default_value */
-      { { "delegate_name", "string", bts::api::required_positional, fc::ovariant() } },
-      /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-      R"(
-returns false if delegate is not recognized
-     )" };
-    fc::variant rpc_server_impl::wallet_get_delegate_trust_status(const fc::variants& params)
-    {
-      return fc::variant();//_client->wallet_get_delegate_trust_status(params[0].as_string()));
-    }
-
-    static bts::api::method_data wallet_list_delegate_trust_status_metadata{ "wallet_list_delegate_trust_status", nullptr,
-      /* description */ "List the trust status for delegates",
-      /* returns: */    "map<delegate_name,delegate_trust_status>",
-      /* params:          name          type       classification                   default_value */
-      { },
-      /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-      R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
-    {
-      return fc::variant( );//_client->wallet_list_delegate_trust_status());
-    }
-
     static bts::api::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
             /* description */ "Get detailed information about an in-wallet transaction",
             /* returns: */    "signed_transaction",
@@ -891,9 +845,6 @@ Result:
 "account" : "account" (string) The account associated with the address, "" is the default account
 }
 
-Examples:
-> bitshares-cli validate_address "1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc"
-> curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "validate_address", "params": ["1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc"] }' -H 'content-type: text/plain;' http://127.0.0.1:8332/
      )" };
     fc::variant rpc_server_impl::validate_address(const fc::variants& params)
     {

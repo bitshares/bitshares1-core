@@ -41,7 +41,7 @@
             },
             {
               "name" : "limit", 
-              "type" : "int64_t", 
+              "type" : "int32_t", 
               "description" : "the maximum number of items to list",
               "default_value" : -1
             }

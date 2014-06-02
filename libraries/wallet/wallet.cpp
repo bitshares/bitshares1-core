@@ -109,7 +109,8 @@ namespace bts { namespace wallet {
                                             const address& account_address )const
       { try {
          auto opt_key = _wallet_db.lookup_key( address_to_check );
-         FC_ASSERT( opt_key.valid() );
+         if( !opt_key.valid() )
+            return false;
          return opt_key->account_address == account_address;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("address_to_check",address_to_check)("account_address",account_address) ) }
 
@@ -274,6 +275,7 @@ namespace bts { namespace wallet {
                          trx_rec.memo_message = status->get_message();
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
+                         trx_rec.to_account   = key.get_public_key();
                          ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
@@ -281,6 +283,7 @@ namespace bts { namespace wallet {
                          ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
                          ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
+                         trx_rec.from_account = key.get_public_key();
                          trx_rec.to_account   = status->from;
                          ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
@@ -1131,7 +1134,7 @@ namespace bts { namespace wallet {
                                    get_account_public_key( issuer_account->name ),
                                    trx, required_signatures );
      
-      trx.issue( asset( asset_record->id, amount ) );
+      trx.issue( asset( amount, asset_record->id ) );
       required_signatures.insert( issuer_account->active_key() );
 
 
@@ -1672,8 +1675,6 @@ namespace bts { namespace wallet {
 
    account_id_type wallet::select_delegate_vote()const
    {
-      return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-      // TODO review / test this more carefully before activating
       vector<account> for_candidates;
       vector<account> against_candidates;
       vector<account_id_type> active_delegates =
@@ -1693,7 +1694,7 @@ namespace bts { namespace wallet {
                 if( against_acct.id== delegate_id )
                     return -delegate_id;
       }
-      else if( for_candidates.size() > 0 )
+      if( for_candidates.size() > 0 )
       {
          // find first delegate who is not active
          bool active = false;
@@ -1734,7 +1735,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-          return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+          return active_delegates[(rand() % BTS_BLOCKCHAIN_NUM_DELEGATES)];
       }
    }
 

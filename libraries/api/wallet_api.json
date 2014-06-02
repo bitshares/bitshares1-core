@@ -220,6 +220,27 @@
         "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {
+        "method_name": "wallet_set_delegate_trust_level",
+        "description": "Updates the trust placed in a given delegate",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "delegate_name", 
+              "type" : "account_name", 
+              "description" : "the name of the delegate to set trust level on"
+            },
+            { 
+              "name" : "trust_level", 
+              "type" : "int64_t", 
+              "description" : "Positive for Trust, Negative for Distrust, 0 for Neutral",
+              "default_value" : 0
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : [ "trust", "set_trust" ]
+      },
+      {
         "method_name": "wallet_add_contact_account",
         "description": "Add new account for sending payments",
         "return_type": "void",
@@ -321,12 +342,12 @@
           [
             {
               "name" : "first_block_number", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the first block to scan"
             },
             {
               "name" : "num_blocks", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the number of blocks to scan"
             }
           ],
