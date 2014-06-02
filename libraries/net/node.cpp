@@ -34,7 +34,6 @@
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
-
 namespace bts { namespace net {
   namespace detail
   {
@@ -64,6 +63,7 @@ namespace bts { namespace net {
       fc::time_point connection_initiation_time;
       peer_connection_direction direction;
       connection_state state;
+      boost::tribool is_firewalled;
 
       /// data about the peer node
       /// @{
@@ -111,7 +111,8 @@ namespace bts { namespace net {
         state(disconnected),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
-        we_need_sync_items_from_peer(true)
+        we_need_sync_items_from_peer(true),
+        is_firewalled(boost::indeterminate)
       {}
       ~peer_connection() {}
 
@@ -1086,8 +1087,13 @@ namespace bts { namespace net {
 
       if( hello_message_received.chain_id != _chain_id )
       {
-         wlog( "Recieved hello message from peer on a different chain: ${message}", ("message",hello_message_received) );
-         connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+         wlog( "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received));
+         std::ostringstream rejection_message;
+         rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id << 
+                              " and you're on " << hello_message_received.chain_id;
+         connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, 
+                                                         originating_peer->get_socket().remote_endpoint(),
+                                                         rejection_message.str());
          originating_peer->state = peer_connection::connection_rejected_sent;
          originating_peer->send_message(message(connection_rejected));
          disconnect_from_peer( originating_peer );
@@ -1110,7 +1116,9 @@ namespace bts { namespace net {
       {
         if( already_connected_to_this_peer )
         {
-          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, 
+                                                          originating_peer->get_socket().remote_endpoint(),
+                                                          "I'm already connected to you");
           originating_peer->state = peer_connection::connection_rejected_sent;
           originating_peer->send_message(message(connection_rejected));
           ilog("Received a hello_message from peer ${peer} that I'm already connected to (with id ${id}), rejection", 
@@ -1121,7 +1129,9 @@ namespace bts { namespace net {
         else if( !_allowed_peers.empty() && 
                  _allowed_peers.find(originating_peer->node_id) == _allowed_peers.end() )
         {
-          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, 
+                                                          originating_peer->get_socket().remote_endpoint(),
+                                                          "you are not in my allowed_peers list");
           originating_peer->state = peer_connection::connection_rejected_sent;
           originating_peer->send_message(message(connection_rejected));
           ilog("Received a hello_message from peer ${peer} who isn't in my allowed_peers list, rejection", ("peer", originating_peer->get_remote_endpoint()));
@@ -1142,12 +1152,15 @@ namespace bts { namespace net {
             if (originating_peer->inbound_port == 0)
             {
               ilog("peer does not appear to be firewalled, but they did not give an inbound port so I'm treating them as if they are.");
+              originating_peer->is_firewalled = true;
             }
             else
             {
+              // peer is not firwalled, add it to our database
               fc::ip::endpoint peers_inbound_endpoint(originating_peer->inbound_address, originating_peer->inbound_port);
               potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(peers_inbound_endpoint);
               _potential_peer_db.update_entry(updated_peer_record);
+              originating_peer->is_firewalled = false;
             }
           }
           else
@@ -1155,11 +1168,14 @@ namespace bts { namespace net {
             ilog("peer is firewalled: they think their outbound endpoing is ${reported_endpoint}, but I see it as ${actual_endpoint}",
                  ("reported_endpoint", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
                  ("actual_endpoint", peers_actual_outbound_endpoint));
+            originating_peer->is_firewalled = true;
           }
 
           if( !is_accepting_new_connections() )
           {
-            connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, originating_peer->get_socket().remote_endpoint());
+            connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, 
+                                                            originating_peer->get_socket().remote_endpoint(),
+                                                            "not accepting any more incoming connections");
             originating_peer->state = peer_connection::connection_rejected_sent;
             originating_peer->send_message(message(connection_rejected));
             ilog("Received a hello_message from peer ${peer}, but I'm not accepting any more connections, rejection", 
@@ -1255,9 +1271,13 @@ namespace bts { namespace net {
       if (originating_peer->state == peer_connection::hello_sent && 
           originating_peer->direction == peer_connection_direction::outbound)
       {
-        ilog("Received a rejection in response to my \"hello\"");
+        ilog("Received a rejection from ${peer} in response to my \"hello\", reason: \"${reason}\"", 
+             ("peer", originating_peer->get_remote_endpoint())
+             ("reason", connection_rejected_message_received.rejection_reason));
+
 
         // update our database to record that we were rejected so we won't try to connect again for a while
+        // this only happens on connections we originate, so we should already know that peer is not firewalled
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(originating_peer->get_socket().remote_endpoint());
         updated_peer_record.last_connection_disposition = last_connection_rejected;
         updated_peer_record.last_connection_attempt_time = fc::time_point::now();
@@ -1295,10 +1315,13 @@ namespace bts { namespace net {
         disconnect_from_peer(originating_peer);
       else
       {
-        // mark the connection as successful in the database
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
-        updated_peer_record.last_connection_disposition = last_connection_succeeded;
-        _potential_peer_db.update_entry(updated_peer_record);
+        if (!originating_peer->is_firewalled)
+        {
+          // mark the connection as successful in the database
+          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
+          updated_peer_record.last_connection_disposition = last_connection_succeeded;
+          _potential_peer_db.update_entry(updated_peer_record);
+        }
 
         _active_connections.insert(originating_peer->shared_from_this());
         _handshaking_connections.erase(originating_peer->shared_from_this());
@@ -1344,10 +1367,13 @@ namespace bts { namespace net {
         ilog("peer ${endpoint} which was handshaking with us has started synchronizing with us, start syncing with it", 
              ("endpoint", originating_peer->get_remote_endpoint()));
         
-        // mark the connection as successful in the database
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
-        updated_peer_record.last_connection_disposition = last_connection_succeeded;
-        _potential_peer_db.update_entry(updated_peer_record);
+        if (!originating_peer->is_firewalled)
+        {
+          // mark the connection as successful in the database
+          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer->get_remote_endpoint());
+          updated_peer_record.last_connection_disposition = last_connection_succeeded;
+          _potential_peer_db.update_entry(updated_peer_record);
+        }
 
         // transition it to our active list
         _active_connections.insert(originating_peer->shared_from_this());
@@ -1968,6 +1994,7 @@ namespace bts { namespace net {
     void node_impl::connect_to_task(peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint)
     {
       // create or find the database entry for the new peer
+      // if we're connecting to them, we believe they're not firewalled
       potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(remote_endpoint);
       updated_peer_record.last_connection_disposition = last_connection_failed;
       updated_peer_record.last_connection_attempt_time = fc::time_point::now();;
@@ -2156,7 +2183,9 @@ namespace bts { namespace net {
 
     void node_impl::add_node(const fc::ip::endpoint& ep)
     {
+      // if we're connecting to them, we believe they're not firewalled
       potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(ep);
+
       // if we've recently connected to this peer, reset the last_connection_attempt_time to allow 
       // us to immediately retry this peer
       updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
@@ -2290,6 +2319,12 @@ namespace bts { namespace net {
         peer_details["version"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["subver"] = peer->user_agent;
         peer_details["inbound"] = peer->direction == peer_connection_direction::inbound;
+        if (peer->is_firewalled)
+          peer_details["firewall_status"] = "behind a firewall";
+        else if (!peer->is_firewalled)
+          peer_details["firewall_status"] = "not behind a firewall";
+        else
+          peer_details["firewall_status"] = "unknown";
         peer_details["startingheight"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["banscore"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["syncnode"] = ""; // TODO: fill me for bitcoin compatibility
