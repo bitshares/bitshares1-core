@@ -163,6 +163,15 @@
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
+        "method_name": "wallet_list",
+        "description": "Return a list of wallets in the current data directory",
+        "return_type": "wallet_name_array",
+        "parameters" : [],
+        "prerequisites" : ["json_authenticated"],
+        "is_const": true,
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_account_create",
         "description": "Add new account for receiving payments",
         "return_type": "public_key",

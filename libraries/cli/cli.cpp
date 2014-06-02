@@ -639,8 +639,13 @@ namespace bts { namespace cli {
               else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
-                  std::cout << "four\n";
                   print_transaction_history(tx_history_summary);
+              }
+              else if (method_name == "wallet_list")
+              {
+                  auto wallets = result.as<vector<string>>();
+                  for (auto wallet : wallets)
+                      std::cout << wallet << "\n";
               }
               else
               {
@@ -798,7 +803,6 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
-                std::cout << "trxs in print_trx_history: " << txs.size() << "\n";
                 std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";

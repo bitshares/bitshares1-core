@@ -142,6 +142,8 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         vector<string> list() const; // list wallets
+
          vector<wallet_account_record> list_receive_accounts()const;
          vector<wallet_account_record> list_contact_accounts()const;
 

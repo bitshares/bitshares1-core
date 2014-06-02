@@ -758,13 +758,10 @@ namespace bts { namespace wallet {
       auto my_trxs = my->_wallet_db.transactions;
       recs.reserve( my_trxs.size() );
 
-      std::cout << "trxs: " << my_trxs.size() << "\n";
-
       public_key_type account_pub;
       if( account_name != string() )
          account_pub = get_account_public_key( account_name );
 
-      std::cout << "one\n";
       for( auto iter : my_trxs)
       {
          if( account_name == string() || account_name == "*" ||
@@ -775,14 +772,12 @@ namespace bts { namespace wallet {
          }
       }
     
-      std::cout << "two\n";
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
                                              const wallet_transaction_record& b)
                                            -> bool
                {
                    return a.received_time < b.received_time;
                });
-      std::cout << "three\n";
       return recs;
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1462,6 +1457,20 @@ namespace bts { namespace wallet {
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
+   vector<string> wallet::list() const
+   {
+       vector<string> wallets;
+       auto path = get_data_directory();
+       fc::directory_iterator end_itr; // constructs terminator
+       for( fc::directory_iterator itr( path ); itr != end_itr; ++itr)
+       {
+          if (fc::is_directory( *itr ))
+          {
+              wallets.push_back( (*itr).stem().string() );
+          }
+       }
+       return wallets;
+   }
 
    bool  wallet::is_sending_address( const address& addr )const
    { try {

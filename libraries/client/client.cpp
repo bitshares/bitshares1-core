@@ -501,6 +501,10 @@ namespace bts { namespace client {
     }
 
 
+    vector<string> client::wallet_list() const
+    {
+      return get_wallet()->list();  
+    }
 
     vector<wallet_account_record> client::wallet_list_contact_accounts() const
     {

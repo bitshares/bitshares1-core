@@ -88,6 +88,11 @@
         "default_example" : "alice"
       },
       {
+        "type_name" : "wallet_name_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_name"
+      },
+      {
         "type_name" : "transaction_record",
         "cpp_return_type" : "bts::wallet::wallet_transaction_record",
         "cpp_include_file" : "bts/wallet/wallet_records.hpp"
