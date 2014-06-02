@@ -185,6 +185,10 @@ namespace bts { namespace wallet {
             {
                cache_trx = true;
             }
+            else
+            {
+               current_trx_record = wallet_transaction_record();
+            }
             current_trx_record->block_num = block_num;
             current_trx_record->trx = trx;
 
