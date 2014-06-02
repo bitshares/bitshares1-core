@@ -205,7 +205,7 @@ namespace bts { namespace cli {
                   else //if missing required argument, prompt for that argument
                   {
                     const bts::api::parameter_data& this_parameter = method_data.parameters[i];
-                    string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ":";
+                    string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ": ";
 
                     //if we're prompting for a password, don't echo it to console
                     bool no_echo = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");

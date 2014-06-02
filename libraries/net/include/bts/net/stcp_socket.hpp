@@ -18,7 +18,7 @@ class stcp_socket : public virtual fc::iostream
     void             accept();
 
     void             connect_to( const fc::ip::endpoint& remote_endpoint );
-    void             connect_to( const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint );
+    void             bind( const fc::ip::endpoint& local_endpoint );
 
     virtual size_t   readsome( char* buffer, size_t max );
     virtual bool     eof()const;

@@ -151,6 +151,13 @@ namespace bts { namespace net {
         void      listen_on_port(uint16_t port);
 
         /**
+         * Returns the endpoint the node is listening on.  This is usually the same
+         * as the value previously passed in to listen_on_endpoint, unless we 
+         * were unable to bind to that port.
+         */
+        fc::ip::endpoint get_actual_listening_endpoint() const;
+
+        /**
          *  @return a list of peers that are currently connected.
          */
         std::vector<peer_status> get_connected_peers()const;
