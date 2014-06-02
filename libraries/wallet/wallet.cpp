@@ -1567,7 +1567,7 @@ namespace bts { namespace wallet {
       {
          for (auto delegate_id : active_delegates)
             for (auto against_acct : against_candidates)
-                if( against_acct.blockchain_account_id == delegate_id )
+                if( against_acct.id== delegate_id )
                     return -delegate_id;
       }
       else if( for_candidates.size() > 0 )
@@ -1578,7 +1578,7 @@ namespace bts { namespace wallet {
          {
             for (auto delegate_id : active_delegates)
             {
-                if (for_acct.blockchain_account_id == delegate_id)
+                if (for_acct.id== delegate_id)
                 {
                     active = true;
                     break;
@@ -1591,7 +1591,7 @@ namespace bts { namespace wallet {
             }
             else
             {
-                return for_acct.blockchain_account_id;
+                return for_acct.id;
             }
          }
          // all of our delegates are active - pick the one with the lowest vote
@@ -1599,7 +1599,7 @@ namespace bts { namespace wallet {
          account_id_type winner;
          for( auto candidate : for_candidates )
          {
-            auto acct_rec = my->_blockchain->get_account_record( candidate.blockchain_account_id );
+            auto acct_rec = my->_blockchain->get_account_record( candidate.id);
             FC_ASSERT(acct_rec);
             if (acct_rec->net_votes() < min)
             {

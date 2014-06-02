@@ -461,6 +461,7 @@ namespace bts { namespace cli {
                   if (! _client->get_wallet()->is_open() )
                       interactive_open_wallet();
                   auto accts = _client->get_wallet()->list_receive_accounts();
+               //   std::cout << fc::json::to_pretty_string( accts ) << "\n";
                   print_receive_account_list( accts );
                   return fc::variant("OK");
               }
