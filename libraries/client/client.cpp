@@ -629,7 +629,7 @@ namespace bts { namespace client {
         get_wallet()->scan_chain(0);
     }
 
-    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int64_t count) const
+    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
       return get_chain()->get_accounts(first, count);
     }
@@ -904,7 +904,7 @@ namespace bts { namespace client {
 
       return info;
     }
-    void client::wallet_rescan_blockchain( int64_t start, int64_t count) 
+    void client::wallet_rescan_blockchain( uint32_t start, uint32_t count) 
     { try {
        get_wallet()->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }

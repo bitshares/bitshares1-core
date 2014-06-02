@@ -1694,7 +1694,7 @@ namespace bts { namespace wallet {
                 if( against_acct.id== delegate_id )
                     return -delegate_id;
       }
-      else if( for_candidates.size() > 0 )
+      if( for_candidates.size() > 0 )
       {
          // find first delegate who is not active
          bool active = false;

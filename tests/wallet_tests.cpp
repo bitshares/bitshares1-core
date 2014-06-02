@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
       auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-      bts::blockchain::advance_time( (next_block_production_time - bts::blockchain::now()).count()/1000000 );
+      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(next_block_production_time);
       my_client->get_wallet()->sign_block( b );
       ilog( "block: ${b}", ("b",b));

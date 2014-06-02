@@ -321,12 +321,12 @@
           [
             {
               "name" : "first_block_number", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the first block to scan"
             },
             {
               "name" : "num_blocks", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the number of blocks to scan"
             }
           ],
