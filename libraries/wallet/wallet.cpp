@@ -208,6 +208,9 @@ namespace bts { namespace wallet {
                   case register_account_op_type:
                      cache_trx |= scan_register_account( op.as<register_account_operation>() );
                      break;
+                  case update_account_op_type:
+                     cache_trx |= scan_update_account( op.as<update_account_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -246,9 +249,14 @@ namespace bts { namespace wallet {
 
           return false;
       }
+
+
+
+
       bool wallet_impl::scan_update_account( const update_account_operation& op )
       {
-        return false;
+          wlog( "\n\n       ********* TODO... update records in wallet *********** \n\n" );
+          return false;
       }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
