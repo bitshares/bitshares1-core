@@ -672,7 +672,7 @@ namespace bts { namespace cli {
             }
 
 
-            void print_contact_account_list(const std::vector<account_record> account_records)
+            void print_contact_account_list(const std::vector<wallet_account_record> account_records)
             {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 64 ) << "KEY";
@@ -691,7 +691,7 @@ namespace bts { namespace cli {
                         std::cout << std::setw(25) << acct.name;
                     }
 
-                    std::cout << std::setw(64) << string( acct.active_key );
+                    std::cout << std::setw(64) << string( acct.active_key() );
 
                     if (acct.registration_date == fc::time_point_sec()) {
                         std::cout << std::setw( 22 ) << "NO";
@@ -704,7 +704,7 @@ namespace bts { namespace cli {
             }
 
 
-            void print_receive_account_list(const std::vector<account_record> account_records)
+            void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 15 ) << std::left << "BALANCE";
@@ -727,7 +727,7 @@ namespace bts { namespace cli {
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
                     std::cout << std::setw(15) << string( balance );
 
-                    std::cout << std::setw(64) << string( acct.active_key );
+                    std::cout << std::setw(64) << string( acct.active_key() );
 
                     if (acct.registration_date == fc::time_point_sec()) {
                         std::cout << std::setw( 22 ) << "NO";
@@ -739,7 +739,7 @@ namespace bts { namespace cli {
                 }
             }
 
-            void print_registered_account_list(const std::vector<account_record> account_records )
+            void print_registered_account_list(const vector<account_record> account_records )
             {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 64 ) << "KEY";
@@ -760,7 +760,7 @@ namespace bts { namespace cli {
                     {
                         std::cout << std::setw(25) << acct.name;
                     }
-                    std::cout << std::setw(64) << string( acct.active_key );
+                    std::cout << std::setw(64) << string( acct.active_key() );
                     std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                                     boost::posix_time::from_time_t( time_t( acct.registration_date.sec_since_epoch() ) ) );
 

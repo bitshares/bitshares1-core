@@ -526,11 +526,11 @@ namespace bts { namespace client {
 
 
 
-    vector<account_record> client::wallet_list_contact_accounts() const
+    vector<wallet_account_record> client::wallet_list_contact_accounts() const
     {
       return get_wallet()->list_contact_accounts();
     }
-    vector<account_record> client::wallet_list_receive_accounts() const
+    vector<wallet_account_record> client::wallet_list_receive_accounts() const
     {
       return get_wallet()->list_receive_accounts();
     }

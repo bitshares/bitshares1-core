@@ -15,7 +15,6 @@ namespace bts { namespace wallet {
       account_record_type        = 1,
       key_record_type            = 2,
       transaction_record_type    = 3,
-      blockchain_account_record_type           = 4,
       asset_record_type          = 5,
       balance_record_type        = 6,
       property_record_type       = 7,
@@ -77,13 +76,15 @@ namespace bts { namespace wallet {
    /**
     *  Contacts are tracked by the hash of their receive key
     */
-   struct account
+   struct account : public bts::blockchain::account_record
    {
        account():trust_level(0){}
 
-       std::string       name;
-       account_id_type   blockchain_account_id;  
        address           account_address;
+       /**
+        * Data kept locally for this account
+        */
+       variant           private_data;
 
        /** 
         * If registered account id is a delegate ID then 
@@ -137,22 +138,24 @@ namespace bts { namespace wallet {
    struct transaction_data
    {
        transaction_data():transmit_count(0){}
-       transaction_data( const signed_transaction& t ):trx(t),transmit_count(0){}
+       transaction_data( const signed_transaction& t ):trx(t),block_num(0),transmit_count(0){}
 
-       signed_transaction       trx;
-       public_key_type          to_account;
-       std::string              memo_message;
-       fc::time_point           received_time;
+       signed_transaction        trx;
+       optional<public_key_type> to_account;
+       optional<public_key_type> from_account;
+       std::string               memo_message;
+       uint32_t                  block_num;
+       fc::time_point            created_time;
+       fc::time_point            received_time;
        /** the number of times this transaction has been transmitted */
-       uint32_t                 transmit_count;
+       uint32_t                  transmit_count;
    };
 
  
 
    /** cached blockchain data */
-   typedef wallet_record< bts::blockchain::asset_record,   asset_record_type       >          wallet_asset_record;
-   typedef wallet_record< bts::blockchain::account_record, blockchain_account_record_type  >  blockchain_account_record;
-   typedef wallet_record< bts::blockchain::balance_record, balance_record_type     >          wallet_balance_record;
+   typedef wallet_record< bts::blockchain::asset_record,   asset_record_type       >  wallet_asset_record;
+   typedef wallet_record< bts::blockchain::balance_record, balance_record_type     >  wallet_balance_record;
 
    /** records unique to the wallet */
    typedef wallet_record< transaction_data,                transaction_record_type >  wallet_transaction_record;
@@ -184,16 +187,16 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
                    (account_record_type)
                    (transaction_record_type)
                    (balance_record_type)
-                   (blockchain_account_record_type)
                    (asset_record_type)
                    (property_record_type)
                 )
+
 FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
-FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(received_time)(transmit_count) )
-FC_REFLECT( bts::wallet::account, (name)(blockchain_account_id)(account_address)(trust_level) )
+FC_REFLECT( bts::wallet::transaction_data, (trx)(to_account)(from_account)(memo_message)(created_time)(received_time)(block_num)(transmit_count) )
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
 
 

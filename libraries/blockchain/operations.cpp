@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
                                                    const public_key_type& active, bool as_delegate )
-   :name(n),json_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
+   :name(n),public_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
 
    operation_factory& operation_factory::instance()
    {

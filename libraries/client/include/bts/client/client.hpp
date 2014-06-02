@@ -99,8 +99,8 @@ namespace bts { namespace client {
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
 
 
-         vector<account_record> wallet_list_contact_accounts() const;
-         vector<account_record> wallet_list_receive_accounts() const override;
+         vector<wallet_account_record> wallet_list_contact_accounts() const;
+         vector<wallet_account_record> wallet_list_receive_accounts() const;
 
 
          void                   wallet_rename_account(const string& current_account_name, 

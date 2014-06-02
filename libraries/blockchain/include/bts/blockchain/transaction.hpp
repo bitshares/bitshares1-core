@@ -52,17 +52,18 @@ namespace bts { namespace blockchain {
                                 asset amount,
                                 fc::ecc::private_key from_key,
                                 const std::string& memo_message,
-                                name_id_type delegate_id );
+                                name_id_type delegate_id,
+                                memo_flags_enum memo_type = from_memo );
 
 
       void register_account( const std::string& name, 
-                         const fc::variant& json_data, 
+                         const fc::variant& public_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
                          bool as_delegate = false );
 
       void update_account( name_id_type name_id, 
-                        const fc::optional<fc::variant>& json_data, 
+                        const fc::optional<fc::variant>& public_data, 
                         const fc::optional<public_key_type>& active, 
                         bool as_delegate = false );
 
@@ -70,7 +71,7 @@ namespace bts { namespace blockchain {
                             const std::string& subject,
                             const std::string& body,
                             const std::string& proposal_type,
-                            const fc::variant& json_data);
+                            const fc::variant& public_data);
 
       void vote_proposal(proposal_id_type proposal_id, name_id_type voter_id, uint8_t vote);
 
@@ -119,7 +120,7 @@ namespace bts { namespace blockchain {
 
       std::vector<asset>                         fees;
       std::vector<asset>                         amounts;
-      fc::variant                                json_data;
+      fc::variant                                public_data;
    }; // transaction_summary
 
 
@@ -294,5 +295,5 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
 
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
 FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount)(asset_id) )
-FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(json_data) )
+FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(public_data) )
 
