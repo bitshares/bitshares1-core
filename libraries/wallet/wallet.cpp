@@ -1134,7 +1134,7 @@ namespace bts { namespace wallet {
                                    get_account_public_key( issuer_account->name ),
                                    trx, required_signatures );
      
-      trx.issue( asset( asset_record->id, amount ) );
+      trx.issue( asset( amount, asset_record->id ) );
       required_signatures.insert( issuer_account->active_key() );
 
 
