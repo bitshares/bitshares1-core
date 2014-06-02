@@ -485,7 +485,11 @@ namespace bts { namespace cli {
               /*
               else if ( command == "wallet_open" || command == "open" )
               {
-                auto wallet_name = arguments[0].as_string();
+                string wallet_name;
+                if (arguments.size() == 0)
+                    wallet_name = "default";
+                else
+                    wallet_name = arguments[0].as_string();
                 if (!fc::exists(_client->get_wallet()->get_data_directory() / wallet_name))
                 {
                     std::cout << "\nNo such wallet. Known wallets:\n";
