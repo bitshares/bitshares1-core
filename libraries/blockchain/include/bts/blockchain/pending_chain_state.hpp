@@ -21,10 +21,11 @@ namespace bts { namespace blockchain {
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
          virtual oaccount_record            get_account_record( account_id_type id )const override;
+         virtual oaccount_record            get_account_record( const address& owner )const override;
          virtual otransaction_location      get_transaction_location( const transaction_id_type& )const override;
 
-         virtual oasset_record              get_asset_record( const std::string& symbol )const override;
-         virtual oaccount_record            get_account_record( const std::string& name )const override;
+         virtual oasset_record              get_asset_record( const string& symbol )const override;
+         virtual oaccount_record            get_account_record( const string& name )const override;
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;
@@ -48,9 +49,9 @@ namespace bts { namespace blockchain {
          virtual void                       store_transaction_location( const transaction_id_type&,
                                                                         const transaction_location& loc )override;
 
-         virtual fc::variant                get_property( chain_property_enum property_id )const override;
+         virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                       set_property( chain_property_enum property_id, 
-                                                          const fc::variant& property_value )override;
+                                                          const variant& property_value )override;
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -68,24 +69,25 @@ namespace bts { namespace blockchain {
          virtual void                       get_undo_state( const chain_interface_ptr& undo_state )const;
 
          /** load the state from a variant */
-         virtual void                       from_variant( const fc::variant& v );
+         virtual void                       from_variant( const variant& v );
          /** convert the state to a variant */
-         virtual fc::variant                to_variant()const;
+         virtual variant                to_variant()const;
 
 
-         std::unordered_map< asset_id_type,         asset_record>         assets;
-         std::unordered_map< account_id_type,       account_record>       accounts;
-         std::unordered_map< balance_id_type,       balance_record>       balances;
-         std::unordered_map< std::string,           account_id_type>      account_id_index;
-         std::unordered_map< std::string,           asset_id_type>        symbol_id_index;
-         std::unordered_map< transaction_id_type,   transaction_location> unique_transactions;
-         std::unordered_map< chain_property_type,   fc::variant>          properties; 
-         std::unordered_map<proposal_id_type, proposal_record>            proposals;
-         std::map< proposal_vote_id_type, proposal_vote>                  proposal_votes; 
-         std::map< market_index_key, order_record>                        bids; 
-         std::map< market_index_key, order_record>                        asks; 
-         std::map< market_index_key, order_record>                        shorts; 
-         std::map< market_index_key, collateral_record>                   collateral; 
+         unordered_map< asset_id_type,         asset_record>            assets;
+         unordered_map< account_id_type,       account_record>          accounts;
+         unordered_map< balance_id_type,       balance_record>          balances;
+         unordered_map< string,           account_id_type>              account_id_index;
+         unordered_map< string,           asset_id_type>                symbol_id_index;
+         unordered_map< transaction_id_type,   transaction_location>    unique_transactions;
+         unordered_map< chain_property_type,   variant>                 properties; 
+         unordered_map<proposal_id_type, proposal_record>               proposals;
+         unordered_map<address, account_id_type>                        key_to_account;
+         map< proposal_vote_id_type, proposal_vote>                     proposal_votes; 
+         map< market_index_key, order_record>                           bids; 
+         map< market_index_key, order_record>                           asks; 
+         map< market_index_key, order_record>                           shorts; 
+         map< market_index_key, collateral_record>                      collateral; 
 
          chain_interface_ptr                                            _prev_state;
    };
