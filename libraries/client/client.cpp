@@ -841,7 +841,36 @@ namespace bts { namespace client {
     {
       return get_rpc_server()->help(command_name);
     }
-     
+    
+
+    variant_object client::blockchain_get_config() const
+    {
+       fc::mutable_variant_object info;
+       info["blockchain_id"]                        = get_chain()->chain_id();
+       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+       info["symbol"]                               = BTS_ADDRESS_PREFIX;
+       info["version"]                              = BTS_BLOCKCHAIN_VERSION;
+
+       info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+
+       info["delegate_fire_votes_min"]              = BTS_BLOCKCHAIN_FIRE_VOTES;
+       info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
+       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_MIN_REWARD;
+
+
+       info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+       info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+
+       return info;
+
+    }
+
     variant_object client::get_info() const
     {
        fc::mutable_variant_object info;
@@ -868,35 +897,10 @@ namespace bts { namespace client {
           info["wallet_seconds_until_next_block_production"] = variant();
        }
        info["wallet_local_time"]                    = bts::blockchain::now();
-       info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
-       info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
-
        info["blockchain_bips_per_share"]            = bips_per_share;
-
-       info["blockchain_block_fee_min"]             = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
-       info["blockchain_block_interval"]            = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blockchain_block_size_max"]            = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["blockchain_block_size_target"]         = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-
-       info["blockchain_delegate_fire_votes_min"]   = BTS_BLOCKCHAIN_FIRE_VOTES;
-       info["blockchain_delegate_num"]              = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["blockchain_delegate_reg_fee"]          = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["blockchain_delegate_reward_min"]       = BTS_BLOCKCHAIN_MIN_REWARD;
-
-       info["blockchain_id"]                        = get_chain()->chain_id();
-
-       info["blockchain_name_size_max"]             = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-       info["blockchain_name_data_size_max"]        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
-
        info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
 
        info["blockchain_shares"]                    = current_share_supply;
-
-       info["blockchain_size_max"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-
-       info["blockchain_symbol"]                    = BTS_ADDRESS_PREFIX;
-
-       info["blockchain_version"]                   = BTS_BLOCKCHAIN_VERSION;
 
    //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
 

@@ -30,6 +30,15 @@
         "aliases" : ["getinfo","info"]
       },
       {
+        "method_name": "blockchain_get_config",
+        "description": "Returns static configuration parameters about the blockchain.",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["getconfig","get_config", "config"]
+      },
+      {
         "method_name": "stop",
         "description": "shut down the RPC server and exit this client",
         "return_type": "void",
