@@ -238,8 +238,8 @@ namespace bts { namespace wallet {
          std::unordered_map<address,string>    get_send_addresses()const;
          */
 
-         vector<asset>                         get_balance( const string& symbol = string(),
-                                                            const string& account_name  = string() )const;
+         vector<asset>                         get_balance( const string& symbol = string("*"),
+                                                            const string& account_name  = string("*") )const;
          ///@}
 
          vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;

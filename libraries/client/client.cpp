@@ -796,7 +796,7 @@ namespace bts { namespace client {
 
     balances client::wallet_get_balance( const string& symbol, const std::string& account_name ) const
     { try {
-        vector<asset> all_balances = get_wallet()->get_balance( symbol == "*" ? string() : symbol ,account_name);
+        vector<asset> all_balances = get_wallet()->get_balance( symbol ,account_name);
        
         balances all_results(all_balances.size());
         for( uint32_t i = 0; i < all_balances.size(); ++i )
@@ -870,7 +870,7 @@ namespace bts { namespace client {
        auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
        auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
        auto advanced_params = network_get_advanced_node_parameters();
-       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance()[0].amount : 0;
+       auto wallet_balance_shares = wallet_get_balance(); //get_wallet()->is_open() ? get_wallet()->get_balance("*","*"): balances();//[0].amount : 0;
 
        info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
        info["blockchain_head_block_time"]           = get_chain()->now();
@@ -902,7 +902,7 @@ namespace bts { namespace client {
 
        info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
 
-       info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
+      // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
 
        info["wallet_open"]                          = get_wallet()->is_open();
 

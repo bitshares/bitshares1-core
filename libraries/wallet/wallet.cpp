@@ -1372,10 +1372,10 @@ namespace bts { namespace wallet {
       FC_ASSERT( account_name == "*" || is_valid_account_name( account_name ) );
 
       asset_id_type filter_asset_id;
-      if( symbol != "" )
+      if( symbol != "*" )
       {
          auto opt_asset_record = my->_blockchain->get_asset_record( symbol );
-         FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol ${s}", ("s",symbol) );
+         FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol '${s}'", ("s",symbol) );
          filter_asset_id = opt_asset_record->id;
       }
 
@@ -1402,7 +1402,7 @@ namespace bts { namespace wallet {
                                     key_rec->account_address == filter_address) )
             {
                auto bal = b.second.get_balance();
-               if( symbol == "" ||  bal.asset_id == filter_asset_id )
+               if( symbol == "*" ||  bal.asset_id == filter_asset_id )
                   balances[bal.asset_id] += bal.amount;
             }
       };
