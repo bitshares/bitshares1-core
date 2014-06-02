@@ -482,6 +482,28 @@ namespace bts { namespace cli {
                   print_contact_account_list( accts );
                   return fc::variant("OK");
               }
+              else if ( command == "wallet_open" || command == "open" )
+              {
+                auto wallet_name = arguments[0].as_string();
+                if (!fc::exists(_client->get_wallet()->get_data_directory() / wallet_name))
+                {
+                    std::cout << "\nNo such wallet. Known wallets:\n";
+                    auto wallets = _client->get_wallet()->list();
+                    for (auto wallet : wallets)
+                        std::cout << wallet << "\n";
+                    std::cout << "\n";
+                }
+                else
+                {
+                    try
+                    {
+                        execute_interactive_command( "wallet_open", fc::variants {wallet_name} );
+                    }
+                    catch( const fc::canceled_exception& )
+                    {
+                    }
+                }
+              }
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -602,13 +624,6 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::canceled_exception& )
                 {
-                }
-                catch( ... )
-                {
-                    std::cout << "Error opening wallet. Known wallets:\n";
-                    auto wallets = _client->get_wallet()->list();
-                    for (auto wallet : wallets)
-                        std::cout << wallet << "\n";
                 }
               }
               else if (choice == "q")
@@ -846,10 +861,16 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    std::cout << std::setw( 20 ) << tx.from_account.substr(0,20);
+                    if (tx.from_account.size() > 16)
+                        std::cout << std::setw( 20 ) << tx.from_account.substr(0,16) << "...";
+                    else
+                        std::cout << std::setw( 20 ) << tx.from_account;
                     
                     // Print "to" account
-                    std::cout << std::setw( 20 ) << tx.to_account.substr(0,20);
+                    if (tx.to_account.size() > 16)
+                        std::cout << std::setw( 20 ) << tx.to_account.substr(0,16) << "...";
+                    else
+                        std::cout << std::setw( 20 ) <<tx.to_account;
 
                     // Print "memo" on transaction
                     std::cout << std::setw( 20 ) << tx.memo_message;
