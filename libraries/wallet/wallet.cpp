@@ -1762,14 +1762,16 @@ namespace bts { namespace wallet {
       }
       else
       {
-            if (active_delegates[(rand() % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
+            auto num = rand();
+            if (active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
             {
                 std::cout << "WARNING - delegate id 0 bug @ 4";
                 return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
             }
             else
-                return for_acct.id;
-
+            {
+                return active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)];
+            }
       }
    }
 
