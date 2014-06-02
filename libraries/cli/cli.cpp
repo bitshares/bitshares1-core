@@ -486,34 +486,6 @@ namespace bts { namespace cli {
                   print_contact_account_list( accts );
                   return fc::variant("OK");
               }
-              /*
-              else if ( command == "wallet_open" || command == "open" )
-              {
-                string wallet_name;
-                if (arguments.size() == 0)
-                    wallet_name = "default";
-                else
-                    wallet_name = arguments[0].as_string();
-                if (!fc::exists(_client->get_wallet()->get_data_directory() / wallet_name))
-                {
-                    std::cout << "\nNo such wallet. Known wallets:\n";
-                    auto wallets = _client->get_wallet()->list();
-                    for (auto wallet : wallets)
-                        std::cout << wallet << "\n";
-                    std::cout << "\n";
-                }
-                else
-                {
-                    try
-                    {
-                        execute_interactive_command( "wallet_open", fc::variants {wallet_name} );
-                    }
-                    catch( const fc::canceled_exception& )
-                    {
-                    }
-                }
-              }
-              */
               else if(command == "quit")
               {
                 FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
@@ -808,8 +780,7 @@ namespace bts { namespace cli {
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << acct.name.substr(0, 20) << "...";
                     }
                     else
                     {
