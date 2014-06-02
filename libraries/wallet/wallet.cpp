@@ -1675,8 +1675,6 @@ namespace bts { namespace wallet {
 
    account_id_type wallet::select_delegate_vote()const
    {
-      return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-      // TODO review / test this more carefully before activating
       vector<account> for_candidates;
       vector<account> against_candidates;
       vector<account_id_type> active_delegates =
@@ -1737,7 +1735,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-          return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+          return active_delegates[(rand() % BTS_BLOCKCHAIN_NUM_DELEGATES)];
       }
    }
 
