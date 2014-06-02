@@ -15,7 +15,8 @@ target_include_directories( bts_api_generator
 target_link_libraries( bts_api_generator fc bts_utilities leveldb )
 
 
-set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
+set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/general_api.json")

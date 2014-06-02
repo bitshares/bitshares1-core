@@ -86,7 +86,12 @@ public:
     _cpp_parameter_type(parameter_type),
     _cpp_return_type(return_type)
   {}
-  virtual std::string get_cpp_parameter_type() override { return _cpp_parameter_type; }
+  virtual std::string get_cpp_parameter_type() override
+  { 
+    if (!_cpp_parameter_type.empty())
+      return _cpp_parameter_type;
+    return std::string("const ") + get_cpp_return_type() + "&";
+  }
   virtual std::string get_cpp_return_type() override { return _cpp_return_type; }
 };
 typedef std::shared_ptr<fundamental_type_mapping> fundamental_type_mapping_ptr;
@@ -211,10 +216,11 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
 
     type_mapping_ptr mapping;
 
-    if (json_type.contains("cpp_parameter_type") && 
-        json_type.contains("cpp_return_type"))
+    if (json_type.contains("cpp_return_type"))
     {
-      std::string parameter_type = json_type["cpp_parameter_type"].as_string();
+      std::string parameter_type;
+      if (json_type.contains("cpp_parameter_type"))
+        parameter_type = json_type["cpp_parameter_type"].as_string();
       std::string return_type = json_type["cpp_return_type"].as_string();
       fundamental_type_mapping_ptr fundamental_mapping = std::make_shared<fundamental_type_mapping>(json_type_name, parameter_type, return_type);
       mapping = fundamental_mapping;
@@ -252,6 +258,8 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
     if (json_type.contains("from_variant_function"))
       mapping->set_from_variant_function(json_type["from_variant_function"].as_string());
 
+    if (_type_map.find(json_type_name) != _type_map.end())
+      FC_ASSERT(false, "Error, type ${type_name} is already registered", ("type_name", json_type_name));
     _type_map.insert(type_map_type::value_type(json_type_name, mapping));
 
     if (json_type.contains("cpp_include_file"))
@@ -773,7 +781,8 @@ void api_generator::initialize_type_map_with_fundamental_types()
     "int32_t",
     "uint32_t",
     "int64_t",
-    "uint64_t"
+    "uint64_t",
+    "bool"
   };
   const char* pass_by_reference_types[] =
   {
