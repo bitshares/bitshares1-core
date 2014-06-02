@@ -432,6 +432,7 @@ namespace bts { namespace net {
       node_id_t get_node_id() const;
       void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
       void clear_peer_database();
+      fc::variant_object network_get_info() const;
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -2445,6 +2446,13 @@ namespace bts { namespace net {
       _potential_peer_db.clear();
     }
 
+    fc::variant_object node_impl::network_get_info() const
+    {
+      fc::mutable_variant_object info;
+      info["listening_on"] = _actual_listening_endpoint;
+      return info;
+    }
+
   }  // end namespace detail
 
 
@@ -2557,7 +2565,10 @@ namespace bts { namespace net {
   {
     my->clear_peer_database();
   }
-
+  fc::variant_object node::network_get_info() const
+  {
+    return my->network_get_info();
+  }
 
   void simulated_network::broadcast( const message& item_to_broadcast )
   {

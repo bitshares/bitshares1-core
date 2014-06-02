@@ -922,4 +922,9 @@ namespace bts { namespace client {
        get_wallet()->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
+    fc::variant_object client::network_get_info() const
+    {
+      return get_node()->network_get_info();
+    }
+
 } } // bts::client

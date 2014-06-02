@@ -158,6 +158,14 @@
           ],
         "prerequisites" : ["json_authenticated"],
         "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
+      },
+      {
+        "method_name": "network_get_info",
+        "description": "Returns assorted information about the network settings and connections",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }
