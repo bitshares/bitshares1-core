@@ -97,10 +97,6 @@ namespace bts { namespace client {
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
 
 
-         void                               wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)  override;
-         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const string& delegate_name) const  override;
-        // map<string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const  override;
-
                         osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const  override;
                                  full_block blockchain_get_block(const block_id_type& block_id) const  override;
                                  full_block blockchain_get_block_by_number(uint32_t block_number) const  override;

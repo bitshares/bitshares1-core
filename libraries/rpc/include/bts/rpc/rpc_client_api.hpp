@@ -81,9 +81,6 @@ namespace bts { namespace rpc {
         virtual                  oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const = 0;
 
 
-         virtual void                               wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level) = 0;
-         //virtual bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const string& delegate_name) const = 0;
-         //virtual map<string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const = 0;
 
          virtual               osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const = 0;
          virtual                        full_block blockchain_get_block(const block_id_type& block_id) const = 0;
