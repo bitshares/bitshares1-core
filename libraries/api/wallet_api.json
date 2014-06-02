@@ -232,7 +232,7 @@
             },
             { 
               "name" : "trust_level", 
-              "type" : "int64_t", 
+              "type" : "int32_t", 
               "description" : "Positive for Trust, Negative for Distrust, 0 for Neutral",
               "default_value" : 0
             }

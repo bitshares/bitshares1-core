@@ -24,15 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (validate_address)\
-             (blockchain_get_transaction)\
-             (blockchain_get_block)\
-             (blockchain_get_block_by_number)\
-             (blockchain_get_account_record)\
-             (blockchain_get_account_record_by_id)\
-             (blockchain_get_asset_record)\
-             (blockchain_get_asset_record_by_id)\
-             (blockchain_get_delegates)\
              (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
              (wallet_get_account)\
@@ -673,73 +664,6 @@ namespace bts { namespace rpc {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
-    static bts::api::method_data blockchain_get_account_record_metadata{"blockchain_get_account_record", nullptr,
-            /* description */ "Retrieves the name record",
-            /* returns: */    "account_record",
-            /* params:          name          type      classification                   default_value */
-                              {{"name",       "string", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )",
-          /* aliases */{ "blockchain_get_name" } //deprecated name
-          };
-    fc::variant rpc_server_impl::blockchain_get_account_record(const fc::variants& params)
-    {
-      return fc::variant( _client->blockchain_get_account_record(params[0].as_string()) );
-    }
-
-    static bts::api::method_data blockchain_get_account_record_by_id_metadata{"blockchain_get_account_record_by_id", nullptr,
-            /* description */ "Retrieves the name record for the given name_id",
-            /* returns: */    "account_record",
-            /* params:          name          type      classification                   default_value */
-                              {{"name_id",    "int", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )",
-          /* aliases */{ "blockchain_get_name_by_id" } //deprecated name
-          };
-    fc::variant rpc_server_impl::blockchain_get_account_record_by_id(const fc::variants& params)
-    {
-      return fc::variant( _client->blockchain_get_account_record_by_id(params[0].as<int32_t>()) );
-    }
-
-    static bts::api::method_data blockchain_get_asset_record_metadata{"blockchain_get_asset_record", nullptr,
-            /* description */ "Retrieves the asset record by the ticker symbol",
-            /* returns: */    "asset_record",
-            /* params:          asset          type      classification                   default_value */
-                              {{"symbol",       "string", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )",
-          /* aliases */{ "blockchain_get_asset" } //deprecated name
-          };
-    fc::variant rpc_server_impl::blockchain_get_asset_record(const fc::variants& params)
-    {
-      oasset_record rec = _client->blockchain_get_asset_record(params[0].as_string());
-      if( !!rec )
-         return fc::variant( *rec );
-      return fc::variant();
-    }
-
-    static bts::api::method_data blockchain_get_asset_record_by_id_metadata{"blockchain_get_asset_record_by_id", nullptr,
-            /* description */ "Retrieves the asset record by the ticker symbol",
-            /* returns: */    "asset_record",
-            /* params:          asset          type      classification                   default_value */
-                              {{"asset_id",       "int", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )",
-          /* aliases */{ "blockchain_get_asset_by_id" } //deprecated name
-          };
-    fc::variant rpc_server_impl::blockchain_get_asset_record_by_id(const fc::variants& params)
-    {
-      oasset_record rec = _client->blockchain_get_asset_record_by_id(params[0].as<int32_t>());
-      if( !!rec )
-         return fc::variant( *rec );
-      return fc::variant();
-    }
-
-
     static bts::api::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
       /* description */ "Submit a proposal to the delegates for voting",
       /* returns: */    "transaction_id",
@@ -781,107 +705,6 @@ namespace bts { namespace rpc {
                                                           params[1].as<int32_t>(),
                                                           params[2].as<uint8_t>());
       return fc::variant(transaction_id);
-    }
-
-
-    static bts::api::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
-            /* description */ "Get detailed information about an in-wallet transaction",
-            /* returns: */    "signed_transaction",
-            /* params:          name              type              classification                   default_value */
-                              {{"transaction_id", "string", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )" };
-    fc::variant rpc_server_impl::blockchain_get_transaction(const fc::variants& params)
-    {
-      return fc::variant( _client->blockchain_get_transaction( params[0].as<transaction_id_type>() )  );
-    }
-
-    static bts::api::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
-            /* description */ "Retrieves the block header for the given block hash",
-            /* returns: */    "block_header",
-            /* params:          name              type             classification                   default_value */
-                              {{"block_hash",     "block_id_type", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-     )",
-    /*aliases*/ { "bitcoin_getblock", "getblock" }};
-    fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
-    { try {
-      return fc::variant( _client->blockchain_get_block( params[0].as<block_id_type>() )  );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-    static bts::api::method_data blockchain_get_block_by_number_metadata{"blockchain_get_block_by_number", nullptr,
-                                   /* description */ "Retrieves the block header for the given block number",
-                                   /* returns: */    "block_header",
-                                   /* params:          name              type     classification                   default_value */
-                                                     {{"block_number",   "int32", bts::api::required_positional, fc::ovariant()}},
-                                 /* prerequisites */ bts::api::json_authenticated};
-    fc::variant rpc_server_impl::blockchain_get_block_by_number(const fc::variants& params)
-    { try {
-      return fc::variant( _client->blockchain_get_block_by_number( params[0].as<uint32_t>() ) );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-    static bts::api::method_data validate_address_metadata{"validate_address", nullptr,
-            /* description */ "Return information about given BitShares address",
-            /* returns: */    "bool",
-            /* params:          name              type       classification                   default_value */
-                              {{"address",        "address", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-TODO: bitcoin supports all below info
-
-Arguments:
-1. "bitsharesaddress" (string, required) The BitShares address to validate
-
-Result:
-{
-"isvalid" : true|false, (boolean) If the address is valid or not. If not, this is the only property returned.
-"address" : "bitsharesaddress", (string) The BitShares address validated
-"ismine" : true|false, (boolean) If the address is yours or not
-"isscript" : true|false, (boolean) If the key is a script
-"pubkey" : "publickeyhex", (string) The hex value of the raw public key
-"iscompressed" : true|false, (boolean) If the address is compressed
-"account" : "account" (string) The account associated with the address, "" is the default account
-}
-
-     )" };
-    fc::variant rpc_server_impl::validate_address(const fc::variants& params)
-    {
-      FC_ASSERT("Not implemented")
-      try {
-        return fc::variant(params[0].as_string());
-      }
-      catch ( const fc::exception& )
-      {
-        return fc::variant(false);
-      }
-    }
-
-
-    static bts::api::method_data blockchain_get_delegates_metadata{"blockchain_get_delegates", nullptr,
-            /* description */ "Returns the list of delegates sorted by vote",
-            /* returns: */    "vector<account_record>",
-            /* params:          name     type      classification                   default value */
-                              {{"first", "int",    bts::api::optional_positional, 0},
-                               {"count", "int",    bts::api::optional_positional, -1}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-blockchain_get_delegates (start, count)
-
-Returns information about the delegates sorted by their net votes starting from position start and returning up to count items.
-
-Arguments:
-   first - the index of the first delegate to be returned
-   count - the maximum number of delegates to be returned
-
-             )" };
-    fc::variant rpc_server_impl::blockchain_get_delegates(const fc::variants& params)
-    {
-      uint32_t first = params[0].as<uint32_t>();;
-      uint32_t count = params[1].as<uint32_t>();
-      std::vector<account_record> delegate_records = _client->blockchain_get_delegates(first, count);
-      return fc::variant(delegate_records);
     }
 
     void rpc_server_impl::shutdown_rpc_server()

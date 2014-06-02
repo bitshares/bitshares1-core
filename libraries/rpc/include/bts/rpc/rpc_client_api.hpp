@@ -75,23 +75,12 @@ namespace bts { namespace rpc {
 
         virtual          wallet_account_record wallet_get_account(const string& account_name) const = 0;
         virtual                       balances wallet_get_balance(const string& asset_symbol = string(BTS_ADDRESS_PREFIX), const string& account_name = string("*")) const = 0;
-        virtual                   blockchain::oaccount_record blockchain_get_account_record(const string& name) const = 0;
-        virtual                   blockchain::oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const = 0;
-        virtual                  oasset_record blockchain_get_asset_record(const string& symbol) const = 0;
-        virtual                  oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const = 0;
-
-
-
-         virtual               osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const = 0;
-         virtual                        full_block blockchain_get_block(const block_id_type& block_id) const = 0;
-         virtual                        full_block blockchain_get_block_by_number(uint32_t block_number) const = 0;
 
          virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) = 0;
          virtual              void wallet_rescan_blockchain_state() = 0;
          virtual              void wallet_import_bitcoin(const fc::path& filename,const string& passphrase, const string& account_name ) = 0;
 
          virtual vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const = 0;
-         virtual vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const = 0;
 
           virtual               void stop() = 0;
 
