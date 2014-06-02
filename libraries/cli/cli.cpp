@@ -850,7 +850,7 @@ namespace bts { namespace cli {
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
                     {
-                        std::cout << std::setw( 12 ) << "unconfirmed";
+                        std::cout << std::setw( 12 ) << std::left << "unconfirmed";
                     }
                     else
                     {
