@@ -345,7 +345,8 @@ namespace bts{ namespace wallet {
    }
 
    void wallet_db::add_contact_account( const string& new_account_name, 
-                                        const public_key_type& new_account_key )
+                                        const public_key_type& new_account_key,
+                                        const variant& private_data )
    {
       ilog( "${name}", ("name", new_account_name)  );
       auto current_account_itr = name_to_account.find( new_account_name );
@@ -363,6 +364,7 @@ namespace bts{ namespace wallet {
       war.account_address = address( new_account_key );
       war.owner_key = new_account_key;
       war.set_active_key( fc::time_point::now(), new_account_key );
+      war.private_data = private_data;
 
       auto current_key = lookup_key( new_account_key );
       if( current_key )
@@ -444,7 +446,7 @@ namespace bts{ namespace wallet {
       store_record( trx_to_store );
       transactions[trx_to_store.trx.id()] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
-   void wallet_db::cache_transaction( const signed_transaction& trx,
+   wallet_transaction_record wallet_db::cache_transaction( const signed_transaction& trx,
                                       const asset&  amount,
                                       share_type fees,
                                       const string& memo_message,
@@ -453,11 +455,13 @@ namespace bts{ namespace wallet {
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );
-      if( itr != transactions.end() ) return;
 
       wallet_transaction_record data;
-      data.index = new_index();
+      if( itr != transactions.end() ) data = itr->second;
+      if( data.index == 0 ) data.index = new_index();
+
       data.trx = trx;
+      data.transaction_id = trx.id();
       data.amount = amount;
       data.fees   = fees;
       data.to_account = to;
@@ -465,6 +469,8 @@ namespace bts{ namespace wallet {
       data.memo_message = memo_message;
       store_record( data );
       transactions[trx_id] = data;
+
+      return data;
        
        //transaction_data data
    } FC_RETHROW_EXCEPTIONS( warn, "", 

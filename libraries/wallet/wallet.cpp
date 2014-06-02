@@ -510,7 +510,8 @@ namespace bts { namespace wallet {
       return my->_scheduled_lock_time;
    }
 
-   public_key_type  wallet::create_account( const string& account_name )
+   public_key_type  wallet::create_account( const string& account_name, 
+                                            const variant& private_data )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -522,7 +523,7 @@ namespace bts { namespace wallet {
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
       auto new_pub_key  = new_priv_key.get_public_key();
 
-      my->_wallet_db.add_contact_account( account_name, new_pub_key );
+      my->_wallet_db.add_contact_account( account_name, new_pub_key, private_data );
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -951,10 +952,13 @@ namespace bts { namespace wallet {
           FC_ASSERT( !"Insufficient funds.");
        }
 
-       for( auto rec : balances_to_store )
-           my->_wallet_db.store_record( rec );
-       for( uint32_t i =0 ; i < trxs.size(); ++i )
-          my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key, bts::blockchain::now() );
+       if( sign ) // don't store invalid trxs..
+       {
+          for( auto rec : balances_to_store )
+              my->_wallet_db.store_record( rec );
+          for( uint32_t i =0 ; i < trxs.size(); ++i )
+             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key, bts::blockchain::now() );
+       }
 
        return trxs;
       
@@ -966,7 +970,7 @@ namespace bts { namespace wallet {
          ("memo_message",memo_message) ) }
 
 
-   signed_transaction wallet::register_account( const string& account_to_register,
+   wallet_transaction_record wallet::register_account( const string& account_to_register,
                                                 const variant& public_data,
                                                 bool as_delegate,
                                                 const string& pay_with_account_name,
@@ -976,7 +980,8 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_to_register ) );
 
-      address from_account_address( get_account_public_key( pay_with_account_name ) );
+      auto payer_public_key = get_account_public_key( pay_with_account_name );
+      address from_account_address( payer_public_key );
 
       auto opt_account = get_account( account_to_register );
       FC_ASSERT( opt_account.valid() );
@@ -1000,9 +1005,16 @@ namespace bts { namespace wallet {
                                    from_account_address,
                                    trx, required_signatures );
       if( sign )
+      {
          sign_transaction( trx, required_signatures );
-
-      return trx;
+         return my->_wallet_db.cache_transaction( trx, 
+                                                  asset(), 
+                                                  required_fees.amount, 
+                                                  "register " + account_to_register, 
+                                                  payer_public_key, 
+                                                  bts::blockchain::now() );
+      }
+      return wallet_transaction_record(transaction_data(trx));
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("public_data", public_data)
@@ -1089,37 +1101,53 @@ namespace bts { namespace wallet {
    }
 
 
-   signed_transaction wallet::update_registered_account( const string& account_name,
-                                                         optional<variant> public_data,
-                                                         optional<public_key_type> active,
-                                                         bool as_delegate,
-                                                         const bool sign )
-   {
+   wallet_transaction_record wallet::update_registered_account( const string& account_to_update,
+                                                                const string& pay_from_account,
+                                                                optional<variant> public_data,
+                                                                optional<public_key_type> new_active_key,
+                                                                bool as_delegate,
+                                                                const bool sign )
+   { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
+      FC_ASSERT( is_valid_account_name( account_to_update ) );
+      FC_ASSERT( is_valid_account_name( pay_from_account ) );
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
+      auto payer_public_key = get_account_public_key( pay_from_account );
 
-      auto account = my->_blockchain->get_account_record( account_name );
-      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_name));
+      auto account = my->_blockchain->get_account_record( account_to_update );
+      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
-                                   get_account_public_key( account->name ),
+                                   payer_public_key,
                                    trx, required_signatures );
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, public_data, active, as_delegate );
+      trx.update_account( account->id, public_data, new_active_key, as_delegate );
        
       if (sign)
+      {
           sign_transaction( trx, required_signatures );
+          return my->_wallet_db.cache_transaction( trx, 
+                                                  asset(), 
+                                                  required_fees.amount, 
+                                                  "update registration for " + account_to_update, 
+                                                  payer_public_key, bts::blockchain::now() );
+      }
+      return wallet_transaction_record(transaction_data(trx));
 
-      return trx;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
+                                      ("pay_from_account",pay_from_account)
+                                      ("public_data",public_data)
+                                      ("new_active_key",new_active_key)
+                                      ("as_delegate",as_delegate)
+                                      ("sign",sign) ) }
+
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,

@@ -67,6 +67,19 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "variant",
+        "cpp_parameter_type" : "const fc::variant&",
+        "cpp_return_type" : "fc::variant",
+        "cpp_include_file" : "fc/variant.hpp",
+        "default_example" : "{}"
+      },
+      {
+        "type_name" : "bool",
+        "cpp_parameter_type" : "bool",
+        "cpp_return_type" : "bool",
+        "default_example" : "{}"
+      },
+      {
         "type_name" : "account_name",
         "cpp_parameter_type" : "const std::string&",
         "cpp_return_type" : "std::string",
@@ -304,7 +317,7 @@
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
-        "method_name": "wallet_create_account",
+        "method_name": "wallet_account_create",
         "description": "Add new account for receiving payments",
         "return_type": "public_key",
         "parameters" : 
@@ -314,9 +327,16 @@
               "type" : "account_name", 
               "description" : "the name you will use to refer to this receive account",
               "enable_autocomplete" : false
+            },
+            { 
+              "name" : "private_data", 
+              "type" : "variant", 
+              "description" : "Extra data to store with this account record",
+              "default_value" : null
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"]
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {
         "method_name": "wallet_add_contact_account",
@@ -414,7 +434,7 @@
       },
       {
         "method_name": "wallet_rescan_blockchain",
-        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "description": "Scans the transaction history for operations relevant to this wallet.",
         "return_type": "void",
         "parameters" : 
           [
@@ -431,6 +451,69 @@
           ],
         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
         "aliases" : ["scan"]
+      },
+      {
+         "method_name" : "wallet_account_register",
+         "description" : "Updates the data published about a given account",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "pay_from_account"
+                  "type" : "account_name",
+                  "description" : "the account from which fees will be paid"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "variant",
+                  "description" : "public data about the account",
+                  "default_value" : null
+               },
+               {
+                  "name" : "as_delegate"
+                  "type" : "bool",
+                  "description" : "true if account_name should be upgraded to a delegate.",
+                  "default_value" : false
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "aliases" : [ "register" ]
+      },
+      {
+         "method_name" : "wallet_account_update_registration",
+         "description" : "Updates the data published about a given account",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "pay_from_account"
+                  "type" : "account_name",
+                  "description" : "the account from which fees will be paid"
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "variant",
+                  "description" : "public data about the account",
+                  "default_value" : null
+               },
+               {
+                  "name" : "as_delegate"
+                  "type" : "bool",
+                  "description" : "true if account_name should be upgraded to a delegate.",
+                  "default_value" : false
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "aliases" : [ "update_registration" ]
       }
+
     ]
 }

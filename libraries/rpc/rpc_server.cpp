@@ -40,7 +40,6 @@ namespace bts { namespace rpc {
              (wallet_rename_account)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
-             (wallet_register_account)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
@@ -742,31 +741,6 @@ namespace bts { namespace rpc {
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_register_account_metadata{"wallet_register_account", nullptr,
-            /* description */ "Register an account with the blockchain", 
-            /* returns: */    "signed_transaction",
-            /* params:          name             type       classification                   default_value */
-                              {{"name",          "string",  bts::api::required_positional, fc::ovariant()},
-                               {"data",          "variant", bts::api::optional_positional, fc::ovariant()},
-                               {"as_delegate",   "bool",    bts::api::optional_positional, fc::variant(false)}},
-            /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-          R"(
-          )"
-     };
-    fc::variant rpc_server_impl::wallet_register_account(const fc::variants& params)
-    {
-        string name = params[0].as_string();
-        fc::variant data;
-        bool as_delegate = false;
-        if (params.size() > 1)
-            data = params[1];
-        if (params.size() > 2)
-            as_delegate = params[2].as<bool>();
-        //TODO currently "pay with account" same as account you are trying to register...
-        auto trx_id = _client->wallet_register_account(name, name, data, as_delegate);
-        return fc::variant( trx_id );
     }
 
 

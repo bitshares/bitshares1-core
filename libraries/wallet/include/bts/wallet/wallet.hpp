@@ -96,7 +96,8 @@ namespace bts { namespace wallet {
          uint32_t  get_last_scanned_block_number()const;
 
          ///@{ account management
-         public_key_type  create_account( const string& account_name );
+         public_key_type  create_account( const string& account_name, 
+                                          const variant& private_data = variant() );
          void             import_account( const string& account_name, 
                                           const string& wif_private_key );
 
@@ -187,13 +188,14 @@ namespace bts { namespace wallet {
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         signed_transaction register_account( const string& account_name,
+         wallet_transaction_record register_account( const string& account_name,
                                               const variant& json_data,
                                               bool  as_delegate, 
                                               const string& pay_with_account_name,
                                               const bool sign = true );
 
-         signed_transaction update_registered_account( const string& account_name,
+         wallet_transaction_record update_registered_account( const string& account_name,
+                                                       const string& pay_from_account,
                                                        optional<variant> json_data,
                                                        optional<public_key_type> active = optional<public_key_type>(),
                                                        bool as_delegate = false,

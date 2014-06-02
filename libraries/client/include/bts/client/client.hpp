@@ -65,22 +65,6 @@ namespace bts { namespace client {
                                                  const string& to_account_name,
                                                  rpc_client_api::generate_transaction_flag flag = 
                                                          rpc_client_api::sign_and_broadcast)  override;
-         /**
-          *  Reserve a name and broadcast it to the network.
-          */
-         signed_transaction  wallet_register_account( const string& account_name, 
-                                                      const string& pay_with_account,
-                                                      const fc::variant& json_data = fc::variant(),
-                                                      bool as_delegate = false,
-                                                      rpc_client_api::generate_transaction_flag flag = 
-                                                                      rpc_client_api::sign_and_broadcast );
-
-         signed_transaction wallet_update_registered_account( const string& registered_account_name,
-                                                              const fc::variant& json_data = fc::variant(),
-                                                              bool as_delegate = false,
-                                                              rpc_client_api::generate_transaction_flag flag = 
-                                                                             rpc_client_api::sign_and_broadcast); 
-
 
 
          /**
