@@ -361,6 +361,8 @@ namespace bts{ namespace wallet {
       war.name = new_account_name;
       war.id = 0;
       war.account_address = address( new_account_key );
+      war.owner_key = new_account_key;
+      war.set_active_key( fc::time_point::now(), new_account_key );
 
       auto current_key = lookup_key( new_account_key );
       if( current_key )
