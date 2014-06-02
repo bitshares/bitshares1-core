@@ -936,16 +936,18 @@ namespace bts { namespace cli {
 #ifdef HAVE_READLINE
     static cli_impl* cli_impl_instance = NULL;
     extern "C" char** json_completion_function(const char* text, int start, int end);
+    extern "C" int control_c_handler(int count, int key);
 #endif
 
-	  cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server ) :
-	    _client(client),
-	    _rpc_server(rpc_server)
-	  {
+    cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server ) :
+      _client(client),
+      _rpc_server(rpc_server)
+    {
 #ifdef HAVE_READLINE
       cli_impl_instance = this;
       _method_data_is_initialized = false;
       rl_attempted_completion_function = &json_completion_function;
+      rl_bind_keyseq("\\C-c", &control_c_handler);
 #endif
     }
 
@@ -977,6 +979,11 @@ namespace bts { namespace cli {
     extern "C" char** json_completion_function(const char* text, int start, int end)
     {
       return cli_impl_instance->json_completion(text, start, end);
+    }
+    extern "C" int control_c_handler(int count, int key)
+    {
+      std::cout << "\n\ngot my control-c handler\n\n";
+      return 0;
     }
 
     // implement json command completion (for function names only)

@@ -24,12 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (wallet_list_contact_accounts)\
-             (wallet_list_receive_accounts)\
-             (wallet_get_account)\
-             (wallet_rename_account)\
-             (wallet_asset_create)\
-             (wallet_asset_issue)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)
 
@@ -545,6 +539,7 @@ namespace bts { namespace rpc {
       return boost::algorithm::trim_copy(help_string);
     }
     
+#if 0
 
     static bts::api::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
             /* description */ "Creates a new user issued asset",
@@ -572,97 +567,7 @@ namespace bts { namespace rpc {
               named_params["maximum_share_supply"].as_int64());
        return fc::variant(create_asset_trx);
     }
-
-
-    static bts::api::method_data wallet_asset_issue_metadata{"wallet_asset_issue", nullptr,
-            /* description */ "Issues new shares of a given asset type",
-            /* returns: */    "invoice_summary",
-            /* params:          name                    type        classification                   default value */
-                              {{"amount",               "int",      bts::api::required_positional, fc::ovariant()},
-                               {"symbol",               "string",   bts::api::required_positional, fc::ovariant()},
-                               {"to_account_name",      "string",   bts::api::required_positional, fc::ovariant()},
-                              },
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-          R"(
-          )" };
-    fc::variant rpc_server_impl::wallet_asset_issue(const fc::variants& params)
-    {
-       fc::variant_object named_params = params[3].get_object();
-       auto issue_asset_trx = _client->wallet_asset_issue(
-              params[0].as_int64(),
-              params[1].as_string(),
-              params[2].as_string() );
-       _client->network_broadcast_transaction( issue_asset_trx );
-       return fc::variant(issue_asset_trx);
-    }
-
-    static bts::api::method_data wallet_list_contact_accounts_metadata{"wallet_list_contact_accounts", nullptr,
-            /* description */ "Lists all foreign addresses and their labels associated with this wallet",
-            /* returns: */    "map<string,extended_address>",
-            /* params:          name     type    classification                   default value */
-                              {},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_list_contact_accounts(const fc::variants& params)
-    {  try {
-      auto accounts = _client->wallet_list_contact_accounts();
-      return fc::variant( accounts );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-    static bts::api::method_data wallet_rename_account_metadata{"wallet_rename_account", nullptr,
-            /* description */ "Rename an account in wallet",
-            /* returns: */    "void",
-            /* params:          name                    type       classification                   default value */
-                              {{"current_account_name", "string",  bts::api::required_positional, fc::ovariant()},
-                               {"new_account_name",     "string",  bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-             Note: new_account_name must be unique or this call will throw an exception.
-     )" };
-    fc::variant rpc_server_impl::wallet_rename_account(const fc::variants& params)
-    {  try {
-      std::string current_account_name = params[0].as_string();
-      std::string new_account_name = params[1].as_string();
-      _client->wallet_rename_account(current_account_name, new_account_name);
-      return fc::variant();
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-
-    static bts::api::method_data wallet_list_receive_accounts_metadata{"wallet_list_receive_accounts", nullptr,
-            /* description */ "Lists all foreign addresses and their labels associated with this wallet",
-            /* returns: */    "map<string,extended_address>",
-            /* params:          name     type    classification                   default value */
-                              {},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_list_receive_accounts(const fc::variants& params)
-    {  try {
-      auto accounts = _client->wallet_list_receive_accounts();
-      return fc::variant( accounts );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-    static bts::api::method_data wallet_get_account_metadata{"wallet_get_account", nullptr,
-            /* description */ "Lists all foreign addresses and their labels associated with this wallet",
-            /* returns: */    "account_record",
-            /* params:          name                  type                   classification                   default_value */
-                              {{"account_name",       "string",              bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_account(const fc::variants& params)
-    {  try {
-      auto account_record = _client->wallet_get_account(params[0].as_string());
-      return fc::variant( account_record );
-      /*
-      fc::mutable_variant_object result;
-      result["name"] = account_record.name;
-      result["extended_address"] = extended_address( account_record.extended_key );
-      return fc::variant( std::move(result) );
-      */
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
+#endif
 
     static bts::api::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
       /* description */ "Submit a proposal to the delegates for voting",

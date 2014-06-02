@@ -365,7 +365,7 @@
                   "description" : "the account that will be updated"
                },
                {
-                  "name" : "pay_from_account"
+                  "name" : "pay_from_account",
                   "type" : "account_name",
                   "description" : "the account from which fees will be paid"
                },
@@ -376,7 +376,7 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate"
+                  "name" : "as_delegate",
                   "type" : "bool",
                   "description" : "true if account_name should be upgraded to a delegate.",
                   "default_value" : false
@@ -396,7 +396,7 @@
                   "description" : "the account that will be updated"
                },
                {
-                  "name" : "pay_from_account"
+                  "name" : "pay_from_account",
                   "type" : "account_name",
                   "description" : "the account from which fees will be paid"
                },
@@ -407,7 +407,7 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate"
+                  "name" : "as_delegate",
                   "type" : "bool",
                   "description" : "true if account_name should be upgraded to a delegate.",
                   "default_value" : false
@@ -415,7 +415,118 @@
             ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
          "aliases" : [ "update_registration" ]
+      },
+      {
+         "method_name" : "wallet_list_contact_accounts",
+         "description" : "Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_list_receive_accounts",
+         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_get_account",
+         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account to retrieve"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_rename_account",
+         "description" : "Rename an account in wallet",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "current_account_name",
+                  "type" : "account_name",
+                  "description" : "the current name of the account"
+               },
+               {
+                  "name" : "new_account_name",
+                  "type" : "new_account_name",
+                  "description" : "the new name for the account"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_asset_create",
+         "description" : "Creates a new user issued asset",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for the new asset"
+               },
+               {
+                  "name" : "asset_name",
+                  "type" : "std::string",
+                  "description" : "the name of the asset"
+               },
+               {
+                  "name" : "issuer_name",
+                  "type" : "std::string",
+                  "description" : "the name of the issuer of the asset"
+               },
+               {
+                  "name" : "description",
+                  "type" : "std::string",
+                  "description" : "a description of the asset",
+                  "default_value" : ""
+               },
+               {
+                  "name" : "data",
+                  "type" : "json_object",
+                  "description" : "arbitrary data attached to the asset",
+                  "default_value" : null
+               },
+               {
+                  "name" : "maximum_share_supply",
+                  "type" : "int64_t",
+                  "description" : "the maximum number of shares of the asset",
+                  "default_value" : 1000000000000000
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+      },
+      {
+         "method_name" : "wallet_asset_issue",
+         "description" : "Issues new shares of a given asset type",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "amount",
+                  "type" : "share_type",
+                  "description" : "the amount of shares to issue"
+               },
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for asset"
+               },
+               {
+                  "name" : "to_account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account to receive the shares"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
       }
-
     ]
 }

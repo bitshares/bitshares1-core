@@ -51,21 +51,6 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations
 
-         signed_transaction  wallet_asset_create( const string& symbol,
-                                                  const string& asset_name,
-                                                  const string& description,
-                                                  const fc::variant& data,
-                                                  const string& issuer_name,
-                                                  share_type maximum_share_supply,
-                                                  rpc_client_api::generate_transaction_flag flag = 
-                                                         rpc_client_api::sign_and_broadcast)  override;
-
-         signed_transaction  wallet_asset_issue( share_type amount,
-                                                 const string& symbol,
-                                                 const string& to_account_name,
-                                                 rpc_client_api::generate_transaction_flag flag = 
-                                                         rpc_client_api::sign_and_broadcast)  override;
-
 
          /**
          *  Submit and vote on proposals by broadcasting to the network.
@@ -82,15 +67,6 @@ namespace bts { namespace client {
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
 
 
-
-         vector<wallet_account_record> wallet_list_contact_accounts() const;
-         vector<wallet_account_record> wallet_list_receive_accounts() const;
-
-
-         void                   wallet_rename_account(const string& current_account_name, 
-                                                      const string& new_account_name);
-
-         wallet_account_record wallet_get_account(const string& account_name) const  override;
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0)  override;
                        void wallet_rescan_blockchain_state()  override;

@@ -42,20 +42,6 @@ namespace bts { namespace rpc {
                                                          const string& invoice_memo = string(),
                                                          generate_transaction_flag flag = sign_and_broadcast) = 0;
                                                          */
-        virtual             signed_transaction wallet_asset_create(const string& symbol,
-                                                                   const string& asset_name,
-                                                                   const string& description,
-                                                                   const fc::variant& data,
-                                                                   const string& issuer_name,
-                                                                   share_type maximum_share_supply,
-                                                                   generate_transaction_flag flag = sign_and_broadcast) = 0;
-
-
-        virtual             signed_transaction wallet_asset_issue(share_type amount,
-                                                                  const string& symbol,
-                                                                  const string& to_account_name,
-                                                                  generate_transaction_flag flag = sign_and_broadcast) = 0;
-
 
          /**
          *  Submit and vote on proposals
@@ -73,7 +59,6 @@ namespace bts { namespace rpc {
 
 
 
-        virtual          wallet_account_record wallet_get_account(const string& account_name) const = 0;
         virtual                       balances wallet_get_balance(const string& asset_symbol = string(BTS_ADDRESS_PREFIX), const string& account_name = string("*")) const = 0;
 
          virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) = 0;

@@ -37,18 +37,6 @@ namespace bts { namespace rpc {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
 
-                     signed_transaction wallet_asset_create(const std::string& symbol,
-                                                            const std::string& asset_name,
-                                                            const std::string& description,
-                                                            const fc::variant& data,
-                                                            const std::string& issuer_name,
-                                                            share_type maximum_share_supply,
-                                                            generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                     signed_transaction wallet_asset_issue(share_type amount,
-                                                          const std::string& symbol,
-                                                          const std::string& to_account_name,
-                                                          generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
                      /**
                      *  Submit and vote on proposals
                      */

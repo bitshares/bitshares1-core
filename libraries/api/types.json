@@ -13,6 +13,12 @@
         "default_example" : "Bob"
       },
       {
+        "type_name" : "new_account_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Carol"
+      },
+      {
         "type_name" : "account_record",
         "cpp_return_type" : "bts::blockchain::account_record",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -153,6 +159,11 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "share_type",
+        "cpp_return_type" : "bts::blockchain::share_type",
+        "default_example" : "TODO"        
+      },
+      {
         "type_name" : "asset",
         "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
         "default_example" : "TODO"        
@@ -236,6 +247,17 @@
         "type_name" : "asset_id_type",
         "cpp_return_type" : "bts::blockchain::asset_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "wallet_account_record",
+        "cpp_return_type" : "bts::wallet::wallet_account_record",
+        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
+      },
+      {
+        "type_name" : "wallet_account_record_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_account_record",
+        "default_example" : "TODO"      
       }
     ]
 }

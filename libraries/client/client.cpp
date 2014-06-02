@@ -432,35 +432,34 @@ namespace bts { namespace client {
     {
       return get_wallet()->to_pretty_trx(wallet_transaction_record(transaction));
     }
-    signed_transaction client::wallet_asset_create(const string& symbol,
-                                                    const string& asset_name,
-                                                    const string& description,
-                                                    const fc::variant& data,
-                                                    const string& issuer_name,
-                                                    share_type maximum_share_supply,
-                                                    rpc_client_api::generate_transaction_flag flag)
+
+
+    bts::blockchain::signed_transaction client::wallet_asset_create(const std::string& symbol, 
+                                                                    const std::string& asset_name, 
+                                                                    const std::string& issuer_name, 
+                                                                    const std::string& description /* = fc::variant("").as<std::string>() */, 
+                                                                    const fc::variant_object& data /* = fc::variant("").as<fc::variant_object>() */, 
+                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */)
     {
-      bool sign = (flag != do_not_sign);
+      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
+      bool sign = flag != do_not_sign;
       auto create_asset_trx = 
         get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
       if (flag == sign_and_broadcast)
-      {
           network_broadcast_transaction(create_asset_trx);
-      }
       return create_asset_trx;
     }
 
-    signed_transaction  client::wallet_asset_issue(share_type amount,
+
+    signed_transaction  client::wallet_asset_issue(const share_type& amount,
                                                    const string& symbol,
-                                                   const string& to_account_name,
-                                                   rpc_client_api::generate_transaction_flag flag)
+                                                   const string& to_account_name)
     {
+      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
       bool sign = (flag != do_not_sign);
       auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name, sign);
       if (flag == sign_and_broadcast)
-      {
           network_broadcast_transaction(issue_asset_trx);
-      }
       return issue_asset_trx;
     }
 
