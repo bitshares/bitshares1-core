@@ -83,7 +83,6 @@ namespace bts { namespace rpc {
                                  full_block blockchain_get_block(const block_id_type& block_id) const override;
                                  full_block blockchain_get_block_by_number(uint32_t block_number) const override;
 
-                       void wallet_rescan_blockchain(uint32_t starting_block_number = 0) override;
                        void wallet_rescan_blockchain_state() override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                        void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase, const std::string& account_name) override;
                        void wallet_import_private_key(const std::string& wif_key_to_import, 

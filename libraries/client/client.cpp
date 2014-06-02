@@ -29,8 +29,8 @@ namespace bts { namespace client {
           public:
             client_impl(bts::client::client* self) :
               _self(self),
-              _chain_db(std::make_shared<chain_database>()),
-              _rpc_server(std::make_shared<rpc_server>(self))
+              _rpc_server(std::make_shared<rpc_server>(self)),
+              _chain_db(std::make_shared<chain_database>())
             {
             }
 
@@ -796,20 +796,17 @@ namespace bts { namespace client {
 
     balances client::wallet_get_balance( const string& symbol, const std::string& account_name ) const
     { try {
-       if( symbol == "*" )
-       {
-          vector<asset> all_balances = get_wallet()->get_balance( symbol == "*" ? string() : symbol ,account_name);
+        vector<asset> all_balances = get_wallet()->get_balance( symbol == "*" ? string() : symbol ,account_name);
        
-          balances all_results(all_balances.size());
-          for( uint32_t i = 0; i < all_balances.size(); ++i )
-          {
-             all_results[i].first  = all_balances[i].amount;
-             all_results[i].second = get_chain()->get_asset_symbol( all_balances[i].asset_id ); 
-          }
-          if( all_results.size() == 0 )
-             all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
-          return all_results;
-       }
+        balances all_results(all_balances.size());
+        for( uint32_t i = 0; i < all_balances.size(); ++i )
+        {
+           all_results[i].first  = all_balances[i].amount;
+           all_results[i].second = get_chain()->get_asset_symbol( all_balances[i].asset_id ); 
+        }
+        if( all_results.size() == 0 )
+           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
+        return all_results;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
     void client::wallet_add_contact_account( const string& account_name, const public_key_type& contact_key )
