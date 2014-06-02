@@ -141,6 +141,12 @@
         "default_example" : "TODO"      
       },
       {
+        "type_name" : "optional_signed_transaction",
+        "cpp_return_type" : "fc::optional<bts::blockchain::signed_transaction>",
+        "cpp_include_file" : "fc/optional.hpp",
+        "default_example" : "TODO"
+      },
+      {
         "type_name" : "asset",
         "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
         "default_example" : "TODO"        
@@ -199,6 +205,16 @@
         "cpp_return_type" : "fc::path",
         "cpp_include_file" : "fc/filesystem.hpp",
         "default_example" : "some_filename.txt"
+      },
+      {
+        "type_name" : "address",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string"
+      },
+      {
+        "type_name" : "full_block",
+        "cpp_return_type" : "bts::blockchain::full_block",
+        "cpp_include_file" : "bts/blockchain/block.hpp"
       }
     ]
 }

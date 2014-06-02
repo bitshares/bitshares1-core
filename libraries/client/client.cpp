@@ -949,4 +949,12 @@ namespace bts { namespace client {
       return get_node()->network_get_info();
     }
 
+    fc::variant_object client::validate_address(const std::string& address) const
+    {
+      FC_ASSERT("Not implemented")
+      fc::mutable_variant_object result;
+      result["isvalid"] = false;
+      return result;
+    }
+
 } } // bts::client

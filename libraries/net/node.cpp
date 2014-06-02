@@ -480,7 +480,7 @@ namespace bts { namespace net {
           }
           catch (const fc::exception& except)
           {
-            wlog("Error binding to desired local endpoint ${endpoint}: ${except}", ("endpoint", *local_endpoint)("except", except));
+            wlog("Failed to bind to desired local endpoint ${endpoint}, will connect using an OS-selected endpoint: ${except}", ("endpoint", *local_endpoint)("except", except));
           }
         }
         _message_connection.connect_to(remote_endpoint);

@@ -30,7 +30,7 @@
       },
       {
         "method_name": "blockchain_list_registered_accounts",
-        "description": "Returns registered accounts starting with a given name upto a the limite provided",
+        "description": "Returns registered accounts starting with a given name upto a the limit provided",
         "return_type": "account_record_array",
         "parameters" : [
             {
@@ -56,6 +56,34 @@
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_get_transaction",
+        "description": "Get detailed information about an in-wallet transaction",
+        "return_type": "optional_signed_transaction",
+        "parameters" : [
+            {
+              "name" : "transaction_id", 
+              "type" : "transaction_id", 
+              "description" : "the transaction to return"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_block",
+        "description": "Retrieves the block header for the given block hash",
+        "return_type": "full_block",
+        "parameters" : [
+            {
+              "name" : "block_id", 
+              "type" : "block_id_type", 
+              "description" : "the id of the block to return"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

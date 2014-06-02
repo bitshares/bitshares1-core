@@ -97,8 +97,6 @@ namespace bts { namespace client {
                           oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
 
 
-                        osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const  override;
-                                 full_block blockchain_get_block(const block_id_type& block_id) const  override;
                                  full_block blockchain_get_block_by_number(uint32_t block_number) const  override;
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0)  override;

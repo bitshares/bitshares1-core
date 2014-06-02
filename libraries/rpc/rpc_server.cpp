@@ -24,9 +24,6 @@
 namespace bts { namespace rpc {
 
 #define RPC_METHOD_LIST\
-             (validate_address)\
-             (blockchain_get_transaction)\
-             (blockchain_get_block)\
              (blockchain_get_block_by_number)\
              (blockchain_get_account_record)\
              (blockchain_get_account_record_by_id)\
@@ -784,33 +781,6 @@ namespace bts { namespace rpc {
     }
 
 
-    static bts::api::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
-            /* description */ "Get detailed information about an in-wallet transaction",
-            /* returns: */    "signed_transaction",
-            /* params:          name              type              classification                   default_value */
-                              {{"transaction_id", "string", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-          )" };
-    fc::variant rpc_server_impl::blockchain_get_transaction(const fc::variants& params)
-    {
-      return fc::variant( _client->blockchain_get_transaction( params[0].as<transaction_id_type>() )  );
-    }
-
-    static bts::api::method_data blockchain_get_block_metadata{"blockchain_get_block", nullptr,
-            /* description */ "Retrieves the block header for the given block hash",
-            /* returns: */    "block_header",
-            /* params:          name              type             classification                   default_value */
-                              {{"block_hash",     "block_id_type", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-     )",
-    /*aliases*/ { "bitcoin_getblock", "getblock" }};
-    fc::variant rpc_server_impl::blockchain_get_block(const fc::variants& params)
-    { try {
-      return fc::variant( _client->blockchain_get_block( params[0].as<block_id_type>() )  );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
     static bts::api::method_data blockchain_get_block_by_number_metadata{"blockchain_get_block_by_number", nullptr,
                                    /* description */ "Retrieves the block header for the given block number",
                                    /* returns: */    "block_header",
@@ -821,43 +791,6 @@ namespace bts { namespace rpc {
     { try {
       return fc::variant( _client->blockchain_get_block_by_number( params[0].as<uint32_t>() ) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
-
-    static bts::api::method_data validate_address_metadata{"validate_address", nullptr,
-            /* description */ "Return information about given BitShares address",
-            /* returns: */    "bool",
-            /* params:          name              type       classification                   default_value */
-                              {{"address",        "address", bts::api::required_positional, fc::ovariant()}},
-          /* prerequisites */ bts::api::json_authenticated,
-          R"(
-TODO: bitcoin supports all below info
-
-Arguments:
-1. "bitsharesaddress" (string, required) The BitShares address to validate
-
-Result:
-{
-"isvalid" : true|false, (boolean) If the address is valid or not. If not, this is the only property returned.
-"address" : "bitsharesaddress", (string) The BitShares address validated
-"ismine" : true|false, (boolean) If the address is yours or not
-"isscript" : true|false, (boolean) If the key is a script
-"pubkey" : "publickeyhex", (string) The hex value of the raw public key
-"iscompressed" : true|false, (boolean) If the address is compressed
-"account" : "account" (string) The account associated with the address, "" is the default account
-}
-
-     )" };
-    fc::variant rpc_server_impl::validate_address(const fc::variants& params)
-    {
-      FC_ASSERT("Not implemented")
-      try {
-        return fc::variant(params[0].as_string());
-      }
-      catch ( const fc::exception& )
-      {
-        return fc::variant(false);
-      }
-    }
-
 
     static bts::api::method_data blockchain_get_delegates_metadata{"blockchain_get_delegates", nullptr,
             /* description */ "Returns the list of delegates sorted by vote",
