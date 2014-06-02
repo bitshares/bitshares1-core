@@ -216,7 +216,7 @@ namespace bts { namespace wallet {
 
          ///@} Transaction Generation Methods
  
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec );
+         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec ) const;
 
 
          void      set_delegate_trust_level(const string& delegate_name, 
@@ -245,6 +245,7 @@ namespace bts { namespace wallet {
          ///@}
 
          vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
+         vector<pretty_transaction>     get_pretty_transaction_history( const string& account_name = string() )const;
 
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;

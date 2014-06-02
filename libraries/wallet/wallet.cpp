@@ -737,6 +737,16 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
 
+   vector<pretty_transaction>         wallet::get_pretty_transaction_history( const string& account_name ) const
+   {
+       auto history = get_transaction_history( account_name );
+       vector<pretty_transaction> pretties;
+       pretties.reserve( history.size() );
+       for (auto item : history)
+           pretties.push_back( to_pretty_trx( item ) );
+       return pretties;
+   }
+
    /** 
     * @return the list of all transactions related to this wallet
     */
@@ -748,28 +758,31 @@ namespace bts { namespace wallet {
       auto my_trxs = my->_wallet_db.transactions;
       recs.reserve( my_trxs.size() );
 
+      std::cout << "trxs: " << my_trxs.size() << "\n";
 
       public_key_type account_pub;
       if( account_name != string() )
-         get_account_public_key( account_name );
+         account_pub = get_account_public_key( account_name );
 
-      for( auto iter = my_trxs.begin(); iter != my_trxs.end(); iter++)
+      std::cout << "one\n";
+      for( auto iter : my_trxs)
       {
-         if( account_name == string() ||
-             (iter->second.to_account && *iter->second.to_account == account_pub) ||
-             (iter->second.from_account && *iter->second.from_account == account_pub)  )
+         if( account_name == string() || account_name == "*" ||
+             (iter.second.to_account && *iter.second.to_account == account_pub) ||
+             (iter.second.from_account && *iter.second.from_account == account_pub)  )
          {
-            recs.push_back(iter->second);
+            recs.push_back(iter.second);
          }
       }
-
+    
+      std::cout << "two\n";
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
                                              const wallet_transaction_record& b)
                                            -> bool
                {
                    return a.received_time < b.received_time;
                });
-
+      std::cout << "three\n";
       return recs;
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1223,7 +1236,7 @@ namespace bts { namespace wallet {
    }
 
    
-   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec )
+   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec ) const
    {
       auto pretty_trx = pretty_transaction();
      
@@ -1244,6 +1257,7 @@ namespace bts { namespace wallet {
       pretty_trx.trx_id = trx.id();
       pretty_trx.received_time = trx_rec.received_time.sec_since_epoch();
       pretty_trx.created_time = trx_rec.created_time.sec_since_epoch();
+      pretty_trx.amount = trx_rec.amount;
       pretty_trx.fees = trx_rec.fees;
       pretty_trx.memo_message = trx_rec.memo_message;
 
@@ -1274,18 +1288,24 @@ namespace bts { namespace wallet {
               {
                   auto pretty_op = pretty_withdraw_op();
                   auto withdraw_op = op.as<withdraw_operation>();
-                  auto balance_rec = my->_blockchain->get_balance_record( withdraw_op.balance_id );
-                  FC_ASSERT(balance_rec, "no balance record for id");
-                  address owner = balance_rec->owner();
-
+                  /*
                   auto name = std::string("");
-                  owallet_account_record acc_rec = my->_wallet_db.lookup_account( owner );
-                  
-                  if ( acc_rec )
-                      name = acc_rec->name;
+                  address owner;
+                  auto balance_rec = my->_blockchain->get_balance_record( withdraw_op.balance_id );
+                  if (balance_rec)
+                  {
+                      owner = balance_rec->owner();
+                      if (owner) 
+                      {
+                          owallet_account_record acc_rec = my->_wallet_db.lookup_account( owner );
+                          if ( acc_rec )
+                              name = acc_rec->name;
+                      }
+                  }
                   
                   pretty_op.owner = std::make_pair(owner, name);
                   pretty_op.amount = withdraw_op.amount;
+                  */
                   pretty_trx.add_operation(pretty_op);
                   break;
               }
@@ -1293,7 +1313,7 @@ namespace bts { namespace wallet {
               {
                   auto pretty_op = pretty_deposit_op();
                   auto deposit_op = op.as<deposit_operation>();
-
+/*
                   // TODO
                   name_id_type vote = deposit_op.condition.delegate_id;
                   name_id_type pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
@@ -1318,7 +1338,7 @@ namespace bts { namespace wallet {
                   }
 
                   pretty_op.amount = deposit_op.amount;
-
+*/
                   pretty_trx.add_operation(pretty_op);
                   break;
               }

@@ -147,6 +147,12 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "pretty_transactions",
+        "cpp_return_type" : "std::vector<bts::wallet::pretty_transaction>",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",

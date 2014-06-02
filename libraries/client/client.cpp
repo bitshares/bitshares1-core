@@ -526,9 +526,10 @@ namespace bts { namespace client {
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<wallet_transaction_record> client::wallet_account_transaction_history(const string& account) 
+
+    vector<pretty_transaction> client::wallet_account_transaction_history(const string& account) 
     {
-      return get_wallet()->get_transaction_history(account);
+      return get_wallet()->get_pretty_transaction_history(account);
     }
 
 

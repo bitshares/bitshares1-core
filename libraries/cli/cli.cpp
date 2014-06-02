@@ -636,9 +636,10 @@ namespace bts { namespace cli {
                 string help_string = result.as<string>();
                 std::cout << help_string << "\n";
               }
-              else if (method_name == "wallet_get_transaction_history_summary")
+              else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
+                  std::cout << "four\n";
                   print_transaction_history(tx_history_summary);
               }
               else
@@ -797,12 +798,13 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
+                std::cout << "trxs in print_trx_history: " << txs.size() << "\n";
                 std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 20 ) << "TIMESTAMP";
-                std::cout << std::setw( 37 ) << "FROM";
-                std::cout << std::setw( 37 ) << "TO";
+                std::cout << std::setw( 55 ) << "FROM";
+                std::cout << std::setw( 55 ) << "TO";
                 std::cout << std::setw( 16 ) << " AMOUNT";
                 std::cout << std::setw(  8 ) << " FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
@@ -825,16 +827,14 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    std::cout << std::setw( 37 ) << tx.from_account;
+                    std::cout << std::setw( 55 ) << tx.from_account;
                     
                     // Print "to" account
-                    std::cout << std::setw( 37 ) << tx.to_account;
+                    std::cout << std::setw( 55 ) << tx.to_account;
 
                     /* Print amount */
                     {
-                        std::stringstream ss;
-                        ss << &tx.amount;
-                        std::cout << std::setw( 16 ) << ss.str();
+                        std::cout << std::setw( 16 ) << string( tx.amount );
                     }
 
                     /* Print fee */

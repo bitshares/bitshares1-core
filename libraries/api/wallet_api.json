@@ -106,7 +106,7 @@
       {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists all transactions for the specified account",
-        "return_type": "transaction_record_array",
+        "return_type": "pretty_transactions",
         "parameters" : 
           [
             { 
