@@ -362,14 +362,14 @@
             { 
               "name" : "symbol", 
               "type" : "asset_symbol", 
-              "description" : "The type of account, ie: XTS, GLD, USD",
-              "default_value" : "XTS"
+              "description" : "The type of account, ie: XTS, GLD, USD or * for everything",
+              "default_value" : "*"
             },
             { 
               "name" : "account_name", 
               "type" : "receive_account_name", 
               "description" : "The account to list the balance of.",
-              "default_value" : ""
+              "default_value" : "*"
             }
           ],
         "is_const" : true,

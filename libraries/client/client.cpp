@@ -798,22 +798,17 @@ namespace bts { namespace client {
     { try {
        if( symbol == "*" )
        {
-          vector<asset> all_balances = get_wallet()->get_all_balances(account_name);
+          vector<asset> all_balances = get_wallet()->get_balance( symbol == "*" ? string() : symbol ,account_name);
+       
           balances all_results(all_balances.size());
           for( uint32_t i = 0; i < all_balances.size(); ++i )
           {
              all_results[i].first  = all_balances[i].amount;
              all_results[i].second = get_chain()->get_asset_symbol( all_balances[i].asset_id ); 
           }
+          if( all_results.size() == 0 )
+             all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
           return all_results;
-       }
-       else
-       {
-          asset balance = get_wallet()->get_balance( symbol, account_name );
-          balances results(1);
-          results.back().first = balance.amount;
-          results.back().second = get_chain()->get_asset_symbol( balance.asset_id );
-          return results;
        }
     } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
@@ -849,7 +844,7 @@ namespace bts { namespace client {
        auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
        auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
        auto advanced_params = network_get_advanced_node_parameters();
-       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance().amount : 0;
+       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance()[0].amount : 0;
 
        info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
        info["blockchain_head_block_time"]           = get_chain()->now();

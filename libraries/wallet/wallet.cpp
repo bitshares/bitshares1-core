@@ -1354,70 +1354,55 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
-   asset wallet::get_balance( const string& symbol, 
+   vector<asset> wallet::get_balance( const string& symbol, 
                               const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
-      FC_ASSERT( account_name == "" || is_valid_account_name( account_name ) );
+      FC_ASSERT( account_name == "*" || is_valid_account_name( account_name ) );
 
-      auto opt_asset_record = my->_blockchain->get_asset_record( symbol );
-      FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol ${s}", ("s",symbol) );
-
-
-      if( account_name == string() )
+      asset_id_type filter_asset_id;
+      if( symbol != "" )
       {
-         asset total_balance( 0, opt_asset_record->id );
-         for( auto b : my->_wallet_db.balances )
-         {
-            if( opt_asset_record->id == b.second.asset_id() )
+         auto opt_asset_record = my->_blockchain->get_asset_record( symbol );
+         FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol ${s}", ("s",symbol) );
+         filter_asset_id = opt_asset_record->id;
+      }
+
+
+      address filter_address;
+
+      if( account_name != "*" )
+      {
+         auto war = my->_wallet_db.lookup_account( account_name );
+         FC_ASSERT( war.valid(), "Unable to find Wallet Account '${account_name}'", ("account_name",account_name) );
+
+         auto account_key = my->_wallet_db.lookup_key( war->account_address );
+         FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
+         ilog( "account: ${war}", ("war",war) );
+         ilog( "account key: ${key}", ("key",account_key) );
+         filter_address = war->account_address;
+      }
+
+      map<asset_id_type,share_type> balances;
+      for( auto b : my->_wallet_db.balances )
+      {
+            auto key_rec = my->_wallet_db.lookup_key( b.second.owner() );
+            if( key_rec.valid() && (account_name == std::string("*") || 
+                                    key_rec->account_address == filter_address) )
             {
-               total_balance += b.second.get_balance();
+               auto bal = b.second.get_balance();
+               if( symbol == "" ||  bal.asset_id == filter_asset_id )
+                  balances[bal.asset_id] += bal.amount;
             }
-         };
-         return total_balance;
-      }
-      else
-      {
-          auto war = my->_wallet_db.lookup_account( account_name );
-          FC_ASSERT( war.valid(), "Unable to find Wallet Account '${account_name}'", ("account_name",account_name) );
-
-          auto account_key = my->_wallet_db.lookup_key( war->account_address );
-          FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
-          ilog( "account: ${war}", ("war",war) );
-          ilog( "account key: ${key}", ("key",account_key) );
-
-          asset total_balance( 0, opt_asset_record->id );
-          for( auto b : my->_wallet_db.balances )
-          {
-             if( opt_asset_record->id == b.second.asset_id() )
-             {
-                auto key_rec = my->_wallet_db.lookup_key( b.second.owner() );
-                if( key_rec.valid() && (account_name == std::string() || 
-                                        key_rec->account_address == war->account_address) )
-                {
-                   total_balance += b.second.get_balance();
-                }
-             }
-          };
-          return total_balance;
-      }
+      };
+      vector<asset> result;
+      result.reserve( balances.size() );
+      for( auto item : balances )
+         result.push_back( asset( item.second, item.first ) );
+      ilog( "result: ${r}", ("r",result) );
+      return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
-
-   vector<asset>   wallet::get_all_balances( const string& account_name )const
-   { try {
-       FC_ASSERT( is_open() );
-       vector<asset> balances;
-       for ( auto pair : my->_wallet_db.balances )
-       {
-           auto balance_rec = pair.second;
-           if( my->_wallet_db.has_private_key( balance_rec.owner() ) )
-           {
-               balances.push_back(balance_rec.balance); 
-           }
-       }
-       return balances;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    bool  wallet::is_sending_address( const address& addr )const
    { try {
