@@ -274,11 +274,15 @@ namespace bts { namespace wallet {
                          trx_rec.memo_message = status->get_message();
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
+                         ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
                       {
+                         ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                         ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
                          trx_rec.to_account   = status->from;
+                         ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
                       cache_deposit = true;
                       break;
@@ -886,6 +890,7 @@ namespace bts { namespace wallet {
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
        private_key_type sender_private_key  = get_account_private_key( from_account_name );
+       public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
        
        asset total_fee = get_priority_fee( amount_to_transfer_symbol );
@@ -983,7 +988,14 @@ namespace bts { namespace wallet {
           for( auto rec : balances_to_store )
               my->_wallet_db.store_record( rec );
           for( uint32_t i =0 ; i < trxs.size(); ++i )
-             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key, bts::blockchain::now() );
+             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), 
+                                               total_fee.amount, 
+                                               memo_message, 
+                                               receiver_public_key,
+                                               bts::blockchain::now(),
+                                               bts::blockchain::now(),
+                                               sender_public_key
+                                             );
        }
 
        return trxs;
@@ -1038,7 +1050,10 @@ namespace bts { namespace wallet {
                                                   required_fees.amount, 
                                                   "register " + account_to_register, 
                                                   payer_public_key, 
-                                                  bts::blockchain::now() );
+                                                  bts::blockchain::now(),
+                                                  bts::blockchain::now(),
+                                                  payer_public_key
+                                                );
       }
       return wallet_transaction_record(transaction_data(trx));
 

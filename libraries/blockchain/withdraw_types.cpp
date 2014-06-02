@@ -22,13 +22,13 @@ namespace bts { namespace blockchain {
       FC_ASSERT( message_str.size() <= sizeof( message ) );
       if( message_str.size() )
       {
-         memcpy( &message.data, message_str.c_str(), message_str.size() );
+         memcpy( message.data, message_str.c_str(), message_str.size() );
       }
    }
 
    std::string memo_data::get_message()const
    {
-      return std::string( (const char*)&message, 20 );
+      return std::string( (const char*)&message, sizeof(message) ).c_str();
    }
 
 
@@ -95,7 +95,10 @@ namespace bts { namespace blockchain {
 
       memo_data memo;
       memo.set_message( memo_message );
-      memo.from    = from_private_key.get_public_key();
+      if( memo_type == from_memo )
+         memo.from = from_private_key.get_public_key();
+      else
+         memo.from = to_public_key;
       memo.from_signature = check_secret._hash[0];
       memo.memo_flags = memo_type;
       one_time_key = one_time_private_key.get_public_key();
@@ -178,4 +181,25 @@ namespace fc {
             break;
       }
    }
-}
+   void to_variant( const bts::blockchain::memo_data& var,  variant& vo )
+   {
+      mutable_variant_object obj("from",var.from);
+      obj("from_signature",var.from_signature)
+         ("message",var.get_message())
+         ("memo_flags",var.memo_flags);
+      vo = std::move( obj );
+   }
+   void from_variant( const variant& var,  bts::blockchain::memo_data& vo )
+   { try {
+      const variant_object& obj = var.get_object();
+      if( obj.contains( "from" ) )
+         vo.from = obj["from"].as<bts::blockchain::public_key_type>();
+      if( obj.contains( "from_signature" ) )
+         vo.from_signature = obj["from_signature"].as_int64();
+      if( obj.contains( "message" ) ) 
+         vo.set_message( obj["message"].as_string() );
+      if( obj.contains( "memo_flags") )
+         vo.memo_flags = obj["memo_flags"].as<bts::blockchain::memo_flags_enum>(); 
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to convert variant to memo_data", ("variant",var) ) }
+
+} // fc

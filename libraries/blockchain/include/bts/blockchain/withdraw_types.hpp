@@ -170,6 +170,8 @@ namespace bts { namespace blockchain {
 namespace fc {
    void to_variant( const bts::blockchain::withdraw_condition& var,  variant& vo );
    void from_variant( const variant& var,  bts::blockchain::withdraw_condition& vo );
+   void to_variant( const bts::blockchain::memo_data& var,  variant& vo );
+   void from_variant( const variant& var,  bts::blockchain::memo_data& vo );
 }
 
 FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types, 

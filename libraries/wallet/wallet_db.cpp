@@ -487,7 +487,10 @@ namespace bts{ namespace wallet {
                                       share_type fees,
                                       const string& memo_message,
                                       const public_key_type& to,
-                                      time_point_sec created )
+                                      time_point_sec created,
+                                      time_point_sec received,
+                                      public_key_type from
+                                      )
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );
@@ -498,11 +501,13 @@ namespace bts{ namespace wallet {
 
       data.trx = trx;
       data.transaction_id = trx.id();
-      data.amount = amount;
-      data.fees   = fees;
-      data.to_account = to;
-      data.created_time = created;
-      data.memo_message = memo_message;
+      data.amount         = amount;
+      data.fees           = fees;
+      data.to_account     = to;
+      data.from_account   = from;
+      data.created_time   = created;
+      data.received_time  = received;
+      data.memo_message   = memo_message;
       store_record( data );
       transactions[trx_id] = data;
 
