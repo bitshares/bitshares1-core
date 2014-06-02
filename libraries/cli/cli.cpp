@@ -93,6 +93,10 @@ namespace bts { namespace cli {
                   fc::variant result = _self->execute_interactive_command(command, arguments);
                   _self->format_and_print_result(command, result);
                 }
+                catch( const fc::canceled_exception&)
+                {
+                  throw;
+                }
                 catch( const fc::exception& e )
                 {
                   std::cout << e.to_detail_string() << "\n";
