@@ -842,7 +842,8 @@ namespace bts { namespace wallet {
 
        auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
 
-       vector<signed_transaction>       trxs;
+       vector<signed_transaction >       trxs;
+       vector<share_type>                amount_sent;
        vector<wallet_balance_record>    balances_to_store; // records to cache if transfer succeeds
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
@@ -927,6 +928,7 @@ namespace bts { namespace wallet {
              }
 
              trxs.emplace_back( trx );
+             amount_sent.push_back( amount_to_deposit.amount );
              if( amount_collected >= asset( amount_to_transfer, asset_id ) )
                 break;
           } // if asset id matches
@@ -940,8 +942,8 @@ namespace bts { namespace wallet {
 
        for( auto rec : balances_to_store )
            my->_wallet_db.store_record( rec );
-       for( auto t : trxs )
-          my->_wallet_db.cache_transaction( t, asset( amount_to_transfer, asset_id), total_fee.amount, memo_message, receiver_public_key );
+       for( uint32_t i =0 ; i < trxs.size(); ++i )
+          my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key );
 
        return trxs;
       
