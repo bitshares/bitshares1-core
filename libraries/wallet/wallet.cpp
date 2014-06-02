@@ -109,7 +109,8 @@ namespace bts { namespace wallet {
                                             const address& account_address )const
       { try {
          auto opt_key = _wallet_db.lookup_key( address_to_check );
-         FC_ASSERT( opt_key.valid() );
+         if( !opt_key.valid() )
+            return false;
          return opt_key->account_address == account_address;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("address_to_check",address_to_check)("account_address",account_address) ) }
 
