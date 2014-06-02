@@ -1605,7 +1605,7 @@ namespace bts { namespace wallet {
             }
          }
          // all of our delegates are active - pick the one with the lowest vote
-         int64_t min = INT64_MAX;
+         int64_t min = std::numeric_limits<int64_t>::max();
          account_id_type winner;
          for( auto candidate : for_candidates )
          {
