@@ -91,13 +91,6 @@ namespace bts { namespace client {
                                                       const string& new_account_name);
 
          wallet_account_record wallet_get_account(const string& account_name) const  override;
-                           oaccount_record blockchain_get_account_record(const string& name) const  override;
-                           oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const  override;
-                          oasset_record blockchain_get_asset_record(const string& symbol) const  override;
-                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
-
-
-                                 full_block blockchain_get_block_by_number(uint32_t block_number) const  override;
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0)  override;
                        void wallet_rescan_blockchain_state()  override;
@@ -107,12 +100,11 @@ namespace bts { namespace client {
                                                   const string& account_name )  override;
 
 
-     vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
      vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
 
          fc::path                            get_data_dir() const;
 
-         // returns true if the client is connected to the network (either server or p2p)
+         // returns true if the client is connected to the network
          bool is_connected() const;
          fc::uint160_t get_node_id() const;
 

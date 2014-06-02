@@ -84,6 +84,101 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_block_by_number",
+        "description": "Retrieves the block header for the given block number",
+        "return_type": "full_block",
+        "parameters" : [
+            {
+              "name" : "block_number", 
+              "type" : "uint32_t", 
+              "description" : "the number of the block to return"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_account_record",
+        "description": "Retrieves the name record",
+        "return_type": "optional_account_record",
+        "parameters" : [
+            {
+              "name" : "account_name", 
+              "type" : "account_name", 
+              "description" : "the name of the account retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["blockchain_get_name"]
+      },
+      {
+        "method_name": "blockchain_get_account_record_by_id",
+        "description": "Retrieves the name record for the given name_id",
+        "return_type": "optional_account_record",
+        "parameters" : [
+            {
+              "name" : "name_id", 
+              "type" : "name_id_type", 
+              "description" : "the id of the name record to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["blockchain_get_name_by_id"]
+      },
+      {
+        "method_name": "blockchain_get_asset_record",
+        "description": "Retrieves the asset record by the ticker symbol",
+        "return_type": "optional_asset_record",
+        "parameters" : [
+            {
+              "name" : "symbol", 
+              "type" : "asset_symbol", 
+              "description" : "the ticker symbol to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["blockchain_get_asset"]
+      },
+      {
+        "method_name": "blockchain_get_asset_record_by_id",
+        "description": "Retrieves the asset record by the id",
+        "return_type": "optional_asset_record",
+        "parameters" : [
+            {
+              "name" : "asset_id", 
+              "type" : "asset_id_type", 
+              "description" : "the id of the asset to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["blockchain_get_asset_by_id"]
+      },
+      {
+        "method_name": "blockchain_get_delegates",
+        "description": "Returns the list of delegates sorted by vote",
+        "return_type": "account_record_array",
+        "parameters" : [
+            {
+              "name" : "first", 
+              "type" : "uint32_t", 
+              "description" : "",
+              "default_value" : 0
+            },
+            {
+              "name" : "count", 
+              "type" : "uint32_t", 
+              "description" : "",
+              "default_value" : -1
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

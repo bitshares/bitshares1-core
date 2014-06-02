@@ -542,7 +542,7 @@ namespace bts { namespace client {
       return get_chain()->get_account_record(name);
     }
 
-    oaccount_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
+    oaccount_record client::blockchain_get_account_record_by_id(const name_id_type& name_id) const
     {
       return get_chain()->get_account_record(name_id);
     }
@@ -552,13 +552,13 @@ namespace bts { namespace client {
       return get_chain()->get_asset_record(symbol);
     }
 
-    oasset_record client::blockchain_get_asset_record_by_id(asset_id_type asset_id) const
+    oasset_record client::blockchain_get_asset_record_by_id(const asset_id_type& asset_id) const
     {
       return get_chain()->get_asset_record(asset_id);
     }
 
     void client::wallet_set_delegate_trust_level( const string& delegate_name, 
-                                                  int64_t user_trust_level)
+                                                  int32_t user_trust_level)
     {
       try {
         auto account_record = get_chain()->get_account_record(delegate_name);
