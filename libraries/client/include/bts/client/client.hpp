@@ -47,7 +47,6 @@ namespace bts { namespace client {
          wallet_ptr                 get_wallet()const;
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
          bts::net::node_ptr         get_node()const;
-         signed_transactions        get_pending_transactions()const;
 
          //-------------------------------------------------- JSON-RPC Method Implementations
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations

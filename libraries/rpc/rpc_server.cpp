@@ -884,7 +884,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant();//_client->wallet_list_delegate_trust_status());
+      return fc::variant( );//_client->wallet_list_delegate_trust_status());
     }
 
     static bts::api::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
