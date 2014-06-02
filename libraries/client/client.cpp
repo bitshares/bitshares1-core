@@ -37,7 +37,7 @@ namespace bts { namespace client {
             virtual ~client_impl()override {}
 
             void delegate_loop();
-            signed_transactions get_pending_transactions() const;
+            signed_transactions blockchain_get_pending_transactions() const;
 
             /* Implement chain_client_impl */
             // @{
@@ -69,7 +69,7 @@ namespace bts { namespace client {
             bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
             chain_database_ptr                                          _chain_db;
-            unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
+            unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
             fc::future<void>                                            _delegate_loop_complete;
        };
@@ -117,13 +117,14 @@ namespace bts { namespace client {
          }
        } // delegate_loop
 
-       signed_transactions client_impl::get_pending_transactions() const
+       signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;
-         trxs.reserve(_pending_trxs.size());
-         for (auto trx : _pending_trxs)
+         auto pending = _chain_db->get_pending_transactions();
+         trxs.reserve(pending.size());
+         for (auto trx_eval_ptr : pending)
          {
-           trxs.push_back(trx.second);
+           trxs.push_back(trx_eval_ptr->trx);
          }
          return trxs;
        }
@@ -333,7 +334,7 @@ namespace bts { namespace client {
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server() const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
-    signed_transactions client::get_pending_transactions()const { return my->get_pending_transactions(); }
+    signed_transactions client::blockchain_get_pending_transactions()const { return my->blockchain_get_pending_transactions(); }
 
     bts::blockchain::transaction_id_type client::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {

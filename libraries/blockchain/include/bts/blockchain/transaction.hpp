@@ -211,7 +211,7 @@ namespace bts { namespace blockchain {
          void add_balance( const asset& amount );
          
          /** any time a balance is deposited increment the vote for the delegate,
-          * if delegate_id then it is a vote against abs(delegate_id)
+          * if delegate_id is negative then it is a vote against abs(delegate_id)
           */
          void add_vote( name_id_type delegate_id, share_type amount );
          void sub_vote( name_id_type delegate_id, share_type amount );

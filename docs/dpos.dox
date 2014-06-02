@@ -85,7 +85,10 @@
       -# If any distrusted_delegates are in the top 200 of the ranked_delegates, vote against the distrusted delegate with
          the highest current rank.
 
-      -# If not voting against anyone, vote for the trusted_delegate with the lowest rank.
+      -# If not voting against anyone, and there are trusted_delegates outside the top 100, vote for the trusted_delegate
+         with the highest rank outside the top 100.
+
+      -# If all trusted_delegates are inside the top 100, vote for the trusted delegate with the lowest rank.
 
       -# If there are no trusted_delegates in then vote for the observed_delegate with the highest score and less than 1%
          of the vote.

@@ -1550,6 +1550,69 @@ namespace bts { namespace wallet {
    account_id_type wallet::select_delegate_vote()const
    {
       return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+      // TODO review / test this more carefully before activating
+      vector<account> for_candidates;
+      vector<account> against_candidates;
+      vector<account_id_type> active_delegates =
+          my->_blockchain->get_delegates_by_vote(0, BTS_BLOCKCHAIN_NUM_DELEGATES);
+
+      for (auto acct_rec : my->_wallet_db.accounts)
+      {
+         if (acct_rec.second.trust_level > 0)
+             for_candidates.push_back(acct_rec.second);
+         if (acct_rec.second.trust_level < 0)
+             against_candidates.push_back(acct_rec.second);
+      }
+      if ( against_candidates.size() > 0 )
+      {
+         for (auto delegate_id : active_delegates)
+            for (auto against_acct : against_candidates)
+                if( against_acct.blockchain_account_id == delegate_id )
+                    return -delegate_id;
+      }
+      else if( for_candidates.size() > 0 )
+      {
+         // find first delegate who is not active
+         bool active = false;
+         for (auto for_acct : for_candidates)
+         {
+            for (auto delegate_id : active_delegates)
+            {
+                if (for_acct.blockchain_account_id == delegate_id)
+                {
+                    active = true;
+                    break;
+                }
+            }
+            if (active)
+            {
+                active = false;
+                continue;
+            }
+            else
+            {
+                return for_acct.blockchain_account_id;
+            }
+         }
+         // all of our delegates are active - pick the one with the lowest vote
+         int64_t min = INT64_MAX;
+         account_id_type winner;
+         for( auto candidate : for_candidates )
+         {
+            auto acct_rec = my->_blockchain->get_account_record( candidate.blockchain_account_id );
+            FC_ASSERT(acct_rec);
+            if (acct_rec->net_votes() < min)
+            {
+                min = acct_rec->net_votes();
+                winner = acct_rec->id;
+            }
+         }
+         return winner;
+      }
+      else
+      {
+          return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+      }
    }
 
    void      wallet::set_delegate_trust_level( const string& delegate_name, 

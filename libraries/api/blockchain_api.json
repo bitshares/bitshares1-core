@@ -27,6 +27,12 @@
         "container_type" : "array",
         "contained_type" : "account_record",
         "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "signed_transactions",
+        "cpp_parameter_type" : "const bts::blockchain::signed_transactions$",
+        "cpp_return_type" : "bts::blockchain::signed_transactions",
+        "default_example" : "TODO"      
       }
     ],
   "methods" :
@@ -56,7 +62,7 @@
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["bitcoin_getblockcount", "getblockcount"]
-      }
+      },
       {
         "method_name": "blockchain_list_registered_accounts",
         "description": "Returns registered accounts starting with a given name upto a the limite provided",
@@ -75,6 +81,14 @@
               "default_value" : -1
             }
         ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_get_pending_transactions",
+        "description": "Return a list of transactions that are not yet in a block.",
+        "return_type": "signed_transaction_array",
+        "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
       }
