@@ -30,11 +30,11 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_index_itr == self->address_to_account.end() );
               self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
               
-              if( account_to_load.blockchain_account_id != 0 )
+              if( account_to_load.id != 0 )
               {
-                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.blockchain_account_id );
+                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.id );
                 FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
-                self->account_id_to_account[ account_to_load.blockchain_account_id ] = account_to_load.index;
+                self->account_id_to_account[ account_to_load.id ] = account_to_load.index;
               }
 
               auto current_name_itr = self->name_to_account.find( account_to_load.name );
@@ -151,7 +151,6 @@ namespace bts{ namespace wallet {
       accounts.clear();
       transactions.clear();
       balances.clear();
-      blockchain_accounts.clear();
       assets.clear();
       properties.clear();
    }
@@ -360,8 +359,10 @@ namespace bts{ namespace wallet {
 
       wallet_account_record war; 
       war.name = new_account_name;
-      war.blockchain_account_id = 0;
+      war.id = 0;
       war.account_address = address( new_account_key );
+      war.owner_key = new_account_key;
+      war.set_active_key( fc::time_point::now(), new_account_key );
 
       auto current_key = lookup_key( new_account_key );
       if( current_key )
@@ -435,18 +436,13 @@ namespace bts{ namespace wallet {
        FC_ASSERT( !"Not Implemented" );
    }
 
-   void wallet_db::store_transaction( const signed_transaction& trx_to_store )
+   void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
    { try {
-      auto trx_id = trx_to_store.id();
-      auto itr = transactions.find( trx_id );
-      if( itr != transactions.end() ) return;
-
       wallet_transaction_record data;
-      data.index = new_index();
-      data.trx = trx_to_store;
-      store_record( data );
-      transactions[trx_id] = data;
-
+      if( trx_to_store.index == 0 )
+         trx_to_store.index = new_index();
+      store_record( trx_to_store );
+      transactions[trx_to_store.trx.id()] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
    void wallet_db::cache_transaction( const signed_transaction& trx,
                                       const string& memo_message,
@@ -473,9 +469,9 @@ namespace bts{ namespace wallet {
    void wallet_db::cache_account( const wallet_account_record& war )
    {
       accounts[war.index] = war;
-      if( war.blockchain_account_id != 0 )
+      if( war.id != 0 )
       {
-         account_id_to_account[war.blockchain_account_id] = war.index;
+         account_id_to_account[war.id] = war.index;
       }
       store_record( war );
    }

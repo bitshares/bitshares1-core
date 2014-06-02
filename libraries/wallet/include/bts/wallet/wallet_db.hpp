@@ -43,7 +43,7 @@ namespace bts { namespace wallet {
          fc::variant get_property( property_enum property_id );
 
          void store_key( const key_data& k );
-         void store_transaction( const signed_transaction& t );
+         void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_account( const wallet_account_record& );
          void cache_memo( const memo_status& memo, 
@@ -53,6 +53,12 @@ namespace bts { namespace wallet {
          void cache_transaction( const signed_transaction& trx,
                                  const string& memo_message,
                                  const public_key_type& to );
+         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const
+         {
+            auto itr = transactions.find(trx_id);
+            if( itr != transactions.end() ) return itr->second;
+            return owallet_transaction_record();
+         }
 
          private_keys get_account_private_keys( const fc::sha512& password );
 
@@ -89,7 +95,6 @@ namespace bts { namespace wallet {
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
          unordered_map< balance_id_type,wallet_balance_record >           balances;
-         map<string,blockchain_account_record>                            blockchain_accounts;
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
 

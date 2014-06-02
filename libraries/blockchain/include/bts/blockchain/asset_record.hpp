@@ -38,7 +38,7 @@ namespace bts { namespace blockchain {
       std::string         symbol;
       std::string         name;
       std::string         description;
-      fc::variant         json_data;
+      fc::variant         public_data;
       account_id_type     issuer_account_id;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
@@ -50,5 +50,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_account_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
+FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(public_data)(issuer_account_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
 

@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
        /**
         * Other information relevant to this asset.
         */
-       fc::variant         json_data;
+       fc::variant         public_data;
 
        /**
         *  Assets can only be issued by individuals that
@@ -52,8 +52,8 @@ namespace bts { namespace blockchain {
        asset_id_type        asset_id;
        std::string          name;
        std::string          description;
-       fc::variant          json_data;
-       account_id_type         issuer_account_id;
+       fc::variant          public_data;
+       account_id_type      issuer_account_id;
    };
 
    /**
@@ -73,6 +73,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(json_data)(issuer_account_id)(maximum_share_supply) )
-FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(json_data)(issuer_account_id) )
+FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(public_data)(issuer_account_id)(maximum_share_supply) )
+FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(public_data)(issuer_account_id) )
 FC_REFLECT( bts::blockchain::issue_asset_operation, (amount) )

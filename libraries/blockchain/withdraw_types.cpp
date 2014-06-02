@@ -57,10 +57,18 @@ namespace bts { namespace blockchain {
       ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
       auto memo = decrypt_memo_data( secret );
       ilog( "" );
-      auto check_secret = secret_private_key.get_shared_secret( memo.from );
-      ilog( "" );
-      bool has_valid_signature = check_secret._hash[0] == memo.from_signature;
-      ilog( "" );
+      bool has_valid_signature = false;
+      if( memo.memo_flags == from_memo )
+      {
+         auto check_secret = secret_private_key.get_shared_secret( memo.from );
+         ilog( "" );
+         has_valid_signature = check_secret._hash[0] == memo.from_signature;
+         ilog( "" );
+      }
+      else
+      {
+         has_valid_signature = true;
+      }
 
       return memo_status( memo, has_valid_signature, secret_private_key );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -69,7 +77,8 @@ namespace bts { namespace blockchain {
    void  withdraw_by_account::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
                                    const fc::ecc::public_key&  to_public_key,
                                    const fc::ecc::private_key& from_private_key,
-                                   const std::string& memo_message )
+                                   const std::string& memo_message,
+                                   memo_flags_enum memo_type )
    {
       auto secret = one_time_private_key.get_shared_secret( to_public_key );
       ilog( "secret: ${s}", ("s",secret) );
@@ -88,6 +97,7 @@ namespace bts { namespace blockchain {
       memo.set_message( memo_message );
       memo.from    = from_private_key.get_public_key();
       memo.from_signature = check_secret._hash[0];
+      memo.memo_flags = memo_type;
       one_time_key = one_time_private_key.get_public_key();
 
       encrypt_memo_data( secret, memo );

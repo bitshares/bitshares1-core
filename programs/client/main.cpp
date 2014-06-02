@@ -20,7 +20,7 @@
 
 struct config
 {
-   config() : default_peers{{"107.170.30.182:8765"}}, ignore_console(false) {}
+   config() : default_peers{{"107.170.30.182:8764"}}, ignore_console(false) {}
    bts::rpc::rpc_server::config rpc;
    std::vector<std::string>     default_peers;
    bool                         ignore_console;
