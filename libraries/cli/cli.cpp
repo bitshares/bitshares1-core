@@ -603,6 +603,13 @@ namespace bts { namespace cli {
                 catch( const fc::canceled_exception& )
                 {
                 }
+                catch( ... )
+                {
+                    std::cout << "Error opening wallet. Known wallets:\n";
+                    auto wallets = _client->get_wallet()->list();
+                    for (auto wallet : wallets)
+                        std::cout << wallet << "\n";
+                }
               }
               else if (choice == "q")
               {
