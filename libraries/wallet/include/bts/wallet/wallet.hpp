@@ -216,7 +216,7 @@ namespace bts { namespace wallet {
 
          ///@} Transaction Generation Methods
  
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec ) const;
+         pretty_transaction                      to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
 
          void      set_delegate_trust_level(const string& delegate_name, 

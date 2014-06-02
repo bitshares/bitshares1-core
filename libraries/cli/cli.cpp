@@ -813,8 +813,9 @@ namespace bts { namespace cli {
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 20 ) << "TIMESTAMP";
-                std::cout << std::setw( 55 ) << "FROM";
-                std::cout << std::setw( 55 ) << "TO";
+                std::cout << std::setw( 20 ) << "FROM";
+                std::cout << std::setw( 20 ) << "TO";
+                std::cout << std::setw( 20 ) << "MEMO";
                 std::cout << std::setw( 16 ) << " AMOUNT";
                 std::cout << std::setw(  8 ) << " FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
@@ -837,10 +838,13 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    std::cout << std::setw( 55 ) << tx.from_account;
+                    std::cout << std::setw( 20 ) << tx.from_account.substr(0,20);
                     
                     // Print "to" account
-                    std::cout << std::setw( 55 ) << tx.to_account;
+                    std::cout << std::setw( 20 ) << tx.to_account.substr(0,20);
+
+                    // Print "memo" on transaction
+                    std::cout << std::setw( 20 ) << tx.memo_message;
 
                     /* Print amount */
                     {

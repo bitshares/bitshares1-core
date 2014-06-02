@@ -1249,7 +1249,7 @@ namespace bts { namespace wallet {
    }
 
    
-   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec ) const
+   pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_rec ) const
    {
       auto pretty_trx = pretty_transaction();
      
@@ -1281,8 +1281,19 @@ namespace bts { namespace wallet {
           if (acct_record)
               pretty_trx.from_account = acct_record->name;
           else
-              pretty_trx.from_account = string( *trx_rec.from_account );
+          {
+              auto registered_account = my->_blockchain->get_account_record( *trx_rec.from_account );
+              if( registered_account.valid() )
+                 pretty_trx.from_account = registered_account->name;
+              else
+                 pretty_trx.from_account = string( *trx_rec.from_account );
+          }
       }
+      else 
+      {
+         pretty_trx.from_account = "unknown";
+      }
+
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
       {
@@ -1290,7 +1301,17 @@ namespace bts { namespace wallet {
           if (acct_record)
               pretty_trx.to_account = acct_record->name;
           else
-              pretty_trx.to_account = string( *trx_rec.to_account );
+          {
+              auto registered_account = my->_blockchain->get_account_record( *trx_rec.to_account );
+              if( registered_account.valid() )
+                 pretty_trx.to_account = registered_account->name;
+              else
+                 pretty_trx.to_account = string( *trx_rec.to_account );
+          }
+      }
+      else
+      {
+         pretty_trx.to_account = "unknown";
       }
 
       for( auto op : trx.operations )
