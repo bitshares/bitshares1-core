@@ -60,6 +60,32 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "wallet_import_private_key",
+        "description": "Loads the private key into the specified account",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wif_key",
+              "description" : "A private key in bitcoin Wallet Import Format (WIF)",
+              "type" : "wif_private_key"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the name of the account the key should be imported into, if null then the key must belong to an active account",
+              "default_value" : null
+           },
+           {
+              "name" : "rescan",
+              "type" : "bool",
+              "description" : "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
+              "default_value" : true
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"],
+        "aliases" : ["import_key"]
+      },
+      {
         "method_name": "wallet_close",
         "description": "Closes the curent wallet if one is open",
         "return_type": "void",

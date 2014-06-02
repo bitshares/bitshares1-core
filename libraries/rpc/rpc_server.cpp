@@ -33,7 +33,6 @@ namespace bts { namespace rpc {
              (blockchain_get_asset_record)\
              (blockchain_get_asset_record_by_id)\
              (blockchain_get_delegates)\
-             (wallet_import_private_key)\
              (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
              (wallet_get_account)\
@@ -906,26 +905,6 @@ Examples:
       {
         return fc::variant(false);
       }
-    }
-
-
-    // TODO: get account argument
-    static bts::api::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
-            /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
-            /* returns: */    "void",
-            /* params:          name            type           classification                   default_value */
-                              {{"key_to_import", "wif_private_key", bts::api::required_positional, fc::ovariant()},
-                               {"account_name", "string",      bts::api::optional_positional, fc::variant("default")},
-                               {"rescan",       "bool",        bts::api::optional_positional, false}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
-          R"()" };
-    fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
-    {
-      auto key_to_import   =  params[0].as_string();
-      std::string account_name = params[1].as_string();
-      bool wallet_rescan_blockchain = params[2].as_bool();
-      _client->wallet_import_private_key(key_to_import, account_name, wallet_rescan_blockchain);
-      return fc::variant();
     }
 
 

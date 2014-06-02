@@ -111,9 +111,6 @@ namespace bts { namespace client {
                                                   const string& passphrase, 
                                                   const string& account_name )  override;
 
-                       void wallet_import_private_key(const string& wif_key_to_import, 
-                                                      const string& account_name,
-                                                      bool wallet_rescan_blockchain = false)  override;
 
      vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
      vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
