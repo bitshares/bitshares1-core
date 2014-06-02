@@ -192,6 +192,8 @@ namespace bts { namespace net {
          */
         void clear_peer_database();
 
+        fc::variant_object network_get_info() const;
+
       private:
         std::unique_ptr<detail::node_impl> my;
    };

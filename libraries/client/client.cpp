@@ -939,4 +939,9 @@ namespace bts { namespace client {
        return trx;
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+    fc::variant_object client::network_get_info() const
+    {
+      return get_node()->network_get_info();
+    }
+
 } } // bts::client

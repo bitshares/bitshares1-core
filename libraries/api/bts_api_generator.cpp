@@ -86,7 +86,12 @@ public:
     _cpp_parameter_type(parameter_type),
     _cpp_return_type(return_type)
   {}
-  virtual std::string get_cpp_parameter_type() override { return _cpp_parameter_type; }
+  virtual std::string get_cpp_parameter_type() override
+  { 
+    if (!_cpp_parameter_type.empty())
+      return _cpp_parameter_type;
+    return std::string("const ") + get_cpp_return_type() + "&";
+  }
   virtual std::string get_cpp_return_type() override { return _cpp_return_type; }
 };
 typedef std::shared_ptr<fundamental_type_mapping> fundamental_type_mapping_ptr;
@@ -156,6 +161,7 @@ private:
   type_map_type _type_map;
 
   method_description_list _methods;
+  std::set<std::string> _registered_method_names; // used for duplicate checking
   std::set<std::string> _include_files;
 public:
   api_generator(const std::string& classname); 
@@ -211,10 +217,11 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
 
     type_mapping_ptr mapping;
 
-    if (json_type.contains("cpp_parameter_type") && 
-        json_type.contains("cpp_return_type"))
+    if (json_type.contains("cpp_return_type"))
     {
-      std::string parameter_type = json_type["cpp_parameter_type"].as_string();
+      std::string parameter_type;
+      if (json_type.contains("cpp_parameter_type"))
+        parameter_type = json_type["cpp_parameter_type"].as_string();
       std::string return_type = json_type["cpp_return_type"].as_string();
       fundamental_type_mapping_ptr fundamental_mapping = std::make_shared<fundamental_type_mapping>(json_type_name, parameter_type, return_type);
       mapping = fundamental_mapping;
@@ -252,6 +259,8 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
     if (json_type.contains("from_variant_function"))
       mapping->set_from_variant_function(json_type["from_variant_function"].as_string());
 
+    FC_ASSERT(_type_map.find(json_type_name) == _type_map.end(), 
+              "Error, type ${type_name} is already registered", ("type_name", json_type_name));
     _type_map.insert(type_map_type::value_type(json_type_name, mapping));
 
     if (json_type.contains("cpp_include_file"))
@@ -303,6 +312,9 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
     fc::variant_object json_method_description = method_description_variant.get_object();
     FC_ASSERT(json_method_description.contains("method_name"), "method entry missing \"method_name\"");
     std::string method_name = json_method_description["method_name"].as_string();
+    FC_ASSERT(_registered_method_names.find(method_name) == _registered_method_names.end(),
+              "Error: multiple methods registered with the name ${name}", ("name", method_name));
+    _registered_method_names.insert(method_name);
     try
     {
       method_description method;
@@ -321,7 +333,15 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
 
       if (json_method_description.contains("aliases"))
+      {
         method.aliases = json_method_description["aliases"].as<std::vector<std::string> >();
+        for (const std::string& alias : method.aliases)
+        {
+          FC_ASSERT(_registered_method_names.find(alias) == _registered_method_names.end(),
+                    "Error: alias \"${alias}\" conflicts with an existing method or alias", ("alias", alias));
+          _registered_method_names.insert(alias);
+        }
+      }
       
       if (json_method_description.contains("description"))
         method.brief_description = json_method_description["description"].as_string();
@@ -424,9 +444,7 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   interface_file << "  public:\n";
 
   for (const method_description& method : _methods)
-  {
     interface_file << "    virtual " << generate_signature_for_method(method, "", true) << " = 0;\n";
-  }
 
   interface_file << "  };\n\n";
   interface_file << "} } // end namespace bts::api\n";
@@ -773,7 +791,8 @@ void api_generator::initialize_type_map_with_fundamental_types()
     "int32_t",
     "uint32_t",
     "int64_t",
-    "uint64_t"
+    "uint64_t",
+    "bool"
   };
   const char* pass_by_reference_types[] =
   {

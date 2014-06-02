@@ -1,44 +1,5 @@
 {
   "category": "Network Methods",
-  "type_map":
-    [
-      {
-        "type_name" : "ip_endpoint",
-        "cpp_parameter_type" : "const fc::ip::endpoint&",
-        "cpp_return_type" : "fc::ip::endpoint",
-        "cpp_include_file" : "fc/network/ip.hpp",
-        "to_variant_function" : "bts::api::fc_ip_endpoint_to_variant",
-        "from_variant_function" : "bts::api::variant_to_fc_ip_endpoint",
-        "default_example" : "192.168.1.5:5678"
-      },
-      {
-        "type_name" : "transaction_id",
-        "cpp_parameter_type" : "const bts::blockchain::transaction_id_type&",
-        "cpp_return_type" : "bts::blockchain::transaction_id_type",
-        "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "message_propagation_data",
-        "cpp_parameter_type" : "const bts::net::message_propagation_data&",
-        "cpp_return_type" : "bts::net::message_propagation_data",
-        "cpp_include_file" : "bts/net/node.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "node_id",
-        "cpp_parameter_type" : "const bts::net::node_id_t&",
-        "cpp_return_type" : "bts::net::node_id_t",
-        "cpp_include_file" : "bts/net/node.hpp",
-        "default_example" : "TODO"
-      },
-      {
-        "type_name" : "node_id_list",
-        "container_type" : "array",
-        "contained_type" : "node_id",
-        "default_example" : "TODO"      
-      }
-    ],
   "methods" :
     [
       {
@@ -158,6 +119,14 @@
           ],
         "prerequisites" : ["json_authenticated"],
         "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
+      },
+      {
+        "method_name": "network_get_info",
+        "description": "Returns assorted information about the network settings and connections",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }
