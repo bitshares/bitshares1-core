@@ -275,6 +275,7 @@ namespace bts { namespace wallet {
                          trx_rec.memo_message = status->get_message();
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
+                         trx_rec.to_account   = key.get_public_key();
                          ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
@@ -282,6 +283,7 @@ namespace bts { namespace wallet {
                          ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
                          ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
+                         trx_rec.from_account = key.get_public_key();
                          trx_rec.to_account   = status->from;
                          ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
