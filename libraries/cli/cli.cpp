@@ -57,6 +57,49 @@ namespace bts { namespace cli {
               return prompt;
             }
 
+            void parse_and_execute_interactive_command(string command, 
+                                                       fc::istream_ptr argument_stream )
+            {
+              fc::buffered_istream buffered_argument_stream(argument_stream);
+
+              bool command_is_valid = false;
+              fc::variants arguments;
+              try
+              {
+                arguments = _self->parse_interactive_command(buffered_argument_stream, command);
+                command_is_valid = true;
+              }
+              catch( const fc::key_not_found_exception& )
+              {
+                std::cout << "Error: invalid command \"" << command << "\"\n";
+              }
+              catch( const fc::canceled_exception&)
+              {
+                std::cout << "Command aborted.\n";
+              }
+              catch( const fc::exception& )
+              {
+                //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                arguments = fc::variants { command };
+                auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
+                std::cout << usage << "\n";
+              }
+
+              //if command is valid, go ahead and execute it
+              if (command_is_valid)
+              {
+                try
+                {
+                  fc::variant result = _self->execute_interactive_command(command, arguments);
+                  _self->format_and_print_result(command, result);
+                }
+                catch( const fc::exception& e )
+                {
+                  std::cout << e.to_detail_string() << "\n";
+                }
+              }
+            } //parse_and_execute_interactive_command
+
             void process_commands()
             { 
               try {
@@ -81,49 +124,15 @@ namespace bts { namespace cli {
                        command = trimmed_line_to_parse;
                        argument_stream = std::make_shared<fc::stringstream>();
                      }
-
-                     fc::buffered_istream buffered_argument_stream(argument_stream);
-
-                     bool command_is_valid = false;
-                     fc::variants arguments;
                      try
                      {
-                       arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-                       command_is_valid = true;
+                       parse_and_execute_interactive_command(command,argument_stream);
                      }
-                     catch( const fc::key_not_found_exception& )
+                     catch( const fc::canceled_exception& )
                      {
-                       std::cout << "Error: invalid command \"" << command << "\"\n";
-                     }
-                     catch( const fc::canceled_exception&)
-                     {
-                       std::cout << "Command aborted.\n";
-                     }
-                     catch( const fc::exception& )
-                     {
-                       //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
-                       arguments = fc::variants { command };
-                       auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
-                       std::cout << usage << "\n";
-                     }
-
-                     if (command_is_valid)
-                     {
-                       try
-                       {
-                         fc::variant result = _self->execute_interactive_command(command, arguments);
-                         _self->format_and_print_result(command, result);
-                       }
-                       catch( const fc::canceled_exception& )
-                       {
-                         if( command == "quit" ) 
-                           break;
-                         std::cout << "Command aborted\n";
-                       }
-                       catch( const fc::exception& e )
-                       {
-                         std::cout << e.to_detail_string() << "\n";
-                       }
+                       if( command == "quit" ) 
+                         break;
+                       std::cout << "Command aborted\n";
                      }
                    }
                    line = _self->get_line( get_prompt()  );
@@ -575,14 +584,10 @@ namespace bts { namespace cli {
 
               if (choice == "c")
               {
-                string wallet_name = _self->get_line("new wallet name [default]: ");
-                if (wallet_name.empty()) 
-                  wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
+                fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>();
                 try
                 {
-                    execute_interactive_command( "wallet_create", arguments );
+                  parse_and_execute_interactive_command( "wallet_create", argument_stream );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -590,14 +595,10 @@ namespace bts { namespace cli {
               }
               else if (choice == "o")
               {
-                string wallet_name = _self->get_line("wallet name [default]: ");
-                if (wallet_name.empty()) 
-                  wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
+                fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>();
                 try
                 {
-                    execute_interactive_command( "wallet_open", arguments );
+                  parse_and_execute_interactive_command( "wallet_open", argument_stream );
                 }
                 catch( const fc::canceled_exception& )
                 {
