@@ -726,7 +726,7 @@ namespace bts { namespace cli {
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
-                    std::cout << std::setw(15) << string( balance );
+                    std::cout << std::setw(15) << std::string(balance[0]);// << " " << balance[0].second;
 
                     std::cout << std::setw(64) << string( acct.active_key() );
 
