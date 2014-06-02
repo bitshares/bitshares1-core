@@ -14,8 +14,8 @@ using namespace bts::blockchain;
 
 struct pretty_transaction
 {
-    uint32_t                                    block_num;
-    uint32_t                                    trx_num;
+    int32_t                                     block_num;
+    int32_t                                     trx_num;
     transaction_id_type                         trx_id;
     uint32_t                                    created_time;
     uint32_t                                    received_time;

@@ -848,8 +848,15 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 3 ) << count; count++;
 
                     /* Print block and transaction numbers */
-                    std::cout << std::setw( 7 ) << tx.block_num << ".";
-                    std::cout << std::setw( 5 ) << std::left << tx.trx_num;
+                    if (tx.block_num == -1)
+                    {
+                        std::cout << std::setw( 12 ) << "unconfirmed";
+                    }
+                    else
+                    {
+                        std::cout << std::setw( 7 ) << tx.block_num << ".";
+                        std::cout << std::setw( 5 ) << std::left << tx.trx_num;
+                    }
 
                     /* Print timestamp */
                     std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
@@ -882,17 +889,28 @@ namespace bts { namespace cli {
                     }
 
                     /* Print delegate vote */
-                    std::cout << std::setw(14) << "TODO";
-                    /*
+                    bool has_deposit = false;
+                    std::stringstream ss;
+                    for (auto op : tx.operations)
                     {
-                        std::stringstream ss;
-                        if( vote.first > 0 ) ss << "+";
-                        else if( vote.first < 0 ) ss << "-";
-                        else ss << " ";
-                        ss << vote.second;
-                        std::cout << std::setw( 14 ) << ss.str();
+                        if (op.get_object()["op_name"].as<string>() == "deposit")
+                        {
+                            has_deposit = true;
+                            auto vote = op.as<pretty_deposit_op>().vote;
+                            if( vote.first > 0 )
+                                ss << "+";
+                            else if (vote.first < 0)
+                                ss << "-";
+                            else
+                                ss << " ";
+                            ss << vote.second;
+                            break;
+                        }
                     }
-                    */
+                    if (has_deposit)
+                        std::cout << std::setw(15) << ss.str();
+                    else
+                        std::cout << std::setw(15) << "N/A";
 
                     /* Print transaction ID */
                     std::cout << std::setw( 40 ) << string( tx.trx_id );

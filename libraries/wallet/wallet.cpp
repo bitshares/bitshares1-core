@@ -1700,7 +1700,14 @@ namespace bts { namespace wallet {
          for (auto delegate_id : active_delegates)
             for (auto against_acct : against_candidates)
                 if( against_acct.id== delegate_id )
+                {
+                    if (delegate_id == 0)
+                    {
+                        std::cout << "WARNING - delegate id 0 bug @ 1";
+                        return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+                    }
                     return -delegate_id;
+                }
       }
       if( for_candidates.size() > 0 )
       {
@@ -1723,7 +1730,13 @@ namespace bts { namespace wallet {
             }
             else
             {
-                return for_acct.id;
+                if (for_acct.id == 0)
+                {
+                    std::cout << "WARNING - delegate id 0 bug @ 2";
+                    return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+                }
+                else
+                    return for_acct.id;
             }
          }
          // all of our delegates are active - pick the one with the lowest vote
@@ -1739,11 +1752,24 @@ namespace bts { namespace wallet {
                 winner = acct_rec->id;
             }
          }
-         return winner;
+         if (winner == 0)
+         {
+            std::cout << "WARNING - delegate id 0 bug @ 3";
+            return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+         }
+         else
+            return winner;
       }
       else
       {
-          return active_delegates[(rand() % BTS_BLOCKCHAIN_NUM_DELEGATES)];
+            if (active_delegates[(rand() % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
+            {
+                std::cout << "WARNING - delegate id 0 bug @ 4";
+                return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+            }
+            else
+                return for_acct.id;
+
       }
    }
 
