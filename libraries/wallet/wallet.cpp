@@ -181,7 +181,7 @@ namespace bts { namespace wallet {
             //std::cout << "scanning block number " << block_num << "    \n";
             //std::cout << "    scanning trx: " << fc::json::to_string( trx) << "    \n";
             owallet_transaction_record current_trx_record = _wallet_db.lookup_transaction( trx.id() );
-            if( !current_trx_record.valid() )
+            if( current_trx_record.valid() )
             {
                cache_trx = true;
             }
