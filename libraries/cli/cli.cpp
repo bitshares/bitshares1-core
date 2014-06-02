@@ -457,12 +457,14 @@ namespace bts { namespace cli {
               {
                   string start;
                   int64_t count;
+                  uint32_t count;
                   if (arguments.size() > 0)
                       start = arguments[0].as_string();
                   else
                       start = "";
                   if (arguments.size() > 1)
                       count = arguments[1].as<int64_t>();
+                      count = arguments[1].as<uint32_t>();
                   else
                       count = 50;
 
