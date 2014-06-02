@@ -117,6 +117,12 @@
         "default_example" : 300
       },
       {
+        "type_name" : "wif_private_key",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB"
+      },
+      {
         "type_name" : "public_key",
         "cpp_return_type" : "bts::blockchain::public_key_type",
         "cpp_include_file" : "bts/blockchain/types.hpp",

@@ -700,9 +700,12 @@ namespace bts { namespace cli {
 
                     std::cout << std::setw(64) << string( acct.active_key() );
 
-                    if (acct.registration_date == fc::time_point_sec()) {
-                        std::cout << std::setw( 22 ) << "NO";
-                    } else {
+                    if( acct.id == 0 ) //acct.registration_date == fc::time_point_sec()) {
+                    {
+                       std::cout << std::setw( 22 ) << "NO";
+                    } 
+                    else 
+                    {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
@@ -736,9 +739,12 @@ namespace bts { namespace cli {
 
                     std::cout << std::setw(64) << string( acct.active_key() );
 
-                    if (acct.registration_date == fc::time_point_sec()) {
+                    if (acct.id == 0 ) 
+                    { //acct.registration_date == fc::time_point_sec()) {
                         std::cout << std::setw( 22 ) << "NO";
-                    } else {
+                    } 
+                    else 
+                    {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }

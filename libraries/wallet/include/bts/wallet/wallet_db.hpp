@@ -79,6 +79,8 @@ namespace bts { namespace wallet {
          void add_contact_account( const string& new_account_name, 
                                    const public_key_type& new_account_key,
                                    const variant& private_data = variant() );
+         void add_contact_account( const account_record& blockchain_account,
+                                   const variant& private_data = variant() );
 
          void rename_account( const string& old_account_name,
                               const string& new_account_name );

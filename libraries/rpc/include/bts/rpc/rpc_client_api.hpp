@@ -12,8 +12,6 @@
 #include <fc/filesystem.hpp>
 
 
-
-
 namespace bts { namespace rpc {
   namespace detail { class rpc_client_impl; }
 
@@ -94,9 +92,6 @@ namespace bts { namespace rpc {
          virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) = 0;
          virtual              void wallet_rescan_blockchain_state() = 0;
          virtual              void wallet_import_bitcoin(const fc::path& filename,const string& passphrase, const string& account_name ) = 0;
-         virtual              void wallet_import_private_key(const string& wif_key_to_import, 
-                                                              const string& account_name,
-                                                              bool wallet_rescan_blockchain = false) = 0;
 
          virtual vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const = 0;
          virtual vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const = 0;

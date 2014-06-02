@@ -8,6 +8,7 @@
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
+#include <fc/io/json.hpp>
 #include <iostream>
 
 #include <algorithm>
@@ -530,29 +531,6 @@ namespace bts { namespace wallet {
 
 
    /**
-    *  Creates a new account from an existing foreign private key
-    */
-   void wallet::import_account( const string& account_name, 
-                                const string& wif_private_key )
-   { try {
-      FC_ASSERT( is_valid_account_name( account_name ) );
-      auto current_account = my->_wallet_db.lookup_account( account_name );
-
-      auto imported_public_key = import_wif_private_key( wif_private_key, string() );
-      if( current_account.valid() )
-      {
-         FC_ASSERT( current_account->account_address == address( imported_public_key ) );
-         import_wif_private_key( wif_private_key, account_name );
-      }
-      else
-      {
-         my->_wallet_db.add_contact_account( account_name, imported_public_key );
-         import_wif_private_key( wif_private_key, account_name );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
-
-   /**
     *  Creates a new private key under the specified account. This key
     *  will not be valid for sending TITAN transactions to, but will
     *  be able to receive payments directly.
@@ -574,14 +552,16 @@ namespace bts { namespace wallet {
 
    /**
     *  A contact is an account for which this wallet does not have the private
-    *  key.  
+    *  key.   If account_name is globally registered then this call will assume
+    *  it is the same account and will fail if the key is not the same.
     *
     *  @param account_name - the name the account is known by to this wallet
     *  @param key - the public key that will be used for sending TITAN transactions
     *               to the account.
     */
    void  wallet::add_contact_account( const string& account_name, 
-                                      const public_key_type& key )
+                                      const public_key_type& key,
+                                      const variant& private_data )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
@@ -597,12 +577,18 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${name}", ("name", *current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
+         current_account->private_data = private_data;
+         my->_wallet_db.store_record( *current_account );
+         return;
       }
       else
       {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( !account_key.valid() );
-         my->_wallet_db.add_contact_account( account_name, key );
+         if( current_registered_account.valid() )
+            my->_wallet_db.add_contact_account( *current_registered_account, private_data );
+         else
+            my->_wallet_db.add_contact_account( account_name, key, private_data );
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
          ilog( "account key:${a}}", ("a", account_key ) );
@@ -638,36 +624,69 @@ namespace bts { namespace wallet {
                 ("new_account_name",new_account_name) ) }
 
 
+   /**
+    *  If we already have a key record for key, then set the private key.
+    *  If we do not have a key record, 
+    *     If account_name is a valid existing account, then create key record
+    *       with that account as parent.
+    *     If account_name is not set, then lookup account with key in the blockchain
+    *       add contact account using data from blockchain and then set the private key
+    */
    public_key_type  wallet::import_private_key( const private_key_type& key, 
                                                 const string& account_name )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( is_valid_account( account_name ), "${account_name}", ("account_name",account_name) );
 
-      auto current_account = my->_wallet_db.lookup_account( account_name );
+      auto import_public_key = key.get_public_key();
 
-      if( account_name != string() )
-         FC_ASSERT( current_account.valid() );
-
-      auto pub_key = key.get_public_key();
-      address key_address(pub_key);
-      auto current_key_record = my->_wallet_db.lookup_key( key_address );
+      owallet_key_record current_key_record = my->_wallet_db.lookup_key( import_public_key );
       if( current_key_record.valid() )
       {
-         FC_ASSERT( current_key_record->account_address == current_account->account_address );
-         return current_key_record->public_key;
+         std::cout << "Storing private key\n";
+         current_key_record->encrypt_private_key( my->_wallet_password, key );
+         std::cout << "Storing private key: \n"<<fc::json::to_pretty_string( *current_key_record) << "\n";
+         my->_wallet_db.store_key( *current_key_record );
+         return import_public_key;
       }
+      else if( account_name == string() )
+      {
+         auto registered_account = my->_blockchain->get_account_record( import_public_key );
+         FC_ASSERT( registered_account );
 
-      key_data new_key_data;
-      if( current_account.valid() )
-         new_key_data.account_address = current_account->account_address;
-      new_key_data.encrypt_private_key( my->_wallet_password, key );
+         std::cout << "Importing key for registered account:\n "<< fc::json::to_pretty_string( *registered_account ) << "\n";
+         add_contact_account( registered_account->name, import_public_key );
+         return import_private_key( key, registered_account->name );
+      }
+      else
+      {
+         FC_ASSERT( is_valid_account_name( account_name ) );
+         FC_ASSERT( is_valid_account( account_name ) );
 
-      my->_wallet_db.store_key( new_key_data );
+         auto current_account = my->_wallet_db.lookup_account( account_name );
 
-      return pub_key;
+         FC_ASSERT( current_account.valid() );
+
+         auto pub_key = key.get_public_key();
+         address key_address(pub_key);
+         auto current_key_record = my->_wallet_db.lookup_key( key_address );
+         if( current_key_record.valid() )
+         {
+            FC_ASSERT( current_key_record->account_address == current_account->account_address );
+            current_key_record->encrypt_private_key( my->_wallet_password, key );
+            my->_wallet_db.store_key( *current_key_record );
+            return current_key_record->public_key;
+         }
+
+         key_data new_key_data;
+         if( current_account.valid() )
+            new_key_data.account_address = current_account->account_address;
+         new_key_data.encrypt_private_key( my->_wallet_password, key );
+
+         my->_wallet_db.store_key( new_key_data );
+
+         return pub_key;
+      }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
@@ -677,7 +696,6 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto wif_bytes = fc::from_base58(wif_key);
       auto key_bytes = vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
@@ -1453,6 +1471,8 @@ namespace bts { namespace wallet {
       result.reserve( balances.size() );
       for( auto item : balances )
          result.push_back( asset( item.second, item.first ) );
+      if( result.size() == 0 )
+         result.push_back( asset() );
       ilog( "result: ${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
