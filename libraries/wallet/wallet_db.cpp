@@ -30,11 +30,11 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_index_itr == self->address_to_account.end() );
               self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
               
-              if( account_to_load.blockchain_account_id != 0 )
+              if( account_to_load.id != 0 )
               {
-                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.blockchain_account_id );
+                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.id );
                 FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
-                self->account_id_to_account[ account_to_load.blockchain_account_id ] = account_to_load.index;
+                self->account_id_to_account[ account_to_load.id ] = account_to_load.index;
               }
 
               auto current_name_itr = self->name_to_account.find( account_to_load.name );
@@ -151,7 +151,6 @@ namespace bts{ namespace wallet {
       accounts.clear();
       transactions.clear();
       balances.clear();
-      blockchain_accounts.clear();
       assets.clear();
       properties.clear();
    }
@@ -242,6 +241,7 @@ namespace bts{ namespace wallet {
       {
          key_data& old_data = key_itr->second;
          old_data = key_to_store;
+         ilog( "storing key: ${k}", ("k",key_to_store) );
          store_record( key_itr->second );
       }
       else
@@ -287,9 +287,13 @@ namespace bts{ namespace wallet {
 
    bool wallet_db::has_private_key( const address& a )const
    { try {
+      ilog( "address: ${a}", ("a",a) );
       auto itr = keys.find(a);
       if( itr != keys.end() )
+      {
+         ilog( "               record: ${a}", ("a",itr->second) );
          return itr->second.has_private_key();
+      }
       return false; 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
 
@@ -307,17 +311,25 @@ namespace bts{ namespace wallet {
    }
 
    private_keys wallet_db::get_account_private_keys( const fc::sha512& password )
-   {
+   { try {
        private_keys keys;
        keys.reserve( accounts.size() );
        for( auto item : accounts )
        {
           auto key_rec = lookup_key(item.second.account_address);
-          if( key_rec.valid() )
-             keys.push_back( key_rec->decrypt_private_key( password ) );
+          if( key_rec.valid() && key_rec->has_private_key() )
+          {
+             try {
+                keys.push_back( key_rec->decrypt_private_key( password ) );
+             } catch ( const fc::exception& e )
+             {
+                wlog( "error decrypting private key: ${e}", ("e", e.to_detail_string() ) );
+                throw; // TODO... don't thtrow here, just log
+             }
+          }
        }
        return keys;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )
    {
@@ -337,8 +349,40 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
+   void wallet_db::add_contact_account( const account_record& blockchain_account,
+                                        const variant& private_data  )
+   {
+      wallet_account_record war;
+      account_record& tmp  = war;
+      tmp = blockchain_account;
+      war.private_data = private_data;
+      war.account_address = address(blockchain_account.owner_key);
+
+      auto current_key = lookup_key( blockchain_account.owner_key );
+      if( current_key )
+      {  
+         current_key->account_address = address(blockchain_account.owner_key);
+         store_record( *current_key );
+      }
+      else
+      {
+         wlog( "new wallet key exists... ..." );
+         wallet_key_record new_key;
+         new_key.index = new_index();
+         new_key.account_address = address(blockchain_account.owner_key);
+         new_key.public_key = blockchain_account.active_key();
+         wlog( "store_key: ${key}", ("key",blockchain_account.owner_key) );
+         my->load_key_record( new_key );
+         store_key( new_key );
+      }
+
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+   }
    void wallet_db::add_contact_account( const string& new_account_name, 
-                                        const public_key_type& new_account_key )
+                                        const public_key_type& new_account_key,
+                                        const variant& private_data )
    {
       ilog( "${name}", ("name", new_account_name)  );
       auto current_account_itr = name_to_account.find( new_account_name );
@@ -352,8 +396,11 @@ namespace bts{ namespace wallet {
 
       wallet_account_record war; 
       war.name = new_account_name;
-      war.blockchain_account_id = 0;
+      war.id = 0;
       war.account_address = address( new_account_key );
+      war.owner_key = new_account_key;
+      war.set_active_key( fc::time_point::now(), new_account_key );
+      war.private_data = private_data;
 
       auto current_key = lookup_key( new_account_key );
       if( current_key )
@@ -427,34 +474,44 @@ namespace bts{ namespace wallet {
        FC_ASSERT( !"Not Implemented" );
    }
 
-   void wallet_db::store_transaction( const signed_transaction& trx_to_store )
+   void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
    { try {
-      auto trx_id = trx_to_store.id();
-      auto itr = transactions.find( trx_id );
-      if( itr != transactions.end() ) return;
-
       wallet_transaction_record data;
-      data.index = new_index();
-      data.trx = trx_to_store;
-      store_record( data );
-      transactions[trx_id] = data;
-
+      if( trx_to_store.index == 0 )
+         trx_to_store.index = new_index();
+      store_record( trx_to_store );
+      transactions[trx_to_store.trx.id()] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
-   void wallet_db::cache_transaction( const signed_transaction& trx,
+   wallet_transaction_record wallet_db::cache_transaction( const signed_transaction& trx,
+                                      const asset&  amount,
+                                      share_type fees,
                                       const string& memo_message,
-                                      const public_key_type& to )
+                                      const public_key_type& to,
+                                      time_point_sec created,
+                                      time_point_sec received,
+                                      public_key_type from
+                                      )
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );
-      if( itr != transactions.end() ) return;
 
       wallet_transaction_record data;
-      data.index = new_index();
+      if( itr != transactions.end() ) data = itr->second;
+      if( data.index == 0 ) data.index = new_index();
+
       data.trx = trx;
-      data.to_account = to;
-      data.memo_message = memo_message;
+      data.transaction_id = trx.id();
+      data.amount         = amount;
+      data.fees           = fees;
+      data.to_account     = to;
+      data.from_account   = from;
+      data.created_time   = created;
+      data.received_time  = received;
+      data.memo_message   = memo_message;
       store_record( data );
       transactions[trx_id] = data;
+
+      return data;
        
        //transaction_data data
    } FC_RETHROW_EXCEPTIONS( warn, "", 
@@ -465,9 +522,9 @@ namespace bts{ namespace wallet {
    void wallet_db::cache_account( const wallet_account_record& war )
    {
       accounts[war.index] = war;
-      if( war.blockchain_account_id != 0 )
+      if( war.id != 0 )
       {
-         account_id_to_account[war.blockchain_account_id] = war.index;
+         account_id_to_account[war.id] = war.index;
       }
       store_record( war );
    }

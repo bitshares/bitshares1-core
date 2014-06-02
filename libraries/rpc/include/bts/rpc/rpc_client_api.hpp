@@ -12,8 +12,6 @@
 #include <fc/filesystem.hpp>
 
 
-
-
 namespace bts { namespace rpc {
   namespace detail { class rpc_client_impl; }
 
@@ -74,12 +72,9 @@ namespace bts { namespace rpc {
                                                            generate_transaction_flag = sign_and_broadcast) = 0;
 
 
-        virtual map<string, public_key_type> wallet_list_receive_accounts() const = 0;
 
         virtual          wallet_account_record wallet_get_account(const string& account_name) const = 0;
         virtual                       balances wallet_get_balance(const string& asset_symbol = string(BTS_ADDRESS_PREFIX), const string& account_name = string("*")) const = 0;
-        virtual vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count) const = 0;
-        virtual vector<pretty_transaction> wallet_get_transaction_history_summary(unsigned count) const = 0;
         virtual                   blockchain::oaccount_record blockchain_get_account_record(const string& name) const = 0;
         virtual                   blockchain::oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const = 0;
         virtual                  oasset_record blockchain_get_asset_record(const string& symbol) const = 0;
@@ -97,9 +92,6 @@ namespace bts { namespace rpc {
          virtual              void wallet_rescan_blockchain(uint32_t starting_block_number = 0) = 0;
          virtual              void wallet_rescan_blockchain_state() = 0;
          virtual              void wallet_import_bitcoin(const fc::path& filename,const string& passphrase, const string& account_name ) = 0;
-         virtual              void wallet_import_private_key(const string& wif_key_to_import, 
-                                                              const string& account_name,
-                                                              bool wallet_rescan_blockchain = false) = 0;
 
          virtual vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const = 0;
          virtual vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const = 0;

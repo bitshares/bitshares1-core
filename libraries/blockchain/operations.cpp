@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
    const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
    const operation_type_enum register_account_operation::type  = register_account_op_type;
    const operation_type_enum update_account_operation::type    = update_account_op_type;
+   const operation_type_enum withdraw_pay_operation::type      = withdraw_pay_op_type;
    const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
    const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
    const operation_type_enum bid_operation::type               = bid_op_type;
@@ -40,7 +41,7 @@ namespace bts { namespace blockchain {
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
                                                    const public_key_type& active, bool as_delegate )
-   :name(n),json_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
+   :name(n),public_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
 
    operation_factory& operation_factory::instance()
    {

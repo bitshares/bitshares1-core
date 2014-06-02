@@ -29,15 +29,15 @@ namespace bts { namespace client {
           public:
             client_impl(bts::client::client* self) :
               _self(self),
-              _chain_db(std::make_shared<chain_database>()),
-              _rpc_server(std::make_shared<rpc_server>(self))
+              _rpc_server(std::make_shared<rpc_server>(self)),
+              _chain_db(std::make_shared<chain_database>())
             {
             }
 
             virtual ~client_impl()override {}
 
             void delegate_loop();
-            signed_transactions get_pending_transactions() const;
+            signed_transactions blockchain_get_pending_transactions() const;
 
             /* Implement chain_client_impl */
             // @{
@@ -69,7 +69,7 @@ namespace bts { namespace client {
             bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
             chain_database_ptr                                          _chain_db;
-            unordered_map<transaction_id_type, signed_transaction> _pending_trxs;
+            unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
             fc::future<void>                                            _delegate_loop_complete;
        };
@@ -117,13 +117,14 @@ namespace bts { namespace client {
          }
        } // delegate_loop
 
-       signed_transactions client_impl::get_pending_transactions() const
+       signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;
-         trxs.reserve(_pending_trxs.size());
-         for (auto trx : _pending_trxs)
+         auto pending = _chain_db->get_pending_transactions();
+         trxs.reserve(pending.size());
+         for (auto trx_eval_ptr : pending)
          {
-           trxs.push_back(trx.second);
+           trxs.push_back(trx_eval_ptr->trx);
          }
          return trxs;
        }
@@ -333,7 +334,7 @@ namespace bts { namespace client {
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server() const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
-    signed_transactions client::get_pending_transactions()const { return my->get_pending_transactions(); }
+    signed_transactions client::blockchain_get_pending_transactions()const { return my->blockchain_get_pending_transactions(); }
 
     bts::blockchain::transaction_id_type client::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
@@ -463,31 +464,6 @@ namespace bts { namespace client {
       return issue_asset_trx;
     }
 
-    signed_transaction client::wallet_register_account( const string& account_name,
-                                                        const string& pay_with_account,
-                                                        const fc::variant& data,
-                                                        bool as_delegate,
-                                                        rpc_client_api::generate_transaction_flag flag)
-    {
-      try {
-        bool sign = (flag != do_not_sign);
-        auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, sign);
-        if( flag == sign_and_broadcast )
-        {
-            network_broadcast_transaction(trx);
-        }
-        return trx;
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
-    }
-
-    signed_transaction client::wallet_update_registered_account( const string& registered_account_name,
-                                                                 const fc::variant& data,
-                                                                 bool as_delegate,
-                                                                 rpc_client_api::generate_transaction_flag flag )
-    {
-      FC_ASSERT(!"Not implemented")
-      return signed_transaction();
-    }
 
 
     signed_transaction client::wallet_submit_proposal( const string& delegate_account_name,
@@ -525,12 +501,16 @@ namespace bts { namespace client {
     }
 
 
+    vector<string> client::wallet_list() const
+    {
+      return get_wallet()->list();  
+    }
 
-    map<std::string, public_key_type> client::wallet_list_contact_accounts() const
+    vector<wallet_account_record> client::wallet_list_contact_accounts() const
     {
       return get_wallet()->list_contact_accounts();
     }
-    map<std::string, public_key_type> client::wallet_list_receive_accounts() const
+    vector<wallet_account_record> client::wallet_list_receive_accounts() const
     {
       return get_wallet()->list_receive_accounts();
     }
@@ -550,23 +530,12 @@ namespace bts { namespace client {
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<wallet_transaction_record> client::wallet_get_transaction_history(unsigned count) const
+
+    vector<pretty_transaction> client::wallet_account_transaction_history(const string& account) 
     {
-      return get_wallet()->get_transaction_history();
+      return get_wallet()->get_pretty_transaction_history(account);
     }
 
-    vector<pretty_transaction> client::wallet_get_transaction_history_summary(unsigned count) const
-    {
-        auto tx_recs = get_wallet()->get_transaction_history( );
-        auto result = vector<pretty_transaction>();
-
-        for( auto tx_rec : tx_recs)
-        {
-            result.push_back( get_wallet()->to_pretty_trx( tx_rec ) );
-        }
-
-        return result;
-    }
 
     oaccount_record client::blockchain_get_account_record(const string& name) const
     {
@@ -805,36 +774,35 @@ namespace bts { namespace client {
       return fc::ecc::public_key(signature, digest());
     }
 
-    balances client::wallet_get_balance( const string& symbol, const std::string& account_name ) const
+
+    balances client::wallet_get_balance( const string& symbol, 
+                                         const std::string& account_name ) const
     { try {
-       if( symbol == "*" )
-       {
-          vector<asset> all_balances = get_wallet()->get_all_balances(account_name);
-          balances all_results(all_balances.size());
-          for( uint32_t i = 0; i < all_balances.size(); ++i )
-          {
-             all_results[i].first  = all_balances[i].amount;
-             all_results[i].second = get_chain()->get_asset_symbol( all_balances[i].asset_id ); 
-          }
-          return all_results;
-       }
-       else
-       {
-          asset balance = get_wallet()->get_balance( symbol, account_name );
-          balances results(1);
-          results.back().first = balance.amount;
-          results.back().second = get_chain()->get_asset_symbol( balance.asset_id );
-          return results;
-       }
+        vector<asset> all_balances = get_wallet()->get_balance( symbol ,account_name);
+       
+        balances all_results(all_balances.size());
+        for( uint32_t i = 0; i < all_balances.size(); ++i )
+        {
+           all_results[i].first  = all_balances[i].amount;
+           all_results[i].second = get_chain()->get_asset_symbol( all_balances[i].asset_id ); 
+        }
+        if( all_results.size() == 0 )
+           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
+        return all_results;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
-    void client::wallet_add_contact_account( const string& account_name, const public_key_type& contact_key )
+
+    void client::wallet_add_contact_account( const string& account_name, 
+                                             const public_key_type& contact_key )
     {
        get_wallet()->add_contact_account( account_name, contact_key );
     }
-    public_key_type client::wallet_create_account( const string& account_name )
+
+
+    public_key_type client::wallet_account_create( const string& account_name,
+                                                   const variant& private_data )
     {
-       return get_wallet()->create_account( account_name );
+       return get_wallet()->create_account( account_name, private_data );
     }
 
     fc::variant_object client::about() const
@@ -852,68 +820,133 @@ namespace bts { namespace client {
     {
       return get_rpc_server()->help(command_name);
     }
-     
-    variant_object client::get_info() const
+    
+
+    variant_object client::blockchain_get_config() const
     {
        fc::mutable_variant_object info;
-       auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
-       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
-       auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
-       auto advanced_params = network_get_advanced_node_parameters();
-       auto wallet_balance_shares = get_wallet()->is_open() ? get_wallet()->get_balance().amount : 0;
-
-       info["blockchain_block_num"]                 = get_chain()->get_head_block_num();
-       info["network_num_connections"]              = network_get_connection_count();
-       info["wallet_balance"]                       = wallet_balance_shares;
-       info["wallet_unlocked_seconds_remaining"]    =  (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
-       info["blockchain_asset_reg_fee"]             = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
-       info["blockchain_asset_shares_max"]          = BTS_BLOCKCHAIN_MAX_SHARES;
-
-       info["blockchain_bips_per_share"]            = bips_per_share;
-
-       info["blockchain_block_fee_min"]             = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
-       info["blockchain_block_interval"]            = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["blockchain_block_size_max"]            = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["blockchain_block_size_target"]         = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-
-       info["blockchain_delegate_fire_votes_min"]   = BTS_BLOCKCHAIN_FIRE_VOTES;
-       info["blockchain_delegate_num"]              = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["blockchain_delegate_reg_fee"]          = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["blockchain_delegate_reward_min"]       = BTS_BLOCKCHAIN_MIN_REWARD;
-
        info["blockchain_id"]                        = get_chain()->chain_id();
+       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+       info["symbol"]                               = BTS_ADDRESS_PREFIX;
+       info["version"]                              = BTS_BLOCKCHAIN_VERSION;
 
-       info["blockchain_name_size_max"]             = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-       info["blockchain_name_data_size_max"]        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+       info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
 
-       info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
+       info["delegate_fire_votes_min"]              = BTS_BLOCKCHAIN_FIRE_VOTES;
+       info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
+       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_MIN_REWARD;
 
-       info["blockchain_shares"]                    = current_share_supply;
 
-       info["blockchain_size_max"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-
-       info["blockchain_symbol"]                    = BTS_ADDRESS_PREFIX;
-
-       info["blockchain_version"]                   = BTS_BLOCKCHAIN_VERSION;
-
-   //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
-
-    //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
-
-       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
-
-       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
-
-       info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
-
-       info["wallet_open"]                          = get_wallet()->is_open();
-
-       info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
-                                                    ? std::string( get_wallet()->unlocked_until() )
-                                                    : "";
-       info["wallet_version"]                       = BTS_WALLET_VERSION;
+       info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+       info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
 
        return info;
+
+    }
+
+    variant_object client::get_info() const
+    {
+      fc::mutable_variant_object info;
+      auto share_record = get_chain()->get_asset_record( BTS_ADDRESS_PREFIX );
+      auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
+      auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
+      auto advanced_params = network_get_advanced_node_parameters();
+      fc::variant wallet_balance_shares;
+      if (get_wallet()->is_open())
+        wallet_balance_shares = wallet_get_balance();
+      else
+        wallet_balance_shares = "[wallet is not open]";
+
+      info["blockchain_head_block_num"]            = get_chain()->get_head_block_num();
+      info["blockchain_head_block_time"]           = get_chain()->now();
+      info["network_num_connections"]              = network_get_connection_count();
+      info["wallet_balance"]                       = wallet_balance_shares;
+      auto seconds_remaining = (get_wallet()->unlocked_until() - bts::blockchain::now()).count()/1000000;
+      info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
+      if( get_wallet()->next_block_production_time() != fc::time_point_sec() )
+      {
+        info["wallet_next_block_production_time"] = get_wallet()->next_block_production_time();
+        info["wallet_seconds_until_next_block_production"] = (get_wallet()->next_block_production_time() - bts::blockchain::now()).count()/1000000;
+      }
+      else
+      {
+        info["wallet_next_block_production_time"] = variant();
+        info["wallet_seconds_until_next_block_production"] = variant();
+      }
+      info["wallet_local_time"]                    = bts::blockchain::now();
+      info["blockchain_bips_per_share"]            = bips_per_share;
+      info["blockchain_random_seed"]               = get_chain()->get_current_random_seed();
+
+      info["blockchain_shares"]                    = current_share_supply;
+
+  //    info["client_httpd_port"]                    = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
+
+  //   info["client_rpc_port"]                      = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+
+      info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
+
+      info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
+
+    // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
+
+      info["wallet_open"]                          = get_wallet()->is_open();
+
+      info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
+                                                  ? std::string( get_wallet()->unlocked_until() )
+                                                  : "";
+      info["wallet_version"]                       = BTS_WALLET_VERSION;
+
+      return info;
+    }
+    void client::wallet_rescan_blockchain( int64_t start, int64_t count) 
+    { try {
+       get_wallet()->scan_chain( start, start + count );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
+
+
+    wallet_transaction_record client::wallet_account_register( const string& account_name,
+                                                        const string& pay_with_account,
+                                                        const fc::variant& data,
+                                                        bool as_delegate ) 
+    {
+      try {
+        // bool sign = (flag != do_not_sign);
+        auto trx = get_wallet()->register_account(account_name, data, as_delegate, pay_with_account, true);//sign);
+        network_broadcast_transaction( trx.trx );
+        /*
+        if( flag == sign_and_broadcast )
+        {
+            network_broadcast_transaction(trx);
+        }
+        */
+        return trx;
+      } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
+    }
+
+    wallet_transaction_record client::wallet_account_update_registration( const string& account_to_update,
+                                                                        const string& pay_from_account,
+                                                                        const variant& public_data,
+                                                                        bool as_delegate )
+    { try {
+       auto trx = get_wallet()->update_registered_account( account_to_update, 
+                                                           pay_from_account, 
+                                                           public_data, 
+                                                           optional<public_key_type>(),
+                                                           as_delegate, true );
+
+       network_broadcast_transaction( trx.trx );
+       return trx;
+    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+    fc::variant_object client::network_get_info() const
+    {
+      return get_node()->network_get_info();
     }
 
 } } // bts::client

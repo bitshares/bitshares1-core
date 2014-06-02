@@ -1,15 +1,5 @@
 {
   "category": "General Methods",
-  "type_map":
-    [
-      {
-        "type_name" : "method_name",
-        "cpp_parameter_type" : "const std::string&",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string",
-        "default_example" : "wallet_transfer"
-      }
-    ],
   "methods" :
     [
       {
@@ -28,6 +18,15 @@
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["getinfo","info"]
+      },
+      {
+        "method_name": "blockchain_get_config",
+        "description": "Returns static configuration parameters about the blockchain.",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["getconfig","get_config", "config"]
       },
       {
         "method_name": "stop",

@@ -104,10 +104,10 @@ namespace bts { namespace blockchain {
          virtual int64_t                    get_delegate_pay_rate()const override;
 
          /** top delegates by current vote, projected to be active in the next round */
-         vector<account_id_type>               next_round_active_delegates()const;
+         vector<account_id_type>            next_round_active_delegates()const;
                                             
-         vector<account_id_type>               get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
-         vector<account_record>                get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
+         vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = -1 )const;
+         vector<account_record>             get_delegate_records_by_vote( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = -1)const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
 
@@ -124,10 +124,11 @@ namespace bts { namespace blockchain {
          asset_id_type                      get_asset_id( const string& asset_sybmol )const;
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record               get_account_record( account_id_type id )const override;
+         virtual oaccount_record            get_account_record( account_id_type id )const override;
+         virtual oaccount_record            get_account_record( const address& owner )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
-         virtual oaccount_record               get_account_record( const string& name )const override;
+         virtual oaccount_record            get_account_record( const string& name )const override;
 
          virtual void                       store_asset_record( const asset_record& r )override;
          virtual void                       store_balance_record( const balance_record& r )override;

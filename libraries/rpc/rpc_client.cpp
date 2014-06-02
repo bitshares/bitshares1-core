@@ -36,11 +36,9 @@ namespace bts { namespace rpc {
                                                    const std::string& invoice_memo = "",
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast);
                                                    */
-      std::vector<wallet_transaction_record> wallet_get_transaction_history(unsigned count);
       full_block blockchain_get_block(const block_id_type& block_id);
       full_block blockchain_get_block_by_number(uint32_t block_number);
       bool validate_address(bts::blockchain::address address);
-      void wallet_rescan_blockchain(uint32_t starting_block_number);
       void wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name );
       void wallet_import_private_key(const std::string& wif_key_to_import, const std::string& account_name = "default", bool wallet_rescan_blockchain = false);
       bts::net::message_propagation_data network_get_transaction_propagation_data(const bts::blockchain::transaction_id_type& transaction_id);
@@ -100,11 +98,6 @@ namespace bts { namespace rpc {
     */
 
 
-    std::vector<wallet_transaction_record> rpc_client_impl::wallet_get_transaction_history(unsigned count)
-    {
-      return _json_connection->call<std::vector<wallet_transaction_record>>("wallet_get_transaction_history", fc::variant(count));
-    }
-
     full_block rpc_client_impl::blockchain_get_block(const block_id_type&  block_id)
     {
       return _json_connection->call<full_block>("blockchain_get_block", fc::variant(block_id));
@@ -120,10 +113,6 @@ namespace bts { namespace rpc {
       return _json_connection->call<bool>("blockchain_get_block", fc::variant(address));
     }
 
-    void rpc_client_impl::wallet_rescan_blockchain(uint32_t starting_block_number)
-    {
-      _json_connection->async_call("wallet_rescan_blockchain", fc::variant(starting_block_number)).wait();
-    }
 
     void rpc_client_impl::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name )
     {
@@ -195,10 +184,6 @@ namespace bts { namespace rpc {
     return my->wallet_get_balance(asset_symbol, account_name);
   }
 
-  std::vector<wallet_transaction_record> rpc_client::wallet_get_transaction_history(unsigned count) const
-  {
-    return my->wallet_get_transaction_history(count);
-  }
 
   full_block rpc_client::blockchain_get_block(const block_id_type& block_id) const
   {
@@ -215,10 +200,6 @@ namespace bts { namespace rpc {
     return my->validate_address(address);
   }
   */
-  void rpc_client::wallet_rescan_blockchain(uint32_t starting_block_number /* = 0 */)
-  {
-    my->wallet_rescan_blockchain(starting_block_number);
-  }
 
   void rpc_client::wallet_import_bitcoin(const fc::path& wallet_filename, const std::string& password, const std::string& account_name)
   {

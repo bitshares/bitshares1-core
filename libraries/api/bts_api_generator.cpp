@@ -86,7 +86,12 @@ public:
     _cpp_parameter_type(parameter_type),
     _cpp_return_type(return_type)
   {}
-  virtual std::string get_cpp_parameter_type() override { return _cpp_parameter_type; }
+  virtual std::string get_cpp_parameter_type() override
+  { 
+    if (!_cpp_parameter_type.empty())
+      return _cpp_parameter_type;
+    return std::string("const ") + get_cpp_return_type() + "&";
+  }
   virtual std::string get_cpp_return_type() override { return _cpp_return_type; }
 };
 typedef std::shared_ptr<fundamental_type_mapping> fundamental_type_mapping_ptr;
@@ -156,6 +161,7 @@ private:
   type_map_type _type_map;
 
   method_description_list _methods;
+  std::set<std::string> _registered_method_names; // used for duplicate checking
   std::set<std::string> _include_files;
 public:
   api_generator(const std::string& classname); 
@@ -170,6 +176,8 @@ private:
   void generate_positional_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream);
   void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
+  std::string generate_detailed_description_for_method(const method_description& method);
+  void write_generated_file_header(std::ostream& stream);
 
   type_mapping_ptr lookup_type_mapping(const std::string& type_string);
   void initialize_type_map_with_fundamental_types();
@@ -209,10 +217,11 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
 
     type_mapping_ptr mapping;
 
-    if (json_type.contains("cpp_parameter_type") && 
-        json_type.contains("cpp_return_type"))
+    if (json_type.contains("cpp_return_type"))
     {
-      std::string parameter_type = json_type["cpp_parameter_type"].as_string();
+      std::string parameter_type;
+      if (json_type.contains("cpp_parameter_type"))
+        parameter_type = json_type["cpp_parameter_type"].as_string();
       std::string return_type = json_type["cpp_return_type"].as_string();
       fundamental_type_mapping_ptr fundamental_mapping = std::make_shared<fundamental_type_mapping>(json_type_name, parameter_type, return_type);
       mapping = fundamental_mapping;
@@ -250,6 +259,8 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
     if (json_type.contains("from_variant_function"))
       mapping->set_from_variant_function(json_type["from_variant_function"].as_string());
 
+    FC_ASSERT(_type_map.find(json_type_name) == _type_map.end(), 
+              "Error, type ${type_name} is already registered", ("type_name", json_type_name));
     _type_map.insert(type_map_type::value_type(json_type_name, mapping));
 
     if (json_type.contains("cpp_include_file"))
@@ -301,6 +312,9 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
     fc::variant_object json_method_description = method_description_variant.get_object();
     FC_ASSERT(json_method_description.contains("method_name"), "method entry missing \"method_name\"");
     std::string method_name = json_method_description["method_name"].as_string();
+    FC_ASSERT(_registered_method_names.find(method_name) == _registered_method_names.end(),
+              "Error: multiple methods registered with the name ${name}", ("name", method_name));
+    _registered_method_names.insert(method_name);
     try
     {
       method_description method;
@@ -319,7 +333,15 @@ void api_generator::load_method_descriptions(const fc::variants& method_descript
       method.prerequisites = load_prerequisites(json_method_description["prerequisites"]);
 
       if (json_method_description.contains("aliases"))
+      {
         method.aliases = json_method_description["aliases"].as<std::vector<std::string> >();
+        for (const std::string& alias : method.aliases)
+        {
+          FC_ASSERT(_registered_method_names.find(alias) == _registered_method_names.end(),
+                    "Error: alias \"${alias}\" conflicts with an existing method or alias", ("alias", alias));
+          _registered_method_names.insert(alias);
+        }
+      }
       
       if (json_method_description.contains("description"))
         method.brief_description = json_method_description["description"].as_string();
@@ -384,6 +406,26 @@ std::string api_generator::generate_signature_for_method(const method_descriptio
   return method_signature.str();
 }
 
+void api_generator::write_generated_file_header(std::ostream& stream)
+{
+  stream << "//                                   _           _    __ _ _      \n";
+  stream << "//                                  | |         | |  / _(_) |     \n";
+  stream << "//    __ _  ___ _ __   ___ _ __ __ _| |_ ___  __| | | |_ _| | ___ \n";
+  stream << "//   / _` |/ _ \\ '_ \\ / _ \\ '__/ _` | __/ _ \\/ _` | |  _| | |/ _ \\`\n";
+  stream << "//  | (_| |  __/ | | |  __/ | | (_| | ||  __/ (_| | | | | | |  __/\n";
+  stream << "//   \\__, |\\___|_| |_|\\___|_|  \\__,_|\\__\\___|\\__,_| |_| |_|_|\\___|\n";
+  stream << "//    __/ |                                                       \n";
+  stream << "//   |___/                                                        \n";
+  stream << "//\n";
+  stream << "//\n";
+  stream << "// Warning: this is a generated file, any changes made here will be\n";
+  stream << "//          overwritten by the build process.  If you need to change what is\n";
+  stream << "//          generated here, you should either modify the input json files\n";
+  stream << "//          (network_api.json, wallet_api.json, etc) or modify the code\n";
+  stream << "//          generator (bts_api_generator.cpp) itself\n";
+  stream << "//\n";
+}
+
 void api_generator::generate_interface_file(const fc::path& api_description_output_dir)
 {
   fc::path api_description_header_path = api_description_output_dir / "include" / "bts" / "api";
@@ -391,6 +433,8 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   fc::path api_header_filename = api_description_header_path / (_api_classname + ".hpp");
 
   std::ofstream interface_file(api_header_filename.string());
+  write_generated_file_header(interface_file);
+
   interface_file << "#pragma once\n\n";
   write_includes_to_stream(interface_file);
   interface_file << "namespace bts { namespace api {\n\n";
@@ -400,9 +444,7 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   interface_file << "  public:\n";
 
   for (const method_description& method : _methods)
-  {
     interface_file << "    virtual " << generate_signature_for_method(method, "", true) << " = 0;\n";
-  }
 
   interface_file << "  };\n\n";
   interface_file << "} } // end namespace bts::api\n";
@@ -421,6 +463,8 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   std::ofstream cpp_file(client_cpp_filename.string());
   std::ofstream method_overrides_file(method_overrides_filename.string());
 
+  write_generated_file_header(header_file);
+  write_generated_file_header(method_overrides_file);
   header_file << "#pragma once\n\n";
   header_file << "#include <fc/rpc/json_connection.hpp>\n";
   header_file << "#include <bts/api/" << _api_classname << ".hpp>\n\n";
@@ -438,7 +482,7 @@ void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
   header_file << "  };\n\n";
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
-
+  write_generated_file_header(cpp_file);
   cpp_file << "#include <bts/rpc_stubs/" << client_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/conversion_functions.hpp>\n\n";
   cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
@@ -573,6 +617,35 @@ void api_generator::generate_named_server_implementation_to_stream(const method_
   stream << "}\n\n";
 }
 
+std::string api_generator::generate_detailed_description_for_method(const method_description& method)
+{
+  std::ostringstream description;
+  description << method.brief_description << "\n";
+
+  if (!method.detailed_description.empty())
+    description << "\n" << method.detailed_description << "\n";
+
+  description << "\nParameters:\n";
+  if (method.parameters.empty())
+    description << "  (none)\n";
+  else
+  {
+    for (const parameter_description& parameter : method.parameters)
+    {
+      description << "  " << parameter.name << " (" << parameter.type->get_type_name() << ", ";
+      if (parameter.default_value)
+        description << "optional, defaults to " << fc::json::to_string(parameter.default_value);
+      else
+        description << "required";
+      description << "): " << parameter.description << "\n";
+    }
+  }
+
+  description << "\nReturns:\n";
+  description << "  " << method.return_type->get_type_name() << "\n";
+  return description.str();
+}
+
 void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
 {
   std::string server_classname = _api_classname + "_server";
@@ -584,6 +657,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   std::ofstream header_file(server_header_filename.string());
   std::ofstream cpp_file(server_cpp_filename.string());
 
+  write_generated_file_header(header_file);
   header_file << "#pragma once\n";
   header_file << "#include <bts/api/api_metadata.hpp>\n";
   header_file << "#include <bts/api/common_api.hpp>\n";
@@ -610,6 +684,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   header_file << "  };\n\n";
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
+  write_generated_file_header(cpp_file);
   cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/api_metadata.hpp>\n";
   cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
@@ -672,7 +747,7 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
     }
     cpp_file <<  "},\n";
     cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
-    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(method.detailed_description)) << ",\n";
+    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(generate_detailed_description_for_method(method))) << ",\n";
     cpp_file << "    /* aliases */ {";
     if (!method.aliases.empty())
     {
@@ -716,7 +791,8 @@ void api_generator::initialize_type_map_with_fundamental_types()
     "int32_t",
     "uint32_t",
     "int64_t",
-    "uint64_t"
+    "uint64_t",
+    "bool"
   };
   const char* pass_by_reference_types[] =
   {

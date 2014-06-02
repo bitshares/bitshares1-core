@@ -33,18 +33,12 @@ namespace bts { namespace rpc {
              (blockchain_get_asset_record)\
              (blockchain_get_asset_record_by_id)\
              (blockchain_get_delegates)\
-             (wallet_import_private_key)\
              (wallet_list_contact_accounts)\
              (wallet_list_receive_accounts)\
              (wallet_get_account)\
              (wallet_rename_account)\
              (wallet_asset_create)\
              (wallet_asset_issue)\
-             (wallet_get_transaction_history)\
-             (wallet_get_transaction_history_summary)\
-             (wallet_rescan_blockchain)\
-             (wallet_rescan_blockchain_state)\
-             (wallet_register_account)\
              (wallet_submit_proposal)\
              (wallet_vote_proposal)\
              (wallet_set_delegate_trust_status)\
@@ -682,34 +676,6 @@ namespace bts { namespace rpc {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("params",params) ) }
 
 
-    static bts::api::method_data wallet_get_transaction_history_metadata{"wallet_get_transaction_history", nullptr,
-            /* description */ "Retrieves all transactions into or out of this wallet",
-            /* returns: */    "std::vector<wallet_transaction_record>",
-            /* params:          name     type      classification                   default_value */
-                              {{"count", "unsigned",    bts::api::optional_positional, 0}},
-            /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_transaction_history(const fc::variants& params)
-    {
-      unsigned count = params[0].as<unsigned>();
-      return fc::variant( _client->wallet_get_transaction_history( count ) );
-    }
-
-    static bts::api::method_data wallet_get_transaction_history_summary_metadata{"wallet_get_transaction_history_summary", nullptr,
-     /* description */ "Returns a transaction history table for pretty printing",
-     /* returns: */ "std::vector<pretty_transaction>",
-     /* params: name type classification default_value */
-                       {{"count", "unsigned", bts::api::optional_positional, 0}},
-     /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-     R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_get_transaction_history_summary(const fc::variants& params)
-    {
-      unsigned count = params[0].as<unsigned>();
-      return fc::variant( _client->wallet_get_transaction_history_summary( count ) );
-    }
-
     static bts::api::method_data blockchain_get_account_record_metadata{"blockchain_get_account_record", nullptr,
             /* description */ "Retrieves the name record",
             /* returns: */    "account_record",
@@ -774,22 +740,6 @@ namespace bts { namespace rpc {
       if( !!rec )
          return fc::variant( *rec );
       return fc::variant();
-    }
-
-    static bts::api::method_data wallet_register_account_metadata{"wallet_register_account", nullptr,
-            /* description */ "Register an account with the blockchain", 
-            /* returns: */    "signed_transaction",
-            /* params:          name             type       classification                   default_value */
-                              {{"name",          "string",  bts::api::required_positional, fc::ovariant()},
-                               {"data",          "variant", bts::api::optional_positional, fc::ovariant()},
-                               {"as_delegate",   "bool",    bts::api::optional_positional, fc::variant(false)}},
-            /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-          R"(
-          )"
-     };
-    fc::variant rpc_server_impl::wallet_register_account(const fc::variants& params)
-    {
-       FC_ASSERT( false, "Not Implemented" );
     }
 
 
@@ -877,7 +827,7 @@ returns false if delegate is not recognized
      )" };
     fc::variant rpc_server_impl::wallet_list_delegate_trust_status(const fc::variants& params)
     {
-      return fc::variant();//_client->wallet_list_delegate_trust_status());
+      return fc::variant( );//_client->wallet_list_delegate_trust_status());
     }
 
     static bts::api::method_data blockchain_get_transaction_metadata{ "blockchain_get_transaction", nullptr,
@@ -955,55 +905,6 @@ Examples:
       {
         return fc::variant(false);
       }
-    }
-
-    static bts::api::method_data wallet_rescan_blockchain_metadata{"wallet_rescan_blockchain", nullptr,
-            /* description */ "Rescan the block chain from the given block number",
-            /* returns: */    "void",
-            /* params:          name              type   classification                   default_value */
-                              {{"starting_block_number", "int", bts::api::optional_positional, 0}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_rescan_blockchain(const fc::variants& params)
-    {
-      uint32_t starting_block_number = params[0].as<uint32_t>();;
-      _client->wallet_rescan_blockchain(starting_block_number);
-      return fc::variant();
-    }
-
-    static bts::api::method_data wallet_rescan_blockchain_state_metadata{"wallet_rescan_blockchain_state", nullptr,
-            /* description */ "Rescans the genesis block and state (not the transactions)",
-            /* returns: */    "void",
-            /* params:          name              type    required */
-                              {},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open,
-          R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_rescan_blockchain_state(const fc::variants& params)
-    {
-      _client->wallet_rescan_blockchain_state();
-      return fc::variant();
-    }
-
-
-    // TODO: get account argument
-    static bts::api::method_data wallet_import_private_key_metadata{"wallet_import_private_key", nullptr,
-            /* description */ "Import a BTC/PTS private key in wallet import format (WIF)",
-            /* returns: */    "void",
-            /* params:          name            type           classification                   default_value */
-                              {{"key_to_import", "wif_private_key", bts::api::required_positional, fc::ovariant()},
-                               {"account_name", "string",      bts::api::optional_positional, fc::variant("default")},
-                               {"rescan",       "bool",        bts::api::optional_positional, false}},
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked,
-          R"()" };
-    fc::variant rpc_server_impl::wallet_import_private_key(const fc::variants& params)
-    {
-      auto key_to_import   =  params[0].as_string();
-      std::string account_name = params[1].as_string();
-      bool wallet_rescan_blockchain = params[2].as_bool();
-      _client->wallet_import_private_key(key_to_import, account_name, wallet_rescan_blockchain);
-      return fc::variant();
     }
 
 

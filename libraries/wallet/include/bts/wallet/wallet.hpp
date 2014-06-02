@@ -59,6 +59,7 @@ namespace bts { namespace wallet {
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
+         bool is_unique_account( const string& account_name )const;
 
          /**
           * Account names are limited the same way as domain names.
@@ -95,10 +96,8 @@ namespace bts { namespace wallet {
          uint32_t  get_last_scanned_block_number()const;
 
          ///@{ account management
-         public_key_type  create_account( const string& account_name );
-         void             import_account( const string& account_name, 
-                                          const string& wif_private_key );
-
+         public_key_type  create_account( const string& account_name, 
+                                          const variant& private_data = variant() );
 
          address  get_new_address( const string& account_name );
 
@@ -106,7 +105,8 @@ namespace bts { namespace wallet {
           *  A contact is an account for which we do not have the private key.
           */
          void     add_contact_account( const string& account_name, 
-                                       const public_key_type& key );
+                                       const public_key_type& key,
+                                       const variant& private_data = variant() );
 
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
@@ -140,8 +140,10 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         map<string,public_key_type> list_receive_accounts()const;
-         map<string,public_key_type> list_contact_accounts()const;
+         vector<string> list() const; // list wallets
+
+         vector<wallet_account_record> list_receive_accounts()const;
+         vector<wallet_account_record> list_contact_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
@@ -186,13 +188,14 @@ namespace bts { namespace wallet {
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         signed_transaction register_account( const string& account_name,
+         wallet_transaction_record register_account( const string& account_name,
                                               const variant& json_data,
                                               bool  as_delegate, 
                                               const string& pay_with_account_name,
                                               const bool sign = true );
 
-         signed_transaction update_registered_account( const string& account_name,
+         wallet_transaction_record update_registered_account( const string& account_name,
+                                                       const string& pay_from_account,
                                                        optional<variant> json_data,
                                                        optional<public_key_type> active = optional<public_key_type>(),
                                                        bool as_delegate = false,
@@ -213,7 +216,7 @@ namespace bts { namespace wallet {
 
          ///@} Transaction Generation Methods
  
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec );
+         pretty_transaction                      to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
 
          void      set_delegate_trust_level(const string& delegate_name, 
@@ -237,13 +240,12 @@ namespace bts { namespace wallet {
          std::unordered_map<address,string>    get_send_addresses()const;
          */
 
-         asset                                 get_balance( const string& symbol = BTS_ADDRESS_PREFIX,
-                                                                 const string& account_name  = string() )const;
-
-         vector<asset>                         get_all_balances( const string& account_name = string() )const;
+         vector<asset>                         get_balance( const string& symbol = string("*"),
+                                                            const string& account_name  = string("*") )const;
          ///@}
 
-         vector<wallet_transaction_record>     get_transaction_history()const;
+         vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
+         vector<pretty_transaction>     get_pretty_transaction_history( const string& account_name = string() )const;
 
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;

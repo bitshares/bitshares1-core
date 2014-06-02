@@ -9,9 +9,6 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
 
-//TODO tmp debug
-#include <iostream>
-
 
 namespace bts { namespace blockchain {
 

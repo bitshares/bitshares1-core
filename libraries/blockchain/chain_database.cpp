@@ -156,10 +156,12 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >                   _asset_db;
             bts::db::level_map< balance_id_type, balance_record >               _balance_db;
-            bts::db::level_map< account_id_type, account_record >                     _name_db;
+            bts::db::level_map< account_id_type, account_record >               _account_db;
+            bts::db::level_map< address, account_id_type >                      _address_to_account_db;
 
-            bts::db::level_map< string, account_id_type >                     _name_index_db;
-            bts::db::level_map< string, asset_id_type >                    _symbol_index_db;
+
+            bts::db::level_map< string, account_id_type >                       _account_index_db;
+            bts::db::level_map< string, asset_id_type >                         _symbol_index_db;
             bts::db::level_pod_map< vote_del, int >                             _delegate_vote_index_db;
 
 
@@ -535,10 +537,10 @@ namespace bts { namespace blockchain {
       void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
          auto block_id = block_data.id();
+         block_summary summary;
          try {
             verify_header( block_data );
 
-            block_summary summary;
             summary.block_data = block_data;
 
             /* Create a pending state to track changes that would apply as we evaluate the block */
@@ -577,13 +579,18 @@ namespace bts { namespace blockchain {
             clear_pending( block_data );
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
-            if( _observer ) _observer->block_applied( summary );
          }
          catch ( const fc::exception& e )
          {
             wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
             mark_invalid( block_id );
             throw;
+         }
+         if( _observer ) try { 
+            _observer->block_applied( summary );
+         } catch ( const fc::exception& e )
+         {
+            wlog( "${e}", ("e",e.to_detail_string() ) );
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
@@ -657,9 +664,10 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
       bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
@@ -745,9 +753,10 @@ namespace bts { namespace blockchain {
 
           my->_asset_db.open( data_dir / "asset_db" );
           my->_balance_db.open( data_dir / "balance_db" );
-          my->_name_db.open( data_dir / "name_db" );
+          my->_account_db.open( data_dir / "account_db" );
+          my->_address_to_account_db.open( data_dir / "address_to_account_db" );
 
-          my->_name_index_db.open( data_dir / "name_index_db" );
+          my->_account_index_db.open( data_dir / "account_index_db" );
           my->_symbol_index_db.open( data_dir / "symbol_index_db" );
           my->_delegate_vote_index_db.open( data_dir / "delegate_vote_index_db" );
 
@@ -819,9 +828,10 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
-      my->_name_db.close();
+      my->_account_db.close();
+      my->_address_to_account_db.close();
 
-      my->_name_index_db.close();
+      my->_account_index_db.close();
       my->_symbol_index_db.close();
       my->_delegate_vote_index_db.close();
 
@@ -849,7 +859,7 @@ namespace bts { namespace blockchain {
    { try {
       auto delegate_record = get_account_record( get_signing_delegate_id( sec ) );
       FC_ASSERT( !!delegate_record );
-      return delegate_record->active_key;
+      return delegate_record->active_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("sec", sec) ) }
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
@@ -953,6 +963,15 @@ namespace bts { namespace blockchain {
       }
       return oasset_record();
    }
+   oaccount_record      chain_database::get_account_record( const address& owner )const
+   { try {
+      auto itr = my->_address_to_account_db.find( owner );
+      if( itr.valid() )
+      {
+         return get_account_record( itr.value() );
+      }
+      return oaccount_record();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("owner",owner) ) }
 
    obalance_record      chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
@@ -961,7 +980,7 @@ namespace bts { namespace blockchain {
 
    oaccount_record         chain_database::get_account_record( account_id_type account_id )const
    {
-      return my->_name_db.fetch_optional( account_id );
+      return my->_account_db.fetch_optional( account_id );
    }
 
    asset_id_type        chain_database::get_asset_id( const string& symbol )const
@@ -990,7 +1009,7 @@ namespace bts { namespace blockchain {
 
    oaccount_record         chain_database::get_account_record( const string& name )const
    { try {
-       auto account_id_itr = my->_name_index_db.find( name );
+       auto account_id_itr = my->_account_index_db.find( name );
        if( account_id_itr.valid() )
           return get_account_record( account_id_itr.value() );
        return oaccount_record();
@@ -1030,19 +1049,27 @@ namespace bts { namespace blockchain {
        auto old_rec = get_account_record( r.id );
        if( r.is_null() )
        {
-          my->_name_db.remove( r.id );
-          my->_name_index_db.remove( r.name );
+          my->_account_db.remove( r.id );
+          my->_account_index_db.remove( r.name );
        }
        else
        {
-          my->_name_db.store( r.id, r );
-          my->_name_index_db.store( r.name, r.id );
+          my->_account_db.store( r.id, r );
+          my->_account_index_db.store( r.name, r.id );
+       }
+       if( old_rec.valid() )
+       {
+          for( auto item : old_rec->active_key_history )
+             my->_address_to_account_db.remove( address(item.second) );
+
+          if( old_rec->is_delegate() )
+          {
+              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), r.id ) );
+          }
        }
 
-       if( old_rec.valid() && old_rec->is_delegate() )
-       {
-          my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), r.id ) );
-       }
+       for( auto item : r.active_key_history )
+          my->_address_to_account_db.store( address(item.second), r.id );
 
        if( r.is_delegate() && !r.is_null() )
           my->_delegate_vote_index_db.store( vote_del( r.net_votes(), r.id ),  0 );
@@ -1091,7 +1118,7 @@ namespace bts { namespace blockchain {
    }
    void    chain_database::scan_accounts( function<void( const account_record& )> callback )
    {
-        auto name_itr = my->_name_db.begin();
+        auto name_itr = my->_account_db.begin();
         while( name_itr.valid() )
         {
            callback( name_itr.value() );
@@ -1248,7 +1275,7 @@ namespace bts { namespace blockchain {
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.active_key        = name.owner;
+         rec.set_active_key( fc::time_point_sec(),  name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )
@@ -1311,7 +1338,7 @@ namespace bts { namespace blockchain {
     }
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
     { try {
-       auto itr = my->_name_index_db.lower_bound(first);
+       auto itr = my->_account_index_db.lower_bound(first);
        std::vector<account_record> names;
        while( itr.valid() && names.size() < count )
        {

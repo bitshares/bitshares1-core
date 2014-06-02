@@ -22,13 +22,13 @@ namespace bts { namespace blockchain {
       FC_ASSERT( message_str.size() <= sizeof( message ) );
       if( message_str.size() )
       {
-         memcpy( &message.data, message_str.c_str(), message_str.size() );
+         memcpy( message.data, message_str.c_str(), message_str.size() );
       }
    }
 
    std::string memo_data::get_message()const
    {
-      return std::string( (const char*)&message, 20 );
+      return std::string( (const char*)&message, sizeof(message) ).c_str();
    }
 
 
@@ -54,13 +54,21 @@ namespace bts { namespace blockchain {
       if( owner != address(secret_public_key) )
          return omemo_status();
 
-      ilog( "" );
+      ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
       auto memo = decrypt_memo_data( secret );
       ilog( "" );
-      auto check_secret = secret_private_key.get_shared_secret( memo.from );
-      ilog( "" );
-      bool has_valid_signature = check_secret._hash[0] == memo.from_signature;
-      ilog( "" );
+      bool has_valid_signature = false;
+      if( memo.memo_flags == from_memo )
+      {
+         auto check_secret = secret_private_key.get_shared_secret( memo.from );
+         ilog( "" );
+         has_valid_signature = check_secret._hash[0] == memo.from_signature;
+         ilog( "" );
+      }
+      else
+      {
+         has_valid_signature = true;
+      }
 
       return memo_status( memo, has_valid_signature, secret_private_key );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -69,7 +77,8 @@ namespace bts { namespace blockchain {
    void  withdraw_by_account::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
                                    const fc::ecc::public_key&  to_public_key,
                                    const fc::ecc::private_key& from_private_key,
-                                   const std::string& memo_message )
+                                   const std::string& memo_message,
+                                   memo_flags_enum memo_type )
    {
       auto secret = one_time_private_key.get_shared_secret( to_public_key );
       ilog( "secret: ${s}", ("s",secret) );
@@ -86,8 +95,12 @@ namespace bts { namespace blockchain {
 
       memo_data memo;
       memo.set_message( memo_message );
-      memo.from    = from_private_key.get_public_key();
+      if( memo_type == from_memo )
+         memo.from = from_private_key.get_public_key();
+      else
+         memo.from = to_public_key;
       memo.from_signature = check_secret._hash[0];
+      memo.memo_flags = memo_type;
       one_time_key = one_time_private_key.get_public_key();
 
       encrypt_memo_data( secret, memo );
@@ -168,4 +181,25 @@ namespace fc {
             break;
       }
    }
-}
+   void to_variant( const bts::blockchain::memo_data& var,  variant& vo )
+   {
+      mutable_variant_object obj("from",var.from);
+      obj("from_signature",var.from_signature)
+         ("message",var.get_message())
+         ("memo_flags",var.memo_flags);
+      vo = std::move( obj );
+   }
+   void from_variant( const variant& var,  bts::blockchain::memo_data& vo )
+   { try {
+      const variant_object& obj = var.get_object();
+      if( obj.contains( "from" ) )
+         vo.from = obj["from"].as<bts::blockchain::public_key_type>();
+      if( obj.contains( "from_signature" ) )
+         vo.from_signature = obj["from_signature"].as_int64();
+      if( obj.contains( "message" ) ) 
+         vo.set_message( obj["message"].as_string() );
+      if( obj.contains( "memo_flags") )
+         vo.memo_flags = obj["memo_flags"].as<bts::blockchain::memo_flags_enum>(); 
+   } FC_RETHROW_EXCEPTIONS( warn, "unable to convert variant to memo_data", ("variant",var) ) }
+
+} // fc

@@ -1,0 +1,204 @@
+{
+  "type_map":
+    [
+      {
+        "type_name" : "block_id_type",
+        "cpp_return_type" : "bts::blockchain::block_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "account_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Bob"
+      },
+      {
+        "type_name" : "account_record",
+        "cpp_return_type" : "bts::blockchain::account_record",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "account_record_array",
+        "container_type" : "array",
+        "contained_type" : "account_record",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "signed_transactions",
+        "cpp_return_type" : "bts::blockchain::signed_transactions",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "method_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "wallet_transfer"
+      },
+      {
+        "type_name" : "ip_endpoint",
+        "cpp_return_type" : "fc::ip::endpoint",
+        "cpp_include_file" : "fc/network/ip.hpp",
+        "to_variant_function" : "bts::api::fc_ip_endpoint_to_variant",
+        "from_variant_function" : "bts::api::variant_to_fc_ip_endpoint",
+        "default_example" : "192.168.1.5:5678"
+      },
+      {
+        "type_name" : "transaction_id",
+        "cpp_return_type" : "bts::blockchain::transaction_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "message_propagation_data",
+       "cpp_return_type" : "bts::net::message_propagation_data",
+        "cpp_include_file" : "bts/net/node.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "node_id",
+        "cpp_return_type" : "bts::net::node_id_t",
+        "cpp_include_file" : "bts/net/node.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "node_id_list",
+        "container_type" : "array",
+        "contained_type" : "node_id",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "new_passphrase",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "my_password",
+        "obscure_in_log_files": true
+      },
+      {
+        "type_name" : "passphrase",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "my_password",
+        "obscure_in_log_files": true
+      },
+      {
+        "type_name" : "wallet_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "alice"
+      },
+      {
+        "type_name" : "wallet_name_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_name"
+      },
+      {
+        "type_name" : "transaction_record",
+        "cpp_return_type" : "bts::wallet::wallet_transaction_record",
+        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
+      },
+      {
+        "type_name" : "transaction_record_array",
+        "container_type" : "array",
+        "contained_type" : "transaction_record"
+      },
+      {
+        "type_name" : "optional_wallet_name",
+        "cpp_return_type" : "fc::optional<std::string>",
+        "cpp_include_file" : "fc/optional.hpp",
+        "default_example" : "alice"
+      },
+      {
+        "type_name" : "time_interval_in_seconds",
+        "cpp_return_type" : "fc::microseconds",
+        "cpp_include_file" : "fc/time.hpp",
+        "to_variant_function" : "bts::api::time_interval_in_seconds_to_variant",
+        "from_variant_function" : "bts::api::variant_to_time_interval_in_seconds",
+        "default_example" : 300
+      },
+      {
+        "type_name" : "wif_private_key",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB"
+      },
+      {
+        "type_name" : "public_key",
+        "cpp_return_type" : "bts::blockchain::public_key_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "signed_transaction",
+        "cpp_return_type" : "bts::blockchain::signed_transaction",
+        "cpp_include_file" : "bts/blockchain/transaction.hpp",
+        "default_example" : "TODO"        
+      },
+      {
+        "type_name" : "signed_transaction_array",
+        "container_type" : "array",
+        "contained_type" : "signed_transaction",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "asset",
+        "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
+        "default_example" : "TODO"        
+      },
+      {
+        "type_name" : "asset_array",
+        "container_type" : "array",
+        "contained_type" : "asset",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "pretty_transaction",
+        "cpp_return_type" : "bts::wallet::pretty_transaction",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "pretty_transactions",
+        "cpp_return_type" : "std::vector<bts::wallet::pretty_transaction>",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "amount",
+        "cpp_parameter_type" : "int64_t",
+        "cpp_return_type" : "int64_t",
+        "cpp_include_file" : "stdint.h",
+        "default_example" : 10000
+      },
+      {
+        "type_name" : "receive_account_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Bob"
+      },
+      {
+        "type_name" : "sending_account_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "alice"
+      },
+      {
+        "type_name" : "asset_symbol",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "XTS"
+      },
+      {
+        "type_name" : "invoice_summary",
+        "cpp_return_type" : "bts::wallet::invoice_summary",
+        "cpp_include_file" : "bts/wallet/wallet.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "filename",
+        "cpp_return_type" : "fc::path",
+        "cpp_include_file" : "fc/filesystem.hpp",
+        "default_example" : "some_filename.txt"
+      }
+    ]
+}

@@ -33,7 +33,7 @@ namespace bts { namespace net {
       fc::tcp_socket& get_socket();
       void accept();
       void connect_to(const fc::ip::endpoint& remote_endpoint);
-      void connect_to(const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint);
+      void bind(const fc::ip::endpoint& local_endpoint);
 
       message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate = nullptr);
       void send_message(const message& message_to_send);
@@ -69,10 +69,9 @@ namespace bts { namespace net {
       _read_loop_done = fc::async([=](){ read_loop(); });
     }
 
-    void message_oriented_connection_impl::connect_to(const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint)
+    void message_oriented_connection_impl::bind(const fc::ip::endpoint& local_endpoint)
     {
-      _sock.connect_to(remote_endpoint, local_endpoint);
-      _read_loop_done = fc::async([=](){ read_loop(); });
+      _sock.bind(local_endpoint);
     }
 
 
@@ -215,9 +214,9 @@ namespace bts { namespace net {
     my->connect_to(remote_endpoint);
   }
 
-  void message_oriented_connection::connect_to(const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint)
+  void message_oriented_connection::bind(const fc::ip::endpoint& local_endpoint)
   {
-    my->connect_to(remote_endpoint, local_endpoint);
+    my->bind(local_endpoint);
   }
   
   void message_oriented_connection::send_message(const message& message_to_send)

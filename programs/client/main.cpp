@@ -20,7 +20,7 @@
 
 struct config
 {
-   config() : default_peers{{"107.170.30.182:8765"}}, ignore_console(false) {}
+   config() : default_peers{{"107.170.30.182:8764"}}, ignore_console(false) {}
    bts::rpc::rpc_server::config rpc;
    std::vector<std::string>     default_peers;
    bool                         ignore_console;
@@ -46,16 +46,16 @@ int main( int argc, char** argv )
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<std::string>(), "configuration data directory")
                               ("help", "display this help message")
-                              ("p2p-port", program_options::value<uint16_t>()->default_value(5678), "set port to listen on")
+                              ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
-                              ("daemon", "run in daemon mode with no CLI console")
-                              ("rpcuser", program_options::value<std::string>(), "username for JSON-RPC")
-                              ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
-                              ("rpcport", program_options::value<uint16_t>()->default_value(5679), "port to listen for JSON-RPC connections")
-                              ("httpport", program_options::value<uint16_t>()->default_value(5680), "port to listen for HTTP JSON-RPC connections")
+                              ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
+                              ("rpcuser", "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcpassword", "password for JSON-RPC")
+                              ("rpcport", "port to listen for JSON-RPC connections")
+                              ("httpport", "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
@@ -114,7 +114,7 @@ int main( int argc, char** argv )
 
       bts::rpc::rpc_server_ptr rpc_server = client->get_rpc_server();
 
-      if( option_variables.count("server") )
+      if( option_variables.count("server") || option_variables.count("daemon") )
       {
         // the user wants us to launch the RPC server.
         // First, override any config parameters they
@@ -123,17 +123,10 @@ int main( int argc, char** argv )
           cfg.rpc.rpc_user = option_variables["rpcuser"].as<std::string>();
         if (option_variables.count("rpcpassword"))
            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<std::string>();
-        // for now, force binding to localhost only
         if (option_variables.count("rpcport"))
-        {
            cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
-        }
-        else
-          cfg.rpc.rpc_endpoint = fc::ip::endpoint(fc::ip::address("127.0.0.1"), uint16_t(9988));
         if (option_variables.count("httpport"))
-        {
            cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
-        }
         std::cout<<"Starting json rpc server on "<< std::string( cfg.rpc.rpc_endpoint ) <<"\n";
         std::cout<<"Starting http json rpc server on "<< std::string( cfg.rpc.httpd_endpoint ) <<"\n";
         bool rpc_success = rpc_server->configure(cfg.rpc);
@@ -159,7 +152,7 @@ int main( int argc, char** argv )
       if (option_variables.count("p2p-port"))
       {
          auto p2pport = option_variables["p2p-port"].as<uint16_t>();
-         std::cout << "Listening to P2P connections on port "<<p2pport<<"\n";
+         std::cout << "Listening to P2P connections on port " << p2pport << "\n";
          client->listen_on_port(p2pport);
 
          if( option_variables["upnp"].as<bool>() )
@@ -182,9 +175,7 @@ int main( int argc, char** argv )
       {
          std::vector<std::string> hosts = option_variables["connect-to"].as<std::vector<std::string>>();
          for( auto peer : hosts )
-         {
             client->connect_to_peer( peer );
-         }
       }
       else
       {
@@ -192,19 +183,16 @@ int main( int argc, char** argv )
           client->connect_to_peer(default_peer);
       }
 
-      if( !option_variables.count("daemon") )
+      if( option_variables.count("daemon") || cfg.ignore_console )
+      {
+          std::cout << "Runing in daemon mode, ignoring console\n";
+          rpc_server->wait_on_quit();
+      }
+      else 
       {
          auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
          cli->wait();
-      }
-      else if( option_variables.count( "server" ) ) // daemon & server
-      {
-         rpc_server->wait_on_quit();
-      }
-      else // daemon  !server
-      {
-         std::cerr << "You must start the rpc server in daemon mode\n";
-      }
+      } 
    }
    catch ( const fc::exception& e )
    {
