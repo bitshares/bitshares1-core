@@ -1,6 +1,7 @@
 #pragma once
 #include <fc/crypto/elliptic.hpp>
 #include <bts/blockchain/pts_address.hpp>
+#include <bts/blockchain/types.hpp>
 #include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
@@ -10,7 +11,7 @@ namespace bts { namespace blockchain {
      name_config():is_delegate(false){}
      std::string               name;
      bool                      is_delegate;
-     fc::ecc::public_key_data  owner;
+     public_key_type           owner;
   };
   struct genesis_block_config
   {

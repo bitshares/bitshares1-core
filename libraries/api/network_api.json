@@ -1,0 +1,163 @@
+{
+  "category": "Network Methods",
+  "type_map":
+    [
+      {
+        "type_name" : "ip_endpoint",
+        "cpp_parameter_type" : "const fc::ip::endpoint&",
+        "cpp_return_type" : "fc::ip::endpoint",
+        "cpp_include_file" : "fc/network/ip.hpp",
+        "to_variant_function" : "bts::api::fc_ip_endpoint_to_variant",
+        "from_variant_function" : "bts::api::variant_to_fc_ip_endpoint",
+        "default_example" : "192.168.1.5:5678"
+      },
+      {
+        "type_name" : "transaction_id",
+        "cpp_parameter_type" : "const bts::blockchain::transaction_id_type&",
+        "cpp_return_type" : "bts::blockchain::transaction_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "message_propagation_data",
+        "cpp_parameter_type" : "const bts::net::message_propagation_data&",
+        "cpp_return_type" : "bts::net::message_propagation_data",
+        "cpp_include_file" : "bts/net/node.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "node_id",
+        "cpp_parameter_type" : "const bts::net::node_id_t&",
+        "cpp_return_type" : "bts::net::node_id_t",
+        "cpp_include_file" : "bts/net/node.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "node_id_list",
+        "container_type" : "array",
+        "contained_type" : "node_id",
+        "default_example" : "TODO"      
+      }
+    ],
+  "methods" :
+    [
+      {
+        "method_name": "network_add_node",
+        "description": "Attempts add or remove <node> from the peer list or try a connection to <node> once",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "node", 
+              "type" : "ip_endpoint", 
+              "description" : "The node (see network_get_peer_info for nodes)",
+              "example" : "192.168.1.5:5678"
+            },
+            { 
+              "name" : "command", 
+              "type" : "std::string", 
+              "description" : "'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once",
+              "example" : "add"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_connection_count",
+        "description": "Returns the number of fully-established connections to other nodes",
+        "return_type": "uint32_t",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_peer_info",
+        "description": "Returns data about each connected node",
+        "return_type": "json_object_array",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_broadcast_transaction",
+        "description": "Broadcast a previously-created signed transaction to the network",
+        "return_type": "transaction_id",
+        "parameters" : 
+          [
+            { 
+              "name" : "transaction_to_broadcast", 
+              "type" : "signed_transaction", 
+              "description" : "The transaction to broadcast to the network"
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "connected_to_network"]
+      },
+      {
+        "method_name": "network_set_advanced_node_parameters",
+        "description": "Sets advanced node parameters, used for setting up automated tests",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "params", 
+              "type" : "json_object", 
+              "description" : "A JSON object containing the name/value pairs for the parameters to set"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_advanced_node_parameters",
+        "description": "Sets advanced node parameters, used for setting up automated tests",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_transaction_propagation_data",
+        "description": "Returns the time the transaction was first seen by this client",
+        "return_type": "message_propagation_data",
+        "parameters" : 
+          [
+            { 
+              "name" : "transaction_id", 
+              "type" : "transaction_id", 
+              "description" : "the id of the transaction"
+            }
+          ],
+        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this transaction. The data in the message cache is only kept for a few blocks, so you can only use this to ask about recent transactions. This is intended to be used to track message propagation delays in our test network.",
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_block_propagation_data",
+        "description": "Returns the time the block was first seen by this client",
+        "return_type": "message_propagation_data",
+        "parameters" : 
+          [
+            { 
+              "name" : "block_hash", 
+              "type" : "block_id_type", 
+              "description" : "the id of the block"
+            }
+          ],
+        "detailed_description" : "This interrogates the p2p node's message cache to find out when it first saw this block. The data in the message cache is only kept for a few blocks, so you can only use this to ask about recent transactions. This is intended to be used to track message propagation delays in our test network.",
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_set_allowed_peers",
+        "description": "Sets the list of peers this node is allowed to connect to",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "allowed_peers", 
+              "type" : "node_id_list", 
+              "description" : "the list of allowable peers"
+            }
+          ],
+        "prerequisites" : ["json_authenticated"],
+        "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
+      }
+    ]
+}

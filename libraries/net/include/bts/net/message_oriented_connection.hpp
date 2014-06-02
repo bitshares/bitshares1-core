@@ -24,8 +24,8 @@ namespace bts { namespace net {
     ~message_oriented_connection();
     fc::tcp_socket& get_socket();
     void accept();
+    void bind(const fc::ip::endpoint& local_endpoint);
     void connect_to(const fc::ip::endpoint& remote_endpoint);
-    void connect_to(const fc::ip::endpoint& remote_endpoint, const fc::ip::endpoint& local_endpoint);
 
     void send_message(const message& message_to_send);
     void close_connection();

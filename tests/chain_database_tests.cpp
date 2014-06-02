@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( titan )
    fc::ecc::private_key to_private_key   = fc::ecc::private_key::generate();
    fc::ecc::private_key from_private_key = fc::ecc::private_key::generate();
 
-   withdraw_by_name cond;
+   withdraw_by_account cond;
    ilog( "encrypting it.." );
    cond.encrypt_memo_data( fc::ecc::private_key::generate(),
                            to_private_key.get_public_key(),
@@ -50,6 +50,7 @@ BOOST_AUTO_TEST_CASE( titan )
      throw;
   }
 }
+
 
 BOOST_AUTO_TEST_CASE( price_math )
 {
@@ -104,11 +105,9 @@ BOOST_AUTO_TEST_CASE( block_signing )
    }
 }
 
-
 BOOST_AUTO_TEST_CASE( wallet_test )
 {
       fc::temp_directory dir;
-
       chain_database_ptr blockchain = std::make_shared<chain_database>();
       blockchain->open( dir.path(), "genesis.dat" );
 
@@ -117,11 +116,11 @@ BOOST_AUTO_TEST_CASE( wallet_test )
       my_wallet.create(  "my_wallet", "password" );
 
       my_wallet.close();
-      my_wallet.open( "my_wallet", "password" );
+      my_wallet.open( "my_wallet" );
       my_wallet.unlock( fc::seconds( 10000000 ), "password" );
       my_wallet.import_private_key( fc::variant("dce167e01dfd6904015a8106e0e1470110ef2d5b0b18ba7a83cb8204e25c6b5f").as<fc::ecc::private_key>() );
       my_wallet.close();
-      my_wallet.open( "my_wallet", "password" );
+      my_wallet.open( "my_wallet" );
 }
 
 

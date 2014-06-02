@@ -30,16 +30,16 @@ namespace bts { namespace blockchain {
       share_type                     pay_balance;
    };
 
-   struct name_record
+   struct account_record
    {
-      name_record()
+      account_record()
       :id(0){}
 
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
 
       bool is_null()const { return owner_key == public_key_type(); }
-      name_record make_null()const    { name_record cpy(*this); cpy.owner_key = public_key_type(); return cpy;      }
+      account_record make_null()const { account_record cpy(*this); cpy.owner_key = public_key_type(); return cpy; }
 
       share_type delegate_pay_balance()const
       { // TODO: move to cpp
@@ -72,23 +72,35 @@ namespace bts { namespace blockchain {
          FC_ASSERT( is_delegate() );
          return delegate_info->votes_against;
       }
-      bool is_retracted()const { return active_key == public_key_type(); }
-      address active_address()const { return address(active_key); }
+      bool is_retracted()const { return active_key() == public_key_type(); }
+      address active_address()const { return address(active_key()); }
 
-      name_id_type                 id;
-      std::string                  name;
-      fc::variant                  json_data;
-      public_key_type              owner_key;
-      public_key_type              active_key;
-      fc::time_point_sec           registration_date;
-      fc::time_point_sec           last_update;
-      fc::optional<delegate_stats> delegate_info;
+      void set_active_key( time_point_sec now, const public_key_type& new_key )
+      {
+         active_key_history[now] = new_key;
+      }
+
+      public_key_type active_key()const
+      {
+         if( active_key_history.size() )
+            return active_key_history.rbegin()->second;
+         return public_key_type();
+      }
+
+      account_id_type                        id;
+      std::string                            name;
+      fc::variant                            public_data;
+      public_key_type                        owner_key;
+      map<time_point_sec, public_key_type>   active_key_history;
+      fc::time_point_sec                     registration_date;
+      fc::time_point_sec                     last_update;
+      fc::optional<delegate_stats>           delegate_info;
    };
-   typedef fc::optional<name_record> oname_record;
+   typedef fc::optional<account_record> oaccount_record;
 } }
 
-FC_REFLECT( bts::blockchain::name_record,
-            (id)(name)(json_data)(owner_key)(active_key)(delegate_info)(registration_date)(last_update)
+FC_REFLECT( bts::blockchain::account_record,
+            (id)(name)(public_data)(owner_key)(active_key_history)(delegate_info)(registration_date)(last_update)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(votes_against)(blocks_produced)

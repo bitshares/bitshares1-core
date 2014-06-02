@@ -1,11 +1,153 @@
 /**
 @defgroup rpc_api Design of RPC API methods
 
-@RPC method parameter conventions
+RPC implementation internals
+============================
 
-* <> = required parameter
-* [] = optional parameter
-* The last positional parameter is an optional parameter dictionary(name/value pairs).
+Code Generation Overview
+------------------------
+The RPC API is defined by a set of JSON files in `libraries/api`
+
+- `blockchain_api.json`
+- `wallet_api.json`
+- `network_api.json`
+
+These files describe each RPC method, providing enough information to generate help,
+the C++ method signature, a C++ RPC client, and a C++ RPC server.
+
+From those files, it generates:
+- `bts/api/common_api.hpp`: the pure virtual interface listing each of the methods listed in the
+  JSON files.
+- `bts/rpc_stubs/common_api_client.hpp` and `bts/rpc_stubs/common_api_client.hpp`:  a C++ 
+  implementation of the client-side RPC API.  This code implements the common_api interface
+  for talking to an out-of-process bitshares_client.  This code is used by `bts::rpc::rpc_client`,
+  which derives from the client stub class and adds a few functions to establish the RPC 
+  network connection.
+- `bts/rpc_stubs/common_api_server.hpp` and `bts/rpc_stubs/common_api_server.hpp`:  implements
+  the server side of the RPC interface.  The generated code takes care of converting the 
+  method arguments from JSON to the native C++ types, validating the parameters, dispatching
+  to native method in `bts::client::client`, and then converting the result back to JSON.
+  This code is used by `bts::rpc::rpc_server`, which derives from the server stub class 
+  and adds methods to accept RPC and HTTP-RPC connections.
+
+Implementing a new method
+-------------------------
+To add a new function to the JSON-RPC API.  I'll walk through the call I'm working on now,
+`network_set_allowed_peers`.  The logic is already implemented in `bts::net::node` as 
+`void set_allowed_peers(const std::vector<node_id_t>& allowed_peers)`.
+1. Implement the C++ call in `bts::client::client`.  All RPC methods must be implemented in 
+   client with the same name as they have in JSON-RPC, so this method will add the 
+   `network_` prefix and delegate the call to the node.  You only need to add the 
+   implementation in the .cpp file.  The method prototype in the header will be generated
+   from the JSON.
+~~~~~~~~~~~~~~~~~~~~~{.cpp}
+void client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
+{
+  my->_p2p_node->set_allowed_peers(allowed_peers);
+}
+~~~~~~~~~~~~~~~~~~~~~
+2. Add the function to the appropriate JSON file.  Since this is a network function, it goes
+   in `network_api.json`.  Down in the `methods` section, add a method description:
+~~~~~~~~~~~~~~~~~~~~~{.json}
+{
+  "method_name": "network_set_allowed_peers",
+  "description": "Sets the list of peers this node is allowed to connect to",
+  "return_type": "void",
+  "parameters" : 
+    [
+      { 
+        "name" : "allowed_peers", 
+        "type" : "node_id_list", 
+        "description" : "the list of allowable peers"
+      }
+    ],
+  "prerequisites" : ["json_authenticated"],
+  "detailed_description" : "This function sets the list of peers we're allowed to connect to. It is used during testing to force network splits or other weird topologies."
+}
+~~~~~~~~~~~~~~~~~~~~~
+   Some notes on the method description: 
+   - `description` should be a short one-liner, `detailed_description` (if present) should be a 
+     longer description that will be appended to the short `description` when we generate 
+     long-form help messages.
+   - types like `return_type` and the `type` field for each parameter can be one of the predefined types 
+     the generator knows about, or one of the types defined in the `types` section of the json file.
+     The default types are:
+     - `void` (only used for return values, a method that takes no parameters just has an empty parameter list)
+     - `int16_t`
+     - `uint16_t`
+     - `int32_t`
+     - `uint32_t`
+     - `int64_t`
+     - `uint64_t`
+     - `std::string`
+     - `json_variant`, which maps to `fc::variant`
+     - `json_object`, which maps to `fc::variant_object`
+     - `json_variant_list`, which maps to `fc::variants`
+     - `json_object_list`, which maps to `std::vector<fc::variant_object>`
+   - `prerequisites` can be a list containing one or more of:
+     - `"no_prerequisites"`
+     - `"json_authenticated"`
+     - `"wallet_open"`
+     - `"wallet_unlocked"`
+     - `"connected_to_network"`
+   - Since this is the first method to need the type `node_id_list`, we need to define it.  In C++, it's
+     a vector of `bts::net::node_id_t`, and we don't know anything about those either.  So first, let's
+     define a `node_id` type to the JSON generator.
+~~~~~~~~~~~~~~~~~~~~~{.json}
+{
+  "type_name" : "node_id",
+  "cpp_parameter_type" : "const bts::net::node_id_t&",
+  "cpp_return_type" : "bts::net::node_id_t",
+  "cpp_include_file" : "bts/net/node.hpp",
+  "default_example" : "TODO"
+}
+~~~~~~~~~~~~~~~~~~~~~
+     A few notes on this:
+     - the `type_name` should be something that makes sense to display in our API help.  So prefer
+       names like `node_id_list` to `std::vector<bts::net::node_id_t>`.
+     - `cpp_parameter_type` is how objects of this type are passed as a parameter to functions.  
+       usually this is by const reference to larger objects, or by value for integer types.
+     - `cpp_return_type` is the type as it appers as a return value, or for instantiating on
+       the stack.  Usually just the type name.
+     - `cpp_include_file` - if you provide this, it will make sure this file is included in any
+       generated files that reference this type.
+     - `default_example` is an object of that type, in JSON form, that will be used in generating
+       example calls in the documentation.
+
+     Now that the base type is defined, I need to define what a list of that type looks like:
+~~~~~~~~~~~~~~~~~~~~~{.json}
+{
+  "type_name" : "node_id_list",
+  "container_type" : "array",
+  "contained_type" : "node_id",
+  "default_example" : "TODO"      
+}
+~~~~~~~~~~~~~~~~~~~~~
+     A few notes on this:
+     - `container_type` can be `"array"` or `"dictionary"`.  
+       - `array` maps to `std::vector` and requires a `contained_type`
+       - `dictionary` maps to `std::map`, and requires a `key_type` and `value_type`
+2. Build.  
+
+Command-Line Interface Prompting and Special Parameter Types
+------------------------------------------------------------
+The command line interface (CLI) will automatically prompt for missing required parameters. For example, if the user
+types the command "unlock", the CLI will prompt the user to enter the required parameters "timeout" and "passphrase".
+A CLI command can be aborted during prompted entry by pressing <ENTER> without entering any data.
+
+Currently the command-line interface recoognizes these special types when prompting for parameters:
+  
+- passphrase: this type should be used for any password that shouldn't be echoed to the console during prompted entry.
+- new_passphrase: this type should be used for any command that requires the user to specify a "new" password. In this case,
+                  the CLI will not echo the password AND it will prompt for the password twice to verify it's accurate entry.
+Old docs
+========
+
+RPC method parameter conventions
+--------------------------------
+- <> = required parameter
+- [] = optional parameter
+- The last positional parameter is an optional parameter dictionary(name/value pairs).
 
 We will support bitcoin-compatible names for the most useful existing bitcoin methods. For example, sendtoaddress, etc.
 
@@ -13,91 +155,94 @@ For bitshares-specific API methods, we will use underscores to separate the word
 
 In addition to using underscores, we have the following namespace prefixes for our new RPC methods:
 
-* wallet_
-* blockchain_
-* p2p_
+- wallet_
+- blockchain_
+- p2p_
 
 DACs can further extend the basic prefix namespace. For example, the DNS DAC will add prefixes like:
-* dns_blockchain_
-* dns_wallet_
-* dns_
+
+- dns_blockchain_
+- dns_wallet_
+- dns_
 
 
-@Client info and configuration
+Client info and configuration
+-----------------------------
   help <command|prefix>
 
-Miscellaneous Diagnostics
+### Miscellaneous Diagnostics
 
 getinfo: all kinds of info
-* bitcoin fields + these below
-    ** wallet name
-	** wallet file name
-	** wallet lock expiration time
-    ** priority fee
-	** number of delegates
-	** number of registered names
-	** number of regisered names in wallet
-	** number of assets
-	** chain name (long form)
-	** chain ticker symbol (short form)
+- bitcoin fields + these below
+ - wallet name
+ - wallet file name
+ - wallet lock expiration time
+ - priority fee
+ - number of delegates
+ - number of registered names
+ - number of regisered names in wallet
+ - number of assets
+ - chain name (long form)
+ - chain ticker symbol (short form)
+
+Peer network info and configuration
+-----------------------------------
+- getpeerinfo
+ - addnode //missing
+
+  
+Wallet control
+--------------
+### Wallet file handling
+- open_wallet -> wallet_open <name> <passwd>
+- create_wallet -> wallet_create <name> <passwd>
+- wallet_open_file <filename> <passwd>
+- wallet_create_file <filename> <passwd>
+- current_wallet -> wallet_get_info
+- close_wallet -> wallet_close
+- walletlock
+- walletpassphrase
+- walletpassphrasechange
+  
+  
+- wallet_set_priority_fee
+- get_transaction(bitcoin version): only reports on transactions in wallet
+- blockchain_get_transaction: reports on all transaction. If it's a wallet transaction, additional info can be reported about the transaction.
+
+### Wallet delegate selection
+- wallet_set_delegate_trust_level <trust,unknown,distrust> //possibly assign a level to the trust
+  
+  
+### Wallet data querying
+- get_transaction_history
+  
+  
+### Creating/importing keys  
+- getnewaddress
+- add_send_address
+- import_wallet
+- import_private_key
+- importprivkey
+  
+- list_send_addresses
+- list_receive_addresses
+
+### Blockchain  
+- getblockhash
+- getblockcount
+- getblock
+- get_block_by_number
+  
+### Name transactions
+- wallet_register_name <name> <is_delegate> <profile data>
+- wallet_update_name //possibly can re-use register_name
 	
-
-@Peer network info and configuration
-* getpeerinfo
-* addnode //missing
-
-  
-@Wallet control
-@@Wallet file handling
-* open_wallet -> wallet_open <name> <passwd>
-* create_wallet -> wallet_create <name> <passwd>
-* wallet_open_file <filename> <passwd>
-* wallet_create_file <filename> <passwd>
-* current_wallet -> wallet_get_info
-* close_wallet -> wallet_close
-* walletlock
-* walletpassphrase
-* walletpassphrasechange
-  
-  
-* wallet_set_priority_fee
-* get_transaction(bitcoin version): only reports on transactions in wallet
-* blockchain_get_transaction: reports on all transaction. If it's a wallet transaction, additional info can be reported about the transaction.
-
-@@Wallet delegate selection
-* wallet_set_delegate_trust_level <trust,unknown,distrust> //possibly assign a level to the trust
-  
-  
-@@Wallet data querying
-* get_transaction_history
-  
-  
-@@Creating/importing keys  
-* getnewaddress
-* add_send_address
-* import_wallet
-* import_private_key
-* importprivkey
-  
-* list_send_addresses
-* list_receive_addresses
-
-@@Blockchain  
-* getblockhash
-* getblockcount
-* getblock
-* get_block_by_number
-   
-@@Name transactions
-* wallet_register_name <name> <is_delegate> <profile data>
-* wallet_update_name //possibly can re-use register_name
+### Name queries	
+- wallet_get_names [start_name] [count]: returns all names that we have registered
+- wallet_get_delegates [start_name] [count]: returns all delegates that we have registered
 	
-@@Name queries	
-* wallet_get_names [start_name] [count]: returns all names that we have registered
-* wallet_get_delegates [start_name] [count]: returns all delegates that we have registered
-	
-* blockchain_get_names [start_name] [count]: returns all names registered in blockchain
-* blockchain_get_delegates [start_rank] [count]: return all delegates registered in blockchain, ranked by net vote for and against. This is filtered version of blockchain_get_names.    
+- blockchain_get_names [start_name] [count]: returns all names registered in blockchain
+- blockchain_get_delegates [start_rank] [count]: return all delegates registered in blockchain, ranked by net vote for and against. This is filtered version of blockchain_get_names.    
 	
 send_account: extended public key you give to someone. This generates a series 
 receive_account: extended private key associated with the send_account you give to someone. 
@@ -106,29 +251,29 @@ contact (not an index)
 - set of send_accounts
 - set of corresponding receive_accounts
 
-* account (has a logical name)
-**  invoice: this is a send to somewhere at the user level (user generates these)
-***   payment: is a one-time address generated by the system (not manipulated by user)
+account (has a logical name)
+invoice: this is a send to somewhere at the user level (user generates these)
+payment: is a one-time address generated by the system (not manipulated by user)
 	  
 payment_id: hash of a payment (hash of one-time signed_transaction)	  
 
 invoice
-*  memo
-*  last_payment_index
+- memo
+- last_payment_index
   
   
 wallet_account_record: this is the "base" type for send and receive accounts (it can represent either).
-  * name: name of account, must be unique.  
-  * account_index: index into wallet master key (generates keys for this account). A negative index indicates it is a send account.  
-  * extended_public_key: generated public key (created from account_index). This is redundant, but it allows us to you to use the public keys without having to unlock the wallet again. In the case of send accounts, it is required because we can't generate this public key (it's someone else's key).
-  * transaction_history: any transaction that references keys from this account.
-  * map<invoice_index,invoice> invoices
+  - name: name of account, must be unique.  
+  - account_index: index into wallet master key (generates keys for this account). A negative index indicates it is a send account.  
+  - extended_public_key: generated public key (created from account_index). This is redundant, but it allows us to you to use the public keys without having to unlock the wallet again. In the case of send accounts, it is required because we can't generate this public key (it's someone else's key).
+  - transaction_history: any transaction that references keys from this account.
+  - map<invoice_index,invoice> invoices
     --a negative invoice_index is used whenever we have an imported key (key can't be generated from index)
   
 invoice_summary
-*  map<payment_id, signed_transaction>
-*  invoice_index
-*  last_payment_index
+- map<payment_id, signed_transaction>
+- invoice_index
+- last_payment_index
 
 wallet_send_to_address <to_address> [from_account_name] [flags]: does bitcoin support some memo here?
   returns transaction_id
@@ -157,7 +302,7 @@ wallet_delete_account <account_name>
 backupwallet <destination_file>
 
   
-@@wallet contacts: Contact is an authorized contact in the keyhotee-sense (a friend). A contact enables to you to send money to someone.
+## wallet contacts: Contact is an authorized contact in the keyhotee-sense (a friend). A contact enables to you to send money to someone.
 --friend's name
 -friend's contact_number: index into contact extended_key array in wallet. We use the index to generate the contact's extended key to generate more extended keys for payments. A payment consist of a number of tranfers to different addresses.
 
@@ -191,11 +336,13 @@ To be implemented: support for bitcoin-styles accounts. These work like traditio
 (stop)\
 
 
-@P2P Diagnostics?
+P2P Diagnostics?
+----------------
   _get_transaction_propagation_data
   _get_block_propagation_data
 
-@Account support
+Account support
+---------------
 getaddressesbyaccount <acount> addresses associated with account (payment addresses assosciated with account + 1)
 getaccount <address>: account for an address
 getaccountaddress <account>: returns current receiving address for account (last_receiving_account+1)
@@ -207,31 +354,31 @@ listreceivedbyaddress
 listtransactions <account>
 setaccount <address> <account>
 
-@Non-bitcoin APIs
+Non-bitcoin APIs
+----------------
 
+### Kehotee-based API methods
 
-@@Kehotee-based API methods
-
-@@Mail
+### Mail
 1) mail inbox versus IM delivery display
 2) mail: to/from/cc/body/attachments
 3)
 
-@@Friend net functionality
+### Friend net functionality
 Each client knows a set of friends to which they can directly connect via IP address. Exchanges between direct-connected friend peers often don't need to be broadcast to the general network (for example, instant messages and email exchanged between two connected friends). 
 
 
-@@@ Key exchange and IP address updating
+### Key exchange and IP address updating
 Each client in a friend relationship is also told how to generate a set of deterministic keys that can be used to transfer money to the other client. These keys will also be used to prove/verify the identity of both parities when they connect up. The clients should also be able to send updated IP addresses to each other. So a client whose IP address has changed can still contact a friend, prove its identity via its key, then supply one or more updated IP addresses where it can be reached in the future. Clients can keep track of what IP their friend has for them, so that they could update friends automatically when their IP changes. Tracking is necessary since all friends might not be online to connect to at the time the IP address changes. We might want to periodically attempt to contact out-of-date friends until we successfully update them with our current IP address (probably should be user-configuratable on how often this is done). One possibility might be to try to contact friends with the updated IP whenever the client starts up and goes online.
 
-@@@Avoiding disjoint subnets
+### Avoiding disjoint subnets
 Friends can also be peers in the general network, but we need to be sure that this preference can't somehow isolate to a standalone subnetwork. The simplest way to avoid this is to have a separate required/allowed count for standard peers and friend peers.
 
 Also, what prevents this from happening normally in a non-darknet scenario? Solution: if no blocks are being received by a peer, we need to randomly disconnect existing peers and try new ones from the peer database.
 
 IP addresses of friend peers won't be shared during peer list broadcasting.
 
-@@@Friend-related API methods
+### Friend-related API methods
 
 friend_request <keyhoteeID|public_key>: initiates a request to establish a friend relationship with someone who holds this key.
 * This is a broadcast message to the whole network that is used to negotiate direct connections.
@@ -254,23 +401,25 @@ Using KeyhoteeID versus DisplayName?
 Need to be notified when user has accepted/rejected authorize request. 
 After rejection is acknowledged, I guess we clear the requesting state back to normal.
 
-@@Friend net Data Model (client holds this data)
+Friend net Data Model (client holds this data)
+----------------------------------------------
 KeyhoteeID -> extended_public_key_of_friend, ip_addresses_of_friend
               extended_public_key_shared_with_this_friend, ip_addresses_shared_with_this_friend
 
 
-@@Market API
+Market API
+----------
 
 
 
-@@Fees
+Fees
+----
 transaction transmission fee (bandwidth cost)
 delegate registration cost
 priority fee (to encourage block generator to include this transaction on a priority basis)
 
-@@@blockchain-specific fees
+### blockchain-specific fees
 asset registration cost
 domain registration cost  
   
-
 */

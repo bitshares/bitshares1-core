@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
       withdraw_option_type      = 4,
-      withdraw_by_name_type     = 5
+      withdraw_by_account_type     = 5
    };
 
    /**
@@ -59,6 +59,17 @@ namespace bts { namespace blockchain {
       address                 owner; 
    };
 
+   enum memo_flags_enum
+   {
+      from_memo = 0, ///< default memo type, the public key is who the deposit is from
+      /**
+       *  Alternative memo type, the public key is who the deposit is to.  This
+       *  can be used for 'change' memos and help the sender reconstruct information
+       *  in the event they lose their wallet.
+       */
+      to_memo = 1,
+   };
+
    struct memo_data
    {
       public_key_type                      from;
@@ -70,7 +81,8 @@ namespace bts { namespace blockchain {
       /** messages are a constant length to preven analysis of
        * transactions with the same length memo_data
        */
-      fc::array<char,20>     message;
+      fc::array<char,BTS_BLOCKCHAIN_MAX_MEMO_SIZE>     message;
+      fc::enum_type<uint8_t,memo_flags_enum>           memo_flags;
    };
    typedef fc::optional<memo_data>         omemo_data;
 
@@ -87,17 +99,18 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<memo_status> omemo_status;
 
-   struct withdraw_by_name
+   struct withdraw_by_account
    {
       static const uint8_t    type;
-      withdraw_by_name( const address owner_arg = address() )
+      withdraw_by_account( const address owner_arg = address() )
       :owner(owner_arg){}
 
       omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
       void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
                                       const fc::ecc::public_key&  to_public_key,
                                       const fc::ecc::private_key& from_private_key,
-                                      const std::string& memo_message );
+                                      const std::string& memo_message,
+                                      memo_flags_enum memo_type = from_memo);
 
       memo_data    decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
@@ -165,7 +178,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_multi_sig_type)
         (withdraw_password_type)
         (withdraw_option_type) 
-        (withdraw_by_name_type) 
+        (withdraw_by_account_type) 
         )
 
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
@@ -173,7 +186,10 @@ FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
-FC_REFLECT( bts::blockchain::withdraw_by_name, (one_time_key)(encrypted_memo_data)(owner) )
-FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message) );
-FC_REFLECT_DERIVED( bts::blockchain::memo_status, (bts::blockchain::memo_data), (has_valid_signature) )
+FC_REFLECT( bts::blockchain::withdraw_by_account, (one_time_key)(encrypted_memo_data)(owner) )
+FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
+FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
+FC_REFLECT_DERIVED( bts::blockchain::memo_status, 
+                    (bts::blockchain::memo_data), 
+                    (has_valid_signature)(owner_private_key) )
 

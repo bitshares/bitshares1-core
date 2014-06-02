@@ -13,29 +13,30 @@ namespace bts { namespace blockchain {
       withdraw_op_type            = 1,
       deposit_op_type             = 2,
 
-      /** name operations */
-      reserve_name_op_type        = 3,
-      update_name_op_type         = 4,
+      /** account operations */
+      register_account_op_type    = 3,
+      update_account_op_type      = 4,
+      withdraw_pay_op_type        = 5,
 
       /** asset operations */
-      create_asset_op_type        = 5,
-      update_asset_op_type        = 6,
-      issue_asset_op_type         = 7,
+      create_asset_op_type        = 6,
+      update_asset_op_type        = 7,
+      issue_asset_op_type         = 8,
 
       /** delegate operations */
-      fire_delegate_op_type       = 8,
+      fire_delegate_op_type       = 9,
 
       /** proposal operations */
-      submit_proposal_op_type     = 9,
-      vote_proposal_op_type       = 10,
+      submit_proposal_op_type     = 10,
+      vote_proposal_op_type       = 11,
 
       /** market operations */
-      bid_op_type                 = 11,
-      ask_op_type                 = 12,
-      short_op_type               = 13,
-      cover_op_type               = 14,
-      add_collateral_op_type      = 15,
-      remove_collateral_op_type   = 16
+      bid_op_type                 = 12,
+      ask_op_type                 = 13,
+      short_op_type               = 14,
+      cover_op_type               = 15,
+      add_collateral_op_type      = 16,
+      remove_collateral_op_type   = 17
    };
 
    /**
@@ -95,8 +96,9 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (deposit_op_type)
                  (create_asset_op_type)
                  (update_asset_op_type)
-                 (reserve_name_op_type)
-                 (update_name_op_type)
+                 (withdraw_pay_op_type)
+                 (register_account_op_type)
+                 (update_account_op_type)
                  (issue_asset_op_type)
                  (submit_proposal_op_type)
                  (vote_proposal_op_type)
@@ -117,6 +119,6 @@ namespace fc {
 
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/name_operations.hpp>
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>

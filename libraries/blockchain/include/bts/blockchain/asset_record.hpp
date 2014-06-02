@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
       };
 
       asset_record()
-      :id(0),issuer_name_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
+      :id(0),issuer_account_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
 
@@ -29,17 +29,17 @@ namespace bts { namespace blockchain {
          return (new_share_supply > current_share_supply) && (new_share_supply < maximum_share_supply);
       }
 
-      bool is_null()const            { return issuer_name_id == -1; }
+      bool is_null()const            { return issuer_account_id == -1; }
       /** the asset is issued by the market and not by any user */
-      bool is_market_issued()const   { return issuer_name_id == market_issued_asset; }
-      asset_record make_null()const { asset_record cpy(*this); cpy.issuer_name_id = -1; return cpy; }
+      bool is_market_issued()const   { return issuer_account_id == market_issued_asset; }
+      asset_record make_null()const { asset_record cpy(*this); cpy.issuer_account_id = -1; return cpy; }
 
       asset_id_type       id;
       std::string         symbol;
       std::string         name;
       std::string         description;
-      fc::variant         json_data;
-      name_id_type        issuer_name_id;
+      fc::variant         public_data;
+      account_id_type     issuer_account_id;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
       share_type          current_share_supply;
@@ -50,5 +50,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(json_data)(issuer_name_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
+FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(public_data)(issuer_account_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
 

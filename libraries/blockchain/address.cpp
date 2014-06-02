@@ -8,6 +8,7 @@
 
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
+#include <bts/blockchain/types.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 
@@ -94,15 +95,5 @@ namespace fc
     void from_variant( const variant& var,  bts::blockchain::address& vo )
     {
         vo = bts::blockchain::address( var.as_string() );
-    }
-
-    void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo )
-    {
-        vo = std::string(var);
-    }
-
-    void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo )
-    {
-        vo = bts::blockchain::public_key_type( var.as_string() );
     }
 }

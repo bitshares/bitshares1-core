@@ -41,25 +41,29 @@ namespace bts { namespace blockchain {
       void withdraw( const balance_id_type& account, 
                      share_type amount );
 
+      void withdraw_pay( const account_id_type& account, 
+                     share_type amount );
+
       void deposit( const address& addr, 
                     const asset& amount, 
                     name_id_type delegate_id );
 
-      void deposit_to_name( fc::ecc::public_key receiver_key,
-                            asset amount,
-                            fc::ecc::private_key from_key,
-                            const std::string& memo_message,
-                            name_id_type delegate_id );
+      void deposit_to_account( fc::ecc::public_key receiver_key,
+                                asset amount,
+                                fc::ecc::private_key from_key,
+                                const std::string& memo_message,
+                                name_id_type delegate_id,
+                                memo_flags_enum memo_type = from_memo );
 
 
-      void reserve_name( const std::string& name, 
-                         const fc::variant& json_data, 
+      void register_account( const std::string& name, 
+                         const fc::variant& public_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
                          bool as_delegate = false );
 
-      void update_name( name_id_type name_id, 
-                        const fc::optional<fc::variant>& json_data, 
+      void update_account( name_id_type name_id, 
+                        const fc::optional<fc::variant>& public_data, 
                         const fc::optional<public_key_type>& active, 
                         bool as_delegate = false );
 
@@ -67,7 +71,7 @@ namespace bts { namespace blockchain {
                             const std::string& subject,
                             const std::string& body,
                             const std::string& proposal_type,
-                            const fc::variant& json_data);
+                            const fc::variant& public_data);
 
       void vote_proposal(proposal_id_type proposal_id, name_id_type voter_id, uint8_t vote);
 
@@ -116,7 +120,7 @@ namespace bts { namespace blockchain {
 
       std::vector<asset>                         fees;
       std::vector<asset>                         amounts;
-      fc::variant                                json_data;
+      fc::variant                                public_data;
    }; // transaction_summary
 
 
@@ -172,8 +176,9 @@ namespace bts { namespace blockchain {
          
          virtual void evaluate_withdraw( const withdraw_operation& op );
          virtual void evaluate_deposit( const deposit_operation& op );
-         virtual void evaluate_reserve_name( const reserve_name_operation& op );
-         virtual void evaluate_update_name( const update_name_operation& op );
+         virtual void evaluate_register_account( const register_account_operation& op );
+         virtual void evaluate_update_account( const update_account_operation& op );
+         virtual void evaluate_withdraw_pay( const withdraw_pay_operation& op );
          virtual void evaluate_create_asset( const create_asset_operation& op );
          virtual void evaluate_update_asset( const update_asset_operation& op );
          virtual void evaluate_issue_asset( const issue_asset_operation& op );
@@ -206,7 +211,7 @@ namespace bts { namespace blockchain {
          void add_balance( const asset& amount );
          
          /** any time a balance is deposited increment the vote for the delegate,
-          * if delegate_id then it is a vote against abs(delegate_id)
+          * if delegate_id is negative then it is a vote against abs(delegate_id)
           */
          void add_vote( name_id_type delegate_id, share_type amount );
          void sub_vote( name_id_type delegate_id, share_type amount );
@@ -290,5 +295,5 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
 
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
 FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount)(asset_id) )
-FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(json_data) )
+FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(public_data) )
 
