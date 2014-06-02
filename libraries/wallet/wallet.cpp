@@ -1263,7 +1263,7 @@ namespace bts { namespace wallet {
    asset wallet::get_priority_fee( const string& symbol )const
    {
       // TODO: support price conversion using price from blockchain
-      return asset( 100000, 0 ); // TODO: actually read the value set
+      return asset( 10000, 0 ); // TODO: actually read the value set
    }
 
    
