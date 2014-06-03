@@ -786,6 +786,8 @@ void api_generator::initialize_type_map_with_fundamental_types()
 {
   const char* pass_by_value_types[] =
   {
+    "int8_t",
+    "uint8_t",
     "int16_t",
     "uint16_t",
     "int32_t",

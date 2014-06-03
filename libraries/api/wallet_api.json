@@ -527,6 +527,62 @@
                }
             ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+      },
+      {
+         "method_name" : "wallet_submit_proposal",
+         "description" : "Submit a proposal to the delegates for voting",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "delegate_account_name",
+                  "type" : "account_name",
+                  "description" : "the delegate account proposing the issue"
+               },
+               {
+                  "name" : "subject",
+                  "type" : "std::string",
+                  "description" : "the subject of the proposal"
+               },
+               {
+                  "name" : "body",
+                  "type" : "std::string",
+                  "description" : "the body of the proposal"
+               },
+               {
+                  "name" : "proposal_type",
+                  "type" : "std::string",
+                  "description" : "the type of the proposal"
+               },
+               {
+                  "name" : "data",
+                  "type" : "json_variant",
+                  "description" : "the name of the account to receive the shares"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+      },
+      {
+         "method_name" : "wallet_vote_proposal",
+         "description" : "Vote on a proposal",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "name",
+                  "type" : "account_name",
+                  "description" : "the name of the account to vote with"
+               },
+               {
+                  "name" : "proposal_id",
+                  "type" : "proposal_id_type",
+                  "description" : "the id of the proposal to vote on"
+               },
+               {
+                  "name" : "vote",
+                  "type" : "uint8_t",
+                  "description" : "your vote"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
       }
     ]
 }

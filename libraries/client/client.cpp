@@ -469,10 +469,10 @@ namespace bts { namespace client {
                                                        const string& subject,
                                                        const string& body,
                                                        const string& proposal_type,
-                                                       const fc::variant& json_data,
-                                                       rpc_client_api::generate_transaction_flag flag)
+                                                       const fc::variant& json_data)
     {
       try {
+        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
         bool sign = (flag != do_not_sign);
         auto trx = get_wallet()->create_proposal(delegate_account_name, subject, body, proposal_type, json_data, sign);
         if (flag == sign_and_broadcast)
@@ -484,11 +484,11 @@ namespace bts { namespace client {
     }
 
     signed_transaction client::wallet_vote_proposal(const string& name,
-                                                     proposal_id_type proposal_id,
-                                                     uint8_t vote,
-                                                     rpc_client_api::generate_transaction_flag flag)
+                                                    const proposal_id_type& proposal_id,
+                                                    uint8_t vote)
     {
       try {
+        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
         bool sign = (flag != do_not_sign);
         auto trx = get_wallet()->vote_proposal(name, proposal_id, vote, sign);
         if (flag == sign_and_broadcast)
