@@ -190,7 +190,7 @@ int main( int argc, char** argv )
       }
       else 
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server, std::cout );
+         auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
          cli->wait();
       } 
    }

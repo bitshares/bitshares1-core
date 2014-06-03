@@ -38,7 +38,7 @@ namespace bts { namespace cli {
             fc::future<void>            _cin_complete;
             std::ostream&               _out;
 
-            cli_impl(const client_ptr& client, const rpc_server_ptr& rpc_server, std::ostream& output_stream);
+            cli_impl(const client_ptr& client, std::ostream& output_stream);
 
             string get_prompt()const
             {
@@ -968,9 +968,9 @@ namespace bts { namespace cli {
     extern "C" int control_c_handler(int count, int key);
 #endif
 
-    cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server, std::ostream& output_stream ) :
+    cli_impl::cli_impl( const client_ptr& client, std::ostream& output_stream ) :
       _client(client),
-      _rpc_server(rpc_server),
+      _rpc_server(client->get_rpc_server()),
       _out(output_stream)
     {
 #ifdef HAVE_READLINE
@@ -1083,8 +1083,8 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, const rpc_server_ptr& rpc_server, std::ostream& output_stream)
-  :my( new detail::cli_impl(client, rpc_server, output_stream) )
+  cli::cli( const client_ptr& client, std::ostream& output_stream)
+  :my( new detail::cli_impl(client, output_stream) )
   {
     my->_self        = this;
 //    my->_main_thread = &fc::thread::current();

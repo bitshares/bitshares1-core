@@ -21,7 +21,7 @@ namespace bts { namespace cli {
    class cli
    {
       public:
-          cli( const client_ptr& client, const rpc_server_ptr& rpc_server, std::ostream& output_stream);
+          cli( const client_ptr& client, std::ostream& output_stream);
           virtual ~cli();
 
           //Parse and execute a command line. Returns false if line is a quit command.
