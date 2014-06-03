@@ -22,6 +22,20 @@ namespace bts { namespace blockchain {
    const operation_type_enum add_collateral_operation::type    = add_collateral_op_type;
    const operation_type_enum remove_collateral_operation::type = remove_collateral_op_type;
 
+   static bool first_chain = []()->bool{
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      return true;
+   }();
 
    balance_id_type  deposit_operation::balance_id()const
    {
