@@ -23,10 +23,6 @@
 
 namespace bts { namespace rpc {
 
-#define RPC_METHOD_LIST\
-             (wallet_submit_proposal)\
-             (wallet_vote_proposal)
-
   namespace detail
   {
     class rpc_server_impl : public bts::rpc_stubs::common_api_server
@@ -34,8 +30,8 @@ namespace bts { namespace rpc {
        public:
          rpc_server::config                _config;
          bts::client::client*              _client;
-         fc::http::server                  _httpd;
-         fc::tcp_server                    _tcp_serv;
+         std::shared_ptr<fc::http::server> _httpd;
+         std::shared_ptr<fc::tcp_server>   _tcp_serv;
          fc::future<void>                  _accept_loop_complete;
          rpc_server*                       _self;
          fc::shared_ptr<fc::promise<void>> _on_quit_promise;
@@ -294,7 +290,7 @@ namespace bts { namespace rpc {
               fc::tcp_socket_ptr sock = std::make_shared<fc::tcp_socket>();
               try
               {
-                _tcp_serv.accept( *sock );
+                _tcp_serv->accept( *sock );
               }
               catch ( const fc::exception& e )
               {
@@ -433,12 +429,6 @@ namespace bts { namespace rpc {
         }
 
         fc::variant login( fc::rpc::json_connection* json_connection, const fc::variants& params );
-
-#define DECLARE_RPC_METHOD( r, visitor, elem )  fc::variant elem( const fc::variants& );
-#define DECLARE_RPC_METHODS( METHODS ) BOOST_PP_SEQ_FOR_EACH( DECLARE_RPC_METHOD, v, METHODS )
-        DECLARE_RPC_METHODS( RPC_METHOD_LIST )
- #undef DECLARE_RPC_METHOD
- #undef DECLARE_RPC_METHODS
     };
 
     bts::api::common_api* rpc_server_impl::get_client() const
@@ -538,79 +528,6 @@ namespace bts { namespace rpc {
 
       return boost::algorithm::trim_copy(help_string);
     }
-    
-#if 0
-
-    static bts::api::method_data wallet_asset_create_metadata{"wallet_asset_create", nullptr,
-            /* description */ "Creates a new user issued asset",
-            /* returns: */    "invoice_summary",
-            /* params:          name                    type        classification                   default value */
-                              {{"symbol",               "string",   bts::api::required_positional, fc::ovariant()},
-                               {"asset_name",           "string",   bts::api::required_positional, fc::ovariant()},
-                               {"issuer_name",          "string",   bts::api::required_positional, fc::ovariant()},
-                               {"description",          "string",   bts::api::optional_named,      fc::variant("")},
-                               {"data",                 "json",     bts::api::optional_named,      fc::ovariant()},
-                               {"maximum_share_supply", "int64",    bts::api::optional_named,      fc::variant(BTS_BLOCKCHAIN_MAX_SHARES)}
-                              },
-          /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-          R"(
-          )" };
-    fc::variant rpc_server_impl::wallet_asset_create(const fc::variants& params)
-    {
-       fc::variant_object named_params = params[3].get_object();
-       auto create_asset_trx = _client->wallet_asset_create(
-              params[0].as_string(), 
-              params[1].as_string(),
-              named_params["description"].as_string(),
-              named_params["data"],
-              params[2].as_string(),
-              named_params["maximum_share_supply"].as_int64());
-       return fc::variant(create_asset_trx);
-    }
-#endif
-
-    static bts::api::method_data wallet_submit_proposal_metadata{ "wallet_submit_proposal", nullptr,
-      /* description */ "Submit a proposal to the delegates for voting",
-      /* returns: */    "transaction_id",
-      /* params:          name          type       classification                   default_value */
-      { { "proposer", "string", bts::api::required_positional, fc::ovariant() },
-        { "subject", "string", bts::api::required_positional, fc::ovariant() },
-        { "body", "string", bts::api::required_positional, fc::ovariant() },
-        { "proposal_type", "string", bts::api::required_positional, fc::ovariant() },
-        { "json_data", "variant", bts::api::optional_positional, fc::ovariant() } 
-      },
-        /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-      R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_submit_proposal(const fc::variants& params)
-    {
-      auto transaction_id = _client->wallet_submit_proposal(params[0].as_string(), //proposer 
-                                                            params[1].as_string(), //subject
-                                                            params[2].as_string(), //body
-                                                            params[3].as_string(), //proposal_type
-                                                            params[4]              //json_data
-                                                            );
-      return fc::variant(transaction_id);
-    }
-
-    static bts::api::method_data wallet_vote_proposal_metadata{ "wallet_vote_proposal", nullptr,
-      /* description */ "Vote on a proposal",
-      /* returns: */    "transaction_id",
-      /* params:          name          type       classification                   default_value */
-      { { "name", "string", bts::api::required_positional, fc::ovariant() },
-        { "proposal_id", "transaction_id", bts::api::required_positional, fc::ovariant() },
-        { "vote", "unsigned integer", bts::api::required_positional, fc::ovariant() }
-      },
-      /* prerequisites */ bts::api::json_authenticated | bts::api::wallet_open | bts::api::wallet_unlocked | bts::api::connected_to_network,
-      R"(
-     )" };
-    fc::variant rpc_server_impl::wallet_vote_proposal(const fc::variants& params)
-    {
-      auto transaction_id = _client->wallet_vote_proposal(params[0].as_string(), 
-                                                          params[1].as<int32_t>(),
-                                                          params[2].as<uint8_t>());
-      return fc::variant(transaction_id);
-    }
 
     void rpc_server_impl::shutdown_rpc_server()
     {
@@ -635,27 +552,24 @@ namespace bts { namespace rpc {
     my(new detail::rpc_server_impl(client))
   {
     my->_self = this;
-
-#define REGISTER_RPC_METHOD( r, visitor, METHODNAME ) \
-    do { \
-      bts::api::method_data data_with_functor(detail::BOOST_PP_CAT(METHODNAME,_metadata)); \
-      data_with_functor.method = boost::bind(&detail::rpc_server_impl::METHODNAME, my.get(), _1); \
-      register_method(data_with_functor); \
-    } while (0);
-#define REGISTER_RPC_METHODS( METHODS ) \
-    BOOST_PP_SEQ_FOR_EACH( REGISTER_RPC_METHOD, v, METHODS )
-
-    REGISTER_RPC_METHODS( RPC_METHOD_LIST )
-
- #undef REGISTER_RPC_METHODS
- #undef REGISTER_RPC_METHOD
     my->register_common_api_method_metadata();
   }
 
   rpc_server::~rpc_server()
   {
-     try {
-         if(!my->_on_quit_promise->ready() )
+    try 
+    {
+      close();
+      wait();
+    }
+    catch ( const fc::exception& e )
+    {
+      wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
+    }
+  }
+
+  /*
+           if(!my->_on_quit_promise->ready() )
             my->_on_quit_promise->set_value();
          my->_tcp_serv.close();
          if( my->_accept_loop_complete.valid() )
@@ -663,13 +577,8 @@ namespace bts { namespace rpc {
             my->_accept_loop_complete.cancel();
             my->_accept_loop_complete.wait();
          }
-     }
-     catch ( const fc::canceled_exception& ){}
-     catch ( const fc::exception& e )
-     {
-        wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
-     }
-  }
+*/
+
 
   bool rpc_server::configure( const rpc_server::config& cfg )
   {
@@ -678,15 +587,17 @@ namespace bts { namespace rpc {
     try
     {
       my->_config = cfg;
-      my->_tcp_serv.listen( cfg.rpc_endpoint );
-      ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
+      my->_tcp_serv = std::make_shared<fc::tcp_server>();
+      my->_tcp_serv->listen( cfg.rpc_endpoint );
+      ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
 
 
       auto m = my.get();
-      my->_httpd.listen(cfg.httpd_endpoint);
-      my->_httpd.on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
+      my->_httpd = std::make_shared<fc::http::server>();
+      my->_httpd->listen(cfg.httpd_endpoint);
+      my->_httpd->on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
 
       return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
@@ -713,67 +624,8 @@ namespace bts { namespace rpc {
     return result;
   }
 
-  void rpc_server::validate_method_data(bts::api::method_data method)
-  {
-    bool encountered_default_argument = false;
-    bool encountered_optional_argument = false;
-    bool encountered_named_argument = false;
-
-    for (const bts::api::parameter_data& parameter : method.parameters)
-    {
-       /*
-      switch (parameter.classification)
-      {
-          case bts::api::required_positional:
-          case bts::api::required_positional_hidden:
-            // can't have any required arguments after an optional argument
-            FC_ASSERT(!encountered_optional_argument);
-            // required arguments can't have a default value
-            FC_ASSERT(!parameter.default_value);
-            break;
-          case bts::api::optional_positional:
-            // can't have any positional optional arguments after a named argument
-            FC_ASSERT(!encountered_named_argument);
-            // if previous arguments have a default value, this one must too
-            if (encountered_default_argument)
-              FC_ASSERT(parameter.default_value);
-            encountered_optional_argument = true;
-            if( parameter.default_value.valid() )
-              encountered_default_argument = true;
-            break;
-          case bts::api::optional_named:
-            encountered_optional_argument = true;
-          case bts::api::required_positional_hidden:
-            // can't have any required arguments after an optional argument
-            FC_ASSERT(!encountered_optional_argument);
-            // required arguments can't have a default value
-            FC_ASSERT(!parameter.default_value);
-            break;
-          case bts::api::optional_positional:
-            // can't have any positional optional arguments after a named argument
-            FC_ASSERT(!encountered_named_argument);
-            // if previous arguments have a default value, this one must too
-            if (encountered_default_argument)
-              FC_ASSERT(parameter.default_value);
-            encountered_optional_argument = true;
-            if( parameter.default_value.valid() )
-              encountered_default_argument = true;
-            break;
-          case bts::api::optional_named:
-            encountered_optional_argument = true;
-            encountered_named_argument = true;
-            break;
-          default:
-            FC_ASSERT(false, "Invalid parameter classification");
-            break;
-      }
-      */
-    }
-  }
-
   void rpc_server::register_method(bts::api::method_data data)
   {
-    validate_method_data(data);
     FC_ASSERT(my->_alias_map.find(data.name) == my->_alias_map.end(), "attempting to register an exsiting method name ${m}", ("m", data.name));
     my->_alias_map[data.name] = data.name;
     for ( auto alias : data.aliases )
@@ -784,15 +636,40 @@ namespace bts { namespace rpc {
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 
+  void rpc_server::close()
+  {
+    if (my->_tcp_serv)
+      my->_tcp_serv->close();
+    if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
+      my->_accept_loop_complete.cancel();
+    my->_on_quit_promise->set_value();
+  }
+
+  void rpc_server::wait()
+  {
+    try
+    {
+      if( my->_accept_loop_complete.valid() )
+        my->_accept_loop_complete.wait();
+      else if ( !my->_on_quit_promise->ready() )
+        my->_on_quit_promise->wait();
+    }
+    catch (const fc::canceled_exception&)
+    {
+    }
+  }
+
+
   void rpc_server::wait_on_quit()
   {
-    if (!my->_on_quit_promise->ready())
-      my->_on_quit_promise->wait();
+    wait();
   }
 
   void rpc_server::shutdown_rpc_server()
   {
-    my->shutdown_rpc_server();
+    // shutdown the server.  add a little delay to give the response to the "stop" method call a chance
+    // to make it to the caller
+    fc::async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
   }
 
   std::string rpc_server::help(const std::string& command_name) const

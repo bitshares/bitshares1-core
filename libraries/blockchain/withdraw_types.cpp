@@ -38,32 +38,29 @@ namespace bts { namespace blockchain {
    }
    omemo_status withdraw_by_account::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
-      ilog( "receiver_key: ${r}", ("r",receiver_key) );
+//      ilog( "receiver_key: ${r}", ("r",receiver_key) );
       auto secret = receiver_key.get_shared_secret( one_time_key );
-      ilog( "secret: ${secret}", ("secret",secret) );
+//      ilog( "secret: ${secret}", ("secret",secret) );
       extended_private_key ext_receiver_key(receiver_key);
-      ilog( "ext_receiver_key: ${key}",("key",ext_receiver_key) );
+ //     ilog( "ext_receiver_key: ${key}",("key",ext_receiver_key) );
       
-      ilog( "" );
       fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret), 
                                                                         extended_private_key::public_derivation );
-      ilog( "secret_private_key: ${k}", ("k",secret_private_key)  );
+   //   ilog( "secret_private_key: ${k}", ("k",secret_private_key)  );
       auto secret_public_key = secret_private_key.get_public_key();
-      ilog( "secret_public_key: ${k}", ("k",secret_public_key)  );
+    //  ilog( "secret_public_key: ${k}", ("k",secret_public_key)  );
 
       if( owner != address(secret_public_key) )
          return omemo_status();
 
-      ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
+     // ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
       auto memo = decrypt_memo_data( secret );
-      ilog( "" );
+
       bool has_valid_signature = false;
       if( memo.memo_flags == from_memo )
       {
          auto check_secret = secret_private_key.get_shared_secret( memo.from );
-         ilog( "" );
          has_valid_signature = check_secret._hash[0] == memo.from_signature;
-         ilog( "" );
       }
       else
       {
@@ -81,15 +78,15 @@ namespace bts { namespace blockchain {
                                    memo_flags_enum memo_type )
    {
       auto secret = one_time_private_key.get_shared_secret( to_public_key );
-      ilog( "secret: ${s}", ("s",secret) );
+//      ilog( "secret: ${s}", ("s",secret) );
       auto ext_to_public_key = extended_public_key(to_public_key);
-      ilog( "ext_to_public_key: ${k}", ("k",ext_to_public_key) );
+//      ilog( "ext_to_public_key: ${k}", ("k",ext_to_public_key) );
       auto secret_ext_public_key = ext_to_public_key.child( fc::sha256::hash(secret) );
-      ilog( "secret ext pub key: ${s}", ("s",secret_ext_public_key) );
+ //     ilog( "secret ext pub key: ${s}", ("s",secret_ext_public_key) );
       auto secret_public_key = secret_ext_public_key.get_pub_key();
-      ilog( "secret_public_key: ${k}", ("k",secret_public_key) );
+ //     ilog( "secret_public_key: ${k}", ("k",secret_public_key) );
       owner = address( secret_public_key );
-      ilog( "owner: ${owner}", ("owner",owner) );
+ //     ilog( "owner: ${owner}", ("owner",owner) );
 
       auto check_secret = from_private_key.get_shared_secret( secret_public_key );
 

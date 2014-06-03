@@ -40,17 +40,6 @@ namespace bts { namespace rpc {
                      /**
                      *  Submit and vote on proposals
                      */
-                     signed_transaction wallet_submit_proposal(const std::string& name,
-                                                                 const std::string& subject,
-                                                                 const std::string& body,
-                                                                 const std::string& proposal_type,
-                                                                 const fc::variant& json_data,
-                                                                 generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                     signed_transaction wallet_vote_proposal( const std::string& name,
-                                                               proposal_id_type proposal_id,
-                                                               uint8_t vote,
-                                                               generate_transaction_flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
 
 
                   wallet_account_record wallet_get_account(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };

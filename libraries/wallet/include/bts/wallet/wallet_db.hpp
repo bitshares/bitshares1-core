@@ -31,7 +31,6 @@ namespace bts { namespace wallet {
          {
             if( t.index == 0 ) 
                t.index = new_index();
-            ilog( "Storing: ${rec}", ("rec",t) );
             store_generic_record( t.index, generic_wallet_record( t ) );
          }
          int32_t              new_index();
@@ -67,9 +66,10 @@ namespace bts { namespace wallet {
          }
 
          private_keys get_account_private_keys( const fc::sha512& password );
+         string       get_account_name( const address& account_address )const;
 
-         owallet_account_record lookup_account( const address& address_of_public_key );
-         owallet_account_record lookup_account( const string& account_name );
+         owallet_account_record lookup_account( const address& address_of_public_key )const;
+         owallet_account_record lookup_account( const string& account_name )const;
 
          oprivate_key           lookup_private_key( const address& address, 
                                                     const fc::sha512& password );

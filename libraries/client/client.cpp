@@ -136,8 +136,8 @@ namespace bts { namespace client {
        {
          try
          {
-           ilog("Received a new block from the server, current head block is ${num}, block is ${block}",
-                ("num", _chain_db->get_head_block_num())("block", block));
+           ilog("Received block ${new_block_num} from the server, current head block is ${num}",
+                ("num", _chain_db->get_head_block_num())("new_block_num", block.block_num));
 
            _chain_db->push_block(block);
          }
@@ -338,8 +338,7 @@ namespace bts { namespace client {
 
     bts::blockchain::transaction_id_type client::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
-      ilog("broadcasting transaction with id ${id} : ${transaction}", 
-           ("id", transaction_to_broadcast.id())("transaction", transaction_to_broadcast));
+      ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
 
       // p2p doesn't send messages back to the originator
       my->on_new_transaction(transaction_to_broadcast);
@@ -469,10 +468,10 @@ namespace bts { namespace client {
                                                        const string& subject,
                                                        const string& body,
                                                        const string& proposal_type,
-                                                       const fc::variant& json_data,
-                                                       rpc_client_api::generate_transaction_flag flag)
+                                                       const fc::variant& json_data)
     {
       try {
+        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
         bool sign = (flag != do_not_sign);
         auto trx = get_wallet()->create_proposal(delegate_account_name, subject, body, proposal_type, json_data, sign);
         if (flag == sign_and_broadcast)
@@ -484,11 +483,11 @@ namespace bts { namespace client {
     }
 
     signed_transaction client::wallet_vote_proposal(const string& name,
-                                                     proposal_id_type proposal_id,
-                                                     uint8_t vote,
-                                                     rpc_client_api::generate_transaction_flag flag)
+                                                    const proposal_id_type& proposal_id,
+                                                    uint8_t vote)
     {
       try {
+        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
         bool sign = (flag != do_not_sign);
         auto trx = get_wallet()->vote_proposal(name, proposal_id, vote, sign);
         if (flag == sign_and_broadcast)
@@ -801,6 +800,7 @@ namespace bts { namespace client {
     public_key_type client::wallet_account_create( const string& account_name,
                                                    const variant& private_data )
     {
+       ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return get_wallet()->create_account( account_name, private_data );
     }
 
@@ -954,6 +954,11 @@ namespace bts { namespace client {
       fc::mutable_variant_object result;
       result["isvalid"] = false;
       return result;
+    }
+
+    vector<wallet_balance_record> client::wallet_list_unspent_balances( const string& account_name, const string& symbol )
+    {
+       return get_wallet()->get_unspent_balances( account_name, symbol );
     }
 
 } } // bts::client

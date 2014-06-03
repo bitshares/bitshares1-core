@@ -83,6 +83,7 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
+                ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
                 _wallet_db.cache_balance( bal_rec );
               }
          } );
@@ -149,7 +150,10 @@ namespace bts { namespace wallet {
               }
             }
          }
-         FC_ASSERT( !"Insufficient Funds" );
+         FC_ASSERT( !"Insufficient Funds", "Requested ${r} but only ${a} available",
+                    ("r", _blockchain->to_pretty_asset( asset(amount,asset_id) ) )
+                    ("a", _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) ) )
+                  );
       }
 
 
@@ -284,16 +288,16 @@ namespace bts { namespace wallet {
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
                          trx_rec.to_account   = key.get_public_key();
-                         ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                         //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
                       {
-                         ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                         ilog( "op: ${op}", ("op",op) );
+                         //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                         //ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
                          trx_rec.from_account = key.get_public_key();
                          trx_rec.to_account   = status->from;
-                         ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                         //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
                       cache_deposit = true;
                       break;
@@ -370,7 +374,6 @@ namespace bts { namespace wallet {
       my->_wallet_db.open( wallet_file_path );
       
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
 
       master_key new_master_key;
       if( brainkey.size() )
@@ -391,7 +394,6 @@ namespace bts { namespace wallet {
     
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
-      wlog( "closing and reopening, just for good measure" );
       my->_wallet_db.close();
       my->_wallet_db.open( wallet_file_path );
 
@@ -466,7 +468,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
       if( !my->_wallet_db.wallet_master_key->validate_password( my->_wallet_password ) )
       {
          lock();
@@ -606,7 +607,6 @@ namespace bts { namespace wallet {
             my->_wallet_db.add_contact_account( account_name, key, private_data );
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
-         ilog( "account key:${a}}", ("a", account_key ) );
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
@@ -658,9 +658,7 @@ namespace bts { namespace wallet {
       owallet_key_record current_key_record = my->_wallet_db.lookup_key( import_public_key );
       if( current_key_record.valid() )
       {
-         std::cout << "Storing private key\n";
          current_key_record->encrypt_private_key( my->_wallet_password, key );
-         std::cout << "Storing private key: \n"<<fc::json::to_pretty_string( *current_key_record) << "\n";
          my->_wallet_db.store_key( *current_key_record );
          return import_public_key;
       }
@@ -668,8 +666,7 @@ namespace bts { namespace wallet {
       {
          auto registered_account = my->_blockchain->get_account_record( import_public_key );
          FC_ASSERT( registered_account );
-
-         std::cout << "Importing key for registered account:\n "<< fc::json::to_pretty_string( *registered_account ) << "\n";
+ 
          add_contact_account( registered_account->name, import_public_key );
          return import_private_key( key, registered_account->name );
       }
@@ -837,7 +834,6 @@ namespace bts { namespace wallet {
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
          if( key.valid() && key->has_private_key() )
          {
-            wlog( "next block time:  ${t}", ("t",fc::time_point_sec( next_block_time ) ) );
             return fc::time_point_sec( next_block_time ); 
          }
          next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -954,7 +950,7 @@ namespace bts { namespace wallet {
              }
              if( amount_of_change > total_fee )
              {
-                trx.deposit_to_account( sender_private_key.get_public_key(),
+                trx.deposit_to_account( receiver_public_key,
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
@@ -999,7 +995,7 @@ namespace bts { namespace wallet {
           for( auto rec : balances_to_store )
               my->_wallet_db.store_record( rec );
           for( uint32_t i =0 ; i < trxs.size(); ++i )
-             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), 
+             my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 
                                                total_fee.amount, 
                                                memo_message, 
                                                receiver_public_key,
@@ -1588,7 +1584,7 @@ namespace bts { namespace wallet {
 
    void  wallet::scan_state()
    { try {
-      wlog( "scan state" );
+      ilog( "WALLET: scaning blockchain state" );
       my->scan_balances();
       my->scan_registered_accounts();
    } FC_RETHROW_EXCEPTIONS( warn, "" )  }
@@ -1810,5 +1806,25 @@ namespace bts { namespace wallet {
          return war->trust_level;
       return 0;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
+
+   vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,
+                                                               const string& symbol ) const
+   { try {
+      vector<wallet_balance_record> balances;
+      for( auto& balance_item : my->_wallet_db.balances )
+      {
+    /*     auto owner = balance_item.second.owner();
+         if( balance_item.second.asset_id() == asset_id && 
+             address_in_account( owner, from_account_address ) )
+         {
+    */
+            if( balance_item.second.balance > 0 )
+            {
+               balances.push_back( balance_item.second );
+            }
+    //    }
+      }
+      return balances;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
 } } // bts::wallet
 

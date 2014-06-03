@@ -4,6 +4,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
+#include <bts/cli/cli.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/exception/exception.hpp>
@@ -15,6 +16,7 @@
 using namespace bts::blockchain;
 using namespace bts::wallet;
 using namespace bts::client;
+using namespace bts::cli;
 
 const char* test_wif_keys = R"([
   "5KYn77SMFximbA7gWoxZxs8VpxnzdnxJyRcA2hv7EziWdNk7cfX",
@@ -43,6 +45,16 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
    }
 }
 
+template<typename T>
+void produce_block( T my_client )
+{
+      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
+      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
+      auto b = my_client->get_chain()->generate_block(next_block_production_time);
+      my_client->get_wallet()->sign_block( b );
+      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+}
+
 BOOST_AUTO_TEST_CASE( client_tests )
 {
    try {
@@ -57,8 +69,12 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto my_client = std::make_shared<client>(network);
       my_client->open( my_dir.path(), "genesis.json" );
 
+
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path(), "genesis.json" );
+
+      auto my_cli = new bts::cli::cli( my_client, std::cerr );
+      auto your_cli = new bts::cli::cli( your_client, std::cerr );
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
@@ -66,7 +82,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_client->wallet_unlock( fc::seconds(999999999), password );
 
       auto my_account1 = my_client->wallet_account_create( "account1" );
-      my_client->wallet_import_private_key( test_keys[0], "account1", true /*rescan*/ );
+      my_client->wallet_import_private_key( test_keys[0], string(), true /*rescan*/ );
       auto bal = my_client->wallet_get_balance();
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
@@ -79,29 +95,43 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->wallet_account_register( "account1", "account1" ); //variant(), false, "account1" );
-      ilog( "----" );
-      ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
-      ilog( "----" );
+      auto trx = my_client->wallet_account_register( "account1", "delegate-0", variant(), true );
 
       my_client->wallet_close();
       my_client->wallet_open("my_wallet");
       my_client->wallet_unlock( fc::seconds(999999999), password );
       auto recv_accounts = my_client->get_wallet()->list_receive_accounts();
-      ilog( "receive accounts: ${r}", ("r",recv_accounts) );
+      //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
-      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
-      auto b = my_client->get_chain()->generate_block(next_block_production_time);
-      my_client->get_wallet()->sign_block( b );
-      ilog( "block: ${b}", ("b",b));
-      ilog( "\n\nBROADCASTING\n\n" );
-      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      produce_block( my_client );
 
-      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
-      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
-      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
+      FC_ASSERT( my_client->get_info()["blockchain_head_block_num"].as_int64() == your_client->get_info()["blockchain_head_block_num"].as_int64() );
+      FC_ASSERT( your_client->blockchain_list_registered_accounts("account1",1)[0].name == "account1" );
 
+      public_key_type your_account_key = your_client->wallet_account_create( "youraccount" );
+      my_client->wallet_add_contact_account( "youraccount", your_account_key );
+
+      for( uint32_t i = 0; i < 2; ++i )
+      {
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount" );
+      }
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
+
+      produce_block( my_client );
+
+      //auto result = my_client->wallet_list_unspent_balances();
+//      my_cli->execute_command_line( "wallet_list_unspent_balances" );
+      wlog( "my cli" );
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
+      wlog( "your cli" );
+      your_cli->execute_command_line( "wallet_account_transaction_history" );
+      
+      //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
+
+//      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
+//      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
+//      ilog( "registered_names: ${info}", 
+                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
    } catch ( const fc::exception& e )
    {

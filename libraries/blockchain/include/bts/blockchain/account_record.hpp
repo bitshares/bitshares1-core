@@ -38,54 +38,20 @@ namespace bts { namespace blockchain {
       static bool is_valid_name( const std::string& str );
       static bool is_valid_json( const std::string& str );
 
-      bool is_null()const { return owner_key == public_key_type(); }
-      account_record make_null()const { account_record cpy(*this); cpy.owner_key = public_key_type(); return cpy; }
+      bool is_null()const;
+      account_record make_null()const;
 
-      share_type delegate_pay_balance()const
-      { // TODO: move to cpp
-         FC_ASSERT( is_delegate() );
-         return delegate_info->pay_balance;
-      }
-      bool    is_delegate()const { return !!delegate_info; }
-      int64_t net_votes()const 
-      {  // TODO: move to cpp
-         FC_ASSERT( is_delegate() );
-         return delegate_info->votes_for - delegate_info->votes_against; 
-      }
-      void adjust_votes_for( share_type delta )
-      {
-         FC_ASSERT( is_delegate() );
-         delegate_info->votes_for += delta;
-      }
-      void adjust_votes_against( share_type delta )
-      {
-         FC_ASSERT( is_delegate() );
-         delegate_info->votes_against += delta;
-      }
-      share_type votes_for()const 
-      {
-         FC_ASSERT( is_delegate() );
-         return delegate_info->votes_for;
-      }
-      share_type votes_against()const 
-      {
-         FC_ASSERT( is_delegate() );
-         return delegate_info->votes_against;
-      }
-      bool is_retracted()const { return active_key() == public_key_type(); }
-      address active_address()const { return address(active_key()); }
-
-      void set_active_key( time_point_sec now, const public_key_type& new_key )
-      {
-         active_key_history[now] = new_key;
-      }
-
-      public_key_type active_key()const
-      {
-         if( active_key_history.size() )
-            return active_key_history.rbegin()->second;
-         return public_key_type();
-      }
+      share_type delegate_pay_balance()const;
+      bool    is_delegate()const;
+      int64_t net_votes()const;
+      void adjust_votes_for( share_type delta );
+      void adjust_votes_against( share_type delta );
+      share_type votes_for()const;
+      share_type votes_against()const;
+      bool is_retracted()const;
+      address active_address()const;
+      void set_active_key( time_point_sec now, const public_key_type& new_key );
+      public_key_type active_key()const;
 
       account_id_type                        id;
       std::string                            name;

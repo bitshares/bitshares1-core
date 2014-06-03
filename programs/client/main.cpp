@@ -52,10 +52,10 @@ int main( int argc, char** argv )
                               ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
-                              ("rpcuser", "username for JSON-RPC") // default arguments are in config.json
-                              ("rpcpassword", "password for JSON-RPC")
-                              ("rpcport", "port to listen for JSON-RPC connections")
-                              ("httpport", "port to listen for HTTP JSON-RPC connections")
+                              ("rpcuser", program_options::value<std::string>(), "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
+                              ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
+                              ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", program_options::value<std::string>()->default_value("genesis.dat"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
@@ -185,12 +185,12 @@ int main( int argc, char** argv )
 
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
-          std::cout << "Runing in daemon mode, ignoring console\n";
+          std::cout << "Running in daemon mode, ignoring console\n";
           rpc_server->wait_on_quit();
       }
       else 
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
+         auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
          cli->wait();
       } 
    }

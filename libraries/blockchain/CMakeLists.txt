@@ -15,6 +15,7 @@ add_library( bts_blockchain
              block.cpp
              chain_database.cpp
              fire_operation.cpp
+             account_record.cpp
              ${HEADERS}
            )
 

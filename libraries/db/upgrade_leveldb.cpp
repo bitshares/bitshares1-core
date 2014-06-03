@@ -41,7 +41,7 @@ namespace bts { namespace db {
         //upgradeable record types should always end with version number
         if( 'v' != old_record_type[last_char] )
         {
-          ilog("Database ${db} is not upgradeable",("db",dir.to_native_ansi_path()));
+          //ilog("Database ${db} is not upgradeable",("db",dir.to_native_ansi_path()));
           return;
         }
 

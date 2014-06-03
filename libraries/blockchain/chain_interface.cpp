@@ -106,5 +106,14 @@ namespace bts{ namespace blockchain {
       return active.end() != std::find( active.begin(), active.end(), delegate_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_id",delegate_id) ) }
 
+   string  chain_interface::to_pretty_asset( const asset& a )const
+   {
+      auto oasset = get_asset_record( a.asset_id );
+      if( oasset )
+         return fc::to_pretty_string( a.amount ) + " " + oasset->symbol;
+      else
+         return fc::to_pretty_string( a.amount ) + " ???";
+   }
+
 } }  // bts::blockchain
 

@@ -19,7 +19,6 @@ namespace bts{ namespace wallet {
            { try {
               FC_ASSERT( !self->wallet_master_key.valid() );
               self->wallet_master_key = key;
-              wlog( "master: ${M}", ("M",key) );
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
            void load_account_record( const wallet_account_record& account_to_load )
@@ -107,7 +106,7 @@ namespace bts{ namespace wallet {
       while( current_record_itr.valid() )
       {
          auto current_record = current_record_itr.value();
-         ilog( "load: ${r}", ("r",current_record) );
+         //ilog( "load: ${r}", ("r",current_record) );
          try 
          {
             switch( (wallet_record_type_enum)current_record.type )
@@ -209,7 +208,7 @@ namespace bts{ namespace wallet {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( index != 0 );
-       ilog( "${record}", ("record",record) );
+      // ilog( "${record}", ("record",record) );
        my->_records.store( index, record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record",record) ) }
 
@@ -233,6 +232,12 @@ namespace bts{ namespace wallet {
       if( property_itr != properties.end() ) return property_itr->second.value;
       return variant();
    }
+   string  wallet_db::get_account_name( const address& account_address )const
+   {
+      auto opt = lookup_account( account_address );
+      if( opt ) return opt->name;
+      return "?";
+   }
 
    void wallet_db::store_key( const key_data& key_to_store )
    {
@@ -241,7 +246,22 @@ namespace bts{ namespace wallet {
       {
          key_data& old_data = key_itr->second;
          old_data = key_to_store;
-         ilog( "storing key: ${k}", ("k",key_to_store) );
+
+         if( key_to_store.has_private_key())
+         {
+            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
+                  ("key",key_to_store.public_key)
+                  ("account",key_to_store.account_address)
+                  ("account_name",get_account_name(key_to_store.account_address)) );
+         }
+         else
+         {
+            ilog( "WALLET: storing public key ${key} under account named '${account_name}' address: (${account})", 
+                  ("key",key_to_store.public_key)
+                  ("account",key_to_store.account_address)
+                  ("account_name",get_account_name(key_to_store.account_address)) );
+         }
+
          store_record( key_itr->second );
       }
       else
@@ -287,11 +307,9 @@ namespace bts{ namespace wallet {
 
    bool wallet_db::has_private_key( const address& a )const
    { try {
-      ilog( "address: ${a}", ("a",a) );
       auto itr = keys.find(a);
       if( itr != keys.end() )
       {
-         ilog( "               record: ${a}", ("a",itr->second) );
          return itr->second.has_private_key();
       }
       return false; 
@@ -358,6 +376,10 @@ namespace bts{ namespace wallet {
       war.private_data = private_data;
       war.account_address = address(blockchain_account.owner_key);
 
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+
       auto current_key = lookup_key( blockchain_account.owner_key );
       if( current_key )
       {  
@@ -366,25 +388,19 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         wlog( "new wallet key exists... ..." );
          wallet_key_record new_key;
          new_key.index = new_index();
          new_key.account_address = address(blockchain_account.owner_key);
          new_key.public_key = blockchain_account.active_key();
-         wlog( "store_key: ${key}", ("key",blockchain_account.owner_key) );
          my->load_key_record( new_key );
          store_key( new_key );
       }
 
-      war.index = new_index();
-      store_record( war );
-      my->load_account_record( war );
    }
    void wallet_db::add_contact_account( const string& new_account_name, 
                                         const public_key_type& new_account_key,
                                         const variant& private_data )
    {
-      ilog( "${name}", ("name", new_account_name)  );
       auto current_account_itr = name_to_account.find( new_account_name );
       FC_ASSERT( current_account_itr == name_to_account.end(), 
                  "Account with name ${name} already exists", 
@@ -402,30 +418,28 @@ namespace bts{ namespace wallet {
       war.set_active_key( fc::time_point::now(), new_account_key );
       war.private_data = private_data;
 
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+
       auto current_key = lookup_key( new_account_key );
       if( current_key )
       {  
-         wlog( "key exists... ..." );
          current_key->account_address = address(new_account_key);
          store_record( *current_key );
       }
       else
       {
-         wlog( "new wallet key exists... ..." );
          wallet_key_record new_key;
          new_key.index = new_index();
          new_key.account_address = address(new_account_key);
          new_key.public_key = new_account_key;
-         wlog( "store_key: ${key}", ("key",new_key) );
          my->load_key_record( new_key );
          store_key( new_key );
       }
 
-      war.index = new_index();
-      store_record( war );
-      my->load_account_record( war );
    }
-   owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )
+   owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )const
    {
       auto address_index_itr = address_to_account.find( address_of_public_key );
       if( address_index_itr != address_to_account.end() )
@@ -438,7 +452,7 @@ namespace bts{ namespace wallet {
       return owallet_account_record();
    }
 
-   owallet_account_record wallet_db::lookup_account( const string& account_name )
+   owallet_account_record wallet_db::lookup_account( const string& account_name )const
    {
       auto name_index_itr = name_to_account.find( account_name );
       if( name_index_itr != name_to_account.end() )
