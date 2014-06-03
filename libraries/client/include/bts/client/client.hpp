@@ -76,6 +76,7 @@ namespace bts { namespace client {
          void listen_on_port( uint16_t port_to_listen );
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
+         fc::ip::endpoint get_p2p_listening_endpoint() const;
        private:
          unique_ptr<detail::client_impl> my;
     };
