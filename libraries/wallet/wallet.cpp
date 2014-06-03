@@ -1848,5 +1848,31 @@ namespace bts { namespace wallet {
       }
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
+
+   wallet::account_balance_summary_type    wallet::get_account_balances()const
+   { try {
+      account_balance_summary_type result;
+      unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
+      for( auto b : my->_wallet_db.balances )
+      {
+          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             asset bal = b.second.get_balance();
+             raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
+          }
+      }
+      for( auto account : raw_results )
+      {
+         auto oaccount = my->_wallet_db.lookup_account( account.first );
+         string name = oaccount ? oaccount->name : string(account.first);
+         for( auto item : account.second )
+         {
+            string symbol = my->_blockchain->get_asset_symbol( item.first );
+            result[name][symbol] = item.second;
+         }
+      }
+      return result;
+   } FC_RETHROW_EXCEPTIONS(warn,"") }
 } } // bts::wallet
 

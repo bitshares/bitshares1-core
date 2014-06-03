@@ -240,6 +240,10 @@ namespace bts { namespace wallet {
          std::unordered_map<address,string>    get_send_addresses()const;
          */
 
+         
+         typedef unordered_map<string, map<string, share_type> >  account_balance_summary_type;
+         account_balance_summary_type          get_account_balances()const;
+
          vector<asset>                         get_balance( const string& symbol = string("*"),
                                                             const string& account_name  = string("*") )const;
          ///@}

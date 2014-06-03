@@ -196,6 +196,10 @@
         "default_example" : "TODO"
       },
       {
+         "type_name" : "map< account_name, map< asset_symbol, share_type> >",
+         "cpp_return_type" : "std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> >"
+      },
+      {
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",

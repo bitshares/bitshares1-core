@@ -296,7 +296,7 @@
           ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
-        "aliases" : [ "balance" ]
+        "aliases" : [  ]
       },
       {
         "method_name": "wallet_transfer",
@@ -603,6 +603,14 @@
            }
          ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+      },
+      {
+         "method_name"    : "wallet_account_balance",
+         "description"    : "Lists the total balances of all accounts sorted by account and asset",
+         "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
+         "parameters"     : [],
+         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "aliases" : ["balance"]
       }
 
     ]
