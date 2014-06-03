@@ -947,7 +947,10 @@ namespace bts { namespace cli {
       cli_impl_instance = this;
       _method_data_is_initialized = false;
       rl_attempted_completion_function = &json_completion_function;
+#ifndef __APPLE__
+      // TODO: find out why this isn't defined on APPL
       rl_bind_keyseq("\\C-c", &control_c_handler);
+#endif
 #endif
     }
 
