@@ -130,6 +130,10 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       trx = your_client->wallet_account_register( "youraccount", "youraccount", variant(), true );
       produce_block( my_client );
+      trx = your_client->wallet_account_register( "otheraccount", "otheraccount", variant(), false );
+      produce_block( my_client );
+      trx = your_client->wallet_account_update_registration( "otheraccount", "otheraccount", variant(), true );
+      produce_block( my_client );
 
       //auto result = my_client->wallet_list_unspent_balances();
 //      my_cli->execute_command_line( "wallet_list_unspent_balances" );

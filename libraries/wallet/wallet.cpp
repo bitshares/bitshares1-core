@@ -251,8 +251,6 @@ namespace bts { namespace wallet {
 
           blockchain::account_record& tmp  = *opt_account;
           tmp = *account_name_rec; //->id = account_name_rec->id;
-          ilog( "tmp: ${tmp}", ("tmp",fc::json::to_pretty_string(tmp) ) );
-          ilog( "opt: ${tmp}", ("tmp",fc::json::to_pretty_string(*opt_account) ) );
           _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
           _wallet_db.store_record( *opt_account );
           _wallet_db.accounts[ opt_account->index ] = *opt_account;
@@ -264,10 +262,31 @@ namespace bts { namespace wallet {
 
 
       bool wallet_impl::scan_update_account( const update_account_operation& op )
-      {
-          wlog( "\n\n       ********* TODO... update records in wallet *********** \n\n" );
+      { try {
+          auto oaccount =  _blockchain->get_account_record( op.account_id ); 
+          FC_ASSERT( oaccount.valid() );
+          auto opt_key_rec = _wallet_db.lookup_key( oaccount->owner_key );
+          if( !opt_key_rec.valid() ) 
+             return false;
+
+          auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
+          if( !opt_account.valid() )
+          {
+             wlog( "We have the key but no account for registration operation" );
+             return false;
+          }
+          wlog( "we detected an account register operation for ${name}", ("name",oaccount->name) );
+          auto account_name_rec = _blockchain->get_account_record( oaccount->name );
+          FC_ASSERT( account_name_rec.valid() );
+
+          blockchain::account_record& tmp  = *opt_account;
+          tmp = *account_name_rec; //->id = account_name_rec->id;
+          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
+          _wallet_db.store_record( *opt_account );
+          _wallet_db.accounts[ opt_account->index ] = *opt_account;
+
           return false;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -1062,6 +1081,9 @@ namespace bts { namespace wallet {
         required_fees += my->_blockchain->get_delegate_registration_fee();
       }
 
+      auto size_fee = fc::raw::pack_size( public_data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
 
@@ -1114,6 +1136,10 @@ namespace bts { namespace wallet {
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      auto size_fee = fc::raw::pack_size( data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
@@ -1189,6 +1215,15 @@ namespace bts { namespace wallet {
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      if( as_delegate && !account->is_delegate() )
+      {
+        required_fees += my->_blockchain->get_delegate_registration_fee();
+      }
+
+      auto size_fee = fc::raw::pack_size( public_data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    payer_public_key,
@@ -1204,8 +1239,12 @@ namespace bts { namespace wallet {
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "update registration for " + account_to_update, 
-                                                  payer_public_key, bts::blockchain::now() );
+                                                  "update " + account_to_update + (as_delegate? " as a delegate" : ""), 
+                                                  payer_public_key, 
+                                                  bts::blockchain::now(),
+                                                  bts::blockchain::now(),
+                                                  payer_public_key
+                                                );
       }
       return wallet_transaction_record(transaction_data(trx));
 
@@ -1236,6 +1275,10 @@ namespace bts { namespace wallet {
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
+      required_fees += fc::raw::pack_size(trx);
+
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( delegate_account->name ),
@@ -1243,7 +1286,6 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( delegate_account->active_key() ); 
     
-      trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
        
       if (sign)
           sign_transaction( trx, required_signatures );
@@ -1266,16 +1308,18 @@ namespace bts { namespace wallet {
 
       auto account = my->_blockchain->get_account_record( name );
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account));
-      
+
+      trx.vote_proposal( proposal_id, account->id, vote );
+
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      required_fees += fc::raw::pack_size(trx);
+      
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( account->name ),
                                    trx, required_signatures );
      
       required_signatures.insert( account->active_key() ); 
-    
-      trx.vote_proposal( proposal_id, account->id, vote );
        
       if (sign)
           sign_transaction( trx, required_signatures );

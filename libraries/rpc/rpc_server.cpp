@@ -539,11 +539,9 @@ namespace bts { namespace rpc {
 
   bool rpc_server::config::is_valid() const
   {
-//    if (rpc_user.empty())
-//      return false;
-//    if (rpc_password.empty())
-//      return false;
-    if (!rpc_endpoint.port())
+    if (rpc_user.empty())
+      return false;
+    if (rpc_password.empty())
       return false;
     return true;
   }
@@ -561,24 +559,15 @@ namespace bts { namespace rpc {
     {
       close();
       wait();
+      // just to be safe, destroy the  servers inside this try/catch block in case they throw
+      my->_tcp_serv.reset();
+      my->_httpd.reset();
     }
     catch ( const fc::exception& e )
     {
       wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
     }
   }
-
-  /*
-           if(!my->_on_quit_promise->ready() )
-            my->_on_quit_promise->set_value();
-         my->_tcp_serv.close();
-         if( my->_accept_loop_complete.valid() )
-         {
-            my->_accept_loop_complete.cancel();
-            my->_accept_loop_complete.wait();
-         }
-*/
-
 
   bool rpc_server::configure( const rpc_server::config& cfg )
   {
@@ -588,7 +577,31 @@ namespace bts { namespace rpc {
     {
       my->_config = cfg;
       my->_tcp_serv = std::make_shared<fc::tcp_server>();
-      my->_tcp_serv->listen( cfg.rpc_endpoint );
+      try
+      {
+        my->_tcp_serv->listen( cfg.rpc_endpoint );
+      }
+      catch (fc::exception& e)
+      {
+        if (cfg.rpc_endpoint.port() != 0)
+        {
+          wlog("unable to listen on endpoint ${endpoint}", ("endpoint", cfg.rpc_endpoint));
+          fc::ip::endpoint any_port_endpoint = cfg.rpc_endpoint;
+          any_port_endpoint.set_port(0);
+          try
+          {
+            my->_tcp_serv->listen(any_port_endpoint);
+          }
+          catch (fc::exception& e)
+          {
+            wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
+            FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}", 
+                                 ("firstchoice", cfg.rpc_endpoint)("secondchoice", any_port_endpoint));
+          }
+        }
+        else
+          FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${endpoint}", ("endpoint", cfg.rpc_endpoint));
+      }
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
@@ -596,7 +609,31 @@ namespace bts { namespace rpc {
 
       auto m = my.get();
       my->_httpd = std::make_shared<fc::http::server>();
-      my->_httpd->listen(cfg.httpd_endpoint);
+      try
+      {
+        my->_httpd->listen(cfg.httpd_endpoint);
+      }
+      catch (fc::exception& e)
+      {
+        if (cfg.httpd_endpoint.port() != 0)
+        {
+          wlog("unable to listen on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
+          fc::ip::endpoint any_port_endpoint = cfg.httpd_endpoint;
+          any_port_endpoint.set_port(0);
+          try
+          {
+            my->_httpd->listen(any_port_endpoint);
+          }
+          catch (fc::exception& e)
+          {
+            wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
+            FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}", 
+                                 ("firstchoice", cfg.httpd_endpoint)("secondchoice", any_port_endpoint));
+          }
+        }
+        else
+          FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
+      }
       my->_httpd->on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
 
       return true;
@@ -638,21 +675,24 @@ namespace bts { namespace rpc {
 
   void rpc_server::close()
   {
+    my->_on_quit_promise->set_value();
     if (my->_tcp_serv)
       my->_tcp_serv->close();
     if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
       my->_accept_loop_complete.cancel();
-    my->_on_quit_promise->set_value();
   }
 
   void rpc_server::wait()
   {
     try
     {
-      if( my->_accept_loop_complete.valid() )
-        my->_accept_loop_complete.wait();
-      else if ( !my->_on_quit_promise->ready() )
+      // wait until a quit has been signalled
+      if ( !my->_on_quit_promise->ready() )
         my->_on_quit_promise->wait();
+
+      // if we were running a TCP server, also wait for it to shut down
+      if (my->_tcp_serv && my->_accept_loop_complete.valid() )
+        my->_accept_loop_complete.wait();
     }
     catch (const fc::canceled_exception&)
     {
@@ -676,6 +716,21 @@ namespace bts { namespace rpc {
   {
     return my->help(command_name);
   }
+
+  fc::optional<fc::ip::endpoint> rpc_server::get_rpc_endpoint() const
+  {
+    if (my->_tcp_serv)
+      return my->_tcp_serv->get_local_endpoint();
+    return fc::optional<fc::ip::endpoint>();
+  }
+
+  fc::optional<fc::ip::endpoint> rpc_server::get_httpd_endpoint() const
+  {
+    if (my->_httpd)
+      return my->_httpd->get_local_endpoint();
+    return fc::optional<fc::ip::endpoint>();
+  }
+
 
   exception::exception(fc::log_message&& m) :
     fc::exception(fc::move(m)) {}

@@ -3,7 +3,7 @@
   "timestamp": "19700101T000000",
   "balances": [[
       "Pk7Q18XihQkQZr7D5vctE7oLB9Gks1n2yz",
-      1000
+      1001
     ],[
       "Pmyf4euvG7rQGU22FouhKgLqvqcAtEezkA",
       1000
@@ -1319,19 +1319,11 @@
       "name": "buratino",
       "is_delegate": false,
       "owner": "XTS5tY37sZ97VP5s7vsjjzZKHbbgkqhzWEz4JDqbyhHU2LUPrdkhP"
-    },{
-      "name": "bytemaster",
-      "is_delegate": false,
-      "owner": "XTS5tY37sZ97VP5s7vsjjzZKHbbgkqhzWEz4JDqbyhHU2LUPrdkhP"
-    },{
+    },,{
       "name": "c",
       "is_delegate": false,
       "owner": "XTS7D2ajuoVMdnWEBd7x5tmfNy6aBydgiVrpi6vZUeLe7XboQ9xHZ"
-    },{
-      "name": "cadenza",
-      "is_delegate": false,
-      "owner": "XTS5yHG6AquKKynnsp3t57o4TVbuaezUB5XFcMG55uewngpmFvKj6"
-    },{
+    },,{
       "name": "cael",
       "is_delegate": false,
       "owner": "XTS5964Gio82TTBoUC6UbKzM7GZ64UtFveHwdqcx8yu7WwePfXQD3"

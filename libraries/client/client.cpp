@@ -754,6 +754,10 @@ namespace bts { namespace client {
       my->_p2p_node->connect_to_p2p_network();
     }
 
+    fc::ip::endpoint client::get_p2p_listening_endpoint() const
+    {
+      return my->_p2p_node->get_actual_listening_endpoint();
+    }
 
     fc::sha256 client_notification::digest()const
     {
@@ -962,7 +966,7 @@ namespace bts { namespace client {
     }
 
 
-   auto  client::wallet_account_balance() -> decltype(get_wallet()->get_account_balances())
+   unordered_map<string, map<string, int64_t> >  client::wallet_account_balance() 
    {
       return get_wallet()->get_account_balances();
    }

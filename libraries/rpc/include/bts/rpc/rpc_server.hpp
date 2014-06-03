@@ -22,9 +22,7 @@ namespace bts { namespace rpc {
   public:
     struct config
     {
-      config():rpc_user("user"),
-               rpc_password("password"),
-               rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
+      config():rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
                httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
                htdocs("./htdocs"){}
       std::string      rpc_user;
@@ -52,6 +50,9 @@ namespace bts { namespace rpc {
     void wait_on_quit();
     void shutdown_rpc_server();
     std::string help(const std::string& command_name) const;
+
+    fc::optional<fc::ip::endpoint> get_rpc_endpoint() const;
+    fc::optional<fc::ip::endpoint> get_httpd_endpoint() const;
   protected:
     friend class bts::rpc::detail::rpc_server_impl;
 
