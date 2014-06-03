@@ -221,37 +221,44 @@ namespace bts { namespace cli {
                     string prompt = this_parameter.name /*+ "(" + this_parameter.type  + ")"*/ + ": ";
 
                     //if we're prompting for a password, don't echo it to console
-                    bool no_echo = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");
-
+                    bool passphrase_type = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");
+                    bool no_echo = passphrase_type;
                     string prompt_answer = _self->get_line(prompt, no_echo );
-                    auto prompt_argument_stream = std::make_shared<fc::stringstream>(prompt_answer);
-                    fc::buffered_istream buffered_argument_stream(prompt_argument_stream);
-                    try
+                    if (passphrase_type)
                     {
-                      arguments.push_back(_self->parse_argument_of_known_type(buffered_argument_stream, method_data, i));
-                    }
-                    catch( const fc::eof_exception& e )
-                    {
-                        FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                                 ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
-                    }
-                    catch( fc::parse_error_exception& e )
-                    {
-                      FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
-                                            ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
-                    }
-                    //if user is specifying a new password, ask him twice to be sure he typed it right
-                    if (this_parameter.type == "new_passphrase")
-                    {
-                      std::string prompt_answer2 = _self->get_line("new_passphrase (verify): ", no_echo );
-                      if (prompt_answer != prompt_answer2)
+                      //if user is specifying a new password, ask him twice to be sure he typed it right
+                      if (this_parameter.type == "new_passphrase")
                       {
-                        std::cout << "Passphrases do not match. ";
-                        FC_THROW_EXCEPTION(canceled_exception,"Passphrase mismatch");
+                        std::string prompt_answer2 = _self->get_line("new_passphrase (verify): ", no_echo );
+                        if (prompt_answer != prompt_answer2)
+                        {
+                          std::cout << "Passphrases do not match. ";
+                          FC_THROW_EXCEPTION(canceled_exception,"Passphrase mismatch");
+                        }
                       }
+                      arguments.push_back(fc::variant(prompt_answer));
                     }
-                   } //end prompting for missing required argument
-                }
+                    else //not a passphrase
+                    {
+                      auto prompt_argument_stream = std::make_shared<fc::stringstream>(prompt_answer);
+                      fc::buffered_istream buffered_argument_stream(prompt_argument_stream);
+                      try
+                      {
+                        arguments.push_back(_self->parse_argument_of_known_type(buffered_argument_stream, method_data, i));
+                      }
+                      catch( const fc::eof_exception& e )
+                      {
+                          FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
+                                   ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
+                      }
+                      catch( fc::parse_error_exception& e )
+                      {
+                        FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
+                                              ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
+                      }
+                    } //else not a passphrase
+                 } //end prompting for missing required argument
+                } //end catch eof_exception
                 catch( fc::parse_error_exception& e )
                 {
                   FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
