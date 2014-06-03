@@ -801,6 +801,7 @@ namespace bts { namespace client {
     public_key_type client::wallet_account_create( const string& account_name,
                                                    const variant& private_data )
     {
+       ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return get_wallet()->create_account( account_name, private_data );
     }
 

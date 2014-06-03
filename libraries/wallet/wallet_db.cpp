@@ -249,14 +249,14 @@ namespace bts{ namespace wallet {
 
          if( key_to_store.has_private_key())
          {
-            ilog( "storing private key for ${key} under account '${account_name}' address: (${account})", 
+            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                   ("account_name",get_account_name(key_to_store.account_address)) );
          }
          else
          {
-            ilog( "storing public key ${key} under account named '${account_name}' address: (${account})", 
+            ilog( "WALLET: storing public key ${key} under account named '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                   ("account_name",get_account_name(key_to_store.account_address)) );
@@ -376,6 +376,10 @@ namespace bts{ namespace wallet {
       war.private_data = private_data;
       war.account_address = address(blockchain_account.owner_key);
 
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+
       auto current_key = lookup_key( blockchain_account.owner_key );
       if( current_key )
       {  
@@ -392,9 +396,6 @@ namespace bts{ namespace wallet {
          store_key( new_key );
       }
 
-      war.index = new_index();
-      store_record( war );
-      my->load_account_record( war );
    }
    void wallet_db::add_contact_account( const string& new_account_name, 
                                         const public_key_type& new_account_key,
@@ -417,6 +418,10 @@ namespace bts{ namespace wallet {
       war.set_active_key( fc::time_point::now(), new_account_key );
       war.private_data = private_data;
 
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+
       auto current_key = lookup_key( new_account_key );
       if( current_key )
       {  
@@ -433,9 +438,6 @@ namespace bts{ namespace wallet {
          store_key( new_key );
       }
 
-      war.index = new_index();
-      store_record( war );
-      my->load_account_record( war );
    }
    owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )const
    {

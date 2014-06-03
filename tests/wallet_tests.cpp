@@ -43,6 +43,16 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
    }
 }
 
+template<typename T>
+void produce_block( T my_client )
+{
+      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
+      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
+      auto b = my_client->get_chain()->generate_block(next_block_production_time);
+      my_client->get_wallet()->sign_block( b );
+      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+}
+
 BOOST_AUTO_TEST_CASE( client_tests )
 {
    try {
@@ -79,7 +89,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->wallet_account_register( "account1", "delegate-0" );
+      auto trx = my_client->wallet_account_register( "account1", "delegate-0", variant(), true );
 
       my_client->wallet_close();
       my_client->wallet_open("my_wallet");
@@ -87,17 +97,25 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto recv_accounts = my_client->get_wallet()->list_receive_accounts();
       //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
-      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
-      auto b = my_client->get_chain()->generate_block(next_block_production_time);
-      my_client->get_wallet()->sign_block( b );
-      //ilog( "block: ${b}", ("b",b));
-      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      produce_block( my_client );
+
+      FC_ASSERT( my_client->get_info()["blockchain_head_block_num"].as_int64() == your_client->get_info()["blockchain_head_block_num"].as_int64() );
+      FC_ASSERT( your_client->blockchain_list_registered_accounts("account1",1)[0].name == "account1" );
+
+      public_key_type your_account_key = your_client->wallet_account_create( "youraccount" );
+      my_client->wallet_add_contact_account( "youraccount", your_account_key );
+
+      for( uint32_t i = 0; i < 20; ++i )
+      {
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount" );
+      }
+
+      produce_block( my_client );
 
 //      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
 //      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
-//      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
-
+//      ilog( "registered_names: ${info}", 
+                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
    } catch ( const fc::exception& e )
    {

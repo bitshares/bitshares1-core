@@ -831,7 +831,6 @@ namespace bts { namespace wallet {
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
          if( key.valid() && key->has_private_key() )
          {
-            wlog( "next block time:  ${t}", ("t",fc::time_point_sec( next_block_time ) ) );
             return fc::time_point_sec( next_block_time ); 
          }
          next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
