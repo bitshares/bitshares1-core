@@ -73,8 +73,8 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path(), "genesis.json" );
 
-      auto my_cli = new cli::cli( my_client, std::cerr );
-      auto your_cli = new cli::cli( your_client, std::cerr );
+      auto my_cli = new bts::cli::cli( my_client, std::cerr );
+      auto your_cli = new bts::cli::cli( your_client, std::cerr );
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
