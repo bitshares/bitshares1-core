@@ -661,17 +661,20 @@ namespace bts { namespace blockchain {
    chain_database::chain_database()
    :my( new detail::chain_database_impl() )
    {
-      bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      static bool first_chain = []()->bool{
+         bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<update_asset_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
+         bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+         return true;
+      }();
       
       my->self = this;
    }
