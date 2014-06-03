@@ -142,12 +142,12 @@ namespace bts { namespace cli {
             void process_commands()
             { 
               try {
-                 string line = _self->get_line(get_prompt());
+                 string line = get_line(get_prompt());
                  while (std::cin.good())
                  {
                    if (!execute_command_line(line))
                      break;
-                   line = _self->get_line( get_prompt() );
+                   line = get_line( get_prompt() );
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
@@ -161,7 +161,12 @@ namespace bts { namespace cli {
               _cin_complete.cancel();
             } 
 
-            string get_line( const string& prompt, bool no_echo )
+            string get_line( const string& prompt = ">>> ", bool no_echo = false)
+            {
+              return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
+            }
+
+            string get_line_internal( const string& prompt, bool no_echo )
             {
                   FC_ASSERT( _self->is_interactive() );
                   string line;
@@ -232,13 +237,13 @@ namespace bts { namespace cli {
                     //if we're prompting for a password, don't echo it to console
                     bool passphrase_type = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");
                     bool no_echo = passphrase_type;
-                    string prompt_answer = _self->get_line(prompt, no_echo );
+                    string prompt_answer = get_line(prompt, no_echo );
                     if (passphrase_type)
                     {
                       //if user is specifying a new password, ask him twice to be sure he typed it right
                       if (this_parameter.type == "new_passphrase")
                       {
-                        std::string prompt_answer2 = _self->get_line("new_passphrase (verify): ", no_echo );
+                        string prompt_answer2 = get_line("new_passphrase (verify): ", no_echo );
                         if (prompt_answer != prompt_answer2)
                         {
                           _out << "Passphrases do not match. ";
@@ -360,7 +365,7 @@ namespace bts { namespace cli {
               }
             }
 
-            fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
+            fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
               if (command == "wallet_create")
               {
@@ -559,12 +564,12 @@ namespace bts { namespace cli {
 
                 while( true )
                 {
-                    passphrase = _self->get_line( query_string + ": ", true );
+                    passphrase = get_line( query_string + ": ", true );
                     if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "password entry aborted");
 
                     if( verify )
                     {
-                        if( passphrase != _self->get_line( query_string + " (verify): ", true ) )
+                        if( passphrase != get_line( query_string + " (verify): ", true ) )
                         {
                             _out << "Passphrases do not match, try again\n";
                             continue;
@@ -614,7 +619,7 @@ namespace bts { namespace cli {
               _out << "(c) Create a new wallet\n";
               _out << "(q) Abort command\n";
 
-              string choice = _self->get_line("Choose [o/c/q]: ");
+              string choice = get_line("Choose [o/c/q]: ");
 
               if (choice == "c")
               {
@@ -1142,11 +1147,6 @@ namespace bts { namespace cli {
   bool cli::execute_command_line(const string& line)
   {
     return my->execute_command_line(line);
-  }
-
-  string cli::get_line( const string& prompt, bool no_echo )
-  {
-    return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
   }
 
   fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,
