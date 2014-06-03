@@ -911,10 +911,6 @@ namespace bts { namespace cli {
                     {
                         _out << std::right;
                         std::stringstream ss;
-                        if (tx.fees > 0) // TODO this might be a bad assumption
-                            ss << "-";
-                        else
-                            ss << "+";
                         ss << _client->get_chain()->to_pretty_asset(tx.amount);
                         _out << std::setw( 20 ) << ss.str();
                     }
