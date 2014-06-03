@@ -1293,12 +1293,19 @@ namespace bts { namespace wallet {
       pretty_trx.fees = trx_rec.fees;
       pretty_trx.memo_message = trx_rec.memo_message;
 
+      pretty_trx.to_me = false;
+      pretty_trx.from_me = false;
+
+
       pretty_trx.from_account = "";
       if( trx_rec.from_account )
       {
           auto acct_record = my->_wallet_db.lookup_account( *trx_rec.from_account );
           if (acct_record)
+          {
+              pretty_trx.from_me = my->_wallet_db.has_private_key( address( *trx_rec.from_account ) );
               pretty_trx.from_account = acct_record->name;
+          }
           else
           {
               auto registered_account = my->_blockchain->get_account_record( *trx_rec.from_account );
@@ -1316,9 +1323,13 @@ namespace bts { namespace wallet {
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
       {
+
           auto acct_record = my->_wallet_db.lookup_account( *trx_rec.to_account );
           if (acct_record)
+          {
+              pretty_trx.to_me = my->_wallet_db.has_private_key( address( *trx_rec.to_account ) );
               pretty_trx.to_account = acct_record->name;
+          }
           else
           {
               auto registered_account = my->_blockchain->get_account_record( *trx_rec.to_account );

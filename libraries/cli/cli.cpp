@@ -866,17 +866,18 @@ namespace bts { namespace cli {
                 for( auto tx : txs )
                 {
                     /* Print index */
-                    std::cout << std::setw( 3 ) << count; count++;
+                    std::cout << std::setw( 3 ) << std::left << count;
+                    count++;
 
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
                     {
-                        std::cout << std::setw( 12 ) << std::left << "pending";
+                        std::cout << std::setw( 12 ) << "pending";
                     }
                     else
                     {
-                        std::cout << std::setw( 7 ) << tx.block_num << ".";
-                        std::cout << std::setw( 5 ) << std::left << tx.trx_num;
+                        std::cout << std::setw( 7 ) << tx.block_num;
+                        std::cout << std::setw( 5 ) << tx.trx_num;
                     }
 
                     /* Print timestamp */
@@ -899,7 +900,14 @@ namespace bts { namespace cli {
 
                     /* Print amount */
                     {
-                        std::cout << std::setw( 16 ) << string( tx.amount );
+                        if (tx.from_me && !tx.to_me)
+                            std::cout << std::setw(3) << "-";
+                        else if (tx.to_me && !tx.from_me)
+                            std::cout << std::setw(3) << "+";
+                        else
+                            std::cout << std::setw(3) << "+/-";
+
+                        std::cout << std::setw( 13 ) << string( tx.amount );
                     }
 
                     /* Print fee */
