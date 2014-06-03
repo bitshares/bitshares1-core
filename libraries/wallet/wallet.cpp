@@ -1062,6 +1062,9 @@ namespace bts { namespace wallet {
         required_fees += my->_blockchain->get_delegate_registration_fee();
       }
 
+      auto size_fee = fc::raw::pack_size( public_data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
 
@@ -1114,6 +1117,10 @@ namespace bts { namespace wallet {
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      auto size_fee = fc::raw::pack_size( data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
@@ -1194,6 +1201,9 @@ namespace bts { namespace wallet {
       {
         required_fees += my->_blockchain->get_delegate_registration_fee();
       }
+
+      auto size_fee = fc::raw::pack_size( public_data );
+      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
