@@ -1189,6 +1189,12 @@ namespace bts { namespace wallet {
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      if( as_delegate && !account->is_delegate() )
+      {
+        required_fees += my->_blockchain->get_delegate_registration_fee();
+      }
+
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    payer_public_key,
