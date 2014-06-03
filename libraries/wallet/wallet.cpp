@@ -245,13 +245,17 @@ namespace bts { namespace wallet {
              return false;
           }
 
+          wlog( "we detected an account register operation for ${name}", ("name",op.name) );
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
           blockchain::account_record& tmp  = *opt_account;
           tmp = *account_name_rec; //->id = account_name_rec->id;
+          ilog( "tmp: ${tmp}", ("tmp",fc::json::to_pretty_string(tmp) ) );
+          ilog( "opt: ${tmp}", ("tmp",fc::json::to_pretty_string(*opt_account) ) );
           _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
           _wallet_db.store_record( *opt_account );
+          _wallet_db.accounts[ opt_account->index ] = *opt_account;
 
           return false;
       }
@@ -1053,6 +1057,11 @@ namespace bts { namespace wallet {
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
+      if( as_delegate )
+      {
+        required_fees += my->_blockchain->get_delegate_registration_fee();
+      }
+
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
 
@@ -1066,7 +1075,7 @@ namespace bts { namespace wallet {
          return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "register " + account_to_register, 
+                                                  "register " + account_to_register + (as_delegate? " as a delegate" : ""), 
                                                   payer_public_key, 
                                                   bts::blockchain::now(),
                                                   bts::blockchain::now(),
@@ -1515,8 +1524,8 @@ namespace bts { namespace wallet {
 
          auto account_key = my->_wallet_db.lookup_key( war->account_address );
          FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
-         ilog( "account: ${war}", ("war",war) );
-         ilog( "account key: ${key}", ("key",account_key) );
+         //ilog( "account: ${war}", ("war",war) );
+        // ilog( "account key: ${key}", ("key",account_key) );
          filter_address = war->account_address;
       }
 
@@ -1538,7 +1547,6 @@ namespace bts { namespace wallet {
          result.push_back( asset( item.second, item.first ) );
       if( result.size() == 0 )
          result.push_back( asset() );
-      ilog( "result: ${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 

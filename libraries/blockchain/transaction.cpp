@@ -584,6 +584,8 @@ namespace bts { namespace blockchain {
 
       if ( !cur_record->is_delegate() && op.is_delegate )
       {
+         // pay fee
+         sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
          cur_record->delegate_info = delegate_stats();
       }
 
