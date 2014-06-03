@@ -251,8 +251,6 @@ namespace bts { namespace wallet {
 
           blockchain::account_record& tmp  = *opt_account;
           tmp = *account_name_rec; //->id = account_name_rec->id;
-          ilog( "tmp: ${tmp}", ("tmp",fc::json::to_pretty_string(tmp) ) );
-          ilog( "opt: ${tmp}", ("tmp",fc::json::to_pretty_string(*opt_account) ) );
           _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
           _wallet_db.store_record( *opt_account );
           _wallet_db.accounts[ opt_account->index ] = *opt_account;
@@ -264,10 +262,31 @@ namespace bts { namespace wallet {
 
 
       bool wallet_impl::scan_update_account( const update_account_operation& op )
-      {
-          wlog( "\n\n       ********* TODO... update records in wallet *********** \n\n" );
+      { try {
+          auto oaccount =  _blockchain->get_account_record( op.account_id ); 
+          FC_ASSERT( oaccount.valid() );
+          auto opt_key_rec = _wallet_db.lookup_key( oaccount->owner_key );
+          if( !opt_key_rec.valid() ) 
+             return false;
+
+          auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
+          if( !opt_account.valid() )
+          {
+             wlog( "We have the key but no account for registration operation" );
+             return false;
+          }
+          wlog( "we detected an account register operation for ${name}", ("name",oaccount->name) );
+          auto account_name_rec = _blockchain->get_account_record( oaccount->name );
+          FC_ASSERT( account_name_rec.valid() );
+
+          blockchain::account_record& tmp  = *opt_account;
+          tmp = *account_name_rec; //->id = account_name_rec->id;
+          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
+          _wallet_db.store_record( *opt_account );
+          _wallet_db.accounts[ opt_account->index ] = *opt_account;
+
           return false;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -1220,8 +1239,12 @@ namespace bts { namespace wallet {
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "update registration for " + account_to_update, 
-                                                  payer_public_key, bts::blockchain::now() );
+                                                  "update " + account_to_update + (as_delegate? " as a delegate" : ""), 
+                                                  payer_public_key, 
+                                                  bts::blockchain::now(),
+                                                  bts::blockchain::now(),
+                                                  payer_public_key
+                                                );
       }
       return wallet_transaction_record(transaction_data(trx));
 
