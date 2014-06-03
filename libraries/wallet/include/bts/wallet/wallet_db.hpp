@@ -31,7 +31,6 @@ namespace bts { namespace wallet {
          {
             if( t.index == 0 ) 
                t.index = new_index();
-            ilog( "Storing: ${rec}", ("rec",t) );
             store_generic_record( t.index, generic_wallet_record( t ) );
          }
          int32_t              new_index();

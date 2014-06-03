@@ -19,7 +19,6 @@ namespace bts{ namespace wallet {
            { try {
               FC_ASSERT( !self->wallet_master_key.valid() );
               self->wallet_master_key = key;
-              wlog( "master: ${M}", ("M",key) );
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
            void load_account_record( const wallet_account_record& account_to_load )
@@ -107,7 +106,7 @@ namespace bts{ namespace wallet {
       while( current_record_itr.valid() )
       {
          auto current_record = current_record_itr.value();
-         ilog( "load: ${r}", ("r",current_record) );
+         //ilog( "load: ${r}", ("r",current_record) );
          try 
          {
             switch( (wallet_record_type_enum)current_record.type )
@@ -209,7 +208,7 @@ namespace bts{ namespace wallet {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( index != 0 );
-       ilog( "${record}", ("record",record) );
+      // ilog( "${record}", ("record",record) );
        my->_records.store( index, record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record",record) ) }
 
@@ -241,7 +240,6 @@ namespace bts{ namespace wallet {
       {
          key_data& old_data = key_itr->second;
          old_data = key_to_store;
-         ilog( "storing key: ${k}", ("k",key_to_store) );
          store_record( key_itr->second );
       }
       else

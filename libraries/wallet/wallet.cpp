@@ -370,7 +370,6 @@ namespace bts { namespace wallet {
       my->_wallet_db.open( wallet_file_path );
       
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
 
       master_key new_master_key;
       if( brainkey.size() )
@@ -391,7 +390,6 @@ namespace bts { namespace wallet {
     
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
-      wlog( "closing and reopening, just for good measure" );
       my->_wallet_db.close();
       my->_wallet_db.open( wallet_file_path );
 
@@ -466,7 +464,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      ilog( "_wallet_password: '${pa}' => ${p}", ("p",my->_wallet_password )("pa",password) );
       if( !my->_wallet_db.wallet_master_key->validate_password( my->_wallet_password ) )
       {
          lock();
