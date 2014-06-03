@@ -107,7 +107,7 @@ int main( int argc, char** argv )
       load_and_configure_chain_database(datadir, option_variables);
 
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
-      client->open( datadir, option_variables["genesis-config"].as<std::string>() );
+      client->open( datadir, datadir / option_variables["genesis-config"].as<std::string>() );
       _global_client = client.get();
 
       client->run_delegate();
@@ -297,7 +297,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
     std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
   }
 
-  fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
+  fc::path genesis_file = datadir / option_variables["genesis-config"].as<std::string>();
   std::cout << "Using genesis block from file \"" << fc::absolute( genesis_file ).string() << "\"\n";
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
