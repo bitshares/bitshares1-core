@@ -185,7 +185,7 @@ int main( int argc, char** argv )
 
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
-          std::cout << "Runing in daemon mode, ignoring console\n";
+          std::cout << "Running in daemon mode, ignoring console\n";
           rpc_server->wait_on_quit();
       }
       else 
