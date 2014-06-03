@@ -995,7 +995,7 @@ namespace bts { namespace wallet {
           for( auto rec : balances_to_store )
               my->_wallet_db.store_record( rec );
           for( uint32_t i =0 ; i < trxs.size(); ++i )
-             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), 
+             my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 
                                                total_fee.amount, 
                                                memo_message, 
                                                receiver_public_key,
