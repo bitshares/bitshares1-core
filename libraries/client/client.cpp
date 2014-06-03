@@ -962,7 +962,7 @@ namespace bts { namespace client {
     }
 
 
-   auto  client::wallet_account_balance() -> decltype(get_wallet()->get_account_balances())
+   unordered_map<string, map<string, int64_t> >  client::wallet_account_balance() 
    {
       return get_wallet()->get_account_balances();
    }
