@@ -185,12 +185,12 @@ int main( int argc, char** argv )
 
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
-          std::cout << "Runing in daemon mode, ignoring console\n";
+          std::cout << "Running in daemon mode, ignoring console\n";
           rpc_server->wait_on_quit();
       }
       else 
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, rpc_server );
+         auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
          cli->wait();
       } 
    }

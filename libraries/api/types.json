@@ -19,6 +19,15 @@
         "default_example" : "Carol"
       },
       {
+         "type_name" : "wallet_balance_record",
+         "cpp_return_type" : "bts::wallet::wallet_balance_record"
+      },
+      {
+         "type_name" : "wallet_balance_record_array",
+         "container_type" : "array",
+         "contained_type" : "wallet_balance_record"
+      },
+      {
         "type_name" : "account_record",
         "cpp_return_type" : "bts::blockchain::account_record",
         "cpp_include_file" : "bts/blockchain/types.hpp",

@@ -150,7 +150,10 @@ namespace bts { namespace wallet {
               }
             }
          }
-         FC_ASSERT( !"Insufficient Funds" );
+         FC_ASSERT( !"Insufficient Funds", "Requested ${r} but only ${a} available",
+                    ("r", _blockchain->to_pretty_asset( asset(amount,asset_id) ) )
+                    ("a", _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) ) )
+                  );
       }
 
 
@@ -285,16 +288,16 @@ namespace bts { namespace wallet {
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
                          trx_rec.to_account   = key.get_public_key();
-                         ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                         //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
                       {
-                         ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                         ilog( "op: ${op}", ("op",op) );
+                         //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                         //ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
                          trx_rec.from_account = key.get_public_key();
                          trx_rec.to_account   = status->from;
-                         ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                         //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
                       cache_deposit = true;
                       break;
@@ -947,7 +950,7 @@ namespace bts { namespace wallet {
              }
              if( amount_of_change > total_fee )
              {
-                trx.deposit_to_account( sender_private_key.get_public_key(),
+                trx.deposit_to_account( receiver_public_key,
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
@@ -992,7 +995,7 @@ namespace bts { namespace wallet {
           for( auto rec : balances_to_store )
               my->_wallet_db.store_record( rec );
           for( uint32_t i =0 ; i < trxs.size(); ++i )
-             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), 
+             my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 
                                                total_fee.amount, 
                                                memo_message, 
                                                receiver_public_key,
@@ -1814,5 +1817,25 @@ namespace bts { namespace wallet {
          return war->trust_level;
       return 0;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
+
+   vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,
+                                                               const string& symbol ) const
+   { try {
+      vector<wallet_balance_record> balances;
+      for( auto& balance_item : my->_wallet_db.balances )
+      {
+    /*     auto owner = balance_item.second.owner();
+         if( balance_item.second.asset_id() == asset_id && 
+             address_in_account( owner, from_account_address ) )
+         {
+    */
+            if( balance_item.second.balance > 0 )
+            {
+               balances.push_back( balance_item.second );
+            }
+    //    }
+      }
+      return balances;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
 } } // bts::wallet
 

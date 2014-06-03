@@ -642,6 +642,7 @@ namespace bts { namespace rpc {
       my->_tcp_serv->close();
     if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
       my->_accept_loop_complete.cancel();
+    my->_on_quit_promise->set_value();
   }
 
   void rpc_server::wait()
@@ -650,6 +651,8 @@ namespace bts { namespace rpc {
     {
       if( my->_accept_loop_complete.valid() )
         my->_accept_loop_complete.wait();
+      else if ( !my->_on_quit_promise->ready() )
+        my->_on_quit_promise->wait();
     }
     catch (const fc::canceled_exception&)
     {
