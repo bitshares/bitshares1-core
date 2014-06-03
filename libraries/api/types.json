@@ -13,6 +13,12 @@
         "default_example" : "Bob"
       },
       {
+        "type_name" : "new_account_name",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "Carol"
+      },
+      {
         "type_name" : "account_record",
         "cpp_return_type" : "bts::blockchain::account_record",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -23,6 +29,12 @@
         "container_type" : "array",
         "contained_type" : "account_record",
         "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "optional_account_record",
+        "cpp_return_type" : "fc::optional<bts::blockchain::account_record>",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
       },
       {
         "type_name" : "signed_transactions",
@@ -88,6 +100,11 @@
         "default_example" : "alice"
       },
       {
+        "type_name" : "wallet_name_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_name"
+      },
+      {
         "type_name" : "transaction_record",
         "cpp_return_type" : "bts::wallet::wallet_transaction_record",
         "cpp_include_file" : "bts/wallet/wallet_records.hpp"
@@ -112,6 +129,12 @@
         "default_example" : 300
       },
       {
+        "type_name" : "wif_private_key",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB"
+      },
+      {
         "type_name" : "public_key",
         "cpp_return_type" : "bts::blockchain::public_key_type",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -128,6 +151,17 @@
         "container_type" : "array",
         "contained_type" : "signed_transaction",
         "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "optional_signed_transaction",
+        "cpp_return_type" : "fc::optional<bts::blockchain::signed_transaction>",
+        "cpp_include_file" : "fc/optional.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "share_type",
+        "cpp_return_type" : "bts::blockchain::share_type",
+        "default_example" : "TODO"        
       },
       {
         "type_name" : "asset",
@@ -188,6 +222,42 @@
         "cpp_return_type" : "fc::path",
         "cpp_include_file" : "fc/filesystem.hpp",
         "default_example" : "some_filename.txt"
+      },
+      {
+        "type_name" : "address",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string"
+      },
+      {
+        "type_name" : "full_block",
+        "cpp_return_type" : "bts::blockchain::full_block",
+        "cpp_include_file" : "bts/blockchain/block.hpp"
+      },
+      {
+        "type_name" : "name_id_type",
+        "cpp_return_type" : "bts::blockchain::name_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "optional_asset_record",
+        "cpp_return_type" : "fc::optional<bts::blockchain::asset_record>",
+        "cpp_include_file" : "bts/blockchain/asset_record.hpp"
+      },
+      {
+        "type_name" : "asset_id_type",
+        "cpp_return_type" : "bts::blockchain::asset_id_type",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "wallet_account_record",
+        "cpp_return_type" : "bts::wallet::wallet_account_record",
+        "cpp_include_file" : "bts/wallet/wallet_records.hpp"
+      },
+      {
+        "type_name" : "wallet_account_record_array",
+        "container_type" : "array",
+        "contained_type" : "wallet_account_record",
+        "default_example" : "TODO"      
       }
     ]
 }

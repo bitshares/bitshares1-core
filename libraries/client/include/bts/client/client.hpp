@@ -51,21 +51,6 @@ namespace bts { namespace client {
          //-------------------------------------------------- JSON-RPC Method Implementations
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations
 
-         signed_transaction  wallet_asset_create( const string& symbol,
-                                                  const string& asset_name,
-                                                  const string& description,
-                                                  const fc::variant& data,
-                                                  const string& issuer_name,
-                                                  share_type maximum_share_supply,
-                                                  rpc_client_api::generate_transaction_flag flag = 
-                                                         rpc_client_api::sign_and_broadcast)  override;
-
-         signed_transaction  wallet_asset_issue( share_type amount,
-                                                 const string& symbol,
-                                                 const string& to_account_name,
-                                                 rpc_client_api::generate_transaction_flag flag = 
-                                                         rpc_client_api::sign_and_broadcast)  override;
-
 
          /**
          *  Submit and vote on proposals by broadcasting to the network.
@@ -82,27 +67,6 @@ namespace bts { namespace client {
                                                    rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast)  override;
 
 
-         vector<wallet_account_record> wallet_list_contact_accounts() const;
-         vector<wallet_account_record> wallet_list_receive_accounts() const;
-
-
-         void                   wallet_rename_account(const string& current_account_name, 
-                                                      const string& new_account_name);
-
-         wallet_account_record wallet_get_account(const string& account_name) const  override;
-                           oaccount_record blockchain_get_account_record(const string& name) const  override;
-                           oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const  override;
-                          oasset_record blockchain_get_asset_record(const string& symbol) const  override;
-                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const  override;
-
-
-         void                               wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)  override;
-         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const string& delegate_name) const  override;
-        // map<string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const  override;
-
-                        osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const  override;
-                                 full_block blockchain_get_block(const block_id_type& block_id) const  override;
-                                 full_block blockchain_get_block_by_number(uint32_t block_number) const  override;
 
                        void wallet_rescan_blockchain(uint32_t starting_block_number = 0)  override;
                        void wallet_rescan_blockchain_state()  override;
@@ -111,16 +75,12 @@ namespace bts { namespace client {
                                                   const string& passphrase, 
                                                   const string& account_name )  override;
 
-                       void wallet_import_private_key(const string& wif_key_to_import, 
-                                                      const string& account_name,
-                                                      bool wallet_rescan_blockchain = false)  override;
 
-     vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const  override;
      vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
 
          fc::path                            get_data_dir() const;
 
-         // returns true if the client is connected to the network (either server or p2p)
+         // returns true if the client is connected to the network
          bool is_connected() const;
          fc::uint160_t get_node_id() const;
 

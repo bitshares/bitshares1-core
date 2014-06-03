@@ -60,6 +60,32 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "wallet_import_private_key",
+        "description": "Loads the private key into the specified account",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wif_key",
+              "description" : "A private key in bitcoin Wallet Import Format (WIF)",
+              "type" : "wif_private_key"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the name of the account the key should be imported into, if null then the key must belong to an active account",
+              "default_value" : null
+           },
+           {
+              "name" : "rescan",
+              "type" : "bool",
+              "description" : "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
+              "default_value" : true
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"],
+        "aliases" : ["import_key"]
+      },
+      {
         "method_name": "wallet_close",
         "description": "Closes the curent wallet if one is open",
         "return_type": "void",
@@ -163,6 +189,15 @@
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
+        "method_name": "wallet_list",
+        "description": "Return a list of wallets in the current data directory",
+        "return_type": "wallet_name_array",
+        "parameters" : [],
+        "prerequisites" : ["json_authenticated"],
+        "is_const": true,
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_account_create",
         "description": "Add new account for receiving payments",
         "return_type": "public_key",
@@ -183,6 +218,27 @@
           ],
         "prerequisites" : ["json_authenticated", "wallet_open"],
         "aliases" : [ "wallet_create_account", "create_account" ]
+      },
+      {
+        "method_name": "wallet_set_delegate_trust_level",
+        "description": "Updates the trust placed in a given delegate",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "delegate_name", 
+              "type" : "account_name", 
+              "description" : "the name of the delegate to set trust level on"
+            },
+            { 
+              "name" : "trust_level", 
+              "type" : "int32_t", 
+              "description" : "Positive for Trust, Negative for Distrust, 0 for Neutral",
+              "default_value" : 0
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "aliases" : [ "trust", "set_trust" ]
       },
       {
         "method_name": "wallet_add_contact_account",
@@ -286,12 +342,12 @@
           [
             {
               "name" : "first_block_number", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the first block to scan"
             },
             {
               "name" : "num_blocks", 
-              "type" : "int64_t", 
+              "type" : "uint32_t", 
               "description" : "the number of blocks to scan"
             }
           ],
@@ -309,7 +365,7 @@
                   "description" : "the account that will be updated"
                },
                {
-                  "name" : "pay_from_account"
+                  "name" : "pay_from_account",
                   "type" : "account_name",
                   "description" : "the account from which fees will be paid"
                },
@@ -320,7 +376,7 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate"
+                  "name" : "as_delegate",
                   "type" : "bool",
                   "description" : "true if account_name should be upgraded to a delegate.",
                   "default_value" : false
@@ -340,7 +396,7 @@
                   "description" : "the account that will be updated"
                },
                {
-                  "name" : "pay_from_account"
+                  "name" : "pay_from_account",
                   "type" : "account_name",
                   "description" : "the account from which fees will be paid"
                },
@@ -351,7 +407,7 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate"
+                  "name" : "as_delegate",
                   "type" : "bool",
                   "description" : "true if account_name should be upgraded to a delegate.",
                   "default_value" : false
@@ -359,7 +415,118 @@
             ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
          "aliases" : [ "update_registration" ]
+      },
+      {
+         "method_name" : "wallet_list_contact_accounts",
+         "description" : "Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_list_receive_accounts",
+         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_get_account",
+         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "return_type" : "wallet_account_record",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account to retrieve"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_rename_account",
+         "description" : "Rename an account in wallet",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "current_account_name",
+                  "type" : "account_name",
+                  "description" : "the current name of the account"
+               },
+               {
+                  "name" : "new_account_name",
+                  "type" : "new_account_name",
+                  "description" : "the new name for the account"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
+         "method_name" : "wallet_asset_create",
+         "description" : "Creates a new user issued asset",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for the new asset"
+               },
+               {
+                  "name" : "asset_name",
+                  "type" : "std::string",
+                  "description" : "the name of the asset"
+               },
+               {
+                  "name" : "issuer_name",
+                  "type" : "std::string",
+                  "description" : "the name of the issuer of the asset"
+               },
+               {
+                  "name" : "description",
+                  "type" : "std::string",
+                  "description" : "a description of the asset",
+                  "default_value" : ""
+               },
+               {
+                  "name" : "data",
+                  "type" : "json_object",
+                  "description" : "arbitrary data attached to the asset",
+                  "default_value" : null
+               },
+               {
+                  "name" : "maximum_share_supply",
+                  "type" : "int64_t",
+                  "description" : "the maximum number of shares of the asset",
+                  "default_value" : 1000000000000000
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+      },
+      {
+         "method_name" : "wallet_asset_issue",
+         "description" : "Issues new shares of a given asset type",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+               {
+                  "name" : "amount",
+                  "type" : "share_type",
+                  "description" : "the amount of shares to issue"
+               },
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for asset"
+               },
+               {
+                  "name" : "to_account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account to receive the shares"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
       }
-
     ]
 }

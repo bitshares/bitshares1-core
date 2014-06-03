@@ -51,6 +51,21 @@
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["h"]
+      },
+      {
+        "method_name": "validate_address",
+        "description": "Return information about given BitShares address",
+        "return_type": "json_object",
+        "parameters" : 
+          [
+            { 
+              "name" : "address", 
+              "type" : "address", 
+              "description" : "the address to validate"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

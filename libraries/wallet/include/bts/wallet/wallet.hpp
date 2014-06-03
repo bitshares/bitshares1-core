@@ -98,9 +98,6 @@ namespace bts { namespace wallet {
          ///@{ account management
          public_key_type  create_account( const string& account_name, 
                                           const variant& private_data = variant() );
-         void             import_account( const string& account_name, 
-                                          const string& wif_private_key );
-
 
          address  get_new_address( const string& account_name );
 
@@ -108,7 +105,8 @@ namespace bts { namespace wallet {
           *  A contact is an account for which we do not have the private key.
           */
          void     add_contact_account( const string& account_name, 
-                                       const public_key_type& key );
+                                       const public_key_type& key,
+                                       const variant& private_data = variant() );
 
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
@@ -141,6 +139,8 @@ namespace bts { namespace wallet {
           *  Account management API
           */
          ///@{
+
+         vector<string> list() const; // list wallets
 
          vector<wallet_account_record> list_receive_accounts()const;
          vector<wallet_account_record> list_contact_accounts()const;
@@ -216,7 +216,7 @@ namespace bts { namespace wallet {
 
          ///@} Transaction Generation Methods
  
-         pretty_transaction                      to_pretty_trx( wallet_transaction_record trx_rec ) const;
+         pretty_transaction                      to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
 
          void      set_delegate_trust_level(const string& delegate_name, 

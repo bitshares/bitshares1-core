@@ -432,35 +432,34 @@ namespace bts { namespace client {
     {
       return get_wallet()->to_pretty_trx(wallet_transaction_record(transaction));
     }
-    signed_transaction client::wallet_asset_create(const string& symbol,
-                                                    const string& asset_name,
-                                                    const string& description,
-                                                    const fc::variant& data,
-                                                    const string& issuer_name,
-                                                    share_type maximum_share_supply,
-                                                    rpc_client_api::generate_transaction_flag flag)
+
+
+    bts::blockchain::signed_transaction client::wallet_asset_create(const std::string& symbol, 
+                                                                    const std::string& asset_name, 
+                                                                    const std::string& issuer_name, 
+                                                                    const std::string& description /* = fc::variant("").as<std::string>() */, 
+                                                                    const fc::variant_object& data /* = fc::variant("").as<fc::variant_object>() */, 
+                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */)
     {
-      bool sign = (flag != do_not_sign);
+      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
+      bool sign = flag != do_not_sign;
       auto create_asset_trx = 
         get_wallet()->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
       if (flag == sign_and_broadcast)
-      {
           network_broadcast_transaction(create_asset_trx);
-      }
       return create_asset_trx;
     }
 
-    signed_transaction  client::wallet_asset_issue(share_type amount,
+
+    signed_transaction  client::wallet_asset_issue(const share_type& amount,
                                                    const string& symbol,
-                                                   const string& to_account_name,
-                                                   rpc_client_api::generate_transaction_flag flag)
+                                                   const string& to_account_name)
     {
+      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
       bool sign = (flag != do_not_sign);
       auto issue_asset_trx = get_wallet()->issue_asset(amount,symbol,to_account_name, sign);
       if (flag == sign_and_broadcast)
-      {
           network_broadcast_transaction(issue_asset_trx);
-      }
       return issue_asset_trx;
     }
 
@@ -501,6 +500,10 @@ namespace bts { namespace client {
     }
 
 
+    vector<string> client::wallet_list() const
+    {
+      return get_wallet()->list();  
+    }
 
     vector<wallet_account_record> client::wallet_list_contact_accounts() const
     {
@@ -538,7 +541,7 @@ namespace bts { namespace client {
       return get_chain()->get_account_record(name);
     }
 
-    oaccount_record client::blockchain_get_account_record_by_id(name_id_type name_id) const
+    oaccount_record client::blockchain_get_account_record_by_id(const name_id_type& name_id) const
     {
       return get_chain()->get_account_record(name_id);
     }
@@ -548,20 +551,20 @@ namespace bts { namespace client {
       return get_chain()->get_asset_record(symbol);
     }
 
-    oasset_record client::blockchain_get_asset_record_by_id(asset_id_type asset_id) const
+    oasset_record client::blockchain_get_asset_record_by_id(const asset_id_type& asset_id) const
     {
       return get_chain()->get_asset_record(asset_id);
     }
 
-    void client::wallet_set_delegate_trust_status(const string& delegate_name, int32_t user_trust_level)
+    void client::wallet_set_delegate_trust_level( const string& delegate_name, 
+                                                  int32_t user_trust_level)
     {
       try {
         auto account_record = get_chain()->get_account_record(delegate_name);
         FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
         FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
-        FC_ASSERT( !"Not Implemented" );
 
-        //get_wallet()->set_delegate_trust_status(delegate_name, user_trust_level);
+        get_wallet()->set_delegate_trust_level(delegate_name, user_trust_level);
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level))
     }
 
@@ -625,7 +628,7 @@ namespace bts { namespace client {
         get_wallet()->scan_chain(0);
     }
 
-    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int64_t count) const
+    vector<account_record> client::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
       return get_chain()->get_accounts(first, count);
     }
@@ -900,7 +903,7 @@ namespace bts { namespace client {
 
       return info;
     }
-    void client::wallet_rescan_blockchain( int64_t start, int64_t count) 
+    void client::wallet_rescan_blockchain( uint32_t start, uint32_t count) 
     { try {
        get_wallet()->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
@@ -943,6 +946,14 @@ namespace bts { namespace client {
     fc::variant_object client::network_get_info() const
     {
       return get_node()->network_get_info();
+    }
+
+    fc::variant_object client::validate_address(const std::string& address) const
+    {
+      FC_ASSERT("Not implemented")
+      fc::mutable_variant_object result;
+      result["isvalid"] = false;
+      return result;
     }
 
 } } // bts::client

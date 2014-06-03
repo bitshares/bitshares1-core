@@ -185,15 +185,6 @@ namespace bts { namespace rpc {
   }
 
 
-  full_block rpc_client::blockchain_get_block(const block_id_type& block_id) const
-  {
-    return my->blockchain_get_block(block_id);
-  }
-
-  full_block rpc_client::blockchain_get_block_by_number(uint32_t block_number) const
-  {
-    return my->blockchain_get_block_by_number(block_number);
-  }
   /*
   bool rpc_client::validate_address(bts::blockchain::address address)
   {

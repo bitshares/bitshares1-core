@@ -184,12 +184,15 @@ namespace bts { namespace net {
     std::string      user_agent;
     uint32_t         core_protocol_version;
     fc::ip::endpoint remote_endpoint;
+    std::string      rejection_reason;
 
     connection_rejected_message() {}
-    connection_rejected_message(const std::string& user_agent, uint32_t core_protocol_version,fc::ip::endpoint remote_endpoint) :
+    connection_rejected_message(const std::string& user_agent, uint32_t core_protocol_version,
+                                const fc::ip::endpoint& remote_endpoint, const std::string& rejection_reason) :
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
-      remote_endpoint(remote_endpoint)
+      remote_endpoint(remote_endpoint),
+      rejection_reason(rejection_reason)
     {}
   };
 
@@ -230,7 +233,7 @@ FC_REFLECT( bts::net::fetch_items_message, (item_type)(items_to_fetch) )
 FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
 FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_address)(inbound_port)(outbound_port)(node_id)(chain_id)(user_data) )
 FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id)(chain_id)(user_data) )
-FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint) )
+FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint)(rejection_reason) )
 FC_REFLECT_EMPTY( bts::net::address_request_message )
 FC_REFLECT( bts::net::address_info, (remote_endpoint)(last_seen_time) )
 FC_REFLECT( bts::net::address_message, (addresses) )

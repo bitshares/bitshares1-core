@@ -167,7 +167,7 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         next_rec_number = next_rec_num.as_int64();
+         next_rec_number = next_rec_num.as<int32_t>();
       }
       set_property( property_enum::next_record_number, next_rec_number + 1 );
       return next_rec_number;
@@ -183,7 +183,7 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         next_child_index = next_child_idx.as_int64();
+         next_child_index = next_child_idx.as<int32_t>();
       }
       set_property( property_enum::next_child_key_index, next_child_index + 1 );
       return next_child_index;
@@ -241,6 +241,7 @@ namespace bts{ namespace wallet {
       {
          key_data& old_data = key_itr->second;
          old_data = key_to_store;
+         ilog( "storing key: ${k}", ("k",key_to_store) );
          store_record( key_itr->second );
       }
       else
@@ -286,9 +287,13 @@ namespace bts{ namespace wallet {
 
    bool wallet_db::has_private_key( const address& a )const
    { try {
+      ilog( "address: ${a}", ("a",a) );
       auto itr = keys.find(a);
       if( itr != keys.end() )
+      {
+         ilog( "               record: ${a}", ("a",itr->second) );
          return itr->second.has_private_key();
+      }
       return false; 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
 
@@ -344,6 +349,37 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
+   void wallet_db::add_contact_account( const account_record& blockchain_account,
+                                        const variant& private_data  )
+   {
+      wallet_account_record war;
+      account_record& tmp  = war;
+      tmp = blockchain_account;
+      war.private_data = private_data;
+      war.account_address = address(blockchain_account.owner_key);
+
+      auto current_key = lookup_key( blockchain_account.owner_key );
+      if( current_key )
+      {  
+         current_key->account_address = address(blockchain_account.owner_key);
+         store_record( *current_key );
+      }
+      else
+      {
+         wlog( "new wallet key exists... ..." );
+         wallet_key_record new_key;
+         new_key.index = new_index();
+         new_key.account_address = address(blockchain_account.owner_key);
+         new_key.public_key = blockchain_account.active_key();
+         wlog( "store_key: ${key}", ("key",blockchain_account.owner_key) );
+         my->load_key_record( new_key );
+         store_key( new_key );
+      }
+
+      war.index = new_index();
+      store_record( war );
+      my->load_account_record( war );
+   }
    void wallet_db::add_contact_account( const string& new_account_name, 
                                         const public_key_type& new_account_key,
                                         const variant& private_data )
@@ -451,7 +487,10 @@ namespace bts{ namespace wallet {
                                       share_type fees,
                                       const string& memo_message,
                                       const public_key_type& to,
-                                      time_point_sec created )
+                                      time_point_sec created,
+                                      time_point_sec received,
+                                      public_key_type from
+                                      )
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );
@@ -462,11 +501,13 @@ namespace bts{ namespace wallet {
 
       data.trx = trx;
       data.transaction_id = trx.id();
-      data.amount = amount;
-      data.fees   = fees;
-      data.to_account = to;
-      data.created_time = created;
-      data.memo_message = memo_message;
+      data.amount         = amount;
+      data.fees           = fees;
+      data.to_account     = to;
+      data.from_account   = from;
+      data.created_time   = created;
+      data.received_time  = received;
+      data.memo_message   = memo_message;
       store_record( data );
       transactions[trx_id] = data;
 

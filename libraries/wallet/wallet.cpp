@@ -8,6 +8,7 @@
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
+#include <fc/io/json.hpp>
 #include <iostream>
 
 #include <algorithm>
@@ -108,7 +109,8 @@ namespace bts { namespace wallet {
                                             const address& account_address )const
       { try {
          auto opt_key = _wallet_db.lookup_key( address_to_check );
-         FC_ASSERT( opt_key.valid() );
+         if( !opt_key.valid() )
+            return false;
          return opt_key->account_address == account_address;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("address_to_check",address_to_check)("account_address",account_address) ) }
 
@@ -206,6 +208,9 @@ namespace bts { namespace wallet {
                   case register_account_op_type:
                      cache_trx |= scan_register_account( op.as<register_account_operation>() );
                      break;
+                  case update_account_op_type:
+                     cache_trx |= scan_update_account( op.as<update_account_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -244,9 +249,14 @@ namespace bts { namespace wallet {
 
           return false;
       }
+
+
+
+
       bool wallet_impl::scan_update_account( const update_account_operation& op )
       {
-        return false;
+          wlog( "\n\n       ********* TODO... update records in wallet *********** \n\n" );
+          return false;
       }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
@@ -273,11 +283,17 @@ namespace bts { namespace wallet {
                          trx_rec.memo_message = status->get_message();
                          trx_rec.amount       = asset( op.amount, op.condition.asset_id );
                          trx_rec.from_account = status->from;
+                         trx_rec.to_account   = key.get_public_key();
+                         ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                       }
                       else
                       {
+                         ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                         ilog( "op: ${op}", ("op",op) );
                          trx_rec.memo_message = status->get_message();
+                         trx_rec.from_account = key.get_public_key();
                          trx_rec.to_account   = status->from;
+                         ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                       }
                       cache_deposit = true;
                       break;
@@ -530,29 +546,6 @@ namespace bts { namespace wallet {
 
 
    /**
-    *  Creates a new account from an existing foreign private key
-    */
-   void wallet::import_account( const string& account_name, 
-                                const string& wif_private_key )
-   { try {
-      FC_ASSERT( is_valid_account_name( account_name ) );
-      auto current_account = my->_wallet_db.lookup_account( account_name );
-
-      auto imported_public_key = import_wif_private_key( wif_private_key, string() );
-      if( current_account.valid() )
-      {
-         FC_ASSERT( current_account->account_address == address( imported_public_key ) );
-         import_wif_private_key( wif_private_key, account_name );
-      }
-      else
-      {
-         my->_wallet_db.add_contact_account( account_name, imported_public_key );
-         import_wif_private_key( wif_private_key, account_name );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
-
-   /**
     *  Creates a new private key under the specified account. This key
     *  will not be valid for sending TITAN transactions to, but will
     *  be able to receive payments directly.
@@ -574,14 +567,16 @@ namespace bts { namespace wallet {
 
    /**
     *  A contact is an account for which this wallet does not have the private
-    *  key.  
+    *  key.   If account_name is globally registered then this call will assume
+    *  it is the same account and will fail if the key is not the same.
     *
     *  @param account_name - the name the account is known by to this wallet
     *  @param key - the public key that will be used for sending TITAN transactions
     *               to the account.
     */
    void  wallet::add_contact_account( const string& account_name, 
-                                      const public_key_type& key )
+                                      const public_key_type& key,
+                                      const variant& private_data )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
@@ -597,12 +592,18 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${name}", ("name", *current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
+         current_account->private_data = private_data;
+         my->_wallet_db.store_record( *current_account );
+         return;
       }
       else
       {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( !account_key.valid() );
-         my->_wallet_db.add_contact_account( account_name, key );
+         if( current_registered_account.valid() )
+            my->_wallet_db.add_contact_account( *current_registered_account, private_data );
+         else
+            my->_wallet_db.add_contact_account( account_name, key, private_data );
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
          ilog( "account key:${a}}", ("a", account_key ) );
@@ -638,36 +639,69 @@ namespace bts { namespace wallet {
                 ("new_account_name",new_account_name) ) }
 
 
+   /**
+    *  If we already have a key record for key, then set the private key.
+    *  If we do not have a key record, 
+    *     If account_name is a valid existing account, then create key record
+    *       with that account as parent.
+    *     If account_name is not set, then lookup account with key in the blockchain
+    *       add contact account using data from blockchain and then set the private key
+    */
    public_key_type  wallet::import_private_key( const private_key_type& key, 
                                                 const string& account_name )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( is_valid_account( account_name ), "${account_name}", ("account_name",account_name) );
 
-      auto current_account = my->_wallet_db.lookup_account( account_name );
+      auto import_public_key = key.get_public_key();
 
-      if( account_name != string() )
-         FC_ASSERT( current_account.valid() );
-
-      auto pub_key = key.get_public_key();
-      address key_address(pub_key);
-      auto current_key_record = my->_wallet_db.lookup_key( key_address );
+      owallet_key_record current_key_record = my->_wallet_db.lookup_key( import_public_key );
       if( current_key_record.valid() )
       {
-         FC_ASSERT( current_key_record->account_address == current_account->account_address );
-         return current_key_record->public_key;
+         std::cout << "Storing private key\n";
+         current_key_record->encrypt_private_key( my->_wallet_password, key );
+         std::cout << "Storing private key: \n"<<fc::json::to_pretty_string( *current_key_record) << "\n";
+         my->_wallet_db.store_key( *current_key_record );
+         return import_public_key;
       }
+      else if( account_name == string() )
+      {
+         auto registered_account = my->_blockchain->get_account_record( import_public_key );
+         FC_ASSERT( registered_account );
 
-      key_data new_key_data;
-      if( current_account.valid() )
-         new_key_data.account_address = current_account->account_address;
-      new_key_data.encrypt_private_key( my->_wallet_password, key );
+         std::cout << "Importing key for registered account:\n "<< fc::json::to_pretty_string( *registered_account ) << "\n";
+         add_contact_account( registered_account->name, import_public_key );
+         return import_private_key( key, registered_account->name );
+      }
+      else
+      {
+         FC_ASSERT( is_valid_account_name( account_name ) );
+         FC_ASSERT( is_valid_account( account_name ) );
 
-      my->_wallet_db.store_key( new_key_data );
+         auto current_account = my->_wallet_db.lookup_account( account_name );
 
-      return pub_key;
+         FC_ASSERT( current_account.valid() );
+
+         auto pub_key = key.get_public_key();
+         address key_address(pub_key);
+         auto current_key_record = my->_wallet_db.lookup_key( key_address );
+         if( current_key_record.valid() )
+         {
+            FC_ASSERT( current_key_record->account_address == current_account->account_address );
+            current_key_record->encrypt_private_key( my->_wallet_password, key );
+            my->_wallet_db.store_key( *current_key_record );
+            return current_key_record->public_key;
+         }
+
+         key_data new_key_data;
+         if( current_account.valid() )
+            new_key_data.account_address = current_account->account_address;
+         new_key_data.encrypt_private_key( my->_wallet_password, key );
+
+         my->_wallet_db.store_key( new_key_data );
+
+         return pub_key;
+      }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
@@ -677,7 +711,6 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto wif_bytes = fc::from_base58(wif_key);
       auto key_bytes = vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
@@ -758,13 +791,10 @@ namespace bts { namespace wallet {
       auto my_trxs = my->_wallet_db.transactions;
       recs.reserve( my_trxs.size() );
 
-      std::cout << "trxs: " << my_trxs.size() << "\n";
-
       public_key_type account_pub;
       if( account_name != string() )
          account_pub = get_account_public_key( account_name );
 
-      std::cout << "one\n";
       for( auto iter : my_trxs)
       {
          if( account_name == string() || account_name == "*" ||
@@ -775,14 +805,12 @@ namespace bts { namespace wallet {
          }
       }
     
-      std::cout << "two\n";
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
                                              const wallet_transaction_record& b)
                                            -> bool
                {
                    return a.received_time < b.received_time;
                });
-      std::cout << "three\n";
       return recs;
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -873,6 +901,7 @@ namespace bts { namespace wallet {
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
        private_key_type sender_private_key  = get_account_private_key( from_account_name );
+       public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
        
        asset total_fee = get_priority_fee( amount_to_transfer_symbol );
@@ -970,7 +999,14 @@ namespace bts { namespace wallet {
           for( auto rec : balances_to_store )
               my->_wallet_db.store_record( rec );
           for( uint32_t i =0 ; i < trxs.size(); ++i )
-             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), total_fee.amount, memo_message, receiver_public_key, bts::blockchain::now() );
+             my->_wallet_db.cache_transaction( trxs[i], asset( amount_sent[i], asset_id), 
+                                               total_fee.amount, 
+                                               memo_message, 
+                                               receiver_public_key,
+                                               bts::blockchain::now(),
+                                               bts::blockchain::now(),
+                                               sender_public_key
+                                             );
        }
 
        return trxs;
@@ -1025,7 +1061,10 @@ namespace bts { namespace wallet {
                                                   required_fees.amount, 
                                                   "register " + account_to_register, 
                                                   payer_public_key, 
-                                                  bts::blockchain::now() );
+                                                  bts::blockchain::now(),
+                                                  bts::blockchain::now(),
+                                                  payer_public_key
+                                                );
       }
       return wallet_transaction_record(transaction_data(trx));
 
@@ -1103,7 +1142,7 @@ namespace bts { namespace wallet {
                                    get_account_public_key( issuer_account->name ),
                                    trx, required_signatures );
      
-      trx.issue( asset( asset_record->id, amount ) );
+      trx.issue( asset( amount, asset_record->id ) );
       required_signatures.insert( issuer_account->active_key() );
 
 
@@ -1232,11 +1271,11 @@ namespace bts { namespace wallet {
    asset wallet::get_priority_fee( const string& symbol )const
    {
       // TODO: support price conversion using price from blockchain
-      return asset( 100000, 0 ); // TODO: actually read the value set
+      return asset( 10000, 0 ); // TODO: actually read the value set
    }
 
    
-   pretty_transaction wallet::to_pretty_trx( wallet_transaction_record trx_rec ) const
+   pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_rec ) const
    {
       auto pretty_trx = pretty_transaction();
      
@@ -1268,8 +1307,19 @@ namespace bts { namespace wallet {
           if (acct_record)
               pretty_trx.from_account = acct_record->name;
           else
-              pretty_trx.from_account = string( *trx_rec.from_account );
+          {
+              auto registered_account = my->_blockchain->get_account_record( *trx_rec.from_account );
+              if( registered_account.valid() )
+                 pretty_trx.from_account = registered_account->name;
+              else
+                 pretty_trx.from_account = string( *trx_rec.from_account );
+          }
       }
+      else 
+      {
+         pretty_trx.from_account = "unknown";
+      }
+
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
       {
@@ -1277,7 +1327,17 @@ namespace bts { namespace wallet {
           if (acct_record)
               pretty_trx.to_account = acct_record->name;
           else
-              pretty_trx.to_account = string( *trx_rec.to_account );
+          {
+              auto registered_account = my->_blockchain->get_account_record( *trx_rec.to_account );
+              if( registered_account.valid() )
+                 pretty_trx.to_account = registered_account->name;
+              else
+                 pretty_trx.to_account = string( *trx_rec.to_account );
+          }
+      }
+      else
+      {
+         pretty_trx.to_account = "unknown";
       }
 
       for( auto op : trx.operations )
@@ -1458,10 +1518,26 @@ namespace bts { namespace wallet {
       result.reserve( balances.size() );
       for( auto item : balances )
          result.push_back( asset( item.second, item.first ) );
+      if( result.size() == 0 )
+         result.push_back( asset() );
       ilog( "result: ${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
+   vector<string> wallet::list() const
+   {
+       vector<string> wallets;
+       auto path = get_data_directory();
+       fc::directory_iterator end_itr; // constructs terminator
+       for( fc::directory_iterator itr( path ); itr != end_itr; ++itr)
+       {
+          if (fc::is_directory( *itr ))
+          {
+              wallets.push_back( (*itr).stem().string() );
+          }
+       }
+       return wallets;
+   }
 
    bool  wallet::is_sending_address( const address& addr )const
    { try {
@@ -1607,8 +1683,6 @@ namespace bts { namespace wallet {
 
    account_id_type wallet::select_delegate_vote()const
    {
-      return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-      // TODO review / test this more carefully before activating
       vector<account> for_candidates;
       vector<account> against_candidates;
       vector<account_id_type> active_delegates =
@@ -1626,9 +1700,16 @@ namespace bts { namespace wallet {
          for (auto delegate_id : active_delegates)
             for (auto against_acct : against_candidates)
                 if( against_acct.id== delegate_id )
+                {
+                    if (delegate_id == 0)
+                    {
+                        std::cout << "WARNING - delegate id 0 bug @ 1";
+                        return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+                    }
                     return -delegate_id;
+                }
       }
-      else if( for_candidates.size() > 0 )
+      if( for_candidates.size() > 0 )
       {
          // find first delegate who is not active
          bool active = false;
@@ -1649,7 +1730,13 @@ namespace bts { namespace wallet {
             }
             else
             {
-                return for_acct.id;
+                if (for_acct.id == 0)
+                {
+                    std::cout << "WARNING - delegate id 0 bug @ 2";
+                    return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+                }
+                else
+                    return for_acct.id;
             }
          }
          // all of our delegates are active - pick the one with the lowest vote
@@ -1665,11 +1752,26 @@ namespace bts { namespace wallet {
                 winner = acct_rec->id;
             }
          }
-         return winner;
+         if (winner == 0)
+         {
+            std::cout << "WARNING - delegate id 0 bug @ 3";
+            return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+         }
+         else
+            return winner;
       }
       else
       {
-          return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+            auto num = rand();
+            if (active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
+            {
+                std::cout << "WARNING - delegate id 0 bug @ 4";
+                return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
+            }
+            else
+            {
+                return active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)];
+            }
       }
    }
 

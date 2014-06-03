@@ -37,18 +37,6 @@ namespace bts { namespace rpc {
          //-------------------------------------------------- JSON-RPC Method Implementations
          //TODO? help()
 
-                     signed_transaction wallet_asset_create(const std::string& symbol,
-                                                            const std::string& asset_name,
-                                                            const std::string& description,
-                                                            const fc::variant& data,
-                                                            const std::string& issuer_name,
-                                                            share_type maximum_share_supply,
-                                                            generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                     signed_transaction wallet_asset_issue(share_type amount,
-                                                          const std::string& symbol,
-                                                          const std::string& to_account_name,
-                                                          generate_transaction_flag flag = sign_and_broadcast) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
                      /**
                      *  Submit and vote on proposals
                      */
@@ -68,21 +56,8 @@ namespace bts { namespace rpc {
                   wallet_account_record wallet_get_account(const std::string& account_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                                 balances wallet_get_balance(const std::string& symbol = BTS_ADDRESS_PREFIX, const std::string& account_name = "*") const override;
 
-                           oaccount_record blockchain_get_account_record(const std::string& name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                           oaccount_record blockchain_get_account_record_by_id(name_id_type name_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                          oasset_record blockchain_get_asset_record(const std::string& symbol) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                          oasset_record blockchain_get_asset_record_by_id(asset_id_type asset_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
-
-                 
-         void                               wallet_set_delegate_trust_status(const std::string& delegate_name, int32_t user_trust_level) override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         //bts::wallet::delegate_trust_status wallet_get_delegate_trust_status(const std::string& delegate_name) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-         //std::map<std::string, bts::wallet::delegate_trust_status> wallet_list_delegate_trust_status() const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
 
                         osigned_transaction blockchain_get_transaction(const transaction_id_type& transaction_id) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                                 full_block blockchain_get_block(const block_id_type& block_id) const override;
-                                 full_block blockchain_get_block_by_number(uint32_t block_number) const override;
-
                        void wallet_rescan_blockchain_state() override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
                        void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase, const std::string& account_name) override;
                        void wallet_import_private_key(const std::string& wif_key_to_import, 

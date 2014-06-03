@@ -57,6 +57,53 @@ namespace bts { namespace cli {
               return prompt;
             }
 
+            void parse_and_execute_interactive_command(string command, 
+                                                       fc::istream_ptr argument_stream )
+            {
+              fc::buffered_istream buffered_argument_stream(argument_stream);
+
+              bool command_is_valid = false;
+              fc::variants arguments;
+              try
+              {
+                arguments = _self->parse_interactive_command(buffered_argument_stream, command);
+                command_is_valid = true;
+              }
+              catch( const fc::key_not_found_exception& )
+              {
+                std::cout << "Error: invalid command \"" << command << "\"\n";
+              }
+              catch( const fc::canceled_exception&)
+              {
+                std::cout << "Command aborted.\n";
+              }
+              catch( const fc::exception& )
+              {
+                //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                arguments = fc::variants { command };
+                auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
+                std::cout << usage << "\n";
+              }
+
+              //if command is valid, go ahead and execute it
+              if (command_is_valid)
+              {
+                try
+                {
+                  fc::variant result = _self->execute_interactive_command(command, arguments);
+                  _self->format_and_print_result(command, result);
+                }
+                catch( const fc::canceled_exception&)
+                {
+                  throw;
+                }
+                catch( const fc::exception& e )
+                {
+                  std::cout << e.to_detail_string() << "\n";
+                }
+              }
+            } //parse_and_execute_interactive_command
+
             void process_commands()
             { 
               try {
@@ -81,49 +128,15 @@ namespace bts { namespace cli {
                        command = trimmed_line_to_parse;
                        argument_stream = std::make_shared<fc::stringstream>();
                      }
-
-                     fc::buffered_istream buffered_argument_stream(argument_stream);
-
-                     bool command_is_valid = false;
-                     fc::variants arguments;
                      try
                      {
-                       arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-                       command_is_valid = true;
+                       parse_and_execute_interactive_command(command,argument_stream);
                      }
-                     catch( const fc::key_not_found_exception& )
+                     catch( const fc::canceled_exception& )
                      {
-                       std::cout << "Error: invalid command \"" << command << "\"\n";
-                     }
-                     catch( const fc::canceled_exception&)
-                     {
-                       std::cout << "Command aborted.\n";
-                     }
-                     catch( const fc::exception& )
-                     {
-                       //std::cout << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
-                       arguments = fc::variants { command };
-                       auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
-                       std::cout << usage << "\n";
-                     }
-
-                     if (command_is_valid)
-                     {
-                       try
-                       {
-                         fc::variant result = _self->execute_interactive_command(command, arguments);
-                         _self->format_and_print_result(command, result);
-                       }
-                       catch( const fc::canceled_exception& )
-                       {
-                         if( command == "quit" ) 
-                           break;
-                         std::cout << "Command aborted\n";
-                       }
-                       catch( const fc::exception& e )
-                       {
-                         std::cout << e.to_detail_string() << "\n";
-                       }
+                       if( command == "quit" ) 
+                         break;
+                       std::cout << "Command aborted\n";
                      }
                    }
                    line = _self->get_line( get_prompt()  );
@@ -443,13 +456,13 @@ namespace bts { namespace cli {
               else if( command == "blockchain_list_registered_accounts" )
               {
                   string start;
-                  int64_t count;
+                  uint32_t count;
                   if (arguments.size() > 0)
                       start = arguments[0].as_string();
                   else
                       start = "";
                   if (arguments.size() > 1)
-                      count = arguments[1].as<int64_t>();
+                      count = arguments[1].as<uint32_t>();
                   else
                       count = 50;
 
@@ -575,14 +588,10 @@ namespace bts { namespace cli {
 
               if (choice == "c")
               {
-                string wallet_name = _self->get_line("new wallet name [default]: ");
-                if (wallet_name.empty()) 
-                  wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
+                fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>();
                 try
                 {
-                    execute_interactive_command( "wallet_create", arguments );
+                  parse_and_execute_interactive_command( "wallet_create", argument_stream );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -590,14 +599,10 @@ namespace bts { namespace cli {
               }
               else if (choice == "o")
               {
-                string wallet_name = _self->get_line("wallet name [default]: ");
-                if (wallet_name.empty()) 
-                  wallet_name = "default";
-
-                fc::variants arguments { wallet_name };
+                fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>();
                 try
                 {
-                    execute_interactive_command( "wallet_open", arguments );
+                  parse_and_execute_interactive_command( "wallet_open", argument_stream );
                 }
                 catch( const fc::canceled_exception& )
                 {
@@ -639,8 +644,13 @@ namespace bts { namespace cli {
               else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
-                  std::cout << "four\n";
                   print_transaction_history(tx_history_summary);
+              }
+              else if (method_name == "wallet_list")
+              {
+                  auto wallets = result.as<vector<string>>();
+                  for (auto wallet : wallets)
+                      std::cout << wallet << "\n";
               }
               else
               {
@@ -679,28 +689,37 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 25 ) << std::left << "NAME";
                 std::cout << std::setw( 64 ) << "KEY";
                 std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << std::setw( 15 ) << "TRUST LEVEL";
                 std::cout << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << (acct.name.substr(0, 20) + "...");
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        std::cout << std::setw(25);
+                        if( acct.is_delegate() )
+                           std::cout << acct.name + " (delegate)";
+                        else
+                           std::cout << acct.name;
                     }
 
                     std::cout << std::setw(64) << string( acct.active_key() );
 
-                    if (acct.registration_date == fc::time_point_sec()) {
-                        std::cout << std::setw( 22 ) << "NO";
-                    } else {
+                    if( acct.id == 0 ) //acct.registration_date == fc::time_point_sec()) {
+                    {
+                       std::cout << std::setw( 22 ) << "NO";
+                    } 
+                    else 
+                    {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
+                    
+                    std::cout << std::setw( 10) << acct.trust_level;
                     std::cout << "\n";
                 }
             }
@@ -712,18 +731,24 @@ namespace bts { namespace cli {
                 std::cout << std::setw( 15 ) << std::left << "BALANCE";
                 std::cout << std::setw( 64 ) << "KEY";
                 std::cout << std::setw( 22 ) << "REGISTERED";
+                std::cout << std::setw( 15 ) << "TRUST LEVEL";
                 std::cout << "\n";
+
+                //std::cout << fc::json::to_string( account_records ) << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << (acct.name.substr(0, 20) + "...");
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        std::cout << std::setw(25);
+                        if( acct.is_delegate() )
+                           std::cout<< acct.name + " (delegate)";
+                        else
+                           std::cout<< acct.name;
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
@@ -731,12 +756,17 @@ namespace bts { namespace cli {
 
                     std::cout << std::setw(64) << string( acct.active_key() );
 
-                    if (acct.registration_date == fc::time_point_sec()) {
+                    if (acct.id == 0 ) 
+                    { //acct.registration_date == fc::time_point_sec()) {
                         std::cout << std::setw( 22 ) << "NO";
-                    } else {
+                    } 
+                    else 
+                    {
                         std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
+
+                    std::cout << std::setw( 15 ) << acct.trust_level;
                     std::cout << "\n";
                 }
             }
@@ -755,12 +785,15 @@ namespace bts { namespace cli {
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(20) << acct.name.substr(0, 20);
-                        std::cout << std::setw(5) << "...";
+                        std::cout << std::setw(25) << acct.name.substr(0, 20) << "...";
                     }
                     else
                     {
-                        std::cout << std::setw(25) << acct.name;
+                        std::cout << std::setw(25);
+                        if( acct.is_delegate() )
+                           std::cout<< acct.name + " (delegate)";
+                        else
+                           std::cout<< acct.name;
                     }
                     std::cout << std::setw(64) << string( acct.active_key() );
                     std::cout << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
@@ -783,12 +816,7 @@ namespace bts { namespace cli {
                     else
                     {
                         auto trust = _client->get_wallet()->get_delegate_trust_level( acct.name );
-                        std::stringstream ss;
-                        if( trust != 0 )
-                            ss << std::setw( 15 ) << trust;
-                        else
-                            ss << std::setw( 15 ) << "N/A";
-                        std::cout << ss.str();
+                        std::cout << std::setw( 15 ) << trust;
                     }
 
                     std::cout << "\n";
@@ -798,13 +826,13 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
-                std::cout << "trxs in print_trx_history: " << txs.size() << "\n";
                 std::cout << std::setw(  3 ) << std::right << "#";
                 std::cout << std::setw(  7 ) << "BLK" << ".";
                 std::cout << std::setw(  5 ) << std::left << "TRX";
                 std::cout << std::setw( 20 ) << "TIMESTAMP";
-                std::cout << std::setw( 55 ) << "FROM";
-                std::cout << std::setw( 55 ) << "TO";
+                std::cout << std::setw( 20 ) << "FROM";
+                std::cout << std::setw( 20 ) << "TO";
+                std::cout << std::setw( 20 ) << "MEMO";
                 std::cout << std::setw( 16 ) << " AMOUNT";
                 std::cout << std::setw(  8 ) << " FEE";
                 std::cout << std::setw( 14 ) << " VOTE";
@@ -820,17 +848,33 @@ namespace bts { namespace cli {
                     std::cout << std::setw( 3 ) << count; count++;
 
                     /* Print block and transaction numbers */
-                    std::cout << std::setw( 7 ) << tx.block_num << ".";
-                    std::cout << std::setw( 5 ) << std::left << tx.trx_num;
+                    if (tx.block_num == -1)
+                    {
+                        std::cout << std::setw( 12 ) << std::left << "unconfirmed";
+                    }
+                    else
+                    {
+                        std::cout << std::setw( 7 ) << tx.block_num << ".";
+                        std::cout << std::setw( 5 ) << std::left << tx.trx_num;
+                    }
 
                     /* Print timestamp */
                     std::cout << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    std::cout << std::setw( 55 ) << tx.from_account;
+                    if (tx.from_account.size() > 16)
+                        std::cout << std::setw( 20 ) << tx.from_account.substr(0,16) << "...";
+                    else
+                        std::cout << std::setw( 20 ) << tx.from_account;
                     
                     // Print "to" account
-                    std::cout << std::setw( 55 ) << tx.to_account;
+                    if (tx.to_account.size() > 16)
+                        std::cout << std::setw( 20 ) << tx.to_account.substr(0,16) << "...";
+                    else
+                        std::cout << std::setw( 20 ) <<tx.to_account;
+
+                    // Print "memo" on transaction
+                    std::cout << std::setw( 20 ) << tx.memo_message;
 
                     /* Print amount */
                     {
@@ -845,17 +889,28 @@ namespace bts { namespace cli {
                     }
 
                     /* Print delegate vote */
-                    std::cout << std::setw(14) << "TODO";
-                    /*
+                    bool has_deposit = false;
+                    std::stringstream ss;
+                    for (auto op : tx.operations)
                     {
-                        std::stringstream ss;
-                        if( vote.first > 0 ) ss << "+";
-                        else if( vote.first < 0 ) ss << "-";
-                        else ss << " ";
-                        ss << vote.second;
-                        std::cout << std::setw( 14 ) << ss.str();
+                        if (op.get_object()["op_name"].as<string>() == "deposit")
+                        {
+                            has_deposit = true;
+                            auto vote = op.as<pretty_deposit_op>().vote;
+                            if( vote.first > 0 )
+                                ss << "+";
+                            else if (vote.first < 0)
+                                ss << "-";
+                            else
+                                ss << " ";
+                            ss << vote.second;
+                            break;
+                        }
                     }
-                    */
+                    if (has_deposit)
+                        std::cout << std::setw(15) << ss.str();
+                    else
+                        std::cout << std::setw(15) << "N/A";
 
                     /* Print transaction ID */
                     std::cout << std::setw( 40 ) << string( tx.trx_id );
@@ -881,16 +936,18 @@ namespace bts { namespace cli {
 #ifdef HAVE_READLINE
     static cli_impl* cli_impl_instance = NULL;
     extern "C" char** json_completion_function(const char* text, int start, int end);
+    extern "C" int control_c_handler(int count, int key);
 #endif
 
-	  cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server ) :
-	    _client(client),
-	    _rpc_server(rpc_server)
-	  {
+    cli_impl::cli_impl( const client_ptr& client, const rpc_server_ptr& rpc_server ) :
+      _client(client),
+      _rpc_server(rpc_server)
+    {
 #ifdef HAVE_READLINE
       cli_impl_instance = this;
       _method_data_is_initialized = false;
       rl_attempted_completion_function = &json_completion_function;
+      rl_bind_keyseq("\\C-c", &control_c_handler);
 #endif
     }
 
@@ -922,6 +979,11 @@ namespace bts { namespace cli {
     extern "C" char** json_completion_function(const char* text, int start, int end)
     {
       return cli_impl_instance->json_completion(text, start, end);
+    }
+    extern "C" int control_c_handler(int count, int key)
+    {
+      std::cout << "\n\ngot my control-c handler\n\n";
+      return 0;
     }
 
     // implement json command completion (for function names only)

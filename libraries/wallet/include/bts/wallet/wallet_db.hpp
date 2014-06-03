@@ -54,7 +54,10 @@ namespace bts { namespace wallet {
                                  const asset& amount, share_type fees,
                                  const string& memo_message,
                                  const public_key_type& to,
-                                 time_point_sec created = time_point_sec() );
+                                 time_point_sec received = time_point_sec(),
+                                 time_point_sec created = time_point_sec(),
+                                 public_key_type from = public_key_type()
+                                 );
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const
          {
@@ -78,6 +81,8 @@ namespace bts { namespace wallet {
 
          void add_contact_account( const string& new_account_name, 
                                    const public_key_type& new_account_key,
+                                   const variant& private_data = variant() );
+         void add_contact_account( const account_record& blockchain_account,
                                    const variant& private_data = variant() );
 
          void rename_account( const string& old_account_name,
