@@ -83,6 +83,7 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
+                ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
                 _wallet_db.cache_balance( bal_rec );
               }
          } );
@@ -1581,7 +1582,7 @@ namespace bts { namespace wallet {
 
    void  wallet::scan_state()
    { try {
-      wlog( "scan state" );
+      ilog( "WALLET: scaning blockchain state" );
       my->scan_balances();
       my->scan_registered_accounts();
    } FC_RETHROW_EXCEPTIONS( warn, "" )  }

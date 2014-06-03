@@ -38,6 +38,9 @@ namespace bts { namespace blockchain {
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( account_id_type ) const;
 
+         /** convers an asset + asset_id to a more friendly representation using the symbol name */
+         string                             to_pretty_asset( const asset& a )const;
+
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
          /** return the current fee rate in millishares */
