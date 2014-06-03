@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_client->wallet_unlock( fc::seconds(999999999), password );
 
       auto my_account1 = my_client->wallet_account_create( "account1" );
-      my_client->wallet_import_private_key( test_keys[0], "account1", true /*rescan*/ );
+      my_client->wallet_import_private_key( test_keys[0], string(), true /*rescan*/ );
       auto bal = my_client->wallet_get_balance();
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
@@ -79,10 +79,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->wallet_account_register( "account1", "account1" ); //variant(), false, "account1" );
-      ilog( "----" );
-      ilog( "${trx}", ("trx",fc::json::to_pretty_string(trx) ) );
-      ilog( "----" );
+      auto trx = my_client->wallet_account_register( "account1", "delegate-0" );
 
       my_client->wallet_close();
       my_client->wallet_open("my_wallet");
@@ -98,9 +95,9 @@ BOOST_AUTO_TEST_CASE( client_tests )
       ilog( "\n\nBROADCASTING\n\n" );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
 
-      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
-      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
-      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
+//      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
+//      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
+//      ilog( "registered_names: ${info}", ("info", fc::json::to_pretty_string(your_client->blockchain_list_registered_accounts("",100)) ));
 
 
    } catch ( const fc::exception& e )
