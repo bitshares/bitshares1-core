@@ -1252,6 +1252,10 @@ namespace bts { namespace wallet {
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+
+      trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
+      required_fees += fc::raw::pack_size(trx);
+
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( delegate_account->name ),
@@ -1259,7 +1263,6 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( delegate_account->active_key() ); 
     
-      trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
        
       if (sign)
           sign_transaction( trx, required_signatures );
@@ -1282,16 +1285,18 @@ namespace bts { namespace wallet {
 
       auto account = my->_blockchain->get_account_record( name );
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account));
-      
+
+      trx.vote_proposal( proposal_id, account->id, vote );
+
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      required_fees += fc::raw::pack_size(trx);
+      
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( account->name ),
                                    trx, required_signatures );
      
       required_signatures.insert( account->active_key() ); 
-    
-      trx.vote_proposal( proposal_id, account->id, vote );
        
       if (sign)
           sign_transaction( trx, required_signatures );
