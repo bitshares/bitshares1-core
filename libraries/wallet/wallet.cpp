@@ -62,7 +62,7 @@ namespace bts { namespace wallet {
              bool scan_register_account( const register_account_operation& op );
              bool scan_update_account( const update_account_operation& op );
 
-             void cache_balance( const balance_id_type& balance_id );
+             bool cache_balance( const balance_id_type& balance_id );
 
              void scan_balances();
              void scan_registered_accounts();
@@ -225,7 +225,9 @@ namespace bts { namespace wallet {
       {
          auto current_balance = _wallet_db.lookup_balance( op.balance_id );
          if( current_balance.valid() )
+         {
             cache_balance( op.balance_id );
+         }
          return current_balance.valid();
       }
 
@@ -308,22 +310,29 @@ namespace bts { namespace wallet {
              // TODO: support other withdraw types here..
           }
           if( cache_deposit )
-             cache_balance( op.balance_id() );
+          {
+             if( !cache_balance( op.balance_id() ) )
+             {
+                elog( "unable to cache balance ${b}", ("b",op) );
+             }
+          }
           return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
-      void wallet_impl::cache_balance( const balance_id_type& balance_id )
+      bool wallet_impl::cache_balance( const balance_id_type& balance_id )
       {
          auto bal_rec = _blockchain->get_balance_record( balance_id );
          if( !bal_rec.valid() )
          {
-            wlog( "blockchain doesn't know about balance id: ${balance_id}",
-                  ("balance_id",balance_id) );
+            // wlog( "blockchain doesn't know about balance id: ${balance_id}",
+            //      ("balance_id",balance_id) );
             _wallet_db.balances.erase( balance_id );
+            return false;
          }
          else
          {
             _wallet_db.cache_balance( *bal_rec );
+            return true;
          }
       }
 
@@ -946,15 +955,17 @@ namespace bts { namespace wallet {
                                         sender_private_key,
                                         memo_message,
                                         select_delegate_vote(),
+                                        sender_private_key.get_public_key(),
                                         from_memo );
              }
              if( amount_of_change > total_fee )
              {
-                trx.deposit_to_account( receiver_public_key,
+                trx.deposit_to_account( sender_public_key,
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
                                         select_delegate_vote(),
+                                        receiver_public_key,
                                         to_memo );
 
                 /** randomly shuffle change to prevent analysis */

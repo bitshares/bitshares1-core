@@ -110,6 +110,7 @@ namespace bts { namespace blockchain {
                                       const fc::ecc::public_key&  to_public_key,
                                       const fc::ecc::private_key& from_private_key,
                                       const std::string& memo_message,
+                                      const fc::ecc::public_key&  memo_pub_key,
                                       memo_flags_enum memo_type = from_memo);
 
       memo_data    decrypt_memo_data( const fc::sha512& secret )const;

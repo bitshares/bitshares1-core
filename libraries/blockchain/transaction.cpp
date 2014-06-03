@@ -742,6 +742,7 @@ namespace bts { namespace blockchain {
                                       fc::ecc::private_key from_key,
                                       const std::string& memo_message,
                                       account_id_type delegate_id,
+                                      const fc::ecc::public_key& memo_pub_key,
                                       memo_flags_enum memo_type )
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
@@ -751,6 +752,7 @@ namespace bts { namespace blockchain {
                                  receiver_key,
                                  from_key,
                                  memo_message,
+                                 memo_pub_key,
                                  memo_type );
 
       deposit_operation op;

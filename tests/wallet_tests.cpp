@@ -111,20 +111,31 @@ BOOST_AUTO_TEST_CASE( client_tests )
       public_key_type your_account_key = your_client->wallet_account_create( "youraccount" );
       my_client->wallet_add_contact_account( "youraccount", your_account_key );
 
-      for( uint32_t i = 0; i < 2; ++i )
+      wlog( "your cli" );
+      your_cli->execute_command_line( "wallet_account_transaction_history" );
+      std::cerr<<"\n";
+      your_cli->execute_command_line( "balance" );
+
+      for( uint32_t i = 0; i < 20; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount" );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
+         produce_block( my_client );
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 
-      produce_block( my_client );
 
       //auto result = my_client->wallet_list_unspent_balances();
 //      my_cli->execute_command_line( "wallet_list_unspent_balances" );
       wlog( "my cli" );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
+      std::cerr<<"\n";
+      my_cli->execute_command_line( "balance" );
+      std::cerr<<"\n";
+      std::cerr<<"\n";
       wlog( "your cli" );
       your_cli->execute_command_line( "wallet_account_transaction_history" );
+      std::cerr<<"\n";
+      your_cli->execute_command_line( "balance" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 
