@@ -69,10 +69,12 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto my_client = std::make_shared<client>(network);
       my_client->open( my_dir.path(), "genesis.json" );
 
-      auto my_cli = new cli::cli( my_client, std::cout );
 
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path(), "genesis.json" );
+
+      auto my_cli = new cli::cli( my_client, std::cerr );
+      auto your_cli = new cli::cli( your_client, std::cerr );
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
@@ -109,16 +111,20 @@ BOOST_AUTO_TEST_CASE( client_tests )
       public_key_type your_account_key = your_client->wallet_account_create( "youraccount" );
       my_client->wallet_add_contact_account( "youraccount", your_account_key );
 
-      for( uint32_t i = 0; i < 20; ++i )
+      for( uint32_t i = 0; i < 2; ++i )
       {
          my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount" );
       }
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
 
       produce_block( my_client );
 
       //auto result = my_client->wallet_list_unspent_balances();
-      my_cli->execute_command_line( "wallet_list_unspent_balances" );
+//      my_cli->execute_command_line( "wallet_list_unspent_balances" );
+      wlog( "my cli" );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
+      wlog( "your cli" );
+      your_cli->execute_command_line( "wallet_account_transaction_history" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 

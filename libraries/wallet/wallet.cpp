@@ -950,7 +950,7 @@ namespace bts { namespace wallet {
              }
              if( amount_of_change > total_fee )
              {
-                trx.deposit_to_account( sender_private_key.get_public_key(),
+                trx.deposit_to_account( receiver_public_key,
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,

@@ -29,6 +29,7 @@ namespace bts { namespace cli {
 
           std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false );
 
+          bool is_interactive()const;
           void confirm_and_broadcast(signed_transaction& tx);
           void wait();
           void quit();

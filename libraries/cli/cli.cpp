@@ -163,6 +163,7 @@ namespace bts { namespace cli {
 
             string get_line( const string& prompt, bool no_echo )
             {
+                  FC_ASSERT( _self->is_interactive() );
                   string line;
                   if ( no_echo )
                   {
@@ -974,9 +975,12 @@ namespace bts { namespace cli {
       _out(output_stream)
     {
 #ifdef HAVE_READLINE
-      cli_impl_instance = this;
-      _method_data_is_initialized = false;
-      rl_attempted_completion_function = &json_completion_function;
+      if( &output_stream == &std::cout ) // readline
+      {
+         cli_impl_instance = this;
+         _method_data_is_initialized = false;
+         rl_attempted_completion_function = &json_completion_function;
+      }
 #ifndef __APPLE__
       // TODO: find out why this isn't defined on APPL
       //rl_bind_keyseq("\\C-c", &control_c_handler);
@@ -1089,7 +1093,11 @@ namespace bts { namespace cli {
     my->_self        = this;
 //    my->_main_thread = &fc::thread::current();
 
-    my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
+    if( is_interactive() )
+    {
+        ilog( "starting process commands" );
+        my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
+    }
   }
 
   cli::~cli()
@@ -1104,9 +1112,19 @@ namespace bts { namespace cli {
     }
   }
 
+  bool cli::is_interactive()const
+  {
+     return ( &my->_out == &std::cout );
+  }
   void cli::wait()
   {
-    my->_rpc_server->wait_on_quit();
+     if( is_interactive() )
+     {
+        my->_cin_complete.cancel();
+        if( my->_cin_complete.ready() )
+           my->_cin_complete.wait();
+     }
+     my->_rpc_server->wait_on_quit();
   }
 
   void cli::quit()
