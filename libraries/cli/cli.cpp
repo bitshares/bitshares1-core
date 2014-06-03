@@ -862,9 +862,9 @@ namespace bts { namespace cli {
                 _out << std::setw( 20 ) << "TIMESTAMP";
                 _out << std::setw( 20 ) << "FROM";
                 _out << std::setw( 20 ) << "TO";
-                _out << std::setw( 20 ) << "MEMO";
+                _out << std::setw( 30 ) << "MEMO";
                 _out << std::setw( 20 ) << std::right << "AMOUNT";
-                _out << std::setw(  8 ) << "FEE";
+                _out << std::setw( 14 ) << "FEE";
                 _out << std::setw( 14 ) << "VOTE";
                 _out << std::setw( 40 ) << "ID";
                 _out << "\n----------------------------------------------------------------------------------------------";
@@ -875,7 +875,8 @@ namespace bts { namespace cli {
                 for( auto tx : txs )
                 {
                     /* Print index */
-                    _out << std::setw( 3 ) << count; count++;
+                    _out << std::setw( 3 ) << count;
+                    count++;
 
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
@@ -904,20 +905,29 @@ namespace bts { namespace cli {
                         _out << std::setw( 20 ) <<tx.to_account;
 
                     // Print "memo" on transaction
-                    _out << std::setw( 20 ) << tx.memo_message;
+                    _out << std::setw( 30 ) << tx.memo_message;
 
                     /* Print amount */
                     {
-                        _out << std::setw( 20 ) << std::right << _client->get_chain()->to_pretty_asset(tx.amount);
+                        _out << std::right;
+                        std::stringstream ss;
+                        if (tx.fees > 0) // TODO this might be a bad assumption
+                            ss << "-";
+                        else
+                            ss << "+";
+                        ss << _client->get_chain()->to_pretty_asset(tx.amount);
+                        _out << std::setw( 20 ) << ss.str();
                     }
 
                     /* Print fee */
                     {
+                        _out << std::right;
                         std::stringstream ss;
-                        ss << tx.fees;
-                        _out << std::setw( 8 ) << ss.str();
+                        ss << _client->get_chain()->to_pretty_asset(tx.fees);
+                        _out << std::setw( 14 ) << ss.str();
                     }
 
+                    _out << std::right;
                     /* Print delegate vote */
                     bool has_deposit = false;
                     std::stringstream ss;
@@ -938,10 +948,11 @@ namespace bts { namespace cli {
                         }
                     }
                     if (has_deposit)
-                        _out << std::setw(15) << ss.str();
+                        _out << std::setw(14) << ss.str();
                     else
-                        _out << std::setw(15) << "N/A";
+                        _out << std::setw(14) << "N/A";
 
+                    _out << std::right;
                     /* Print transaction ID */
                     _out << std::setw( 40 ) << string( tx.trx_id );
 
