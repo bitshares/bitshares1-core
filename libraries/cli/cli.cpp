@@ -1091,7 +1091,7 @@ namespace bts { namespace cli {
     }
     catch( const fc::exception& e )
     {
-       wlog( "${e}", ("e",e.to_detail_string()) );
+      wlog( "${e}", ("e",e.to_detail_string()) );
     }
   }
 

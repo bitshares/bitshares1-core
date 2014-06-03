@@ -683,7 +683,6 @@ namespace bts { namespace client {
     void client::stop()
     {
       my->_rpc_server->shutdown_rpc_server();
-      exit(0);
     }
 
     uint32_t client::network_get_connection_count() const

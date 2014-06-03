@@ -30,8 +30,8 @@ namespace bts { namespace rpc {
        public:
          rpc_server::config                _config;
          bts::client::client*              _client;
-         fc::http::server                  _httpd;
-         fc::tcp_server                    _tcp_serv;
+         std::shared_ptr<fc::http::server> _httpd;
+         std::shared_ptr<fc::tcp_server>   _tcp_serv;
          fc::future<void>                  _accept_loop_complete;
          rpc_server*                       _self;
          fc::shared_ptr<fc::promise<void>> _on_quit_promise;
@@ -290,7 +290,7 @@ namespace bts { namespace rpc {
               fc::tcp_socket_ptr sock = std::make_shared<fc::tcp_socket>();
               try
               {
-                _tcp_serv.accept( *sock );
+                _tcp_serv->accept( *sock );
               }
               catch ( const fc::exception& e )
               {
@@ -557,8 +557,19 @@ namespace bts { namespace rpc {
 
   rpc_server::~rpc_server()
   {
-     try {
-         if(!my->_on_quit_promise->ready() )
+    try 
+    {
+      close();
+      wait();
+    }
+    catch ( const fc::exception& e )
+    {
+      wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
+    }
+  }
+
+  /*
+           if(!my->_on_quit_promise->ready() )
             my->_on_quit_promise->set_value();
          my->_tcp_serv.close();
          if( my->_accept_loop_complete.valid() )
@@ -566,13 +577,8 @@ namespace bts { namespace rpc {
             my->_accept_loop_complete.cancel();
             my->_accept_loop_complete.wait();
          }
-     }
-     catch ( const fc::canceled_exception& ){}
-     catch ( const fc::exception& e )
-     {
-        wlog( "unhandled exception thrown in destructor.\n${e}", ("e", e.to_detail_string() ) );
-     }
-  }
+*/
+
 
   bool rpc_server::configure( const rpc_server::config& cfg )
   {
@@ -581,15 +587,17 @@ namespace bts { namespace rpc {
     try
     {
       my->_config = cfg;
-      my->_tcp_serv.listen( cfg.rpc_endpoint );
-      ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv.get_port()) );
+      my->_tcp_serv = std::make_shared<fc::tcp_server>();
+      my->_tcp_serv->listen( cfg.rpc_endpoint );
+      ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
 
 
       auto m = my.get();
-      my->_httpd.listen(cfg.httpd_endpoint);
-      my->_httpd.on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
+      my->_httpd = std::make_shared<fc::http::server>();
+      my->_httpd->listen(cfg.httpd_endpoint);
+      my->_httpd->on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
 
       return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
@@ -628,15 +636,37 @@ namespace bts { namespace rpc {
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 
+  void rpc_server::close()
+  {
+    if (my->_tcp_serv)
+      my->_tcp_serv->close();
+    if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
+      my->_accept_loop_complete.cancel();
+  }
+
+  void rpc_server::wait()
+  {
+    try
+    {
+      if( my->_accept_loop_complete.valid() )
+        my->_accept_loop_complete.wait();
+    }
+    catch (const fc::canceled_exception&)
+    {
+    }
+  }
+
+
   void rpc_server::wait_on_quit()
   {
-    if (!my->_on_quit_promise->ready())
-      my->_on_quit_promise->wait();
+    wait();
   }
 
   void rpc_server::shutdown_rpc_server()
   {
-    my->shutdown_rpc_server();
+    // shutdown the server.  add a little delay to give the response to the "stop" method call a chance
+    // to make it to the caller
+    fc::async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
   }
 
   std::string rpc_server::help(const std::string& command_name) const
