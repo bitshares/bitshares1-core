@@ -1015,7 +1015,7 @@ namespace bts { namespace cli {
     }
     extern "C" int control_c_handler(int count, int key)
     {
-      _out << "\n\ncontrol-c!\n\n";
+       std::cout << "\n\ncontrol-c!\n\n";
       return 0;
     }
 
