@@ -881,7 +881,7 @@ namespace bts { namespace cli {
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
                     {
-                        _out << std::setw( 12 ) << std::left << "pending";
+                        _out << std::setw( 13 ) << std::left << "   pending";
                     }
                     else
                     {
