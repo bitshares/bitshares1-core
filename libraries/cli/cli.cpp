@@ -104,42 +104,49 @@ namespace bts { namespace cli {
               }
             } //parse_and_execute_interactive_command
 
+            bool execute_command_line(const string& line)
+            {
+              string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
+              if (!trimmed_line_to_parse.empty())
+              {
+                string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
+                string command;
+                fc::istream_ptr argument_stream;
+                if (iter != trimmed_line_to_parse.end())
+                {
+                  // then there are arguments to this function
+                  size_t first_space_pos = iter - trimmed_line_to_parse.begin();
+                  command = trimmed_line_to_parse.substr(0, first_space_pos);
+                  argument_stream = std::make_shared<fc::stringstream>((trimmed_line_to_parse.substr(first_space_pos + 1)));
+                }
+                else
+                {
+                  command = trimmed_line_to_parse;
+                  argument_stream = std::make_shared<fc::stringstream>();
+                }
+                try
+                {
+                  parse_and_execute_interactive_command(command,argument_stream);
+                }
+                catch( const fc::canceled_exception& )
+                {
+                  if( command == "quit" ) 
+                    return false;
+                  std::cout << "Command aborted\n";
+                }
+              } //end if command line not empty
+              return true;
+            }
+
             void process_commands()
             { 
               try {
                  string line = _self->get_line(get_prompt());
                  while (std::cin.good())
                  {
-                   string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
-                   if (!trimmed_line_to_parse.empty())
-                   {
-                     string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
-                     string command;
-                     fc::istream_ptr argument_stream;
-                     if (iter != trimmed_line_to_parse.end())
-                     {
-                       // then there are arguments to this function
-                       size_t first_space_pos = iter - trimmed_line_to_parse.begin();
-                       command = trimmed_line_to_parse.substr(0, first_space_pos);
-                       argument_stream = std::make_shared<fc::stringstream>((trimmed_line_to_parse.substr(first_space_pos + 1)));
-                     }
-                     else
-                     {
-                       command = trimmed_line_to_parse;
-                       argument_stream = std::make_shared<fc::stringstream>();
-                     }
-                     try
-                     {
-                       parse_and_execute_interactive_command(command,argument_stream);
-                     }
-                     catch( const fc::canceled_exception& )
-                     {
-                       if( command == "quit" ) 
-                         break;
-                       std::cout << "Command aborted\n";
-                     }
-                   }
-                   line = _self->get_line( get_prompt()  );
+                   if (!execute_command_line(line))
+                     break;
+                   line = _self->get_line( get_prompt() );
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
@@ -1103,6 +1110,11 @@ namespace bts { namespace cli {
   void cli::quit()
   {
     my->_cin_complete.cancel();
+  }
+
+  bool cli::execute_command_line(const string& line)
+  {
+    return my->execute_command_line(line);
   }
 
   string cli::get_line( const string& prompt, bool no_echo )
