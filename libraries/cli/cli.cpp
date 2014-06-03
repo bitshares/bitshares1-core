@@ -863,9 +863,9 @@ namespace bts { namespace cli {
                 _out << std::setw( 20 ) << "FROM";
                 _out << std::setw( 20 ) << "TO";
                 _out << std::setw( 20 ) << "MEMO";
-                _out << std::setw( 16 ) << " AMOUNT";
-                _out << std::setw(  8 ) << " FEE";
-                _out << std::setw( 14 ) << " VOTE";
+                _out << std::setw( 20 ) << std::right << "AMOUNT";
+                _out << std::setw(  8 ) << "FEE";
+                _out << std::setw( 14 ) << "VOTE";
                 _out << std::setw( 40 ) << "ID";
                 _out << "\n----------------------------------------------------------------------------------------------";
                 _out <<   "----------------------------------------------------------------------------------------------\n";
@@ -908,7 +908,7 @@ namespace bts { namespace cli {
 
                     /* Print amount */
                     {
-                        _out << std::setw( 16 ) << string( tx.amount );
+                        _out << std::setw( 20 ) << std::right << _client->get_chain()->to_pretty_asset(tx.amount);
                     }
 
                     /* Print fee */
