@@ -445,7 +445,7 @@ namespace bts { namespace cli {
                           _out << "|";
                           for(int i = 0; i < 100; i++)
                               _out << "-";
-                          _out << "|\n|";
+                          _out << "|\n|=";
                           uint32_t next_step = 0;
                           auto cb = [=](uint32_t cur,
                                                        uint32_t last
