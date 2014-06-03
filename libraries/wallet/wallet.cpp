@@ -62,7 +62,7 @@ namespace bts { namespace wallet {
              bool scan_register_account( const register_account_operation& op );
              bool scan_update_account( const update_account_operation& op );
 
-             void cache_balance( const balance_id_type& balance_id );
+             bool cache_balance( const balance_id_type& balance_id );
 
              void scan_balances();
              void scan_registered_accounts();
@@ -225,7 +225,9 @@ namespace bts { namespace wallet {
       {
          auto current_balance = _wallet_db.lookup_balance( op.balance_id );
          if( current_balance.valid() )
+         {
             cache_balance( op.balance_id );
+         }
          return current_balance.valid();
       }
 
@@ -243,13 +245,17 @@ namespace bts { namespace wallet {
              return false;
           }
 
+          wlog( "we detected an account register operation for ${name}", ("name",op.name) );
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
           blockchain::account_record& tmp  = *opt_account;
           tmp = *account_name_rec; //->id = account_name_rec->id;
+          ilog( "tmp: ${tmp}", ("tmp",fc::json::to_pretty_string(tmp) ) );
+          ilog( "opt: ${tmp}", ("tmp",fc::json::to_pretty_string(*opt_account) ) );
           _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
           _wallet_db.store_record( *opt_account );
+          _wallet_db.accounts[ opt_account->index ] = *opt_account;
 
           return false;
       }
@@ -308,22 +314,29 @@ namespace bts { namespace wallet {
              // TODO: support other withdraw types here..
           }
           if( cache_deposit )
-             cache_balance( op.balance_id() );
+          {
+             if( !cache_balance( op.balance_id() ) )
+             {
+                elog( "unable to cache balance ${b}", ("b",op) );
+             }
+          }
           return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
-      void wallet_impl::cache_balance( const balance_id_type& balance_id )
+      bool wallet_impl::cache_balance( const balance_id_type& balance_id )
       {
          auto bal_rec = _blockchain->get_balance_record( balance_id );
          if( !bal_rec.valid() )
          {
-            wlog( "blockchain doesn't know about balance id: ${balance_id}",
-                  ("balance_id",balance_id) );
+            // wlog( "blockchain doesn't know about balance id: ${balance_id}",
+            //      ("balance_id",balance_id) );
             _wallet_db.balances.erase( balance_id );
+            return false;
          }
          else
          {
             _wallet_db.cache_balance( *bal_rec );
+            return true;
          }
       }
 
@@ -946,15 +959,17 @@ namespace bts { namespace wallet {
                                         sender_private_key,
                                         memo_message,
                                         select_delegate_vote(),
+                                        sender_private_key.get_public_key(),
                                         from_memo );
              }
              if( amount_of_change > total_fee )
              {
-                trx.deposit_to_account( receiver_public_key,
+                trx.deposit_to_account( sender_public_key,
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
                                         select_delegate_vote(),
+                                        receiver_public_key,
                                         to_memo );
 
                 /** randomly shuffle change to prevent analysis */
@@ -1042,6 +1057,11 @@ namespace bts { namespace wallet {
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
+      if( as_delegate )
+      {
+        required_fees += my->_blockchain->get_delegate_registration_fee();
+      }
+
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
 
@@ -1055,7 +1075,7 @@ namespace bts { namespace wallet {
          return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "register " + account_to_register, 
+                                                  "register " + account_to_register + (as_delegate? " as a delegate" : ""), 
                                                   payer_public_key, 
                                                   bts::blockchain::now(),
                                                   bts::blockchain::now(),
@@ -1296,12 +1316,19 @@ namespace bts { namespace wallet {
       pretty_trx.fees = trx_rec.fees;
       pretty_trx.memo_message = trx_rec.memo_message;
 
+      pretty_trx.to_me = false;
+      pretty_trx.from_me = false;
+
+
       pretty_trx.from_account = "";
       if( trx_rec.from_account )
       {
           auto acct_record = my->_wallet_db.lookup_account( *trx_rec.from_account );
           if (acct_record)
+          {
+              pretty_trx.from_me = my->_wallet_db.has_private_key( address( *trx_rec.from_account ) );
               pretty_trx.from_account = acct_record->name;
+          }
           else
           {
               auto registered_account = my->_blockchain->get_account_record( *trx_rec.from_account );
@@ -1319,9 +1346,13 @@ namespace bts { namespace wallet {
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
       {
+
           auto acct_record = my->_wallet_db.lookup_account( *trx_rec.to_account );
           if (acct_record)
+          {
+              pretty_trx.to_me = my->_wallet_db.has_private_key( address( *trx_rec.to_account ) );
               pretty_trx.to_account = acct_record->name;
+          }
           else
           {
               auto registered_account = my->_blockchain->get_account_record( *trx_rec.to_account );
@@ -1493,8 +1524,8 @@ namespace bts { namespace wallet {
 
          auto account_key = my->_wallet_db.lookup_key( war->account_address );
          FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
-         ilog( "account: ${war}", ("war",war) );
-         ilog( "account key: ${key}", ("key",account_key) );
+         //ilog( "account: ${war}", ("war",war) );
+        // ilog( "account key: ${key}", ("key",account_key) );
          filter_address = war->account_address;
       }
 
@@ -1516,7 +1547,6 @@ namespace bts { namespace wallet {
          result.push_back( asset( item.second, item.first ) );
       if( result.size() == 0 )
          result.push_back( asset() );
-      ilog( "result: ${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
@@ -1826,5 +1856,31 @@ namespace bts { namespace wallet {
       }
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
+
+   wallet::account_balance_summary_type    wallet::get_account_balances()const
+   { try {
+      account_balance_summary_type result;
+      unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
+      for( auto b : my->_wallet_db.balances )
+      {
+          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             asset bal = b.second.get_balance();
+             raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
+          }
+      }
+      for( auto account : raw_results )
+      {
+         auto oaccount = my->_wallet_db.lookup_account( account.first );
+         string name = oaccount ? oaccount->name : string(account.first);
+         for( auto item : account.second )
+         {
+            string symbol = my->_blockchain->get_asset_symbol( item.first );
+            result[name][symbol] = item.second;
+         }
+      }
+      return result;
+   } FC_RETHROW_EXCEPTIONS(warn,"") }
 } } // bts::wallet
 

@@ -584,6 +584,8 @@ namespace bts { namespace blockchain {
 
       if ( !cur_record->is_delegate() && op.is_delegate )
       {
+         // pay fee
+         sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
          cur_record->delegate_info = delegate_stats();
       }
 
@@ -742,6 +744,7 @@ namespace bts { namespace blockchain {
                                       fc::ecc::private_key from_key,
                                       const std::string& memo_message,
                                       account_id_type delegate_id,
+                                      const fc::ecc::public_key& memo_pub_key,
                                       memo_flags_enum memo_type )
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
@@ -751,6 +754,7 @@ namespace bts { namespace blockchain {
                                  receiver_key,
                                  from_key,
                                  memo_message,
+                                 memo_pub_key,
                                  memo_type );
 
       deposit_operation op;

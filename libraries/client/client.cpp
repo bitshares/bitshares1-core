@@ -961,4 +961,10 @@ namespace bts { namespace client {
        return get_wallet()->get_unspent_balances( account_name, symbol );
     }
 
+
+   auto  client::wallet_account_balance() -> decltype(get_wallet()->get_account_balances())
+   {
+      return get_wallet()->get_account_balances();
+   }
+
 } } // bts::client

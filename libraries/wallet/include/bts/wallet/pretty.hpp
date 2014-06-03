@@ -23,6 +23,8 @@ struct pretty_transaction
     share_type                                  fees;
     string                                      to_account;
     string                                      from_account;
+    bool                                        to_me;     // since to/from accounts are just strings we need
+    bool                                        from_me;   // to populate these if we want to pretty print nicely
 
     string                                      memo_message;
 

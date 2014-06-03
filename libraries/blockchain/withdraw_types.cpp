@@ -75,6 +75,7 @@ namespace bts { namespace blockchain {
                                    const fc::ecc::public_key&  to_public_key,
                                    const fc::ecc::private_key& from_private_key,
                                    const std::string& memo_message,
+                                   const fc::ecc::public_key&  memo_pub_key,
                                    memo_flags_enum memo_type )
    {
       auto secret = one_time_private_key.get_shared_secret( to_public_key );
@@ -92,10 +93,7 @@ namespace bts { namespace blockchain {
 
       memo_data memo;
       memo.set_message( memo_message );
-      if( memo_type == from_memo )
-         memo.from = from_private_key.get_public_key();
-      else
-         memo.from = to_public_key;
+      memo.from = memo_pub_key;
       memo.from_signature = check_secret._hash[0];
       memo.memo_flags = memo_type;
       one_time_key = one_time_private_key.get_public_key();

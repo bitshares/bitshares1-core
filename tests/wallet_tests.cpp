@@ -104,6 +104,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
       produce_block( my_client );
+      my_cli->execute_command_line( "wallet_list_receive_accounts" );
 
       FC_ASSERT( my_client->get_info()["blockchain_head_block_num"].as_int64() == your_client->get_info()["blockchain_head_block_num"].as_int64() );
       FC_ASSERT( your_client->blockchain_list_registered_accounts("account1",1)[0].name == "account1" );
@@ -111,20 +112,45 @@ BOOST_AUTO_TEST_CASE( client_tests )
       public_key_type your_account_key = your_client->wallet_account_create( "youraccount" );
       my_client->wallet_add_contact_account( "youraccount", your_account_key );
 
-      for( uint32_t i = 0; i < 2; ++i )
+      public_key_type other_account_key = your_client->wallet_account_create( "otheraccount" );
+      my_client->wallet_add_contact_account( "otheraccount", other_account_key );
+
+      wlog( "your cli" );
+      your_cli->execute_command_line( "wallet_account_transaction_history" );
+      std::cerr<<"\n";
+      your_cli->execute_command_line( "balance" );
+
+      for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount" );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 30000000+i, "XTS", "delegate-0", "otheraccount", "memo-"+fc::to_string(i) );
+         produce_block( my_client );
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 
+      trx = your_client->wallet_account_register( "youraccount", "youraccount", variant(), true );
       produce_block( my_client );
 
       //auto result = my_client->wallet_list_unspent_balances();
 //      my_cli->execute_command_line( "wallet_list_unspent_balances" );
       wlog( "my cli" );
-      my_cli->execute_command_line( "wallet_account_transaction_history" );
+      my_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
+      my_cli->execute_command_line( "wallet_account_transaction_history otheraccount" );
+      my_cli->execute_command_line( "wallet_account_transaction_history \"delegate-0\"" );
+      std::cerr<<"\n";
+      my_cli->execute_command_line( "balance" );
+      std::cerr<<"\n";
+      std::cerr<<"\n";
       wlog( "your cli" );
       your_cli->execute_command_line( "wallet_account_transaction_history" );
+      std::cerr<<"\n";
+      your_cli->execute_command_line( "balance" );
+      wlog("my");
+      my_cli->execute_command_line( "wallet_list_contact_accounts" );
+      my_cli->execute_command_line( "wallet_list_receive_accounts" );
+      wlog("your");
+      your_cli->execute_command_line( "wallet_list_contact_accounts" );
+      your_cli->execute_command_line( "wallet_list_receive_accounts" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 
