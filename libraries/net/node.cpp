@@ -2607,7 +2607,6 @@ namespace bts { namespace net {
 
   void simulated_network::broadcast( const message& item_to_broadcast )
   {
-      ilog( "broadcast: ${b}", ("b",item_to_broadcast) );
       for(node_delegate* network_node : network_nodes)
         network_node->handle_message(item_to_broadcast);
   }

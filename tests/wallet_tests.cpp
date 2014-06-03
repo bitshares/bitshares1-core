@@ -85,14 +85,13 @@ BOOST_AUTO_TEST_CASE( client_tests )
       my_client->wallet_open("my_wallet");
       my_client->wallet_unlock( fc::seconds(999999999), password );
       auto recv_accounts = my_client->get_wallet()->list_receive_accounts();
-      ilog( "receive accounts: ${r}", ("r",recv_accounts) );
+      //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
       auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
       bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(next_block_production_time);
       my_client->get_wallet()->sign_block( b );
-      ilog( "block: ${b}", ("b",b));
-      ilog( "\n\nBROADCASTING\n\n" );
+      //ilog( "block: ${b}", ("b",b));
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
 
 //      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));

@@ -603,7 +603,6 @@ namespace bts { namespace wallet {
             my->_wallet_db.add_contact_account( account_name, key, private_data );
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
-         ilog( "account key:${a}}", ("a", account_key ) );
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
@@ -655,9 +654,7 @@ namespace bts { namespace wallet {
       owallet_key_record current_key_record = my->_wallet_db.lookup_key( import_public_key );
       if( current_key_record.valid() )
       {
-         std::cout << "Storing private key\n";
          current_key_record->encrypt_private_key( my->_wallet_password, key );
-         std::cout << "Storing private key: \n"<<fc::json::to_pretty_string( *current_key_record) << "\n";
          my->_wallet_db.store_key( *current_key_record );
          return import_public_key;
       }
@@ -665,8 +662,7 @@ namespace bts { namespace wallet {
       {
          auto registered_account = my->_blockchain->get_account_record( import_public_key );
          FC_ASSERT( registered_account );
-
-         std::cout << "Importing key for registered account:\n "<< fc::json::to_pretty_string( *registered_account ) << "\n";
+ 
          add_contact_account( registered_account->name, import_public_key );
          return import_private_key( key, registered_account->name );
       }

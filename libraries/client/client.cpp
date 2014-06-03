@@ -136,8 +136,8 @@ namespace bts { namespace client {
        {
          try
          {
-           ilog("Received a new block from the server, current head block is ${num}, block is ${block}",
-                ("num", _chain_db->get_head_block_num())("block", block));
+           ilog("Received block ${new_block_num} from the server, current head block is ${num}",
+                ("num", _chain_db->get_head_block_num())("new_block_num", block.block_num));
 
            _chain_db->push_block(block);
          }
@@ -338,8 +338,7 @@ namespace bts { namespace client {
 
     bts::blockchain::transaction_id_type client::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
-      ilog("broadcasting transaction with id ${id} : ${transaction}", 
-           ("id", transaction_to_broadcast.id())("transaction", transaction_to_broadcast));
+      ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
 
       // p2p doesn't send messages back to the originator
       my->on_new_transaction(transaction_to_broadcast);
