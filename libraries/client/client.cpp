@@ -956,4 +956,9 @@ namespace bts { namespace client {
       return result;
     }
 
+    vector<wallet_balance_record> client::wallet_list_unspent_balances( const string& account_name, const string& symbol )
+    {
+       return get_wallet()->get_unspent_balances( account_name, symbol );
+    }
+
 } } // bts::client

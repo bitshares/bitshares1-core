@@ -112,6 +112,9 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       produce_block( my_client );
 
+      auto result = my_client->wallet_list_unspent_balances();
+      ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
+
 //      ilog( "my_client ${info}", ("info", fc::json::to_pretty_string(my_client->get_info()) ));
 //      ilog( "your_client ${info}", ("info", fc::json::to_pretty_string(your_client->get_info()) ));
 //      ilog( "registered_names: ${info}", 
