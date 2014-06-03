@@ -56,7 +56,7 @@ int main( int argc, char** argv )
                               ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
                               ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
-                              ("genesis-config", program_options::value<std::string>()->default_value("genesis.dat"), 
+                              ("genesis-config", program_options::value<std::string>()->default_value("genesis.json"), 
                                "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
