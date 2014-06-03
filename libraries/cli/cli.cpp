@@ -785,7 +785,7 @@ namespace bts { namespace cli {
                 {
                     if (acct.name.size() > 20)
                     {
-                        std::cout << std::setw(25) << acct.name.substr(0, 20) << "...";
+                        std::cout << std::setw(25) << (acct.name.substr(0, 20) + "...");
                     }
                     else
                     {
@@ -850,7 +850,7 @@ namespace bts { namespace cli {
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
                     {
-                        std::cout << std::setw( 12 ) << std::left << "unconfirmed";
+                        std::cout << std::setw( 12 ) << std::left << "pending";
                     }
                     else
                     {
@@ -863,13 +863,13 @@ namespace bts { namespace cli {
 
                     // Print "from" account
                     if (tx.from_account.size() > 16)
-                        std::cout << std::setw( 20 ) << tx.from_account.substr(0,16) << "...";
+                        std::cout << std::setw( 20 ) << (tx.from_account.substr(0,16) + "...");
                     else
                         std::cout << std::setw( 20 ) << tx.from_account;
                     
                     // Print "to" account
                     if (tx.to_account.size() > 16)
-                        std::cout << std::setw( 20 ) << tx.to_account.substr(0,16) << "...";
+                        std::cout << std::setw( 20 ) << (tx.to_account.substr(0,16) + "...");
                     else
                         std::cout << std::setw( 20 ) <<tx.to_account;
 
