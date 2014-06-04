@@ -45,6 +45,7 @@ namespace bts { namespace blockchain {
          void close();
 
          void set_observer( chain_observer* observer );
+         void sanity_check()const;
 
          transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx );
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;

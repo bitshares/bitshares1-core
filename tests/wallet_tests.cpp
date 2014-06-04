@@ -48,11 +48,13 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
 template<typename T>
 void produce_block( T my_client )
 {
+      auto head_num = my_client->get_chain()->get_head_block_num();
       auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
       bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(next_block_production_time);
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
 }
 
 BOOST_AUTO_TEST_CASE( client_tests )
@@ -104,6 +106,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
 
       produce_block( my_client );
+
       my_cli->execute_command_line( "wallet_list_receive_accounts" );
 
       FC_ASSERT( my_client->get_info()["blockchain_head_block_num"].as_int64() == your_client->get_info()["blockchain_head_block_num"].as_int64() );
@@ -125,6 +128,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
          my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
          my_client->wallet_transfer( 30000000+i, "XTS", "delegate-0", "otheraccount", "memo-"+fc::to_string(i) );
          produce_block( my_client );
+      return;
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 

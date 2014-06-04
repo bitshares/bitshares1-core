@@ -336,6 +336,7 @@ namespace bts { namespace blockchain {
          fail( BTS_UNDEFINED_ADDRESS, fc::variant(op) );
          FC_ASSERT( !"Evaluating withdraw, but unable to find balance record", "", ("op",op) );
       }
+      FC_ASSERT( op.amount <= arec->balance, "", ("balance_record",arec)("delta",arec->balance - op.amount) );
 
       switch( (withdraw_condition_types)arec->condition.type )
       {
