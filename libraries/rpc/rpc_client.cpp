@@ -178,11 +178,6 @@ namespace bts { namespace rpc {
   }
   */
 
-  balances rpc_client::wallet_get_balance(const std::string& asset_symbol, 
-                                       const std::string& account_name) const
-  {
-    return my->wallet_get_balance(asset_symbol, account_name);
-  }
 
 
   /*
@@ -197,12 +192,6 @@ namespace bts { namespace rpc {
     my->wallet_import_bitcoin(wallet_filename, password, account_name );
   }
 
-  void rpc_client::wallet_import_private_key(const std::string& wif_key_to_import,
-                                             const std::string& account_name, 
-                                             bool wallet_rescan_blockchain)
-  {
-    my->wallet_import_private_key(wif_key_to_import, account_name, wallet_rescan_blockchain);
-  }
 
   void rpc_client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers)
   {
