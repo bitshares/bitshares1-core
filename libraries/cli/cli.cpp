@@ -721,7 +721,7 @@ namespace bts { namespace cli {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
                   _out << std::right;
                   _out << std::setw(18) << "BALANCE";
-                  _out << std::right << std::setw(35) << "OWNER";
+                  _out << std::right << std::setw(40) << "OWNER";
                   _out << std::right << std::setw(25) << "VOTE";
                   _out << "\n";
                   _out << "-------------------------------------------------------------";
@@ -741,10 +741,10 @@ namespace bts { namespace cli {
                               else
                                   owner = string( balance_rec.owner() );
 
-                              if (owner.size() > 31)
-                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              if (owner.size() > 36)
+                                  _out << std::setw(40) << owner.substr(0, 31) << "...";
                               else
-                                  _out << std::setw(35) << owner;
+                                  _out << std::setw(40) << owner;
 
                               auto delegate_id = balance_rec.condition.delegate_id;
                               auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
