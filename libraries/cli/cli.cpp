@@ -868,13 +868,13 @@ namespace bts { namespace cli {
                 _out << std::setw( 20 ) << "TIMESTAMP";
                 _out << std::setw( 20 ) << "FROM";
                 _out << std::setw( 20 ) << "TO";
-                _out << std::setw( 30 ) << "MEMO";
+                _out << std::setw( 25 ) << "MEMO";
                 _out << std::setw( 20 ) << std::right << "AMOUNT";
                 _out << std::setw( 20 ) << "FEE";
                 _out << std::setw( 14 ) << "VOTE";
-                _out << std::setw( 40 ) << "ID";
-                _out << "\n----------------------------------------------------------------------------------------------";
-                _out <<   "----------------------------------------------------------------------------------------------\n";
+                _out << std::setw( 42 ) << "ID";
+                _out << "\n---------------------------------------------------------------------------------------------------";
+                _out <<   "--------------------------------------------------------------------------------------------------\n";
                 _out << std::right; 
                 
                 int count = 1;
@@ -908,10 +908,13 @@ namespace bts { namespace cli {
                     if (tx.to_account.size() > 16)
                         _out << std::setw( 20 ) << (tx.to_account.substr(0,16) + "...");
                     else
-                        _out << std::setw( 20 ) <<tx.to_account;
+                        _out << std::setw( 20 ) << tx.to_account;
 
                     // Print "memo" on transaction
-                    _out << std::setw( 30 ) << tx.memo_message;
+                    if (tx.memo_message.size() > 21)
+                        _out << std::setw( 25 ) << (tx.memo_message.substr(0, 21) + "...");
+                    else
+                        _out << std::setw( 25 ) << tx.memo_message;
 
                     /* Print amount */
                     {
@@ -956,7 +959,7 @@ namespace bts { namespace cli {
 
                     _out << std::right;
                     /* Print transaction ID */
-                    _out << std::setw( 40 ) << string( tx.trx_id );
+                    _out << std::setw( 42 ) << string( tx.trx_id );
 
                     _out << std::right << "\n";
                 }
