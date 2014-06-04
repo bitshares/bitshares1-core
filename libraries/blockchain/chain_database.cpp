@@ -1523,7 +1523,7 @@ namespace bts { namespace blockchain {
          total += ind;
          ++itr;
       }
-      std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
+      //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 } } // namespace bts::blockchain
