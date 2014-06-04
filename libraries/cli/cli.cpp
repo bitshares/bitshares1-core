@@ -186,6 +186,7 @@ namespace bts { namespace cli {
                   string line;
                   if ( no_echo )
                   {
+                      _out<<prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
                       std::getline( std::cin, line );
@@ -196,6 +197,7 @@ namespace bts { namespace cli {
                   {
                   #ifdef HAVE_READLINE 
                      char* line_read = nullptr;
+                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
                          add_history(line_read);
