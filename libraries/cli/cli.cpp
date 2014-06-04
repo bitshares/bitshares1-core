@@ -168,7 +168,7 @@ namespace bts { namespace cli {
 
             string get_line_internal( const string& prompt, bool no_echo )
             {
-                  FC_ASSERT( _self->is_interactive() );
+                  //FC_ASSERT( _self->is_interactive() );
                   string line;
                   if ( no_echo )
                   {
@@ -196,6 +196,7 @@ namespace bts { namespace cli {
                      _out<<prompt;
                      std::getline( std::cin, line );
                   #endif
+                    //DLNFIX _out.echo_console_input_to_log(line);
                   }
 
                   boost::trim(line);
@@ -1102,14 +1103,13 @@ namespace bts { namespace cli {
   cli::cli( const client_ptr& client, std::ostream& output_stream)
   :my( new detail::cli_impl(client, output_stream) )
   {
-    my->_self        = this;
-//    my->_main_thread = &fc::thread::current();
+    my->_self = this;
+  }
 
-    if( is_interactive() )
-    {
-        ilog( "starting process commands" );
-        my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
-    }
+  void cli::process_commands()
+  {
+    ilog( "starting to process interactive commands" );
+    my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
 
   cli::~cli()
@@ -1124,13 +1124,9 @@ namespace bts { namespace cli {
     }
   }
 
-  bool cli::is_interactive()const
-  {
-     return ( &my->_out == &std::cout );
-  }
   void cli::wait()
   {
-     if( is_interactive() )
+     if( my->_cin_complete.valid() )
      {
         my->_cin_complete.cancel();
         if( my->_cin_complete.ready() )
