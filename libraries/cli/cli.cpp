@@ -112,6 +112,15 @@ namespace bts { namespace cli {
             { try {
               ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
+              /** 
+               *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
+               *  when expected while parsing the command.  Adding EOF (0x04) characater at the
+               *  end of the string casues the JSON parser to recognize the EOF rather than relying
+               *  on stringstream.  
+               *
+               *  @todo figure out how to fix things on these OS X systems.
+               */
+              trimmed_line_to_parse += string(" ") + char(0x04);
               if (!trimmed_line_to_parse.empty())
               {
                 string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
@@ -361,7 +370,8 @@ namespace bts { namespace cli {
                 // assume it's raw JSON
                 try
                 {
-                  return fc::json::from_stream( argument_stream );
+                  auto tmp = fc::json::from_stream( argument_stream );
+                  return  tmp;
                 }
                 catch( fc::parse_error_exception& e )
                 {
