@@ -18,11 +18,13 @@
 #include <iostream>
 #include <sstream>
 
+
 #ifdef HAVE_READLINE
 #include <readline/history.h>
 #include <readline/readline.h>
 #endif
 
+#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
@@ -687,11 +689,10 @@ namespace bts { namespace cli {
                   auto summary = result.as<unordered_map<string, map<string, share_type>>>();
                   for( auto accts : summary )
                   {
-                      _out << accts.first << "\n";
+                      _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << balance.first << ": " << 
-                             _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                         _out << "    " << _client->get_chain()->to_pretty_asset(balance.second) << "\n";
                       }
                   }
               }
