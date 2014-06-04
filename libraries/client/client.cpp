@@ -605,16 +605,11 @@ namespace bts { namespace client {
       return _chain_db->get_block(block_number);
     }
 
-    void client::wallet_rescan_blockchain_state()
+    void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
     {
-      // _wallet->scan_state();
-    }
-
-    void client::wallet_import_bitcoin(const fc::path& filename,
-                                       const string& passphrase,
-                                       const string& account_name )
-    {
-      get_wallet()->import_bitcoin_wallet(filename,passphrase,account_name);
+      _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
@@ -634,11 +629,6 @@ namespace bts { namespace client {
     vector<asset_record> detail::client_impl::blockchain_list_registered_assets( const string& first, int32_t count) const
     {
       return _chain_db->get_assets(first, count);
-    }
-
-    vector<asset_record> client::blockchain_get_assets(const string& first_symbol, uint32_t count) const
-    {
-      return get_chain()->get_assets(first_symbol,count);
     }
 
     vector<account_record> detail::client_impl::blockchain_get_delegates(uint32_t first, uint32_t count) const

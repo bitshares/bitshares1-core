@@ -33,26 +33,6 @@ namespace bts { namespace rpc {
 
     bool login(const std::string& username, const std::string& password);
     virtual fc::rpc::json_connection_ptr get_json_connection() const override;
-
-         //-------------------------------------------------- JSON-RPC Method Implementations
-         //TODO? help()
-
-                     /**
-                     *  Submit and vote on proposals
-                     */
-
-                       void wallet_rescan_blockchain_state() override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-                       void wallet_import_bitcoin(const fc::path& filename,const std::string& passphrase, const std::string& account_name) override;
-
-     //std::vector<account_record> blockchain_list_registered_accounts(const std::string& first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-    std::vector<asset_record> blockchain_get_assets(const std::string& first_symbol, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-     std::vector<account_record> blockchain_get_delegates(uint32_t first, uint32_t count) const override { FC_ASSERT(false, "NOT IMPLEMENTED"); };
-
-                         void stop() override;
-
-                      void network_set_allowed_peers(const std::vector<bts::net::node_id_t>& allowed_peers);
-
-
   private:
     std::unique_ptr<detail::rpc_client_impl> my;
   };

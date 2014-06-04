@@ -30,12 +30,6 @@ namespace bts { namespace rpc {
             do_not_broadcast      = 1,
             do_not_sign           = 2
          };
-
-        public:
-         virtual              void wallet_rescan_blockchain_state() = 0;
-         virtual              void wallet_import_bitcoin(const fc::path& filename,const string& passphrase, const string& account_name ) = 0;
-
-         virtual vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const = 0;
     };
 
 } } // bts::rpc

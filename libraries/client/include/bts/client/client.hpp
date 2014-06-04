@@ -49,16 +49,6 @@ namespace bts { namespace client {
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
          bts::net::node_ptr         get_node()const;
 
-
-                       void wallet_rescan_blockchain_state()  override;
-
-                       void wallet_import_bitcoin(const fc::path& filename, 
-                                                  const string& passphrase, 
-                                                  const string& account_name )  override;
-
-
-     vector<asset_record> blockchain_get_assets(const string& first_symbol, uint32_t count) const  override;
-
          fc::path                            get_data_dir() const;
 
          // returns true if the client is connected to the network

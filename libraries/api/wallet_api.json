@@ -66,8 +66,8 @@
         "parameters" : [
            {
               "name" : "wif_key",
-              "description" : "A private key in bitcoin Wallet Import Format (WIF)",
-              "type" : "wif_private_key"
+              "type" : "wif_private_key",
+              "description" : "A private key in bitcoin Wallet Import Format (WIF)"
            },
            {
               "name" : "account_name",
@@ -84,6 +84,29 @@
         ],
         "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"],
         "aliases" : ["import_key"]
+      },
+      {
+        "method_name": "wallet_import_bitcoin",
+        "description": "Imports a bitcoin wallet",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wallet_filename",
+              "type" : "filename"
+              "description" : "the bitcoin wallet"
+           },
+           {
+              "name" : "passphrase",
+              "type" : "passphrase",
+              "description" : "the wallet's password"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the account name to receive the contents of the wallet"
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
       },
       {
         "method_name": "wallet_close",
