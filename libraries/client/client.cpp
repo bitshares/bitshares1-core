@@ -29,11 +29,15 @@ namespace bts { namespace client {
        {
           public:
             client_impl(bts::client::client* self) :
-              _self(self),
-              _rpc_server(std::make_shared<rpc_server>(self)),
-              _chain_db(std::make_shared<chain_database>())
-            {
-            }
+              _self(self)
+            { try {
+                try {
+                  _rpc_server = std::make_shared<rpc_server>(self);
+                } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
+                try {
+                  _chain_db = std::make_shared<chain_database>();
+                } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl()override {}
 

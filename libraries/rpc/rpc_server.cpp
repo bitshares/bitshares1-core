@@ -550,7 +550,9 @@ namespace bts { namespace rpc {
     my(new detail::rpc_server_impl(client))
   {
     my->_self = this;
-    my->register_common_api_method_metadata();
+    try {
+       my->register_common_api_method_metadata();
+    }FC_RETHROW_EXCEPTIONS( warn, "register common api" )
   }
 
   rpc_server::~rpc_server()

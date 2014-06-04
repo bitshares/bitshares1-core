@@ -1282,7 +1282,7 @@ namespace bts { namespace blockchain {
          for( auto delegate_id : delegate_ids )
          {
             fc::uint128 initial( int64_t(item.second/1000) );
-            initial *= fc::uint128(BTS_BLOCKCHAIN_INITIAL_SHARES);
+            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
             initial /= total_unscaled;
             initial /= int64_t(delegate_ids.size());
             balance_record initial_balance( item.first,
