@@ -184,7 +184,6 @@ namespace bts { namespace cli {
             {
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
-                  _out<<prompt;
                   if ( no_echo )
                   {
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
@@ -196,8 +195,6 @@ namespace bts { namespace cli {
                   else
                   {
                   #ifdef HAVE_READLINE 
-                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
-                     rl_already_prompted = 1; //we've already written out prompt
                      char* line_read = nullptr;
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
@@ -209,6 +206,7 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
+                     _out<<prompt;
                      std::getline( std::cin, line );
                   #endif
                     //DLNFIX _out.echo_console_input_to_log(line);
