@@ -1,5 +1,5 @@
 #include <bts/api/api_metadata.hpp>
-
+#include <bts/utilities/string_escape.hpp>
 #include <fc/optional.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/io/json.hpp>
@@ -65,7 +65,7 @@ std::string type_mapping::convert_variant_to_object_of_type(const std::string& v
 std::string type_mapping::create_value_of_type_from_variant(const fc::variant& value)
 {
   std::ostringstream default_value_as_variant;
-  default_value_as_variant << "fc::variant(" << fc::json::to_string(value.as_string()) << ")";
+  default_value_as_variant << "fc::json::from_string(" << bts::utilities::escape_string_for_c_source_code(fc::json::to_string(value)) << ")";
   return convert_variant_to_object_of_type(default_value_as_variant.str());
 }
 
@@ -739,7 +739,7 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   {
     server_cpp_file << "  // register method " << method.name << "\n";
     server_cpp_file << "  bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
-    server_cpp_file << "    /* description */ " << fc::json::to_string(method.brief_description) << ",\n";
+    server_cpp_file << "    /* description */ " << bts::utilities::escape_string_for_c_source_code(method.brief_description) << ",\n";
     server_cpp_file << "    /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
     server_cpp_file << "    /* params: */ {";
     bool first_parameter = true;
@@ -751,13 +751,13 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
         server_cpp_file << ",\n  ";
       server_cpp_file << "    {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
       if (parameter.default_value)
-        server_cpp_file << "optional_positional, fc::variant(" << fc::json::to_string(parameter.default_value->as_string()) << ")}";
+        server_cpp_file << "optional_positional, fc::variant(fc::json::from_string(" << bts::utilities::escape_string_for_c_source_code(fc::json::to_string(parameter.default_value)) << "))}";
       else
         server_cpp_file << "required_positional, fc::ovariant()}";
     }
     server_cpp_file <<  "},\n";
     server_cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
-    server_cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(generate_detailed_description_for_method(method))) << ",\n";
+    server_cpp_file << "    /* detailed description */ " << bts::utilities::escape_string_for_c_source_code(generate_detailed_description_for_method(method)) << ",\n";
     server_cpp_file << "    /* aliases */ {";
     if (!method.aliases.empty())
     {
