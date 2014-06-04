@@ -1089,8 +1089,8 @@ namespace bts { namespace net {
       {
          wlog( "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received));
          std::ostringstream rejection_message;
-         rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id << 
-                              " and you're on " << hello_message_received.chain_id;
+         rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id.str() << 
+                              " and you're on " << hello_message_received.chain_id.str();
          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version, 
                                                          originating_peer->get_socket().remote_endpoint(),
                                                          rejection_message.str());

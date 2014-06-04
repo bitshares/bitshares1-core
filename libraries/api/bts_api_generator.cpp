@@ -9,6 +9,7 @@
 #include <fc/log/logger.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string/join.hpp>
 #include <iostream>
 #include <fstream>
 #include <list>
@@ -26,15 +27,19 @@ private:
   std::string _type_name;
   std::string _to_variant_function;
   std::string _from_variant_function;
+  bool _obscure_in_log_files;
 public:
   type_mapping(const std::string& type_name) :
-    _type_name(type_name)
+    _type_name(type_name),
+    _obscure_in_log_files(false)
   {}
   std::string get_type_name() { return _type_name; }
   virtual std::string get_cpp_parameter_type() = 0;
   virtual std::string get_cpp_return_type() = 0;
   virtual void set_to_variant_function(const std::string& to_variant_function) { _to_variant_function = to_variant_function; }
   virtual void set_from_variant_function(const std::string& from_variant_function) { _from_variant_function = from_variant_function; }
+  virtual void set_obscure_in_log_files() { _obscure_in_log_files = true; }
+  virtual bool get_obscure_in_log_files() const { return _obscure_in_log_files; }
   virtual std::string convert_object_of_type_to_variant(const std::string& object_name);
   virtual std::string convert_variant_to_object_of_type(const std::string& variant_name);
   virtual std::string create_value_of_type_from_variant(const fc::variant& value);
@@ -168,8 +173,9 @@ public:
 
   void load_api_description(const fc::path& api_description_filename, bool load_types);
   void generate_interface_file(const fc::path& api_description_output_dir);
-  void generate_client_files(const fc::path& rpc_client_output_dir);
-  void generate_server_files(const fc::path& rpc_server_output_dir);
+  void generate_rpc_client_files(const fc::path& rpc_client_output_dir);
+  void generate_rpc_server_files(const fc::path& rpc_server_output_dir);
+  void generate_client_files(const fc::path& client_output_dir);
 private:
   void write_includes_to_stream(std::ostream& stream);
   void generate_prerequisite_checks_to_stream(const method_description& method, std::ostream& stream);
@@ -178,6 +184,7 @@ private:
   void generate_server_call_to_client_to_stream(const method_description& method, std::ostream& stream);
   std::string generate_detailed_description_for_method(const method_description& method);
   void write_generated_file_header(std::ostream& stream);
+  std::string create_logging_statement_for_method(const method_description& method);
 
   type_mapping_ptr lookup_type_mapping(const std::string& type_string);
   void initialize_type_map_with_fundamental_types();
@@ -258,6 +265,9 @@ void api_generator::load_type_map(const fc::variants& json_type_map)
       mapping->set_to_variant_function(json_type["to_variant_function"].as_string());
     if (json_type.contains("from_variant_function"))
       mapping->set_from_variant_function(json_type["from_variant_function"].as_string());
+    if (json_type.contains("obscure_in_log_files") &&
+        json_type["obscure_in_log_files"].as_bool())
+      mapping->set_obscure_in_log_files();
 
     FC_ASSERT(_type_map.find(json_type_name) == _type_map.end(), 
               "Error, type ${type_name} is already registered", ("type_name", json_type_name));
@@ -450,9 +460,9 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   interface_file << "} } // end namespace bts::api\n";
 }
 
-void api_generator::generate_client_files(const fc::path& rpc_client_output_dir)
+void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_dir)
 {
-  std::string client_classname = _api_classname + "_client";
+  std::string client_classname = _api_classname + "_rpc_client";
 
   fc::path client_header_path = rpc_client_output_dir / "include" / "bts" / "rpc_stubs";
   fc::create_directories(client_header_path); // creates dirs for both header and cpp
@@ -646,16 +656,16 @@ std::string api_generator::generate_detailed_description_for_method(const method
   return description.str();
 }
 
-void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
+void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_dir)
 {
-  std::string server_classname = _api_classname + "_server";
+  std::string server_classname = _api_classname + "_rpc_server";
 
   fc::path server_header_path = rpc_server_output_dir / "include" / "bts" / "rpc_stubs";
   fc::create_directories(server_header_path); // creates dirs for both header and cpp
   fc::path server_header_filename = server_header_path / (server_classname + ".hpp");
   fc::path server_cpp_filename = rpc_server_output_dir / (server_classname + ".cpp");
   std::ofstream header_file(server_header_filename.string());
-  std::ofstream cpp_file(server_cpp_filename.string());
+  std::ofstream server_cpp_file(server_cpp_filename.string());
 
   write_generated_file_header(header_file);
   header_file << "#pragma once\n";
@@ -684,71 +694,71 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
   header_file << "  };\n\n";
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
-  write_generated_file_header(cpp_file);
-  cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
-  cpp_file << "#include <bts/api/api_metadata.hpp>\n";
-  cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
-  cpp_file << "#include <boost/bind.hpp>\n";
-  write_includes_to_stream(cpp_file);
-  cpp_file << "\n";
-  cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
+  write_generated_file_header(server_cpp_file);
+  server_cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
+  server_cpp_file << "#include <bts/api/api_metadata.hpp>\n";
+  server_cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
+  server_cpp_file << "#include <boost/bind.hpp>\n";
+  write_includes_to_stream(server_cpp_file);
+  server_cpp_file << "\n";
+  server_cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 
   // Generate the method bodies
   for (const method_description& method : _methods)
   {
-    generate_positional_server_implementation_to_stream(method, server_classname, cpp_file);
-    generate_named_server_implementation_to_stream(method, server_classname, cpp_file);
+    generate_positional_server_implementation_to_stream(method, server_classname, server_cpp_file);
+    generate_named_server_implementation_to_stream(method, server_classname, server_cpp_file);
   }
 
   // Generate a function that registers all of the methods with the JSON-RPC dispatcher
-  cpp_file << "void " << server_classname << "::register_" << _api_classname << "_methods(const fc::rpc::json_connection_ptr& json_connection)\n";
-  cpp_file << "{\n";
-  cpp_file << "  fc::rpc::json_connection::method bound_positional_method;\n";
-  cpp_file << "  fc::rpc::json_connection::named_param_method bound_named_method;\n";
+  server_cpp_file << "void " << server_classname << "::register_" << _api_classname << "_methods(const fc::rpc::json_connection_ptr& json_connection)\n";
+  server_cpp_file << "{\n";
+  server_cpp_file << "  fc::rpc::json_connection::method bound_positional_method;\n";
+  server_cpp_file << "  fc::rpc::json_connection::named_param_method bound_named_method;\n";
   for (const method_description& method : _methods)
   {
-    cpp_file << "  // register method " << method.name << "\n";
-    cpp_file << "  bound_positional_method = boost::bind(&" << server_classname << "::" << method.name << "_positional, \n";
-    cpp_file << "                                        this, json_connection, _1);\n";
-    cpp_file << "  json_connection->add_method(\"" << method.name << "\", bound_positional_method);\n";
+    server_cpp_file << "  // register method " << method.name << "\n";
+    server_cpp_file << "  bound_positional_method = boost::bind(&" << server_classname << "::" << method.name << "_positional, \n";
+    server_cpp_file << "                                        this, json_connection, _1);\n";
+    server_cpp_file << "  json_connection->add_method(\"" << method.name << "\", bound_positional_method);\n";
     for (const std::string& alias : method.aliases)
-      cpp_file << "  json_connection->add_method(\"" << alias << "\", bound_positional_method);\n";
-    cpp_file << "  bound_named_method = boost::bind(&" << server_classname << "::" << method.name << "_named, \n";
-    cpp_file << "                                        this, json_connection, _1);\n";
-    cpp_file << "  json_connection->add_named_param_method(\"" << method.name << "\", bound_named_method);\n";
+      server_cpp_file << "  json_connection->add_method(\"" << alias << "\", bound_positional_method);\n";
+    server_cpp_file << "  bound_named_method = boost::bind(&" << server_classname << "::" << method.name << "_named, \n";
+    server_cpp_file << "                                        this, json_connection, _1);\n";
+    server_cpp_file << "  json_connection->add_named_param_method(\"" << method.name << "\", bound_named_method);\n";
     for (const std::string& alias : method.aliases)
-      cpp_file << "  json_connection->add_named_param_method(\"" << alias << "\", bound_named_method);\n";
-    cpp_file << "\n";
+      server_cpp_file << "  json_connection->add_named_param_method(\"" << alias << "\", bound_named_method);\n";
+    server_cpp_file << "\n";
   }
-  cpp_file << "}\n\n";
+  server_cpp_file << "}\n\n";
 
   // generate a function that registers all method metadata
-  cpp_file << "void " << server_classname << "::register_" << _api_classname << "_method_metadata()\n";
-  cpp_file << "{\n";
+  server_cpp_file << "void " << server_classname << "::register_" << _api_classname << "_method_metadata()\n";
+  server_cpp_file << "{\n";
   for (const method_description& method : _methods)
   {
-    cpp_file << "  // register method " << method.name << "\n";
-    cpp_file << "  bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
-    cpp_file << "    /* description */ " << fc::json::to_string(method.brief_description) << ",\n";
-    cpp_file << "    /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
-    cpp_file << "    /* params: */ {";
+    server_cpp_file << "  // register method " << method.name << "\n";
+    server_cpp_file << "  bts::api::method_data " << method.name << "_method_metadata{\"" << method.name << "\", nullptr,\n";
+    server_cpp_file << "    /* description */ " << fc::json::to_string(method.brief_description) << ",\n";
+    server_cpp_file << "    /* returns */ \"" << method.return_type->get_type_name() << "\",\n";
+    server_cpp_file << "    /* params: */ {";
     bool first_parameter = true;
     for (const parameter_description& parameter : method.parameters)
     {
       if (first_parameter)
         first_parameter = false;
       else
-        cpp_file << ",\n  ";
-      cpp_file << "    {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
+        server_cpp_file << ",\n  ";
+      server_cpp_file << "    {\"" << parameter.name << "\", \"" << parameter.type->get_type_name() <<  "\", bts::api::";
       if (parameter.default_value)
-        cpp_file << "optional_positional, fc::variant(" << fc::json::to_string(parameter.default_value->as_string()) << ")}";
+        server_cpp_file << "optional_positional, fc::variant(" << fc::json::to_string(parameter.default_value->as_string()) << ")}";
       else
-        cpp_file << "required_positional, fc::ovariant()}";
+        server_cpp_file << "required_positional, fc::ovariant()}";
     }
-    cpp_file <<  "},\n";
-    cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
-    cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(generate_detailed_description_for_method(method))) << ",\n";
-    cpp_file << "    /* aliases */ {";
+    server_cpp_file <<  "},\n";
+    server_cpp_file << "    /* prerequisites */ (bts::api::method_prerequisites)" << (int)method.prerequisites << ", \n";
+    server_cpp_file << "    /* detailed description */ " << fc::json::to_string(fc::variant(generate_detailed_description_for_method(method))) << ",\n";
+    server_cpp_file << "    /* aliases */ {";
     if (!method.aliases.empty())
     {
       bool first = true;
@@ -757,29 +767,103 @@ void api_generator::generate_server_files(const fc::path& rpc_server_output_dir)
         if (first)
           first = false;
         else
-          cpp_file << ", ";
-        cpp_file << "\"" << alias << "\"";
+          server_cpp_file << ", ";
+        server_cpp_file << "\"" << alias << "\"";
       }
     }
-    cpp_file << "}};\n";
+    server_cpp_file << "}};\n";
       
-    cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
+    server_cpp_file << "  store_method_metadata(" << method.name << "_method_metadata);\n\n";
   }
-  cpp_file << "}\n\n";
+  server_cpp_file << "}\n\n";
 
   // generate a function for directly invoking a method, probably a stop-gap until we finish migrating all methods to this code
-  cpp_file << "fc::variant " << server_classname << "::direct_invoke_positional_method(const std::string& method_name, const fc::variants& parameters)\n";
-  cpp_file << "{\n";
+  server_cpp_file << "fc::variant " << server_classname << "::direct_invoke_positional_method(const std::string& method_name, const fc::variants& parameters)\n";
+  server_cpp_file << "{\n";
   for (const method_description& method : _methods)
   {
-    cpp_file << "  if (method_name == \"" << method.name << "\")\n";
-    cpp_file << "    return " << method.name << "_positional(nullptr, parameters);\n";
+    server_cpp_file << "  if (method_name == \"" << method.name << "\")\n";
+    server_cpp_file << "    return " << method.name << "_positional(nullptr, parameters);\n";
   }
-  cpp_file << "  FC_ASSERT(false, \"shouldn't happen\");\n";
-  cpp_file << "}\n";
+  server_cpp_file << "  FC_ASSERT(false, \"shouldn't happen\");\n";
+  server_cpp_file << "}\n";
 
-  cpp_file << "\n";
-  cpp_file << "} } // end namespace bts::rpc_stubs\n";
+  server_cpp_file << "\n";
+  server_cpp_file << "} } // end namespace bts::rpc_stubs\n";
+}
+
+void api_generator::generate_client_files(const fc::path& client_output_dir)
+{
+  fc::path client_header_path = client_output_dir / "include" / "bts" / "rpc_stubs";
+  fc::create_directories(client_header_path); // creates dirs for both header and cpp
+
+  std::string interceptor_classname = _api_classname + "_client";
+  fc::path interceptor_header_filename = client_header_path / (interceptor_classname + ".hpp");
+  std::ofstream interceptor_header_file(interceptor_header_filename.string());
+  fc::path interceptor_cpp_filename = client_output_dir / (interceptor_classname + ".cpp");
+  std::ofstream interceptor_cpp_file(interceptor_cpp_filename.string());
+  
+  write_generated_file_header(interceptor_header_file);
+  interceptor_header_file << "#pragma once\n";
+  interceptor_header_file << "#include <bts/api/api_metadata.hpp>\n";
+  interceptor_header_file << "#include <bts/api/common_api.hpp>\n\n";
+
+  interceptor_header_file << "namespace bts { namespace rpc_stubs {\n";
+  interceptor_header_file << "  class " << interceptor_classname << " : public bts::api::common_api\n";
+  interceptor_header_file << "  {\n";
+  interceptor_header_file << "  protected:\n";
+  interceptor_header_file << "    virtual bts::api::common_api* get_impl() const = 0;\n\n";
+  interceptor_header_file << "  public:\n";
+
+  for (const method_description& method : _methods)
+    interceptor_header_file << "    " << generate_signature_for_method(method, "", true) << " override;\n";
+
+  interceptor_header_file << "  };\n\n";
+  interceptor_header_file << "} } // end namespace bts::rpc_stubs\n";
+
+  interceptor_cpp_file << "#include <bts/rpc_stubs/" << interceptor_classname << ".hpp>\n\n";
+  interceptor_cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
+
+  for (const method_description& method : _methods)
+  {
+    interceptor_cpp_file << generate_signature_for_method(method, interceptor_classname, false) << "\n";
+    interceptor_cpp_file << "{\n";
+    interceptor_cpp_file << "  " << create_logging_statement_for_method(method) << "\n";
+    interceptor_cpp_file << "  try\n";
+    interceptor_cpp_file << "  {\n";
+    interceptor_cpp_file << "    ";
+    if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+      interceptor_cpp_file << "return ";
+    std::list<std::string> args;
+    for (const parameter_description& param : method.parameters)
+      args.push_back(param.name);
+    interceptor_cpp_file << "get_impl()->" << method.name << "(" << boost::join(args, ", ") << ");\n";
+    interceptor_cpp_file << "  }\n";
+    interceptor_cpp_file << "  FC_RETHROW_EXCEPTIONS(warn, \"\")\n";
+    interceptor_cpp_file << "}\n\n";
+  }
+  interceptor_cpp_file << "} } // end namespace bts::rpc_stubs\n";
+}
+
+std::string api_generator::create_logging_statement_for_method(const method_description& method)
+{
+  std::ostringstream result;
+
+  std::list<std::string> args;
+  for (const parameter_description& param :method.parameters)
+  {
+    if (param.type->get_obscure_in_log_files())
+      args.push_back("*********");
+    else
+      args.push_back(std::string("${") + param.name + "}");
+  }
+  result << "ilog(\"received RPC call: " << method.name << "(" << boost::join(args, ", ") << ")\", ";
+  for (const parameter_description& param :method.parameters)
+    if (!param.type->get_obscure_in_log_files())
+      result << "(\"" << param.name << "\", " << param.name << ")";
+  result << ");";
+
+  return result.str();
 }
 
 void api_generator::initialize_type_map_with_fundamental_types()
@@ -874,8 +958,9 @@ int main(int argc, char*argv[])
 
     if (option_variables.count("rpc-stub-output-dir"))
     {
+      generator.generate_rpc_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
+      generator.generate_rpc_server_files(option_variables["rpc-stub-output-dir"].as<std::string>());
       generator.generate_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
-      generator.generate_server_files(option_variables["rpc-stub-output-dir"].as<std::string>());
     }
   }
   catch (const fc::exception& e)

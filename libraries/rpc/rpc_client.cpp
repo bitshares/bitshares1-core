@@ -10,13 +10,13 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/thread/future.hpp>
 
-#include <bts/rpc_stubs/common_api_client.hpp>
+#include <bts/rpc_stubs/common_api_rpc_client.hpp>
 
 namespace bts { namespace rpc { 
 
   namespace detail 
   {
-    class rpc_client_impl : public bts::rpc_stubs::common_api_client
+    class rpc_client_impl : public bts::rpc_stubs::common_api_rpc_client
     {
     public:
       fc::rpc::json_connection_ptr _json_connection;

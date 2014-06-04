@@ -19,13 +19,13 @@
 #include <limits>
 #include <sstream>
 
-#include <bts/rpc_stubs/common_api_server.hpp>
+#include <bts/rpc_stubs/common_api_rpc_server.hpp>
 
 namespace bts { namespace rpc {
 
   namespace detail
   {
-    class rpc_server_impl : public bts::rpc_stubs::common_api_server
+    class rpc_server_impl : public bts::rpc_stubs::common_api_rpc_server
     {
        public:
          rpc_server::config                _config;

@@ -9,7 +9,7 @@
 #include <bts/net/node.hpp>
 
 #include <bts/rpc/rpc_client_api.hpp>
-#include <bts/rpc_stubs/common_api_client.hpp>
+#include <bts/rpc_stubs/common_api_rpc_client.hpp>
 
 #include <fc/network/ip.hpp>
 #include <fc/filesystem.hpp>
@@ -23,7 +23,7 @@ namespace bts { namespace rpc {
   *  @brief provides a C++ interface to a remote BTS client over JSON-RPC
   */
   class rpc_client : public rpc_client_api,
-                     public bts::rpc_stubs::common_api_client
+                     public bts::rpc_stubs::common_api_rpc_client
   {
   public:
     rpc_client();
