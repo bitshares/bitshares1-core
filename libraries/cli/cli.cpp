@@ -758,7 +758,7 @@ namespace bts { namespace cli {
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
                 _out << std::setw( 25 ) << std::left << "NAME";
-                _out << std::setw( 15 ) << std::left << "BALANCE";
+                _out << std::setw( 25 ) << std::left << "BALANCE";
                 _out << std::setw( 64 ) << "KEY";
                 _out << std::setw( 22 ) << "REGISTERED";
                 _out << std::setw( 15 ) << "TRUST LEVEL";
@@ -782,7 +782,7 @@ namespace bts { namespace cli {
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
-                    _out << std::setw(15) << std::string(balance[0]);// << " " << balance[0].second;
+                    _out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
 
                     _out << std::setw(64) << string( acct.active_key() );
 

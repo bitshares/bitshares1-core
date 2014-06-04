@@ -367,7 +367,7 @@ namespace bts { namespace client {
       get_wallet()->open(wallet_name);
     }
 
-    void client::wallet_create(const string& wallet_name, const std::string& password)
+    void client::wallet_create(const string& wallet_name, const string& password)
     {
       get_wallet()->create(wallet_name,password);
     }
@@ -433,11 +433,11 @@ namespace bts { namespace client {
     }
 
 
-    bts::blockchain::signed_transaction client::wallet_asset_create(const std::string& symbol, 
-                                                                    const std::string& asset_name, 
-                                                                    const std::string& issuer_name, 
-                                                                    const std::string& description /* = fc::variant("").as<std::string>() */, 
-                                                                    const fc::variant_object& data /* = fc::variant("").as<fc::variant_object>() */, 
+    bts::blockchain::signed_transaction client::wallet_asset_create(const string& symbol, 
+                                                                    const string& asset_name, 
+                                                                    const string& issuer_name, 
+                                                                    const string& description /* = fc::variant("").as<string>() */, 
+                                                                    const variant& data /* = fc::variant("").as<fc::variant_object>() */, 
                                                                     int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */)
     {
       rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
@@ -579,7 +579,7 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
     }
 
-    map<std::string, bts::wallet::delegate_trust_status> client::wallet_list_delegate_trust_status() const
+    map<string, bts::wallet::delegate_trust_status> client::wallet_list_delegate_trust_status() const
     {
       return get_wallet()->list_delegate_trust_status();
     }
@@ -632,7 +632,7 @@ namespace bts { namespace client {
       return get_chain()->get_accounts(first, count);
     }
 
-    vector<asset_record> client::blockchain_get_assets(const std::string& first_symbol, uint32_t count) const
+    vector<asset_record> client::blockchain_get_assets(const string& first_symbol, uint32_t count) const
     {
       return get_chain()->get_assets(first_symbol,count);
     }
@@ -778,7 +778,7 @@ namespace bts { namespace client {
 
 
     balances client::wallet_get_balance( const string& symbol, 
-                                         const std::string& account_name ) const
+                                         const string& account_name ) const
     { try {
         vector<asset> all_balances = get_wallet()->get_balance( symbol ,account_name);
        
@@ -819,7 +819,7 @@ namespace bts { namespace client {
       return info;
     }
 
-    std::string client::help(const std::string& command_name) const
+    string client::help(const string& command_name) const
     {
       return get_rpc_server()->help(command_name);
     }
@@ -901,7 +901,7 @@ namespace bts { namespace client {
       info["wallet_open"]                          = get_wallet()->is_open();
 
       info["wallet_unlocked_until"]                = get_wallet()->is_open() && get_wallet()->is_unlocked()
-                                                  ? std::string( get_wallet()->unlocked_until() )
+                                                  ? string( get_wallet()->unlocked_until() )
                                                   : "";
       info["wallet_version"]                       = BTS_WALLET_VERSION;
 
@@ -952,7 +952,7 @@ namespace bts { namespace client {
       return get_node()->network_get_info();
     }
 
-    fc::variant_object client::validate_address(const std::string& address) const
+    fc::variant_object client::validate_address(const string& address) const
     {
       fc::mutable_variant_object result;
       try

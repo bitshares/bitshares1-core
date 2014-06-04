@@ -155,6 +155,10 @@ BOOST_AUTO_TEST_CASE( client_tests )
       wlog("your");
       your_cli->execute_command_line( "wallet_list_contact_accounts" );
       your_cli->execute_command_line( "wallet_list_receive_accounts" );
+
+      your_cli->execute_command_line( R"(wallet_asset_create USD BitUSD youraccount "description" )" );
+      produce_block( my_client );
+      your_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 

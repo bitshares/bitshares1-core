@@ -100,7 +100,7 @@
  *  blocks produced in a day. Only serious assets should register.  When transaction fees are low this fee should be low, as transaction fees rise the
  *  cost of issuing a new asset grows because the demand for transactions on this chain is already pretty high.
  */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE       (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE       BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE
 
 
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE                (63)
