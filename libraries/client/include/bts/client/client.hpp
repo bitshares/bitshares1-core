@@ -27,8 +27,7 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc::rpc_client_api,
-                   public bts::rpc_stubs::common_api_client
+    class client : public bts::rpc_stubs::common_api_client
     {
        public:
                   client();
@@ -89,4 +88,4 @@ namespace bts { namespace client {
 } } // bts::client
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
-FC_REFLECT_ENUM( bts::client::client::generate_transaction_flag, (do_not_broadcast)(do_not_sign)(sign_and_broadcast) )
+

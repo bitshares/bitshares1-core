@@ -444,11 +444,11 @@ namespace bts { namespace client {
                                                                     const variant& data /* = fc::variant("").as<fc::variant_object>() */, 
                                                                     int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */)
     {
-      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
-      bool sign = flag != client::do_not_sign;
+      generate_transaction_flag flag = sign_and_broadcast;
+      bool sign = flag != do_not_sign;
       auto create_asset_trx = 
         _wallet->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
-      if (flag == client::sign_and_broadcast)
+      if (flag == sign_and_broadcast)
           network_broadcast_transaction(create_asset_trx);
       return create_asset_trx;
     }
@@ -458,10 +458,10 @@ namespace bts { namespace client {
                                                    const string& symbol,
                                                    const string& to_account_name)
     {
-      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
-      bool sign = (flag != client::do_not_sign);
+      generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
+      bool sign = (flag != bts::rpc::do_not_sign);
       auto issue_asset_trx = _wallet->issue_asset(amount,symbol,to_account_name, sign);
-      if (flag == client::sign_and_broadcast)
+      if (flag == bts::rpc::sign_and_broadcast)
           network_broadcast_transaction(issue_asset_trx);
       return issue_asset_trx;
     }
@@ -475,10 +475,10 @@ namespace bts { namespace client {
                                                        const fc::variant& json_data)
     {
       try {
-        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
-        bool sign = (flag != client::do_not_sign);
+        generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
+        bool sign = (flag != bts::rpc::do_not_sign);
         auto trx = _wallet->create_proposal(delegate_account_name, subject, body, proposal_type, json_data, sign);
-        if (flag == client::sign_and_broadcast)
+        if (flag == bts::rpc::sign_and_broadcast)
         {
             network_broadcast_transaction(trx);
         }
@@ -491,10 +491,10 @@ namespace bts { namespace client {
                                                     uint8_t vote)
     {
       try {
-        rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
-        bool sign = (flag != client::do_not_sign);
+        generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
+        bool sign = (flag != bts::rpc::do_not_sign);
         auto trx = _wallet->vote_proposal(name, proposal_id, vote, sign);
-        if (flag == client::sign_and_broadcast)
+        if (flag == bts::rpc::sign_and_broadcast)
         {
             network_broadcast_transaction(trx);
         }

@@ -20,16 +20,12 @@ namespace bts { namespace rpc {
 
     typedef vector<std::pair<share_type,string> > balances;
 
-
-    class rpc_client_api
+    enum generate_transaction_flag
     {
-        public:
-         enum generate_transaction_flag
-         {
-            sign_and_broadcast    = 0,
-            do_not_broadcast      = 1,
-            do_not_sign           = 2
-         };
+      sign_and_broadcast    = 0,
+      do_not_broadcast      = 1,
+      do_not_sign           = 2
     };
 
 } } // bts::rpc
+FC_REFLECT_ENUM( bts::rpc::generate_transaction_flag, (do_not_broadcast)(do_not_sign)(sign_and_broadcast) )
