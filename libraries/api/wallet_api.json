@@ -216,7 +216,7 @@
               "default_value" : null
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
         "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {

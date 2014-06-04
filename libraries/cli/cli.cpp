@@ -78,9 +78,9 @@ namespace bts { namespace cli {
               {
                 _out << "Command aborted.\n";
               }
-              catch( const fc::exception& )
+              catch( const fc::exception& e)
               {
-                //_out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                _out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
                 auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
                 _out << usage << "\n";
@@ -329,7 +329,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::eof_exception& )
                 {
-                   _out << "ignoring eof  line: "<<__LINE__<<"\n";
+                   // _out << "ignoring eof  line: "<<__LINE__<<"\n";
                    // expected and ignored
                 }
                 string address_string = address_stream.str();
@@ -541,8 +541,8 @@ namespace bts { namespace cli {
                 }
                 catch( const rpc_wallet_unlock_needed_exception& )
                 {
-                    fc::variants arguments { 60 * 5 }; // default to five minute timeout
-                    execute_interactive_command( "wallet_unlock", arguments );
+                    fc::istream_ptr unlock_time_arguments = std::make_shared<fc::stringstream>("300"); // default to five minute timeout
+                    parse_and_execute_interactive_command( "wallet_unlock", unlock_time_arguments );
                 }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }

@@ -962,7 +962,7 @@ namespace bts { namespace client {
       fc::mutable_variant_object result;
       try
       {
-        bts::blockchain::address::is_valid(address);
+        bts::blockchain::public_key_type test_key(address);
         result["isvalid"] = true;
       }
       catch (const fc::exception&)
