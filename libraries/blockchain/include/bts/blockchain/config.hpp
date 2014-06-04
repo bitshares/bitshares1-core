@@ -38,7 +38,7 @@
 /**
  * Initial shares read from the genesis block are scaled to this number.
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*1000ll*1000*1000ll)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*UINT64_C(1000)*UINT64_C(1000)*UINT64_C(1000))
 #define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**
