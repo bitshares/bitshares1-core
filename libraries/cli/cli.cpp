@@ -62,7 +62,7 @@ namespace bts { namespace cli {
 
             void parse_and_execute_interactive_command(string command, 
                                                        fc::istream_ptr argument_stream )
-            {
+            { 
               fc::buffered_istream buffered_argument_stream(argument_stream);
 
               bool command_is_valid = false;
@@ -70,6 +70,7 @@ namespace bts { namespace cli {
               try
               {
                 arguments = _self->parse_interactive_command(buffered_argument_stream, command);
+               ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
               catch( const fc::key_not_found_exception& )
@@ -108,7 +109,8 @@ namespace bts { namespace cli {
             } //parse_and_execute_interactive_command
 
             bool execute_command_line(const string& line)
-            {
+            { try {
+              ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
               if (!trimmed_line_to_parse.empty())
               {
@@ -139,7 +141,7 @@ namespace bts { namespace cli {
                 }
               } //end if command line not empty
               return true;
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",line) ) }
 
             void process_commands()
             { 

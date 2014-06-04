@@ -515,7 +515,7 @@
                },
                {
                   "name" : "data",
-                  "type" : "json_variant",
+                  "type" : "variant",
                   "description" : "arbitrary data attached to the asset",
                   "default_value" : null
                },

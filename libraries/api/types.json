@@ -109,6 +109,10 @@
         "default_example" : "alice"
       },
       {
+        "type_name" : "variant",
+        "cpp_return_type" : "fc::variant"
+      },
+      {
         "type_name" : "wallet_name_array",
         "container_type" : "array",
         "contained_type" : "wallet_name"
