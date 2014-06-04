@@ -78,8 +78,8 @@ namespace bts { namespace blockchain {
          osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
-         vector<account_record > get_accounts( const string& first, uint32_t count )const;
-         vector<asset_record> get_assets( const string& first_symbol, uint32_t count )const;
+         vector<account_record >       get_accounts( const string& first, uint32_t count )const;
+         vector<asset_record>          get_assets( const string& first_symbol, uint32_t count )const;
 
          /** should perform any chain reorganization required
           *

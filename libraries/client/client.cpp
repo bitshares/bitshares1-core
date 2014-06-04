@@ -632,6 +632,11 @@ namespace bts { namespace client {
       return get_chain()->get_accounts(first, count);
     }
 
+    vector<asset_record> client::blockchain_list_registered_assets( const string& first, int32_t count) const
+    {
+      return get_chain()->get_assets(first, count);
+    }
+
     vector<asset_record> client::blockchain_get_assets(const string& first_symbol, uint32_t count) const
     {
       return get_chain()->get_assets(first_symbol,count);

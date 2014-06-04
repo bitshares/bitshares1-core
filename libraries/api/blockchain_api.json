@@ -50,6 +50,27 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "blockchain_list_registered_assets",
+        "description": "Returns registered assets starting with a given name upto a the limit provided",
+        "return_type": "asset_record_array",
+        "parameters" : [
+            {
+              "name" : "first_symbol", 
+              "type" : "asset_symbol", 
+              "description" : "the prefix of the first asset symbol name to include",
+              "default_value" : ""
+            },
+            {
+              "name" : "limit", 
+              "type" : "int32_t", 
+              "description" : "the maximum number of items to list",
+              "default_value" : -1
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "blockchain_get_pending_transactions",
         "description": "Return a list of transactions that are not yet in a block.",
         "return_type": "signed_transaction_array",
