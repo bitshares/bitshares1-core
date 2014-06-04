@@ -2,6 +2,7 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -714,6 +715,77 @@ namespace bts { namespace cli {
                   auto wallets = result.as<vector<string>>();
                   for (auto wallet : wallets)
                       _out << wallet << "\n";
+              }
+              else if (method_name == "wallet_list_unspent_balances" )
+              {
+                  auto balance_recs = result.as<vector<wallet_balance_record>>();
+                  _out << std::right;
+                  _out << std::setw(18) << "BALANCE";
+                  _out << std::right << std::setw(35) << "OWNER";
+                  _out << std::right << std::setw(25) << "VOTE";
+                  _out << "\n";
+                  _out << "-------------------------------------------------------------";
+                  _out << "-------------------------------------------------------------\n";
+                  for( auto balance_rec : balance_recs )
+                  {
+                      _out << std::setw(18) << balance_rec.balance;
+                      switch (withdraw_condition_types(balance_rec.condition.type))
+                      {
+                          case (withdraw_signature_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_with_signature>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 31)
+                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(35) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          case (withdraw_by_account_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_by_account>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 31)
+                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(35) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          default:
+                          {
+                              FC_ASSERT(!"unimplemented condition type");
+                          }
+                      } // switch cond type
+                      _out << "\n";
+                  } // for balance in balances
               }
               else
               {

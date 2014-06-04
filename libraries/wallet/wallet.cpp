@@ -1965,6 +1965,12 @@ namespace bts { namespace wallet {
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
 
+
+   optional<wallet_account_record>         wallet::get_account_record( const address& addr)const
+   {
+      return my->_wallet_db.lookup_account( addr );
+   }
+
    wallet::account_balance_summary_type    wallet::get_account_balances()const
    { try {
       account_balance_summary_type result;
