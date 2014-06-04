@@ -18,11 +18,13 @@
 #include <iostream>
 #include <sstream>
 
+
 #ifdef HAVE_READLINE
 #include <readline/history.h>
 #include <readline/readline.h>
 #endif
 
+#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
@@ -78,9 +80,9 @@ namespace bts { namespace cli {
               {
                 _out << "Command aborted.\n";
               }
-              catch( const fc::exception& )
+              catch( const fc::exception& e)
               {
-                //_out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                _out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
                 auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
                 _out << usage << "\n";
@@ -142,12 +144,12 @@ namespace bts { namespace cli {
             void process_commands()
             { 
               try {
-                 string line = _self->get_line(get_prompt());
+                 string line = get_line(get_prompt());
                  while (std::cin.good())
                  {
                    if (!execute_command_line(line))
                      break;
-                   line = _self->get_line( get_prompt() );
+                   line = get_line( get_prompt() );
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
@@ -161,9 +163,14 @@ namespace bts { namespace cli {
               _cin_complete.cancel();
             } 
 
-            string get_line( const string& prompt, bool no_echo )
+            string get_line( const string& prompt = ">>> ", bool no_echo = false)
             {
-                  FC_ASSERT( _self->is_interactive() );
+              return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
+            }
+
+            string get_line_internal( const string& prompt, bool no_echo )
+            {
+                  //FC_ASSERT( _self->is_interactive() );
                   string line;
                   if ( no_echo )
                   {
@@ -191,6 +198,7 @@ namespace bts { namespace cli {
                      _out<<prompt;
                      std::getline( std::cin, line );
                   #endif
+                    //DLNFIX _out.echo_console_input_to_log(line);
                   }
 
                   boost::trim(line);
@@ -232,13 +240,13 @@ namespace bts { namespace cli {
                     //if we're prompting for a password, don't echo it to console
                     bool passphrase_type = (this_parameter.type == "passphrase") || (this_parameter.type == "new_passphrase");
                     bool no_echo = passphrase_type;
-                    string prompt_answer = _self->get_line(prompt, no_echo );
+                    string prompt_answer = get_line(prompt, no_echo );
                     if (passphrase_type)
                     {
                       //if user is specifying a new password, ask him twice to be sure he typed it right
                       if (this_parameter.type == "new_passphrase")
                       {
-                        std::string prompt_answer2 = _self->get_line("new_passphrase (verify): ", no_echo );
+                        string prompt_answer2 = get_line("new_passphrase (verify): ", no_echo );
                         if (prompt_answer != prompt_answer2)
                         {
                           _out << "Passphrases do not match. ";
@@ -329,7 +337,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::eof_exception& )
                 {
-                   _out << "ignoring eof  line: "<<__LINE__<<"\n";
+                   // _out << "ignoring eof  line: "<<__LINE__<<"\n";
                    // expected and ignored
                 }
                 string address_string = address_stream.str();
@@ -360,7 +368,7 @@ namespace bts { namespace cli {
               }
             }
 
-            fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments)
+            fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
               if (command == "wallet_create")
               {
@@ -541,8 +549,8 @@ namespace bts { namespace cli {
                 }
                 catch( const rpc_wallet_unlock_needed_exception& )
                 {
-                    fc::variants arguments { 60 * 5 }; // default to five minute timeout
-                    execute_interactive_command( "wallet_unlock", arguments );
+                    fc::istream_ptr unlock_time_arguments = std::make_shared<fc::stringstream>("300"); // default to five minute timeout
+                    parse_and_execute_interactive_command( "wallet_unlock", unlock_time_arguments );
                 }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
@@ -559,12 +567,12 @@ namespace bts { namespace cli {
 
                 while( true )
                 {
-                    passphrase = _self->get_line( query_string + ": ", true );
+                    passphrase = get_line( query_string + ": ", true );
                     if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "password entry aborted");
 
                     if( verify )
                     {
-                        if( passphrase != _self->get_line( query_string + " (verify): ", true ) )
+                        if( passphrase != get_line( query_string + " (verify): ", true ) )
                         {
                             _out << "Passphrases do not match, try again\n";
                             continue;
@@ -614,7 +622,7 @@ namespace bts { namespace cli {
               _out << "(c) Create a new wallet\n";
               _out << "(q) Abort command\n";
 
-              string choice = _self->get_line("Choose [o/c/q]: ");
+              string choice = get_line("Choose [o/c/q]: ");
 
               if (choice == "c")
               {
@@ -675,6 +683,18 @@ namespace bts { namespace cli {
               {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
+              }
+              else if (method_name == "wallet_account_balance" )
+              {
+                  auto summary = result.as<unordered_map<string, map<string, share_type>>>();
+                  for( auto accts : summary )
+                  {
+                      _out << accts.first << ":\n";
+                      for( auto balance : accts.second )
+                      {
+                         _out << "    " << _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                      }
+                  }
               }
               else if (method_name == "wallet_list")
               {
@@ -758,7 +778,7 @@ namespace bts { namespace cli {
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
                 _out << std::setw( 25 ) << std::left << "NAME";
-                _out << std::setw( 15 ) << std::left << "BALANCE";
+                _out << std::setw( 25 ) << std::left << "BALANCE";
                 _out << std::setw( 64 ) << "KEY";
                 _out << std::setw( 22 ) << "REGISTERED";
                 _out << std::setw( 15 ) << "TRUST LEVEL";
@@ -782,7 +802,7 @@ namespace bts { namespace cli {
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
-                    _out << std::setw(15) << std::string(balance[0]);// << " " << balance[0].second;
+                    _out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
 
                     _out << std::setw(64) << string( acct.active_key() );
 
@@ -862,13 +882,13 @@ namespace bts { namespace cli {
                 _out << std::setw( 20 ) << "TIMESTAMP";
                 _out << std::setw( 20 ) << "FROM";
                 _out << std::setw( 20 ) << "TO";
-                _out << std::setw( 30 ) << "MEMO";
+                _out << std::setw( 25 ) << "MEMO";
                 _out << std::setw( 20 ) << std::right << "AMOUNT";
-                _out << std::setw( 14 ) << "FEE";
+                _out << std::setw( 20 ) << "FEE";
                 _out << std::setw( 14 ) << "VOTE";
-                _out << std::setw( 40 ) << "ID";
-                _out << "\n----------------------------------------------------------------------------------------------";
-                _out <<   "----------------------------------------------------------------------------------------------\n";
+                _out << std::setw( 42 ) << "ID";
+                _out << "\n---------------------------------------------------------------------------------------------------";
+                _out <<   "--------------------------------------------------------------------------------------------------\n";
                 _out << std::right; 
                 
                 int count = 1;
@@ -902,10 +922,13 @@ namespace bts { namespace cli {
                     if (tx.to_account.size() > 16)
                         _out << std::setw( 20 ) << (tx.to_account.substr(0,16) + "...");
                     else
-                        _out << std::setw( 20 ) <<tx.to_account;
+                        _out << std::setw( 20 ) << tx.to_account;
 
                     // Print "memo" on transaction
-                    _out << std::setw( 30 ) << tx.memo_message;
+                    if (tx.memo_message.size() > 21)
+                        _out << std::setw( 25 ) << (tx.memo_message.substr(0, 21) + "...");
+                    else
+                        _out << std::setw( 25 ) << tx.memo_message;
 
                     /* Print amount */
                     {
@@ -920,7 +943,7 @@ namespace bts { namespace cli {
                         _out << std::right;
                         std::stringstream ss;
                         ss << _client->get_chain()->to_pretty_asset(tx.fees);
-                        _out << std::setw( 14 ) << ss.str();
+                        _out << std::setw( 20 ) << ss.str();
                     }
 
                     _out << std::right;
@@ -950,7 +973,7 @@ namespace bts { namespace cli {
 
                     _out << std::right;
                     /* Print transaction ID */
-                    _out << std::setw( 40 ) << string( tx.trx_id );
+                    _out << std::setw( 42 ) << string( tx.trx_id );
 
                     _out << std::right << "\n";
                 }
@@ -1097,14 +1120,13 @@ namespace bts { namespace cli {
   cli::cli( const client_ptr& client, std::ostream& output_stream)
   :my( new detail::cli_impl(client, output_stream) )
   {
-    my->_self        = this;
-//    my->_main_thread = &fc::thread::current();
+    my->_self = this;
+  }
 
-    if( is_interactive() )
-    {
-        ilog( "starting process commands" );
-        my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
-    }
+  void cli::process_commands()
+  {
+    ilog( "starting to process interactive commands" );
+    my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
   }
 
   cli::~cli()
@@ -1119,13 +1141,9 @@ namespace bts { namespace cli {
     }
   }
 
-  bool cli::is_interactive()const
-  {
-     return ( &my->_out == &std::cout );
-  }
   void cli::wait()
   {
-     if( is_interactive() )
+     if( my->_cin_complete.valid() )
      {
         my->_cin_complete.cancel();
         if( my->_cin_complete.ready() )
@@ -1142,11 +1160,6 @@ namespace bts { namespace cli {
   bool cli::execute_command_line(const string& line)
   {
     return my->execute_command_line(line);
-  }
-
-  string cli::get_line( const string& prompt, bool no_echo )
-  {
-    return my->_cin_thread.async( [=](){ return my->get_line( prompt, no_echo ); } ).wait();
   }
 
   fc::variant cli::parse_argument_of_known_type(fc::buffered_istream& argument_stream,

@@ -15,8 +15,12 @@
 #include <fc/git_revision.hpp>
 #include <fc/io/json.hpp>
 
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
 #include <iostream>
 #include <iomanip>
+
 
 struct config
 {
@@ -235,8 +239,19 @@ int main( int argc, char** argv )
       }
       else 
       {
-         auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
-         cli->wait();
+        //tee cli output to the console and a log file
+        typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
+        typedef boost::iostreams::stream<TeeDevice> TeeStream;
+        std::ofstream console_log("console.log");
+        TeeDevice my_tee(std::cout, console_log); 
+        TeeStream cout_with_log(my_tee);
+        //force flushing to console and log file whenever cin input is required
+        std::cin.tie( &cout_with_log );
+
+//        auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
+        auto cli = std::make_shared<bts::cli::cli>( client, cout_with_log );
+        cli->process_commands();
+        cli->wait();
       } 
    }
    catch ( const fc::exception& e )

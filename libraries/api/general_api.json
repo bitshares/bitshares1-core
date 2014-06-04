@@ -60,8 +60,8 @@
           [
             { 
               "name" : "address", 
-              "type" : "address", 
-              "description" : "the address to validate"
+              "type" : "std::string", 
+              "description" : "the address or public key to validate"
             }
           ],
         "is_const"   : true,

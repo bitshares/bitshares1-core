@@ -61,6 +61,7 @@ namespace bts { namespace wallet {
 
              bool scan_register_account( const register_account_operation& op );
              bool scan_update_account( const update_account_operation& op );
+             bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
 
              bool cache_balance( const balance_id_type& balance_id );
 
@@ -150,9 +151,9 @@ namespace bts { namespace wallet {
               }
             }
          }
-         FC_ASSERT( !"Insufficient Funds", "Requested ${r} but only ${a} available",
-                    ("r", _blockchain->to_pretty_asset( asset(amount,asset_id) ) )
-                    ("a", _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) ) )
+         FC_ASSERT( !"Insufficient Funds", "Requested ${required} but only ${available} available",
+                    ("required", _blockchain->to_pretty_asset( asset(amount,asset_id) ) )
+                    ("available", _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) ) )
                   );
       }
 
@@ -214,6 +215,9 @@ namespace bts { namespace wallet {
                      break;
                   case update_account_op_type:
                      cache_trx |= scan_update_account( op.as<update_account_operation>() );
+                     break;
+                   case create_asset_op_type:
+                     cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
                      break;
                }
             }
@@ -287,6 +291,21 @@ namespace bts { namespace wallet {
 
           return false;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
+
+      bool wallet_impl::scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op  )
+      {
+         wlog( "${op}", ("op",op) );
+         auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
+         FC_ASSERT( oissuer.valid() );
+         auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
+         if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+         {
+            trx_rec.to_account = oissuer->owner_key;
+            trx_rec.from_account = oissuer->owner_key;
+            trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+         }
+         return true;
+      }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -1121,7 +1140,7 @@ namespace bts { namespace wallet {
                                              const string& issuer_account_name,
                                              share_type max_share_supply, 
                                              const bool sign  )
-   {
+   { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( issuer_account_name ) );
@@ -1139,10 +1158,13 @@ namespace bts { namespace wallet {
 
       auto size_fee = fc::raw::pack_size( data );
       required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += my->_blockchain->get_asset_registration_fee();
 
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
+
+      required_signatures.insert( address( from_account_address ) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -1157,7 +1179,10 @@ namespace bts { namespace wallet {
          sign_transaction( trx, required_signatures );
 
       return trx;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
+                                      ("name", asset_name )
+                                      ("description", description)
+                                      ( "issuer_account", issuer_account_name) ) }
 
    signed_transaction  wallet::issue_asset( share_type amount, 
                                          const string& symbol,                                               

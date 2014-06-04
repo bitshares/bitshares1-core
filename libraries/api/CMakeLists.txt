@@ -2,6 +2,11 @@ include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 
 file(GLOB HEADERS "include/bts/api/*.hpp")
 
+if( UNIX AND NOT APPLE )
+  set(rt_library rt )
+endif()
+
+
 add_executable( bts_api_generator 
                 bts_api_generator.cpp )
 target_include_directories( bts_api_generator
@@ -12,7 +17,7 @@ target_include_directories( bts_api_generator
                                     "${CMAKE_SOURCE_DIR}/libraries/wallet/include"
                                     "${CMAKE_SOURCE_DIR}/libraries/net/include"
                                     "${CMAKE_SOURCE_DIR}/libraries/client/include" )
-target_link_libraries( bts_api_generator fc bts_utilities leveldb )
+target_link_libraries( bts_api_generator fc bts_utilities leveldb ${rt_library} )
 
 
 set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"

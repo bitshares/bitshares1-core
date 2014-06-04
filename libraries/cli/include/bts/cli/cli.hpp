@@ -24,12 +24,10 @@ namespace bts { namespace cli {
           cli( const client_ptr& client, std::ostream& output_stream);
           virtual ~cli();
 
+          void process_commands();
+
           //Parse and execute a command line. Returns false if line is a quit command.
           bool execute_command_line(const std::string& line);
-
-          std::string get_line( const std::string& prompt = ">>> ", bool no_echo = false );
-
-          bool is_interactive()const;
           void confirm_and_broadcast(signed_transaction& tx);
           void wait();
           void quit();

@@ -98,6 +98,8 @@ namespace bts { namespace blockchain {
 
             void                       initialize_genesis(fc::path genesis_file);
 
+            void                       sanity_check()const;
+
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       clear_pending(  const full_block& blk );
             void                       switch_to_fork( const block_id_type& block_id );
@@ -579,6 +581,8 @@ namespace bts { namespace blockchain {
             clear_pending( block_data );
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
+
+            self->sanity_check();
          }
          catch ( const fc::exception& e )
          {
@@ -1508,5 +1512,18 @@ namespace bts { namespace blockchain {
       return asset_rec->symbol;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
 
+   void chain_database::sanity_check()const
+   { try {
+      asset total;
+      auto itr = my->_balance_db.begin();
+      while( itr.valid() )
+      {
+         auto ind = itr.value().get_balance();
+         FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
+         total += ind;
+         ++itr;
+      }
+      //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 } } // namespace bts::blockchain

@@ -45,6 +45,7 @@ namespace bts { namespace blockchain {
          void close();
 
          void set_observer( chain_observer* observer );
+         void sanity_check()const;
 
          transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx );
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
@@ -78,8 +79,8 @@ namespace bts { namespace blockchain {
          osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
-         vector<account_record > get_accounts( const string& first, uint32_t count )const;
-         vector<asset_record> get_assets( const string& first_symbol, uint32_t count )const;
+         vector<account_record >       get_accounts( const string& first, uint32_t count )const;
+         vector<asset_record>          get_assets( const string& first_symbol, uint32_t count )const;
 
          /** should perform any chain reorganization required
           *
