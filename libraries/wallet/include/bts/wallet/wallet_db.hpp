@@ -76,6 +76,7 @@ namespace bts { namespace wallet {
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;
+         owallet_account_record lookup_account( account_id_type aid )const;
 
          oprivate_key           lookup_private_key( const address& address, 
                                                     const fc::sha512& password );

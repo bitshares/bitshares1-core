@@ -179,6 +179,7 @@ namespace bts { namespace wallet {
          signed_transaction       issue_asset( share_type amount, 
                                                const string& symbol,                                               
                                                const string& to_account_name,
+                                               const string& memo_message,
                                                const bool sign = true );
 
          owallet_account_record    get_account( const string& account_name );

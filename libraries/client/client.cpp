@@ -456,12 +456,14 @@ namespace bts { namespace client {
 
     signed_transaction  detail::client_impl::wallet_asset_issue(const share_type& amount,
                                                    const string& symbol,
-                                                   const string& to_account_name)
+                                                   const string& to_account_name,
+                                                   const string& memo_message
+                                                   )
     {
-      generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
-      bool sign = (flag != bts::rpc::do_not_sign);
-      auto issue_asset_trx = _wallet->issue_asset(amount,symbol,to_account_name, sign);
-      if (flag == bts::rpc::sign_and_broadcast)
+      rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
+      bool sign = (flag != client::do_not_sign);
+      auto issue_asset_trx = _wallet->issue_asset(amount,symbol,to_account_name, memo_message, sign);
+      if (flag == client::sign_and_broadcast)
           network_broadcast_transaction(issue_asset_trx);
       return issue_asset_trx;
     }

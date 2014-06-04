@@ -1574,7 +1574,7 @@ namespace bts { namespace blockchain {
      
       auto ar = get_asset_record( asset_id_type(0) );
       FC_ASSERT( ar.valid() );
-      FC_ASSERT( ar->current_share_supply == total.amount, "", ("ar",ar)("total",total)("delta",ar->current_share_supply-total) );
+      FC_ASSERT( ar->current_share_supply == total.amount, "", ("ar",ar)("total",total)("delta",ar->current_share_supply-total.amount) );
       FC_ASSERT( ar->current_share_supply <= ar->maximum_share_supply );
       //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }

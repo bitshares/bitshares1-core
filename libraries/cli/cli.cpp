@@ -705,7 +705,7 @@ namespace bts { namespace cli {
                       _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                         _out << "    " << fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }
@@ -955,7 +955,7 @@ namespace bts { namespace cli {
                     {
                         _out << std::right;
                         std::stringstream ss;
-                        ss << _client->get_chain()->to_pretty_asset(tx.fees);
+                        ss << _client->get_chain()->to_pretty_asset( asset(tx.fees,0 ));
                         _out << std::setw( 20 ) << ss.str();
                     }
 

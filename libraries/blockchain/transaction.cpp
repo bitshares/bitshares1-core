@@ -431,9 +431,12 @@ namespace bts { namespace blockchain {
    { try {
        if( op.amount <= 0 ) fail( BTS_NEGATIVE_DEPOSIT, fc::variant(op) );
        auto deposit_balance_id = op.balance_id();
-       auto delegate_record = _current_state->get_account_record( op.condition.delegate_id );
-       if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
-       if( !delegate_record->is_delegate() ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
+       if( op.condition.asset_id == 0 )
+       {
+          auto delegate_record = _current_state->get_account_record( op.condition.delegate_id );
+          if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
+          if( !delegate_record->is_delegate() ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
+       }
 
        auto cur_record = _current_state->get_balance_record( deposit_balance_id );
        if( !cur_record )
@@ -492,7 +495,7 @@ namespace bts { namespace blockchain {
       }
       else
       {
-         deposit_itr->second += amount.amount;
+         deposit_itr->second += amount;
       }
 
       auto balance_itr = balance.find(amount.asset_id);
@@ -510,9 +513,9 @@ namespace bts { namespace blockchain {
    {
       auto withdraw_itr = withdraws.find( amount.asset_id );
       if( withdraw_itr == withdraws.end() )
-         withdraws[amount.asset_id] = amount.amount;
+         withdraws[amount.asset_id] = amount;
       else
-         withdraw_itr->second += amount.amount;
+         withdraw_itr->second += amount;
 
       auto balance_itr = balance.find( amount.asset_id );
       if( balance_itr == balance.end() )
@@ -557,7 +560,7 @@ namespace bts { namespace blockchain {
       {
          // pay fee
          wlog( "pay delegate reg fee: ${f}", ("f",_current_state->get_delegate_registration_fee()) );
-         required_fees += _current_state->get_delegate_registration_fee();
+         required_fees += asset(_current_state->get_delegate_registration_fee(),0);
       }
 
       _current_state->store_account_record( new_record );
@@ -593,7 +596,7 @@ namespace bts { namespace blockchain {
       if ( !cur_record->is_delegate() && op.is_delegate )
       {
          // pay fee
-         required_fees += _current_state->get_delegate_registration_fee();
+         required_fees += asset(_current_state->get_delegate_registration_fee(),0);
          cur_record->delegate_info = delegate_stats();
       }
 
@@ -613,7 +616,7 @@ namespace bts { namespace blockchain {
          add_required_signature(issuer_account_record->active_address());
       }
 
-      required_fees += _current_state->get_asset_registration_fee();
+      required_fees += asset(_current_state->get_asset_registration_fee(),0);
 
       asset_record new_record;
       new_record.id                    = _current_state->new_asset_id();
@@ -658,7 +661,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_issue_asset( const issue_asset_operation& op )
    { try {
-      FC_ASSERT( op.amount > 0, "amount: ${amount}", ("amount",op.amount) );
+      FC_ASSERT( op.amount.amount > 0, "amount: ${amount}", ("amount",op.amount) );
       auto cur_record = _current_state->get_asset_record( op.amount.asset_id );
       if( !cur_record ) 
          fail( BTS_INVALID_ASSET_ID, fc::variant(op) );
@@ -675,7 +678,7 @@ namespace bts { namespace blockchain {
       cur_record->current_share_supply += op.amount.amount;
       
       // TODO: To be checked, issued asset is not for pay fee, nor related to balance i/o, issued out from void.
-      //add_balance( op.amount );
+      add_balance( op.amount );
 
       _current_state->store_asset_record( *cur_record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
@@ -743,7 +746,7 @@ namespace bts { namespace blockchain {
 
    void transaction::deposit( const address& owner, const asset& amount, account_id_type delegate_id )
    {
-      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
+      FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
 
