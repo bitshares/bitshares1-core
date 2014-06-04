@@ -870,7 +870,7 @@ namespace bts { namespace cli {
                 _out << std::setw( 20 ) << "TO";
                 _out << std::setw( 30 ) << "MEMO";
                 _out << std::setw( 20 ) << std::right << "AMOUNT";
-                _out << std::setw( 14 ) << "FEE";
+                _out << std::setw( 20 ) << "FEE";
                 _out << std::setw( 14 ) << "VOTE";
                 _out << std::setw( 40 ) << "ID";
                 _out << "\n----------------------------------------------------------------------------------------------";
@@ -926,7 +926,7 @@ namespace bts { namespace cli {
                         _out << std::right;
                         std::stringstream ss;
                         ss << _client->get_chain()->to_pretty_asset(tx.fees);
-                        _out << std::setw( 14 ) << ss.str();
+                        _out << std::setw( 20 ) << ss.str();
                     }
 
                     _out << std::right;
