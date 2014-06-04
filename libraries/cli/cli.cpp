@@ -24,7 +24,7 @@
 #include <readline/readline.h>
 #endif
 
-#undef HAVE_READLINE
+//#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
@@ -172,10 +172,10 @@ namespace bts { namespace cli {
             {
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
+                  _out<<prompt;
                   if ( no_echo )
                   {
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
-                      _out<<prompt;
                       fc::set_console_echo(false);
                       std::getline( std::cin, line );
                       fc::set_console_echo(true);
@@ -183,7 +183,9 @@ namespace bts { namespace cli {
                   }
                   else
                   {
-                  #ifdef HAVE_READLINE
+                  #ifdef HAVE_READLINE 
+                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
+                     rl_already_prompted = 1; //we've already written out prompt
                      char* line_read = nullptr;
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
@@ -195,7 +197,6 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
-                     _out<<prompt;
                      std::getline( std::cin, line );
                   #endif
                     //DLNFIX _out.echo_console_input_to_log(line);
@@ -1005,7 +1006,7 @@ namespace bts { namespace cli {
       _out(output_stream)
     {
 #ifdef HAVE_READLINE
-      if( &output_stream == &std::cout ) // readline
+      //if( &output_stream == &std::cout ) // readline
       {
          cli_impl_instance = this;
          _method_data_is_initialized = false;
