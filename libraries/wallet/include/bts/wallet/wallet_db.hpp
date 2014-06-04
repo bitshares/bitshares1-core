@@ -49,6 +49,12 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
 
+         void store_balance( const wallet_balance_record& r )
+         {
+            store_record( r );
+            balances[r.id()] = r;
+         }
+
          wallet_transaction_record  cache_transaction( const signed_transaction& trx,
                                  const asset& amount, share_type fees,
                                  const string& memo_message,

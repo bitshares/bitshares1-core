@@ -49,10 +49,6 @@ namespace bts{ namespace blockchain {
       }
       return true;
    }
-   bool account_record::is_valid_json( const std::string& str )
-   {
-      return fc::json::is_valid( str );
-   }
 
    asset_id_type chain_interface::last_asset_id()const
    {

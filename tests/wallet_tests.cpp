@@ -128,7 +128,6 @@ BOOST_AUTO_TEST_CASE( client_tests )
          my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
          my_client->wallet_transfer( 30000000+i, "XTS", "delegate-0", "otheraccount", "memo-"+fc::to_string(i) );
          produce_block( my_client );
-      return;
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 

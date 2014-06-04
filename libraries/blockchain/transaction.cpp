@@ -93,15 +93,21 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::post_evaluate()
    { try {
-
+      required_fees += asset((fc::raw::pack_size(trx) * _current_state->get_fee_rate())/1000,0);
       for( auto fee : balance )
       {
          if( fee.second < 0 ) fail( BTS_INSUFFICIENT_FUNDS, fc::variant(fee) );
-         auto asset_record = _current_state->get_asset_record( fee.first );
-         FC_ASSERT( !!asset_record, "unable to find asset ${a}", ("a",fee.first) );
-         asset_record->collected_fees += fee.second;
-         asset_record->current_share_supply -= fee.second;
-         _current_state->store_asset_record( *asset_record );
+         if( fee.second > 0 )
+         {
+            if( fee.first == 0 )
+               FC_ASSERT( fee.second > required_fees.amount, "transaction did not pay required fees" );
+
+            auto asset_record = _current_state->get_asset_record( fee.first );
+            FC_ASSERT( !!asset_record, "unable to find asset ${a}", ("a",fee.first) );
+            asset_record->collected_fees += fee.second;
+            asset_record->current_share_supply -= fee.second;
+            _current_state->store_asset_record( *asset_record );
+         }
       }
       for( auto req_deposit : required_deposits )
       {
@@ -532,12 +538,12 @@ namespace bts { namespace blockchain {
          FC_ASSERT( !"Account already registered using the requested key" );
 
       account_record new_record;
-      new_record.id            = _current_state->new_account_id();
-      new_record.name          = op.name;
-      new_record.public_data     = op.public_data;
-      new_record.owner_key     = op.owner_key;
+      new_record.id                = _current_state->new_account_id();
+      new_record.name              = op.name;
+      new_record.public_data       = op.public_data;
+      new_record.owner_key         = op.owner_key;
       new_record.set_active_key( _current_state->now(), op.active_key );
-      new_record.last_update   = _current_state->now();
+      new_record.last_update       = _current_state->now();
       new_record.registration_date = _current_state->now();
       if (op.is_delegate)
       {
@@ -550,7 +556,8 @@ namespace bts { namespace blockchain {
       if( op.is_delegate )
       {
          // pay fee
-         sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
+         wlog( "pay delegate reg fee: ${f}", ("f",_current_state->get_delegate_registration_fee()) );
+         required_fees += _current_state->get_delegate_registration_fee();
       }
 
       _current_state->store_account_record( new_record );
@@ -586,7 +593,7 @@ namespace bts { namespace blockchain {
       if ( !cur_record->is_delegate() && op.is_delegate )
       {
          // pay fee
-         sub_balance( balance_id_type(), asset(_current_state->get_delegate_registration_fee()) );
+         required_fees += _current_state->get_delegate_registration_fee();
          cur_record->delegate_info = delegate_stats();
       }
 
@@ -606,7 +613,7 @@ namespace bts { namespace blockchain {
          add_required_signature(issuer_account_record->active_address());
       }
 
-      sub_balance( balance_id_type(), asset(_current_state->get_asset_registration_fee() , 0) );
+      required_fees += _current_state->get_asset_registration_fee();
 
       asset_record new_record;
       new_record.id                    = _current_state->new_asset_id();

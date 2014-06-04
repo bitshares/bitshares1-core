@@ -98,7 +98,6 @@ namespace bts { namespace blockchain {
 
             void                       initialize_genesis(fc::path genesis_file);
 
-            void                       sanity_check()const;
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
             void                       clear_pending(  const full_block& blk );
@@ -397,7 +396,14 @@ namespace bts { namespace blockchain {
             FC_ASSERT( !!delegate_record );
             FC_ASSERT( delegate_record->is_delegate() );
             delegate_record->delegate_info->pay_balance += amount;
+            delegate_record->delegate_info->votes_for += amount;
             pending_state->store_account_record( *delegate_record );
+
+            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
+            FC_ASSERT( base_asset_record.valid() );
+            base_asset_record->current_share_supply += amount;
+            pending_state->store_asset_record( *base_asset_record );
+
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
@@ -1203,9 +1209,10 @@ namespace bts { namespace blockchain {
    }
 
    void detail::chain_database_impl::initialize_genesis(fc::path genesis_file)
-   {
+   { try {
       if( self->chain_id() != digest_type() )
       {
+         self->sanity_check();
          ilog( "Genesis state already initialized" );
          return;
       }
@@ -1233,9 +1240,9 @@ namespace bts { namespace blockchain {
       _chain_id = enc.result();
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 
-      double total_unscaled = 0;
-      for( auto item : config.balances ) total_unscaled += item.second;
-      double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / total_unscaled;
+      fc::uint128 total_unscaled = 0;
+      for( auto item : config.balances ) total_unscaled += int64_t(item.second/1000);
+      ilog( "total unscaled: ${s}", ("s", total_unscaled) );
 
       std::vector<name_config> delegate_config;
       for( auto item : config.names )
@@ -1248,16 +1255,6 @@ namespace bts { namespace blockchain {
       account_record god; god.id = 0; god.name = "god";
       self->store_account_record( god );
 
-      asset_record base_asset;
-      base_asset.id = 0;
-      base_asset.symbol = BTS_ADDRESS_PREFIX;
-      base_asset.name = "BitShares XTS";
-      base_asset.description = "Shares in the DAC";
-      base_asset.issuer_account_id = god.id;
-      base_asset.current_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
-      base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
-      base_asset.collected_fees = 0;
-      self->store_asset_record( base_asset );
 
       fc::time_point_sec timestamp = config.timestamp;
       std::vector<account_id_type> delegate_ids;
@@ -1274,7 +1271,6 @@ namespace bts { namespace blockchain {
          if( name.is_delegate )
          {
             rec.delegate_info = delegate_stats();
-            rec.delegate_info->votes_for  = BTS_BLOCKCHAIN_INITIAL_SHARES/delegate_config.size();
             delegate_ids.push_back( account_id );
          }
          self->store_account_record( rec );
@@ -1285,12 +1281,43 @@ namespace bts { namespace blockchain {
       {
          for( auto delegate_id : delegate_ids )
          {
+            fc::uint128 initial( int64_t(item.second/1000) );
+            initial *= fc::uint128(BTS_BLOCKCHAIN_INITIAL_SHARES);
+            initial /= total_unscaled;
+            initial /= int64_t(delegate_ids.size());
             balance_record initial_balance( item.first,
-                                            asset( share_type( (item.second * scale_factor) / delegate_ids.size() ), base_asset.id ),
+                                            asset( share_type( initial.low_bits() ), 0 ),
                                             delegate_id );
+            // in case of redundant balances
+            auto cur = self->get_balance_record( initial_balance.id() );
+            if( cur.valid() ) initial_balance.balance += cur->balance;
             self->store_balance_record( initial_balance );
+            auto da = _account_db.fetch( delegate_id );
+            da.delegate_info->votes_for += initial.low_bits();
+            _account_db.store( da.id, da );
          }
       }
+
+      asset total;
+      auto itr = _balance_db.begin();
+      while( itr.valid() )
+      {
+         auto ind = itr.value().get_balance();
+         FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
+         total += ind;
+         ++itr;
+      }
+
+      asset_record base_asset;
+      base_asset.id = 0;
+      base_asset.symbol = BTS_ADDRESS_PREFIX;
+      base_asset.name = "BitShares XTS";
+      base_asset.description = "Shares in the DAC";
+      base_asset.issuer_account_id = god.id;
+      base_asset.current_share_supply = total.amount;
+      base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
+      base_asset.collected_fees = 0;
+      self->store_asset_record( base_asset );
 
       block_fork_data gen_fork;
       gen_fork.is_valid = true;
@@ -1302,7 +1329,9 @@ namespace bts { namespace blockchain {
       self->set_property( chain_property_enum::last_asset_id, 0 );
       self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
-   }
+
+      self->sanity_check();
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void chain_database::set_observer( chain_observer* observer )
    {
@@ -1519,10 +1548,34 @@ namespace bts { namespace blockchain {
       while( itr.valid() )
       {
          auto ind = itr.value().get_balance();
-         FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
-         total += ind;
+         if( ind.asset_id == 0 )
+         {
+            FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
+            total += ind;
+         }
          ++itr;
       }
+      int64_t total_votes = 0;
+      auto aitr = my->_account_db.begin();
+      while( aitr.valid() )
+      {
+         auto v = aitr.value();
+         if( v.is_delegate() )
+         {
+            total += asset(v.delegate_info->pay_balance);
+            total_votes += v.delegate_info->votes_for + v.delegate_info->votes_against;
+         }
+         ++aitr;
+      }
+
+      FC_ASSERT( total_votes == total.amount, "", 
+                 ("total_votes",total_votes)
+                 ("total_shares",total) );
+     
+      auto ar = get_asset_record( asset_id_type(0) );
+      FC_ASSERT( ar.valid() );
+      FC_ASSERT( ar->current_share_supply == total.amount, "", ("ar",ar)("total",total)("delta",ar->current_share_supply-total) );
+      FC_ASSERT( ar->current_share_supply <= ar->maximum_share_supply );
       //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 

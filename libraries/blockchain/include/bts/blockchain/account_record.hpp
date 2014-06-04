@@ -36,21 +36,21 @@ namespace bts { namespace blockchain {
       :id(0){}
 
       static bool is_valid_name( const std::string& str );
-      static bool is_valid_json( const std::string& str );
 
       bool is_null()const;
       account_record make_null()const;
 
-      share_type delegate_pay_balance()const;
-      bool    is_delegate()const;
-      int64_t net_votes()const;
-      void adjust_votes_for( share_type delta );
-      void adjust_votes_against( share_type delta );
-      share_type votes_for()const;
-      share_type votes_against()const;
-      bool is_retracted()const;
-      address active_address()const;
-      void set_active_key( time_point_sec now, const public_key_type& new_key );
+      share_type     delegate_pay_balance()const;
+      bool           is_delegate()const;
+      int64_t        net_votes()const;
+      void           adjust_votes_for( share_type delta );
+      void           adjust_votes_against( share_type delta );
+      share_type     votes_for()const;
+      share_type     votes_against()const;
+      bool           is_retracted()const;
+      address        active_address()const;
+      void           set_active_key( time_point_sec now, 
+                                     const public_key_type& new_key );
       public_key_type active_key()const;
 
       account_id_type                        id;

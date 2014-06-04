@@ -237,6 +237,8 @@ namespace bts { namespace blockchain {
          // track deposits and withdraws by asset type
          std::unordered_map<asset_id_type, asset>         deposits;
          std::unordered_map<asset_id_type, asset>         withdraws;
+
+         asset                                            required_fees;
          
          /**
           *  As operation withdraw funds, input balance grows...
