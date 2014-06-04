@@ -109,6 +109,10 @@
         "default_example" : "alice"
       },
       {
+        "type_name" : "variant",
+        "cpp_return_type" : "fc::variant"
+      },
+      {
         "type_name" : "wallet_name_array",
         "container_type" : "array",
         "contained_type" : "wallet_name"
@@ -141,7 +145,8 @@
         "type_name" : "wif_private_key",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "bts/blockchain/types.hpp",
-        "default_example" : "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB"
+        "default_example" : "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB",
+        "obscure_in_log_files": true
       },
       {
         "type_name" : "public_key",

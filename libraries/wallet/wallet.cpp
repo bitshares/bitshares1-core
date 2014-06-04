@@ -62,6 +62,7 @@ namespace bts { namespace wallet {
              bool scan_register_account( const register_account_operation& op );
              bool scan_update_account( const update_account_operation& op );
              bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
+             bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
 
              bool cache_balance( const balance_id_type& balance_id );
 
@@ -219,6 +220,9 @@ namespace bts { namespace wallet {
                    case create_asset_op_type:
                      cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
                      break;
+                   case issue_asset_op_type:
+                     cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -305,6 +309,22 @@ namespace bts { namespace wallet {
             trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
          }
          return true;
+      }
+      bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op  )
+      {
+         wlog( "${op}", ("op",op) );
+         /*
+         auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
+         FC_ASSERT( oissuer.valid() );
+         auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
+         if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+         {
+            trx_rec.to_account = oissuer->owner_key;
+            trx_rec.from_account = oissuer->owner_key;
+            trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+         }
+         */
+         return false;
       }
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
@@ -938,9 +958,10 @@ namespace bts { namespace wallet {
                   ("to_account_name",to_account_name) );
 
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
-       FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ) );
+       FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
 
        auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
+       asset asset_to_transfer( amount_to_transfer, asset_id );
 
        vector<signed_transaction >       trxs;
        vector<share_type>                amount_sent;
@@ -979,9 +1000,9 @@ namespace bts { namespace wallet {
              asset amount_to_deposit( 0, asset_id );
              asset amount_of_change( 0, asset_id );
 
-             if( amount_collected + from_balance > amount_to_transfer )
+             if( (amount_collected + from_balance) > asset_to_transfer )
              {
-                amount_to_deposit = amount_to_transfer - amount_collected;
+                amount_to_deposit = asset_to_transfer - amount_collected;
                 amount_of_change  = from_balance - amount_to_deposit;
                 amount_collected += amount_to_deposit;
              }
@@ -1046,7 +1067,9 @@ namespace bts { namespace wallet {
        if( sign ) // don't store invalid trxs..
        {
           for( auto rec : balances_to_store )
-              my->_wallet_db.store_record( rec );
+          {
+              my->_wallet_db.store_balance( rec );
+          }
           for( uint32_t i =0 ; i < trxs.size(); ++i )
              my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 
                                                total_fee.amount, 
@@ -1097,7 +1120,7 @@ namespace bts { namespace wallet {
 
       if( as_delegate )
       {
-        required_fees += my->_blockchain->get_delegate_registration_fee();
+        required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
@@ -1158,7 +1181,7 @@ namespace bts { namespace wallet {
 
       auto size_fee = fc::raw::pack_size( data );
       required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
-      required_fees += my->_blockchain->get_asset_registration_fee();
+      required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
@@ -1184,10 +1207,11 @@ namespace bts { namespace wallet {
                                       ("description", description)
                                       ( "issuer_account", issuer_account_name) ) }
 
-   signed_transaction  wallet::issue_asset( share_type amount, 
-                                         const string& symbol,                                               
-                                         const string& to_account_name,
-                                         const bool sign )
+   signed_transaction  wallet::issue_asset( share_type amount_to_issue, 
+                                            const string& symbol,                                               
+                                            const string& to_account_name,
+                                            const string& memo_message,
+                                            const bool sign )
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1204,14 +1228,29 @@ namespace bts { namespace wallet {
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
+      asset shares_to_issue( amount_to_issue, asset_record->id );
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( issuer_account->name ),
                                    trx, required_signatures );
      
-      trx.issue( asset( amount, asset_record->id ) );
+      trx.issue( shares_to_issue );
       required_signatures.insert( issuer_account->active_key() );
 
+      public_key_type  receiver_public_key = get_account_public_key( to_account_name );
+      owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
+      FC_ASSERT( issuer.valid() );
+      owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->account_address );
+      FC_ASSERT( issuer_key && issuer_key->has_private_key() );
+      auto sender_private_key = issuer_key->decrypt_private_key( my->_wallet_password );
+
+      trx.deposit_to_account( receiver_public_key,
+                              shares_to_issue,
+                              sender_private_key,
+                              memo_message,
+                              0,
+                              sender_private_key.get_public_key(),
+                              from_memo );
 
       if( sign )
           sign_transaction( trx, required_signatures );
@@ -1243,7 +1282,7 @@ namespace bts { namespace wallet {
 
       if( as_delegate && !account->is_delegate() )
       {
-        required_fees += my->_blockchain->get_delegate_registration_fee();
+        required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
@@ -1302,7 +1341,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
-      required_fees += fc::raw::pack_size(trx);
+      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -1337,7 +1376,7 @@ namespace bts { namespace wallet {
       trx.vote_proposal( proposal_id, account->id, vote );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
-      required_fees += fc::raw::pack_size(trx);
+      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
       
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -1926,6 +1965,12 @@ namespace bts { namespace wallet {
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
 
+
+   optional<wallet_account_record>         wallet::get_account_record( const address& addr)const
+   {
+      return my->_wallet_db.lookup_account( addr );
+   }
+
    wallet::account_balance_summary_type    wallet::get_account_balances()const
    { try {
       account_balance_summary_type result;
@@ -1949,6 +1994,7 @@ namespace bts { namespace wallet {
             result[name][symbol] = item.second;
          }
       }
+      ilog( "${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 } } // bts::wallet

@@ -179,6 +179,7 @@ namespace bts { namespace wallet {
          signed_transaction       issue_asset( share_type amount, 
                                                const string& symbol,                                               
                                                const string& to_account_name,
+                                               const string& memo_message,
                                                const bool sign = true );
 
          owallet_account_record    get_account( const string& account_name );
@@ -254,9 +255,9 @@ namespace bts { namespace wallet {
          vector<wallet_balance_record>  get_unspent_balances( const string& account_name,
                                                              const string& sybmol ) const;
 
+         optional<wallet_account_record>        get_account_record( const address& addr)const;
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;
-         optional<wallet_account_record>        get_account_record( const address& addr)const;
 
          std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
          */

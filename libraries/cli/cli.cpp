@@ -2,6 +2,7 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -24,7 +25,7 @@
 #include <readline/readline.h>
 #endif
 
-#undef HAVE_READLINE
+//#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
@@ -62,7 +63,7 @@ namespace bts { namespace cli {
 
             void parse_and_execute_interactive_command(string command, 
                                                        fc::istream_ptr argument_stream )
-            {
+            { 
               fc::buffered_istream buffered_argument_stream(argument_stream);
 
               bool command_is_valid = false;
@@ -70,6 +71,7 @@ namespace bts { namespace cli {
               try
               {
                 arguments = _self->parse_interactive_command(buffered_argument_stream, command);
+               ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
               catch( const fc::key_not_found_exception& )
@@ -108,8 +110,18 @@ namespace bts { namespace cli {
             } //parse_and_execute_interactive_command
 
             bool execute_command_line(const string& line)
-            {
+            { try {
+              ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
+              /** 
+               *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
+               *  when expected while parsing the command.  Adding EOF (0x04) characater at the
+               *  end of the string casues the JSON parser to recognize the EOF rather than relying
+               *  on stringstream.  
+               *
+               *  @todo figure out how to fix things on these OS X systems.
+               */
+              trimmed_line_to_parse += string(" ") + char(0x04);
               if (!trimmed_line_to_parse.empty())
               {
                 string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
@@ -139,7 +151,7 @@ namespace bts { namespace cli {
                 }
               } //end if command line not empty
               return true;
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("command",line) ) }
 
             void process_commands()
             { 
@@ -174,8 +186,8 @@ namespace bts { namespace cli {
                   string line;
                   if ( no_echo )
                   {
-                      // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       _out<<prompt;
+                      // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
                       std::getline( std::cin, line );
                       fc::set_console_echo(true);
@@ -183,8 +195,9 @@ namespace bts { namespace cli {
                   }
                   else
                   {
-                  #ifdef HAVE_READLINE
+                  #ifdef HAVE_READLINE 
                      char* line_read = nullptr;
+                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
                          add_history(line_read);
@@ -358,7 +371,8 @@ namespace bts { namespace cli {
                 // assume it's raw JSON
                 try
                 {
-                  return fc::json::from_stream( argument_stream );
+                  auto tmp = fc::json::from_stream( argument_stream );
+                  return  tmp;
                 }
                 catch( fc::parse_error_exception& e )
                 {
@@ -692,7 +706,7 @@ namespace bts { namespace cli {
                       _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                         _out << "    " << fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }
@@ -701,6 +715,77 @@ namespace bts { namespace cli {
                   auto wallets = result.as<vector<string>>();
                   for (auto wallet : wallets)
                       _out << wallet << "\n";
+              }
+              else if (method_name == "wallet_list_unspent_balances" )
+              {
+                  auto balance_recs = result.as<vector<wallet_balance_record>>();
+                  _out << std::right;
+                  _out << std::setw(18) << "BALANCE";
+                  _out << std::right << std::setw(35) << "OWNER";
+                  _out << std::right << std::setw(25) << "VOTE";
+                  _out << "\n";
+                  _out << "-------------------------------------------------------------";
+                  _out << "-------------------------------------------------------------\n";
+                  for( auto balance_rec : balance_recs )
+                  {
+                      _out << std::setw(18) << balance_rec.balance;
+                      switch (withdraw_condition_types(balance_rec.condition.type))
+                      {
+                          case (withdraw_signature_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_with_signature>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 31)
+                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(35) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          case (withdraw_by_account_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_by_account>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 31)
+                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(35) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          default:
+                          {
+                              FC_ASSERT(!"unimplemented condition type");
+                          }
+                      } // switch cond type
+                      _out << "\n";
+                  } // for balance in balances
               }
               else
               {
@@ -942,7 +1027,7 @@ namespace bts { namespace cli {
                     {
                         _out << std::right;
                         std::stringstream ss;
-                        ss << _client->get_chain()->to_pretty_asset(tx.fees);
+                        ss << _client->get_chain()->to_pretty_asset( asset(tx.fees,0 ));
                         _out << std::setw( 20 ) << ss.str();
                     }
 
@@ -1005,7 +1090,7 @@ namespace bts { namespace cli {
       _out(output_stream)
     {
 #ifdef HAVE_READLINE
-      if( &output_stream == &std::cout ) // readline
+      //if( &output_stream == &std::cout ) // readline
       {
          cli_impl_instance = this;
          _method_data_is_initialized = false;

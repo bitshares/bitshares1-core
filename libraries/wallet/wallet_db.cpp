@@ -238,6 +238,18 @@ namespace bts{ namespace wallet {
       if( opt ) return opt->name;
       return "?";
    }
+   owallet_account_record wallet_db::lookup_account( account_id_type aid )const
+   {
+      auto itr = account_id_to_account.find(aid);
+      if( itr != account_id_to_account.end() )
+      {
+         auto aitr = accounts.find( itr->second );
+         FC_ASSERT( accounts.end() != aitr );
+         return aitr->second;
+      }
+      return owallet_account_record();
+   }
+
 
    void wallet_db::store_key( const key_data& key_to_store )
    {

@@ -19,13 +19,13 @@
 #include <limits>
 #include <sstream>
 
-#include <bts/rpc_stubs/common_api_server.hpp>
+#include <bts/rpc_stubs/common_api_rpc_server.hpp>
 
 namespace bts { namespace rpc {
 
   namespace detail
   {
-    class rpc_server_impl : public bts::rpc_stubs::common_api_server
+    class rpc_server_impl : public bts::rpc_stubs::common_api_rpc_server
     {
        public:
          rpc_server::config                _config;
@@ -550,7 +550,9 @@ namespace bts { namespace rpc {
     my(new detail::rpc_server_impl(client))
   {
     my->_self = this;
-    my->register_common_api_method_metadata();
+    try {
+       my->register_common_api_method_metadata();
+    }FC_RETHROW_EXCEPTIONS( warn, "register common api" )
   }
 
   rpc_server::~rpc_server()

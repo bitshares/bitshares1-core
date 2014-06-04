@@ -49,6 +49,12 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
 
+         void store_balance( const wallet_balance_record& r )
+         {
+            store_record( r );
+            balances[r.id()] = r;
+         }
+
          wallet_transaction_record  cache_transaction( const signed_transaction& trx,
                                  const asset& amount, share_type fees,
                                  const string& memo_message,
@@ -70,6 +76,7 @@ namespace bts { namespace wallet {
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;
+         owallet_account_record lookup_account( account_id_type aid )const;
 
          oprivate_key           lookup_private_key( const address& address, 
                                                     const fc::sha512& password );

@@ -18,7 +18,8 @@ namespace bts { namespace blockchain {
    */
   struct asset
   {
-      asset( share_type a = 0, asset_id_type u = 0)
+      asset():amount(0),asset_id(0){}
+      explicit asset( share_type a, asset_id_type u = 0)
       :amount(a),asset_id(u){}
 
       asset& operator += ( const asset& o );

@@ -128,7 +128,6 @@ BOOST_AUTO_TEST_CASE( client_tests )
          my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
          my_client->wallet_transfer( 30000000+i, "XTS", "delegate-0", "otheraccount", "memo-"+fc::to_string(i) );
          produce_block( my_client );
-      return;
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 
@@ -160,10 +159,15 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_cli->execute_command_line( "wallet_list_contact_accounts" );
       your_cli->execute_command_line( "wallet_list_receive_accounts" );
 
-      your_cli->execute_command_line( R"(wallet_asset_create USD BitUSD youraccount "description" )" );
+      your_cli->execute_command_line( "wallet_asset_create USD BitUSD youraccount \"description\"" );
       produce_block( my_client );
       your_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       your_cli->execute_command_line( "blockchain_list_registered_assets" );
+      your_cli->execute_command_line( "wallet_asset_issue 50000000 USD otheraccount \"some memo\"" );
+      produce_block( my_client );
+      your_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
+      your_cli->execute_command_line( "blockchain_list_registered_assets" );
+      your_cli->execute_command_line( "balance" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 
