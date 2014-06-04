@@ -682,6 +682,19 @@ namespace bts { namespace cli {
                   auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
               }
+              else if (method_name == "wallet_account_balance" )
+              {
+                  auto summary = result.as<unordered_map<string, map<string, share_type>>>();
+                  for( auto accts : summary )
+                  {
+                      _out << accts.first << "\n";
+                      for( auto balance : accts.second )
+                      {
+                         _out << "    " << balance.first << ": " << 
+                             _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                      }
+                  }
+              }
               else if (method_name == "wallet_list")
               {
                   auto wallets = result.as<vector<string>>();
