@@ -30,8 +30,9 @@ struct vote_del
    }
    friend bool operator < ( const vote_del& a, const vote_del& b )
    {
-      if( a.votes == b.votes ) return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
-      return a.votes > b.votes; /* Reverse so that highest rank is placed first in sorted maps */
+      if( a.votes > b.votes ) return true;
+      if( a.votes < b.votes ) return false;
+      return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
    }
 };
 FC_REFLECT( vote_del, (votes)(delegate_id) )
@@ -1043,37 +1044,80 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
 
-   void chain_database::store_account_record( const account_record& r )
+   void chain_database::store_account_record( const account_record& record_to_store )
    { try {
-       auto old_rec = get_account_record( r.id );
-       if( r.is_null() )
+       oaccount_record old_rec = get_account_record( record_to_store.id );
+
+       if( record_to_store.is_null() && old_rec)
        {
-          my->_account_db.remove( r.id );
-          my->_account_index_db.remove( r.name );
-       }
-       else
-       {
-          my->_account_db.store( r.id, r );
-          my->_account_index_db.store( r.name, r.id );
-       }
-       if( old_rec.valid() )
-       {
+          my->_account_db.remove( record_to_store.id );
+          my->_account_index_db.remove( record_to_store.name );
+
           for( auto item : old_rec->active_key_history )
              my->_address_to_account_db.remove( address(item.second) );
 
           if( old_rec->is_delegate() )
           {
-              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), r.id ) );
+              auto itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
+              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), 
+                                                            record_to_store.id ) );
+              itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
           }
        }
+       else if( !record_to_store.is_null() )
+       {
+          my->_account_db.store( record_to_store.id, record_to_store );
+          my->_account_index_db.store( record_to_store.name, record_to_store.id );
 
-       for( auto item : r.active_key_history )
-          my->_address_to_account_db.store( address(item.second), r.id );
+          for( auto item : record_to_store.active_key_history )
+          { // re-index all keys for this record
+             my->_address_to_account_db.store( address(item.second), record_to_store.id );
+          }
 
-       if( r.is_delegate() && !r.is_null() )
-          my->_delegate_vote_index_db.store( vote_del( r.net_votes(), r.id ),  0 );
 
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
+          if( old_rec.valid() && old_rec->is_delegate() )
+          {
+              auto itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
+              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), 
+                                                            record_to_store.id ) );
+              itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
+          }
+
+
+          if( record_to_store.is_delegate() )
+          {
+              auto itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
+              my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
+                                                           record_to_store.id ), 
+                                                0/*dummy value*/ );
+              itr = my->_delegate_vote_index_db.begin();
+              while( itr.valid() )
+              {
+                  ++itr;
+              }
+          }
+       }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
 
    void  chain_database::store_transaction_location( const transaction_id_type& trx_id,
                                                      const transaction_location& loc )
@@ -1294,7 +1338,8 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
             auto da = _account_db.fetch( delegate_id );
             da.delegate_info->votes_for += initial.low_bits();
-            _account_db.store( da.id, da );
+            self->store_account_record( da );
+         //   _account_db.store( da.id, da );
          }
       }
 
