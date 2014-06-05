@@ -911,6 +911,7 @@ namespace bts { namespace wallet {
       {
          auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
          auto delegate_record = my->_blockchain->get_account_record( id );
+         FC_ASSERT( delegate_record.valid(), "", ("delegate_id",id ) );
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
          if( key.valid() && key->has_private_key() )
          {

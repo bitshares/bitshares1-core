@@ -76,7 +76,8 @@ namespace bts { namespace cli {
               }
               catch( const fc::key_not_found_exception& )
               {
-                _out << "Error: invalid command \"" << command << "\"\n";
+                 if( command.size() )
+                   _out << "Error: invalid command \"" << command << "\"\n";
               }
               catch( const fc::canceled_exception&)
               {
@@ -314,7 +315,7 @@ namespace bts { namespace cli {
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
                                                       const bts::api::method_data& method_data,
                                                       unsigned parameter_index)
-            {
+            { try {
               const bts::api::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
               {
@@ -380,7 +381,7 @@ namespace bts { namespace cli {
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 }
               }
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("parameter_index",parameter_index) ) }
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
