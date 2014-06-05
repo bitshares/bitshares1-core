@@ -637,7 +637,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->_scheduled_lock_time = fc::time_point::now() + timeout;
+         my->_scheduled_lock_time = bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count());
          if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
          {
            my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
@@ -649,10 +649,12 @@ namespace bts { namespace wallet {
                  lock();
                  return;
                }
+               // if the promise is set, the wallet is shutting down and we need to exit the relocker
+               if (my->_wallet_shutting_down_promise->ready())
+                 return;
                try
                {
-                 my->_wallet_shutting_down_promise->wait_until(fc::time_point::now() + fc::milliseconds(200));
-                 // if the promise is set, the wallet is shutting down and we need to exit the relocker
+                 my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
                  return;
                }
                catch (const fc::timeout_exception&)

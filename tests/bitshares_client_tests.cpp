@@ -377,9 +377,9 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
   }
 
   bts_client_process& first_client = client_processes[0];
-  first_client.wallet->unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE);
+  first_client.wallet->unlock(WALLET_PASSPHRASE, fc::microseconds::maximum());
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
-    first_client.wallet->import_private_key(delegate_keys[i]);
+    first_client.wallet->import_private_key(delegate_keys[i], "delegate_keys");
   first_client.wallet->scan_state();
 
   uint32_t current_block_count = 0;
@@ -495,7 +495,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
+    std::vector<fc::variant_object> peers_info = client_processes[i].rpc_client->network_get_peer_info();
     for (const fc::variant& peer_info : peers_info)
     {
       fc::variant_object peer_info_object = peer_info.get_object();
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     // should throw a "can't find wallet" type exception
-    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE), fc::exception);
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_open(WALLET_NAME), fc::exception);
     client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
   }
 
@@ -753,7 +753,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     auto balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
-    BOOST_CHECK(balance == bts::blockchain::asset());
+    BOOST_CHECK(balance == bts::blockchain::share_type());
   }
 
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
@@ -766,11 +766,11 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing receive address generation");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    std::map<std::string, extended_address> initial_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
+    std::vector<bts::wallet::wallet_account_record> initial_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
     BOOST_CHECK(initial_receive_accounts.empty());
     std::string account_name("address_test_account");
-    bts::blockchain::extended_address new_address = client_processes[i].rpc_client->wallet_create_receive_account(account_name);
-    std::map<std::string, extended_address> final_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
+    bts::blockchain::public_key_type new_address = client_processes[i].rpc_client->wallet_account_create(account_name);
+    std::vector<bts::wallet::wallet_account_record> final_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
     BOOST_CHECK(final_receive_accounts.size() == initial_receive_accounts.size() + 1);
     /*TODO RESTORE THIS CODE SOON!
     for (auto initial_account_name : initial_receive_accounts)
@@ -795,26 +795,26 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
 
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() while wallet is locked");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_0"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_0"), fc::exception);
   BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
   client_processes[0].rpc_client->wallet_unlock(fc::seconds(1), WALLET_PASSPHRASE);
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() with wallet unlocked locked");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_1"));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_1"));
   fc::usleep(fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() after wallet should have relocked");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_2"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_2"), fc::exception);
 
   BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
   client_processes[0].rpc_client->wallet_unlock(fc::seconds(4), WALLET_PASSPHRASE);
   client_processes[0].rpc_client->wallet_unlock(fc::seconds(2), WALLET_PASSPHRASE);
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account immediately after both unlocks");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_3"));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_3"));
   fc::usleep(fc::seconds(3));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account after the second unlock expired, but first should still be in effect");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_4"));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_4"));
   fc::usleep(fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing that we correctly relock after both unlocks should have expired");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_create_receive_account("account_5"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_5"), fc::exception);
 }
 
 BOOST_AUTO_TEST_CASE(transfer_test)
@@ -849,12 +849,12 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     uint32_t next_client_index = (i + 1) % client_processes.size();
-    bts::blockchain::extended_address destination_address = client_processes[next_client_index].rpc_client->wallet_create_receive_account("circle_test");
+    bts::blockchain::public_key_type destination_address = client_processes[next_client_index].rpc_client->wallet_account_create("circle_test");
     auto destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first;
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     const uint32_t amount_to_transfer = 1000000;
-    client_processes[i].rpc_client->wallet_create_sending_account("next_client", destination_address);
-    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "next_client");
+    client_processes[i].rpc_client->wallet_add_contact_account("next_client", destination_address);
+    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", "initial_balance_account", "next_client");
     fc::time_point transfer_time = fc::time_point::now();
     for (;;)
     {
@@ -898,17 +898,17 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
 
-  std::vector<bts::blockchain::extended_address> recieve_addresses;
+  std::vector<bts::blockchain::public_key_type> recieve_addresses;
   recieve_addresses.resize(number_of_recipients + 1);
   BOOST_TEST_MESSAGE("Generating receive addresses for each recieving node");
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    recieve_addresses[i] = client_processes[i].rpc_client->wallet_create_receive_account("test");
+    recieve_addresses[i] = client_processes[i].rpc_client->wallet_account_create("test");
 
   BOOST_TEST_MESSAGE("Making 1000 transfers from node 0 to the rest of the nodes");
   unsigned total_transfer_count = 0;
@@ -942,7 +942,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
+    std::vector<fc::variant_object> peers_info = client_processes[i].rpc_client->network_get_peer_info();
     uint64_t total_in = 0;
     uint64_t total_out = 0;
     for (const fc::variant& peer_info : peers_info)
@@ -990,17 +990,17 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
 
-  std::vector<bts::blockchain::extended_address> recieve_addresses;
+  std::vector<bts::blockchain::public_key_type> recieve_addresses;
   recieve_addresses.resize(client_processes.size());
   BOOST_TEST_MESSAGE("Generating receive addresses for each recieving node");
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    recieve_addresses[i] = client_processes[i].rpc_client->wallet_create_receive_account("test");
+    recieve_addresses[i] = client_processes[i].rpc_client->wallet_account_create("test");
 
   //// initial setup is done
 
@@ -1049,12 +1049,11 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   std::vector<std::pair<uint64_t, uint64_t> > rx_tx_bytes;
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    fc::variants peers_info = client_processes[i].rpc_client->network_get_peer_info();
+    std::vector<fc::variant_object> peers_info = client_processes[i].rpc_client->network_get_peer_info();
     uint64_t total_in = 0;
     uint64_t total_out = 0;
-    for (const fc::variant& peer_info : peers_info)
+    for (const fc::variant_object& peer_info_object : peers_info)
     {
-      fc::variant_object peer_info_object = peer_info.get_object();
       total_out += peer_info_object["bytessent"].as_uint64();
       total_in += peer_info_object["bytesrecv"].as_uint64();
     }
@@ -1241,13 +1240,13 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[i].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
 
   import_initial_balances();
 
-  bts::blockchain::extended_address receive_address = client_processes[0].rpc_client->wallet_create_receive_account("test");
+  bts::blockchain::public_key_type receive_address = client_processes[0].rpc_client->wallet_account_create("test");
   bts::blockchain::transaction_id_type transaction_id;// = client_processes[0].rpc_client->wallet_transfer(receive_address, 50);
   fc::usleep(fc::seconds(10));  // give the transaction time to propagate across the network
   std::vector<bts::net::message_propagation_data> propagation_data;
@@ -1365,12 +1364,12 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
       unsigned source = transaction_source_indices[i];
       unsigned dest = transaction_destination_indices[i];
       std::ostringstream receive_note;
-      receive_note << "from " << source << " in block " << i;
-      bts::blockchain::extended_address receive_address = client_processes[dest].rpc_client->wallet_create_receive_account(receive_note.str());
+      receive_note << "from" << source << "inblock" << i;
+      bts::blockchain::public_key_type receive_address = client_processes[dest].rpc_client->wallet_account_create(receive_note.str());
       std::ostringstream send_note;
-      send_note << "to " << dest << " in block " << i;
+      send_note << "to" << dest << "inblock" << i;
 
-      client_processes[source].rpc_client->wallet_transfer(amounts_to_transfer[i], receive_note.str(), send_note.str());
+      client_processes[source].rpc_client->wallet_transfer(amounts_to_transfer[i], "XTS", send_note.str(), receive_note.str());
       client_processes[dest].expected_balance += amounts_to_transfer[i];
     }
 
@@ -1439,7 +1438,7 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
 
 
     client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
-    client_processes[0].rpc_client->wallet_open(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[0].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
 
     auto endpoint = fc::ip::endpoint( fc::ip::address("127.0.0.1"), client_processes[0].rpc_port );
