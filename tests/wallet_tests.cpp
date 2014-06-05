@@ -57,6 +57,8 @@ void produce_block( T my_client )
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
 }
 
+#include <fstream>
+
 BOOST_AUTO_TEST_CASE( client_tests )
 {
    try {
@@ -75,8 +77,20 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path(), "genesis.json" );
 
-      auto my_cli = new bts::cli::cli( my_client, std::cerr );
-      auto your_cli = new bts::cli::cli( your_client, std::cerr );
+      /* DLN: Some example test code, just left here for reference, will remove soon
+      std::ofstream console_log("notestein_wallet_test.log");
+      std::stringstream my_input("wallet_list\n");
+      std::stringstream your_input("wallet_list\n");
+
+      //auto my_cli = new bts::cli::cli( my_client, my_input, std::cerr);
+      auto my_cli = new bts::cli::cli( my_client, my_input, console_log);      
+      my_cli->set_input_log_stream(console_log);
+      my_cli->process_commands();
+      my_cli->wait();
+      */
+
+      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);      
+      auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );

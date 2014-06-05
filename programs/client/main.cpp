@@ -18,6 +18,7 @@
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
+
 #include <iostream>
 #include <iomanip>
 
@@ -239,17 +240,22 @@ int main( int argc, char** argv )
       }
       else 
       {
+
+#ifdef _DEBUG
         //tee cli output to the console and a log file
+        std::ofstream console_log("console.log");
         typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
         typedef boost::iostreams::stream<TeeDevice> TeeStream;
-        std::ofstream console_log("console.log");
         TeeDevice my_tee(std::cout, console_log); 
         TeeStream cout_with_log(my_tee);
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( &cout_with_log );
-
-//        auto cli = std::make_shared<bts::cli::cli>( client, std::cout );
-        auto cli = std::make_shared<bts::cli::cli>( client, cout_with_log );
+        auto cli = std::make_shared<bts::cli::cli>( client, std::cin, cout_with_log );
+        //also echo input to the log file
+        cli->set_input_log_stream(console_log);
+#else
+        auto cli = std::make_shared<bts::cli::cli>( client, std::cin, std::cout );
+#endif
         cli->process_commands();
         cli->wait();
       } 
