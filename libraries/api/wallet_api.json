@@ -410,7 +410,8 @@
             {
               "name" : "first_block_number", 
               "type" : "uint32_t", 
-              "description" : "the first block to scan"
+              "description" : "the first block to scan",
+              "default_value" : 0
             },
             {
               "name" : "num_blocks", 
