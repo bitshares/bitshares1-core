@@ -40,6 +40,10 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type; 
       withdraw_pay_operation():amount(0){}
 
+      withdraw_pay_operation( share_type amount_to_withdraw, 
+                              account_id_type id )
+      :amount(amount_to_withdraw),account_id(id) {}
+
       share_type                       amount;
       account_id_type                  account_id;
    };

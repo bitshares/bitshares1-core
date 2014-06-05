@@ -172,6 +172,7 @@ namespace bts { namespace blockchain {
             break;
          case withdraw_pay_op_type:
             evaluate_withdraw_pay( op.as<withdraw_pay_operation>() );
+            break;
          case create_asset_op_type:
             evaluate_create_asset( op.as<create_asset_operation>() );
             break;
@@ -325,6 +326,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( cur_record->is_delegate() );
 
       add_required_signature( cur_record->active_address() );
+      sub_vote( op.account_id, op.amount );
 
       FC_ASSERT( cur_record->delegate_info->pay_balance >= op.amount );
       cur_record->delegate_info->pay_balance -= op.amount;
@@ -737,26 +739,35 @@ namespace bts { namespace blockchain {
    {
    }
 
-
-   void transaction::withdraw( const balance_id_type& account, share_type amount )
+   void transaction::withdraw( const balance_id_type& account, 
+                               share_type             amount )
    { try {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( withdraw_operation( account, amount ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
-   void transaction::deposit( const address& owner, const asset& amount, account_id_type delegate_id )
+   void transaction::withdraw_pay( const account_id_type& account, 
+                                   share_type             amount )
+   {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
+      operations.push_back( withdraw_pay_operation( amount, account ) );
+   }
+
+   void transaction::deposit( const address&  owner, 
+                              const asset&    amount, 
+                              account_id_type delegate_id )
    {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
 
    void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
-                                      asset amount,
-                                      fc::ecc::private_key from_key,
-                                      const std::string& memo_message,
-                                      account_id_type delegate_id,
-                                      const fc::ecc::public_key& memo_pub_key,
-                                      memo_flags_enum memo_type )
+                                         asset amount,
+                                         fc::ecc::private_key from_key,
+                                         const std::string& memo_message,
+                                         account_id_type delegate_id,
+                                         const fc::ecc::public_key& memo_pub_key,
+                                         memo_flags_enum memo_type )
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
 

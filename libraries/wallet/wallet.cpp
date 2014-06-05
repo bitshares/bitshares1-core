@@ -1108,6 +1108,55 @@ namespace bts { namespace wallet {
          ("to_account_name",to_account_name)
          ("memo_message",memo_message) ) }
 
+
+   signed_transaction   wallet::withdraw_delegate_pay( const string& delegate_name,
+                                                       share_type amount_to_withdraw,
+                                                       const string& withdraw_to_account_name,
+                                                       const string& memo_message,
+                                                       bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( is_receive_account( delegate_name ) );
+       FC_ASSERT( is_valid_account( withdraw_to_account_name ) );
+
+       auto delegate_account_record = my->_blockchain->get_account_record( delegate_name ); //_wallet_db.lookup_account( delegate_name );
+       FC_ASSERT( delegate_account_record.valid() );
+       FC_ASSERT( delegate_account_record->is_delegate() );
+
+       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+       FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",
+                  ("delegate_account_record",delegate_account_record));
+
+       signed_transaction trx;
+       unordered_set<address> required_signatures;
+
+       owallet_key_record  delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
+       FC_ASSERT( delegate_key && delegate_key->has_private_key() );
+       auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
+       required_signatures.insert( delegate_private_key.get_public_key() );
+
+       public_key_type  receiver_public_key = get_account_public_key( withdraw_to_account_name );
+       
+       trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
+       trx.deposit_to_account( receiver_public_key,
+                               asset(amount_to_withdraw,0),
+                               delegate_private_key,
+                               memo_message,
+                               delegate_account_record->id, // vote for yourself
+                               delegate_private_key.get_public_key(),
+                               from_memo );
+
+       if( sign )
+       {
+          delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
+          // my->_wallet_db.cache_account( *delegate_account_record );
+          sign_transaction( trx, required_signatures );
+       }
+       return trx;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
+                                      ("amount_to_withdraw",amount_to_withdraw ) ) }
+
    signed_transaction   wallet::transfer_asset( share_type amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
                                         const string& from_account_name,
@@ -1687,6 +1736,11 @@ namespace bts { namespace wallet {
                   auto pretty_op = pretty_vote_proposal_op();
                   pretty_trx.add_operation( pretty_op );
                   break;
+              }
+              case withdraw_pay_op_type:
+              {
+                 pretty_trx.add_operation( op );
+                 break;
               }
               default:
               {

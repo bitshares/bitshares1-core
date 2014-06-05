@@ -182,29 +182,34 @@ namespace bts { namespace wallet {
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
-         signed_transaction       transfer_asset( share_type amount_to_transfer,
+         signed_transaction  transfer_asset( share_type amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
                                               bool sign );
 
+         signed_transaction  withdraw_delegate_pay( const string& delegate_name,
+                                                    share_type amount_to_withdraw,
+                                                    const string& withdraw_to_account_name,
+                                                    const string& memo_message,
+                                                    bool sign );
 
-         signed_transaction       create_asset( const string& symbol,
-                                                const string& asset_name,
-                                                const string& description,
-                                                const variant& data,
-                                                const string& issuer_name,
-                                                share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                                const bool sign = true );
+         signed_transaction  create_asset( const string& symbol,
+                                           const string& asset_name,
+                                           const string& description,
+                                           const variant& data,
+                                           const string& issuer_name,
+                                           share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
+                                           const bool sign = true );
 
-         signed_transaction       issue_asset( share_type amount, 
-                                               const string& symbol,                                               
-                                               const string& to_account_name,
-                                               const string& memo_message,
-                                               const bool sign = true );
+         signed_transaction  issue_asset( share_type amount, 
+                                          const string& symbol,                                               
+                                          const string& to_account_name,
+                                          const string& memo_message,
+                                          const bool sign = true );
 
-         owallet_account_record    get_account( const string& account_name );
+         owallet_account_record get_account( const string& account_name );
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
