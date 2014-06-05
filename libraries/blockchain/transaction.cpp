@@ -234,6 +234,8 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_vote_proposal( const vote_proposal_operation& op )
    { try {
+       FC_ASSERT(op.message.size() < BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE );
+
        ///  signed by a registered delegate
        auto delegate_record = _current_state->get_account_record( op.id.delegate_id );
        FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
