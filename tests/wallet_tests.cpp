@@ -223,7 +223,12 @@ BOOST_AUTO_TEST_CASE( client_tests )
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_delegates 0 3" );
-      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate-0 delegate-0 14000 \"del payday\"" );
+      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate-0 delegate-0 100 \"del payday\"" );
+      produce_block( my_client );
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
+      my_cli->execute_command_line( "blockchain_list_proposals" );
+      my_cli->execute_command_line( "blockchain_get_proposal_votes 1" );
+      my_cli->execute_command_line( "wallet_vote_proposal delegate-0 1 yes \"why not\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );

@@ -6,6 +6,8 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
 
+#include <bts/blockchain/proposal_record.hpp>
+
 #include <unordered_set>
 
 namespace bts { namespace blockchain {
@@ -74,7 +76,10 @@ namespace bts { namespace blockchain {
                             const std::string& proposal_type,
                             const fc::variant& public_data);
 
-      void vote_proposal(proposal_id_type proposal_id, name_id_type voter_id, uint8_t vote);
+      void vote_proposal(proposal_id_type proposal_id, 
+                         name_id_type voter_id, 
+                         proposal_vote::vote_type vote,
+                         const string& message );
 
 
       void create_asset( const std::string& symbol, 

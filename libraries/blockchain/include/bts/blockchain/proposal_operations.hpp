@@ -1,5 +1,6 @@
 #pragma once
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/proposal_record.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -21,10 +22,11 @@ namespace bts { namespace blockchain {
 
       proposal_vote_id_type                            id;
       fc::time_point_sec                               timestamp;
-      uint8_t                                          vote;
+      fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;
+      string                                           message;
      // fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;
    };
 
 } } // bts::blockchain
 FC_REFLECT( bts::blockchain::submit_proposal_operation, (submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )
-FC_REFLECT( bts::blockchain::vote_proposal_operation, (id)(timestamp)(vote) )
+FC_REFLECT( bts::blockchain::vote_proposal_operation, (id)(timestamp)(vote)(message) )

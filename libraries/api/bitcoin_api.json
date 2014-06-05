@@ -1,0 +1,49 @@
+{
+  "category" : "Bitcoin Compatibility",
+  "methods"  : [
+      {
+           "method_name" : "bitcoin_getaccountaddress",
+           "description" : "Returns a current bitshare address for receiving payments to this account",
+           "parameters" : [
+                 {
+                    "name" : "account_name",
+                    "type" : "account_name"
+                 }
+              ],
+           "prerequisites" : ["json_authenticated", "wallet_open"],
+           "aliases" [ "getaccountaddress" ]
+      },
+      {
+
+         getaccount
+         dumpprivkey
+         encryptwallet
+         addnode
+         backupwallet
+         getaddressesbyaccount
+         getbalance
+         getblock
+         getblockcount
+         getblockhash
+         getblocknumber
+         getconnectioncount
+         getinfo
+         getnewaddress
+         getreceivedbyaddress
+         importprivkey
+         listaccounts
+         listtransactions
+         sendfrom
+         sendmany
+         sendtoaddress
+         settxfee
+         signmessage
+         validateaddress
+         verifymessage
+         walletlock
+         walletpassphrase
+         walletpassphrasechange
+      }
+     ]
+
+}

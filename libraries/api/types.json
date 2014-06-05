@@ -58,6 +58,11 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "vote_type",
+        "cpp_return_type" : "bts::blockchain::proposal_vote::vote_type",
+        "default_example" : "yes"
+      },
+      {
         "type_name" : "proposal_vote_array",
         "container_type" : "array",
         "contained_type" : "proposal_vote",

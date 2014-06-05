@@ -1514,39 +1514,60 @@ namespace bts { namespace wallet {
       return trx;
    }
 
-   signed_transaction wallet::vote_proposal( const string& name, 
+   signed_transaction wallet::vote_proposal( const string& delegate_name, 
                                              proposal_id_type proposal_id, 
-                                             uint8_t vote,
+                                             proposal_vote::vote_type vote,
+                                             const string& message,
                                              const bool sign )
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( name ) );
+      FC_ASSERT( is_valid_account_name( delegate_name ) );
       // TODO validate subject, body, and data
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
 
-      auto account = my->_blockchain->get_account_record( name );
-      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account));
+      auto delegate_account = my->_blockchain->get_account_record( delegate_name );
+      FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account));
+      FC_ASSERT(delegate_account->is_delegate());
 
-      trx.vote_proposal( proposal_id, account->id, vote );
+      bool found_active_delegate = false;
+      auto next_active = my->_blockchain->next_round_active_delegates();
+      for( auto delegate_id : next_active )
+      {
+         if( delegate_id == delegate_account->id )
+         {
+            found_active_delegate = true;
+            break;
+         }
+      }
+      FC_ASSERT( found_active_delegate, "Delegate ${name} is not currently active",
+                 ("name",delegate_name) );
+      
+
+      FC_ASSERT(message.size() < BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE );
+      trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
       required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
       
+      /*
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( account->name ),
                                    trx, required_signatures );
-     
-      required_signatures.insert( account->active_key() ); 
+      */
+
+      trx.withdraw_pay( delegate_account->id, required_fees.amount );
+      required_signatures.insert( delegate_account->active_key() ); 
        
-      if (sign)
+      if( sign )
+      {
           sign_transaction( trx, required_signatures );
+      }
 
       return trx;
-
    }
 
    asset wallet::get_priority_fee( const string& symbol )const

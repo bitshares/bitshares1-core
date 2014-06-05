@@ -410,12 +410,14 @@
             {
               "name" : "first_block_number", 
               "type" : "uint32_t", 
-              "description" : "the first block to scan"
+              "description" : "the first block to scan",
+              "default_value" : 0
             },
             {
               "name" : "num_blocks", 
               "type" : "uint32_t", 
-              "description" : "the number of blocks to scan"
+              "description" : "the number of blocks to scan",
+              "default_value" : -1
             }
           ],
         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
@@ -663,11 +665,17 @@
                },
                {
                   "name" : "vote",
-                  "type" : "uint8_t",
+                  "type" : "vote_type",
                   "description" : "your vote"
+               },
+               {
+                  "name" : "message",
+                  "type" : "std::string",
+                  "description" : "comment to go along with vote",
+                  "default_value" : ""
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_list_unspent_balances",
@@ -721,7 +729,7 @@
                "name" : "memo",
                "type" : "std::string",
                "description" : "memo to add to transaction"
-            }
+      }
          ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : ["pay_delegate"]
