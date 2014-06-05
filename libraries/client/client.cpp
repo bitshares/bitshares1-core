@@ -1024,6 +1024,10 @@ namespace bts { namespace client {
    {
       return _chain_db->get_proposals( first, count );
    }
+   vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
+   {
+      return _chain_db->get_proposal_votes( proposal_id );
+   }
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

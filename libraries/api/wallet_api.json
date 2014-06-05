@@ -658,7 +658,7 @@
                },
                {
                   "name" : "proposal_id",
-                  "type" : "proposal_id_type",
+                  "type" : "proposal_id",
                   "description" : "the id of the proposal to vote on"
                },
                {
