@@ -172,6 +172,13 @@ BOOST_AUTO_TEST_CASE( client_tests )
       produce_block( my_client );
       your_cli->execute_command_line( "balance" );
       your_cli->execute_command_line( "unlock 99999999999999999999" );
+      my_cli->execute_command_line( "wallet_submit_proposal delegate-0 \"test proposal\" \"test body\" \"notice\" null" );
+      produce_block( my_client );
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
+      // this errors as expected because youraccount is not a delegate
+      // your_cli->execute_command_line( "wallet_submit_proposal youraccount \"test proposal\" \"test body\" \"notice\" null" );
+
+
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 
