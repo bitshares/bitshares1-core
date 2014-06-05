@@ -41,6 +41,8 @@ namespace bts { namespace cli {
             fc::future<void>            _cin_complete;
             std::ostream&               _out;
 
+            bool                        raw_only;
+
             cli_impl(const client_ptr& client, std::ostream& output_stream);
 
             string get_prompt()const
@@ -64,6 +66,17 @@ namespace bts { namespace cli {
             void parse_and_execute_interactive_command(string command, 
                                                        fc::istream_ptr argument_stream )
             { 
+              if (command == "enable_raw")
+              {
+                  raw_only = true;
+                  return;
+              }
+              else if (command == "disable_raw")
+              {
+                  raw_only = false;
+                  return;
+              }
+
               fc::buffered_istream buffered_argument_stream(argument_stream);
 
               bool command_is_valid = false;
@@ -71,7 +84,7 @@ namespace bts { namespace cli {
               try
               {
                 arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-               ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
+                ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
               catch( const fc::key_not_found_exception& )
@@ -688,7 +701,23 @@ namespace bts { namespace cli {
               {
                  elog( " unexpected exception " );
               }
-              
+
+              if (raw_only)
+              {
+                  string result_type;
+                  const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
+                  result_type = method_data.return_type;
+
+                  if (result_type == "asset")
+                    _out << (string)result.as<bts::blockchain::asset>() << "\n";
+                  else if (result_type == "address")
+                    _out << (string)result.as<bts::blockchain::address>() << "\n";
+                  else if (result_type == "null" || result_type == "void")
+                    _out << "OK\n";
+                  else
+                    _out << fc::json::to_pretty_string(result) << "\n";
+              }
+             
               if (method_name == "help")
               {
                 string help_string = result.as<string>();
@@ -1088,7 +1117,8 @@ namespace bts { namespace cli {
     cli_impl::cli_impl( const client_ptr& client, std::ostream& output_stream ) :
       _client(client),
       _rpc_server(client->get_rpc_server()),
-      _out(output_stream)
+      _out(output_stream),
+      raw_only(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
