@@ -1,11 +1,11 @@
 # Warning: this is a generated file, any changes made here will be overwritten by the build process
 
-class NetworkAPI
+class BlockchainAPI
 
   constructor: (@q, @log, @rpc) ->
     #@log.info "---- Network API Constructor ----"
 
-<% network_api['methods'].each do |m| %>
+<% blockchain_api['methods'].each do |m| %>
   # <%= m['description'] %>
   # parameters: <%= js_params_doc(m, 2) %>
   # return_type: `<%= m['return_type'] %>`
@@ -15,4 +15,4 @@ class NetworkAPI
 <% end %>
 
 
-angular.module("app").service("NetworkAPI", ["$q", "$log", "RpcService", NetworkAPI])
+angular.module("app").service("BlockchainAPI", ["$q", "$log", "RpcService", BlockchainAPI])

@@ -1,17 +1,20 @@
+#!/usr/bin/env ruby
+
 require 'erb'
 require 'json'
 
 class Generator
 
-  attr_reader :wallet_api, :network_api
+  attr_reader :wallet_api, :network_api, :blockchain_api
 
   def initialize
     @wallet_api = JSON.parse(IO.read('../wallet_api.json'))
     @network_api = JSON.parse(IO.read('../network_api.json'))
+    @blockchain_api = JSON.parse(IO.read('../blockchain_api.json'))
   end
 
   def render(template)
-    ERB.new(template).result(binding)
+    ERB.new(template, nil, '-').result(binding)
   end
 
 private
@@ -28,6 +31,25 @@ private
     return '' if param_names.empty?
     ', [' + param_names.join(', ') + ']'
   end
+
+  def js_params_doc(method, shift_right)
+    return '' if method['parameters'].empty?
+    res = ''
+    method['parameters'].each do |p|
+      res << "\n"
+      res << " " * shift_right
+      res << "#   #{p['type']} `#{p['name']}` - #{p['description']}"
+      res << ", example: #{p['example']}" if p['example']
+    end
+    res
+  end
+#    <% if m['parameters'] and !m['parameters'].empty? -%>
+## parameters:
+#    <% m['parameters'].each do |p| -%>
+##   <%= p['type'] %> `<%= p['name'] %>` - <%= p['description'] %>, example: <%= p['example'] %>
+#         <%
+#       end -%>
+#  <% end -%>
 
 end
 
