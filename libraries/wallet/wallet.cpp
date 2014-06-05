@@ -1938,7 +1938,7 @@ namespace bts { namespace wallet {
                 {
                     if (delegate_id == 0)
                     {
-                        std::cout << "WARNING - delegate id 0 bug @ 1";
+                        FC_ASSERT(!"WARNING - delegate id 0 bug @ 1");
                         return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
                     }
                     return -delegate_id;
@@ -1967,7 +1967,7 @@ namespace bts { namespace wallet {
             {
                 if (for_acct.id == 0)
                 {
-                    std::cout << "WARNING - delegate id 0 bug @ 2";
+                    FC_ASSERT(!"WARNING - delegate id 0 bug @ 2");
                     return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
                 }
                 else
@@ -1989,7 +1989,7 @@ namespace bts { namespace wallet {
          }
          if (winner == 0)
          {
-            std::cout << "WARNING - delegate id 0 bug @ 3";
+            FC_ASSERT(!"WARNING - delegate id 0 bug @ 3");
             return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
          }
          else
@@ -2000,7 +2000,7 @@ namespace bts { namespace wallet {
             auto num = rand();
             if (active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
             {
-                std::cout << "WARNING - delegate id 0 bug @ 4";
+                FC_ASSERT(!"WARNING - delegate id 0 bug @ 4");
                 return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
             }
             else
