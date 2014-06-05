@@ -35,12 +35,17 @@
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
 
+
+#include <boost/range/adaptor/reversed.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 
@@ -322,7 +327,8 @@ namespace bts { namespace client {
             // @{
             virtual bool has_item(const bts::net::item_id& id) override;
             virtual void handle_message(const bts::net::message&) override;
-            virtual vector<bts::net::item_hash_t> get_item_ids(const bts::net::item_id& from_id,
+            virtual std::vector<bts::net::item_hash_t> get_item_ids(uint32_t item_type,
+                                                                    const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
@@ -331,7 +337,7 @@ namespace bts { namespace client {
                 FC_ASSERT( _chain_db != nullptr );
                 return _chain_db->chain_id(); 
             }
-            virtual vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
+            virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point = fc::optional<bts::net::item_hash_t>()) override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
             /// @}
@@ -553,59 +559,108 @@ namespace bts { namespace client {
          }
        }
 
-       /**
-        *  Get the hash of all blocks after from_id
-        */
-       vector<bts::net::item_hash_t> client_impl::get_item_ids(const bts::net::item_id& from_id,
-                                                                    uint32_t& remaining_item_count,
-                                                                    uint32_t limit /* = 2000 */)
-       {
-         FC_ASSERT(from_id.item_type == bts::client::block_message_type);
-         ilog("head_block is ${head_block_num}", ("head_block_num", _chain_db->get_head_block_num()));
-
-         uint32_t last_seen_block_num;
-         try
-         {
-           last_seen_block_num = _chain_db->get_block_num(from_id.item_hash);
-         }
-         catch (fc::key_not_found_exception&)
-         {
-           if (from_id.item_hash == bts::net::item_hash_t())
-             last_seen_block_num = 0;
-           else
-           {
-             remaining_item_count = 0;
-             return vector<bts::net::item_hash_t>();
-           }
-         }
-         remaining_item_count = _chain_db->get_head_block_num() - last_seen_block_num;
-         uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
-         vector<bts::net::item_hash_t> hashes_to_return;
-         hashes_to_return.reserve(items_to_get_this_iteration);
-         for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
-         {
-           ++last_seen_block_num;
-           signed_block_header header;
-           try
-           {
-             header = _chain_db->get_block(last_seen_block_num);
-           }
-           catch (fc::key_not_found_exception&)
-           {
-             elog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
-             throw;
-             // assert( !"I assume this can never happen");
-           }
-           hashes_to_return.push_back(header.id());
-         }
-         remaining_item_count -= items_to_get_this_iteration;
-         return hashes_to_return;
-       }
-
-      vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis()
+      /**
+      *  Get the hash of all blocks after from_id
+      */
+      std::vector<bts::net::item_hash_t> client_impl::get_item_ids(uint32_t item_type,
+                                                                  const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
+                                                                  uint32_t& remaining_item_count,
+                                                                  uint32_t limit /* = 2000 */)
       {
-        vector<bts::net::item_hash_t> synopsis;
-        uint32_t high_block_num = _chain_db->get_head_block_num();
+        FC_ASSERT(item_type == bts::client::block_message_type);
+        uint32_t last_seen_block_num = 1;
+        bts::net::item_hash_t last_seen_block_hash;
+        for (const bts::net::item_hash_t& item_hash : boost::adaptors::reverse(blockchain_synopsis))
+        {
+          try
+          {
+            last_seen_block_num = _chain_db->get_block_num(item_hash);
+            last_seen_block_hash = item_hash;
+            break;
+          }
+          catch (fc::key_not_found_exception&)
+          {
+          }
+        }
+
+        std::vector<bts::net::item_hash_t> hashes_to_return;
+        uint32_t head_block_num = _chain_db->get_head_block_num();
+        if (head_block_num == 0)
+        {
+          remaining_item_count = 0;
+          return hashes_to_return; // we have no blocks
+        }
+
+        if (last_seen_block_num > head_block_num)
+        {
+          // We were getting this condition during testing when one of the blocks is invalid because 
+          // its timestamp was in the future.  It was accepted in to the database, but never linked to
+          // the chain.  We've fixed the test and it doesn't seem likely that this would happen in a
+          // production environment.
+
+          //wlog("last_seen_block_num(${last_seen}) > head_block_num(${head})", ("last_seen", last_seen_block_num)("head", head_block_num));
+          //wlog("last_seen_block(${last_seen}) > head_block(${head})", ("last_seen", last_seen_block_hash)("head", _chain_db->get_head_block_id()));
+          //int num = rand() % 100;
+          //fc::path dot_filename(std::string("E:\\fork") + boost::lexical_cast<std::string>(num) + ".dot");
+          //_chain_db->export_fork_graph(dot_filename);
+          //wlog("Graph written to file ${dot_filename}", ("dot_filename", dot_filename));
+
+          assert(false);
+          // and work around it
+          last_seen_block_num = head_block_num;
+        }
+
+        remaining_item_count = head_block_num - last_seen_block_num + 1;
+        uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
+        hashes_to_return.reserve(items_to_get_this_iteration);
+        for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
+        {
+          signed_block_header header;
+          try
+          {
+            header = _chain_db->get_block(last_seen_block_num);
+          }
+          catch (fc::key_not_found_exception&)
+          {
+            ilog("chain_database::get_block failed to return block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number", 
+                 ("last_seen_block_num",last_seen_block_num));
+            assert( !"I assume this can never happen");
+          }
+          hashes_to_return.push_back(header.id());
+          ++last_seen_block_num;
+        }
+        remaining_item_count -= items_to_get_this_iteration;
+        return hashes_to_return;
+      }
+
+      std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point /* = fc::optional<bts::net::item_hash_t>() */)
+      {
+        FC_ASSERT(item_type == bts::client::block_message_type);
+        std::vector<bts::net::item_hash_t> synopsis;
+        uint32_t high_block_num = 0;
+        if (reference_point)
+        {
+          // the node is asking for a summary of the block chain up to a specified
+          // block, which may or may not be on a fork
+          // for now, assume it's not on a fork
+          try
+          {
+            high_block_num = _chain_db->get_block_num(*reference_point);
+          }
+          catch (const fc::key_not_found_exception&)
+          {
+            // it must be on a fork or we've never seen it
+            // TODO: figure out which
+            return synopsis;
+          }
+        }
+        else
+        {
+          // no reference point specified, summarize the whole block chain
+          high_block_num = _chain_db->get_head_block_num();
+          if (high_block_num == 0)
+            return synopsis; // we have no blocks
+        }
         uint32_t low_block_num = 1;
         do
         {

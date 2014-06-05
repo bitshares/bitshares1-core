@@ -50,9 +50,10 @@ namespace bts { namespace net {
           *  in our blockchain after the last item returned in the result,
           *  or 0 if the result contains the last item in the blockchain
           */
-         virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id,
-                                                        uint32_t& remaining_item_count,
-                                                        uint32_t limit = 2000 ) = 0;
+         virtual std::vector<item_hash_t> get_item_ids(uint32_t item_type,
+                                                       const std::vector<item_hash_t>& blockchain_synopsis,
+                                                       uint32_t& remaining_item_count,
+                                                       uint32_t limit = 2000) = 0;
 
          /**
           *  Given the hash of the requested data, fetch the body.
@@ -76,7 +77,7 @@ namespace bts { namespace net {
           *     &c.
           *   the last item in the list will be the hash of the most recent block on our preferred chain
           */
-         virtual std::vector<item_hash_t> get_blockchain_synopsis() = 0;
+         virtual std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point = fc::optional<bts::net::item_hash_t>()) = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.

@@ -1332,25 +1332,35 @@ namespace bts { namespace net {
     void node_impl::on_fetch_blockchain_item_ids_message(peer_connection* originating_peer, 
                                                          const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received)
     {
+      item_id peers_last_item_seen;
+      if (!fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty())
+        peers_last_item_seen = item_id(fetch_blockchain_item_ids_message_received.item_type,
+                                       fetch_blockchain_item_ids_message_received.blockchain_synopsis.back());
       ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
-           ("last_item_seen", fetch_blockchain_item_ids_message_received.last_item_seen.item_hash)
+           ("last_item_seen", peers_last_item_seen)
            ("peer_endpoint", originating_peer->get_remote_endpoint()));
-      blockchain_item_ids_inventory_message reply_message;
-      reply_message.item_hashes_available = _delegate->get_item_ids(fetch_blockchain_item_ids_message_received.last_item_seen,
-                                                                    reply_message.total_remaining_item_count);
-      reply_message.item_type = fetch_blockchain_item_ids_message_received.last_item_seen.item_type;
 
-      // if our client doesn't have any items after the item the peer requested
-      if (reply_message.item_hashes_available.empty())
+      blockchain_item_ids_inventory_message reply_message;
+      reply_message.item_hashes_available = _delegate->get_item_ids(fetch_blockchain_item_ids_message_received.item_type,
+                                                                    fetch_blockchain_item_ids_message_received.blockchain_synopsis,
+                                                                    reply_message.total_remaining_item_count);
+      reply_message.item_type = fetch_blockchain_item_ids_message_received.item_type;
+
+      // if our client doesn't have any items after the item the peer requested, it will send back
+      // a list containing the last item the peer requested
+      if (reply_message.item_hashes_available.empty() /* I have no items in my blockchain */ ||
+          (reply_message.item_hashes_available.size() == 1 &&
+           reply_message.item_hashes_available[0] == fetch_blockchain_item_ids_message_received.blockchain_synopsis.back()))
       {
         ilog("sync: peer is already in sync with us");
         originating_peer->peer_needs_sync_items_from_us = false;
 
-        // if we thought we had all the items this peer had, but we don't even have the
-        // starting item it requested to send from, 
+        // if we thought we had all the items this peer had, but now it turns out that we don't 
+        // have the last item it requested to send from, 
         // we need to kick off another round of synchronization
         if (!originating_peer->we_need_sync_items_from_peer &&
-            !_delegate->has_item(fetch_blockchain_item_ids_message_received.last_item_seen))
+            !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
+            !_delegate->has_item(peers_last_item_seen))
           start_synchronizing_with_peer(originating_peer->shared_from_this());
       }
       else
@@ -1398,7 +1408,10 @@ namespace bts { namespace net {
     {
       ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}", ("last_item_seen", last_item_id_seen.item_hash)("peer", peer->get_remote_endpoint()));
       peer->item_ids_requested_from_peer = boost::make_tuple(last_item_id_seen, fc::time_point::now());
-      peer->send_message(fetch_blockchain_item_ids_message(last_item_id_seen));
+      std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis(last_item_id_seen.item_type, last_item_id_seen.item_hash);
+      assert(last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back());
+      ilog("actual last item from blockchain synopsis is ${last_item_seen_for_real}", ("last_item_seen_for_real", blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back()));
+      peer->send_message(fetch_blockchain_item_ids_message(last_item_id_seen.item_type, blockchain_synopsis));
     }
 
     void node_impl::on_blockchain_item_ids_inventory_message(peer_connection* originating_peer,
@@ -1407,6 +1420,31 @@ namespace bts { namespace net {
       // ignore unless we asked for the data
       if( originating_peer->item_ids_requested_from_peer.valid() )
       {
+        bool response_indicates_a_fork = true;
+        if (blockchain_item_ids_inventory_message_received.item_hashes_available.empty())
+        {
+          // the peer didn't know of any blocks.  they're useless.  
+          response_indicates_a_fork = false;
+        }
+        else if (originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t())
+        {
+          // we didn't know of any blocks when we requested a list of blocks from this peer.
+          // regardless of what they give us, we won't treat it as a fork
+          response_indicates_a_fork = false;
+        }
+        else if (blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash)
+        {
+          // the peer knows some blocks, but they're indicating no fork (they chose to extend the last 
+          // block we sent them)
+          response_indicates_a_fork = false;
+        }
+
+#if 0
+        assert(originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
+               blockchain_item_ids_inventory_message_received.item_hashes_available.empty() ||
+               blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash);
+#endif
+
         originating_peer->item_ids_requested_from_peer.reset();
 
         ilog("sync: received a list of ${count} available items from ${peer_endpoint}", 
@@ -1419,7 +1457,10 @@ namespace bts { namespace net {
 
         // if the peer doesn't have any items after the one we asked for
         if (blockchain_item_ids_inventory_message_received.total_remaining_item_count == 0 &&
-            blockchain_item_ids_inventory_message_received.item_hashes_available.empty() &&
+            /// was: blockchain_item_ids_inventory_message_received.item_hashes_available.empty() &&
+            (blockchain_item_ids_inventory_message_received.item_hashes_available.size() == 1 && 
+             _delegate->has_item(item_id(blockchain_item_ids_inventory_message_received.item_type,
+                                         blockchain_item_ids_inventory_message_received.item_hashes_available.front()))) &&
             originating_peer->ids_of_items_to_get.empty() &&
             originating_peer->number_of_unfetched_item_ids == 0) // <-- is the last check necessary?
         {
