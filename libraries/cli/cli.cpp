@@ -854,6 +854,33 @@ namespace bts { namespace cli {
                       //current++;
                   }
               }
+              else if (method_name == "blockchain_list_proposals")
+              {
+                  auto proposals = result.as<vector<proposal_record>>();
+                  _out << std::setw(10) << "ID";
+                  _out << std::setw(20) << "SUBMITTED BY";
+                  _out << std::setw(15) << "SUBMIT TIME";
+                  _out << std::setw(15) << "TYPE";
+                  _out << std::setw(20) << "SUBJECT";
+                  _out << std::setw(35) << "BODY";
+                  _out << std::setw(20) << "DATA";
+                  _out << std::setw(4)  << "RATIFIED";
+                  _out << "\n------------------------------------------------------------";
+                  _out << "-----------------------------------------------------------------";
+                  _out << "------------------\n";
+                  for (auto prop : proposals)
+                  {
+                      _out << std::setw(10) << prop.id;
+                      auto time = boost::posix_time::from_time_t(time_t(prop.submission_date.sec_since_epoch()));
+                      _out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      _out << std::setw(15) << prop.proposal_type;
+                      _out << std::setw(20) << prop.subject;
+                      _out << std::setw(35) << prop.body;
+                      _out << std::setw(20) << fc::json::to_pretty_string(prop.data);
+                      _out << std::setw(4) << prop.ratified;
+                  }
+                  
+              }
               else
               {
                 // there was no custom handler for this particular command, see if the return type
