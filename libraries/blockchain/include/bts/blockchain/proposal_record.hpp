@@ -9,13 +9,16 @@ namespace bts { namespace blockchain {
       bool is_null()const { return submitting_delegate_id == -1; }
       proposal_record make_null()const    { proposal_record cpy(*this); cpy.submitting_delegate_id = -1; return cpy; }
 
+      proposal_record():ratified(false){}
+
       proposal_id_type      id;
       name_id_type          submitting_delegate_id; // the delegate_id of the submitter
       fc::time_point_sec    submission_date;
-      std::string           subject;
-      std::string           body;
-      std::string           proposal_type; // alert, bug fix, feature upgrade, property change, etc
-      fc::variant           data;  // data that is unique to the proposal
+      string                subject;
+      string                body;
+      string                proposal_type; // alert, bug fix, feature upgrade, property change, etc
+      variant               data;  // data that is unique to the proposal
+      bool                  ratified; /// set true once more than 50% of delegates approve
    };
    typedef fc::optional<proposal_record> oproposal_record;
    
@@ -39,4 +42,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
 FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
-FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data) )
+FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data)(ratified) )
