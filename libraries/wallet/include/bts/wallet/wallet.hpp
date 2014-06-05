@@ -240,7 +240,8 @@ namespace bts { namespace wallet {
 
          signed_transaction vote_proposal( const string& delegate_account_name, 
                                            proposal_id_type proposal_id, 
-                                           uint8_t vote,
+                                           proposal_vote::vote_type vote,
+                                           const string& message = string(),
                                            const bool sign = true);
 
 

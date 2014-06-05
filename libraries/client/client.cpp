@@ -512,12 +512,13 @@ namespace bts { namespace client {
 
     signed_transaction detail::client_impl::wallet_vote_proposal(const string& name,
                                                     const proposal_id_type& proposal_id,
-                                                    uint8_t vote)
+                                                    const proposal_vote::vote_type& vote,
+                                                    const string& message )
     {
       try {
         generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
         bool sign = (flag != bts::rpc::do_not_sign);
-        auto trx = _wallet->vote_proposal(name, proposal_id, vote, sign);
+        auto trx = _wallet->vote_proposal(name, proposal_id, vote, message, sign);
         if (flag == bts::rpc::sign_and_broadcast)
         {
             network_broadcast_transaction(trx);

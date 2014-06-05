@@ -663,11 +663,17 @@
                },
                {
                   "name" : "vote",
-                  "type" : "uint8_t",
+                  "type" : "vote_type",
                   "description" : "your vote"
+               },
+               {
+                  "name" : "message",
+                  "type" : "std::string",
+                  "description" : "comment to go along with vote",
+                  "default_value" : ""
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_list_unspent_balances",

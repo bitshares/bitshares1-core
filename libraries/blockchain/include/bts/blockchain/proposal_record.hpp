@@ -1,7 +1,7 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
+//#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
    struct proposal_record
@@ -35,11 +35,12 @@ namespace bts { namespace blockchain {
 
       proposal_vote_id_type             id;
       fc::time_point_sec                timestamp;
+      string                            message;
       fc::enum_type<uint8_t,vote_type>  vote;
    };
    typedef fc::optional<proposal_vote> oproposal_vote;
 }} // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )
-FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(vote) )
+FC_REFLECT( bts::blockchain::proposal_vote, (id)(timestamp)(message)(vote) )
 FC_REFLECT( bts::blockchain::proposal_record, (id)(submitting_delegate_id)(submission_date)(subject)(body)(proposal_type)(data)(ratified) )

@@ -249,6 +249,7 @@ namespace bts { namespace blockchain {
        new_vote.id = op.id;
        new_vote.timestamp = op.timestamp;
        new_vote.vote = op.vote;
+       new_vote.message = op.message;
 
        _current_state->store_proposal_vote( new_vote );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
@@ -824,13 +825,15 @@ namespace bts { namespace blockchain {
 
    void transaction::vote_proposal(proposal_id_type proposal_id,
                                    account_id_type voter_id,
-                                   uint8_t vote)
+                                   proposal_vote::vote_type vote,
+                                   const string& message )
    {
      vote_proposal_operation op;
      op.id.proposal_id = proposal_id;
      op.id.delegate_id = voter_id;
      op.timestamp = fc::time_point::now();
      op.vote = vote;
+     op.message = message;
      operations.push_back(op);
    }
 
