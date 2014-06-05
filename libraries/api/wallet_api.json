@@ -322,8 +322,8 @@
         "aliases" : [  ]
       },
       {
-        "method_name": "wallet_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "method_name": "wallet_multipart_transfer",
+        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
         "parameters" : 
           [
@@ -354,7 +354,43 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network"],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+        "aliases" : ["multipart_transfer"]
+      },
+      {
+        "method_name": "wallet_transfer",
+        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "return_type": "signed_transaction",
+        "parameters" : 
+          [
+            {
+              "name" : "amount_to_transfer", 
+              "type" : "amount", 
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol", 
+              "type" : "asset_symbol", 
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name", 
+              "type" : "sending_account_name", 
+              "description" : "the source account(s) to draw the shares from"
+            },
+            {
+              "name" : "to_account_name", 
+              "type" : "receive_account_name", 
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "memo_message", 
+              "type" : "std::string", 
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
         "aliases" : ["transfer"]
       },
       {
@@ -470,6 +506,19 @@
          "prerequisites" : ["json_authenticated", "wallet_open" ]
       },
       {
+         "method_name" : "wallet_remove_contact_account",
+         "description" : "Remove a contact account from your wallet",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the contact"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
          "method_name" : "wallet_rename_account",
          "description" : "Rename an account in wallet",
          "return_type" : "void",
@@ -515,7 +564,7 @@
                },
                {
                   "name" : "data",
-                  "type" : "variant",
+                  "type" : "json_variant",
                   "description" : "arbitrary data attached to the asset",
                   "default_value" : null
                },
@@ -547,9 +596,14 @@
                   "name" : "to_account_name",
                   "type" : "account_name",
                   "description" : "the name of the account to receive the shares"
+               },
+               {
+                  "name" : "memo_message",
+                  "type" : "std::string",
+                  "description" : "the memo to send to the receiver"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_submit_proposal",
@@ -582,7 +636,7 @@
                   "description" : "the name of the account to receive the shares"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_vote_proposal",
@@ -634,6 +688,35 @@
          "parameters"     : [],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : ["balance"]
+      },
+      {
+         "method_name"  : "wallet_withdraw_delegate_pay",
+         "description"  : "Used to transfer some of the delegates pay from their balance",
+         "return_type"  : "signed_transaction",
+         "parameters"   : [
+            {
+              "name" : "delegate_name",
+              "type" : "account_name",
+              "description" : "the delegate who's pay is being cashed out"
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "account_name",
+              "description" : "the account that should receive the funds"
+            },
+            {
+               "name" : "amount_to_withdraw",
+               "type" : "share_type",
+               "description" : "the amount to withdraw"
+            },
+            {
+               "name" : "memo",
+               "type" : "std::string",
+               "description" : "memo to add to transaction"
+            }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "aliases" : ["pay_delegate"]
       }
 
     ]

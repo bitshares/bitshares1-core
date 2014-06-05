@@ -181,7 +181,7 @@
         "aliases" : ["blockchain_get_asset_by_id"]
       },
       {
-        "method_name": "blockchain_get_delegates",
+        "method_name": "blockchain_list_delegates",
         "description": "Returns the list of delegates sorted by vote",
         "return_type": "account_record_array",
         "parameters" : [
@@ -199,6 +199,7 @@
             }
         ],
         "is_const" : true,
+        "aliases" : ["blockchain_get_delegates"],
         "prerequisites" : ["json_authenticated"]
       }
     ]

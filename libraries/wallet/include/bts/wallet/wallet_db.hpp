@@ -76,6 +76,7 @@ namespace bts { namespace wallet {
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;
+         owallet_account_record lookup_account( account_id_type aid )const;
 
          oprivate_key           lookup_private_key( const address& address, 
                                                     const fc::sha512& password );
@@ -90,6 +91,8 @@ namespace bts { namespace wallet {
                                    const variant& private_data = variant() );
          void add_contact_account( const account_record& blockchain_account,
                                    const variant& private_data = variant() );
+
+         void remove_contact_account( const string& account_name);
 
          void rename_account( const string& old_account_name,
                               const string& new_account_name );

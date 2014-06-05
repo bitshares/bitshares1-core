@@ -2,6 +2,7 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -14,9 +15,13 @@
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <boost/optional.hpp>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 
 #ifdef HAVE_READLINE
@@ -38,9 +43,14 @@ namespace bts { namespace cli {
 //            fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
-            std::ostream&               _out;
 
-            cli_impl(const client_ptr& client, std::ostream& output_stream);
+            bool                        show_raw_output;
+
+            std::ostream&                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
+            std::istream&                  _input_stream;
+            boost::optional<std::ostream&> _input_log_stream;
+
+            cli_impl(const client_ptr& client, std::istream& input_stream, std::ostream& output_stream);
 
             string get_prompt()const
             {
@@ -48,14 +58,14 @@ namespace bts { namespace cli {
               string prompt = wallet_name;
               if( prompt == "" )
               {
-                 prompt = "(wallet closed) >>> ";
+                 prompt = "(wallet closed) " CLI_PROMPT_SUFFIX;
               }
               else
               {
                  if( _client->get_wallet()->is_locked() )
-                    prompt += " (locked) >>> ";
+                    prompt += " (locked) " CLI_PROMPT_SUFFIX;
                  else
-                    prompt += " (unlocked) >>> ";
+                    prompt += " (unlocked) " CLI_PROMPT_SUFFIX;
               }
               return prompt;
             }
@@ -63,6 +73,17 @@ namespace bts { namespace cli {
             void parse_and_execute_interactive_command(string command, 
                                                        fc::istream_ptr argument_stream )
             { 
+              if (command == "enable_raw")
+              {
+                  show_raw_output = true;
+                  return;
+              }
+              else if (command == "disable_raw")
+              {
+                  show_raw_output = false;
+                  return;
+              }
+
               fc::buffered_istream buffered_argument_stream(argument_stream);
 
               bool command_is_valid = false;
@@ -70,12 +91,13 @@ namespace bts { namespace cli {
               try
               {
                 arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-               ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
+                ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
               catch( const fc::key_not_found_exception& )
               {
-                _out << "Error: invalid command \"" << command << "\"\n";
+                 if( command.size() )
+                   _out << "Error: invalid command \"" << command << "\"\n";
               }
               catch( const fc::canceled_exception&)
               {
@@ -112,6 +134,15 @@ namespace bts { namespace cli {
             { try {
               ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
+              /** 
+               *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
+               *  when expected while parsing the command.  Adding EOF (0x04) characater at the
+               *  end of the string casues the JSON parser to recognize the EOF rather than relying
+               *  on stringstream.  
+               *
+               *  @todo figure out how to fix things on these OS X systems.
+               */
+              trimmed_line_to_parse += string(" ") + char(0x04);
               if (!trimmed_line_to_parse.empty())
               {
                 string::const_iterator iter = std::find_if(trimmed_line_to_parse.begin(), trimmed_line_to_parse.end(), ::isspace);
@@ -147,7 +178,7 @@ namespace bts { namespace cli {
             { 
               try {
                  string line = get_line(get_prompt());
-                 while (std::cin.good())
+                 while (_input_stream.good())
                  {
                    if (!execute_command_line(line))
                      break;
@@ -165,7 +196,7 @@ namespace bts { namespace cli {
               _cin_complete.cancel();
             } 
 
-            string get_line( const string& prompt = ">>> ", bool no_echo = false)
+            string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
               return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
             }
@@ -174,21 +205,20 @@ namespace bts { namespace cli {
             {
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
-                  _out<<prompt;
                   if ( no_echo )
                   {
+                      _out<<prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      std::getline( std::cin, line );
+                      std::getline( _input_stream, line );
                       fc::set_console_echo(true);
                       _out << std::endl;
                   }
                   else
                   {
                   #ifdef HAVE_READLINE 
-                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
-                     rl_already_prompted = 1; //we've already written out prompt
                      char* line_read = nullptr;
+                     _out.flush(); //readline doesn't use cin, so we must manually flush _out
                      line_read = readline(prompt.c_str());
                      if(line_read && *line_read)
                          add_history(line_read);
@@ -199,9 +229,11 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
-                     std::getline( std::cin, line );
+                      _out<<prompt;
+                     std::getline( _input_stream, line );
                   #endif
-                    //DLNFIX _out.echo_console_input_to_log(line);
+                  if (_input_log_stream)
+                    *_input_log_stream << line << std::endl;
                   }
 
                   boost::trim(line);
@@ -304,7 +336,7 @@ namespace bts { namespace cli {
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
                                                       const bts::api::method_data& method_data,
                                                       unsigned parameter_index)
-            {
+            { try {
               const bts::api::parameter_data& this_parameter = method_data.parameters[parameter_index];
               if (this_parameter.type == "asset")
               {
@@ -361,7 +393,8 @@ namespace bts { namespace cli {
                 // assume it's raw JSON
                 try
                 {
-                  return fc::json::from_stream( argument_stream );
+                  auto tmp = fc::json::from_stream( argument_stream );
+                  return  tmp;
                 }
                 catch( fc::parse_error_exception& e )
                 {
@@ -369,7 +402,7 @@ namespace bts { namespace cli {
                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
                 }
               }
-            }
+            } FC_RETHROW_EXCEPTIONS( warn, "", ("parameter_index",parameter_index) ) }
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
@@ -676,7 +709,23 @@ namespace bts { namespace cli {
               {
                  elog( " unexpected exception " );
               }
-              
+
+              if (show_raw_output)
+              {
+                  string result_type;
+                  const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
+                  result_type = method_data.return_type;
+
+                  if (result_type == "asset")
+                    _out << (string)result.as<bts::blockchain::asset>() << "\n";
+                  else if (result_type == "address")
+                    _out << (string)result.as<bts::blockchain::address>() << "\n";
+                  else if (result_type == "null" || result_type == "void")
+                    _out << "OK\n";
+                  else
+                    _out << fc::json::to_pretty_string(result) << "\n";
+              }
+             
               if (method_name == "help")
               {
                 string help_string = result.as<string>();
@@ -695,7 +744,7 @@ namespace bts { namespace cli {
                       _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << _client->get_chain()->to_pretty_asset(balance.second) << "\n";
+                         _out << "    " << fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }
@@ -704,6 +753,77 @@ namespace bts { namespace cli {
                   auto wallets = result.as<vector<string>>();
                   for (auto wallet : wallets)
                       _out << wallet << "\n";
+              }
+              else if (method_name == "wallet_list_unspent_balances" )
+              {
+                  auto balance_recs = result.as<vector<wallet_balance_record>>();
+                  _out << std::right;
+                  _out << std::setw(18) << "BALANCE";
+                  _out << std::right << std::setw(40) << "OWNER";
+                  _out << std::right << std::setw(25) << "VOTE";
+                  _out << "\n";
+                  _out << "-------------------------------------------------------------";
+                  _out << "-------------------------------------------------------------\n";
+                  for( auto balance_rec : balance_recs )
+                  {
+                      _out << std::setw(18) << balance_rec.balance;
+                      switch (withdraw_condition_types(balance_rec.condition.type))
+                      {
+                          case (withdraw_signature_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_with_signature>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 36)
+                                  _out << std::setw(40) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(40) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          case (withdraw_by_account_type):
+                          {
+                              auto cond = balance_rec.condition.as<withdraw_by_account>();
+                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                              string owner;
+                              if ( acct_rec.valid() )
+                                  owner = acct_rec->name;
+                              else
+                                  owner = string( balance_rec.owner() );
+
+                              if (owner.size() > 31)
+                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
+                              else
+                                  _out << std::setw(35) << owner;
+
+                              auto delegate_id = balance_rec.condition.delegate_id;
+                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                              string sign = (delegate_id > 0 ? "+" : "-");
+                              if (delegate_rec->name.size() > 21)
+                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                              else
+                                  _out << std::setw(25) << sign << delegate_rec->name;
+                              break;
+                          }
+                          default:
+                          {
+                              FC_ASSERT(!"unimplemented condition type");
+                          }
+                      } // switch cond type
+                      _out << "\n";
+                  } // for balance in balances
               }
               else
               {
@@ -945,7 +1065,7 @@ namespace bts { namespace cli {
                     {
                         _out << std::right;
                         std::stringstream ss;
-                        ss << _client->get_chain()->to_pretty_asset(tx.fees);
+                        ss << _client->get_chain()->to_pretty_asset( asset(tx.fees,0 ));
                         _out << std::setw( 20 ) << ss.str();
                     }
 
@@ -1002,10 +1122,12 @@ namespace bts { namespace cli {
     extern "C" int control_c_handler(int count, int key);
 #endif
 
-    cli_impl::cli_impl( const client_ptr& client, std::ostream& output_stream ) :
+    cli_impl::cli_impl(const client_ptr& client, std::istream& input_stream, std::ostream& output_stream) : 
       _client(client),
       _rpc_server(client->get_rpc_server()),
-      _out(output_stream)
+      _input_stream(input_stream), 
+      _out(output_stream),
+      show_raw_output(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1120,12 +1242,17 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, std::ostream& output_stream)
-  :my( new detail::cli_impl(client, output_stream) )
+  cli::cli( const client_ptr& client, std::istream& input_stream, std::ostream& output_stream)
+  :my( new detail::cli_impl(client,input_stream,output_stream) )
   {
     my->_self = this;
   }
 
+  void cli::set_input_log_stream(boost::optional<std::ostream&> input_log_stream)
+  {
+    my->_input_log_stream = input_log_stream;
+  } 
+  
   void cli::process_commands()
   {
     ilog( "starting to process interactive commands" );

@@ -1282,7 +1282,7 @@ namespace bts { namespace blockchain {
          for( auto delegate_id : delegate_ids )
          {
             fc::uint128 initial( int64_t(item.second/1000) );
-            initial *= fc::uint128(BTS_BLOCKCHAIN_INITIAL_SHARES);
+            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
             initial /= total_unscaled;
             initial /= int64_t(delegate_ids.size());
             balance_record initial_balance( item.first,
@@ -1327,6 +1327,7 @@ namespace bts { namespace blockchain {
 
       self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
       self->set_property( chain_property_enum::last_asset_id, 0 );
+      self->set_property( chain_property_enum::last_proposal_id, 0 );
       self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
 
@@ -1574,7 +1575,7 @@ namespace bts { namespace blockchain {
      
       auto ar = get_asset_record( asset_id_type(0) );
       FC_ASSERT( ar.valid() );
-      FC_ASSERT( ar->current_share_supply == total.amount, "", ("ar",ar)("total",total)("delta",ar->current_share_supply-total) );
+      FC_ASSERT( ar->current_share_supply == total.amount, "", ("ar",ar)("total",total)("delta",ar->current_share_supply-total.amount) );
       FC_ASSERT( ar->current_share_supply <= ar->maximum_share_supply );
       //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }

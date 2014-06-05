@@ -42,7 +42,7 @@ namespace bts { namespace blockchain {
                      share_type amount );
 
       void withdraw_pay( const account_id_type& account, 
-                     share_type amount );
+                         share_type amount );
 
       void deposit( const address& addr, 
                     const asset& amount, 

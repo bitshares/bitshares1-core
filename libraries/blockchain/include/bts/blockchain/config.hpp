@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
@@ -38,7 +39,7 @@
 /**
  * Initial shares read from the genesis block are scaled to this number.
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*1000ll*1000*1000ll)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*uint64_t(1000)*uint64_t(1000)*uint64_t(1000))
 #define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**

@@ -8,7 +8,6 @@
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/net/node.hpp>
 
-#include <bts/rpc/rpc_client_api.hpp>
 #include <bts/rpc_stubs/common_api_rpc_client.hpp>
 
 #include <fc/network/ip.hpp>
@@ -22,8 +21,7 @@ namespace bts { namespace rpc {
   *  @class rpc_client
   *  @brief provides a C++ interface to a remote BTS client over JSON-RPC
   */
-  class rpc_client : public rpc_client_api,
-                     public bts::rpc_stubs::common_api_rpc_client
+  class rpc_client : public bts::rpc_stubs::common_api_rpc_client
   {
   public:
     rpc_client();

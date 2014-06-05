@@ -108,6 +108,8 @@ namespace bts { namespace wallet {
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
 
+         void     remove_contact_account( const string& account_name );
+
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
          ///@}  
@@ -161,27 +163,53 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
-         vector<signed_transaction> transfer( share_type amount_to_transfer,
+         
+         
+         /**
+          *  Multi-Part transfers provide additional security by not combining inputs, but they
+          *  show up to the user as multiple unique transfers.  This is an advanced feature
+          *  that should probably have some user interface support to merge these transfers
+          *  into one logical transfer.
+          */
+         vector<signed_transaction> multipart_transfer( share_type amount_to_transfer,
+                                                         const string& amount_to_transfer_symbol,
+                                                         const string& from_account_name,
+                                                         const string& to_account_name,
+                                                         const string& memo_message,
+                                                         bool sign );
+
+         /**
+          *  This transfer works like a bitcoin transaction combining multiple inputs
+          *  and producing a single output.
+          */
+         signed_transaction  transfer_asset( share_type amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
                                               bool sign );
 
-         signed_transaction       create_asset( const string& symbol,
-                                                const string& asset_name,
-                                                const string& description,
-                                                const variant& data,
-                                                const string& issuer_name,
-                                                share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                                const bool sign = true );
+         signed_transaction  withdraw_delegate_pay( const string& delegate_name,
+                                                    share_type amount_to_withdraw,
+                                                    const string& withdraw_to_account_name,
+                                                    const string& memo_message,
+                                                    bool sign );
 
-         signed_transaction       issue_asset( share_type amount, 
-                                               const string& symbol,                                               
-                                               const string& to_account_name,
-                                               const bool sign = true );
+         signed_transaction  create_asset( const string& symbol,
+                                           const string& asset_name,
+                                           const string& description,
+                                           const variant& data,
+                                           const string& issuer_name,
+                                           share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
+                                           const bool sign = true );
 
-         owallet_account_record    get_account( const string& account_name );
+         signed_transaction  issue_asset( share_type amount, 
+                                          const string& symbol,                                               
+                                          const string& to_account_name,
+                                          const string& memo_message,
+                                          const bool sign = true );
+
+         owallet_account_record get_account( const string& account_name );
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
@@ -254,9 +282,9 @@ namespace bts { namespace wallet {
          vector<wallet_balance_record>  get_unspent_balances( const string& account_name,
                                                              const string& sybmol ) const;
 
+         optional<wallet_account_record>        get_account_record( const address& addr)const;
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;
-         optional<wallet_account_record>        get_account_record( const address& addr)const;
 
          std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
          */

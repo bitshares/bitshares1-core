@@ -4,11 +4,14 @@
 #include <fc/variant.hpp>
 #include <fc/io/buffered_iostream.hpp>
 #include <bts/api/api_metadata.hpp>
+#include <boost/optional.hpp>
 
 namespace bts { namespace rpc {
   class rpc_server;
   typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } }
+
+#define CLI_PROMPT_SUFFIX ">>> "
 
 namespace bts { namespace cli {
 
@@ -21,8 +24,9 @@ namespace bts { namespace cli {
    class cli
    {
       public:
-          cli( const client_ptr& client, std::ostream& output_stream);
+          cli( const client_ptr& client, std::istream& input_stream, std::ostream& output_stream);
           virtual ~cli();
+          void set_input_log_stream(boost::optional<std::ostream&> input_log_stream);
 
           void process_commands();
 
@@ -48,4 +52,5 @@ namespace bts { namespace cli {
           std::unique_ptr<detail::cli_impl> my;
    };
    typedef std::shared_ptr<cli> cli_ptr;
+
 } } // bts::cli
