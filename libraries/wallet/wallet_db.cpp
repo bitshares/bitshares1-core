@@ -497,7 +497,18 @@ namespace bts{ namespace wallet {
    void wallet_db::rename_account( const string& old_account_name, 
                                    const string& new_account_name )
    {
-       FC_ASSERT( !"Not Implemented" );
+      FC_ASSERT( is_open() );
+
+      auto opt_old_acct = lookup_account( old_account_name );
+      FC_ASSERT( opt_old_acct.valid() );
+      auto acct = *opt_old_acct;
+      acct.name = new_account_name;
+      name_to_account[acct.name] = acct.index;
+      accounts[acct.index] = acct;
+      address_to_account[address(acct.owner_key)] = acct.index;
+      for (auto time_key_pair : acct.active_key_history)
+          address_to_account[address(time_key_pair.second)] = acct.index;
+
    }
 
    void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
