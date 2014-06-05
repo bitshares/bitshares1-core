@@ -64,8 +64,8 @@ namespace bts { namespace rpc {
          std::string make_short_description(const bts::api::method_data& method_data) const
          {
            std::string help_string;
-           std::stringstream sstream;
-           sstream << std::setw(100) << std::left;
+           std::stringstream short_description;
+           short_description << std::setw(100) << std::left;
            help_string = method_data.name + " ";
            for (const bts::api::parameter_data& parameter : method_data.parameters)
            {
@@ -78,8 +78,8 @@ namespace bts { namespace rpc {
              else 
                help_string += std::string("[") + parameter.name + std::string("] ");
            }
-           sstream << help_string << "  " << method_data.description << "\n";
-           help_string = sstream.str();
+           short_description << help_string << "  " << method_data.description << "\n";
+           help_string = short_description.str();
            return help_string;
          }
 

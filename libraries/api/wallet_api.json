@@ -415,7 +415,8 @@
             {
               "name" : "num_blocks", 
               "type" : "uint32_t", 
-              "description" : "the number of blocks to scan"
+              "description" : "the number of blocks to scan",
+              "default_value" : -1
             }
           ],
         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
@@ -727,7 +728,7 @@
                "name" : "memo",
                "type" : "std::string",
                "description" : "memo to add to transaction"
-            }
+      }
          ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : ["pay_delegate"]

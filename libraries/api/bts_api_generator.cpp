@@ -10,6 +10,8 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/tokenizer.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <list>
@@ -194,6 +196,66 @@ private:
   void load_method_descriptions(const fc::variants& json_method_descriptions);
   std::string generate_signature_for_method(const method_description& method, const std::string& class_name, bool include_default_parameters);
 };
+
+std::string word_wrap(const std::string& text, const std::string& line_prefix, const std::string first_line_prefix = "", unsigned wrap_column = 120)
+{
+  std::ostringstream result;
+
+  typedef boost::tokenizer<boost::char_separator<char> > char_tokenizer;
+  boost::char_separator<char> whitespace_separator(" \t\n");
+  char_tokenizer whitespace_tokenizer(text, whitespace_separator);
+
+  unsigned current_column = 0;
+  bool token_emitted_on_this_line = false;
+
+  result << line_prefix;
+  current_column += line_prefix.size();
+
+  if (!first_line_prefix.empty())
+  {
+    result << first_line_prefix;
+    current_column += first_line_prefix.size();
+  }
+
+  for (char_tokenizer::iterator tok_iter = whitespace_tokenizer.begin(); tok_iter != whitespace_tokenizer.end(); )
+  {
+    unsigned columns_left = wrap_column - current_column;
+    unsigned this_token_size = tok_iter->size();
+    if (token_emitted_on_this_line)
+      ++this_token_size;
+    if (this_token_size < columns_left)
+    {
+      if (token_emitted_on_this_line)
+        result << " ";
+      else
+        token_emitted_on_this_line = true;
+      result << *tok_iter;
+      current_column += this_token_size;
+      ++tok_iter;
+      continue;
+    } 
+    else if (!token_emitted_on_this_line)
+    {
+      // this token is too long, but it will be too long for any line.
+      // output it, then do our end of line processing
+      result << *tok_iter;
+      ++tok_iter;
+    }
+    result << "\n";
+    current_column = 0;
+    token_emitted_on_this_line = false;
+
+    result << line_prefix;
+    current_column += line_prefix.size();
+
+    if (!first_line_prefix.empty())
+      for (unsigned i = 0; i < first_line_prefix.size(); ++i)
+        result << " ";
+    current_column += first_line_prefix.size();
+  }
+  return result.str();
+}
+
 
 api_generator::api_generator(const std::string& classname) :
   _api_classname(classname)
@@ -454,8 +516,55 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   interface_file << "  public:\n";
 
   for (const method_description& method : _methods)
-    interface_file << "    virtual " << generate_signature_for_method(method, "", true) << " = 0;\n";
+  {
+    interface_file << "    /**\n";
+    if (!method.brief_description.empty())
+    {
+      std::ostringstream brief_description_doc_string;
+      brief_description_doc_string << method.brief_description;
+      if (method.brief_description.back() != '.')
+        brief_description_doc_string << '.';
+      interface_file << word_wrap(brief_description_doc_string.str(), "     * ") << "\n";
+    }
 
+    if (!method.detailed_description.empty())
+    {
+      std::istringstream detailed_description_stream(method.detailed_description);
+      std::string line;
+      while (std::getline(detailed_description_stream, line))
+      {
+        interface_file << "     *\n";
+        interface_file << word_wrap(line, "     * ") << "\n";
+      }
+    }
+
+    if (!method.parameters.empty())
+      interface_file << "     *\n";
+    for (const parameter_description& parameter : method.parameters)
+    {
+      std::ostringstream parameter_doc_string_rest;
+      std::ostringstream parameter_doc_string_start;
+
+      parameter_doc_string_start << "@param "  << parameter.name << " ";
+      parameter_doc_string_rest << parameter.description << " (";
+      if (parameter.default_value)
+        parameter_doc_string_rest << parameter.type->get_type_name() << ", optional, defaults to " << fc::json::to_string(parameter.default_value);
+      else
+        parameter_doc_string_rest << parameter.type->get_type_name() << ", required";
+      parameter_doc_string_rest << ")";
+      interface_file << word_wrap(parameter_doc_string_rest.str(), "     * ", parameter_doc_string_start.str()) << "\n";      
+    }
+    if (!std::dynamic_pointer_cast<void_type_mapping>(method.return_type))
+    {
+      interface_file << "     *\n";
+      std::ostringstream returns_doc_string;
+      returns_doc_string << "@return " << method.return_type->get_type_name();
+      interface_file << word_wrap(returns_doc_string.str(), "     * ") << "\n";      
+    }
+
+    interface_file << "     */\n";
+    interface_file << "    virtual " << generate_signature_for_method(method, "", true) << " = 0;\n";
+  }
   interface_file << "  };\n\n";
   interface_file << "} } // end namespace bts::api\n";
 }
@@ -895,7 +1004,6 @@ void api_generator::initialize_type_map_with_fundamental_types()
   _type_map.insert(type_map_type::value_type("json_object", std::make_shared<fundamental_type_mapping>("json_object", "const fc::variant_object&", "fc::variant_object")));
   _type_map.insert(type_map_type::value_type("json_object_array", std::make_shared<sequence_type_mapping>("json_object_array", _type_map["json_object"])));
 }
-
 
 int main(int argc, char*argv[])
 {
