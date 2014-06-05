@@ -108,6 +108,8 @@ namespace bts { namespace wallet {
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
 
+         void     remove_contact_account( const string& account_name );
+
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
          ///@}  
@@ -161,12 +163,32 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
-         vector<signed_transaction> transfer( share_type amount_to_transfer,
+         
+         
+         /**
+          *  Multi-Part transfers provide additional security by not combining inputs, but they
+          *  show up to the user as multiple unique transfers.  This is an advanced feature
+          *  that should probably have some user interface support to merge these transfers
+          *  into one logical transfer.
+          */
+         vector<signed_transaction> multipart_transfer( share_type amount_to_transfer,
+                                                         const string& amount_to_transfer_symbol,
+                                                         const string& from_account_name,
+                                                         const string& to_account_name,
+                                                         const string& memo_message,
+                                                         bool sign );
+
+         /**
+          *  This transfer works like a bitcoin transaction combining multiple inputs
+          *  and producing a single output.
+          */
+         signed_transaction       transfer_asset( share_type amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
                                               bool sign );
+
 
          signed_transaction       create_asset( const string& symbol,
                                                 const string& asset_name,

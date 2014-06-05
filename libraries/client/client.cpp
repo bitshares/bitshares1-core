@@ -416,15 +416,15 @@ namespace bts { namespace client {
     }
 
 
-    vector<signed_transaction> detail::client_impl::wallet_transfer(int64_t amount_to_transfer, 
+    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
                                                        const string& memo_message)
     {
-         auto trxs = _wallet->transfer( amount_to_transfer, asset_symbol, 
-                                             from_account_name, to_account_name, 
-                                             memo_message, true );
+         auto trxs = _wallet->multipart_transfer( amount_to_transfer, asset_symbol, 
+                                                  from_account_name, to_account_name, 
+                                                  memo_message, true );
          for( auto trx : trxs )
          {
             network_broadcast_transaction( trx );
@@ -433,6 +433,20 @@ namespace bts { namespace client {
          return trxs;
     }
 
+    signed_transaction detail::client_impl::wallet_transfer(int64_t amount_to_transfer, 
+                                                       const string& asset_symbol, 
+                                                       const string& from_account_name, 
+                                                       const string& to_account_name, 
+                                                       const string& memo_message)
+    {
+         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol, 
+                                                  from_account_name, to_account_name, 
+                                                  memo_message, true );
+
+         network_broadcast_transaction( trx );
+
+         return trx;
+    }
 
 
     bts::wallet::pretty_transaction detail::client_impl::wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const
@@ -521,6 +535,11 @@ namespace bts { namespace client {
     vector<wallet_account_record> detail::client_impl::wallet_list_receive_accounts() const
     {
       return _wallet->list_receive_accounts();
+    }
+
+    void detail::client_impl::wallet_remove_contact_account(const string& account_name)
+    {
+      _wallet->remove_contact_account( account_name );
     }
 
     void detail::client_impl::wallet_rename_account(const string& current_account_name,

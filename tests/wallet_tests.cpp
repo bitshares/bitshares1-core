@@ -168,6 +168,10 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       your_cli->execute_command_line( "blockchain_list_registered_assets" );
       your_cli->execute_command_line( "balance" );
+      your_cli->execute_command_line( "transfer 2000000 USD otheraccount youraccount \"payday\"" );
+      produce_block( my_client );
+      your_cli->execute_command_line( "balance" );
+      your_cli->execute_command_line( "unlock 99999999999999999999" );
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 
