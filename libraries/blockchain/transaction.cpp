@@ -319,7 +319,7 @@ namespace bts { namespace blockchain {
    { try {
       if( op.amount <= 0 ) fail( BTS_NEGATIVE_WITHDRAW, fc::variant(op) );
 
-      auto cur_record = _current_state->get_account_record( op.account_id );
+      auto cur_record = _current_state->get_account_record( abs(op.account_id) );
       if( !cur_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
       if( cur_record->is_retracted() ) fail( BTS_NAME_RETRACTED, fc::variant(op) );
       FC_ASSERT( cur_record->is_delegate() );
@@ -433,7 +433,7 @@ namespace bts { namespace blockchain {
        auto deposit_balance_id = op.balance_id();
        if( op.condition.asset_id == 0 )
        {
-          auto delegate_record = _current_state->get_account_record( op.condition.delegate_id );
+          auto delegate_record = _current_state->get_account_record( abs(op.condition.delegate_id) );
           if( !delegate_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
           if( !delegate_record->is_delegate() ) fail( BTS_INVALID_DELEGATE_ID, fc::variant(op) );
        }
@@ -696,7 +696,7 @@ namespace bts { namespace blockchain {
 
       if( op.get_amount().asset_id == BASE_ASSET_ID )
       {
-         auto delegate_record = _current_state->get_account_record( op.delegate_id );
+         auto delegate_record = _current_state->get_account_record( abs(op.delegate_id) );
          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
          if( cur_bid->balance )
             sub_vote( cur_bid->delegate_id, cur_bid->balance );

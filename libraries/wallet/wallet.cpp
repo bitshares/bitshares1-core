@@ -1189,6 +1189,10 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_to_register ) );
 
+      auto registered_account = my->_blockchain->get_account_record( account_to_register );
+      FC_ASSERT( !registered_account.valid(), "the account has already been registered",
+                 ("account_to_register",account_to_register) );
+
       auto payer_public_key = get_account_public_key( pay_with_account_name );
       address from_account_address( payer_public_key );
 
