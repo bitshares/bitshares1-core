@@ -322,8 +322,8 @@
         "aliases" : [  ]
       },
       {
-        "method_name": "wallet_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC",
+        "method_name": "wallet_multipart_transfer",
+        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
         "parameters" : 
           [
@@ -354,7 +354,43 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network"],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+        "aliases" : ["multipart_transfer"]
+      },
+      {
+        "method_name": "wallet_transfer",
+        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "return_type": "signed_transaction",
+        "parameters" : 
+          [
+            {
+              "name" : "amount_to_transfer", 
+              "type" : "amount", 
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol", 
+              "type" : "asset_symbol", 
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name", 
+              "type" : "sending_account_name", 
+              "description" : "the source account(s) to draw the shares from"
+            },
+            {
+              "name" : "to_account_name", 
+              "type" : "receive_account_name", 
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "memo_message", 
+              "type" : "std::string", 
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
         "aliases" : ["transfer"]
       },
       {
