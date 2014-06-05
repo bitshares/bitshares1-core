@@ -15,9 +15,13 @@
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <boost/optional.hpp>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 
 #ifdef HAVE_READLINE
@@ -39,11 +43,14 @@ namespace bts { namespace cli {
 //            fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
-            std::ostream&               _out;
 
-            bool                        raw_only;
+            bool                        show_raw_output;
 
-            cli_impl(const client_ptr& client, std::ostream& output_stream);
+            std::ostream&                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
+            std::istream&                  _input_stream;
+            boost::optional<std::ostream&> _input_log_stream;
+
+            cli_impl(const client_ptr& client, std::istream& input_stream, std::ostream& output_stream);
 
             string get_prompt()const
             {
@@ -51,14 +58,14 @@ namespace bts { namespace cli {
               string prompt = wallet_name;
               if( prompt == "" )
               {
-                 prompt = "(wallet closed) >>> ";
+                 prompt = "(wallet closed) " CLI_PROMPT_SUFFIX;
               }
               else
               {
                  if( _client->get_wallet()->is_locked() )
-                    prompt += " (locked) >>> ";
+                    prompt += " (locked) " CLI_PROMPT_SUFFIX;
                  else
-                    prompt += " (unlocked) >>> ";
+                    prompt += " (unlocked) " CLI_PROMPT_SUFFIX;
               }
               return prompt;
             }
@@ -68,12 +75,12 @@ namespace bts { namespace cli {
             { 
               if (command == "enable_raw")
               {
-                  raw_only = true;
+                  show_raw_output = true;
                   return;
               }
               else if (command == "disable_raw")
               {
-                  raw_only = false;
+                  show_raw_output = false;
                   return;
               }
 
@@ -171,7 +178,7 @@ namespace bts { namespace cli {
             { 
               try {
                  string line = get_line(get_prompt());
-                 while (std::cin.good())
+                 while (_input_stream.good())
                  {
                    if (!execute_command_line(line))
                      break;
@@ -189,7 +196,7 @@ namespace bts { namespace cli {
               _cin_complete.cancel();
             } 
 
-            string get_line( const string& prompt = ">>> ", bool no_echo = false)
+            string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
               return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
             }
@@ -203,7 +210,7 @@ namespace bts { namespace cli {
                       _out<<prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      std::getline( std::cin, line );
+                      std::getline( _input_stream, line );
                       fc::set_console_echo(true);
                       _out << std::endl;
                   }
@@ -222,10 +229,11 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
-                     _out<<prompt;
-                     std::getline( std::cin, line );
+                      _out<<prompt;
+                     std::getline( _input_stream, line );
                   #endif
-                    //DLNFIX _out.echo_console_input_to_log(line);
+                  if (_input_log_stream)
+                    *_input_log_stream << line << std::endl;
                   }
 
                   boost::trim(line);
@@ -702,7 +710,7 @@ namespace bts { namespace cli {
                  elog( " unexpected exception " );
               }
 
-              if (raw_only)
+              if (show_raw_output)
               {
                   string result_type;
                   const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
@@ -1114,11 +1122,12 @@ namespace bts { namespace cli {
     extern "C" int control_c_handler(int count, int key);
 #endif
 
-    cli_impl::cli_impl( const client_ptr& client, std::ostream& output_stream ) :
+    cli_impl::cli_impl(const client_ptr& client, std::istream& input_stream, std::ostream& output_stream) : 
       _client(client),
       _rpc_server(client->get_rpc_server()),
+      _input_stream(input_stream), 
       _out(output_stream),
-      raw_only(false)
+      show_raw_output(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1233,12 +1242,17 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, std::ostream& output_stream)
-  :my( new detail::cli_impl(client, output_stream) )
+  cli::cli( const client_ptr& client, std::istream& input_stream, std::ostream& output_stream)
+  :my( new detail::cli_impl(client,input_stream,output_stream) )
   {
     my->_self = this;
   }
 
+  void cli::set_input_log_stream(boost::optional<std::ostream&> input_log_stream)
+  {
+    my->_input_log_stream = input_log_stream;
+  } 
+  
   void cli::process_commands()
   {
     ilog( "starting to process interactive commands" );

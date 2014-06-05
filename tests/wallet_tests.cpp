@@ -57,6 +57,32 @@ void produce_block( T my_client )
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
 }
 
+#include <fstream>
+
+string extract_commands_from_log_stream(std::istream& log_stream)
+{
+  string command_list;
+  string line;
+  while (std::getline(log_stream,line))
+  {
+    //if line begins with a prompt, add to input buffer
+    size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+    if (prompt_position != string::npos )
+    { 
+      size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+      command_list += line.substr(command_start_position);
+      command_list += "\n";
+    }
+  }
+  return command_list;
+}
+
+string extract_commands_from_log_file(fc::path test_file)
+{
+  std::ifstream test_input(test_file.string());
+  return extract_commands_from_log_stream(test_input);
+}
+
 BOOST_AUTO_TEST_CASE( client_tests )
 {
    try {
@@ -75,8 +101,29 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path(), "genesis.json" );
 
-      auto my_cli = new bts::cli::cli( my_client, std::cerr );
-      auto your_cli = new bts::cli::cli( your_client, std::cerr );
+      /* DLN: Some example test code, just left here for reference, will remove soon
+      std::ofstream console_log("notestein_wallet_test.log");
+      //std::stringstream my_input("wallet_list\n");      
+      auto my_cli = new bts::cli::cli( my_client, my_input, console_log);      
+      my_cli->set_input_log_stream(console_log);
+      my_cli->process_commands();
+      my_cli->wait();
+      */
+      
+      /* DLN: Example that extracts commands from an existing log file
+              and sends them to client for re-execution. Results are
+              written to std::cerr in this example.
+      string input_buffer = extract_commands_from_log_file("console.log");
+      std::stringstream my_input(input_buffer);
+
+      auto my_cli = new bts::cli::cli( my_client, my_input, std::cerr);  
+      my_cli->set_input_log_stream(std::cerr);
+      my_cli->process_commands();
+      my_cli->wait();
+      */
+          
+      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
+      auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
@@ -172,6 +219,13 @@ BOOST_AUTO_TEST_CASE( client_tests )
       produce_block( my_client );
       your_cli->execute_command_line( "balance" );
       your_cli->execute_command_line( "unlock 99999999999999999999" );
+      my_cli->execute_command_line( "wallet_submit_proposal delegate-0 \"test proposal\" \"test body\" \"notice\" null" );
+      produce_block( my_client );
+      my_cli->execute_command_line( "wallet_account_transaction_history" );
+      // this errors as expected because youraccount is not a delegate
+      // your_cli->execute_command_line( "wallet_submit_proposal youraccount \"test proposal\" \"test body\" \"notice\" null" );
+
+
       
       //ilog( "unspent:\n ${r}", ("r", fc::json::to_pretty_string(result)) );
 

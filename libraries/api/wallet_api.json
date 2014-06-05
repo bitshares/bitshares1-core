@@ -636,7 +636,7 @@
                   "description" : "the name of the account to receive the shares"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_vote_proposal",
