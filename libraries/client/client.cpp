@@ -1016,6 +1016,10 @@ namespace bts { namespace client {
       network_broadcast_transaction( trx );
       return trx;
    }
+   vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
+   {
+      return _chain_db->get_proposals( first, count );
+   }
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

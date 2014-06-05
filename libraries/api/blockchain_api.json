@@ -201,6 +201,28 @@
         "is_const" : true,
         "aliases" : ["blockchain_get_delegates"],
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_list_proposals",
+        "description": "Returns the list of delegates sorted by vote",
+        "return_type": "proposal_array",
+        "parameters" : [
+            {
+              "name" : "first", 
+              "type" : "uint32_t", 
+              "description" : "",
+              "default_value" : 0
+            },
+            {
+              "name" : "count", 
+              "type" : "uint32_t", 
+              "description" : "",
+              "default_value" : -1
+            }
+        ],
+        "is_const" : true,
+        "aliases" : ["blockchain_get_proposals"],
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

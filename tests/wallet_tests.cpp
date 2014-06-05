@@ -226,6 +226,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate-0 delegate-0 14000 \"del payday\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
+      my_cli->execute_command_line( "blockchain_list_proposals" );
       // this errors as expected because youraccount is not a delegate
       // your_cli->execute_command_line( "wallet_submit_proposal youraccount \"test proposal\" \"test body\" \"notice\" null" );
 
