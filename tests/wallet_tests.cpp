@@ -59,6 +59,30 @@ void produce_block( T my_client )
 
 #include <fstream>
 
+string extract_commands_from_log_stream(std::istream& log_stream)
+{
+  string command_list;
+  string line;
+  while (std::getline(log_stream,line))
+  {
+    //if line begins with a prompt, add to input buffer
+    size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+    if (prompt_position != string::npos )
+    { 
+      size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+      command_list += line.substr(command_start_position);
+      command_list += "\n";
+    }
+  }
+  return command_list;
+}
+
+string extract_commands_from_log_file(fc::path test_file)
+{
+  std::ifstream test_input(test_file.string());
+  return extract_commands_from_log_stream(test_input);
+}
+
 BOOST_AUTO_TEST_CASE( client_tests )
 {
    try {
@@ -79,17 +103,26 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       /* DLN: Some example test code, just left here for reference, will remove soon
       std::ofstream console_log("notestein_wallet_test.log");
-      std::stringstream my_input("wallet_list\n");
-      std::stringstream your_input("wallet_list\n");
-
-      //auto my_cli = new bts::cli::cli( my_client, my_input, std::cerr);
+      //std::stringstream my_input("wallet_list\n");      
       auto my_cli = new bts::cli::cli( my_client, my_input, console_log);      
       my_cli->set_input_log_stream(console_log);
       my_cli->process_commands();
       my_cli->wait();
       */
+      
+      /* DLN: Example that extracts commands from an existing log file
+              and sends them to client for re-execution. Results are
+              written to std::cerr in this example.
+      string input_buffer = extract_commands_from_log_file("console.log");
+      std::stringstream my_input(input_buffer);
 
-      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);      
+      auto my_cli = new bts::cli::cli( my_client, my_input, std::cerr);  
+      my_cli->set_input_log_stream(std::cerr);
+      my_cli->process_commands();
+      my_cli->wait();
+      */
+          
+      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
       auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
 
       my_client->wallet_create( "my_wallet", password );

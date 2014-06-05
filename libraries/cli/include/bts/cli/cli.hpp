@@ -11,6 +11,8 @@ namespace bts { namespace rpc {
   typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } }
 
+#define CLI_PROMPT_SUFFIX ">>> "
+
 namespace bts { namespace cli {
 
    using namespace bts::client;
@@ -50,4 +52,5 @@ namespace bts { namespace cli {
           std::unique_ptr<detail::cli_impl> my;
    };
    typedef std::shared_ptr<cli> cli_ptr;
+
 } } // bts::cli

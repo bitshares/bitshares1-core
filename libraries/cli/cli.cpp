@@ -58,14 +58,14 @@ namespace bts { namespace cli {
               string prompt = wallet_name;
               if( prompt == "" )
               {
-                 prompt = "(wallet closed) >>> ";
+                 prompt = "(wallet closed) " CLI_PROMPT_SUFFIX;
               }
               else
               {
                  if( _client->get_wallet()->is_locked() )
-                    prompt += " (locked) >>> ";
+                    prompt += " (locked) " CLI_PROMPT_SUFFIX;
                  else
-                    prompt += " (unlocked) >>> ";
+                    prompt += " (unlocked) " CLI_PROMPT_SUFFIX;
               }
               return prompt;
             }
@@ -196,7 +196,7 @@ namespace bts { namespace cli {
               _cin_complete.cancel();
             } 
 
-            string get_line( const string& prompt = ">>> ", bool no_echo = false)
+            string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
               return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
             }
