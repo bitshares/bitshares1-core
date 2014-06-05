@@ -105,6 +105,7 @@ namespace bts { namespace blockchain {
           **/
          virtual void push_block( const full_block& block_data );
 
+         std::vector<block_id_type> get_fork_history( const block_id_type& id );
 
          /**
           *  Evaluate the transaction and return the results.

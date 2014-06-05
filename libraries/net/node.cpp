@@ -16,6 +16,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/logic/tribool.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -94,6 +95,9 @@ namespace bts { namespace net {
       bool we_need_sync_items_from_peer;
       fc::optional<boost::tuple<item_id, fc::time_point> > item_ids_requested_from_peer; /// we check this to detect a timed-out request and in busy()
       item_to_time_map_type sync_items_requested_from_peer; /// ids of blocks we've requested from this peer during sync.  fetch from another peer if this peer disconnects
+      uint32_t initial_block_number; /// the block number they were on when we first connected to the peer
+      uint32_t last_block_number_delegate_has_seen; /// the number of the last block this peer has told us about that the delegate knows (ids_of_items_to_get[0] should be the id of block [this value + 1])
+      item_hash_t last_block_delegate_has_seen; /// the hash of the last block  this peer has told us about that the peer knows 
       /// @}
 
       /// non-synchronization state data
@@ -112,7 +116,8 @@ namespace bts { namespace net {
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
-        is_firewalled(boost::indeterminate)
+        is_firewalled(boost::indeterminate),
+        last_block_number_delegate_has_seen(0)
       {}
       ~peer_connection() {}
 
@@ -333,6 +338,7 @@ namespace bts { namespace net {
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
       
       boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
+      uint32_t _sync_item_type;
       uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
 
       blockchain_tied_message_cache _message_cache; /// cache message we have received and might be required to provide to other peers via inventory requests
@@ -370,7 +376,8 @@ namespace bts { namespace net {
       bool merge_address_info_with_potential_peer_database(const std::vector<address_info> addresses);
       void display_current_connections();
       uint32_t calculate_unsynced_block_count_from_all_peers();
-      void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, const item_id& last_item_id_seen);
+      std::vector<item_hash_t> create_blockchain_synopsis_for_peer(const peer_connection* peer);
+      void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer);
 
       fc::variant_object generate_hello_user_data();
       void parse_hello_user_data_for_peer(peer_connection* originating_peer, const fc::variant_object& user_data);
@@ -550,7 +557,7 @@ namespace bts { namespace net {
 
     bool peer_connection::busy() 
     { 
-      return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer.valid();
+      return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer;
     }
 
     bool peer_connection::idle()
@@ -1336,9 +1343,10 @@ namespace bts { namespace net {
       if (!fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty())
         peers_last_item_seen = item_id(fetch_blockchain_item_ids_message_received.item_type,
                                        fetch_blockchain_item_ids_message_received.blockchain_synopsis.back());
-      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint}", 
+      ilog("sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint} (full request: ${synopsis})", 
            ("last_item_seen", peers_last_item_seen)
-           ("peer_endpoint", originating_peer->get_remote_endpoint()));
+           ("peer_endpoint", originating_peer->get_remote_endpoint())
+           ("synopsis", fetch_blockchain_item_ids_message_received.blockchain_synopsis));
 
       blockchain_item_ids_inventory_message reply_message;
       reply_message.item_hashes_available = _delegate->get_item_ids(fetch_blockchain_item_ids_message_received.item_type,
@@ -1365,7 +1373,7 @@ namespace bts { namespace net {
       }
       else
       {
-        ilog("sync: peer is out of sync, sending peer ${count} items ids", ("count", reply_message.item_hashes_available.size()));
+        ilog("sync: peer is out of sync, sending peer ${count} items ids: ${item_ids}", ("count", reply_message.item_hashes_available.size())("item_ids", reply_message.item_hashes_available));
         originating_peer->peer_needs_sync_items_from_us = true;
       }
       originating_peer->send_message(reply_message);
@@ -1404,47 +1412,58 @@ namespace bts { namespace net {
       return max_number_of_unfetched_items;
     }
 
-    void node_impl::fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, const item_id& last_item_id_seen)
+    // get a blockchain synopsis that makes sense to send to the given peer.
+    // If the peer isn't yet syncing with us, this is just a synopsis of our active blockchain
+    // If the peer is syncing with us, it is a synopsis of our active blockchain plus the 
+    //    blocks the peer has already told us it has
+    std::vector<item_hash_t> node_impl::create_blockchain_synopsis_for_peer(const peer_connection* peer)
     {
-      ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}", ("last_item_seen", last_item_id_seen.item_hash)("peer", peer->get_remote_endpoint()));
-      peer->item_ids_requested_from_peer = boost::make_tuple(last_item_id_seen, fc::time_point::now());
-      std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis(last_item_id_seen.item_type, last_item_id_seen.item_hash);
-      assert(last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back());
-      ilog("actual last item from blockchain synopsis is ${last_item_seen_for_real}", ("last_item_seen_for_real", blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back()));
-      peer->send_message(fetch_blockchain_item_ids_message(last_item_id_seen.item_type, blockchain_synopsis));
+      item_hash_t reference_point;
+      uint32_t number_of_blocks_after_reference_point = 0;
+
+      reference_point = peer->last_block_delegate_has_seen;
+      number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
+
+      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis(_sync_item_type, reference_point, number_of_blocks_after_reference_point);
+      if (number_of_blocks_after_reference_point)
+      {
+        // then the synopsis is incomplete, add the missing elements from ids_of_items_to_get
+        uint32_t true_high_block_num = peer->last_block_number_delegate_has_seen + number_of_blocks_after_reference_point;
+        uint32_t low_block_num = 1;
+        do
+        {
+          if (low_block_num > peer->last_block_number_delegate_has_seen)
+            synopsis.push_back(peer->ids_of_items_to_get[low_block_num - peer->last_block_number_delegate_has_seen - 1]);
+          low_block_num += ((true_high_block_num - low_block_num + 2) / 2);
+        }
+        while (low_block_num <= true_high_block_num);
+        assert(synopsis.back() == peer->ids_of_items_to_get.back());
+      }
+      return synopsis;
+    }
+
+    void node_impl::fetch_next_batch_of_item_ids_from_peer(peer_connection* peer)
+    {
+      std::vector<item_hash_t> blockchain_synopsis = create_blockchain_synopsis_for_peer(peer);
+      ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}", ("last_item_seen", blockchain_synopsis.back())("peer", peer->get_remote_endpoint()));
+      peer->item_ids_requested_from_peer = boost::make_tuple(item_id(_sync_item_type, blockchain_synopsis.back()), fc::time_point::now());
+      //std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis(last_item_id_seen.item_type, last_item_id_seen.item_hash);
+      //assert(last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back());
+      //ilog("actual last item from blockchain synopsis is ${last_item_seen_for_real}", ("last_item_seen_for_real", blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back()));
+      peer->send_message(fetch_blockchain_item_ids_message(_sync_item_type, blockchain_synopsis));
     }
 
     void node_impl::on_blockchain_item_ids_inventory_message(peer_connection* originating_peer,
                                                              const blockchain_item_ids_inventory_message& blockchain_item_ids_inventory_message_received)
     {
       // ignore unless we asked for the data
-      if( originating_peer->item_ids_requested_from_peer.valid() )
+      if (originating_peer->item_ids_requested_from_peer)
       {
-        bool response_indicates_a_fork = true;
-        if (blockchain_item_ids_inventory_message_received.item_hashes_available.empty())
-        {
-          // the peer didn't know of any blocks.  they're useless.  
-          response_indicates_a_fork = false;
-        }
-        else if (originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t())
-        {
-          // we didn't know of any blocks when we requested a list of blocks from this peer.
-          // regardless of what they give us, we won't treat it as a fork
-          response_indicates_a_fork = false;
-        }
-        else if (blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash)
-        {
-          // the peer knows some blocks, but they're indicating no fork (they chose to extend the last 
-          // block we sent them)
-          response_indicates_a_fork = false;
-        }
-
 #if 0
         assert(originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.empty() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash);
 #endif
-
         originating_peer->item_ids_requested_from_peer.reset();
 
         ilog("sync: received a list of ${count} available items from ${peer_endpoint}", 
@@ -1473,7 +1492,7 @@ namespace bts { namespace net {
                                                      blockchain_item_ids_inventory_message_received.item_hashes_available.end());
         originating_peer->number_of_unfetched_item_ids = blockchain_item_ids_inventory_message_received.total_remaining_item_count;
         // flush any items this peer sent us that we've already received and processed from another peer
-        if (item_hashes_received.size() &&
+        if (!item_hashes_received.empty() &&
             originating_peer->ids_of_items_to_get.empty())
         {
           bool is_first_item_for_other_peer = false;
@@ -1494,14 +1513,61 @@ namespace bts { namespace net {
             while (!item_hashes_received.empty() && 
                    _delegate->has_item(item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front())))
+            {
+              assert(item_hashes_received.front() != item_hash_t());
+              originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
+              ++originating_peer->last_block_number_delegate_has_seen;
+              ilog("popping item because delegate has already seen it.  peer's last block the delegate has seen is now ${block_id} (${block_num})", ("block_id", originating_peer->last_block_delegate_has_seen)("block_num", originating_peer->last_block_number_delegate_has_seen));
               item_hashes_received.pop_front();
+            }
             ilog("after removing all items we have already seen, item_hashes_received.size() = ${size}", ("size", item_hashes_received.size()));
+          }
+        } 
+        else if (!item_hashes_received.empty())
+        {
+          // we received a list of items and we already have a list of items to fetch from this peer.
+          // In the normal case, this list will immediately follow the existing list, meaning the 
+          // last hash of our existing list will match the first hash of the new list.
+
+          // In the much less likely case, we've received a partial list of items from the peer, then
+          // the peer switched forks before sending us the remaining list.  In this case, the first
+          // hash in the new list may not be the last hash in the existing list (it may be earlier, or
+          // it may not exist at all.
+          
+          // In either case, pop items off the back of our existing list until we find our first 
+          // item, then append our list.
+          while (!originating_peer->ids_of_items_to_get.empty())
+          {
+            if (item_hashes_received.front() != originating_peer->ids_of_items_to_get.back())
+              originating_peer->ids_of_items_to_get.pop_back();
+            else
+              break;
+          }
+          if (originating_peer->ids_of_items_to_get.empty())
+          {
+            // this happens when the peer has switched forks between the last inventory message and
+            // this one, and there weren't any unfetched items in common
+            // We don't know where in the blockchain the new front() actually falls, all we can
+            // expect is that it is a block that we knew about because it should be one of the 
+            // blocks we sent in the initial synopsis.
+            assert(_delegate->has_item(item_id(_sync_item_type, item_hashes_received.front())));
+            originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
+            originating_peer->last_block_number_delegate_has_seen = _delegate->get_block_number(item_hashes_received.front());
+            item_hashes_received.pop_front();
+          }
+          else
+          {
+            // the common simple case: the new list extends the old.  pop off the duplicate element
+            originating_peer->ids_of_items_to_get.pop_back();
           }
         }
 
+        if (!item_hashes_received.empty() && !originating_peer->ids_of_items_to_get.empty())
+          assert(item_hashes_received.front() != originating_peer->ids_of_items_to_get.back());
+
         // append the remaining items to the peer's list
-        std::copy(item_hashes_received.begin(), item_hashes_received.end(),
-                  std::back_inserter(originating_peer->ids_of_items_to_get));
+        boost::push_back(originating_peer->ids_of_items_to_get, item_hashes_received);
+
         originating_peer->number_of_unfetched_item_ids = blockchain_item_ids_inventory_message_received.total_remaining_item_count;
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
@@ -1520,16 +1586,18 @@ namespace bts { namespace net {
           if (!originating_peer->ids_of_items_to_get.empty())
           {
             // if we have a list of sync items, keep asking for more until we get to the end of the list
-            fetch_next_batch_of_item_ids_from_peer(originating_peer, item_id(blockchain_item_ids_inventory_message_received.item_type, 
-                                                                             originating_peer->ids_of_items_to_get.back()));
+            fetch_next_batch_of_item_ids_from_peer(originating_peer);
           }
           else
           {
             // If we get here, we the peer has sent us a non-empty list of items, but we have all of them
-            // already.  There's no need to continue the list in sequence, just start the sync again 
-            // from the last item we've processed
-            fetch_next_batch_of_item_ids_from_peer(originating_peer, item_id(blockchain_item_ids_inventory_message_received.item_type, 
-                                                                             _most_recent_blocks_accepted.back()));
+            // already.
+            // Most likely, that means that some of the next blocks in sequence will be ones we have 
+            // already, but we still need to ask the client for them in order.
+            // (If we didn't have to handle forks, we could just jump to our last seen block,
+            // but in the case where the client is telling us about a fork, we need to keep asking them
+            // for sequential blocks)
+            fetch_next_batch_of_item_ids_from_peer(originating_peer);
           }
         }
         else
@@ -1545,8 +1613,7 @@ namespace bts { namespace net {
             // If we get here, the peer has sent us a non-empty list of items, but we have already
             // received all of the items from other peers.  Send a new request to the peer to 
             // see if we're really in sync
-            fetch_next_batch_of_item_ids_from_peer(originating_peer, item_id(blockchain_item_ids_inventory_message_received.item_type,
-                                                                             _most_recent_blocks_accepted.back()));
+            fetch_next_batch_of_item_ids_from_peer(originating_peer);
           }
         }
       }
@@ -1688,7 +1755,7 @@ namespace bts { namespace net {
              received_block_iter != _received_sync_items.end(); 
              ++received_block_iter)
         {
-          // find out if this block is the next block that we can hand directly to the client
+          // find out if this block is the next block on one the active chain or one of the forks
           bool potential_first_block = false;
           for (const peer_connection_ptr& peer : _active_connections)
             if (!peer->ids_of_items_to_get.empty() &&
@@ -1697,6 +1764,21 @@ namespace bts { namespace net {
               potential_first_block = true;
               break;
             }
+#if 0 // just extra debugging
+          if (potential_first_block)
+          {
+            ilog("block ${block_id} is a potential first block", ("block_id", received_block_iter->block_id));
+          }
+          else
+          {
+            ilog("block ${block_id} is not a potential first block.  potential first blocks are:", ("block_id", received_block_iter->block_id));
+            for (const peer_connection_ptr& peer : _active_connections)
+            {
+              if (!peer->ids_of_items_to_get.empty())
+                ilog(" Peer ${peer}: ${id}", ("peer", peer->get_remote_endpoint())("id", peer->ids_of_items_to_get.front()));
+            }
+          }
+#endif
 
           // if it is, process it, remove it from all sync peers lists
           if (potential_first_block)
@@ -1719,7 +1801,6 @@ namespace bts { namespace net {
                             block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
               {
                 _delegate->handle_message(block_message_to_process);
-                // TODO: only record as accepted if it has a valid signature.
                 _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
               }
               else
@@ -1762,6 +1843,9 @@ namespace bts { namespace net {
                 {
                   if (peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
                   {
+                    peer->last_block_delegate_has_seen = block_message_to_process.block_id;
+                    ++peer->last_block_number_delegate_has_seen;
+
                     peer->ids_of_items_to_get.pop_front();
                     ilog("Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_to_get.size()));
 
@@ -1790,7 +1874,7 @@ namespace bts { namespace net {
                 }
               }
               for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
-                fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type, block_message_to_process.block_id));
+                fetch_next_batch_of_item_ids_from_peer(peer.get());
 
               for (const peer_connection_ptr& peer : peers_we_need_to_sync_to)
                 start_synchronizing_with_peer(peer);
@@ -1887,7 +1971,6 @@ namespace bts { namespace net {
           {
             _delegate->handle_message(block_message_to_process);
             message_validated_time = fc::time_point::now();
-            // TODO: only record it as accepted if it has a valid signature.
             _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
           }
           else
@@ -1975,8 +2058,9 @@ namespace bts { namespace net {
     void node_impl::start_synchronizing_with_peer(const peer_connection_ptr& peer)
     {
       peer->we_need_sync_items_from_peer = true;
-      fetch_next_batch_of_item_ids_from_peer(peer.get(), item_id(bts::client::block_message_type,
-                                                                 _most_recent_blocks_accepted.back()));
+      peer->last_block_delegate_has_seen = item_hash_t();
+      peer->last_block_number_delegate_has_seen = 0;
+      fetch_next_batch_of_item_ids_from_peer(peer.get());
     }
 
     void node_impl::start_synchronizing()
@@ -2256,13 +2340,13 @@ namespace bts { namespace net {
       for (const peer_connection_ptr& active_peer : _active_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(active_peer->get_remote_endpoint());
-        if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
+        if (endpoint_for_this_peer && *endpoint_for_this_peer == remote_endpoint)
           return active_peer;
       }
       for (const peer_connection_ptr& handshaking_peer : _handshaking_connections)
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer(handshaking_peer->get_remote_endpoint());
-        if (endpoint_for_this_peer.valid() && *endpoint_for_this_peer == remote_endpoint)
+        if (endpoint_for_this_peer && *endpoint_for_this_peer == remote_endpoint)
           return handshaking_peer;
       }
       return peer_connection_ptr();
@@ -2462,6 +2546,7 @@ namespace bts { namespace net {
     void node_impl::sync_from(const item_id& last_item_id_seen)
     {
       _most_recent_blocks_accepted.clear();
+      _sync_item_type = last_item_id_seen.item_type;
       _most_recent_blocks_accepted.push_back(last_item_id_seen.item_hash);
     }
 

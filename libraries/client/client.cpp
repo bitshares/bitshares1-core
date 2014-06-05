@@ -37,6 +37,7 @@
 
 
 #include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/algorithm/reverse.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <boost/program_options.hpp>
@@ -317,11 +318,8 @@ namespace bts { namespace client {
             void delegate_loop();
             void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
-            /* Implement chain_client_impl */
-            // @{
-            virtual void on_new_block(const full_block& block);
-            virtual void on_new_transaction(const signed_transaction& trx);
-            /// @}
+            void on_new_block(const full_block& block, const block_id_type& block_id);
+            void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
@@ -337,9 +335,12 @@ namespace bts { namespace client {
                 FC_ASSERT( _chain_db != nullptr );
                 return _chain_db->chain_id(); 
             }
-            virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point = fc::optional<bts::net::item_hash_t>()) override;
+            virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type, 
+                                                                               bts::net::item_hash_t reference_point = bts::net::item_hash_t(),
+                                                                               uint32_t number_of_blocks_after_reference_point = 0) override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
+            virtual uint32_t get_block_number(bts::net::item_hash_t block_id) override;
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
@@ -448,7 +449,7 @@ namespace bts { namespace client {
                      full_block next_block = _chain_db->generate_block( next_block_time );
                      _wallet->sign_block( next_block );
 
-                     on_new_block(next_block);
+                     on_new_block(next_block, next_block.id());
                      _p2p_node->broadcast(block_message( next_block ));
                   }
                   catch ( const fc::exception& e )
@@ -500,14 +501,16 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       void client_impl::on_new_block(const full_block& block)
+       void client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
        {
          try
          {
-           ilog("Received block ${new_block_num} from the server, current head block is ${num}",
-                ("num", _chain_db->get_head_block_num())("new_block_num", block.block_num));
-
-           _chain_db->push_block(block);
+           ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}",
+                ("num", _chain_db->get_head_block_num())("block", block));
+           if (_chain_db->is_known_block(block_id))
+             ilog("The block we just received is one I've already seen, ignoring it");
+           else
+             _chain_db->push_block(block);
          }
          catch (fc::exception& e)
          {
@@ -546,7 +549,7 @@ namespace bts { namespace client {
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
                 ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
-                on_new_block(block_message_to_handle.block);
+                on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
                 break;
               }
             case trx_message_type:
@@ -567,6 +570,7 @@ namespace bts { namespace client {
                                                                   uint32_t& remaining_item_count,
                                                                   uint32_t limit /* = 2000 */)
       {
+        limit = 20; // for testing
         FC_ASSERT(item_type == bts::client::block_message_type);
         uint32_t last_seen_block_num = 1;
         bts::net::item_hash_t last_seen_block_hash;
@@ -633,39 +637,75 @@ namespace bts { namespace client {
         return hashes_to_return;
       }
 
-      std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point /* = fc::optional<bts::net::item_hash_t>() */)
+      std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis(uint32_t item_type, 
+                                                                              bts::net::item_hash_t reference_point /* = bts::net::item_hash_t() */, 
+                                                                              uint32_t number_of_blocks_after_reference_point /* = 0 */)
       {
         FC_ASSERT(item_type == bts::client::block_message_type);
         std::vector<bts::net::item_hash_t> synopsis;
         uint32_t high_block_num = 0;
-        if (reference_point)
+        uint32_t non_fork_high_block_num = 0;
+        std::vector<block_id_type> fork_history;
+
+        if (reference_point != bts::net::item_hash_t())
         {
           // the node is asking for a summary of the block chain up to a specified
           // block, which may or may not be on a fork
           // for now, assume it's not on a fork
           try
           {
-            high_block_num = _chain_db->get_block_num(*reference_point);
+            high_block_num = _chain_db->get_block_num(reference_point);
+            // didn't throw, so no fork
+            non_fork_high_block_num = high_block_num;
           }
           catch (const fc::key_not_found_exception&)
           {
-            // it must be on a fork or we've never seen it
-            // TODO: figure out which
-            return synopsis;
+            // it is either on a fork or we've never seen it
+            try
+            {
+              fork_history = _chain_db->get_fork_history(reference_point);
+              assert(fork_history.size() >= 2);
+              assert(fork_history.front() == reference_point);
+              block_id_type last_non_fork_block = fork_history.back();
+              fork_history.pop_back();
+              boost::reverse(fork_history);
+              try
+              {
+                non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
+              }
+              catch (const fc::key_not_found_exception&)
+              {
+                assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+              }
+              high_block_num = non_fork_high_block_num + fork_history.size();
+              assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+            }
+            catch (const fc::exception&)
+            {
+              // unable to get fork history for some reason.  maybe not linked, maybe we've never seen
+              // the block at all.  Either way, we can't return a synopsis of its chain
+              return synopsis;
+            }
           }
         }
         else
         {
           // no reference point specified, summarize the whole block chain
           high_block_num = _chain_db->get_head_block_num();
+          non_fork_high_block_num = high_block_num;
           if (high_block_num == 0)
             return synopsis; // we have no blocks
         }
+
+        uint32_t true_high_block_num = high_block_num + number_of_blocks_after_reference_point;
         uint32_t low_block_num = 1;
         do
         {
-          synopsis.push_back(_chain_db->get_block(low_block_num).id());
-          low_block_num += ((high_block_num - low_block_num + 2) / 2);
+          if (low_block_num <= non_fork_high_block_num)
+            synopsis.push_back(_chain_db->get_block(low_block_num).id());
+          else
+            synopsis.push_back(fork_history[low_block_num - non_fork_high_block_num - 1]);
+          low_block_num += ((true_high_block_num - low_block_num + 2) / 2);
         }
         while (low_block_num <= high_block_num);
 
@@ -721,6 +761,11 @@ namespace bts { namespace client {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
          _cli->display_status_message(message.str());
+       }
+
+       uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
+       {
+         return _chain_db->get_block_num(block_id);
        }
 
     } // end namespace detail

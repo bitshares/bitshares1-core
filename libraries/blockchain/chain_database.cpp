@@ -1062,6 +1062,10 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
 
+  std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
+  {
+    return my->get_fork_history(id);
+  }
 
 
    /** return the timestamp from the head block */

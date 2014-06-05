@@ -77,7 +77,7 @@ namespace bts { namespace net {
           *     &c.
           *   the last item in the list will be the hash of the most recent block on our preferred chain
           */
-         virtual std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, fc::optional<bts::net::item_hash_t> reference_point = fc::optional<bts::net::item_hash_t>()) = 0;
+         virtual std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, bts::net::item_hash_t reference_point = bts::net::item_hash_t(), uint32_t number_of_blocks_after_reference_point = 0) = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.
@@ -92,6 +92,8 @@ namespace bts { namespace net {
           *  Call any time the number of connected peers changes.
           */
          virtual void     connection_count_changed( uint32_t c ) = 0;
+
+         virtual uint32_t get_block_number(item_hash_t block_id) = 0;
    };
 
    /**

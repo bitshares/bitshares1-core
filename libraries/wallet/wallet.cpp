@@ -49,6 +49,7 @@ namespace bts { namespace wallet {
              path               _data_directory;
              path               _current_wallet_path;
              fc::time_point     _scheduled_lock_time;
+             fc::promise<void>::ptr _wallet_shutting_down_promise;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
              bool               _use_deterministic_one_time_keys;
@@ -581,13 +582,14 @@ namespace bts { namespace wallet {
    void wallet::close()
    { try {
       my->_wallet_db.close();
-      if( my->_wallet_relocker_done.valid() )
+      if( my->_wallet_relocker_done.valid() && 
+          !my->_wallet_relocker_done.ready() &&
+          my->_wallet_shutting_down_promise )
       {
-         lock();
-         my->_wallet_relocker_done.cancel();
-         if( my->_wallet_relocker_done.ready() ) 
-           my->_wallet_relocker_done.wait();
+        my->_wallet_shutting_down_promise->set_value();
+        my->_wallet_relocker_done.wait();
       }
+      my->_scheduled_lock_time = fc::time_point();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    string wallet::get_wallet_name()const
@@ -638,15 +640,24 @@ namespace bts { namespace wallet {
          my->_scheduled_lock_time = fc::time_point::now() + timeout;
          if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
          {
+           my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
            my->_wallet_relocker_done = fc::async([this](){
-             while( !my->_wallet_relocker_done.canceled() )
+             for (;;)
              {
-               if (fc::time_point::now() > my->_scheduled_lock_time)
+               if (bts::blockchain::now() > my->_scheduled_lock_time)
                {
                  lock();
                  return;
                }
-               fc::usleep(microseconds(200000));
+               try
+               {
+                 my->_wallet_shutting_down_promise->wait_until(fc::time_point::now() + fc::milliseconds(200));
+                 // if the promise is set, the wallet is shutting down and we need to exit the relocker
+                 return;
+               }
+               catch (const fc::timeout_exception&)
+               {
+               }
              }
            });
          }
