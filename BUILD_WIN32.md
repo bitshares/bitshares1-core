@@ -3,7 +3,7 @@ Windows - Visual Studio 2013
 #### Prerequisites ####
 * Microsoft Visual C++ 2013 Update 1 (the free Express edition will work)
 * If you have multiple MSVS installation use MSVS Developer console from target version.
-* This file builds only x86 version.
+* You can build either Windows 32bit or 64bit binaries.
 
 #### Set up the directory structure####
 * Create a base directory for all projects.  I'm putting everything in 
@@ -37,9 +37,13 @@ git clone https://github.com/InvictusInnovations/leveldb-win.git
   directory's `CMake` subdirectory, so those scripts would need tweaking.
 
 * Download library dependencies:
-   You can get prebuilt package containing all of the libraries described below built
-   by using currently used compiler. This package can be downloaded from:
-   http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013.7z
+   You can get prebuilt packages containing all of the libraries described below built
+   by using currently used compiler. Download the appropriate package from one of the links below
+   (or both if you plan to build 32bit and 64bit versions).
+
+   32bit version:    http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013.7z
+   64bit version:    http://get.syncad.com/invictus/Bitshare_toolkit_prebuilt_libs-vs2013-x64.7z
+
    and should be unpacked into Bitshare-root directory (ie: D:\Bitshares).
    Now the package contains: BerkeleyDB, boost 1.55, OpenSSL 1.0.1g.
 
@@ -52,7 +56,8 @@ git clone https://github.com/InvictusInnovations/leveldb-win.git
  
    BitShares depends on the Boost libraries version 1.55 or later (I assume 
    you're using 1.55, the latest as of this writing).  You must build them from
-   source.
+   source if you're building 32bit binaries, but the 64bit binaries include
+    prebuilt boost binaries, so no need to build them again for 64bit development).
    * download the latest boost source from http://www.boost.org/users/download/
    * unzip it to the base directory `D:\BitShares`. 
    * This will create a directory like `D:\BitShares\boost_1_55_0`.
@@ -64,7 +69,8 @@ git clone https://github.com/InvictusInnovations/leveldb-win.git
     * Untar it to the base directory `D:\BitShares`
     * this will create a directory like `D:\BitShares\openssl-1.0.1g`.
 
-At the end of this, your base directory should look like this:
+At the end of this, your base directory should look like this (directory names will
+be slightly different for the 64bit versions):
 ```
 D:\BitShares
 +- BerkeleyDB
@@ -79,10 +85,10 @@ D:\BitShares
 * Set up environment for building:
   ```
 cd D:\BitShares\bitshares_toolkit
-setenv.bat
+setenv.bat (or setenv_x64.bat for 64bit development)
 ```
 
-* Build boost libraries:
+* Build boost libraries (required for 32bit builds only, skip this step for 64bit development):
   ```
 cd D:\BitShares\boost
 bootstrap.bat
@@ -121,12 +127,12 @@ nmake -f ms\ntdll.mak install
 * Run CMake:
   ```
 cd D:\BitShares\bitshares_toolkit
-run_cmake.bat
+run_cmake.bat (or run_cmake_x64.bat for 64bit development)
 ```
  This pops up the cmake gui, but if you've used CMake before it will probably be
  showing the wrong data, so fix that:
  * Where is the source code: `D:\BitShares\bitshares_toolkit`
- * Where to build the binaries: `D:\BitShares\bin`
+ * Where to build the binaries: `D:\BitShares\bin` (or bin64 for 64bit development).
  
  Then hit **Configure**.  It may ask you to specify a generator for this 
  project; if it does, choose **Visual Studio 12** and select **Use default 
