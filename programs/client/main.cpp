@@ -243,7 +243,8 @@ int main( int argc, char** argv )
 
 #ifdef _DEBUG
         //tee cli output to the console and a log file
-        std::ofstream console_log("console.log");
+        fc::path console_log_file = datadir / "console.log";
+        std::ofstream console_log(console_log_file.string());
         typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
         typedef boost::iostreams::stream<TeeDevice> TeeStream;
         TeeDevice my_tee(std::cout, console_log); 

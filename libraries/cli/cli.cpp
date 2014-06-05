@@ -204,7 +204,6 @@ namespace bts { namespace cli {
             string get_line_internal( const string& prompt, bool no_echo )
             {
                   //FC_ASSERT( _self->is_interactive() );
-                  _out<<prompt;
                   string line;
                   if ( no_echo )
                   {
@@ -230,12 +229,11 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
+                      _out<<prompt;
                      std::getline( _input_stream, line );
                   #endif
                   if (_input_log_stream)
                     *_input_log_stream << line << std::endl;
-                  else
-                    _out << std::endl;
                   }
 
                   boost::trim(line);
