@@ -295,9 +295,10 @@ namespace bts{ namespace wallet {
    {
        for (auto id_trx_pair : transactions)
        {
-           if (id_trx_pair.second.block_num == -1)
+           if (id_trx_pair.second.block_num == 0)
            {
                transactions.erase(id_trx_pair.first);
+               my->_records.remove( id_trx_pair.second.index );
            }
        }
    }
