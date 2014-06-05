@@ -415,6 +415,10 @@ namespace bts { namespace client {
       _wallet->change_passphrase(new_password);
     }
 
+    void detail::client_impl::wallet_clear_pending_transactions()
+    {
+        _wallet->clear_pending_transactions();
+    }
 
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
                                                        const string& asset_symbol, 

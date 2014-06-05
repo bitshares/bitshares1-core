@@ -291,6 +291,17 @@ namespace bts{ namespace wallet {
       }
    }
 
+   void wallet_db::clear_pending_transactions()
+   {
+       for (auto id_trx_pair : transactions)
+       {
+           if (id_trx_pair.second.block_num == -1)
+           {
+               transactions.erase(id_trx_pair.first);
+           }
+       }
+   }
+
    void wallet_db::export_to_json( const fc::path& file_name ) const
    { try {
       FC_ASSERT( is_open() );

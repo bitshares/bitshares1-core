@@ -66,6 +66,8 @@ namespace bts { namespace wallet {
 
              bool cache_balance( const balance_id_type& balance_id );
 
+             void clear_pending_transactions();
+
              void scan_balances();
              void scan_registered_accounts();
              void withdraw_to_transaction( share_type amount,
@@ -78,6 +80,10 @@ namespace bts { namespace wallet {
 
       };
 
+      void wallet_impl::clear_pending_transactions()
+      {
+          _wallet_db.clear_pending_transactions();
+      }
       void wallet_impl::scan_balances()
       {
          _blockchain->scan_balances( [=]( const balance_record& bal_rec )
@@ -1875,6 +1881,10 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   void wallet::clear_pending_transactions()
+   {
+      my->clear_pending_transactions();
+   }
 
    void  wallet::scan_state()
    { try {
