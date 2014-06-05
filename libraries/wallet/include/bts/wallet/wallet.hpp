@@ -108,6 +108,8 @@ namespace bts { namespace wallet {
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
 
+         void     remove_contact_account( const string& account_name );
+
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
          ///@}  

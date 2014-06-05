@@ -690,6 +690,15 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( account_name );
    }
 
+   void  wallet::remove_contact_account( const string& account_name )
+   { try {
+      auto oaccount = my->_wallet_db.lookup_account( account_name );
+      FC_ASSERT( oaccount.valid() );
+      FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
+              "you can only remove contact accounts" );
+      my->_wallet_db.remove_contact_account( account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
    void  wallet::rename_account( const string& old_account_name, 
                                  const string& new_account_name )

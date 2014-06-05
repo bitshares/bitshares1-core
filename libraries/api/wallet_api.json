@@ -506,6 +506,19 @@
          "prerequisites" : ["json_authenticated", "wallet_open" ]
       },
       {
+         "method_name" : "wallet_remove_contact_account",
+         "description" : "Remove a contact account from your wallet",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the contact"
+               }
+            ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ]
+      },
+      {
          "method_name" : "wallet_rename_account",
          "description" : "Rename an account in wallet",
          "return_type" : "void",

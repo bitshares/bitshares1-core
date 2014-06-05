@@ -537,6 +537,11 @@ namespace bts { namespace client {
       return _wallet->list_receive_accounts();
     }
 
+    void detail::client_impl::wallet_remove_contact_account(const string& account_name)
+    {
+      _wallet->remove_contact_account( account_name );
+    }
+
     void detail::client_impl::wallet_rename_account(const string& current_account_name,
                                        const string& new_account_name)
     {
