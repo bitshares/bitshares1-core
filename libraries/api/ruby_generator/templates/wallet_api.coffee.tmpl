@@ -1,14 +1,18 @@
-class Wallet
+# Warning: this is a generated file, any changes made here will be overwritten by the build process
 
-  constructor: (@q, @log, @rpc, @error_service, @interval) ->
-    @log.info "---- Wallet Constructor ----"
+class WalletAPI
+
+  constructor: (@q, @log, @rpc, @interval) ->
+    #@log.info "---- WalletAPI Constructor ----"
 
 <% wallet_api['methods'].each do |m| %>
   # <%= m['description'] %>
+  # parameters: <%= js_params_doc(m, 2) %>
+  # return_type: `<%= m['return_type'] %>`
   <%= m['method_name'].gsub('wallet_', '') %>: <%= js_method_params(m) %> ->
     @rpc.request('<%= m['method_name'] %>'<%= js_pass_params(m) %>).then (response) ->
       response.result
 <% end %>
 
 
-angular.module("app").service("WalletAPI", ["$q", "$log", "RpcService", "ErrorService", "$interval", Wallet])
+angular.module("app").service("WalletAPI", ["$q", "$log", "RpcService", "$interval", WalletAPI])
