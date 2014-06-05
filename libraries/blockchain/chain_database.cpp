@@ -362,9 +362,13 @@ namespace bts { namespace blockchain {
 
           // update the parallel block list
           std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
-          std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id );
-          parallel_blocks.push_back( block_id );
-          _fork_number_db.store( block_data.block_num, parallel_blocks );
+          if (std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id ) == parallel_blocks.end())
+          {
+            // don't add the block to the list if it's already there.
+            // TODO: do we need to execute any of the rest of this function (or, for that matter, its caller) if the block is already there
+            parallel_blocks.push_back( block_id );
+            _fork_number_db.store( block_data.block_num, parallel_blocks );
+          }
 
 
           // now find how it links in.
@@ -1591,10 +1595,10 @@ namespace bts { namespace blockchain {
              ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
              for( auto next : fork_data.next_blocks )
              {
-                out << '"' << string ( fork_itr.key() ).substr(0,5) <<"\" "
-                    << "[color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
+                out << '"' << std::string ( fork_itr.key() ) <<"\" "
+                    << "[label=<" << std::string ( fork_itr.key() ).substr(0,5) << ">,color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
                     << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
-                out << '"' << string ( next ).substr(0,5) <<"\" -> \"" << string( fork_itr.key() ).substr(0,5) << "\";\n";
+                out << '"' << std::string ( next ) <<"\" -> \"" << std::string( fork_itr.key() ) << "\";\n";
             }
              ++fork_itr;
           }
