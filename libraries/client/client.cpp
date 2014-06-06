@@ -510,6 +510,7 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_account_name", delegate_account_name)("subject", subject))
     }
 
+
     signed_transaction detail::client_impl::wallet_vote_proposal(const string& name,
                                                     const proposal_id_type& proposal_id,
                                                     const proposal_vote::vote_type& vote,

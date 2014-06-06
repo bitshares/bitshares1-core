@@ -331,6 +331,14 @@ namespace bts { namespace blockchain {
       add_required_signature( cur_record->active_address() );
       sub_vote( op.account_id, op.amount );
 
+      std::cout << "BALANCE: ";
+      std::cout << cur_record->delegate_info->pay_balance;
+      std::cout << "\n";
+
+      std::cout << "REQUIRED: ";
+      std::cout << op.amount;
+      std::cout << "\n";
+
       FC_ASSERT( cur_record->delegate_info->pay_balance >= op.amount );
       cur_record->delegate_info->pay_balance -= op.amount;
 

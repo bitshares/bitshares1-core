@@ -850,32 +850,62 @@ namespace bts { namespace cli {
                       //current++;
                   }
               }
+              else if (method_name == "blockchain_get_proposal_votes")
+              {
+                  auto votes = result.as<vector<proposal_vote>>();
+                  _out << std::left;
+                  _out << std::setw(15) << "DELEGATE";
+                  _out << std::setw(22) << "TIME";
+                  _out << std::setw(5)  << "VOTE";
+                  _out << std::setw(35) << "MESSAGE";
+                  _out << "\n----------------------------------------------------------------";
+                  _out << "-----------------------\n";
+                  for (auto vote : votes)
+                  {
+                      auto time = boost::posix_time::from_time_t(time_t(vote.timestamp.sec_since_epoch()));
+                      auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
+                      _out << std::setw(15) << pretty_shorten(rec->name, 14);
+                      _out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      if (vote.vote == proposal_vote::no)
+                          _out << std::setw(5) << "NO";
+                      else if (vote.vote == proposal_vote::yes)
+                          _out << std::setw(5) << "YES";
+                      else
+                          _out << std::setw(5) << "??";
+                      _out << std::setw(35) << pretty_shorten(vote.message, 35);
+                      _out << "\n";
+                  }
+                  _out << "\n";
+              }
               else if (method_name == "blockchain_list_proposals")
               {
                   auto proposals = result.as<vector<proposal_record>>();
+                  _out << std::left;
                   _out << std::setw(10) << "ID";
                   _out << std::setw(20) << "SUBMITTED BY";
-                  _out << std::setw(15) << "SUBMIT TIME";
+                  _out << std::setw(22) << "SUBMIT TIME";
                   _out << std::setw(15) << "TYPE";
                   _out << std::setw(20) << "SUBJECT";
                   _out << std::setw(35) << "BODY";
                   _out << std::setw(20) << "DATA";
-                  _out << std::setw(4)  << "RATIFIED";
+                  _out << std::setw(10)  << "RATIFIED";
                   _out << "\n------------------------------------------------------------";
                   _out << "-----------------------------------------------------------------";
                   _out << "------------------\n";
                   for (auto prop : proposals)
                   {
                       _out << std::setw(10) << prop.id;
+                      auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
+                      _out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
                       auto time = boost::posix_time::from_time_t(time_t(prop.submission_date.sec_since_epoch()));
                       _out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
-                      _out << std::setw(15) << prop.proposal_type;
-                      _out << std::setw(20) << prop.subject;
-                      _out << std::setw(35) << prop.body;
-                      _out << std::setw(20) << fc::json::to_pretty_string(prop.data);
-                      _out << std::setw(4) << prop.ratified;
+                      _out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
+                      _out << std::setw(20) << pretty_shorten(prop.subject, 19);
+                      _out << std::setw(35) << pretty_shorten(prop.body, 34);
+                      _out << std::setw(20) << pretty_shorten(fc::json::to_pretty_string(prop.data), 19);
+                      _out << std::setw(10) << (prop.ratified ? "YES" : "NO");
                   }
-                  
+                  _out << "\n"; 
               }
               else
               {

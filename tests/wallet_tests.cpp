@@ -250,6 +250,73 @@ BOOST_AUTO_TEST_CASE( client_tests )
       elog( "${e}", ("e",e.to_detail_string() ) );
       throw;
    }
+} // client_tests
+
+
+BOOST_AUTO_TEST_CASE( delegate_proposals )
+{
+   try {
+      std::string password = "123456789";
+      fc::temp_directory my_dir;
+      fc::temp_directory your_dir;
+
+      auto test_keys = fc::json::from_string( test_wif_keys ).as<vector<string> >();
+
+      auto network = std::make_shared<bts::net::simulated_network>();
+
+      auto my_client = std::make_shared<client>(network);
+      my_client->open( my_dir.path(), "genesis.json" );
+
+      auto your_client = std::make_shared<client>(network);
+      your_client->open( your_dir.path(), "genesis.json" );
+
+      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
+      auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
+
+      my_client->wallet_create( "my_wallet", password );
+      my_client->wallet_unlock( fc::seconds(999999999), password );
+      your_client->wallet_create( "your_wallet", password );
+      your_client->wallet_unlock( fc::seconds(999999999), password );
+
+      auto my_account1 = my_client->wallet_account_create( "account1" );
+      my_client->wallet_import_private_key( test_keys[0], string(), true /*rescan*/ );
+      auto bal = my_client->wallet_get_balance();
+      ilog( "${bal}", ("bal",bal ) );
+      FC_ASSERT( bal[0].first > 0 );
+
+      auto trx = my_client->wallet_account_register( "account1", "delegate-0", variant(), true );
+
+      auto your_account_key = your_client->wallet_account_create("youraccount");
+      my_client->wallet_add_contact_account("youraccount", your_account_key);
+
+      produce_block( my_client );
+
+      for( uint32_t i = 0; i < 10; ++i )
+      {
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "delegate-0", "memo-"+fc::to_string(i) );
+         produce_block( my_client );
+      }
+      my_client->wallet_submit_proposal("delegate-0", "subject", "body", "type", fc::variant("data"));
+      produce_block( my_client );
+      for( uint32_t i = 0; i < 10; ++i )
+      {
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "delegate-0", "memo-"+fc::to_string(i) );
+         produce_block( my_client );
+      }
+      my_client->wallet_vote_proposal("delegate-0", 1, proposal_vote::yes, "I AGREE!!!");
+      produce_block( my_client );
+      my_cli->execute_command_line( "blockchain_list_proposals" );
+      my_cli->execute_command_line( "blockchain_get_proposal_votes 1" ); 
+
+
+   } catch ( const fc::exception& e )
+   {
+      elog( "${e}", ("e",e.to_detail_string() ) );
+      throw;
+   }
+
 }
+
+
 
 
