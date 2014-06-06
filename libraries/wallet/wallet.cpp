@@ -1516,13 +1516,16 @@ namespace bts { namespace wallet {
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
       required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
 
+      /*
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( delegate_account->name ),
                                    trx, required_signatures );
+      */
      
+      trx.withdraw_pay( delegate_account->id, required_fees.amount );
       required_signatures.insert( delegate_account->active_key() ); 
-    
+
        
       if (sign)
           sign_transaction( trx, required_signatures );
