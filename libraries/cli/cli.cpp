@@ -804,10 +804,12 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_list_registered_accounts")
               {
-                  std::cout << arguments.size();
-                  auto count = arguments[1].as<int32_t>();
-                  if (count == -1)
-                      count = 25; // In the CLI this is a more sane default
+                  string start = "";
+                  int32_t count = 25; // In CLI this is a more sane result
+                  if (arguments.size() > 0)
+                      start = arguments[0].as_string();
+                  if (arguments.size() > 1)
+                      count = arguments[1].as<int32_t>();
                   print_registered_account_list( result.as<vector<account_record>>(), count );
               }
               else if (method_name == "blockchain_list_delegates")
@@ -914,9 +916,10 @@ namespace bts { namespace cli {
 
                 for( auto acct : account_records )
                 {
-                    auto name_with_delegate = pretty_shorten(acct.name, 14) 
-                                            + (acct.is_delegate() ? " (delegate)" : "");
-                    _out << std::setw(25) << name_with_delegate;
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                    else
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
 
                     _out << std::setw(64) << string( acct.active_key() );
 
@@ -949,9 +952,10 @@ namespace bts { namespace cli {
 
                 for( auto acct : account_records )
                 {
-                    auto name_with_delegate = pretty_shorten(acct.name, 14) 
-                                            + (acct.is_delegate() ? " (delegate)" : "");
-                    _out << std::setw(25) << name_with_delegate;
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                    else
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
                     _out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
@@ -986,12 +990,10 @@ namespace bts { namespace cli {
                 auto counter = 0;
                 for( auto acct : account_records )
                 {
-                    /* Count is positive b/c CLI overrides default -1 arg */
-                    if (counter >= count)
-                        return;
-                    auto name_with_delegate = pretty_shorten(acct.name, 14) 
-                                            + (acct.is_delegate() ? " (delegate)" : "");
-                    _out << std::setw(25) << name_with_delegate;
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                    else
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
                     
                     _out << std::setw(64) << string( acct.active_key() );
                     _out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
@@ -1018,6 +1020,15 @@ namespace bts { namespace cli {
                     }
 
                     _out << "\n";
+
+                    /* Count is positive b/c CLI overrides default -1 arg */
+                    if (counter >= count)
+                    {
+                        _out << "... Use \"blockchain_list_registered_accounts <start_name> <count>\" to see more.\n";
+                        return;
+                    }
+                    counter++;
+
                 }
             }
 
