@@ -1356,13 +1356,19 @@ namespace bts { namespace net {
 
       // if our client doesn't have any items after the item the peer requested, it will send back
       // a list containing the last item the peer requested
-      if (reply_message.item_hashes_available.empty() /* I have no items in my blockchain */ ||
-          (reply_message.item_hashes_available.size() == 1 &&
-           reply_message.item_hashes_available[0] == fetch_blockchain_item_ids_message_received.blockchain_synopsis.back()))
+      if (reply_message.item_hashes_available.empty()) 
+        originating_peer->peer_needs_sync_items_from_us = false; /* I have no items in my blockchain */ 
+      else if (!fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
+               reply_message.item_hashes_available.size() == 1 &&
+               reply_message.item_hashes_available.back() == fetch_blockchain_item_ids_message_received.blockchain_synopsis.back())
+        /* the last item in the peer's list matches the last item in our list */
+        originating_peer->peer_needs_sync_items_from_us = false;
+      else
+        originating_peer->peer_needs_sync_items_from_us = true;
+
+      if (!originating_peer->peer_needs_sync_items_from_us)
       {
         ilog("sync: peer is already in sync with us");
-        originating_peer->peer_needs_sync_items_from_us = false;
-
         // if we thought we had all the items this peer had, but now it turns out that we don't 
         // have the last item it requested to send from, 
         // we need to kick off another round of synchronization
@@ -1374,7 +1380,6 @@ namespace bts { namespace net {
       else
       {
         ilog("sync: peer is out of sync, sending peer ${count} items ids: ${item_ids}", ("count", reply_message.item_hashes_available.size())("item_ids", reply_message.item_hashes_available));
-        originating_peer->peer_needs_sync_items_from_us = true;
       }
       originating_peer->send_message(reply_message);
 

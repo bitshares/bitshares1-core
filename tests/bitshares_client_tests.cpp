@@ -377,8 +377,9 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
 
   bts_client_process& first_client = client_processes[0];
   first_client.wallet->unlock(WALLET_PASSPHRASE, fc::microseconds::maximum());
+  first_client.wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
-    first_client.wallet->import_private_key(delegate_keys[i], "delegate_keys");
+    first_client.wallet->import_private_key(delegate_keys[i], "delegatekeys");
   first_client.wallet->scan_state();
 
   uint32_t current_block_count = 0;
@@ -484,7 +485,8 @@ void bts_client_launcher_fixture::register_delegates()
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
   {
     int client_for_this_delegate = i % client_processes.size();
-    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]), "delegate_key");
+    client_processes[i].rpc_client->wallet_account_create("delegatekey");
+    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]), "delegatekey");
     client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
   }
 }
@@ -852,7 +854,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     uint32_t next_client_index = (i + 1) % client_processes.size();
-    bts::blockchain::public_key_type destination_address = client_processes[next_client_index].rpc_client->wallet_account_create("circle_test");
+    bts::blockchain::public_key_type destination_address = client_processes[next_client_index].rpc_client->wallet_account_create("circletest");
     auto destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first;
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     const uint32_t amount_to_transfer = 1000000;

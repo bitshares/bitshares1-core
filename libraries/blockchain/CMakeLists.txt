@@ -56,3 +56,7 @@ add_library( bts_blockchain
 target_link_libraries( bts_blockchain fc bts_db leveldb )
 target_include_directories( bts_blockchain 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+if (USE_PCH)
+  set_target_properties(bts_blockchain PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+  cotire(bts_blockchain)
+endif(USE_PCH)

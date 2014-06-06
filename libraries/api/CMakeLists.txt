@@ -64,3 +64,7 @@ target_link_libraries( bts_rpc_stubs
                        PUBLIC bts_api bts_wallet bts_net bts_blockchain)
 target_include_directories(bts_rpc_stubs
                            PUBLIC "${rpc_stubs_output_dir}/include")
+if (USE_PCH)
+  set_target_properties(bts_rpc_stubs PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+  cotire(bts_rpc_stubs)
+endif(USE_PCH)

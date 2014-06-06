@@ -15,3 +15,7 @@ target_link_libraries( bts_rpc
                        PRIVATE bts_client fc bts_db bts_blockchain bts_utilities leveldb)
 target_include_directories( bts_rpc 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+if (USE_PCH)
+  set_target_properties(bts_rpc PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+  cotire(bts_rpc)
+endif(USE_PCH)
