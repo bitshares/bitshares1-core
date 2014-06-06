@@ -415,6 +415,10 @@ namespace bts { namespace client {
       _wallet->change_passphrase(new_password);
     }
 
+    void detail::client_impl::wallet_clear_pending_transactions()
+    {
+        _wallet->clear_pending_transactions();
+    }
 
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
                                                        const string& asset_symbol, 
@@ -508,12 +512,13 @@ namespace bts { namespace client {
 
     signed_transaction detail::client_impl::wallet_vote_proposal(const string& name,
                                                     const proposal_id_type& proposal_id,
-                                                    uint8_t vote)
+                                                    const proposal_vote::vote_type& vote,
+                                                    const string& message )
     {
       try {
         generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
         bool sign = (flag != bts::rpc::do_not_sign);
-        auto trx = _wallet->vote_proposal(name, proposal_id, vote, sign);
+        auto trx = _wallet->vote_proposal(name, proposal_id, vote, message, sign);
         if (flag == bts::rpc::sign_and_broadcast)
         {
             network_broadcast_transaction(trx);
@@ -656,7 +661,7 @@ namespace bts { namespace client {
       return _chain_db->get_assets(first, count);
     }
 
-    vector<account_record> detail::client_impl::blockchain_get_delegates(uint32_t first, uint32_t count) const
+    vector<account_record> detail::client_impl::blockchain_list_delegates(uint32_t first, uint32_t count) const
     {
       auto delegates = _chain_db->get_delegates_by_vote(first, count);
       vector<account_record> delegate_records;
@@ -796,7 +801,13 @@ namespace bts { namespace client {
     }
 
 
-    balances detail::client_impl::wallet_get_balance( const string& symbol, 
+   /**
+    * Detail Implementation 
+    */
+   namespace detail  {
+
+
+    balances client_impl::wallet_get_balance( const string& symbol, 
                                          const string& account_name ) const
     { try {
         vector<asset> all_balances = _wallet->get_balance( symbol ,account_name);
@@ -813,21 +824,21 @@ namespace bts { namespace client {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
 
-    void detail::client_impl::wallet_add_contact_account( const string& account_name, 
+    void client_impl::wallet_add_contact_account( const string& account_name, 
                                              const public_key_type& contact_key )
     {
        _wallet->add_contact_account( account_name, contact_key );
     }
 
 
-    public_key_type detail::client_impl::wallet_account_create( const string& account_name,
+    public_key_type client_impl::wallet_account_create( const string& account_name,
                                                    const variant& private_data )
     {
        ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return _wallet->create_account( account_name, private_data );
     }
 
-    fc::variant_object detail::client_impl::about() const
+    fc::variant_object client_impl::about() const
     {
       fc::mutable_variant_object info;
       info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
@@ -838,13 +849,13 @@ namespace bts { namespace client {
       return info;
     }
 
-    string detail::client_impl::help(const string& command_name) const
+    string client_impl::help(const string& command_name) const
     {
       return _rpc_server->help(command_name);
     }
     
 
-    variant_object detail::client_impl::blockchain_get_config() const
+    variant_object client_impl::blockchain_get_config() const
     {
        fc::mutable_variant_object info;
        info["blockchain_id"]                        = _chain_db->chain_id();
@@ -872,7 +883,7 @@ namespace bts { namespace client {
 
     }
 
-    variant_object detail::client_impl::get_info() const
+    variant_object client_impl::get_info() const
     {
       fc::mutable_variant_object info;
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
@@ -926,13 +937,13 @@ namespace bts { namespace client {
 
       return info;
     }
-    void detail::client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count) 
+    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count) 
     { try {
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
 
-    wallet_transaction_record detail::client_impl::wallet_account_register( const string& account_name,
+    wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
                                                         const fc::variant& data,
                                                         bool as_delegate ) 
@@ -951,7 +962,7 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
     }
 
-    wallet_transaction_record detail::client_impl::wallet_account_update_registration( const string& account_to_update,
+    wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
                                                                         bool as_delegate )
@@ -966,12 +977,12 @@ namespace bts { namespace client {
        return trx;
     }
 
-    fc::variant_object detail::client_impl::network_get_info() const
+    fc::variant_object client_impl::network_get_info() const
     {
       return _p2p_node->network_get_info();
     }
 
-    fc::variant_object detail::client_impl::validate_address(const string& address) const
+    fc::variant_object client_impl::validate_address(const string& address) const
     {
       fc::mutable_variant_object result;
       try
@@ -986,20 +997,42 @@ namespace bts { namespace client {
       return result;
     }
 
-    vector<wallet_balance_record> detail::client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
+    vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
     {
        return _wallet->get_unspent_balances( account_name, symbol );
     }
 
 
-   unordered_map<string, map<string, int64_t> >  detail::client_impl::wallet_account_balance() 
+   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance() 
    {
       return _wallet->get_account_balances();
    }
+
+
+   signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name, 
+                                                                 const string& to_account_name, 
+                                                                 const share_type& amount_to_withdraw,
+                                                                 const string& memo_message )
+   {
+      auto trx = _wallet->withdraw_delegate_pay( delegate_name, 
+                                           amount_to_withdraw, 
+                                           to_account_name, 
+                                           memo_message, true );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+   vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
+   {
+      return _chain_db->get_proposals( first, count );
+   }
+   vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
+   {
+      return _chain_db->get_proposal_votes( proposal_id );
+   }
+   } // namespace detail
 
    bts::api::common_api* client::get_impl() const
    {
      return my.get();
    }
-
 } } // bts::client

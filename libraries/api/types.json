@@ -40,6 +40,35 @@
         "default_example" : "TODO"      
       },
       {
+        "type_name" : "proposal_record",
+        "cpp_return_type" : "bts::blockchain::proposal_record",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "proposal_array",
+        "container_type" : "array",
+        "contained_type" : "proposal_record",
+        "default_example" : "TODO"      
+      },
+      {
+        "type_name" : "proposal_vote",
+        "cpp_return_type" : "bts::blockchain::proposal_vote",
+        "cpp_include_file" : "bts/blockchain/types.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "vote_type",
+        "cpp_return_type" : "bts::blockchain::proposal_vote::vote_type",
+        "default_example" : "yes"
+      },
+      {
+        "type_name" : "proposal_vote_array",
+        "container_type" : "array",
+        "contained_type" : "proposal_vote",
+        "default_example" : "TODO"      
+      },
+      {
         "type_name" : "optional_account_record",
         "cpp_return_type" : "fc::optional<bts::blockchain::account_record>",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -289,7 +318,7 @@
         "default_example" : "TODO"      
       },
       {
-        "type_name" : "proposal_id_type",
+        "type_name" : "proposal_id",
         "cpp_return_type" : "bts::blockchain::proposal_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
       }

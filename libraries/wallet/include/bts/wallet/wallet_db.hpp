@@ -49,6 +49,8 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
 
+         void clear_pending_transactions();
+
          void store_balance( const wallet_balance_record& r )
          {
             store_record( r );
@@ -103,7 +105,7 @@ namespace bts { namespace wallet {
                                 const fc::path& wallet_to_create );
 
          fc::optional<wallet_master_key_record>                 wallet_master_key;
-
+ 
          unordered_map<address,wallet_key_record>                         keys;
          unordered_map<address,address>                                   btc_to_bts_address;
          unordered_map<address,int32_t>                                   address_to_account;

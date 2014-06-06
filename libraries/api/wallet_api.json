@@ -169,6 +169,14 @@
         "aliases" : ["history"]
       },
       {
+        "method_name": "wallet_clear_pending_transactions",
+        "description": "Clear \"stuck\" pending transactions from the wallet.",
+        "return_type": "void",
+        "parameters" : [],
+        "prerequisites" : ["json_authenticated","wallet_open"],
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_lock",
         "description": "Lock the private keys in wallet, disables spending commands until unlocked",
         "return_type": "void",
@@ -402,12 +410,14 @@
             {
               "name" : "first_block_number", 
               "type" : "uint32_t", 
-              "description" : "the first block to scan"
+              "description" : "the first block to scan",
+              "default_value" : 0
             },
             {
               "name" : "num_blocks", 
               "type" : "uint32_t", 
-              "description" : "the number of blocks to scan"
+              "description" : "the number of blocks to scan",
+              "default_value" : -1
             }
           ],
         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
@@ -650,16 +660,22 @@
                },
                {
                   "name" : "proposal_id",
-                  "type" : "proposal_id_type",
+                  "type" : "proposal_id",
                   "description" : "the id of the proposal to vote on"
                },
                {
                   "name" : "vote",
-                  "type" : "uint8_t",
+                  "type" : "vote_type",
                   "description" : "your vote"
+               },
+               {
+                  "name" : "message",
+                  "type" : "std::string",
+                  "description" : "comment to go along with vote",
+                  "default_value" : ""
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked", "connected_to_network" ]
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
       },
       {
          "method_name" : "wallet_list_unspent_balances",
@@ -688,6 +704,35 @@
          "parameters"     : [],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : ["balance"]
+      },
+      {
+         "method_name"  : "wallet_withdraw_delegate_pay",
+         "description"  : "Used to transfer some of the delegates pay from their balance",
+         "return_type"  : "signed_transaction",
+         "parameters"   : [
+            {
+              "name" : "delegate_name",
+              "type" : "account_name",
+              "description" : "the delegate who's pay is being cashed out"
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "account_name",
+              "description" : "the account that should receive the funds"
+            },
+            {
+               "name" : "amount_to_withdraw",
+               "type" : "share_type",
+               "description" : "the amount to withdraw"
+            },
+            {
+               "name" : "memo",
+               "type" : "std::string",
+               "description" : "memo to add to transaction"
+      }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "aliases" : ["pay_delegate"]
       }
 
     ]

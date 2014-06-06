@@ -172,6 +172,7 @@ namespace bts { namespace blockchain {
             break;
          case withdraw_pay_op_type:
             evaluate_withdraw_pay( op.as<withdraw_pay_operation>() );
+            break;
          case create_asset_op_type:
             evaluate_create_asset( op.as<create_asset_operation>() );
             break;
@@ -233,6 +234,8 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_vote_proposal( const vote_proposal_operation& op )
    { try {
+       FC_ASSERT(op.message.size() < BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE );
+
        ///  signed by a registered delegate
        auto delegate_record = _current_state->get_account_record( op.id.delegate_id );
        FC_ASSERT( !!delegate_record && delegate_record->is_delegate(),
@@ -248,6 +251,7 @@ namespace bts { namespace blockchain {
        new_vote.id = op.id;
        new_vote.timestamp = op.timestamp;
        new_vote.vote = op.vote;
+       new_vote.message = op.message;
 
        _current_state->store_proposal_vote( new_vote );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
@@ -325,6 +329,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( cur_record->is_delegate() );
 
       add_required_signature( cur_record->active_address() );
+      sub_vote( op.account_id, op.amount );
 
       FC_ASSERT( cur_record->delegate_info->pay_balance >= op.amount );
       cur_record->delegate_info->pay_balance -= op.amount;
@@ -737,26 +742,35 @@ namespace bts { namespace blockchain {
    {
    }
 
-
-   void transaction::withdraw( const balance_id_type& account, share_type amount )
+   void transaction::withdraw( const balance_id_type& account, 
+                               share_type             amount )
    { try {
       FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( withdraw_operation( account, amount ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account",account)("amount",amount) ) }
 
-   void transaction::deposit( const address& owner, const asset& amount, account_id_type delegate_id )
+   void transaction::withdraw_pay( const account_id_type& account, 
+                                   share_type             amount )
+   {
+      FC_ASSERT( amount > 0, "amount: ${amount}", ("amount",amount) );
+      operations.push_back( withdraw_pay_operation( amount, account ) );
+   }
+
+   void transaction::deposit( const address&  owner, 
+                              const asset&    amount, 
+                              account_id_type delegate_id )
    {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, delegate_id ) );
    }
 
    void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
-                                      asset amount,
-                                      fc::ecc::private_key from_key,
-                                      const std::string& memo_message,
-                                      account_id_type delegate_id,
-                                      const fc::ecc::public_key& memo_pub_key,
-                                      memo_flags_enum memo_type )
+                                         asset amount,
+                                         fc::ecc::private_key from_key,
+                                         const std::string& memo_message,
+                                         account_id_type delegate_id,
+                                         const fc::ecc::public_key& memo_pub_key,
+                                         memo_flags_enum memo_type )
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
 
@@ -813,13 +827,15 @@ namespace bts { namespace blockchain {
 
    void transaction::vote_proposal(proposal_id_type proposal_id,
                                    account_id_type voter_id,
-                                   uint8_t vote)
+                                   proposal_vote::vote_type vote,
+                                   const string& message )
    {
      vote_proposal_operation op;
      op.id.proposal_id = proposal_id;
      op.id.delegate_id = voter_id;
      op.timestamp = fc::time_point::now();
      op.vote = vote;
+     op.message = message;
      operations.push_back(op);
    }
 

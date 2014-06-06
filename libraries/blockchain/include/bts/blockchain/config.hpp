@@ -33,8 +33,9 @@
  *
  *  Adjusting this value will change the effective fee charged on transactions
  */
-#define BTS_BLOCKCHAIN_MAX_SIZE                     (1024*1024*1024*100ll) // 100 GB
-#define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                (19) // bytes
+#define BTS_BLOCKCHAIN_MAX_SIZE                         (1024*1024*1024*100ll) // 100 GB
+#define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                    (19) // bytes
+#define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE   (1024) // bytes
 
 /**
  * Initial shares read from the genesis block are scaled to this number.
