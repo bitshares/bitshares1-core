@@ -102,14 +102,14 @@ struct bts_xt_client_test_config
   }
 };
 fc::path bts_xt_client_test_config::bts_client_exe = "e:/invictus/vs12_bt/programs/client/Debug/bitshares_client.exe";
-fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bts_xt_client_tests";
+fc::path bts_xt_client_test_config::config_directory = fc::temp_directory_path() / "bitshares_client_tests";
 uint16_t bts_xt_client_test_config::base_rpc_port  = 20100;
 uint16_t bts_xt_client_test_config::base_p2p_port  = 21100;
 uint16_t bts_xt_client_test_config::base_http_port = 22100;
 
 #define RPC_USERNAME "test"
 #define RPC_PASSWORD "test"
-#define WALLET_PASSPHRASE "testtest"
+#define WALLET_PASSPHRASE "testtesttest"
 #define WALLET_NAME "default"
 #define INITIAL_BALANCE 100000000
 
@@ -252,12 +252,11 @@ void bts_client_process::launch(uint32_t process_number,
   options.push_back(config_dir.string());
 
   options.push_back("--server");
+  options.push_back("--daemon");
   options.push_back("--rpcuser=" RPC_USERNAME);
   options.push_back("--rpcpassword=" RPC_PASSWORD);
   options.push_back("--rpcport");
   options.push_back(boost::lexical_cast<std::string>(rpc_port));
-  options.push_back("--httpport");
-  options.push_back(boost::lexical_cast<std::string>(http_port));
   options.push_back("--p2p-port");
   options.push_back(boost::lexical_cast<std::string>(p2p_port));
 
@@ -473,7 +472,8 @@ void bts_client_launcher_fixture::import_initial_balances()
   BOOST_TEST_MESSAGE("Importing initial keys and verifying initial balances");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_import_private_key(key_to_wif(client_processes[i].private_key), "blah");
+    client_processes[i].rpc_client->wallet_account_create("initialbalanceaccount");
+    client_processes[i].rpc_client->wallet_import_private_key(key_to_wif(client_processes[i].private_key), "initialbalanceaccount");
     client_processes[i].rpc_client->wallet_rescan_blockchain(0);
     BOOST_CHECK_EQUAL(client_processes[i].rpc_client->wallet_get_balance()[0].first, client_processes[i].initial_balance);
   }
@@ -746,6 +746,8 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   {
     // should throw a "can't find wallet" type exception
     BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_open(WALLET_NAME), fc::exception);
+    // should throw passphrase too short type exception:1
+    BOOST_CHECK_THROW(client_processes[i].rpc_client->wallet_create(WALLET_NAME, "eightchr"),  fc::exception);
     client_processes[i].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
   }
 
@@ -793,28 +795,29 @@ BOOST_AUTO_TEST_CASE(unlocking_test)
   //trigger_network_connections();
 
   client_processes[0].rpc_client->wallet_create(WALLET_NAME, WALLET_PASSPHRASE);
+  client_processes[0].rpc_client->wallet_lock();
 
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() while wallet is locked");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_0"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account0"), fc::exception);
   BOOST_TEST_MESSAGE("Unlocking wallet for 1 second");
   client_processes[0].rpc_client->wallet_unlock(fc::seconds(1), WALLET_PASSPHRASE);
-  BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() with wallet unlocked locked");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_1"));
+  BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() with wallet unlocked");
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account1"));
   fc::usleep(fc::seconds(2));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account() after wallet should have relocked");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_2"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account2"), fc::exception);
 
   BOOST_TEST_MESSAGE("Testing whether a second unlock cancels the first unlock");
-  client_processes[0].rpc_client->wallet_unlock(fc::seconds(4), WALLET_PASSPHRASE);
-  client_processes[0].rpc_client->wallet_unlock(fc::seconds(2), WALLET_PASSPHRASE);
+  client_processes[0].rpc_client->wallet_unlock(fc::seconds(60), WALLET_PASSPHRASE);
+  client_processes[0].rpc_client->wallet_unlock(fc::seconds(30), WALLET_PASSPHRASE);
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account immediately after both unlocks");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_3"));
-  fc::usleep(fc::seconds(3));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account3"));
+  fc::usleep(fc::seconds(33));
   BOOST_TEST_MESSAGE("Testing wallet_create_receive_account after the second unlock expired, but first should still be in effect");
-  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account_4"));
-  fc::usleep(fc::seconds(2));
+  BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_account_create("account4"));
+  fc::usleep(fc::seconds(33));
   BOOST_TEST_MESSAGE("Testing that we correctly relock after both unlocks should have expired");
-  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account_5"), fc::exception);
+  BOOST_CHECK_THROW(client_processes[0].rpc_client->wallet_account_create("account5"), fc::exception);
 }
 
 BOOST_AUTO_TEST_CASE(transfer_test)
@@ -853,8 +856,8 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     auto destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first;
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     const uint32_t amount_to_transfer = 1000000;
-    client_processes[i].rpc_client->wallet_add_contact_account("next_client", destination_address);
-    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", "initial_balance_account", "next_client");
+    client_processes[i].rpc_client->wallet_add_contact_account("nextclient", destination_address);
+    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", "initialbalanceaccount", "nextclient");
     fc::time_point transfer_time = fc::time_point::now();
     for (;;)
     {

@@ -586,6 +586,7 @@ namespace bts { namespace wallet {
           !my->_wallet_relocker_done.ready() &&
           my->_wallet_shutting_down_promise )
       {
+        ilog("setting relocker promise");
         my->_wallet_shutting_down_promise->set_value();
         my->_wallet_relocker_done.wait();
       }
@@ -637,32 +638,45 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->_scheduled_lock_time = bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count());
-         if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
-         {
-           my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
-           my->_wallet_relocker_done = fc::async([this](){
-             for (;;)
-             {
-               if (bts::blockchain::now() > my->_scheduled_lock_time)
-               {
-                 lock();
-                 return;
-               }
-               // if the promise is set, the wallet is shutting down and we need to exit the relocker
-               if (my->_wallet_shutting_down_promise->ready())
-                 return;
-               try
-               {
-                 my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
-                 return;
-               }
-               catch (const fc::timeout_exception&)
-               {
-               }
-             }
-           });
-         }
+        fc::time_point now = bts::blockchain::now();
+        fc::time_point scheduled = my->_scheduled_lock_time;
+        fc::time_point new_lock_point = bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count());
+        my->_scheduled_lock_time = std::max<fc::time_point>(my->_scheduled_lock_time, bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count()));
+        ilog("Checking wallet relocker task");
+        if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
+        {
+          ilog("Wallet relocker task not running");
+          my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
+          my->_wallet_relocker_done = fc::async([this](){
+            ilog("Starting wallet relocker task");
+            struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
+            for (;;)
+            {
+              if (bts::blockchain::now() > my->_scheduled_lock_time)
+              {
+                lock();
+                ilog("leaving relocker after relock");
+                return;
+              }
+              // if the promise is set, the wallet is shutting down and we need to exit the relocker
+              if (my->_wallet_shutting_down_promise->ready())
+              {
+                ilog("leaving relocker task because promise is ready");
+                return;
+              }
+              try
+              {
+                my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
+                ilog("leaving relocker task because promise waited");
+                return;
+              }
+              catch (const fc::timeout_exception&)
+              {
+              }
+            }
+          });
+          ilog("Wallet relocker task launched");
+        }
       }
       scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
@@ -672,7 +686,6 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::time_point();
-      my->_wallet_relocker_done.cancel();
    }
    void wallet::change_passphrase( const string& new_passphrase )
    { try {
