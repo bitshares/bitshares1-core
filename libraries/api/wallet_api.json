@@ -109,6 +109,75 @@
         "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
       },
       {
+        "method_name": "wallet_import_armory",
+        "description": "Imports a armory wallet",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wallet_filename",
+              "type" : "filename"
+              "description" : "the armory wallet"
+           },
+           {
+              "name" : "passphrase",
+              "type" : "passphrase",
+              "description" : "the wallet's password"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the account name to receive the contents of the wallet"
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_import_electrum",
+        "description": "Imports a electrum wallet",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wallet_filename",
+              "type" : "filename"
+              "description" : "the electrum wallet"
+           },
+           {
+              "name" : "passphrase",
+              "type" : "passphrase",
+              "description" : "the wallet's password"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the account name to receive the contents of the wallet"
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+      },
+      {
+        "method_name": "wallet_import_multibit",
+        "description": "Imports a multibit wallet",
+        "return_type": "void",
+        "parameters" : [
+           {
+              "name" : "wallet_filename",
+              "type" : "filename"
+              "description" : "the multibit wallet"
+           },
+           {
+              "name" : "passphrase",
+              "type" : "passphrase",
+              "description" : "the wallet's password"
+           },
+           {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the account name to receive the contents of the wallet"
+           }
+        ],
+        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+      },
+      {
         "method_name": "wallet_close",
         "description": "Closes the curent wallet if one is open",
         "return_type": "void",

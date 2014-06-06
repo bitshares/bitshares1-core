@@ -1,5 +1,6 @@
 #include <bts/bitcoin/electrum.hpp>
 
+#include <bts/wallet/exceptions.hpp>
 #include <bts/blockchain/pts_address.hpp>
 
 #include <fc/crypto/aes.hpp>
@@ -159,7 +160,7 @@ private:
               }
               else
               {
-                 FC_THROW_EXCEPTION( exception, "wrong password" );
+                 FC_THROW_EXCEPTION( bts::wallet::invalid_password, "wrong password" );
               }
            }
 
@@ -228,7 +229,7 @@ public:
      }
      else
      {
-        FC_THROW_EXCEPTION( exception, "failed to parse electrum wallet" );
+        FC_THROW_EXCEPTION( fc::parse_error_exception, "failed to parse electrum wallet" );
      }
   }
 
@@ -251,7 +252,7 @@ public:
      }
      else
      {
-        FC_THROW_EXCEPTION( exception, "failed to parse electrum wallet - unsupported seed_version" );
+        FC_THROW_EXCEPTION( fc::parse_error_exception, "failed to parse electrum wallet - unsupported seed_version" );
      }
   }
 
@@ -265,7 +266,7 @@ std::vector<fc::ecc::private_key> import_electrum_wallet( const fc::path& wallet
 { try {
   std::vector<fc::ecc::private_key> keys;
   electrumwallet wallet( wallet_dat.to_native_ansi_path());
-  if( !wallet.ok() ) FC_THROW_EXCEPTION( exception, "invalid electrum wallet");
+  if( !wallet.ok() ) FC_THROW_EXCEPTION( fc::invalid_arg_exception, "invalid electrum wallet");
   wallet.derivekeys( passphrase );
   return wallet.keys();
 }

@@ -224,7 +224,7 @@ namespace bts { namespace cli {
                          add_history(line_read);
                      if( line_read == nullptr )
                      {
-                        FC_THROW_EXCEPTION( eof_exception, "" );
+                        FC_THROW_EXCEPTION( fc::eof_exception, "" );
                      }
                      line = line_read;
                      free(line_read);
@@ -285,7 +285,7 @@ namespace bts { namespace cli {
                         if (prompt_answer != prompt_answer2)
                         {
                           _out << "Passphrases do not match. ";
-                          FC_THROW_EXCEPTION(canceled_exception,"Passphrase mismatch");
+                          FC_THROW_EXCEPTION(fc::canceled_exception,"Passphrase mismatch");
                         }
                       }
                       arguments.push_back(fc::variant(prompt_answer));
@@ -330,7 +330,7 @@ namespace bts { namespace cli {
               if (command == "quit")
                 return fc::variants();
 
-              FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
+              FC_THROW_EXCEPTION(fc::key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
@@ -406,13 +406,22 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_import_bitcoin")
+              if (command == "wallet_create")
+              {
+                auto wallet_name = arguments[0].as_string();
+                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                {
+                  _out << "Wallet \"" << wallet_name << "\" already exists\n";
+                  FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
+                }
+              }
+              else if (command == "wallet_import_bitcoin")
               {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" not found\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   try /* Try empty password first */
                   {
@@ -432,7 +441,7 @@ namespace bts { namespace cli {
                   if( fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" already exists\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
               }
               else if (command == "wallet_create_from_json")
@@ -442,12 +451,12 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" not found\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                   {
                     _out << "Wallet \"" << wallet_name << "\" already exists\n";
-                    FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                    FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
@@ -537,7 +546,7 @@ namespace bts { namespace cli {
               }
               else if(command == "quit")
               {
-                FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
+                FC_THROW_EXCEPTION(fc::canceled_exception, "quit command issued");
               }
               
               return execute_command(command, arguments);
@@ -579,7 +588,7 @@ namespace bts { namespace cli {
                 while( true )
                 {
                     passphrase = get_line( query_string + ": ", true );
-                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "password entry aborted");
+                    if( passphrase.empty() ) FC_THROW_EXCEPTION(fc::canceled_exception, "password entry aborted");
 
                     if( verify )
                     {
@@ -659,7 +668,7 @@ namespace bts { namespace cli {
               }
               else if (choice == "q")
               {
-                FC_THROW_EXCEPTION(canceled_exception, "");
+                FC_THROW_EXCEPTION(fc::canceled_exception, "");
               }
               else
               {
@@ -841,32 +850,62 @@ namespace bts { namespace cli {
                       //current++;
                   }
               }
+              else if (method_name == "blockchain_get_proposal_votes")
+              {
+                  auto votes = result.as<vector<proposal_vote>>();
+                  _out << std::left;
+                  _out << std::setw(15) << "DELEGATE";
+                  _out << std::setw(22) << "TIME";
+                  _out << std::setw(5)  << "VOTE";
+                  _out << std::setw(35) << "MESSAGE";
+                  _out << "\n----------------------------------------------------------------";
+                  _out << "-----------------------\n";
+                  for (auto vote : votes)
+                  {
+                      auto time = boost::posix_time::from_time_t(time_t(vote.timestamp.sec_since_epoch()));
+                      auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
+                      _out << std::setw(15) << pretty_shorten(rec->name, 14);
+                      _out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      if (vote.vote == proposal_vote::no)
+                          _out << std::setw(5) << "NO";
+                      else if (vote.vote == proposal_vote::yes)
+                          _out << std::setw(5) << "YES";
+                      else
+                          _out << std::setw(5) << "??";
+                      _out << std::setw(35) << pretty_shorten(vote.message, 35);
+                      _out << "\n";
+                  }
+                  _out << "\n";
+              }
               else if (method_name == "blockchain_list_proposals")
               {
                   auto proposals = result.as<vector<proposal_record>>();
+                  _out << std::left;
                   _out << std::setw(10) << "ID";
                   _out << std::setw(20) << "SUBMITTED BY";
-                  _out << std::setw(15) << "SUBMIT TIME";
+                  _out << std::setw(22) << "SUBMIT TIME";
                   _out << std::setw(15) << "TYPE";
                   _out << std::setw(20) << "SUBJECT";
                   _out << std::setw(35) << "BODY";
                   _out << std::setw(20) << "DATA";
-                  _out << std::setw(4)  << "RATIFIED";
+                  _out << std::setw(10)  << "RATIFIED";
                   _out << "\n------------------------------------------------------------";
                   _out << "-----------------------------------------------------------------";
                   _out << "------------------\n";
                   for (auto prop : proposals)
                   {
                       _out << std::setw(10) << prop.id;
+                      auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
+                      _out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
                       auto time = boost::posix_time::from_time_t(time_t(prop.submission_date.sec_since_epoch()));
                       _out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
-                      _out << std::setw(15) << prop.proposal_type;
-                      _out << std::setw(20) << prop.subject;
-                      _out << std::setw(35) << prop.body;
-                      _out << std::setw(20) << fc::json::to_pretty_string(prop.data);
-                      _out << std::setw(4) << prop.ratified;
+                      _out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
+                      _out << std::setw(20) << pretty_shorten(prop.subject, 19);
+                      _out << std::setw(35) << pretty_shorten(prop.body, 34);
+                      _out << std::setw(20) << pretty_shorten(fc::json::to_pretty_string(prop.data), 19);
+                      _out << std::setw(10) << (prop.ratified ? "YES" : "NO");
                   }
-                  
+                  _out << "\n"; 
               }
               else
               {

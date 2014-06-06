@@ -283,7 +283,7 @@ namespace bts { namespace client {
              trx_message_to_send.trx = iter->second;
          }
 
-         FC_THROW_EXCEPTION(key_not_found_exception, "I don't have the item you're looking for");
+         FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
@@ -510,6 +510,7 @@ namespace bts { namespace client {
       } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_account_name", delegate_account_name)("subject", subject))
     }
 
+
     signed_transaction detail::client_impl::wallet_vote_proposal(const string& name,
                                                     const proposal_id_type& proposal_id,
                                                     const proposal_vote::vote_type& vote,
@@ -641,6 +642,24 @@ namespace bts { namespace client {
     {
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
+    void detail::client_impl::wallet_import_multibit(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_multibit_wallet(filename, passphrase, account_name);
+    }
+    void detail::client_impl::wallet_import_electrum(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_electrum_wallet(filename, passphrase, account_name);
+    }
+    void detail::client_impl::wallet_import_armory(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_armory_wallet(filename, passphrase, account_name);
+    }
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
                                            const string& account_name,
@@ -717,13 +736,13 @@ namespace bts { namespace client {
     bts::net::message_propagation_data detail::client_impl::network_get_transaction_propagation_data(const transaction_id_type& transaction_id)
     {
       return _p2p_node->get_transaction_propagation_data(transaction_id);
-      FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
+      FC_THROW_EXCEPTION(fc::invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
     bts::net::message_propagation_data detail::client_impl::network_get_block_propagation_data(const block_id_type& block_id)
     {
       return _p2p_node->get_block_propagation_data(block_id);
-      FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
+      FC_THROW_EXCEPTION(fc::invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
     }
 
 

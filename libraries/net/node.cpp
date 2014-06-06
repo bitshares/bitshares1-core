@@ -236,7 +236,7 @@ namespace bts { namespace net {
       message_cache_container::index<message_hash_index>::type::const_iterator iter = _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup);
       if (iter != _message_cache.get<message_hash_index>().end())
         return iter->message_body;
-      FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
+      FC_THROW_EXCEPTION( fc::key_not_found_exception, "Requested message not in cache");
     }
     message_propagation_data blockchain_tied_message_cache::get_message_propagation_data(const fc::uint160_t& hash_of_message_contents_to_lookup) const
     {
@@ -246,7 +246,7 @@ namespace bts { namespace net {
         if (iter != _message_cache.get<message_contents_hash_index>().end())
           return iter->propagation_data;
       }
-      FC_THROW_EXCEPTION(key_not_found_exception, "Requested message not in cache");
+      FC_THROW_EXCEPTION( fc::key_not_found_exception, "Requested message not in cache");
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////

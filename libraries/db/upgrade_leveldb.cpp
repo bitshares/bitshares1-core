@@ -1,3 +1,4 @@
+#include <bts/db/exception.hpp>
 #include <bts/db/upgrade_leveldb.hpp>
 #include <fc/log/logger.hpp>
 #include <boost/filesystem.hpp>
@@ -5,6 +6,7 @@
 
 
 namespace bts { namespace db {
+    FC_REGISTER_EXCEPTIONS( (db_exception)(db_in_use_exception) )
 
     upgrade_db_mapper& upgrade_db_mapper::instance()
     {

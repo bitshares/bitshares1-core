@@ -140,7 +140,7 @@ namespace bts { namespace net {
       catch ( ... )
       {
         _delegate->on_connection_closed(_self);
-        FC_THROW_EXCEPTION( unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
+        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
       }
     }
 

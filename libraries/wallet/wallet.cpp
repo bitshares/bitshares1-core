@@ -1,4 +1,5 @@
 #include <bts/wallet/wallet.hpp>
+#include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/blockchain/time.hpp>
@@ -13,7 +14,17 @@
 
 #include <algorithm>
 
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/multibit.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/armory.hpp>
+
 namespace bts { namespace wallet {
+
+   FC_REGISTER_EXCEPTIONS( (wallet_exception)
+                           (invalid_password)
+                           (login_required) )
+
 
    namespace detail {
 
@@ -437,7 +448,7 @@ namespace bts { namespace wallet {
       if( fc::exists( get_data_directory() / wallet_name ) )
       {
           std::cerr << "Wallet \"" << wallet_name << "\" already exists!\n";
-          FC_THROW_EXCEPTION(invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
+          FC_THROW_EXCEPTION(fc::invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
       }
       if (is_open())
         close();
@@ -1505,13 +1516,16 @@ namespace bts { namespace wallet {
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
       required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
 
+      /*
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( delegate_account->name ),
                                    trx, required_signatures );
+      */
      
+      trx.withdraw_pay( delegate_account->id, required_fees.amount );
       required_signatures.insert( delegate_account->active_key() ); 
-    
+
        
       if (sign)
           sign_transaction( trx, required_signatures );
@@ -1792,7 +1806,60 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( false, "Not Implemented" );
+
+      auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_multibit_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_electrum_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_armory_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
