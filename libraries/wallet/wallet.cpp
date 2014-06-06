@@ -14,6 +14,11 @@
 
 #include <algorithm>
 
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/multibit.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/armory.hpp>
+
 namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
@@ -1798,7 +1803,60 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      FC_ASSERT( false, "Not Implemented" );
+
+      auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_multibit_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_electrum_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
+   } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
+                            ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+
+   void wallet::import_armory_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
+
+      for( auto key : keys )
+         import_private_key( key, account_name );
+
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 

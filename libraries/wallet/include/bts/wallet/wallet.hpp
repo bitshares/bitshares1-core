@@ -152,6 +152,15 @@ namespace bts { namespace wallet {
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
                                      const string& account_name );
+         void import_multibit_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name );
+         void import_electrum_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name );
+         void import_armory_wallet( const path& wallet_dat,
+                                     const string& wallet_dat_passphrase,
+                                     const string& account_name );
 
          public_key_type import_private_key( const private_key_type& key, 
                                              const string& account_name );

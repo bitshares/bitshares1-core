@@ -641,6 +641,24 @@ namespace bts { namespace client {
     {
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
+    void detail::client_impl::wallet_import_multibit(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_multibit_wallet(filename, passphrase, account_name);
+    }
+    void detail::client_impl::wallet_import_electrum(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_electrum_wallet(filename, passphrase, account_name);
+    }
+    void detail::client_impl::wallet_import_armory(const fc::path& filename,
+                                                    const string& passphrase,
+                                                    const string& account_name )
+    {
+      _wallet->import_armory_wallet(filename, passphrase, account_name);
+    }
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
                                            const string& account_name,
