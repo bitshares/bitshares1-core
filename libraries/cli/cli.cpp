@@ -117,7 +117,7 @@ namespace bts { namespace cli {
                 try
                 {
                   fc::variant result = _self->execute_interactive_command(command, arguments);
-                  _self->format_and_print_result(command, result);
+                  _self->format_and_print_result(command, arguments, result);
                 }
                 catch( const fc::canceled_exception&)
                 {
@@ -406,16 +406,7 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create")
-              {
-                auto wallet_name = arguments[0].as_string();
-                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                {
-                  _out << "Wallet \"" << wallet_name << "\" already exists\n";
-                  FC_THROW_EXCEPTION(invalid_arg_exception, "");
-                }
-              }
-              else if (command == "wallet_import_bitcoin")
+              if (command == "wallet_import_bitcoin")
               {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
@@ -526,22 +517,6 @@ namespace bts { namespace cli {
                       }
  
                   }
-              }
-              else if( command == "blockchain_list_registered_accounts" )
-              {
-                  string start;
-                  uint32_t count;
-                  if (arguments.size() > 0)
-                      start = arguments[0].as_string();
-                  else
-                      start = "";
-                  if (arguments.size() > 1)
-                      count = arguments[1].as<uint32_t>();
-                  else
-                      count = 50;
-
-                  print_registered_account_list( _client->get_chain()->get_accounts(start, count) );
-                  return fc::variant("Use 'blockchain_list_registered_accounts <startname> <number>' to see more.");
               }
               else if ( command == "wallet_list_receive_accounts" )
               {
@@ -692,7 +667,9 @@ namespace bts { namespace cli {
               }
             }
 
-            void format_and_print_result(const string& command, const fc::variant& result)
+            void format_and_print_result(const string& command,
+                                         const fc::variants arguments,
+                                         const fc::variant& result)
             {
               string method_name = command;
               try
@@ -825,6 +802,16 @@ namespace bts { namespace cli {
                       _out << "\n";
                   } // for balance in balances
               }
+              else if (method_name == "blockchain_list_registered_accounts")
+              {
+                  string start = "";
+                  int32_t count = 25; // In CLI this is a more sane result
+                  if (arguments.size() > 0)
+                      start = arguments[0].as_string();
+                  if (arguments.size() > 1)
+                      count = arguments[1].as<int32_t>();
+                  print_registered_account_list( result.as<vector<account_record>>(), count );
+              }
               else if (method_name == "blockchain_list_delegates")
               {
                   auto delegates = result.as<vector<account_record>>();
@@ -912,6 +899,12 @@ namespace bts { namespace cli {
               }
             }
 
+            string pretty_shorten(const string& str, uint32_t size)
+            {
+                if (str.size() < size)
+                    return str;
+                return str.substr(0, size - 3) + "...";
+            }
 
             void print_contact_account_list(const std::vector<wallet_account_record> account_records)
             {
@@ -923,22 +916,14 @@ namespace bts { namespace cli {
 
                 for( auto acct : account_records )
                 {
-                    if (acct.name.size() > 20)
-                    {
-                        _out << std::setw(25) << (acct.name.substr(0, 20) + "...");
-                    }
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
                     else
-                    {
-                        _out << std::setw(25);
-                        if( acct.is_delegate() )
-                           _out << acct.name + " (delegate)";
-                        else
-                           _out << acct.name;
-                    }
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
 
                     _out << std::setw(64) << string( acct.active_key() );
 
-                    if( acct.id == 0 ) //acct.registration_date == fc::time_point_sec()) {
+                    if( acct.id == 0 )
                     {
                        _out << std::setw( 22 ) << "NO";
                     } 
@@ -967,18 +952,10 @@ namespace bts { namespace cli {
 
                 for( auto acct : account_records )
                 {
-                    if (acct.name.size() > 20)
-                    {
-                        _out << std::setw(25) << (acct.name.substr(0, 20) + "...");
-                    }
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
                     else
-                    {
-                        _out << std::setw(25);
-                        if( acct.is_delegate() )
-                           _out<< acct.name + " (delegate)";
-                        else
-                           _out<< acct.name;
-                    }
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
                     _out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
@@ -1000,7 +977,7 @@ namespace bts { namespace cli {
                 }
             }
 
-            void print_registered_account_list(const vector<account_record> account_records )
+            void print_registered_account_list(const vector<account_record> account_records, int32_t count )
             {
                 _out << std::setw( 25 ) << std::left << "NAME";
                 _out << std::setw( 64 ) << "KEY";
@@ -1010,20 +987,14 @@ namespace bts { namespace cli {
                 _out << std::setw( 15 ) << "TRUST LEVEL";
 
                 _out << "\n";
+                auto counter = 0;
                 for( auto acct : account_records )
                 {
-                    if (acct.name.size() > 20)
-                    {
-                        _out << std::setw(25) << (acct.name.substr(0, 20) + "...");
-                    }
+                    if (acct.is_delegate())
+                        _out << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
                     else
-                    {
-                        _out << std::setw(25);
-                        if( acct.is_delegate() )
-                           _out<< acct.name + " (delegate)";
-                        else
-                           _out<< acct.name;
-                    }
+                        _out << std::setw(25) << pretty_shorten(acct.name, 24);
+                    
                     _out << std::setw(64) << string( acct.active_key() );
                     _out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                                     boost::posix_time::from_time_t( time_t( acct.registration_date.sec_since_epoch() ) ) );
@@ -1049,6 +1020,15 @@ namespace bts { namespace cli {
                     }
 
                     _out << "\n";
+
+                    /* Count is positive b/c CLI overrides default -1 arg */
+                    if (counter >= count)
+                    {
+                        _out << "... Use \"blockchain_list_registered_accounts <start_name> <count>\" to see more.\n";
+                        return;
+                    }
+                    counter++;
+
                 }
             }
 
@@ -1092,22 +1072,13 @@ namespace bts { namespace cli {
                     _out << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    if (tx.from_account.size() > 16)
-                        _out << std::setw( 20 ) << (tx.from_account.substr(0,16) + "...");
-                    else
-                        _out << std::setw( 20 ) << tx.from_account;
+                    _out << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
                     
                     // Print "to" account
-                    if (tx.to_account.size() > 16)
-                        _out << std::setw( 20 ) << (tx.to_account.substr(0,16) + "...");
-                    else
-                        _out << std::setw( 20 ) << tx.to_account;
+                    _out << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
 
                     // Print "memo" on transaction
-                    if (tx.memo_message.size() > 21)
-                        _out << std::setw( 25 ) << (tx.memo_message.substr(0, 21) + "...");
-                    else
-                        _out << std::setw( 25 ) << tx.memo_message;
+                    _out << std::setw( 25 ) << pretty_shorten(tx.memo_message, 24);
 
                     /* Print amount */
                     {
@@ -1372,9 +1343,11 @@ namespace bts { namespace cli {
   {
     return my->execute_interactive_command(command, arguments);
   }
-  void cli::format_and_print_result(const string& command, const fc::variant& result)
+  void cli::format_and_print_result(const string& command,
+                                    const fc::variants& arguments,
+                                    const fc::variant& result)
   {
-    return my->format_and_print_result(command, result);
+    return my->format_and_print_result(command, arguments, result);
   }
 
 } } // bts::cli

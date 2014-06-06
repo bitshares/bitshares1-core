@@ -46,7 +46,9 @@ namespace bts { namespace cli {
                                                                   const bts::api::method_data& method_data);
           virtual fc::variants parse_interactive_command(fc::buffered_istream& argument_stream, const std::string& command);
           virtual fc::variant execute_interactive_command(const std::string& command, const fc::variants& arguments);
-          virtual void format_and_print_result(const std::string& command, const fc::variant& result);
+          virtual void format_and_print_result(const std::string& command,
+                                               const fc::variants& arguments,
+                                               const fc::variant& result);
 
       private:
           std::unique_ptr<detail::cli_impl> my;
