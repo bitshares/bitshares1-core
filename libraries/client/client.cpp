@@ -283,7 +283,7 @@ namespace bts { namespace client {
              trx_message_to_send.trx = iter->second;
          }
 
-         FC_THROW_EXCEPTION(key_not_found_exception, "I don't have the item you're looking for");
+         FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
@@ -717,13 +717,13 @@ namespace bts { namespace client {
     bts::net::message_propagation_data detail::client_impl::network_get_transaction_propagation_data(const transaction_id_type& transaction_id)
     {
       return _p2p_node->get_transaction_propagation_data(transaction_id);
-      FC_THROW_EXCEPTION(invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
+      FC_THROW_EXCEPTION(fc::invalid_operation_exception, "get_transaction_propagation_data only valid in p2p mode");
     }
 
     bts::net::message_propagation_data detail::client_impl::network_get_block_propagation_data(const block_id_type& block_id)
     {
       return _p2p_node->get_block_propagation_data(block_id);
-      FC_THROW_EXCEPTION(invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
+      FC_THROW_EXCEPTION(fc::invalid_operation_exception, "get_block_propagation_data only valid in p2p mode");
     }
 
 

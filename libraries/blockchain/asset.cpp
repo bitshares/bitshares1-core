@@ -1,6 +1,7 @@
 #define __STDC_CONSTANT_MACROS
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/bigint.hpp>
 #include <fc/log/logger.hpp>
@@ -32,7 +33,7 @@ namespace bts { namespace blockchain {
 
      if( amount < old.amount ) 
      {
-       FC_THROW_EXCEPTION( exception, "asset addition overflowed  ${a} + ${b} = ${c}", 
+       FC_THROW_EXCEPTION( addition_overflow, "asset addition overflowed  ${a} + ${b} = ${c}", 
                             ("a", old)("b",o)("c",*this) );
      }
      return *this;
@@ -53,7 +54,7 @@ namespace bts { namespace blockchain {
      amount -= o.amount;
      if( amount > old.amount ) 
      {
-        FC_THROW_EXCEPTION( exception, "asset addition underflow  ${a} - ${b} = ${c}", 
+        FC_THROW_EXCEPTION( addition_underthrow, "asset addition underflow  ${a} - ${b} = ${c}", 
                             ("a", old)("b",o)("c",*this) );
      }
      return *this;
@@ -208,7 +209,7 @@ namespace bts { namespace blockchain {
             auto lg2 = amnt.log2();
             if( lg2 >= 128 )
             {
-               FC_THROW_EXCEPTION( exception, "overflow ${a} * ${p}", ("a",a)("p",p) );
+               FC_THROW_EXCEPTION( addition_overflow, "overflow ${a} * ${p}", ("a",a)("p",p) );
             }
 
             asset rtn;
@@ -231,7 +232,7 @@ namespace bts { namespace blockchain {
             if( lg2 >= 128 )
             {
              //  wlog( "." );
-               FC_THROW_EXCEPTION( exception, 
+               FC_THROW_EXCEPTION( addition_overflow, 
                                     "overflow ${a} / ${p} = ${r} lg2 = ${l}", 
                                     ("a",a)("p",p)("r", std::string(result)  )("l",lg2) );
             }
@@ -242,7 +243,7 @@ namespace bts { namespace blockchain {
             ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
             return r;
         }
-        FC_THROW_EXCEPTION( exception, "type mismatch multiplying asset ${a} by price ${p}", 
+        FC_THROW_EXCEPTION( asset_type_mismatch, "type mismatch multiplying asset ${a} by price ${p}", 
                                             ("a",a)("p",p) );
     } FC_RETHROW_EXCEPTIONS( warn, "type mismatch multiplying asset ${a} by price ${p}", 
                                         ("a",a)("p",p) );
