@@ -6,6 +6,7 @@
 #include <fc/exception/exception.hpp>
 
 #include <bts/blockchain/pts_address.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
    pts_address::pts_address()
@@ -21,7 +22,7 @@ namespace bts { namespace blockchain {
 
       if( !is_valid() )
       {
-         FC_THROW_EXCEPTION( exception, "invalid pts_address ${a}", ("a", base58str) );  
+         FC_THROW_EXCEPTION( invalid_pts_address, "invalid pts_address ${a}", ("a", base58str) );  
       }
    }
 

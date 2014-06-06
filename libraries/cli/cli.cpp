@@ -224,7 +224,7 @@ namespace bts { namespace cli {
                          add_history(line_read);
                      if( line_read == nullptr )
                      {
-                        FC_THROW_EXCEPTION( eof_exception, "" );
+                        FC_THROW_EXCEPTION( fc::eof_exception, "" );
                      }
                      line = line_read;
                      free(line_read);
@@ -285,7 +285,7 @@ namespace bts { namespace cli {
                         if (prompt_answer != prompt_answer2)
                         {
                           _out << "Passphrases do not match. ";
-                          FC_THROW_EXCEPTION(canceled_exception,"Passphrase mismatch");
+                          FC_THROW_EXCEPTION(fc::canceled_exception,"Passphrase mismatch");
                         }
                       }
                       arguments.push_back(fc::variant(prompt_answer));
@@ -330,7 +330,7 @@ namespace bts { namespace cli {
               if (command == "quit")
                 return fc::variants();
 
-              FC_THROW_EXCEPTION(key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
+              FC_THROW_EXCEPTION(fc::key_not_found_exception, "Unknown command \"${command}\".", ("command", command));
             }
 
             fc::variant parse_argument_of_known_type( fc::buffered_istream& argument_stream,
@@ -406,13 +406,22 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_import_bitcoin")
+              if (command == "wallet_create")
+              {
+                auto wallet_name = arguments[0].as_string();
+                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
+                {
+                  _out << "Wallet \"" << wallet_name << "\" already exists\n";
+                  FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
+                }
+              }
+              else if (command == "wallet_import_bitcoin")
               {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" not found\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   try /* Try empty password first */
                   {
@@ -432,7 +441,7 @@ namespace bts { namespace cli {
                   if( fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" already exists\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
               }
               else if (command == "wallet_create_from_json")
@@ -442,12 +451,12 @@ namespace bts { namespace cli {
                   if( !fc::exists( filename ) )
                   {
                      _out << "File \"" << filename.generic_string() << "\" not found\n";
-                     FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                   {
                     _out << "Wallet \"" << wallet_name << "\" already exists\n";
-                    FC_THROW_EXCEPTION(invalid_arg_exception, "");
+                    FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
               }
@@ -537,7 +546,7 @@ namespace bts { namespace cli {
               }
               else if(command == "quit")
               {
-                FC_THROW_EXCEPTION(canceled_exception, "quit command issued");
+                FC_THROW_EXCEPTION(fc::canceled_exception, "quit command issued");
               }
               
               return execute_command(command, arguments);
@@ -579,7 +588,7 @@ namespace bts { namespace cli {
                 while( true )
                 {
                     passphrase = get_line( query_string + ": ", true );
-                    if( passphrase.empty() ) FC_THROW_EXCEPTION(canceled_exception, "password entry aborted");
+                    if( passphrase.empty() ) FC_THROW_EXCEPTION(fc::canceled_exception, "password entry aborted");
 
                     if( verify )
                     {
@@ -659,7 +668,7 @@ namespace bts { namespace cli {
               }
               else if (choice == "q")
               {
-                FC_THROW_EXCEPTION(canceled_exception, "");
+                FC_THROW_EXCEPTION(fc::canceled_exception, "");
               }
               else
               {

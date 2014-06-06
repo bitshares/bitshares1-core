@@ -1,3 +1,5 @@
+#include <bts/wallet/exceptions.hpp>
+#include <bts/rpc/exceptions.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/utilities/git_revision.hpp>
 
@@ -22,6 +24,10 @@
 #include <bts/rpc_stubs/common_api_rpc_server.hpp>
 
 namespace bts { namespace rpc {
+
+   FC_REGISTER_EXCEPTIONS( (rpc_exception)
+                           (missing_parameter)
+                           (unknown_method) )
 
   namespace detail
   {
@@ -343,7 +349,7 @@ namespace bts { namespace rpc {
           // ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & bts::api::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
-            FC_THROW_EXCEPTION(exception, "not logged in");
+            FC_THROW_EXCEPTION( bts::wallet::login_required, "not logged in");
           return dispatch_authenticated_method(method_data, arguments);
         }
 
@@ -374,7 +380,7 @@ namespace bts { namespace rpc {
                 || parameter.classification == bts::api::required_positional_hidden)
             {
               if (arguments_from_caller.size() < next_argument_index + 1)
-                FC_THROW_EXCEPTION(exception, "missing required parameter ${parameter_name}", ("parameter_name", parameter.name));
+                FC_THROW_EXCEPTION(missing_parameter, "missing required parameter ${parameter_name}", ("parameter_name", parameter.name));
               modified_positional_arguments.push_back(arguments_from_caller[next_argument_index++]);
             }
             else if (parameter.classification == bts::api::optional_positional)
@@ -424,7 +430,7 @@ namespace bts { namespace rpc {
           // ilog( "method: ${method} arguments: ${params}", ("method",method_name)("params",arguments) );
           auto iter = _alias_map.find(method_name);
           if (iter == _alias_map.end())
-            FC_THROW_EXCEPTION(exception, "Invalid command ${command}", ("command", method_name));
+            FC_THROW_EXCEPTION( unknown_method, "Invalid command ${command}", ("command", method_name));
           return dispatch_authenticated_method(_method_map[iter->second], arguments);
         }
 
@@ -652,7 +658,7 @@ namespace bts { namespace rpc {
     auto iter = my->_alias_map.find(method_name);
     if (iter != my->_alias_map.end())
       return my->_method_map[iter->second];
-    FC_THROW_EXCEPTION(key_not_found_exception, "Method \"${name}\" not found", ("name", method_name));
+    FC_THROW_EXCEPTION(unknown_method, "Method \"${name}\" not found", ("name", method_name));
   }
 
   std::vector<bts::api::method_data> rpc_server::get_all_method_data() const

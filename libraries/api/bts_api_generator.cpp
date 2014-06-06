@@ -692,7 +692,7 @@ void api_generator::generate_positional_server_implementation_to_stream(const me
     {
       // parameter is required
       stream << "  if (parameters.size() <= " << parameter_index << ")\n";
-      stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter " << (parameter_index + 1) << " (" << parameter.name << ")\");\n";
+      stream << "    FC_THROW_EXCEPTION(fc::invalid_arg_exception, \"missing required parameter " << (parameter_index + 1) << " (" << parameter.name << ")\");\n";
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
                   " = " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }
@@ -726,7 +726,7 @@ void api_generator::generate_named_server_implementation_to_stream(const method_
     {
       // parameter is required
       stream << "  if (!parameters.contains(\"" << parameter.name << "\"))\n";
-      stream << "    FC_THROW_EXCEPTION(invalid_arg_exception, \"missing required parameter '" <<  parameter.name << "'\");\n";
+      stream << "    FC_THROW_EXCEPTION(fc::invalid_arg_exception, \"missing required parameter '" <<  parameter.name << "'\");\n";
       stream << "  " << parameter.type->get_cpp_return_type() << " " << parameter.name << 
                   " = " << parameter.type->convert_variant_to_object_of_type(this_parameter.str()) << ";\n";
     }

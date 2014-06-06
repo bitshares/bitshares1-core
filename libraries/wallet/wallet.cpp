@@ -1,4 +1,5 @@
 #include <bts/wallet/wallet.hpp>
+#include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/blockchain/time.hpp>
@@ -14,6 +15,11 @@
 #include <algorithm>
 
 namespace bts { namespace wallet {
+
+   FC_REGISTER_EXCEPTIONS( (wallet_exception)
+                           (invalid_password)
+                           (login_required) )
+
 
    namespace detail {
 
@@ -437,7 +443,7 @@ namespace bts { namespace wallet {
       if( fc::exists( get_data_directory() / wallet_name ) )
       {
           std::cerr << "Wallet \"" << wallet_name << "\" already exists!\n";
-          FC_THROW_EXCEPTION(invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
+          FC_THROW_EXCEPTION(fc::invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
       }
       if (is_open())
         close();

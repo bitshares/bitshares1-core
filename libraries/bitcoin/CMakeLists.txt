@@ -1,4 +1,5 @@
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
 
 set(private_include_directories)
 
