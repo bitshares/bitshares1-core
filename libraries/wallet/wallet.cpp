@@ -434,6 +434,11 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey  )
    { try {
+      if( fc::exists( get_data_directory() / wallet_name ) )
+      {
+          std::cerr << "Wallet \"" << wallet_name << "\" already exists!\n";
+          FC_THROW_EXCEPTION(invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
+      }
       if (is_open())
         close();
       create_file( fc::absolute(my->_data_directory) / wallet_name, password, brainkey ); 
