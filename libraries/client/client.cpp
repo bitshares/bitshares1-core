@@ -86,7 +86,7 @@ namespace bts { namespace client {
 
        void client_impl::delegate_loop()
        {
-          fc::usleep( fc::seconds( 10 ) );
+          fc::usleep( fc::seconds( 1 ) );
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
@@ -240,8 +240,9 @@ namespace bts { namespace client {
            }
            catch (fc::key_not_found_exception&)
            {
-             ilog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
-             assert( !"I assume this can never happen");
+             elog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
+             throw;
+             // assert( !"I assume this can never happen");
            }
            hashes_to_return.push_back(header.id());
          }

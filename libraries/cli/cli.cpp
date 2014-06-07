@@ -1,5 +1,6 @@
 #include <bts/cli/cli.hpp>
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -94,7 +95,7 @@ namespace bts { namespace cli {
                 ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
-              catch( const fc::key_not_found_exception& )
+              catch( const rpc::unknown_method& )
               {
                  if( command.size() )
                    _out << "Error: invalid command \"" << command << "\"\n";
@@ -105,6 +106,7 @@ namespace bts { namespace cli {
               }
               catch( const fc::exception& e)
               {
+                _out << e.to_detail_string() <<"\n";
                 _out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
                 auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
