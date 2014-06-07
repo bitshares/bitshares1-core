@@ -408,16 +408,7 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create")
-              {
-                auto wallet_name = arguments[0].as_string();
-                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                {
-                  _out << "Wallet \"" << wallet_name << "\" already exists\n";
-                  FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
-                }
-              }
-              else if (command == "wallet_import_bitcoin")
+              if (command == "wallet_import_bitcoin")
               {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
