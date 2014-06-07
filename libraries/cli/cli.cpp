@@ -45,6 +45,7 @@ namespace bts { namespace cli {
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
 
+            bool                        _quit;
             bool                        show_raw_output;
 
             std::ostream&                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
@@ -180,11 +181,12 @@ namespace bts { namespace cli {
             { 
               try {
                  string line = get_line(get_prompt());
-                 while (_input_stream.good())
+                 while (_input_stream.good() && !_quit )
                  {
                    if (!execute_command_line(line))
                      break;
-                   line = get_line( get_prompt() );
+                   if( !_quit )
+                      line = get_line( get_prompt() );
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
@@ -205,6 +207,8 @@ namespace bts { namespace cli {
 
             string get_line_internal( const string& prompt, bool no_echo )
             {
+                  if( _quit ) return std::string();
+
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
                   if ( no_echo )
@@ -537,8 +541,9 @@ namespace bts { namespace cli {
                   print_contact_account_list( accts );
                   return fc::variant("OK");
               }
-              else if(command == "quit")
+              else if(command == "quit" || command == "stop" || command == "exit")
               {
+                _quit = true;
                 FC_THROW_EXCEPTION(fc::canceled_exception, "quit command issued");
               }
               
@@ -1186,6 +1191,7 @@ namespace bts { namespace cli {
       _rpc_server(client->get_rpc_server()),
       _input_stream(input_stream), 
       _out(output_stream),
+      _quit(false),
       show_raw_output(false)
     {
 #ifdef HAVE_READLINE
