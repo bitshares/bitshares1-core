@@ -251,7 +251,7 @@
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["json_authenticated", "wallet_open"],
-        "aliases" : ["bitcoin_walletlock", "walletlock", "lock"]
+        "aliases" : ["lock"]
       },
       {
         "method_name": "wallet_unlock",
