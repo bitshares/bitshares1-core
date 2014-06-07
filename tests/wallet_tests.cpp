@@ -186,6 +186,7 @@ string extract_commands_from_log_file(fc::path test_file)
 
 BOOST_AUTO_TEST_CASE( client_tests )
 {
+   /*
    if( !fc::exists( "xt_genesis.json" ) )
    {
       auto con = std::make_shared<fc::http::connection>();
@@ -198,6 +199,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       std::ofstream out( "xt_genesis.json", std::ios::binary );
       out.write( response.body.data(), response.body.size() );
    }
+   */
 
    try {
       std::string password = "123456789";
@@ -209,11 +211,11 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto network = std::make_shared<bts::net::simulated_network>();
 
       auto my_client = std::make_shared<client>(network);
-      my_client->open( my_dir.path(), "xt_genesis.json" );
+      my_client->open( my_dir.path() );
 
 
       auto your_client = std::make_shared<client>(network);
-      your_client->open( your_dir.path(), "xt_genesis.json" );
+      your_client->open( your_dir.path() );
 
       /* DLN: Some example test code, just left here for reference, will remove soon
       std::ofstream console_log("notestein_wallet_test.log");
@@ -378,10 +380,10 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
       auto network = std::make_shared<bts::net::simulated_network>();
 
       auto my_client = std::make_shared<client>(network);
-      my_client->open( my_dir.path(), "genesis.json" );
+      my_client->open( my_dir.path() );
 
       auto your_client = std::make_shared<client>(network);
-      your_client->open( your_dir.path(), "genesis.json" );
+      your_client->open( your_dir.path() );
 
       auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
       auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
