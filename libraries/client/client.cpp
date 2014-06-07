@@ -6,6 +6,8 @@
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/io/fstream.hpp>
+#include <fc/network/http/connection.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
@@ -309,9 +311,24 @@ namespace bts { namespace client {
       my->_p2p_node = network_to_connect_to;
     }
 
-    void client::open( const path& data_dir, const path& genesis_dat )
+    void client::open( const path& data_dir )
     { try {
-        my->_chain_db->open( data_dir / "chain", genesis_dat );
+
+        if( !fc::exists( data_dir/"genesis.json" ) )
+        {
+           auto con = std::make_shared<fc::http::connection>();
+           con->connect_to( fc::ip::endpoint::from_string( "107.170.30.182:80" ) );
+           wlog( "fetching genesis block, this could take a few seconds" );
+           auto response = con->request( "GET", "http://bitshares.org/snapshots/xt_genesis.json" );
+           FC_ASSERT( response.body.size() );
+           auto check = fc::variant("154fb7a037f139b235a79ef82df474c6ab06456fece9ddbda18787cb1d12b556").as<fc::sha256>();
+           FC_ASSERT( fc::sha256::hash( response.body.data(), response.body.size() ) == check );
+           fc::ofstream out( data_dir / "genesis.json", fc::ofstream::binary );
+           out.write( response.body.data(), response.body.size() );
+        }
+
+
+        my->_chain_db->open( data_dir / "chain", data_dir / "genesis.json" );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
@@ -321,8 +338,8 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir)
-                             ("genesis_dat", fc::absolute(genesis_dat)) ) }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+                             
 
     client::~client()
     {

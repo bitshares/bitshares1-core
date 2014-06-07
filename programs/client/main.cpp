@@ -158,7 +158,7 @@ int main( int argc, char** argv )
       load_and_configure_chain_database(datadir, option_variables);
 
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
-      client->open( datadir, option_variables["genesis-config"].as<std::string>() );
+      client->open( datadir );//, option_variables["genesis-config"].as<std::string>() );
       _global_client = client.get();
 
       client->run_delegate();
