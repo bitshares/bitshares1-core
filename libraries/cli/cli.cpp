@@ -722,13 +722,14 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_account_balance" )
               {
+                 auto bc = _client->get_chain();
                   auto summary = result.as<unordered_map<string, map<string, share_type>>>();
                   for( auto accts : summary )
                   {
                       _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
+                         _out << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";//fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }

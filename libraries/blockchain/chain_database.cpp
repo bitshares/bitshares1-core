@@ -1418,6 +1418,7 @@ namespace bts { namespace blockchain {
       base_asset.symbol = BTS_ADDRESS_PREFIX;
       base_asset.name = "BitShares XTS";
       base_asset.description = "Shares in the DAC";
+      base_asset.precision = 1000000;
       base_asset.issuer_account_id = god.id;
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;

@@ -653,6 +653,12 @@
                   "type" : "int64_t",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
+               },
+               {
+                  "name" : "precision",
+                  "type" : "int64_t",
+                  "description" : "defines where the decimal should be displayed, must be a power of 10",
+                  "default_value" : 1000000
                }
             ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]

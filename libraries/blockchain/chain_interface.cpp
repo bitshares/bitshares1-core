@@ -106,7 +106,18 @@ namespace bts{ namespace blockchain {
    {
       auto oasset = get_asset_record( a.asset_id );
       if( oasset )
-         return fc::to_pretty_string( a.amount ) + " " + oasset->symbol;
+      {
+         if( oasset->precision )
+         {
+            string decimal = fc::to_string(oasset->precision + a.amount%oasset->precision);
+            decimal[0] = '.';
+            return fc::to_pretty_string( a.amount / oasset->precision) +  decimal + " " + oasset->symbol;
+         }
+         else
+         {
+            return fc::to_pretty_string( a.amount ) + " " + oasset->symbol;
+         }
+      }
       else
          return fc::to_pretty_string( a.amount ) + " ???";
    }

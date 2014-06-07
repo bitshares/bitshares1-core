@@ -80,6 +80,34 @@ namespace bts { namespace blockchain {
       converter_itr->second->from_variant( in, output );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("in",in) ) }
 
+   bool create_asset_operation::is_power_of_ten( int64_t n )
+   {
+      switch( n )
+      {
+         case 0ll:
+         case 1ll:
+         case 10ll:
+         case 100ll:
+         case 1000ll:
+         case 10000ll:
+         case 100000ll:
+         case 1000000ll:
+         case 10000000ll:
+         case 100000000ll:
+         case 1000000000ll:
+         case 10000000000ll:
+         case 100000000000ll:
+         case 1000000000000ll:
+         case 10000000000000ll:
+         case 100000000000000ll:
+         case 1000000000000000ll:
+            return true;
+         default:
+            return false;
+      }
+      return false;
+   }
+
 } } // bts::blockchain
 
 namespace fc {

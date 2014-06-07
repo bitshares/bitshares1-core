@@ -87,7 +87,8 @@ namespace bts { namespace blockchain {
                          const std::string& description,
                          const fc::variant& data,
                          name_id_type issuer_id,
-                         share_type   max_share_supply );
+                         share_type   max_share_supply,
+                         int64_t      precision );
    }; // transaction
 
    struct transaction_summary_details
