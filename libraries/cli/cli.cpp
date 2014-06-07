@@ -1,5 +1,6 @@
 #include <bts/cli/cli.hpp>
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -44,6 +45,7 @@ namespace bts { namespace cli {
             fc::thread                  _cin_thread;
             fc::future<void>            _cin_complete;
 
+            bool                        _quit;
             bool                        show_raw_output;
 
             std::ostream&                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
@@ -94,7 +96,7 @@ namespace bts { namespace cli {
                 ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
-              catch( const fc::key_not_found_exception& )
+              catch( const rpc::unknown_method& )
               {
                  if( command.size() )
                    _out << "Error: invalid command \"" << command << "\"\n";
@@ -105,6 +107,7 @@ namespace bts { namespace cli {
               }
               catch( const fc::exception& e)
               {
+                _out << e.to_detail_string() <<"\n";
                 _out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
                 auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
@@ -178,11 +181,12 @@ namespace bts { namespace cli {
             { 
               try {
                  string line = get_line(get_prompt());
-                 while (_input_stream.good())
+                 while (_input_stream.good() && !_quit )
                  {
                    if (!execute_command_line(line))
                      break;
-                   line = get_line( get_prompt() );
+                   if( !_quit )
+                      line = get_line( get_prompt() );
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
@@ -203,6 +207,8 @@ namespace bts { namespace cli {
 
             string get_line_internal( const string& prompt, bool no_echo )
             {
+                  if( _quit ) return std::string();
+
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
                   if ( no_echo )
@@ -406,16 +412,7 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if (command == "wallet_create")
-              {
-                auto wallet_name = arguments[0].as_string();
-                if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
-                {
-                  _out << "Wallet \"" << wallet_name << "\" already exists\n";
-                  FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
-                }
-              }
-              else if (command == "wallet_import_bitcoin")
+              if (command == "wallet_import_bitcoin")
               {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
@@ -544,8 +541,9 @@ namespace bts { namespace cli {
                   print_contact_account_list( accts );
                   return fc::variant("OK");
               }
-              else if(command == "quit")
+              else if(command == "quit" || command == "stop" || command == "exit")
               {
+                _quit = true;
                 FC_THROW_EXCEPTION(fc::canceled_exception, "quit command issued");
               }
               
@@ -724,13 +722,14 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_account_balance" )
               {
+                 auto bc = _client->get_chain();
                   auto summary = result.as<unordered_map<string, map<string, share_type>>>();
                   for( auto accts : summary )
                   {
                       _out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         _out << "    " << fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
+                         _out << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";//fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }
@@ -1193,6 +1192,7 @@ namespace bts { namespace cli {
       _rpc_server(client->get_rpc_server()),
       _input_stream(input_stream), 
       _out(output_stream),
+      _quit(false),
       show_raw_output(false)
     {
 #ifdef HAVE_READLINE

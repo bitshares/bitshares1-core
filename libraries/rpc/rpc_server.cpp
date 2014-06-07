@@ -41,6 +41,7 @@ namespace bts { namespace rpc {
          fc::future<void>                  _accept_loop_complete;
          rpc_server*                       _self;
          fc::shared_ptr<fc::promise<void>> _on_quit_promise;
+         fc::thread*                       _thread;
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -555,6 +556,7 @@ namespace bts { namespace rpc {
   rpc_server::rpc_server(bts::client::client* client) :
     my(new detail::rpc_server_impl(client))
   {
+    my->_thread = &fc::thread::current();
     my->_self = this;
     try {
        my->register_common_api_method_metadata();
@@ -717,7 +719,7 @@ namespace bts { namespace rpc {
   {
     // shutdown the server.  add a little delay to give the response to the "stop" method call a chance
     // to make it to the caller
-    fc::async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
+    my->_thread->async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
   }
 
   std::string rpc_server::help(const std::string& command_name) const

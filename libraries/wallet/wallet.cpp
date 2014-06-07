@@ -23,7 +23,9 @@ namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
                            (invalid_password)
-                           (login_required) )
+                           (login_required)
+                           (no_such_wallet)
+                           (wallet_already_exists) )
 
 
    namespace detail {
@@ -313,7 +315,8 @@ namespace bts { namespace wallet {
           return false;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
-      bool wallet_impl::scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op  )
+      bool wallet_impl::scan_create_asset( wallet_transaction_record& trx_rec, 
+                                           const create_asset_operation& op  )
       {
          wlog( "${op}", ("op",op) );
          auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
@@ -327,7 +330,8 @@ namespace bts { namespace wallet {
          }
          return true;
       }
-      bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op  )
+      bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, 
+                                          const issue_asset_operation& op  )
       {
          wlog( "${op}", ("op",op) );
          /*
@@ -448,7 +452,7 @@ namespace bts { namespace wallet {
       if( fc::exists( get_data_directory() / wallet_name ) )
       {
           std::cerr << "Wallet \"" << wallet_name << "\" already exists!\n";
-          FC_THROW_EXCEPTION(fc::invalid_arg_exception, "wallet name already exists", ("wal",wallet_name));
+          FC_THROW_EXCEPTION(wallet_already_exists, "wallet name already exists", ("wal",wallet_name));
       }
       if (is_open())
         close();
@@ -498,6 +502,8 @@ namespace bts { namespace wallet {
 
    void wallet::open( const string& wallet_name )
    { try {
+      if ( !fc::exists( get_data_directory() / wallet_name ) )
+         FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("name", wallet_name) );
       open_file( get_data_directory() / wallet_name );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
    
@@ -564,7 +570,7 @@ namespace bts { namespace wallet {
       if( !my->_wallet_db.wallet_master_key->validate_password( my->_wallet_password ) )
       {
          lock();
-         FC_ASSERT( !"Invalid Password" );
+         FC_THROW_EXCEPTION( invalid_password, "Invalid Password." );
       }
 
       if( timeout == microseconds::maximum() )
@@ -1335,6 +1341,7 @@ namespace bts { namespace wallet {
                                              const variant& data,
                                              const string& issuer_account_name,
                                              share_type max_share_supply, 
+                                             int64_t precision,
                                              const bool sign  )
    { try {
       FC_ASSERT( is_open() );
@@ -1369,7 +1376,7 @@ namespace bts { namespace wallet {
     
       trx.create_asset( symbol, asset_name,
                         description, data,
-                        oname_rec->id, max_share_supply );
+                        oname_rec->id, max_share_supply, precision );
 
       if( sign )
          sign_transaction( trx, required_signatures );

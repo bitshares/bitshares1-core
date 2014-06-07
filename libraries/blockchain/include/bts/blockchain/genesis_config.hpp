@@ -17,7 +17,8 @@ namespace bts { namespace blockchain {
   {
      genesis_block_config():supply(0) {}
 
-     double                                                         supply;
+     int64_t                                                        supply;
+     int64_t                                                        precision;
      fc::time_point_sec                                             timestamp;
      std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
      std::vector< name_config >                                     names;
@@ -26,4 +27,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::name_config, (name)(is_delegate)(owner) )
-FC_REFLECT( bts::blockchain::genesis_block_config, (supply)(timestamp)(balances)(names) )
+FC_REFLECT( bts::blockchain::genesis_block_config, (supply)(precision)(timestamp)(balances)(names) )

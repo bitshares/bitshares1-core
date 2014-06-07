@@ -33,7 +33,8 @@
         "description": "shut down the RPC server and exit this client",
         "return_type": "void",
         "parameters" : [],
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["quit","exit"]
       },
       {
         "method_name": "help",

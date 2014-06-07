@@ -212,6 +212,7 @@ namespace bts { namespace wallet {
                                            const variant& data,
                                            const string& issuer_name,
                                            share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
+                                           int64_t  precision = 0,
                                            const bool sign = true );
 
          signed_transaction  issue_asset( share_type amount, 

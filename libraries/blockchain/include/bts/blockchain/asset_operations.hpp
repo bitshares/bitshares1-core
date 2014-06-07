@@ -10,6 +10,9 @@ namespace bts { namespace blockchain {
    struct create_asset_operation
    {
        static const operation_type_enum type; 
+       static bool is_power_of_ten( int64_t n );
+
+       create_asset_operation():maximum_share_supply(0),precision(0){}
 
        /**
         * Symbols may only contain A-Z and 0-9 and up to 5
@@ -39,6 +42,8 @@ namespace bts { namespace blockchain {
 
        /** The maximum number of shares that may be allocated */
        share_type          maximum_share_supply;
+
+       int64_t             precision;
    };
 
    /**
@@ -73,6 +78,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(public_data)(issuer_account_id)(maximum_share_supply) )
+FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(public_data)(issuer_account_id)(maximum_share_supply)(precision) )
 FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(public_data)(issuer_account_id) )
 FC_REFLECT( bts::blockchain::issue_asset_operation, (amount) )

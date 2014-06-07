@@ -598,7 +598,7 @@
          "prerequisites" : ["json_authenticated", "wallet_open" ]
       },
       {
-         "method_name" : "wallet_rename_account",
+         "method_name" : "wallet_account_rename",
          "description" : "Rename an account in wallet",
          "return_type" : "void",
          "parameters"  : [
@@ -613,7 +613,8 @@
                   "description" : "the new name for the account"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "aliases" : ["wallet_rename_account"]
       },
       {
          "method_name" : "wallet_asset_create",
@@ -652,6 +653,12 @@
                   "type" : "int64_t",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
+               },
+               {
+                  "name" : "precision",
+                  "type" : "int64_t",
+                  "description" : "defines where the decimal should be displayed, must be a power of 10",
+                  "default_value" : 1000000
                }
             ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]

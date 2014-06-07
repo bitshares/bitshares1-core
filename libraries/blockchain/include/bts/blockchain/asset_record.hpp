@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
       };
 
       asset_record()
-      :id(0),issuer_account_id(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
+      :id(0),issuer_account_id(0),precision(0),current_share_supply(0),maximum_share_supply(0),collected_fees(0){}
 
       share_type available_shares()const { return maximum_share_supply - current_share_supply; }
 
@@ -40,6 +40,7 @@ namespace bts { namespace blockchain {
       std::string         description;
       fc::variant         public_data;
       account_id_type     issuer_account_id;
+      uint64_t            precision;
       fc::time_point_sec  registration_date;
       fc::time_point_sec  last_update;
       share_type          current_share_supply;
@@ -50,5 +51,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(public_data)(issuer_account_id)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
+FC_REFLECT( bts::blockchain::asset_record, (id)(symbol)(name)(description)(public_data)(issuer_account_id)(precision)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
 

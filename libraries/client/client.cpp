@@ -86,7 +86,7 @@ namespace bts { namespace client {
 
        void client_impl::delegate_loop()
        {
-          fc::usleep( fc::seconds( 10 ) );
+          fc::usleep( fc::seconds( 1 ) );
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
@@ -240,8 +240,9 @@ namespace bts { namespace client {
            }
            catch (fc::key_not_found_exception&)
            {
-             ilog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
-             assert( !"I assume this can never happen");
+             elog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
+             throw;
+             // assert( !"I assume this can never happen");
            }
            hashes_to_return.push_back(header.id());
          }
@@ -464,12 +465,13 @@ namespace bts { namespace client {
                                                                     const string& issuer_name, 
                                                                     const string& description /* = fc::variant("").as<string>() */, 
                                                                     const variant& data /* = fc::variant("").as<fc::variant_object>() */, 
-                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */)
+                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */,
+                                                                    int64_t precision /* = 0 */)
     {
       generate_transaction_flag flag = sign_and_broadcast;
       bool sign = flag != do_not_sign;
       auto create_asset_trx = 
-        _wallet->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, sign);
+        _wallet->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, precision, sign);
       if (flag == sign_and_broadcast)
           network_broadcast_transaction(create_asset_trx);
       return create_asset_trx;
@@ -548,7 +550,7 @@ namespace bts { namespace client {
       _wallet->remove_contact_account( account_name );
     }
 
-    void detail::client_impl::wallet_rename_account(const string& current_account_name,
+    void detail::client_impl::wallet_account_rename(const string& current_account_name,
                                        const string& new_account_name)
     {
       _wallet->rename_account(current_account_name, new_account_name);
@@ -915,10 +917,12 @@ namespace bts { namespace client {
       else
         wallet_balance_shares = "[wallet is not open]";
 
-      info["blockchain_head_block_num"]            = _chain_db->get_head_block_num();
-      info["blockchain_head_block_time"]           = _chain_db->now();
-      info["network_num_connections"]              = network_get_connection_count();
-      info["wallet_balance"]                       = wallet_balance_shares;
+      info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
+      info["blockchain_head_block_time"]                 = _chain_db->now();
+      info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
+      info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
+      info["network_num_connections"]                    = network_get_connection_count();
+      info["wallet_balance"]                             = wallet_balance_shares;
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )

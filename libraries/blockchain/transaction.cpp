@@ -618,6 +618,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
    { try {
+      FC_ASSERT( op.is_power_of_ten(op.precision), "", ("precision",op.precision) );
       if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );
       if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );
@@ -642,6 +643,7 @@ namespace bts { namespace blockchain {
       new_record.maximum_share_supply  = op.maximum_share_supply;
       new_record.collected_fees        = 0;
       new_record.registration_date     = _current_state->now();
+      new_record.precision             = op.precision;
 
       _current_state->store_asset_record( new_record );
 
@@ -860,7 +862,8 @@ namespace bts { namespace blockchain {
                                    const std::string& description,
                                    const fc::variant& data,
                                    account_id_type issuer_id,
-                                   share_type   max_share_supply )
+                                   share_type   max_share_supply,
+                                   int64_t      precision )
    {
       FC_ASSERT( max_share_supply > 0 );
       create_asset_operation op;
@@ -870,6 +873,7 @@ namespace bts { namespace blockchain {
       op.public_data = data;
       op.issuer_account_id = issuer_id;
       op.maximum_share_supply = max_share_supply;
+      op.precision = precision;
       operations.push_back( op );
    }
 
