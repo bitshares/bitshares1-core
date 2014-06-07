@@ -38,17 +38,17 @@
 #define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE   (1024) // bytes
 
 /**
- * Initial shares read from the genesis block are scaled to this number.
- */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES               (80*1000*uint64_t(1000)*uint64_t(1000)*uint64_t(1000))
-#define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
-
-/**
  *  The maximum amount that can be issued for user assets.
  *
  *  10^18 / 2^63 < 1 
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                   (1000*1000*1000ll*1000*1000ll)
+
+/**
+ * Initial shares read from the genesis block are scaled to this number.
+ */
+#define BTS_BLOCKCHAIN_INITIAL_SHARES               BTS_BLOCKCHAIN_MAX_SHARES //(80*1000*uint64_t(1000)*uint64_t(1000)*uint64_t(1000))
+#define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
