@@ -598,7 +598,7 @@
          "prerequisites" : ["json_authenticated", "wallet_open" ]
       },
       {
-         "method_name" : "wallet_rename_account",
+         "method_name" : "wallet_account_rename",
          "description" : "Rename an account in wallet",
          "return_type" : "void",
          "parameters"  : [
@@ -613,7 +613,8 @@
                   "description" : "the new name for the account"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "aliases" : ["wallet_rename_account"]
       },
       {
          "method_name" : "wallet_asset_create",
