@@ -271,7 +271,9 @@ namespace bts { namespace blockchain {
              FC_ASSERT( proof.first.validate_signee( delegate_record->active_key() ) );
 
              // then fire the delegate
-             delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
+             // this maintains the invariant of total votes == total shares
+             delegate_record->adjust_votes_against( delegate_record->votes_for() );
+             delegate_record->adjust_votes_for( -delegate_record->votes_for() );
              _current_state->store_account_record( *delegate_record );
              break;
           }
@@ -284,7 +286,8 @@ namespace bts { namespace blockchain {
              if( testimony.valid || !!trx_loc  )
              {
                 // then fire the delegate
-                delegate_record->adjust_votes_against( BTS_BLOCKCHAIN_FIRE_VOTES );
+                delegate_record->adjust_votes_against( delegate_record->votes_for() );
+                delegate_record->adjust_votes_for( -delegate_record->votes_for() );
                 _current_state->store_account_record( *delegate_record );
              }
 
@@ -539,7 +542,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::evaluate_register_account( const register_account_operation& op )
    { try {
-      FC_ASSERT( account_record::is_valid_name( op.name ) );
+      FC_ASSERT( _current_state->is_valid_account_name( op.name ) );
 
       auto cur_record = _current_state->get_account_record( op.name );
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
@@ -619,6 +622,10 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate_create_asset( const create_asset_operation& op )
    { try {
       FC_ASSERT( op.is_power_of_ten(op.precision), "", ("precision",op.precision) );
+      FC_ASSERT( _current_state->is_valid_symbol_name( op.symbol ) );
+
+      for( auto c : op.symbol ) FC_ASSERT( std::isalnum(c) && std::isupper(c) );
+
       if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );
       if( cur_record.valid() ) fail( BTS_ASSET_ALREADY_REGISTERED, fc::variant(op) );

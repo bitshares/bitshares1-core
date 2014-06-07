@@ -46,13 +46,14 @@ int main( int argc, char** argv )
    for( unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
       keys.push_back( fc::ecc::private_key::generate() );
-      config.names[i].name = "delegate-"+fc::to_string(i);
+      config.names[i].name = "delegate"+fc::to_string(i);
       config.names[i].is_delegate = true;
       config.names[i].owner = keys[i].get_public_key().serialize();
       config.balances[i].first = pts_address( keys[i].get_public_key() );
       config.balances[i].second = 1000;
    }
 
+   /*
    if( fc::exists( "founders.json" ) )
    {
       try {
@@ -78,6 +79,7 @@ int main( int argc, char** argv )
          elog( "${e}", ("e",e.to_detail_string() ) );
       }
    }
+   */
 
    fc::json::save_to_file( config, fc::path("genesis.json"), true );
    std::vector<std::string> wif_keys;

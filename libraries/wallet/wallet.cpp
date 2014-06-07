@@ -1357,9 +1357,8 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( is_valid_account_name( issuer_account_name ) );
+      FC_ASSERT( my->_blockchain->is_valid_symbol_name( symbol ) ); // valid length and characters
       FC_ASSERT( ! my->_blockchain->is_valid_symbol( symbol ) ); // not yet registered
-      //TODO rename "is_valid_symbol" to "is_registered_symbol"
-      //TODO "is_valid_symbol" will actually check if the string is valid for symbol name
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -2035,7 +2034,7 @@ namespace bts { namespace wallet {
     */
    bool wallet::is_valid_account_name( const string& account_name )const
    {
-      return blockchain::account_record::is_valid_name( account_name );
+      return my->_blockchain->is_valid_account_name( account_name );
    }
 
 

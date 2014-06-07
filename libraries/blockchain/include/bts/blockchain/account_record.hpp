@@ -35,8 +35,6 @@ namespace bts { namespace blockchain {
       account_record()
       :id(0){}
 
-      static bool is_valid_name( const std::string& str );
-
       bool is_null()const;
       account_record make_null()const;
 
