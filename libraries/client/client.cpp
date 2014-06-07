@@ -421,7 +421,7 @@ namespace bts { namespace client {
         _wallet->clear_pending_transactions();
     }
 
-    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
+    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
@@ -438,7 +438,7 @@ namespace bts { namespace client {
          return trxs;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(int64_t amount_to_transfer, 
+    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 

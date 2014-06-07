@@ -182,7 +182,7 @@ namespace bts { namespace wallet {
           *  that should probably have some user interface support to merge these transfers
           *  into one logical transfer.
           */
-         vector<signed_transaction> multipart_transfer( share_type amount_to_transfer,
+         vector<signed_transaction> multipart_transfer( double real_amount_to_transfer,
                                                          const string& amount_to_transfer_symbol,
                                                          const string& from_account_name,
                                                          const string& to_account_name,
@@ -193,7 +193,7 @@ namespace bts { namespace wallet {
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
-         signed_transaction  transfer_asset( share_type amount_to_transfer,
+         signed_transaction  transfer_asset( double real_amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
                                               const string& from_account_name,
                                               const string& to_account_name,

@@ -978,7 +978,7 @@ namespace bts { namespace wallet {
     *  secure.
     *
     */
-   vector<signed_transaction> wallet::multipart_transfer( share_type    amount_to_transfer,
+   vector<signed_transaction> wallet::multipart_transfer( double  real_amount_to_transfer,
                                                 const string& amount_to_transfer_symbol,
                                                 const string& from_account_name,
                                                 const string& to_account_name,
@@ -995,12 +995,17 @@ namespace bts { namespace wallet {
                   "please rename your local account before attempting a transfer",
                   ("to_account_name",to_account_name) );
 
+
+       auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+       FC_ASSERT( asset_rec.valid() );
+       auto asset_id = asset_rec->id;
+
+       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+       share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
+       asset asset_to_transfer( amount_to_transfer, asset_id );
+
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
        FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
-
-
-       auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
-       asset asset_to_transfer( amount_to_transfer, asset_id );
 
        /**
         *  TODO: until we support paying fees in other assets, this will not function
@@ -1130,7 +1135,7 @@ namespace bts { namespace wallet {
        return trxs;
       
    } FC_RETHROW_EXCEPTIONS( warn, "", 
-         ("amount_to_transfer",amount_to_transfer)
+         ("amount_to_transfer",real_amount_to_transfer)
          ("amount_to_transfer_symbol",amount_to_transfer_symbol)
          ("from_account_name",from_account_name)
          ("to_account_name",to_account_name)
@@ -1185,7 +1190,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
                                       ("amount_to_withdraw",amount_to_withdraw ) ) }
 
-   signed_transaction   wallet::transfer_asset( share_type amount_to_transfer,
+   signed_transaction   wallet::transfer_asset( double real_amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
                                         const string& from_account_name,
                                         const string& to_account_name,
@@ -1202,7 +1207,12 @@ namespace bts { namespace wallet {
                   "please rename your local account before attempting a transfer",
                   ("to_account_name",to_account_name) );
 
-      auto asset_id = my->_blockchain->get_asset_id( amount_to_transfer_symbol );
+      auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      FC_ASSERT( asset_rec.valid() );
+      auto asset_id = asset_rec->id;
+
+      int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+      share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
 
@@ -1259,7 +1269,7 @@ namespace bts { namespace wallet {
       return trx; 
 
    } FC_RETHROW_EXCEPTIONS( warn, "", 
-         ("amount_to_transfer",amount_to_transfer)
+         ("real_amount_to_transfer",real_amount_to_transfer)
          ("amount_to_transfer_symbol",amount_to_transfer_symbol)
          ("from_account_name",from_account_name)
          ("to_account_name",to_account_name)

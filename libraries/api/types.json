@@ -241,6 +241,13 @@
         "default_example" : 10000
       },
       {
+        "type_name" : "real_amount",
+        "cpp_parameter_type" : "double",
+        "cpp_return_type" : "double",
+        "cpp_include_file" : "stdint.h",
+        "default_example" : 10000
+      },
+      {
         "type_name" : "receive_account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
