@@ -1144,36 +1144,16 @@ namespace bts { namespace blockchain {
 
           if( old_rec.valid() && old_rec->is_delegate() )
           {
-              auto itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
               my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), 
                                                             record_to_store.id ) );
-              itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
           }
 
 
           if( record_to_store.is_delegate() )
           {
-              auto itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
                                                            record_to_store.id ), 
                                                 0/*dummy value*/ );
-              itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
           }
        }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
@@ -1382,25 +1362,54 @@ namespace bts { namespace blockchain {
          ++account_id;
       }
 
+      int64_t n = 0;
       for( auto item : config.balances )
       {
-         for( auto delegate_id : delegate_ids )
+         // if( (int64_t(n) % 100) == 0 )
+         //   wlog( "percent: ${p}       \r", ("p",100*double(n)/config.balances.size() ) );
+         ++n;
+
+         fc::uint128 initial( int64_t(item.second/1000) );
+         initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
+         initial /= total_unscaled;
+         if( initial > fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES/1000)) )
          {
-            fc::uint128 initial( int64_t(item.second/1000) );
-            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
-            initial /= total_unscaled;
             initial /= int64_t(delegate_ids.size());
+            for( auto delegate_id : delegate_ids )
+            {
+                  balance_record initial_balance( item.first,
+                                                  asset( share_type( initial.low_bits() ), 0 ),
+                                                  delegate_id );
+                  // in case of redundant balances
+                  auto cur = self->get_balance_record( initial_balance.id() );
+                  if( cur.valid() ) initial_balance.balance += cur->balance;
+                  initial_balance.last_update                = config.timestamp;
+                  self->store_balance_record( initial_balance );
+                  auto da = _account_db.fetch( delegate_id );
+                  da.delegate_info->votes_for += initial.low_bits();
+                  da.registration_date        = config.timestamp;
+                  da.last_update              = config.timestamp;
+                  self->store_account_record( da );
+            //   _account_db.store( da.id, da );
+            }
+         }
+         else
+         {
+            auto delegate_id = n % delegate_ids.size() + 1;
             balance_record initial_balance( item.first,
                                             asset( share_type( initial.low_bits() ), 0 ),
                                             delegate_id );
             // in case of redundant balances
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
+            initial_balance.last_update                = config.timestamp;
             self->store_balance_record( initial_balance );
-            auto da = _account_db.fetch( delegate_id );
+
+            auto da = _account_db.fetch( delegate_id  );
             da.delegate_info->votes_for += initial.low_bits();
+            da.registration_date        = config.timestamp;
+            da.last_update              = config.timestamp;
             self->store_account_record( da );
-         //   _account_db.store( da.id, da );
          }
       }
 
@@ -1416,10 +1425,10 @@ namespace bts { namespace blockchain {
 
       asset_record base_asset;
       base_asset.id = 0;
-      base_asset.symbol = BTS_ADDRESS_PREFIX;
-      base_asset.name = "BitShares XTS";
-      base_asset.description = "Shares in the DAC";
-      base_asset.precision = 1000000;
+      base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
+      base_asset.name = BTS_BLOCKCHAIN_NAME;
+      base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
+      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
       base_asset.issuer_account_id = god.id;
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
