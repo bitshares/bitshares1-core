@@ -111,7 +111,7 @@ uint16_t bts_xt_client_test_config::base_http_port = 22100;
 #define RPC_PASSWORD "test"
 #define WALLET_PASSPHRASE "testtesttest"
 #define WALLET_NAME "default"
-#define INITIAL_BALANCE 100000000
+#define INITIAL_BALANCE 1000
 
 BOOST_GLOBAL_FIXTURE(bts_xt_client_test_config);
 
@@ -334,6 +334,10 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
                                                     (double)client_processes[i].initial_balance));
     initial_shares_requested += client_processes[i].initial_balance;
   }
+
+  genesis_block.precision = 6;
+  genesis_block.base_symbol = "XTS";
+  genesis_block.base_name = "BitShares XTS";
 
   double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / initial_shares_requested;
   for (unsigned i = 0; i < client_processes.size(); ++i)
