@@ -128,13 +128,25 @@ namespace bts { namespace blockchain {
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
             void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
+
             void                       update_random_seed( secret_hash_type new_secret, 
                                                           const pending_chain_state_ptr& pending_state );
-            void                       update_active_delegate_list(const full_block& block_data, const pending_chain_state_ptr& pending_state );
+
+            void                       update_active_delegate_list(const full_block& block_data, 
+                                                                   const pending_chain_state_ptr& pending_state );
 
 
             void                       update_delegate_production_info( const full_block& block_data, 
                                                                         const pending_chain_state_ptr& pending_state );
+      
+            /**
+             *  Used to track the cumulative effect of all pending transactions that are known,
+             *  new incomming transactions are evaluated relative to this state.
+             *
+             *  After a new block is pushed this state is recalculated based upon what ever
+             *  pending transactions remain.
+             */
+            pending_chain_state_ptr                                             _pending_trx_state;
 
             chain_database*                                                     self;
             chain_observer*                                                     _observer;
@@ -193,7 +205,7 @@ namespace bts { namespace blockchain {
       }
 
       void  chain_database_impl::clear_pending(  const full_block& blk )
-      {
+      { //try {
          std::unordered_set<transaction_id_type> confirmed_trx_ids;
 
          for( auto trx : blk.user_transactions )
@@ -203,15 +215,33 @@ namespace bts { namespace blockchain {
             _pending_transaction_db.remove( id );
          }
 
-         auto temp_pending_fee_index( _pending_fee_index );
-         for( auto pair : temp_pending_fee_index )
-         {
-            auto fee_index = pair.first;
+         _pending_fee_index.clear();
 
-            if( confirmed_trx_ids.count( fee_index._trx ) > 0 )
-               _pending_fee_index.erase( fee_index );
+         vector<transaction_id_type> trx_to_discard;
+
+         _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+         auto itr = _pending_transaction_db.begin();
+         while( itr.valid() )
+         {
+            auto trx = itr.value();
+            auto trx_id = trx.id();
+            try {
+               auto eval_state = self->evaluate_transaction( trx );
+               share_type fees = eval_state->get_fees();
+               _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+               _pending_transaction_db.store( trx_id, trx );
+            } 
+            catch ( const fc::exception& e )
+            {
+               trx_to_discard.push_back(trx_id);
+               wlog( "discarding invalid transaction: ${id} =>  ${trx}",
+                     ("id",trx_id)("trx",trx) );
+            }
+            ++itr;
          }
-      }
+         for( auto item : trx_to_discard )
+            _pending_transaction_db.remove( item );
+      }// FC_CAPTURE_AND_RETHROW( blk ) }
 
       void chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
       {
@@ -887,10 +917,16 @@ namespace bts { namespace blockchain {
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
    { try {
-      pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(shared_from_this());
+      if( !my->_pending_trx_state )
+         my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
+
+      pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
+
+      // apply changes from this transaction to _pending_trx_state
+      pend_state->apply_changes();
 
       return trx_eval_state;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }
@@ -1195,6 +1231,7 @@ namespace bts { namespace blockchain {
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx )
    { try {
+
       auto trx_id = trx.id();
       auto current_itr = my->_pending_transaction_db.find( trx_id );
       if( current_itr.valid() ) return nullptr;
