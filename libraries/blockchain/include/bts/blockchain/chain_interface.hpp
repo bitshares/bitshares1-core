@@ -14,11 +14,25 @@ namespace bts { namespace blockchain {
    enum chain_property_enum
    {
       last_asset_id            = 0,
-      last_account_id             = 1,
+      last_account_id          = 1,
       last_proposal_id         = 2,
       last_random_seed_id      = 3,
       active_delegate_list_id  = 4,
-      chain_id                 = 5 // hash of initial state
+      chain_id                 = 5, // hash of initial state
+      /**
+       *  N = numb delegates
+       *  Initial condition = 2N
+       *  Every time a block is produced subtract 1
+       *  Every time a block is missed add 2
+       *  Maximum value is 2N, Min value is 0
+       *
+       *  Defines how many blocks you must wait to
+       *  be 'confirmed' assuming that at least
+       *  60% of the blocks in the last 2 rounds
+       *  are present.  Less than 60% and you
+       *  are on the minority chain.
+       */
+      confirmation_requirement = 6
    };
    typedef uint32_t chain_property_type;
 
@@ -49,6 +63,7 @@ namespace bts { namespace blockchain {
          virtual share_type                 get_delegate_registration_fee()const;
          virtual share_type                 get_asset_registration_fee()const;
 
+         virtual int64_t                    get_required_confirmations()const;
          virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;
          virtual void                       set_property( chain_property_enum property_id, 
                                                           const fc::variant& property_value )               = 0;
@@ -100,5 +115,11 @@ namespace bts { namespace blockchain {
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, (last_asset_id)(last_account_id)(last_proposal_id)(last_random_seed_id)(chain_id) )
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, 
+                 (last_asset_id)
+                 (last_account_id)
+                 (last_proposal_id)
+                 (last_random_seed_id)
+                 (chain_id)
+                 (confirmation_requirement) )
 

@@ -233,6 +233,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );
       my_cli->execute_command_line( "blockchain_get_proposal_votes 1" );
+      my_cli->execute_command_line( "info" );
       // this errors as expected because youraccount is not a delegate
       // your_cli->execute_command_line( "wallet_submit_proposal youraccount \"test proposal\" \"test body\" \"notice\" null" );
 

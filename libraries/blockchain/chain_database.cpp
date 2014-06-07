@@ -500,6 +500,7 @@ namespace bts { namespace blockchain {
               headblock_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           }
 
+          int64_t required_confirmations = pending_state->get_property( confirmation_requirement ).as_int64();
           do
           {
               headblock_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -508,13 +509,27 @@ namespace bts { namespace blockchain {
               auto delegate_rec = pending_state->get_account_record( delegate_id );
 
               if( headblock_timestamp != produced_block.timestamp )
+              {
                   delegate_rec->delegate_info->blocks_missed += 1;
+                  required_confirmations += 2;
+              }
               else
+              {
                   delegate_rec->delegate_info->blocks_produced += 1;
+              }
 
               pending_state->store_account_record( *delegate_rec );
           }
           while( headblock_timestamp != produced_block.timestamp );
+
+          required_confirmations -= 1;
+          if( required_confirmations < 1 )
+             required_confirmations = 1;
+
+          if( required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES*3 )
+             required_confirmations = 3*BTS_BLOCKCHAIN_NUM_DELEGATES;
+
+          pending_state->set_property( confirmation_requirement, required_confirmations );
       }
       void chain_database_impl::update_random_seed( secret_hash_type new_secret, 
                                                     const pending_chain_state_ptr& pending_state )
@@ -1383,6 +1398,7 @@ namespace bts { namespace blockchain {
       self->set_property( chain_property_enum::last_proposal_id, 0 );
       self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
+      self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
       self->sanity_check();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1632,5 +1648,32 @@ namespace bts { namespace blockchain {
       FC_ASSERT( ar->current_share_supply <= ar->maximum_share_supply );
       //std::cerr << "Total Balances: " << to_pretty_asset( total ) << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   /**
+    *   Calculates the percentage of blocks produced in the last 10 rounds as an average
+    *   measure of the delegate participation rate.
+    *
+    *   @return a value betwee 0 and 100
+    */
+   double chain_database::get_average_delegate_participation()const
+   {
+      int32_t head_num = get_head_block_num();
+      auto now         = bts::blockchain::now();
+      if( head_num < 10 * BTS_BLOCKCHAIN_NUM_DELEGATES )
+      {
+         // what percent of the maximum total blocks that could have been produced 
+         // have been produced.
+         auto expected_blocks = (now - get_block_header( 1 ).timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
+         return 100*double(head_num) / expected_blocks;
+      }
+      else 
+      {
+         // if 10*N blocks ago is longer than 10*N*INTERVAL_SEC ago then we missed blocks, calculate
+         // in terms of percentage time rather than percentage blocks.
+         auto starting_time =  get_block_header( head_num - 10*BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
+         auto expected_production = (now - starting_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
+         return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
+      }
+   }
 
 } } // namespace bts::blockchain

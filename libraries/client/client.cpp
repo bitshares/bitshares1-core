@@ -915,10 +915,12 @@ namespace bts { namespace client {
       else
         wallet_balance_shares = "[wallet is not open]";
 
-      info["blockchain_head_block_num"]            = _chain_db->get_head_block_num();
-      info["blockchain_head_block_time"]           = _chain_db->now();
-      info["network_num_connections"]              = network_get_connection_count();
-      info["wallet_balance"]                       = wallet_balance_shares;
+      info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
+      info["blockchain_head_block_time"]                 = _chain_db->now();
+      info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
+      info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
+      info["network_num_connections"]                    = network_get_connection_count();
+      info["wallet_balance"]                             = wallet_balance_shares;
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )

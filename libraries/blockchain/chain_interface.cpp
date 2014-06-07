@@ -110,6 +110,10 @@ namespace bts{ namespace blockchain {
       else
          return fc::to_pretty_string( a.amount ) + " ???";
    }
+   int64_t   chain_interface::get_required_confirmations()const
+   {
+      return get_property( confirmation_requirement ).as_int64(); 
+   }
 
 } }  // bts::blockchain
 
