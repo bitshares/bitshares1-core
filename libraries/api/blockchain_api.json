@@ -17,7 +17,7 @@
           ],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["bitcoin_getblockhash", "getblockhash"]
+        "aliases" : ["getblockhash"]
       },
       {
         "method_name": "blockchain_get_blockcount",
@@ -26,7 +26,7 @@
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["bitcoin_getblockcount", "getblockcount"]
+        "aliases" : ["getblockcount"]
       },
       {
         "method_name": "blockchain_list_registered_accounts",
