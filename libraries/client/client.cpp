@@ -421,7 +421,7 @@ namespace bts { namespace client {
         _wallet->clear_pending_transactions();
     }
 
-    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
+    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
@@ -438,7 +438,7 @@ namespace bts { namespace client {
          return trxs;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(int64_t amount_to_transfer, 
+    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
@@ -724,6 +724,145 @@ namespace bts { namespace client {
           _p2p_node->add_node(node);
       }
     }
+    
+    std::string detail::client_impl::bitcoin_getaccountaddress(const std::string &account_name)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+    
+    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const std::string &account_address)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+    
+    std::string detail::client_impl::bitcoin_dumpprivkey(const std::string& bitshares_address){
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bool detail::client_impl::bitcoin_encryptwallet(const std::string& passphrase)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const std::string& command)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_backupwallet(const fc::path& destination) const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    std::vector<std::string> detail::client_impl::bitcoin_getaddressesbyaccount(const std::string& account_name)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    uint32_t detail::client_impl::bitcoin_getblockcount() const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::block_id_type detail::client_impl::bitcoin_getblockhash(uint32_t block_number) const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    uint32_t detail::client_impl::bitcoin_getconnectioncount() const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    fc::variant_object detail::client_impl::bitcoin_getinfo() const
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::public_key_type detail::client_impl::bitcoin_getnewaddress(const std::string& account_name)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const std::string& address)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_importprivkey(const std::string& wif_key, const std::string& account_name, bool rescan)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+    
+    std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const std::string& account_name, int64_t count, int64_t from)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const std::string& address, int64_t amount, const std::string& comment)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::address, int64_t >& to_address_amounts, const std::string& comment)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_settrxfee(int64_t amount)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    std::string detail::client_impl::bitcoin_signmessage(const std::string& address, const std::string& message)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    std::string detail::client_impl::bitcoin_validatemessage(const std::string& address)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_walletlock()
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
+
+    void detail::client_impl::bitcoin_walletpassphrasechange(const std::string& oldpassphrase, const std::string& newpassphrase)
+    {
+        FC_ASSERT(false, "Not implemented");
+    }
 
     void detail::client_impl::stop()
     {
@@ -889,10 +1028,9 @@ namespace bts { namespace client {
 
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
 
-       info["delegate_fire_votes_min"]              = BTS_BLOCKCHAIN_FIRE_VOTES;
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_MIN_REWARD;
+       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
@@ -909,7 +1047,6 @@ namespace bts { namespace client {
       fc::mutable_variant_object info;
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
-      auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
       fc::variant wallet_balance_shares;
       if (_wallet->is_open())
@@ -936,7 +1073,6 @@ namespace bts { namespace client {
         info["wallet_seconds_until_next_block_production"] = variant();
       }
       info["wallet_local_time"]                    = bts::blockchain::now();
-      info["blockchain_bips_per_share"]            = bips_per_share;
       info["blockchain_random_seed"]               = _chain_db->get_current_random_seed();
 
       info["blockchain_shares"]                    = current_share_supply;
@@ -948,8 +1084,6 @@ namespace bts { namespace client {
       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
 
       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
-
-    // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
 
       info["wallet_open"]                          = _wallet->is_open();
 

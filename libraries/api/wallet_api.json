@@ -251,7 +251,7 @@
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["json_authenticated", "wallet_open"],
-        "aliases" : ["bitcoin_walletlock", "walletlock", "lock"]
+        "aliases" : ["lock"]
       },
       {
         "method_name": "wallet_unlock",
@@ -406,8 +406,8 @@
           [
             {
               "name" : "amount_to_transfer", 
-              "type" : "amount", 
-              "description" : "the amount of shares to transfer"
+              "type" : "real_amount", 
+              "description" : "the amount of shares to transfer, will be multiplied by the precision associated by asset_symbol"
             },
             {
               "name" : "asset_symbol", 
@@ -442,7 +442,7 @@
           [
             {
               "name" : "amount_to_transfer", 
-              "type" : "amount", 
+              "type" : "real_amount", 
               "description" : "the amount of shares to transfer"
             },
             {

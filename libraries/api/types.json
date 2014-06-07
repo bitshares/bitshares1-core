@@ -241,6 +241,13 @@
         "default_example" : 10000
       },
       {
+        "type_name" : "real_amount",
+        "cpp_parameter_type" : "double",
+        "cpp_return_type" : "double",
+        "cpp_include_file" : "stdint.h",
+        "default_example" : 10000
+      },
+      {
         "type_name" : "receive_account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -321,6 +328,23 @@
         "type_name" : "proposal_id",
         "cpp_return_type" : "bts::blockchain::proposal_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+        "type_name" : "address_list",
+        "container_type" : "array",
+        "contained_type" : "address",
+        "default_example" : "TODO"
+      },
+      {
+          "type_name" : "size",
+          "cpp_parameter_type" : "int64_t",
+          "cpp_return_type" : "int64_t",
+          "cpp_include_file" : "stdint.h",
+          "default_example" : 10
+      },
+      {
+          "type_name" : "map< address, amount >",
+          "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >"
       }
     ]
 }

@@ -3,7 +3,7 @@ if( UNIX AND NOT APPLE )
 endif()
 
 add_executable( bts_create_key bts_create_key.cpp )
-target_link_libraries( bts_create_key fc bts_blockchain  ${rt_library} )
+target_link_libraries( bts_create_key fc bts_blockchain bts_utilities  ${rt_library} )
 
 add_executable( bts_create_genesis bts_create_genesis.cpp )
 target_link_libraries( bts_create_genesis fc bts_blockchain bts_utilities  ${rt_library} )
