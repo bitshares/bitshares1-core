@@ -14,6 +14,7 @@ namespace bts { namespace blockchain {
 
    class chain_interface;
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
+   typedef std::weak_ptr<chain_interface> chain_interface_weak_ptr;
    struct fire_delegate_operation;
 
    /**

@@ -3,6 +3,7 @@
 #include <fc/io/json.hpp>
 #include <algorithm>
 #include <sstream>
+#include <cctype>
 
 namespace bts{ namespace blockchain {
    balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
