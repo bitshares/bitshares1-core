@@ -35,9 +35,9 @@ namespace bts{ namespace blockchain {
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
    }
 
-   bool account_record::is_valid_name( const std::string& str )
+   bool chain_interface::is_valid_account_name( const std::string& str )const
    {
-      if( str.size() == 0 ) return false;
+      if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
       for( auto c : str )
@@ -124,6 +124,17 @@ namespace bts{ namespace blockchain {
    int64_t   chain_interface::get_required_confirmations()const
    {
       return get_property( confirmation_requirement ).as_int64(); 
+   }
+   bool chain_interface::is_valid_symbol_name( const string& name )const
+   {
+      if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+         return false;
+      if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
+         return false;
+      for( auto c : name )
+         if( !std::isalnum(c) || !std::isupper(c) )
+            return false;
+      return true;
    }
 
 } }  // bts::blockchain

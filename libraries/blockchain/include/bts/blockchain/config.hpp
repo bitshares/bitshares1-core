@@ -21,7 +21,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (30ll)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (15ll)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -34,8 +34,14 @@
  *  Adjusting this value will change the effective fee charged on transactions
  */
 #define BTS_BLOCKCHAIN_MAX_SIZE                         (1024*1024*1024*100ll) // 100 GB
+#define BTS_BLOCKCHAIN_MIN_NAME_SIZE                    (1)
+#define BTS_BLOCKCHAIN_MAX_NAME_SIZE                    (63)
+#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE               (1024*4)
 #define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                    (19) // bytes
+#define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                  (5) // characters
+#define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                  (3) // characters
 #define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE   (1024) // bytes
+
 
 /**
  *  The maximum amount that can be issued for user assets.
@@ -45,10 +51,14 @@
 #define BTS_BLOCKCHAIN_MAX_SHARES                   (1000*1000*1000ll*1000*1000ll)
 
 /**
- * Initial shares read from the genesis block are scaled to this number.
+ * Initial shares read from the genesis block are scaled to this number. It is divided
+ * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES               BTS_BLOCKCHAIN_MAX_SHARES //(80*1000*uint64_t(1000)*uint64_t(1000)*uint64_t(1000))
-#define BTS_BLOCKCHAIN_FIRE_VOTES                   (BTS_BLOCKCHAIN_INITIAL_SHARES / BTS_BLOCKCHAIN_NUM_DELEGATES)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES               (BTS_BLOCKCHAIN_MAX_SHARES / 100)
+
+
+#define BTS_BLOCKCHAIN_BLOCK_REWARD                 10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
+#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR             (10)  // 10% per year
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
@@ -65,12 +75,6 @@
  */
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR              (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
-
-/**
- * A BIP is one 1/10^15 of the share supply at any given time.
- */
-#define BTS_BLOCKCHAIN_BIP                          (1000*1000ll*1000*1000*1000ll)
-
 /** defines the maximum block size allowed, 24 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE               (24 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
 
@@ -83,27 +87,15 @@
 #define BTS_BLOCKCHAIN_MIN_FEE                      (1000)
 
 /**
- *  the minimum mining reward paid to delegates, may result in some inflation
- *  if there is no transaction volume.  So long as there are atleast 2KB of
- *  transactions per block then there will be no inflation.
+ *  Defined so that a delegate must produce 100 blocks to break even.
  */
-#define BTS_BLOCKCHAIN_MIN_REWARD                   (200)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE    (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
 
 /**
- *  Defines the fee required to register a name to be considered for a delegate.  Having users vote
- *  for non-serious delegates is a waist of everyones time and money, this fee is set so that a
- *  delegate that is elected and produces blocks for 10 days can break even.  Any delegate that cannot
- *  perform reliably for 10 days should lose money.
+ *  Defines the fee required to register a asset, this fee is set to discourage anyone from 
+ *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
+ *  of mining fees then it really isn't worth the networks time.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE    ((BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE*BTS_BLOCKCHAIN_BLOCKS_PER_DAY / BTS_BLOCKCHAIN_NUM_DELEGATES )/10)
-
-/**
- *  Defines the fee required to register a asset, this fee is set to discourage anyone from registering all of the symbols and is equal to the fee of all
- *  blocks produced in a day. Only serious assets should register.  When transaction fees are low this fee should be low, as transaction fees rise the
- *  cost of issuing a new asset grows because the demand for transactions on this chain is already pretty high.
- */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE       BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE      (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
 
 
-#define BTS_BLOCKCHAIN_MAX_NAME_SIZE                (63)
-#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE           (1024*4)

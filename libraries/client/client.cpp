@@ -421,7 +421,7 @@ namespace bts { namespace client {
         _wallet->clear_pending_transactions();
     }
 
-    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(int64_t amount_to_transfer, 
+    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
@@ -438,7 +438,7 @@ namespace bts { namespace client {
          return trxs;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(int64_t amount_to_transfer, 
+    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer, 
                                                        const string& asset_symbol, 
                                                        const string& from_account_name, 
                                                        const string& to_account_name, 
@@ -1028,10 +1028,9 @@ namespace bts { namespace client {
 
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
 
-       info["delegate_fire_votes_min"]              = BTS_BLOCKCHAIN_FIRE_VOTES;
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_MIN_REWARD;
+       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
@@ -1048,7 +1047,6 @@ namespace bts { namespace client {
       fc::mutable_variant_object info;
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
-      auto bips_per_share = current_share_supply > 0 ? double( BTS_BLOCKCHAIN_BIP ) / current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
       fc::variant wallet_balance_shares;
       if (_wallet->is_open())
@@ -1075,7 +1073,6 @@ namespace bts { namespace client {
         info["wallet_seconds_until_next_block_production"] = variant();
       }
       info["wallet_local_time"]                    = bts::blockchain::now();
-      info["blockchain_bips_per_share"]            = bips_per_share;
       info["blockchain_random_seed"]               = _chain_db->get_current_random_seed();
 
       info["blockchain_shares"]                    = current_share_supply;
@@ -1087,8 +1084,6 @@ namespace bts { namespace client {
       info["network_num_connections_max"]          = advanced_params["maximum_number_of_connections"];
 
       info["network_protocol_version"]             = BTS_NET_PROTOCOL_VERSION;
-
-    // info["wallet_balance_bips"]                  = wallet_balance_shares * bips_per_share;
 
       info["wallet_open"]                          = _wallet->is_open();
 
