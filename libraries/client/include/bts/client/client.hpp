@@ -6,11 +6,14 @@
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
 
+
 namespace bts { namespace rpc {
   class rpc_server;
   typedef std::shared_ptr<rpc_server> rpc_server_ptr;
 } }
-
+namespace bts { namespace cli {
+    class cli;
+}};
 namespace bts { namespace client {
 
     using namespace bts::blockchain;
@@ -33,7 +36,9 @@ namespace bts { namespace client {
                   client();
                   client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
+
          void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
+         void set_cli( bts::cli::cli* cli );
 
          /**
           *  Produces a block every 30 seconds if there is at least

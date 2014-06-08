@@ -2,6 +2,7 @@
 
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
+#include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
@@ -32,7 +33,7 @@ namespace bts { namespace client {
        {
           public:
             client_impl(bts::client::client* self) :
-              _self(self)
+              _self(self),_cli(nullptr)
             { try {
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
@@ -70,6 +71,7 @@ namespace bts { namespace client {
             virtual void connection_count_changed(uint32_t c) override;
             /// @}
             bts::client::client*                                        _self;
+            bts::cli::cli*                                              _cli;
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
 
@@ -290,6 +292,20 @@ namespace bts { namespace client {
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
+       std::string client_impl::execute_command_line(const std::string& input) const
+       {
+           if (_cli)
+           {
+               std::stringstream output;
+               _cli->execute_command_line( input, &output );
+               return output.str();
+           }
+           else
+           {
+              return "CLI not set for this client.\n";
+           }
+       }
+
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
        }
@@ -310,6 +326,11 @@ namespace bts { namespace client {
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
+    }
+
+    void client::set_cli( bts::cli::cli* cli)
+    {
+        my->_cli = cli;
     }
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )

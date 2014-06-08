@@ -67,6 +67,22 @@
           ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "execute_command_line",
+        "description": "Execute the given command as if it were typed on the CLI",
+        "return_type": "std::string",
+        "parameters" : 
+          [
+            { 
+              "name" : "input", 
+              "type" : "std::string", 
+              "description" : "The entire command input as if it were a CLI input"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
+
     ]
 }

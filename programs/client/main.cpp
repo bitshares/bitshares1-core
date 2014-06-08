@@ -286,6 +286,8 @@ int main( int argc, char** argv )
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
           std::cout << "Running in daemon mode, ignoring console\n";
+          auto cli = std::make_shared<bts::cli::cli>( client );
+          client->set_cli( cli.get() );
           rpc_server->wait_on_quit();
       }
       else 
@@ -305,8 +307,9 @@ int main( int argc, char** argv )
         //also echo input to the log file
         cli->set_input_log_stream(console_log);
 #else
-        auto cli = std::make_shared<bts::cli::cli>( client, std::cin, std::cout );
+        auto cli = std::make_shared<bts::cli::cli>( client, &std::cin, &std::cout );
 #endif
+        client->set_cli( cli.get() );
         cli->process_commands();
         cli->wait();
       } 
