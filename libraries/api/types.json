@@ -337,8 +337,8 @@
       },
       {
           "type_name" : "size",
-          "cpp_parameter_type" : "int64_t",
-          "cpp_return_type" : "int64_t",
+          "cpp_parameter_type" : "uint64_t",
+          "cpp_return_type" : "uint64_t",
           "cpp_include_file" : "stdint.h",
           "default_example" : 10
       },
