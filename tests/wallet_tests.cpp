@@ -255,15 +255,15 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_client->wallet_unlock( fc::seconds(999999999), password );
       */
 
-      my_cli->execute_command_line( "wallet_import_private_key " + test_keys[0] + "\"\" true" );
-      my_cli->execute_command_line( "wallet_import_private_key 5KJ51szQb1CDcU9AkzKSDAkiYbL5V6CnVA5SWYG1NfsMr7B3HDS delegate0 true" );
+      my_cli->execute_command_line( "wallet_import_private_key " + test_keys[30] + "\"\" true" );
+      my_cli->execute_command_line( "wallet_import_private_key 5KJ51szQb1CDcU9AkzKSDAkiYbL5V6CnVA5SWYG1NfsMr7B3HDS delegate30 true" );
       my_cli->execute_command_line( "balance" );
       my_cli->execute_command_line( "wallet_close" );
       my_cli->execute_command_line( "wallet_open my_wallet" );
       my_cli->execute_command_line( "wallet_unlock 999999999999 "+password );
       my_cli->execute_command_line( "wallet_account_create account1" );
       my_cli->execute_command_line( "wallet_list_receive_accounts" );
-      my_cli->execute_command_line( "wallet_account_register account1 delegate0 null true" );
+      my_cli->execute_command_line( "wallet_account_register account1 delegate30 null true" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_list_receive_accounts" );
 
@@ -283,8 +283,8 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50.0+i, "XTS", "delegate0", "youraccount", "memo-"+fc::to_string(i) );
-         my_client->wallet_transfer( 30.0+i, "XTS", "delegate0", "otheraccount", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50.0+i, "XTS", "delegate30", "youraccount", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 30.0+i, "XTS", "delegate30", "otheraccount", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       wlog( "my cli" );
       my_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       my_cli->execute_command_line( "wallet_account_transaction_history otheraccount" );
-      my_cli->execute_command_line( "wallet_account_transaction_history \"delegate0\"" );
+      my_cli->execute_command_line( "wallet_account_transaction_history \"delegate30\"" );
       std::cerr<<"\n";
       my_cli->execute_command_line( "balance" );
       std::cerr<<"\n";
@@ -331,16 +331,16 @@ BOOST_AUTO_TEST_CASE( client_tests )
       produce_block( my_client );
       your_cli->execute_command_line( "balance" );
       //your_cli->execute_command_line( "unlock 99999999999999999999" );
-      my_cli->execute_command_line( "wallet_submit_proposal delegate0 \"test proposal\" \"test body\" \"notice\" null" );
+      my_cli->execute_command_line( "wallet_submit_proposal delegate30 \"test proposal\" \"test body\" \"notice\" null" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_delegates 0 3" );
-      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate0 delegate0 100 \"del payday\"" );
+      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate30 delegate30 100 \"del payday\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );
       my_cli->execute_command_line( "blockchain_get_proposal_votes 1" );
-      my_cli->execute_command_line( "wallet_vote_proposal delegate0 1 yes \"why not\"" );
+      my_cli->execute_command_line( "wallet_vote_proposal delegate30 1 yes \"why not\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->wallet_account_register( "account1", "delegate0", variant(), true );
+      auto trx = my_client->wallet_account_register( "account1", "delegate30", variant(), true );
 
       auto your_account_key = your_client->wallet_account_create("youraccount");
       my_client->wallet_add_contact_account("youraccount", your_account_key);
@@ -408,17 +408,17 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate0", "delegate0", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate30", "delegate30", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
-      my_client->wallet_submit_proposal("delegate0", "subject", "body", "type", fc::variant("data"));
+      my_client->wallet_submit_proposal("delegate30", "subject", "body", "type", fc::variant("data"));
       produce_block( my_client );
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate0", "delegate0", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate30", "delegate30", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
-      my_client->wallet_vote_proposal("delegate0", 1, proposal_vote::yes, "I AGREE!!!");
+      my_client->wallet_vote_proposal("delegate30", 1, proposal_vote::yes, "I AGREE!!!");
       produce_block( my_client );
       my_cli->execute_command_line( "blockchain_list_proposals" );
       my_cli->execute_command_line( "blockchain_get_proposal_votes 1" ); 

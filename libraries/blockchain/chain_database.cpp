@@ -1365,8 +1365,6 @@ namespace bts { namespace blockchain {
       int64_t n = 0;
       for( auto item : config.balances )
       {
-         // if( (int64_t(n) % 100) == 0 )
-         //   wlog( "percent: ${p}       \r", ("p",100*double(n)/config.balances.size() ) );
          ++n;
 
          fc::uint128 initial( int64_t(item.second/1000) );
@@ -1385,12 +1383,12 @@ namespace bts { namespace blockchain {
                   if( cur.valid() ) initial_balance.balance += cur->balance;
                   initial_balance.last_update                = config.timestamp;
                   self->store_balance_record( initial_balance );
+
                   auto da = _account_db.fetch( delegate_id );
                   da.delegate_info->votes_for += initial.low_bits();
                   da.registration_date        = config.timestamp;
                   da.last_update              = config.timestamp;
                   self->store_account_record( da );
-            //   _account_db.store( da.id, da );
             }
          }
          else
