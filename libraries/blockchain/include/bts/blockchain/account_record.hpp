@@ -58,13 +58,14 @@ namespace bts { namespace blockchain {
       map<time_point_sec, public_key_type>   active_key_history;
       fc::time_point_sec                     registration_date;
       fc::time_point_sec                     last_update;
-      fc::optional<delegate_stats>           delegate_info;
+      optional<delegate_stats>               delegate_info;
+      optional<account_meta_info>            meta_data;
    };
    typedef fc::optional<account_record> oaccount_record;
 } }
 
 FC_REFLECT( bts::blockchain::account_record,
-            (id)(name)(public_data)(owner_key)(active_key_history)(delegate_info)(registration_date)(last_update)
+            (id)(name)(public_data)(owner_key)(active_key_history)(delegate_info)(registration_date)(last_update)(meta_data)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(votes_against)(blocks_produced)

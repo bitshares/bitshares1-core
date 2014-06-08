@@ -22,8 +22,6 @@ namespace bts{ namespace blockchain {
    {
       if( condition.type == withdraw_signature_type )
          return condition.as<withdraw_with_signature>().owner;
-      else if ( condition.type == withdraw_by_account_type )
-         return condition.as<withdraw_by_account>().owner;
       return address();
    }
 
@@ -46,6 +44,7 @@ namespace bts{ namespace blockchain {
           if( c >= 'a' && c <= 'z' ) continue;
           else if( c >= '0' && c <= '9' ) continue;
           else if( c == '-' ) continue;
+          else if( c == '.' ) continue;
           else return false;
       }
       return true;

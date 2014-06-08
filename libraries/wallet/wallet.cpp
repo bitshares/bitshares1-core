@@ -356,50 +356,58 @@ namespace bts { namespace wallet {
           switch( (withdraw_condition_types) op.condition.type )
           {
              case withdraw_signature_type:
-                cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
-                break;
-             case withdraw_by_account_type:
+             //   cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
+             //   break;
+            // case withdraw_with_signature:
              {
-                for( auto key : keys )
+                auto deposit = op.condition.as<withdraw_with_signature>();
+                if( _wallet_db.has_private_key( deposit.owner ) )
                 {
-                   auto deposit = op.condition.as<withdraw_by_account>();
-                   omemo_status status = deposit.decrypt_memo_data( key );
-                   if( status.valid() )
-                   {
-                      _wallet_db.cache_memo( *status, key, _wallet_password );
-                      if( status->memo_flags == from_memo )
-                      {
-                         trx_rec.memo_message = status->get_message();
-                         trx_rec.amount       = asset( op.amount, op.condition.asset_id );
-                         trx_rec.from_account = status->from;
-                         trx_rec.to_account   = key.get_public_key();
-                         //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
-                      }
-                      else
-                      {
-                         //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                         //ilog( "op: ${op}", ("op",op) );
-                         trx_rec.memo_message = status->get_message();
-                         trx_rec.from_account = key.get_public_key();
-                         trx_rec.to_account   = status->from;
-                         //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                      }
-                      cache_deposit = true;
-                      break;
-                   }
+                   cache_deposit = true;
                 }
-                break;
-             }
+                else if( deposit.memo )
+                {
+                   for( auto key : keys )
+                   {
+                      omemo_status status = deposit.decrypt_memo_data( key );
+                      if( status.valid() )
+                      {
+                         _wallet_db.cache_memo( *status, key, _wallet_password );
+                         if( status->memo_flags == from_memo )
+                         {
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.amount       = asset( op.amount, op.condition.asset_id );
+                            trx_rec.from_account = status->from;
+                            trx_rec.to_account   = key.get_public_key();
+                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                         }
+                         else
+                         {
+                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                            //ilog( "op: ${op}", ("op",op) );
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.from_account = key.get_public_key();
+                            trx_rec.to_account   = status->from;
+                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                         }
+                         cache_deposit = true;
+                         break;
+                      }
+                   }
+                   break;
+                }
              // TODO: support other withdraw types here..
-          }
-          if( cache_deposit )
-          {
-             if( !cache_balance( op.balance_id() ) )
-             {
-                elog( "unable to cache balance ${b}", ("b",op) );
              }
-          }
-          return cache_deposit;
+        }
+        if( cache_deposit )
+        {
+           if( !cache_balance( op.balance_id() ) )
+           {
+              elog( "unable to cache balance ${b}", ("b",op) );
+           }
+        }
+        return cache_deposit;
+
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
       bool wallet_impl::cache_balance( const balance_id_type& balance_id )

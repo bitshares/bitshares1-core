@@ -10,7 +10,6 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
    const uint8_t withdraw_option::type            = withdraw_option_type;
-   const uint8_t withdraw_by_account::type           = withdraw_by_account_type;
 
    memo_status::memo_status( const memo_data& memo, 
                    bool valid_signature,
@@ -36,10 +35,11 @@ namespace bts { namespace blockchain {
    {
       return address( *this );
    }
-   omemo_status withdraw_by_account::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
+   omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
+      FC_ASSERT( memo.valid() );
 //      ilog( "receiver_key: ${r}", ("r",receiver_key) );
-      auto secret = receiver_key.get_shared_secret( one_time_key );
+      auto secret = receiver_key.get_shared_secret( memo->one_time_key );
 //      ilog( "secret: ${secret}", ("secret",secret) );
       extended_private_key ext_receiver_key(receiver_key);
  //     ilog( "ext_receiver_key: ${key}",("key",ext_receiver_key) );
@@ -71,13 +71,14 @@ namespace bts { namespace blockchain {
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
-   void  withdraw_by_account::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
+   void  withdraw_with_signature::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
                                    const fc::ecc::public_key&  to_public_key,
                                    const fc::ecc::private_key& from_private_key,
                                    const std::string& memo_message,
                                    const fc::ecc::public_key&  memo_pub_key,
                                    memo_flags_enum memo_type )
    {
+      memo = titan_memo();
       auto secret = one_time_private_key.get_shared_secret( to_public_key );
 //      ilog( "secret: ${s}", ("s",secret) );
       auto ext_to_public_key = extended_public_key(to_public_key);
@@ -91,25 +92,28 @@ namespace bts { namespace blockchain {
 
       auto check_secret = from_private_key.get_shared_secret( secret_public_key );
 
-      memo_data memo;
-      memo.set_message( memo_message );
-      memo.from = memo_pub_key;
-      memo.from_signature = check_secret._hash[0];
-      memo.memo_flags = memo_type;
-      one_time_key = one_time_private_key.get_public_key();
+      memo_data memo_content;
+      memo_content.set_message( memo_message );
+      memo_content.from = memo_pub_key;
+      memo_content.from_signature = check_secret._hash[0];
+      memo_content.memo_flags = memo_type;
 
-      encrypt_memo_data( secret, memo );
+      memo->one_time_key = one_time_private_key.get_public_key();
+
+      encrypt_memo_data( secret, memo_content );
    }
 
-   memo_data withdraw_by_account::decrypt_memo_data( const fc::sha512& secret )const
+   memo_data withdraw_with_signature::decrypt_memo_data( const fc::sha512& secret )const
    { try {
-      return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, encrypted_memo_data ) );
+      FC_ASSERT( memo.valid() );
+      return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, memo->encrypted_memo_data ) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void withdraw_by_account::encrypt_memo_data( const fc::sha512& secret, 
-                                             const memo_data& memo )
+   void withdraw_with_signature::encrypt_memo_data( const fc::sha512& secret, 
+                                             const memo_data& memo_content )
    {
-      encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo ) );
+      FC_ASSERT( memo.valid() );
+      memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
 
 } } // bts::blockchain
@@ -136,9 +140,6 @@ namespace fc {
             break;
          case withdraw_option_type:
             obj["data"] = fc::raw::unpack<withdraw_option>( var.data );
-            break;
-         case withdraw_by_account_type:
-            obj["data"] = fc::raw::unpack<withdraw_by_account>( var.data );
             break;
          case withdraw_null_type:
             obj["data"] = fc::variant();
@@ -168,9 +169,6 @@ namespace fc {
             break;
          case withdraw_option_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_option>() );
-            break;
-         case withdraw_by_account_type:
-            vo.data = fc::raw::pack( obj["data"].as<withdraw_by_account>() );
             break;
          case withdraw_null_type:
             break;
