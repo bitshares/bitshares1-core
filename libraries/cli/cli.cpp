@@ -823,8 +823,12 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_list_delegates")
               {
                   auto delegates = result.as<vector<account_record>>();
-                  uint32_t current = arguments[0].as<uint32_t>();
-                  uint32_t count = arguments[1].as<uint32_t>();
+                  uint32_t current = 1;
+                  uint32_t count = uint32_t(-1);
+                  if (arguments.size() > 0)
+                      current = arguments[0].as<uint32_t>();
+                  if (arguments.size() > 1)
+                      count = arguments[1].as<uint32_t>();
                   auto max = current + count;
                   auto num_active = BTS_BLOCKCHAIN_NUM_DELEGATES - current + 1;
                   if (current < num_active)
@@ -846,7 +850,6 @@ namespace bts { namespace cli {
                       std::stringstream ss;
                       ss << 100 * (delegate_rec.net_votes() / BTS_BLOCKCHAIN_MAX_SHARES);
                       ss << "%";
-                          
                       _out << std::setw(20) << ss.str();
                       _out << "\n";
                       current++;
