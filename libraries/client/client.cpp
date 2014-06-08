@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include <bts/client/client.hpp>
+#include <bts/client/genesis_json.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/net/node.hpp>
 #include <bts/blockchain/chain_database.hpp>
@@ -21,6 +22,7 @@
 #include <fc/git_revision.hpp>
 
 #include <iostream>
+#include <fstream>
 
 namespace bts { namespace client {
 
@@ -316,6 +318,17 @@ namespace bts { namespace client {
 
         if( !fc::exists( data_dir/"genesis.json" ) )
         {
+          // if no genesis.json exists, initialize it with the copy that's compiled in
+          std::istringstream genesis_json_contents = get_builtin_genesis_json_stream();
+          std::ofstream genesis_json_file((data_dir/"genesis.json").string(), std::ios::binary);
+          std::copy(std::istream_iterator<char>(genesis_json_contents), 
+                    std::istream_iterator<char>(),
+                    std::ostream_iterator<char>(genesis_json_file));
+        }
+
+        if( !fc::exists( data_dir/"genesis.json" ) )
+        {
+           // fallback to downloading from http, this code should never be reached
            auto con = std::make_shared<fc::http::connection>();
            con->connect_to( fc::ip::endpoint::from_string( "107.170.30.182:80" ) );
            wlog( "fetching genesis block, this could take a few seconds" );
@@ -326,7 +339,6 @@ namespace bts { namespace client {
            fc::ofstream out( data_dir / "genesis.json", fc::ofstream::binary );
            out.write( response.body.data(), response.body.size() );
         }
-
 
         my->_chain_db->open( data_dir / "chain", data_dir / "genesis.json" );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
