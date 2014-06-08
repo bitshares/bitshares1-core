@@ -778,30 +778,6 @@ namespace bts { namespace cli {
                                   _out << std::setw(25) << sign << delegate_rec->name;
                               break;
                           }
-                          case (withdraw_by_account_type):
-                          {
-                              auto cond = balance_rec.condition.as<withdraw_by_account>();
-                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
-                              string owner;
-                              if ( acct_rec.valid() )
-                                  owner = acct_rec->name;
-                              else
-                                  owner = string( balance_rec.owner() );
-
-                              if (owner.size() > 31)
-                                  _out << std::setw(35) << owner.substr(0, 31) << "...";
-                              else
-                                  _out << std::setw(35) << owner;
-
-                              auto delegate_id = balance_rec.condition.delegate_id;
-                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
-                              string sign = (delegate_id > 0 ? "+" : "-");
-                              if (delegate_rec->name.size() > 21)
-                                  _out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
-                              else
-                                  _out << std::setw(25) << sign << delegate_rec->name;
-                              break;
-                          }
                           default:
                           {
                               FC_ASSERT(!"unimplemented condition type");

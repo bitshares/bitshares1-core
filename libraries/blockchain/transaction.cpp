@@ -369,11 +369,13 @@ namespace bts { namespace blockchain {
             add_required_signature( arec->condition.as<withdraw_with_signature>().owner );
             break;
          }
+         /*
          case withdraw_by_account_type:  
          {
             add_required_signature( arec->condition.as<withdraw_by_account>().owner );
             break;
          }
+         */
 
          case withdraw_multi_sig_type:
          {
@@ -542,9 +544,25 @@ namespace bts { namespace blockchain {
          balance_itr->second += amount.amount;
    }
 
+   string get_parent_account_name( const string& child )
+   {
+      auto pos = child.find( '.' );
+      if( pos == string::npos ) return string();
+      return child.substr( pos+1, string::npos );
+   }
+
    void transaction_evaluation_state::evaluate_register_account( const register_account_operation& op )
    { try {
       FC_ASSERT( _current_state->is_valid_account_name( op.name ) );
+
+      string parent_name = get_parent_account_name( op.name );
+      if( parent_name.size() )
+      {
+         auto parent_record = _current_state->get_account_record( parent_name );
+         FC_ASSERT( parent_record.valid(), "", ("parent_name",parent_name) );
+         add_required_signature( address(parent_record->active_key()) );
+         if( parent_record->is_retracted() ) fail( BTS_NAME_RETRACTED, "parent name has been retracted" );
+      }
 
       auto cur_record = _current_state->get_account_record( op.name );
       if( cur_record.valid() && ((fc::time_point(cur_record->last_update) + one_year) > fc::time_point(_current_state->now())) ) 
@@ -591,10 +609,58 @@ namespace bts { namespace blockchain {
       if( !cur_record ) fail( BTS_INVALID_NAME_ID, fc::variant(op) );
       if( cur_record->is_retracted() ) fail( BTS_NAME_RETRACTED, fc::variant(op) );
 
+      string parent_name = get_parent_account_name( cur_record->name );
       if( !!op.active_key && *op.active_key != cur_record->active_key() )
-         add_required_signature( address(cur_record->owner_key) );
+      {
+         // check signature of any parent record...
+         if( parent_name.size() == 0 )
+         {
+            add_required_signature( address(cur_record->owner_key) );
+         }
+         else
+         {
+             auto parent_record = _current_state->get_account_record( parent_name );
+             FC_ASSERT( parent_record.valid() );
+             bool verified = false;
+             while( parent_record.valid() )
+             {
+                FC_ASSERT( !parent_record->is_retracted() );
+                if( check_signature( parent_record->owner_key ) || check_signature( parent_record->active_address() ) )
+                   verified = true;
+                else
+                {
+                   parent_name = get_parent_account_name( parent_name );
+                   parent_record = _current_state->get_account_record( parent_name );
+                }
+             }
+             FC_ASSERT( verified, "updating the active key for this account requires the signature "
+                                  "of the owner or one of their parent accounts" );
+         }
+      }
       else
-         add_required_signature( cur_record->active_address() );
+      {
+         bool verified = false;
+         verified |= check_signature( cur_record->active_address() );
+         if( !verified ) verified = check_signature( cur_record->owner_key );
+
+         if( !verified && parent_name.size() )
+         {
+             auto parent_record = _current_state->get_account_record( parent_name );
+             while( parent_record.valid() )
+             {
+                FC_ASSERT( !parent_record->is_retracted() );
+                if( check_signature( parent_record->owner_key ) || check_signature( parent_record->active_address() ) )
+                   verified = true;
+                else
+                {
+                   parent_name = get_parent_account_name( parent_name );
+                   parent_record = _current_state->get_account_record( parent_name );
+                }
+             }
+         }
+         FC_ASSERT( verified, "updating the account for this account requires the signature "
+                              "of the owner or one of their parent accounts" );
+      }
 
       if( !!op.public_data )
       {
@@ -793,7 +859,7 @@ namespace bts { namespace blockchain {
    {
       fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
 
-      withdraw_by_account by_account;
+      withdraw_with_signature by_account;
       by_account.encrypt_memo_data( one_time_private_key,
                                  receiver_key,
                                  from_key,
