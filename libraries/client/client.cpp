@@ -321,7 +321,7 @@ namespace bts { namespace client {
            wlog( "fetching genesis block, this could take a few seconds" );
            auto response = con->request( "GET", "http://bitshares.org/snapshots/xt_genesis.json" );
            FC_ASSERT( response.body.size() );
-           auto check = fc::variant("154fb7a037f139b235a79ef82df474c6ab06456fece9ddbda18787cb1d12b556").as<fc::sha256>();
+           auto check = fc::variant("549dcaeecc86f2c060148834b339083f08e17d3cf97da7c614551b6cfe4d08b2").as<fc::sha256>();
            FC_ASSERT( fc::sha256::hash( response.body.data(), response.body.size() ) == check );
            fc::ofstream out( data_dir / "genesis.json", fc::ofstream::binary );
            out.write( response.body.data(), response.body.size() );
