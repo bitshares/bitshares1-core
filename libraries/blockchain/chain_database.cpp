@@ -1706,6 +1706,7 @@ namespace bts { namespace blockchain {
    double chain_database::get_average_delegate_participation()const
    {
       int32_t head_num = get_head_block_num();
+      if( head_num < 1 ) return 0;
       auto now         = bts::blockchain::now();
       if( head_num < 10 * BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
