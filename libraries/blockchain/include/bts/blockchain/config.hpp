@@ -10,13 +10,19 @@
 /**
  *  The address prepended to string representation of
  *  addresses.
+ *
+ *  Changing these parameters will result in a hard fork.
  */
 #define BTS_ADDRESS_PREFIX                          "XTS"
+#define BTS_BLOCKCHAIN_SYMBOL                       "XTS"
+#define BTS_BLOCKCHAIN_NAME                         "BitShares XTS"
+#define BTS_BLOCKCHAIN_DESCRIPTION                  "Stake in future BitShares X chains"
+#define BTS_BLOCKCHAIN_PRECISION                    1000000
 
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                (7)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                (97)
 
 /**
  * Defines the number of seconds that should elapse between blocks

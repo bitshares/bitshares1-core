@@ -11,6 +11,8 @@
 #include <iostream>
 #include <fc/io/json.hpp>
 
+#include <cctype>
+
 namespace bts { namespace blockchain {
 
    static const fc::microseconds one_year = fc::seconds( 60*60*24*365 );
@@ -624,7 +626,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( op.is_power_of_ten(op.precision), "", ("precision",op.precision) );
       FC_ASSERT( _current_state->is_valid_symbol_name( op.symbol ) );
 
-      for( auto c : op.symbol ) FC_ASSERT( std::isalnum(c) && std::isupper(c) );
+      for( auto c : op.symbol ) { FC_ASSERT( std::isalnum(c) && std::isupper(c) ); }
 
       if( op.maximum_share_supply <= 0 ) fail( BTS_NEGATIVE_ISSUE, fc::variant(op) );
       auto cur_record = _current_state->get_asset_record( op.symbol );

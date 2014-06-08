@@ -89,7 +89,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           shorts; 
          map< market_index_key, collateral_record>                      collateral; 
 
-         chain_interface_ptr                                            _prev_state;
+         chain_interface_weak_ptr                                       _prev_state;
    };
 
    typedef std::shared_ptr<pending_chain_state> pending_chain_state_ptr;

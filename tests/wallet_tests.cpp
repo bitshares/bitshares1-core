@@ -13,12 +13,14 @@
 #include <fc/thread/thread.hpp>
 #include <iostream>
 
+#include <fc/network/http/connection.hpp>
+
 using namespace bts::blockchain;
 using namespace bts::wallet;
 using namespace bts::client;
 using namespace bts::cli;
 
-const char* test_wif_keys = R"([
+/*
   "5KYn77SMFximbA7gWoxZxs8VpxnzdnxJyRcA2hv7EziWdNk7cfX",
   "5KK44Qy6MUcBVHzPo3mHuKzzj5fzmRUrKbnnQE2gCYY4yDnsbyJ",
   "5KkUdWJ1VQAssZ3YY6chkG9uaWmhvPhkKsjRtTxV9KbqXfXy8dx",
@@ -26,6 +28,105 @@ const char* test_wif_keys = R"([
   "5KkTHkXCcik9cDKoMo4BPxrojzjmFBwgEMEuCusoV5fdXhwwf19",
   "5JBUAW2EWd2TFfk2tVQmi86dGPejGedN8tNsHDGUJaVyW8bqjaK",
   "5KV5f8Eohi7WmuxWnP4uJzh7oX9zDEYpTbHBx5jFokSEZoUWpbB"
+  */
+const char* test_wif_keys = R"([
+  "5KU3Sj7LtRi6A4tFZ2XapADeqizZ3SA7fNxc8KByjXKxi21M42x",
+  "5HreFY4QaddTbb6AUKph52fQ3cbmEUpEePRy525ZTMLSdckqYve",
+  "5J8PQtu1HY4yb8o8dsDL3CxmxV8Tro2AK9LWaQj2jKeu227tEm2",
+  "5KE5bjhx5RJT7xPFFPMkvj9YEdpf47qGbhY23QjEmkkEaoC7PCa",
+  "5KJXiBjJ4APATGPoLqsyssLKjKBfMSNEa3oGeQNaZnrqpe61iwz",
+  "5JzMqDwLVHMBbJqbqS2BfS1EEBQWC5Sb3Rkievn8xvMMj6SEt3J",
+  "5K6kX9TK6b4wwh5GdRuyguLZEZcDkSBqer2RBaiorebjzLQFpYo",
+  "5KJzxHADuPLLftGjkc6zF6r1oRsQ36PgSrowjmGfoQRbbLDjx2z",
+  "5J5sUufthtA6xUv9JgmSfbvZWpKbcDR94oGUVqK35muLDsvuAja",
+  "5JPtJZvRWcrKBvV2aA6TwvUGxKjTdNMvmK6ENHSuLUtAQ7AWVk5",
+  "5JqwCevx4dYTYBNX1yewoBZoJTbTXMpxs2C5a1Z3Gpo3q1x3yRN",
+  "5KNuwnpLeK4xGRAq3Ejkm2hu1H9gDmzAYSzWDnYPAdrsZLS9Mvu",
+  "5JdsDeUN5gxbtUgiWc7AynPyWQTiaPaMQ3zzYEgs6bZchpjnwJL",
+  "5JrbaumXBXPcTq5fSdzcc9x7T1LcbEqQDqUxJeQgQDkit7GonVS",
+  "5JtxciS4Q8YxGRe3uBwznTuy9fU4qdSUNq15GA6WXiXotUDzEyg",
+  "5J7dwmyMKWi6fZ5zasHQqTvnKb283Dpg3gpwCJLPy9uK8MfUTJw",
+  "5KExAZQaqpeWZj54BawxhAvbAqwF82rwYjyfvLmwEYAsMoKnoJ3",
+  "5KWi5CTq1g4zHa3gzaieZDmikxGd3EZe4WsUw4yDvSqheWoPbBy",
+  "5JTyyJTuC9uUNZNprYK9rar7q53Lw9FgEn4knq6n8d1xCA9Wszx",
+  "5JJahsHQUYbAm3h2gPx5cL4VxdXuYJQgF9D2sTikGEqbG4EX8kd",
+  "5KDPBK24FH5KnwQHiNKwRz3gokj9HFbcbq3Z6GwZws9EXW7VQaA",
+  "5JHy4a38rsJD9j3E8k3BHp6ft65QMYfXySC4yDgWB3VCvjSP4Gw",
+  "5Hz164itq48DMsVQ1W7iCnBdSEzBJjZoPCKm8JjJPFC9mvFuLZF",
+  "5KCeRHGXXLHwkMApxkoTvuM23RmmFCqPjvCNc8Dg8BkjTeKWBph",
+  "5KP8LxCczF54AQU1RjVVUm7rXXCnhDPkPCzzhAtzULEnJixir4j",
+  "5JwYKFbguekptzgfg6xetA2Dg3ruZAx9oPR3bvZTMLZ3L1TmxF1",
+  "5KV1Pmh6o5hRpCYZjSf1zVhGM4eihGc3yBJMSWnK8B66yfPJhSD",
+  "5KdeCK6PcFuZqh9XBPBN2tYG2MsgXpYXG3vzPhLK1VA8ye6Ptwf",
+  "5HpfB8gzfLXps46uZAKXrrN5XdrBMUSvAgwsxpecmG35HDQQvBf",
+  "5Hwj2ty8b7V87EqJhTHLYEFiLXu67UC2fGNTwCjMqcDTh9k5iZ3",
+  "5HrXYt7PHuxwiGq5NY49Um5uXS1azQjdebCfLBFTfeeCXSRA5bs",
+  "5Kgv87goW599UgHxLYuVTVJMnajgh6iJLjzuh54g2kiDmP7jX4e",
+  "5JGeHYXq9BRmvPuEpEoSJmGxpBo3MX6pxb9Fty5qwF7wrGqqf6x",
+  "5JZXgPtPu3X7L2rBPk966FCcFJ7kor6ozbH2Akbty9fXk8y7Tp2",
+  "5Jnbv8bKTPzesPK2qBKKEgMtoGAWg78z9zVB7KAKgskrpD9Cvyk",
+  "5JYSUVEVSh8gH3AYzbfkg4J14P8ZzTHYwzcpX1b9qyZdESR2LEP",
+  "5J6zzXxh5Q1MRJuVoEHvtDSkckBRqECzQM9heBn45aAcr9ityEi",
+  "5JwGf7nET2iXvgDxRTyKPdayZ6ygBbbEm42iAmFimwoY5iSqLEn",
+  "5KfCWVL9iQPzzBvCFi6YNdKScqsMkW5MKoJVXePDxeFh8xsbqLK",
+  "5KHA9x5YEBpT3z2VmX3nj1Xd5DXaFqFNKpeHauJCqCb1wmQjLQu",
+  "5JgNYmQ66SFWqmJfYJ1jGgjemwkwPiwYAvyUzF1LBZ1iS7VBwD9",
+  "5Ju9sj7ZV4tAfnWa5mQrVB8LVYfyyYtGqLhZdqXANH26WbeouAk",
+  "5KD11E7kLNUcG4cg3o7KBUcecRypxdZdHMcZ3W1yhKjKKpqFn8Z",
+  "5Km1pQFzeTkATSc1vbg4ZTCBYKNuQycADqTjFDKi6hEKVihEayb",
+  "5JGsBi6e2oSQJgot4JWabXTxTaoHRxk2AYkUFSaPVgasSFFzf3E",
+  "5Jn3An5DcCcHb6dTLEFVBkJA6amk92gNzvShCmZQbpvBp3PCr76",
+  "5KWnZLdoLKPuiyVdGFjCDaxY4P6xnHymYnTrtF6H69bqSSewEpJ",
+  "5JVrBxpMWVQUKV3WmqFxb6YunFBnDCav7Wnw8BuhzDL5gu9STbS",
+  "5Jsy1haER1y77qH9LqwQ151NxdaobAki7aB9AKHPbtJYvC34n5U",
+  "5HwejMdWjwnFX9USZwNHH5jfSHNqSPw5MmKr5i7AUCFBTLVVqCw",
+  "5JfuDWFRscdtqR9WLSdK6LUXRZ3rxUoHKGvDxSjrRVVaN1aMbHn",
+  "5K4ziASEV1jS3Fq5qh13GprKhg22LbNqpvpseQ285W1i2XC3kwr",
+  "5JaUEtp9UfZQaWrX2RXhHxKAkZjzSoNbwgwSAHTxHKfNMRRARB8",
+  "5KadZxFfCCCRyWjPinevvooNwscEyzxQum1s6bzoCJkyL5RXH7W",
+  "5JQJCwLvutsH6og2hvaoAUCwcRc5t9cVxaixwzZyoAq1QH9RQfA",
+  "5Jy9BVSbqJ97MWR8aASZA61efdBKqTwDZ1MwPyyAPA8xceuxQWq",
+  "5KVBpVVtWUsMQc2qQ825NLGz8ekmMDVFodcDxcZdbr4nf5n6JZH",
+  "5K6r972NZdZcfrijhqP8JKteYwtXERW1x1ttxJ6eHqoCtAewrKw",
+  "5JxiMgVUZowuQXsRZcTvqReGeDvbqsxk5dtyShZhzxC95bHbCML",
+  "5JYC5MqCqqAKry4kZfm4SWE7tDtiiBGoHUKotepsvo2kjnTrjcS",
+  "5JRFhJ7pGVUJ536bqGbQT8Hoa2k1eE9L43hyENg8FcV4nY6BLTH",
+  "5KgYU6mbT5sT5EaPZVskaDPtR7GinsZZjdD3jA8UgyxQ7j4fQij",
+  "5J9yrpW7knihTffrw3mDKPQ88vvqsLJdmytrXNvgRs9d5Sd2zs4",
+  "5JL94PhyHhhYxau5dNeWNveDCdvgUJFi86aLPcDaCT42bUQVpBK",
+  "5JeFhDeTnkUonnnBn2hWFAcPytxDNVN1oGNNSRTSdNoWk6QG2WA",
+  "5JxVY4m4p8wgV3MDwMPLkp8mGEsZMyqULZ9E7Qymx6o1jjx7GH9",
+  "5KQc958faU3ySTicJV7LojvaZ1Y8UU8ujQ6LJHixLProsoghpne",
+  "5JUN4YAZy1S39HxqGAp1Q3h3BZgLUzo9qZAnZGxuuEioTCad8rM",
+  "5KkZvkFQMqgHBdnuzXKYNLQiaYfGgLDNZSZpYyQoJLiFmRaA4dT",
+  "5JxEbtPEBDEtDEibbarKFPwcQgsxc96mxmj9wGuYA8p5UnU4HXd",
+  "5JqK5zY1ugvqpvtT5LwwB8Kve8fZXwM2ktyGU1yU9N6ita2jwg8",
+  "5JmAFR4cfEuexZ22T4GRa9KfjLJT2JGoKjT49Cag8GDYziLVpbr",
+  "5K8kfi4jtzUaMZ6ebxjSyQLTZPEwhsoBwP79KC32JRfkRsJjCSu",
+  "5JgvdQMgQZogaL3qLu4tRWr93YnYTXqgr1KFKW9vfWfjVs3LHrb",
+  "5KgHkSE6gatznsZ24C1fS5ViTEkGa19vyYCHMhbjmgnLDYZdkJE",
+  "5KhhahvxRDBYPX9xQWPRqzfhiKmyxxdEeodG4pG1WMzV3MeiYao",
+  "5JYVxi97dYtm6RQDm4oP19gPfqe36dGyWHaMWB5k3KPBaEsb6zJ",
+  "5HpPRmPUfZnLoHPRTfN5JDtdg6d5FN7LtSy1tanSx7gb9eDQNsL",
+  "5Hvnzv3Htgo3MNM8GWjp8yjmvXoZSEV3n9WNqtYUHaiVA67sgmx",
+  "5JkAwXxT8XnECAUec7t6xPfjw7PTmmtA8FPSFqwMXNdTW6SpGCM",
+  "5KLeJzBYhabKt1LLFXDvG79Wt7y6AKnMbhN1w63BsuspD6uj1P1",
+  "5KKsaK8xs1n6T1F3HN6cjME2PJnncJ8MEzw6JwJAkjMmdBLfhbk",
+  "5Jn8WutwvNfnFQRrdwErpkVFK9MgJWP99T31E2q9PvkVFan5uMZ",
+  "5KhJxJnuTWL6qux2SutCjxw3qourPV6MdcppS4FE7bGuS1rCWVY",
+  "5JnT3fBz8LxZGgoWZQE5Uw788tLiND414T5HPP2MDXehrncn657",
+  "5JFzi3cjJiYmpii87d91yWHDEiXtKrTwNyiQ5G6uKPzdpLvDovm",
+  "5JBbz6T1a1Ta2FCJk9gTXwNEkbZ8Z4hhJNmxxSJtaxDmoC1XpAY",
+  "5K3XPKfxDFTSZGkKew1gSm1J6vp6YsaQteUqKQZEvre2MdFB59b",
+  "5JNTkmH4exbEybEi7Y9X853oa1nWKTDvKgDLKJ94z6FsfrkF5Qx",
+  "5JbVnW1eANRYefx4vWaEwKdnkFdnVyqt8pM5gcNcrypGXv14Ec1",
+  "5Km1XYkQYiRbVcqBybUMaMVQC5ytif8fUyyF4k4QeWJbxraqdqU",
+  "5KZqXPfCuAugJtsWFLkLeBg4hQuwjSGS4YJrwmhaxXN6v2CTTKf",
+  "5K73XPNrzwBo9Z6tfS1dKTa4Z4ENoVi6WbtpiuEP41KmJtvn173",
+  "5JCDLGUWqFgk2FFTxCsjbrFpPrZBJXrLjrXbYZdTPwMEhxiePkn",
+  "5JKJtSc6D2xP32oF3oFd8gPuGLXUktAWjkUL6kVn4y2g38Nb3ha",
+  "5KT8eCBqgdhFvgndjvZvUh2xzw1QNbHapPC83DKqWPuk53ABs7x",
+  "5KLwx1TpBJen1D5FvDgRvBwGDTttXCkCQxkK7YdPdg18nEmLBce"
 ])";
 
 BOOST_AUTO_TEST_CASE( public_key_type_test )
@@ -85,6 +186,21 @@ string extract_commands_from_log_file(fc::path test_file)
 
 BOOST_AUTO_TEST_CASE( client_tests )
 {
+   /*
+   if( !fc::exists( "xt_genesis.json" ) )
+   {
+      auto con = std::make_shared<fc::http::connection>();
+      con->connect_to( fc::ip::endpoint::from_string( "107.170.30.182:80" ) );
+      wlog( "fetching genesis block, this could take a few seconds" );
+      auto response = con->request( "GET", "http://bitshares.org/snapshots/xt_genesis.json" );
+      FC_ASSERT( response.body.size() );
+      auto check = fc::variant("154fb7a037f139b235a79ef82df474c6ab06456fece9ddbda18787cb1d12b556").as<fc::sha256>();
+      FC_ASSERT( fc::sha256::hash( response.body.data(), response.body.size() ) == check );
+      std::ofstream out( "xt_genesis.json", std::ios::binary );
+      out.write( response.body.data(), response.body.size() );
+   }
+   */
+
    try {
       std::string password = "123456789";
       fc::temp_directory my_dir;
@@ -95,11 +211,11 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto network = std::make_shared<bts::net::simulated_network>();
 
       auto my_client = std::make_shared<client>(network);
-      my_client->open( my_dir.path(), "genesis.json" );
+      my_client->open( my_dir.path() );
 
 
       auto your_client = std::make_shared<client>(network);
-      your_client->open( your_dir.path(), "genesis.json" );
+      your_client->open( your_dir.path() );
 
       /* DLN: Some example test code, just left here for reference, will remove soon
       std::ofstream console_log("notestein_wallet_test.log");
@@ -125,35 +241,30 @@ BOOST_AUTO_TEST_CASE( client_tests )
       auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
       auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
 
+      my_cli->execute_command_line( "help");
+      my_cli->execute_command_line( "blockchain_list_delegates" );
+      my_cli->execute_command_line( "wallet_create my_wallet "+password );
+      my_cli->execute_command_line( "wallet_unlock 999999999999 "+password );
+      your_cli->execute_command_line( "wallet_create your_wallet "+password );
+      your_cli->execute_command_line( "wallet_unlock 999999999999 "+password );
+
+      /*
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );
       your_client->wallet_create( "your_wallet", password );
       your_client->wallet_unlock( fc::seconds(999999999), password );
+      */
 
-      auto my_account1 = my_client->wallet_account_create( "account1" );
-      my_client->wallet_import_private_key( test_keys[0], string(), true /*rescan*/ );
-      auto bal = my_client->wallet_get_balance();
-      ilog( "${bal}", ("bal",bal ) );
-      FC_ASSERT( bal[0].first > 0 );
-
-      my_client->wallet_close();
-      my_client->wallet_open("my_wallet");
-      my_client->wallet_unlock( fc::seconds(999999999), password );
-
-      bal = my_client->wallet_get_balance();
-      ilog( "${bal}", ("bal",bal ) );
-      FC_ASSERT( bal[0].first > 0 );
-
-      auto trx = my_client->wallet_account_register( "account1", "delegate-0", variant(), true );
-
-      my_client->wallet_close();
-      my_client->wallet_open("my_wallet");
-      my_client->wallet_unlock( fc::seconds(999999999), password );
-      auto recv_accounts = my_client->get_wallet()->list_receive_accounts();
-      //ilog( "receive accounts: ${r}", ("r",recv_accounts) );
-
+      my_cli->execute_command_line( "wallet_import_private_key " + test_keys[30] + "\"\" true" );
+      my_cli->execute_command_line( "wallet_import_private_key 5KJ51szQb1CDcU9AkzKSDAkiYbL5V6CnVA5SWYG1NfsMr7B3HDS delegate30 true" );
+      my_cli->execute_command_line( "balance" );
+      my_cli->execute_command_line( "wallet_close" );
+      my_cli->execute_command_line( "wallet_open my_wallet" );
+      my_cli->execute_command_line( "wallet_unlock 999999999999 "+password );
+      my_cli->execute_command_line( "wallet_account_create account1" );
+      my_cli->execute_command_line( "wallet_list_receive_accounts" );
+      my_cli->execute_command_line( "wallet_account_register account1 delegate30 null true" );
       produce_block( my_client );
-
       my_cli->execute_command_line( "wallet_list_receive_accounts" );
 
       FC_ASSERT( my_client->get_info()["blockchain_head_block_num"].as_int64() == your_client->get_info()["blockchain_head_block_num"].as_int64() );
@@ -172,13 +283,13 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50.0+i, "XTS", "delegate-0", "youraccount", "memo-"+fc::to_string(i) );
-         my_client->wallet_transfer( 30.0+i, "XTS", "delegate-0", "otheraccount", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50.0+i, "XTS", "delegate30", "youraccount", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 30.0+i, "XTS", "delegate30", "otheraccount", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 
-      trx = your_client->wallet_account_register( "youraccount", "youraccount", variant(), true );
+      auto trx = your_client->wallet_account_register( "youraccount", "youraccount", variant(), true );
       produce_block( my_client );
       trx = your_client->wallet_account_register( "otheraccount", "otheraccount", variant(), false );
       produce_block( my_client );
@@ -190,7 +301,7 @@ BOOST_AUTO_TEST_CASE( client_tests )
       wlog( "my cli" );
       my_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       my_cli->execute_command_line( "wallet_account_transaction_history otheraccount" );
-      my_cli->execute_command_line( "wallet_account_transaction_history \"delegate-0\"" );
+      my_cli->execute_command_line( "wallet_account_transaction_history \"delegate30\"" );
       std::cerr<<"\n";
       my_cli->execute_command_line( "balance" );
       std::cerr<<"\n";
@@ -215,21 +326,21 @@ BOOST_AUTO_TEST_CASE( client_tests )
       your_cli->execute_command_line( "wallet_account_transaction_history youraccount" );
       your_cli->execute_command_line( "blockchain_list_registered_assets" );
       your_cli->execute_command_line( "balance" );
-      return;
+   //   return;
       your_cli->execute_command_line( "transfer 2000000 USD otheraccount youraccount \"payday\"" );
       produce_block( my_client );
       your_cli->execute_command_line( "balance" );
       //your_cli->execute_command_line( "unlock 99999999999999999999" );
-      my_cli->execute_command_line( "wallet_submit_proposal delegate-0 \"test proposal\" \"test body\" \"notice\" null" );
+      my_cli->execute_command_line( "wallet_submit_proposal delegate30 \"test proposal\" \"test body\" \"notice\" null" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_delegates 0 3" );
-      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate-0 delegate-0 100 \"del payday\"" );
+      my_cli->execute_command_line( "wallet_withdraw_delegate_pay delegate30 delegate30 100 \"del payday\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );
       my_cli->execute_command_line( "blockchain_get_proposal_votes 1" );
-      my_cli->execute_command_line( "wallet_vote_proposal delegate-0 1 yes \"why not\"" );
+      my_cli->execute_command_line( "wallet_vote_proposal delegate30 1 yes \"why not\"" );
       produce_block( my_client );
       my_cli->execute_command_line( "wallet_account_transaction_history" );
       my_cli->execute_command_line( "blockchain_list_proposals" );
@@ -269,10 +380,10 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
       auto network = std::make_shared<bts::net::simulated_network>();
 
       auto my_client = std::make_shared<client>(network);
-      my_client->open( my_dir.path(), "genesis.json" );
+      my_client->open( my_dir.path() );
 
       auto your_client = std::make_shared<client>(network);
-      your_client->open( your_dir.path(), "genesis.json" );
+      your_client->open( your_dir.path() );
 
       auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
       auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
@@ -288,7 +399,7 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
       ilog( "${bal}", ("bal",bal ) );
       FC_ASSERT( bal[0].first > 0 );
 
-      auto trx = my_client->wallet_account_register( "account1", "delegate-0", variant(), true );
+      auto trx = my_client->wallet_account_register( "account1", "delegate30", variant(), true );
 
       auto your_account_key = your_client->wallet_account_create("youraccount");
       my_client->wallet_add_contact_account("youraccount", your_account_key);
@@ -297,17 +408,17 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "delegate-0", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate30", "delegate30", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
-      my_client->wallet_submit_proposal("delegate-0", "subject", "body", "type", fc::variant("data"));
+      my_client->wallet_submit_proposal("delegate30", "subject", "body", "type", fc::variant("data"));
       produce_block( my_client );
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50000000+i, "XTS", "delegate-0", "delegate-0", "memo-"+fc::to_string(i) );
+         my_client->wallet_transfer( 50000000+i, "XTS", "delegate30", "delegate30", "memo-"+fc::to_string(i) );
          produce_block( my_client );
       }
-      my_client->wallet_vote_proposal("delegate-0", 1, proposal_vote::yes, "I AGREE!!!");
+      my_client->wallet_vote_proposal("delegate30", 1, proposal_vote::yes, "I AGREE!!!");
       produce_block( my_client );
       my_cli->execute_command_line( "blockchain_list_proposals" );
       my_cli->execute_command_line( "blockchain_get_proposal_votes 1" ); 

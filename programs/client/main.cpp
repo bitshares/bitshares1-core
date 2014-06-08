@@ -14,6 +14,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/git_revision.hpp>
 #include <fc/io/json.hpp>
+#include <fc/log/logger_config.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -25,18 +26,62 @@
 
 struct config
 {
-   config() : default_peers{{"107.170.30.182:8764"}}, ignore_console(false) {}
+   config( ) : 
+      default_peers{{"107.170.30.182:8764"},{"114.215.104.153:8764"},{"84.238.140.192:8764"}}, 
+      ignore_console(false)
+      {
+      }
+
+   void init_default_logger( const fc::path& data_dir )
+   {
+          fc::logging_config cfg;
+          
+          fc::file_appender::config ac;
+          ac.filename = data_dir / "default.log";
+          ac.truncate = false;
+          ac.flush    = true;
+
+          std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
+          
+          fc::file_appender::config ac_rpc;
+          ac_rpc.filename = data_dir / "rpc.log";
+          ac_rpc.truncate = false;
+          ac_rpc.flush    = true;
+
+          std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
+          
+          cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
+          cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+          
+          fc::logger_config dlc;
+          dlc.level = fc::log_level::debug;
+          dlc.name = "default";
+          dlc.appenders.push_back("default");
+          
+          fc::logger_config dlc_rpc;
+          dlc_rpc.level = fc::log_level::debug;
+          dlc_rpc.name = "rpc";
+          dlc_rpc.appenders.push_back("rpc");
+          
+          cfg.loggers.push_back(dlc);
+          cfg.loggers.push_back(dlc_rpc);
+          
+          // fc::configure_logging( cfg );
+          logging = cfg;
+   }
+
    bts::rpc::rpc_server::config rpc;
    std::vector<std::string>     default_peers;
    bool                         ignore_console;
+   fc::logging_config           logging;
 };
 
-FC_REFLECT( config, (rpc)(default_peers)(ignore_console) )
+FC_REFLECT( config, (rpc)(default_peers)(ignore_console)(logging) )
 
 using namespace boost;
 
 void print_banner();
-void configure_logging(const fc::path&);
+//void configure_logging(const fc::path&);
 fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
@@ -104,15 +149,16 @@ int main( int argc, char** argv )
    try {
       print_banner();
       fc::path datadir = get_data_dir(option_variables);
-      ::configure_logging(datadir);
+  //    ::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
       std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+      fc::configure_logging( cfg.logging );
 
       load_and_configure_chain_database(datadir, option_variables);
 
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
-      client->open( datadir, option_variables["genesis-config"].as<std::string>() );
+      client->open( datadir );//, option_variables["genesis-config"].as<std::string>() );
       _global_client = client.get();
 
       client->run_delegate();
@@ -284,43 +330,6 @@ void print_banner()
     std::cout<<"================================================================\n";
 }
 
-void configure_logging(const fc::path& data_dir)
-{
-    fc::logging_config cfg;
-    
-    fc::file_appender::config ac;
-    ac.filename = data_dir / "default.log";
-    ac.truncate = false;
-    ac.flush    = true;
-
-    std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
-    
-    fc::file_appender::config ac_rpc;
-    ac_rpc.filename = data_dir / "rpc.log";
-    ac_rpc.truncate = false;
-    ac_rpc.flush    = true;
-
-    std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
-    
-    cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
-    cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
-    
-    fc::logger_config dlc;
-    dlc.level = fc::log_level::debug;
-    dlc.name = "default";
-    dlc.appenders.push_back("default");
-    
-    fc::logger_config dlc_rpc;
-    dlc_rpc.level = fc::log_level::debug;
-    dlc_rpc.name = "rpc";
-    dlc_rpc.appenders.push_back("rpc");
-    
-    cfg.loggers.push_back(dlc);
-    cfg.loggers.push_back(dlc_rpc);
-    
-    fc::configure_logging( cfg );
-}
-
 
 fc::path get_data_dir(const program_options::variables_map& option_variables)
 { try {
@@ -380,8 +389,11 @@ config load_config( const fc::path& datadir )
       }
       else
       {
-         std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
-         fc::json::save_to_file( cfg, config_file );
+         std::cerr<<"Creating default config file \""<<fc::absolute(config_file).generic_string()<<"\"\n";
+         cfg.init_default_logger( datadir );
+	 fc::create_directories( config_file.parent_path() );
+         fc::json::save_to_file( cfg, fc::absolute(config_file) );
+	 std::cerr << "done saving config\n";	
       }
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }

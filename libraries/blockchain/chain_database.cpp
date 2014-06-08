@@ -194,7 +194,40 @@ namespace bts { namespace blockchain {
 
             /** used to prevent duplicate processing */
             bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
+
+            void open_database( const fc::path& data_dir );
       };
+      void chain_database_impl::open_database( const fc::path& data_dir )
+      {
+          _fork_number_db.open( data_dir / "fork_number_db" );
+          _fork_db.open( data_dir / "fork_db" );
+          _property_db.open( data_dir / "property_db" );
+          _proposal_db.open( data_dir / "proposal_db" );
+          _proposal_vote_db.open( data_dir / "proposal_vote_db" );
+
+          _undo_state_db.open( data_dir / "undo_state_db" );
+
+          _block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
+          _block_id_to_block_db.open( data_dir / "block_id_to_block_db" );
+
+          _pending_transaction_db.open( data_dir / "pending_transaction_db" );
+
+          _asset_db.open( data_dir / "asset_db" );
+          _balance_db.open( data_dir / "balance_db" );
+          _account_db.open( data_dir / "account_db" );
+          _address_to_account_db.open( data_dir / "address_to_account_db" );
+
+          _account_index_db.open( data_dir / "account_index_db" );
+          _symbol_index_db.open( data_dir / "symbol_index_db" );
+          _delegate_vote_index_db.open( data_dir / "delegate_vote_index_db" );
+
+          _ask_db.open( data_dir / "ask_db" );
+          _bid_db.open( data_dir / "bid_db" );
+          _short_db.open( data_dir / "short_db" );
+          _collateral_db.open( data_dir / "collateral_db" );
+
+          _processed_transaction_id_db.open( data_dir / "processed_transaction_id_db" );
+      }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
       {
@@ -231,7 +264,7 @@ namespace bts { namespace blockchain {
                _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                _pending_transaction_db.store( trx_id, trx );
             } 
-            catch ( const fc::exception& e )
+            catch ( const fc::exception& )
             {
                trx_to_discard.push_back(trx_id);
                wlog( "discarding invalid transaction: ${id} =>  ${trx}",
@@ -790,34 +823,7 @@ namespace bts { namespace blockchain {
       {
           fc::create_directories( data_dir );
 
-          my->_fork_number_db.open( data_dir / "fork_number_db" );
-          my->_fork_db.open( data_dir / "fork_db" );
-          my->_property_db.open( data_dir / "property_db" );
-          my->_proposal_db.open( data_dir / "proposal_db" );
-          my->_proposal_vote_db.open( data_dir / "proposal_vote_db" );
-
-          my->_undo_state_db.open( data_dir / "undo_state_db" );
-
-          my->_block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
-          my->_block_id_to_block_db.open( data_dir / "block_id_to_block_db" );
-
-          my->_pending_transaction_db.open( data_dir / "pending_transaction_db" );
-
-          my->_asset_db.open( data_dir / "asset_db" );
-          my->_balance_db.open( data_dir / "balance_db" );
-          my->_account_db.open( data_dir / "account_db" );
-          my->_address_to_account_db.open( data_dir / "address_to_account_db" );
-
-          my->_account_index_db.open( data_dir / "account_index_db" );
-          my->_symbol_index_db.open( data_dir / "symbol_index_db" );
-          my->_delegate_vote_index_db.open( data_dir / "delegate_vote_index_db" );
-
-          my->_ask_db.open( data_dir / "ask_db" );
-          my->_bid_db.open( data_dir / "bid_db" );
-          my->_short_db.open( data_dir / "short_db" );
-          my->_collateral_db.open( data_dir / "collateral_db" );
-
-          my->_processed_transaction_id_db.open( data_dir / "processed_transaction_id_db" );
+          my->open_database( data_dir );
 
           // TODO: check to see if we crashed during the last write
           //   if so, then apply the last undo operation stored.
@@ -851,7 +857,13 @@ namespace bts { namespace blockchain {
           }
 
           if( last_block_num == uint32_t(-1) )
+          {
+             close();
+             fc::remove_all( data_dir );
+             fc::create_directories( data_dir );
+             my->open_database( data_dir );
              my->initialize_genesis(genesis_file);
+          }
           my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
       }
       catch( ... )
@@ -1144,36 +1156,16 @@ namespace bts { namespace blockchain {
 
           if( old_rec.valid() && old_rec->is_delegate() )
           {
-              auto itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
               my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(), 
                                                             record_to_store.id ) );
-              itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
           }
 
 
           if( record_to_store.is_delegate() )
           {
-              auto itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
                                                            record_to_store.id ), 
                                                 0/*dummy value*/ );
-              itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
           }
        }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
@@ -1322,7 +1314,8 @@ namespace bts { namespace blockchain {
          return;
       }
 
-      std::cout << "Initializing genesis state\n";
+
+      std::cout << "Initializing genesis state from "<< genesis_file.generic_string() << "\n";
       FC_ASSERT( fc::exists( genesis_file ), "Genesis file '${file}' was not found.", ("file",genesis_file) );
 
       genesis_block_config config;
@@ -1382,25 +1375,52 @@ namespace bts { namespace blockchain {
          ++account_id;
       }
 
+      int64_t n = 0;
       for( auto item : config.balances )
       {
-         for( auto delegate_id : delegate_ids )
+         ++n;
+
+         fc::uint128 initial( int64_t(item.second/1000) );
+         initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
+         initial /= total_unscaled;
+         if( initial > fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES/1000)) )
          {
-            fc::uint128 initial( int64_t(item.second/1000) );
-            initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
-            initial /= total_unscaled;
             initial /= int64_t(delegate_ids.size());
+            for( auto delegate_id : delegate_ids )
+            {
+                  balance_record initial_balance( item.first,
+                                                  asset( share_type( initial.low_bits() ), 0 ),
+                                                  delegate_id );
+                  // in case of redundant balances
+                  auto cur = self->get_balance_record( initial_balance.id() );
+                  if( cur.valid() ) initial_balance.balance += cur->balance;
+                  initial_balance.last_update                = config.timestamp;
+                  self->store_balance_record( initial_balance );
+
+                  auto da = _account_db.fetch( delegate_id );
+                  da.delegate_info->votes_for += initial.low_bits();
+                  da.registration_date        = config.timestamp;
+                  da.last_update              = config.timestamp;
+                  self->store_account_record( da );
+            }
+         }
+         else
+         {
+            auto delegate_id = n % delegate_ids.size() + 1;
             balance_record initial_balance( item.first,
                                             asset( share_type( initial.low_bits() ), 0 ),
                                             delegate_id );
             // in case of redundant balances
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
+            initial_balance.last_update                = config.timestamp;
             self->store_balance_record( initial_balance );
-            auto da = _account_db.fetch( delegate_id );
+
+            auto da = _account_db.fetch( delegate_id  );
             da.delegate_info->votes_for += initial.low_bits();
+            da.registration_date        = config.timestamp;
+            da.last_update              = config.timestamp;
             self->store_account_record( da );
-         //   _account_db.store( da.id, da );
          }
       }
 
@@ -1416,10 +1436,10 @@ namespace bts { namespace blockchain {
 
       asset_record base_asset;
       base_asset.id = 0;
-      base_asset.symbol = BTS_ADDRESS_PREFIX;
-      base_asset.name = "BitShares XTS";
-      base_asset.description = "Shares in the DAC";
-      base_asset.precision = 1000000;
+      base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
+      base_asset.name = BTS_BLOCKCHAIN_NAME;
+      base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
+      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
       base_asset.issuer_account_id = god.id;
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
@@ -1697,6 +1717,7 @@ namespace bts { namespace blockchain {
    double chain_database::get_average_delegate_participation()const
    {
       int32_t head_num = get_head_block_num();
+      if( head_num < 1 ) return 0;
       auto now         = bts::blockchain::now();
       if( head_num < 10 * BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
