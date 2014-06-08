@@ -3,6 +3,15 @@
   "methods" :
     [
       {
+        "method_name": "wallet_get_info",
+        "description": "Extra information about the wallet.",
+        "return_type": "json_object",
+        "parameters" : 
+          [
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
         "method_name": "wallet_open_file",
         "description": "Opens the wallet at the given path",
         "return_type": "void",

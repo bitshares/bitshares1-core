@@ -488,7 +488,7 @@ namespace bts { namespace wallet {
          extended_private_key epk( private_key_type::generate() );
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
-    
+      my->_wallet_db.set_property( last_unlocked_scanned_block_number, my->_blockchain->get_head_block_num() );
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
       my->_wallet_db.close();
@@ -595,7 +595,8 @@ namespace bts { namespace wallet {
            });
          }
       }
-
+      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as_int64(), 
+                                               my->_blockchain->get_head_block_num() );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_sec", timeout.count()/1000000 ) ) }
 
    void wallet::lock()
@@ -1826,7 +1827,14 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( auto key : keys )
+      {
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
+      }
+      scan_chain( 0, 1 );
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
@@ -1842,7 +1850,15 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( auto key : keys )
+      {
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
+      }
+
+      scan_chain( 0, 1 );
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
@@ -1858,7 +1874,14 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( auto key : keys )
+      {
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
+      }
+      scan_chain( 0, 1 );
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
@@ -1874,7 +1897,14 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( auto key : keys )
+      {
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
+         std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
+      }
+      scan_chain( 0, 1 );
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
@@ -2272,5 +2302,27 @@ namespace bts { namespace wallet {
       ilog( "${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
+
+   variant wallet::get_info()const
+   {
+       fc::mutable_variant_object obj;
+       obj( "data_directory", fc::absolute(my->_data_directory) );
+       if( is_open() )
+       {
+          obj( "last_unlocked_scanned_block_number", my->_wallet_db.get_property( last_unlocked_scanned_block_number ) );
+          obj( "last_locked_scanned_block_number", my->_wallet_db.get_property( last_locked_scanned_block_number ) );
+          obj( "next_child_key_index", my->_wallet_db.get_property( next_child_key_index ) );
+          obj( "default_transaction_fee", my->_wallet_db.get_property( default_transaction_fee ) );
+          obj( "state", "open" );
+          obj( "locked", is_locked() );
+          obj( "file", fc::absolute(my->_current_wallet_path) );
+          obj( "scheduled_lock_time", my->_scheduled_lock_time );
+       }
+       else
+       {
+          obj( "state", "closed" );
+       }
+       return obj;
+   }
 } } // bts::wallet
 
