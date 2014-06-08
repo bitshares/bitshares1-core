@@ -682,9 +682,10 @@ namespace bts { namespace client {
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
                                            const string& account_name,
+                                           bool create_account,
                                            bool wallet_rescan_blockchain)
     {
-      _wallet->import_wif_private_key(wif_key_to_import, account_name);
+      _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
     }
@@ -1039,9 +1040,13 @@ namespace bts { namespace client {
        info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
        info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
        info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-       info["symbol"]                               = BTS_ADDRESS_PREFIX;
+       info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
+       info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
+       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
 
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
 
@@ -1051,6 +1056,8 @@ namespace bts { namespace client {
 
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
+       info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
        info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
@@ -1134,6 +1141,11 @@ namespace bts { namespace client {
         */
         return trx;
       } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
+    }
+
+    variant_object client_impl::wallet_get_info()
+    {
+       return _wallet->get_info().get_object();
     }
 
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,

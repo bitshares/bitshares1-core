@@ -675,7 +675,7 @@ namespace bts { namespace blockchain {
 
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
-            self->sanity_check();
+            // self->sanity_check();
          }
          catch ( const fc::exception& e )
          {
@@ -1295,7 +1295,12 @@ namespace bts { namespace blockchain {
       next_block.transaction_digest = digest_block(next_block).calculate_transaction_digest();
 
       // TODO: adjust fees vs dividends here...  right now 100% of fees are paid to delegates
-      total_fees += BTS_BLOCKCHAIN_BLOCK_REWARD;
+      //total_fees += BTS_BLOCKCHAIN_BLOCK_REWARD;
+      /**
+       *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
+       *  should be less than eventual fees.
+       */
+      total_fees = BTS_BLOCKCHAIN_BLOCK_REWARD;
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
 
@@ -1442,7 +1447,7 @@ namespace bts { namespace blockchain {
       base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
       base_asset.issuer_account_id = god.id;
       base_asset.current_share_supply = total.amount;
-      base_asset.maximum_share_supply = BTS_BLOCKCHAIN_INITIAL_SHARES;
+      base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
       base_asset.collected_fees = 0;
       self->store_asset_record( base_asset );
 
