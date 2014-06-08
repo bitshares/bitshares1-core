@@ -48,7 +48,7 @@ namespace bts { namespace wallet {
              chain_database_ptr _blockchain;
              path               _data_directory;
              path               _current_wallet_path;
-             fc::time_point     _scheduled_lock_time;
+             fc::time_point_sec _scheduled_lock_time;
              fc::promise<void>::ptr _wallet_shutting_down_promise;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
@@ -590,7 +590,7 @@ namespace bts { namespace wallet {
         my->_wallet_shutting_down_promise->set_value();
         my->_wallet_relocker_done.wait();
       }
-      my->_scheduled_lock_time = fc::time_point();
+      my->_scheduled_lock_time = fc::time_point_sec();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    string wallet::get_wallet_name()const
@@ -634,14 +634,17 @@ namespace bts { namespace wallet {
 
       if( timeout == microseconds::maximum() )
       {
-         my->_scheduled_lock_time = fc::time_point::maximum();
+         my->_scheduled_lock_time = fc::time_point_sec::maximum();
       }
       else
       {
-        fc::time_point now = bts::blockchain::now();
-        fc::time_point scheduled = my->_scheduled_lock_time;
-        fc::time_point new_lock_point = bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count());
-        my->_scheduled_lock_time = std::max<fc::time_point>(my->_scheduled_lock_time, bts::blockchain::now() + (uint32_t)(timeout.count() / fc::seconds(1).count()));
+        // the API lets users specify a 64-bit time offset that can't be represented in our 32-bit time_point_sec class,
+        // so safely convert it to 32-bit here.
+        uint64_t relock_seconds_in_the_future = timeout.count() / fc::seconds(1).count();
+        uint64_t relock_seconds_since_epoch = bts::blockchain::now().sec_since_epoch() + relock_seconds_in_the_future;
+        uint32_t relock_seconds_since_epoch_32 = (int32_t)std::min<uint64_t>(relock_seconds_since_epoch, 
+                                                                             std::numeric_limits<uint32_t>::max());        
+        my->_scheduled_lock_time = fc::time_point_sec(relock_seconds_since_epoch_32);
         ilog("Checking wallet relocker task");
         if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
         {
