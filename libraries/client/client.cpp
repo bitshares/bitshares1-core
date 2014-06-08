@@ -12,6 +12,7 @@
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
+#include <fc/network/resolve.hpp>
 
 #include <bts/rpc/rpc_client.hpp>
 #include <bts/api/common_api.hpp>
@@ -22,6 +23,8 @@
 #include <fc/git_revision.hpp>
 
 #include <iostream>
+
+#include <boost/lexical_cast.hpp>
 
 namespace bts { namespace client {
 
@@ -998,7 +1001,24 @@ namespace bts { namespace client {
 
     {
         std::cout << "Attempting to connect to peer " << remote_endpoint << "\n";
-        my->_p2p_node->connect_to(fc::ip::endpoint::from_string(remote_endpoint.c_str()));
+        fc::ip::endpoint ep;
+        try {
+            ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
+        } catch (...) {
+            auto pos = remote_endpoint.find(':');
+            uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+            std::string hostname = remote_endpoint.substr( 0, pos );
+            auto eps = fc::resolve(hostname, port);
+            if ( eps.size() > 0 )
+            {
+                ep = eps.back();
+            }
+            else
+            {
+                FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+            }
+        }
+        my->_p2p_node->connect_to(ep);
     }
     void client::connect_to_p2p_network()
     {
