@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
   };
   struct genesis_block_config
   {
-     genesis_block_config():supply(0) {}
+     genesis_block_config():supply(0),precision(1000000) {}
 
      int64_t                                                        supply;
      int64_t                                                        precision;
