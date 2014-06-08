@@ -588,6 +588,7 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
       }
+      new_record.meta_data = op.meta_data;
 
       cur_record = _current_state->get_account_record( new_record.id );
       FC_ASSERT( !cur_record );
