@@ -27,7 +27,7 @@
 struct config
 {
    config( ) : 
-      default_peers{{"107.170.30.182:8764"}}, 
+      default_peers{{"107.170.30.182:8764"},{"114.215.104.153:8764"},{"84.238.140.192:8764"}}, 
       ignore_console(false)
       {
       }
