@@ -42,7 +42,7 @@
 #define BTS_BLOCKCHAIN_MAX_SIZE                         (1024*1024*1024*100ll) // 100 GB
 #define BTS_BLOCKCHAIN_MIN_NAME_SIZE                    (1)
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE                    (63)
-#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE               (1024*4)
+#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE               (1024*64)
 #define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                    (19) // bytes
 #define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                  (5) // characters
 #define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                  (3) // characters
@@ -63,8 +63,6 @@
 #define BTS_BLOCKCHAIN_INITIAL_SHARES               (BTS_BLOCKCHAIN_MAX_SHARES / 100)
 
 
-#define BTS_BLOCKCHAIN_BLOCK_REWARD                 10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
-#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR             (10)  // 10% per year
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
@@ -86,6 +84,9 @@
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE            (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
+
+#define BTS_BLOCKCHAIN_BLOCK_REWARD                 (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
+#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR             (10)  // 10% per year
 
 /**
  *  defines the min fee in milli-shares per byte

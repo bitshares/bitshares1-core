@@ -389,9 +389,11 @@ config load_config( const fc::path& datadir )
       }
       else
       {
-         std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
+         std::cerr<<"Creating default config file \""<<fc::absolute(config_file).generic_string()<<"\"\n";
          cfg.init_default_logger( datadir );
-         fc::json::save_to_file( cfg, config_file );
+	 fc::create_directories( config_file.parent_path() );
+         fc::json::save_to_file( cfg, fc::absolute(config_file) );
+	 std::cerr << "done saving config\n";	
       }
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }

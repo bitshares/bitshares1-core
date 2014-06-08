@@ -3,6 +3,15 @@
   "methods" :
     [
       {
+        "method_name": "wallet_get_info",
+        "description": "Extra information about the wallet.",
+        "return_type": "json_object",
+        "parameters" : 
+          [
+          ],
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
         "method_name": "wallet_open_file",
         "description": "Opens the wallet at the given path",
         "return_type": "void",
@@ -76,6 +85,12 @@
               "default_value" : null
            },
            {
+              "name" : "create_new_account",
+              "type" : "bool",
+              "description" : "If true, the wallet will attempt to create a new account for the name provided rather than import the key into an existing account",
+              "default_value" : false
+           },
+           {
               "name" : "rescan",
               "type" : "bool",
               "description" : "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
@@ -93,17 +108,17 @@
            {
               "name" : "wallet_filename",
               "type" : "filename"
-              "description" : "the bitcoin wallet"
+              "description" : "the path to the bitcoin wallet you would like to import."
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the bitcoin wallet's password, not your bitshares wallet password."
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
            }
         ],
         "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]

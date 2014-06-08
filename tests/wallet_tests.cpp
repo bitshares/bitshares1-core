@@ -283,10 +283,22 @@ BOOST_AUTO_TEST_CASE( client_tests )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         my_client->wallet_transfer( 50.0+i, "XTS", "delegate30", "youraccount", "memo-"+fc::to_string(i) );
-         my_client->wallet_transfer( 30.0+i, "XTS", "delegate30", "otheraccount", "memo-"+fc::to_string(i) );
+         auto start = fc::time_point::now();
+         for( uint32_t x = 0; x < 1; ++x )
+         {
+            my_client->wallet_transfer( (30+i*100+x)/10.0, "XTS", "delegate30", "youraccount", "memo-"+fc::to_string(i) );
+            my_client->wallet_transfer( (20+i*100+x)/10.0, "XTS", "delegate30", "otheraccount", "memo-"+fc::to_string(i) );
+         }
+         produce_block( my_client );
+         auto end = fc::time_point::now();
+         elog( "block production time: ${t}", ("t", (end-start).to_seconds() ) );
+      }
+      /*
+      for( uint32_t i = 0; i < 1000; ++i )
+      {
          produce_block( my_client );
       }
+      */
       my_cli->execute_command_line( "wallet_account_transaction_history" );
 
       auto trx = your_client->wallet_account_register( "youraccount", "youraccount", variant(), true );
