@@ -816,9 +816,10 @@ namespace bts { namespace cli {
                   if (current < num_active)
                       _out << "** Active:\n";
 
+                  auto total_delegates = delegates.size();
                   for( auto delegate_rec : delegates )
                   {
-                      if (current > max)
+                      if (current > max || current == total_delegates)
                           return;
                       if (current == num_active)
                           _out << "** Inactive:\n"; 
@@ -835,6 +836,7 @@ namespace bts { namespace cli {
                       _out << "\n";
                       current++;
                   }
+                  _out << "  Use \"blockchain_list_delegates <start_num> <count>\" to see more.\n";
               }
               else if (method_name == "blockchain_get_proposal_votes")
               {

@@ -124,7 +124,8 @@
               "default_value" : "*"
           }
           ],
-          "prerequisites" : ["json_authenticated"]
+          "prerequisites" : ["json_authenticated"],
+          "aliases" : [ "getbalance" ]
       },
       {
           "method_name": "bitcoin_getblock",
@@ -139,7 +140,7 @@
           ],
           "is_const" : true,
           "prerequisites" : ["json_authenticated"],
-          "aliases" : [ "getbalance" ]
+          "aliases" : [ "getblock" ]
       },
       {
           "method_name": "bitcoin_getblockcount",
