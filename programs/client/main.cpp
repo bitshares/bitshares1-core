@@ -106,8 +106,8 @@ int main( int argc, char** argv )
                               ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
                               ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
-                              ("genesis-config", program_options::value<std::string>()->default_value("genesis.json"), 
-                               "generate a genesis state with the given json file (only accepted when the blockchain is empty)")
+                              ("genesis-config", program_options::value<std::string>(), 
+                               "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
                               ("version", "print the version information for bts_xt_client");
@@ -157,8 +157,12 @@ int main( int argc, char** argv )
 
       load_and_configure_chain_database(datadir, option_variables);
 
+      fc::optional<fc::path> genesis_file_path;
+      if (option_variables.count("genesis-config"))
+        genesis_file_path = option_variables["genesis-config"].as<std::string>();
+
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
-      client->open( datadir );//, option_variables["genesis-config"].as<std::string>() );
+      client->open( datadir, genesis_file_path );
       _global_client = client.get();
 
       client->run_delegate();
@@ -373,9 +377,11 @@ void load_and_configure_chain_database( const fc::path& datadir,
     std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
   }
 
-  fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
-  std::cout << "Using genesis block from file \"" << fc::absolute( genesis_file ).string() << "\"\n";
-
+  if (option_variables.count("genesis-config"))
+  {
+    fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
+    std::cout << "Using genesis block from file \"" << fc::absolute(genesis_file).string() << "\"\n";
+  }
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 
 config load_config( const fc::path& datadir )

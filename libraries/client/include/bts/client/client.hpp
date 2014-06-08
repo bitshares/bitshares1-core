@@ -33,7 +33,7 @@ namespace bts { namespace client {
                   client();
                   client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
-         void open( const path& data_dir);
+         void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
 
          /**
           *  Produces a block every 30 seconds if there is at least

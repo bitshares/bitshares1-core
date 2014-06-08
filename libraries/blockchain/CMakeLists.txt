@@ -1,3 +1,27 @@
+##################################################################################################
+# Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
+set(genesis_json "${CMAKE_SOURCE_DIR}/libraries/blockchain/genesis.json")
+source_group("Genesis JSON Files" FILES ${genesis_json})
+
+set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
+set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
+set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp" 
+                              "${rpc_stubs_output_dir}/common_api_rpc_client.cpp" 
+                              "${rpc_stubs_output_dir}/common_api_client.cpp" 
+                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_rpc_server.hpp" 
+                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_rpc_client.hpp"
+                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp"
+                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
+
+add_custom_command(OUTPUT ${generated_genesis_file} 
+                   COMMAND bts_genesis_to_cpp "--genesis-json=${genesis_json}" 
+                                              "--output-file=${generated_genesis_file}"
+                   DEPENDS bts_genesis_to_cpp ${genesis_json} )
+
+                   
+##################################################################################################
+# Regular stuff for the bts_client library
+
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
@@ -16,6 +40,8 @@ add_library( bts_blockchain
              chain_database.cpp
              fire_operation.cpp
              account_record.cpp
+             ${generated_genesis_file}
+             ${genesis_json}
              ${HEADERS}
            )
 
