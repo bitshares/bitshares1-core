@@ -2359,5 +2359,18 @@ namespace bts { namespace wallet {
        }
        return obj;
    }
+   vector<public_key_type> wallet::get_public_keys_in_account( const string& account_name )const
+   {
+      public_key_type  account_public_key = get_account_public_key( account_name );
+      address          account_address( account_public_key );
+
+      vector<public_key_type> account_keys;
+      for( auto key : my->_wallet_db.keys )
+      {
+         if( key.second.account_address == account_address )
+            account_keys.push_back( key.second.public_key );
+      }
+      return account_keys;
+   }
 } } // bts::wallet
 

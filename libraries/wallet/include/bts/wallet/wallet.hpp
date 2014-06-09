@@ -68,6 +68,8 @@ namespace bts { namespace wallet {
 
          private_key_type get_account_private_key( const string& account_name )const;
          public_key_type  get_account_public_key( const string& account_name )const;
+
+         vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
          
          /**
           *  @returns the priority fee paid denominated in the given asset symbol.
