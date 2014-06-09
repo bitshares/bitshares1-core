@@ -18,6 +18,7 @@
 #include <bts/bitcoin/multibit.hpp>
 #include <bts/bitcoin/electrum.hpp>
 #include <bts/bitcoin/armory.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
 
 namespace bts { namespace wallet {
 
@@ -1920,6 +1921,28 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+    
+    void wallet::import_keyhotee( const std::string& firstname,
+                                 const std::string& middlename,
+                                 const std::string& lastname,
+                                 const std::string& brainkey,
+                                 const std::string& keyhoteeid,
+                                 const std::string& account_name )
+    { try {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        FC_ASSERT( is_valid_account_name( account_name ) );
+        // TODO: what will keyhoteeid's validation be like, they have different rules?
+        
+        bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
+        
+        auto private_key = bts::keyhotee::import_keyhotee_id(config, keyhoteeid);
+        
+        import_private_key(private_key, account_name, true);
+        
+        scan_chain( 0, 1 );
+    } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
+                            ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid)("account_name",account_name) ) }
 
    vector<asset> wallet::get_balance( const string& symbol, 
                               const string& account_name )const

@@ -690,6 +690,16 @@ namespace bts { namespace client {
     {
       _wallet->import_armory_wallet(filename, passphrase, account_name);
     }
+    
+    void detail::client_impl::wallet_import_keyhotee(const std::string& firstname,
+                                                     const std::string& middlename,
+                                                     const std::string& lastname,
+                                                     const std::string& brainkey,
+                                                     const std::string& keyhoteeid,
+                                                     const std::string& account_name)
+    {
+        _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid, account_name);
+    }
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
                                            const string& account_name,

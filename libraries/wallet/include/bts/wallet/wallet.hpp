@@ -161,8 +161,15 @@ namespace bts { namespace wallet {
          void import_armory_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
                                      const string& account_name );
+       
+         void import_keyhotee( const std::string& firstname,
+                            const std::string& middlename,
+                            const std::string& lastname,
+                            const std::string& brainkey,
+                            const std::string& keyhoteeid,
+                            const std::string& account_name );
 
-         public_key_type import_private_key( const private_key_type& key, 
+         public_key_type import_private_key( const private_key_type& key,
                                              const string& account_name,
                                              bool create_account = false );
 
