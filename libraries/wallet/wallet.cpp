@@ -2364,13 +2364,13 @@ namespace bts { namespace wallet {
    public_key_summary wallet::get_public_key_summary( const public_key_type& pubkey ) const
    {
        public_key_summary summary;
-       summary.hex = string( public_key( pubkey ) );
+       summary.hex = variant( fc::ecc::public_key_data(pubkey) ).as_string();
        summary.native_pubkey = string( pubkey );
        summary.native_address = string( address( pubkey ) );
        summary.pts_normal_address = string( pts_address( pubkey, false, 56 ) );
        summary.pts_compressed_address = string( pts_address( pubkey, true, 56 ) );
        summary.btc_normal_address = string( pts_address( pubkey, false, 0 ) );
-       summary.pts_normal_address = string( pts_address( pubkey, true, 0 ) );
+       summary.btc_compressed_address = string( pts_address( pubkey, true, 0 ) );
        return summary;
    }
    
