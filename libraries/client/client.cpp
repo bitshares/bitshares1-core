@@ -1259,7 +1259,11 @@ namespace bts { namespace client {
 
       load_and_configure_chain_database(datadir, option_variables);
 
-      this->open( datadir, option_variables["genesis-config"].as<std::string>() );
+      fc::optional<fc::path> genesis_file_path;
+      if (option_variables.count("genesis-config"))
+        genesis_file_path = option_variables["genesis-config"].as<std::string>();
+
+      this->open( datadir, genesis_file_path );
       this->run_delegate();
 
       //maybe clean this up later
@@ -1397,7 +1401,7 @@ namespace bts { namespace client {
         TeeStream cout_with_log(my_tee);
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( &cout_with_log );
-        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), std::cin, cout_with_log );
+        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &cout_with_log );
         //also echo input to the log file
         cli->set_input_log_stream(console_log);
     #else

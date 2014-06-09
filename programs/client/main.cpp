@@ -28,10 +28,6 @@
 int main( int argc, char** argv )
 {
    try {
-      fc::optional<fc::path> genesis_file_path;
-      if (option_variables.count("genesis-config"))
-        genesis_file_path = option_variables["genesis-config"].as<std::string>();
-
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
       client->configure_from_command_line(argc,argv);
    }

@@ -39,8 +39,6 @@ namespace bts { namespace client {
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
-         void open( const path& data_dir, const path& genesis_dat );
-
          void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
          void set_cli( bts::cli::cli* cli );
 
