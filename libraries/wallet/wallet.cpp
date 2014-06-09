@@ -645,7 +645,10 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
-      FC_ASSERT( !current_account.valid() );
+      FC_ASSERT( !current_account.valid(), "This name is already in your wallet." );
+
+      auto existing_registered_account = my->_blockchain->get_account_record( account_name );
+      FC_ASSERT( !existing_registered_account.valid(), "This name is already registered with the blockchain." );
 
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
       auto new_pub_key  = new_priv_key.get_public_key();
