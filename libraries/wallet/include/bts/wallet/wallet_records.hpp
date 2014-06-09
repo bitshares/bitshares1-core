@@ -144,6 +144,7 @@ namespace bts { namespace wallet {
        transaction_id_type       transaction_id;
        optional<public_key_type> to_account;
        optional<public_key_type> from_account;
+       vector<public_key_type>   extra_to_accounts;
        asset                     amount;
        share_type                fees;
        std::string               memo_message;

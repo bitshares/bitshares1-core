@@ -291,7 +291,7 @@
           },
           {
               "name" : "toaddresskey",
-              "type" : "public_key",
+              "type" : "address",
               "description" : "the address to send"
           },
           {
@@ -397,9 +397,9 @@
           "aliases" : ["signmessage"]
       },
       {
-          "method_name": "bitcoin_validatemessage",
+          "method_name": "bitcoin_validateaddress",
           "description": "Return information about <address>.",
-          "return_type": "std::string",
+          "return_type": "variant",
           "parameters" :
           [
           {
