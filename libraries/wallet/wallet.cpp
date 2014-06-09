@@ -2,6 +2,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/utilities/key_conversion.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
@@ -105,7 +106,7 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                //ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
+                ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
                 _wallet_db.cache_balance( bal_rec );
               }
          } );
@@ -784,13 +785,16 @@ namespace bts { namespace wallet {
       else if( account_name == string() )
       {
          auto registered_account = my->_blockchain->get_account_record( import_public_key );
-         FC_ASSERT( registered_account );
+         FC_ASSERT( registered_account, "the key must belong to a registered account or an account name must be specified" );
  
          add_contact_account( registered_account->name, import_public_key );
          return import_private_key( key, registered_account->name );
       }
       else
       {
+         FC_ASSERT( is_receive_account(account_name), 
+                    "You can only import keys into receive accounts." );
+
          FC_ASSERT( is_valid_account_name( account_name ) );
          auto current_account = my->_wallet_db.lookup_account( account_name );
          if( !current_account && create_account )
@@ -798,7 +802,6 @@ namespace bts { namespace wallet {
             add_contact_account( account_name, key.get_public_key() );
             return import_private_key( key, account_name, false );
          }
-         FC_ASSERT( current_account.valid(), "You must create an account before importing a key" );
 
          auto pub_key = key.get_public_key();
          address key_address(pub_key);
@@ -831,13 +834,11 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      auto wif_bytes = fc::from_base58(wif_key);
-      auto key_bytes = vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
-      auto key = variant(key_bytes).as<private_key_type>();
-      auto check = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() - 4 );
-
-      if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
-         return import_private_key( key, account_name, create_account );
+      auto key = bts::utilities::wif_to_key( wif_key );
+      if( key.valid() )
+      {
+         import_private_key( *key, account_name, create_account );
+      }
       
       FC_ASSERT( false, "Error parsing WIF private key" );
 
@@ -2357,6 +2358,19 @@ namespace bts { namespace wallet {
           obj( "state", "closed" );
        }
        return obj;
+   }
+   vector<public_key_type> wallet::get_public_keys_in_account( const string& account_name )const
+   {
+      public_key_type  account_public_key = get_account_public_key( account_name );
+      address          account_address( account_public_key );
+
+      vector<public_key_type> account_keys;
+      for( auto key : my->_wallet_db.keys )
+      {
+         if( key.second.account_address == account_address )
+            account_keys.push_back( key.second.public_key );
+      }
+      return account_keys;
    }
 } } // bts::wallet
 

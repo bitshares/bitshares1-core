@@ -38,10 +38,19 @@ set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp
                               "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp"
                               "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
 
+set(copy_if_different_commands)
+foreach(rpc_stub_file ${generated_api_files} ${generated_rpc_stubs_files})
+  list(APPEND copy_if_different_commands COMMAND ${CMAKE_COMMAND} -E copy_if_different "${rpc_stub_file}.new" "${rpc_stub_file}"
+                                         COMMAND ${CMAKE_COMMAND} -E remove "${rpc_stub_file}.new")
+endforeach(rpc_stub_file)
+
 add_custom_command(OUTPUT ${generated_api_files} ${generated_rpc_stubs_files}
                    COMMAND bts_api_generator "--api-classname=common_api" 
                                              "--api-interface-output-dir=${CMAKE_CURRENT_BINARY_DIR}"
-                                             "--rpc-stub-output-dir=${rpc_stubs_output_dir}" ${json_description_files}
+                                             "--rpc-stub-output-dir=${rpc_stubs_output_dir}" 
+                                             "--generated-file-suffix=.new"
+                                             ${json_description_files}
+                   ${copy_if_different_commands}
                    DEPENDS bts_api_generator ${json_description_files} )
 
 add_library(bts_api STATIC ${HEADERS} "conversion_functions.cpp" ${json_description_files} ${generated_api_files})

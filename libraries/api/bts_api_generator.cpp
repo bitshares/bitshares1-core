@@ -174,10 +174,10 @@ public:
   api_generator(const std::string& classname); 
 
   void load_api_description(const fc::path& api_description_filename, bool load_types);
-  void generate_interface_file(const fc::path& api_description_output_dir);
-  void generate_rpc_client_files(const fc::path& rpc_client_output_dir);
-  void generate_rpc_server_files(const fc::path& rpc_server_output_dir);
-  void generate_client_files(const fc::path& client_output_dir);
+  void generate_interface_file(const fc::path& api_description_output_dir, const std::string& generated_filename_suffix);
+  void generate_rpc_client_files(const fc::path& rpc_client_output_dir, const std::string& generated_filename_suffix);
+  void generate_rpc_server_files(const fc::path& rpc_server_output_dir, const std::string& generated_filename_suffix);
+  void generate_client_files(const fc::path& client_output_dir, const std::string& generated_filename_suffix);
 private:
   void write_includes_to_stream(std::ostream& stream);
   void generate_prerequisite_checks_to_stream(const method_description& method, std::ostream& stream);
@@ -498,13 +498,13 @@ void api_generator::write_generated_file_header(std::ostream& stream)
   stream << "//\n";
 }
 
-void api_generator::generate_interface_file(const fc::path& api_description_output_dir)
+void api_generator::generate_interface_file(const fc::path& api_description_output_dir, const std::string& generated_filename_suffix)
 {
   fc::path api_description_header_path = api_description_output_dir / "include" / "bts" / "api";
   fc::create_directories(api_description_header_path);
   fc::path api_header_filename = api_description_header_path / (_api_classname + ".hpp");
 
-  std::ofstream interface_file(api_header_filename.string());
+  std::ofstream interface_file(api_header_filename.string() + generated_filename_suffix);
   write_generated_file_header(interface_file);
 
   interface_file << "#pragma once\n\n";
@@ -569,7 +569,7 @@ void api_generator::generate_interface_file(const fc::path& api_description_outp
   interface_file << "} } // end namespace bts::api\n";
 }
 
-void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_dir)
+void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_dir, const std::string& generated_filename_suffix)
 {
   std::string client_classname = _api_classname + "_rpc_client";
 
@@ -578,9 +578,9 @@ void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_
   fc::path client_header_filename = client_header_path / (client_classname + ".hpp");
   fc::path client_cpp_filename = rpc_client_output_dir / (client_classname + ".cpp");
   fc::path method_overrides_filename = client_header_path / (_api_classname + "_overrides.ipp");
-  std::ofstream header_file(client_header_filename.string());
-  std::ofstream cpp_file(client_cpp_filename.string());
-  std::ofstream method_overrides_file(method_overrides_filename.string());
+  std::ofstream header_file(client_header_filename.string() + generated_filename_suffix);
+  std::ofstream cpp_file(client_cpp_filename.string() + generated_filename_suffix);
+  std::ofstream method_overrides_file(method_overrides_filename.string() + generated_filename_suffix);
 
   write_generated_file_header(header_file);
   write_generated_file_header(method_overrides_file);
@@ -765,7 +765,7 @@ std::string api_generator::generate_detailed_description_for_method(const method
   return description.str();
 }
 
-void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_dir)
+void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_dir, const std::string& generated_filename_suffix)
 {
   std::string server_classname = _api_classname + "_rpc_server";
 
@@ -773,8 +773,8 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   fc::create_directories(server_header_path); // creates dirs for both header and cpp
   fc::path server_header_filename = server_header_path / (server_classname + ".hpp");
   fc::path server_cpp_filename = rpc_server_output_dir / (server_classname + ".cpp");
-  std::ofstream header_file(server_header_filename.string());
-  std::ofstream server_cpp_file(server_cpp_filename.string());
+  std::ofstream header_file(server_header_filename.string() + generated_filename_suffix);
+  std::ofstream server_cpp_file(server_cpp_filename.string() + generated_filename_suffix);
 
   write_generated_file_header(header_file);
   header_file << "#pragma once\n";
@@ -901,16 +901,16 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   server_cpp_file << "} } // end namespace bts::rpc_stubs\n";
 }
 
-void api_generator::generate_client_files(const fc::path& client_output_dir)
+void api_generator::generate_client_files(const fc::path& client_output_dir, const std::string& generated_filename_suffix)
 {
   fc::path client_header_path = client_output_dir / "include" / "bts" / "rpc_stubs";
   fc::create_directories(client_header_path); // creates dirs for both header and cpp
 
   std::string interceptor_classname = _api_classname + "_client";
   fc::path interceptor_header_filename = client_header_path / (interceptor_classname + ".hpp");
-  std::ofstream interceptor_header_file(interceptor_header_filename.string());
+  std::ofstream interceptor_header_file(interceptor_header_filename.string() + generated_filename_suffix);
   fc::path interceptor_cpp_filename = client_output_dir / (interceptor_classname + ".cpp");
-  std::ofstream interceptor_cpp_file(interceptor_cpp_filename.string());
+  std::ofstream interceptor_cpp_file(interceptor_cpp_filename.string() + generated_filename_suffix);
   
   write_generated_file_header(interceptor_header_file);
   interceptor_header_file << "#pragma once\n";
@@ -1013,7 +1013,8 @@ int main(int argc, char*argv[])
                              ("api-description",    boost::program_options::value<std::vector<std::string> >(), "API description file name in JSON format")
                              ("api-interface-output-dir", boost::program_options::value<std::string>(), "C++ pure interface class output directory")
                              ("api-classname",      boost::program_options::value<std::string>(), "Name for the generated C++ classes")
-                             ("rpc-stub-output-dir", boost::program_options::value<std::string>(), "Output directory for RPC server/client stubs");
+                             ("rpc-stub-output-dir", boost::program_options::value<std::string>(), "Output directory for RPC server/client stubs")
+                             ("generated-file-suffix", boost::program_options::value<std::string>()->default_value(""), "Suffix to append to generated filenames");
   boost::program_options::positional_options_description positional_config;
   positional_config.add("api-description", -1);
 
@@ -1062,13 +1063,13 @@ int main(int argc, char*argv[])
       generator.load_api_description(api_description_filename, false);
 
     if (option_variables.count("api-interface-output-dir"))
-      generator.generate_interface_file(option_variables["api-interface-output-dir"].as<std::string>());
+      generator.generate_interface_file(option_variables["api-interface-output-dir"].as<std::string>(), option_variables["generated-file-suffix"].as<std::string>());
 
     if (option_variables.count("rpc-stub-output-dir"))
     {
-      generator.generate_rpc_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
-      generator.generate_rpc_server_files(option_variables["rpc-stub-output-dir"].as<std::string>());
-      generator.generate_client_files(option_variables["rpc-stub-output-dir"].as<std::string>());
+      generator.generate_rpc_client_files(option_variables["rpc-stub-output-dir"].as<std::string>(), option_variables["generated-file-suffix"].as<std::string>());
+      generator.generate_rpc_server_files(option_variables["rpc-stub-output-dir"].as<std::string>(), option_variables["generated-file-suffix"].as<std::string>());
+      generator.generate_client_files(option_variables["rpc-stub-output-dir"].as<std::string>(), option_variables["generated-file-suffix"].as<std::string>());
     }
   }
   catch (const fc::exception& e)

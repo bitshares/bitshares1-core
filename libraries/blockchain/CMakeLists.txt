@@ -15,7 +15,9 @@ set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp
 
 add_custom_command(OUTPUT ${generated_genesis_file} 
                    COMMAND bts_genesis_to_cpp "--genesis-json=${genesis_json}" 
-                                              "--output-file=${generated_genesis_file}"
+                                              "--output-file=${generated_genesis_file}.new"
+                   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
+                   COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
                    DEPENDS bts_genesis_to_cpp ${genesis_json} )
 
                    
