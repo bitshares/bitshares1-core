@@ -343,8 +343,8 @@
           "default_example" : 10
       },
       {
-          "type_name" : "map< address, amount >",
-          "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >"
+          "type_name" : "map< public_key, amount >",
+          "cpp_return_type" : "std::unordered_map< std::string, int64_t >"
       },
       {
           "type_name" : "name",
