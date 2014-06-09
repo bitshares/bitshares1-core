@@ -7,6 +7,11 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+        "type_name" : "blockchain_security_state",
+        "cpp_return_type" : "bts::blockchain::blockchain_security_state",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
         "type_name" : "account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",

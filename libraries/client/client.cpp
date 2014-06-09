@@ -373,7 +373,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() )
+               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
@@ -1684,6 +1684,29 @@ namespace bts { namespace client {
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
+    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    {
+        auto state = blockchain_security_state();
+        auto required_confirmations = _chain_db->get_required_confirmations();
+        auto participation_rate = _chain_db->get_average_delegate_participation();
+        state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        state.participation_rate = participation_rate;
+        if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+            && participation_rate > .9)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::green;
+        } 
+        else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
+                 || participation_rate < .6)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::red;
+        }
+        else
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::yellow;
+        }
+        return state;
+    }
 
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,

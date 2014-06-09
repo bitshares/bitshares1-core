@@ -105,6 +105,17 @@ namespace bts { namespace blockchain {
       }
    };
 
+   struct blockchain_security_state {
+       enum alert_level_enum {
+           green = 0,
+           yellow = 1,
+           red = 2
+       };
+       alert_level_enum    alert_level;
+       uint32_t            estimated_confirmation_seconds;
+       double              participation_rate;
+   };
+
    #define BASE_ASSET_ID  (asset_id_type())
 
 } } // bts::blockchain
@@ -120,4 +131,6 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
-FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) )
+FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) );
+FC_REFLECT_ENUM( bts::blockchain::blockchain_security_state::alert_level_enum, (green)(yellow)(red) );
+FC_REFLECT( bts::blockchain::blockchain_security_state, (alert_level)(estimated_confirmation_seconds)(participation_rate) )
