@@ -870,6 +870,18 @@ namespace bts { namespace wallet {
          if( progress_callback )
             progress_callback( block_num, min_end );
       }
+
+      for( auto acct : my->_wallet_db.accounts )
+      {
+         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.first );
+         if (blockchain_acct_rec.valid())
+         {
+             blockchain::account_record& brec = acct.second;
+             brec = *blockchain_acct_rec;
+             my->_wallet_db.cache_account( acct.second );
+         }
+      }
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
 
@@ -2051,8 +2063,8 @@ namespace bts { namespace wallet {
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
-   vector<asset> wallet::get_balance( const string& symbol, 
-                              const string& account_name )const
+   vector<asset> wallet::get_balances( const string& symbol, 
+                                       const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( account_name == "*" || is_valid_account_name( account_name ) );

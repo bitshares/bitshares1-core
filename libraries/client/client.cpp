@@ -1081,7 +1081,7 @@ namespace bts { namespace client {
     int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
     {
         try {
-            vector<asset> all_balances = _wallet->get_balance( BTS_ADDRESS_PREFIX ,account_name);
+            vector<asset> all_balances = _wallet->get_balances( BTS_ADDRESS_PREFIX ,account_name);
             
             for( uint32_t i = 0; i < all_balances.size(); ++i )
             {
@@ -1553,23 +1553,6 @@ namespace bts { namespace client {
    namespace detail  {
 
 
-    balances client_impl::wallet_get_balance( const string& symbol, 
-                                         const string& account_name ) const
-    { try {
-        vector<asset> all_balances = _wallet->get_balance( symbol ,account_name);
-       
-        balances all_results(all_balances.size());
-        for( uint32_t i = 0; i < all_balances.size(); ++i )
-        {
-           all_results[i].first  = all_balances[i].amount;
-           all_results[i].second = _chain_db->get_asset_symbol( all_balances[i].asset_id ); 
-        }
-        if( all_results.size() == 0 )
-           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
-        return all_results;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
-
-
     void client_impl::wallet_add_contact_account( const string& account_name, 
                                              const public_key_type& contact_key )
     {
@@ -1641,17 +1624,12 @@ namespace bts { namespace client {
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
       fc::variant wallet_balance_shares;
-      if (_wallet->is_open())
-        wallet_balance_shares = wallet_get_balance();
-      else
-        wallet_balance_shares = "[wallet is not open]";
 
       info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
       info["blockchain_head_block_time"]                 = _chain_db->now();
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
-      info["wallet_balance"]                             = wallet_balance_shares;
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )
