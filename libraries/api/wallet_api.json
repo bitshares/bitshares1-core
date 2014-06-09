@@ -220,7 +220,7 @@
           {
               "name" : "keyhoteeid",
               "type" : "keyhoteeid",
-              "description" : "keyhoteeid, TODO"
+              "description" : "using keyhotee id as account name"
           }
           ],
           "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
