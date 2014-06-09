@@ -59,6 +59,55 @@ void produce_block( T my_client )
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
 }
 
+
+/***
+ *  This test case is designed to grow for ever and never shrink.  It is a complete scripted history
+ *  of operations that should always work based upon a generated genesis condition.
+ */
+BOOST_AUTO_TEST_CASE( master_test )
+{ try {
+   bts::blockchain::start_simulated_time(fc::time_point::from_iso_string( "20200101T000000" ));
+
+   vector<fc::ecc::private_key> delegate_private_keys;
+
+   genesis_block_config config;
+   config.precision         = BTS_BLOCKCHAIN_PRECISION
+   config.timestamp         = bts::blockchain::now();
+   config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
+   config.base_name         = BTS_BLOCKCHAIN_NAME;
+   config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
+   config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
+
+   for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
+   {
+      name_config delegate_name;
+      delegate_account.name = "delegate" + fc::to_string(i);
+      delegate_private_keys.push_back( fc::ecc::private_key::generate() );
+      delegate_account.owner = delegate_private_keys.back().get_public_key();
+      delegate_account.is_delegate = true;
+
+      config.names.push_back(delegate_account);
+      balances.push_back( std::make_pair( pts_address( delegate_account.owner, BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) ) );
+   }
+
+   fc::temp_directory clienta_dir;
+   fc::json::save_to_file( config, clienta_dir / "genesis.json" );
+
+   fc::temp_directory clientb_dir;
+   fc::json::save_to_file( config, clientb_dir / "genesis.json" );
+
+   auto sim_network = std::make_shared<simulated_network>();
+
+   auto clienta = std::make_shared<client>(sim_network);
+   clienta->open( clienta_dir.path(), clienta_dir / "genesis.json" );
+
+   auto clientb = std::make_shared<client>(sim_network);
+   clientb->open( clienta_dir.path(), clientb_dir / "genesis.json" );
+
+
+} FC_LOG_AND_RETHROW() }
+
+
 #include <fstream>
 
 string extract_commands_from_log_stream(std::istream& log_stream)
