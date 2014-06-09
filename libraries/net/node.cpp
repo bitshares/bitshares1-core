@@ -2619,6 +2619,7 @@ namespace bts { namespace net {
     {
       fc::mutable_variant_object info;
       info["listening_on"] = _actual_listening_endpoint;
+      info["node_id"] = _node_id;
       return info;
     }
 

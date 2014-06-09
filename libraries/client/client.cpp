@@ -38,6 +38,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/algorithm/reverse.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <boost/program_options.hpp>
