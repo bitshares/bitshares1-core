@@ -12,6 +12,7 @@
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
 #include <iostream>
+#include <bts/utilities/key_conversion.hpp>
 
 #include <fc/network/http/connection.hpp>
 
@@ -144,6 +145,23 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
       elog( "${e}", ("e",e.to_detail_string()) );
       throw;
    }
+}
+
+BOOST_AUTO_TEST_CASE( wif_format_test )
+{
+
+   auto priv_key = fc::variant( "0c28fca386c7a227600b2fe50b7cae11ec86d3bf1fbe471be89827e19d72aa1d" ).as<fc::ecc::private_key>();
+   FC_ASSERT( bts::utilities::key_to_wif(priv_key) == "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ" );
+   FC_ASSERT( bts::utilities::wif_to_key( "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ" ).valid() );
+   /*
+   auto secret = priv_key.get_secret();
+   auto secret_hash = fc::sha256::hash( (char*)&secret, sizeof(secret) );
+   auto secret_hash_str = "80" + std::string(secret_hash);
+   FC_ASSERT( secret_hash_str == "8147786c4d15106333bf278d71dadaf1079ef2d2440a4dde37d747ded5403592" );
+   auto secret_hash2 = fc::sha256::hash( secret_hash );
+   FC_ASSERT( std::string(secret_hash2) == "507a5b8dfed0fc6fe8801743720cedec06aa5c6fca72b07c49964492fb98a714" );
+   */
+
 }
 
 template<typename T>

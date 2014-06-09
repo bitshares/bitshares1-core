@@ -2,6 +2,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/utilities/key_conversion.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
@@ -833,13 +834,11 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      auto wif_bytes = fc::from_base58(wif_key);
-      auto key_bytes = vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
-      auto key = variant(key_bytes).as<private_key_type>();
-      auto check = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() - 4 );
-
-      if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
-         return import_private_key( key, account_name, create_account );
+      auto key = bts::utilities::wif_to_key( wif_key );
+      if( key.valid() )
+      {
+         import_private_key( *key, account_name, create_account );
+      }
       
       FC_ASSERT( false, "Error parsing WIF private key" );
 
