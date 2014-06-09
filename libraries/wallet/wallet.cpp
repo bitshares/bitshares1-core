@@ -496,7 +496,7 @@ namespace bts { namespace wallet {
          extended_private_key epk( private_key_type::generate() );
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
-      my->_wallet_db.set_property( last_unlocked_scanned_block_number, my->_blockchain->get_head_block_num() );
+      my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
       my->_wallet_db.close();
@@ -603,7 +603,7 @@ namespace bts { namespace wallet {
            });
          }
       }
-      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as_int64(), 
+      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_sec", timeout.count()/1000000 ) ) }
 
@@ -1014,7 +1014,7 @@ namespace bts { namespace wallet {
        auto asset_id = asset_rec->id;
 
        int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-       share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
+       share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
@@ -1225,7 +1225,7 @@ namespace bts { namespace wallet {
       auto asset_id = asset_rec->id;
 
       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
+      share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
 
