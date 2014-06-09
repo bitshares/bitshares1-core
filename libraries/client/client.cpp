@@ -1065,8 +1065,16 @@ namespace bts { namespace client {
     {
         try {
             std::vector<std::string> addresses;
-            auto account = wallet_get_account(account_name);
-            addresses.push_back(std::string(account.active_address()));
+            auto public_keys = _wallet->get_public_keys_in_account(account_name);
+            for ( auto key : public_keys )
+            {
+                addresses.push_back( std::string( address(key) ) );
+                addresses.push_back( std::string( address( pts_address(key,false,56) ) ) );
+                addresses.push_back( std::string( address( pts_address(key,true,56) ) ) );
+                addresses.push_back( std::string( address( pts_address(key,false,0) ) ) );
+                addresses.push_back( std::string( address( pts_address(key,true,0) ) ) );
+            }
+            
             return addresses;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
