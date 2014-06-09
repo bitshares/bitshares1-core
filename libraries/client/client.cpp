@@ -249,6 +249,7 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 void load_and_configure_chain_database( const fc::path& datadir,
                                         const program_options::variables_map& option_variables)
 { try {
+
   if (option_variables.count("resync-blockchain"))
   {
     std::cout << "Deleting old copy of the blockchain in \"" << ( datadir / "chain" ).generic_string() << "\"\n";
@@ -266,9 +267,6 @@ void load_and_configure_chain_database( const fc::path& datadir,
   {
     std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
   }
-
-  fc::path genesis_file = option_variables["genesis-config"].as<std::string>();
-  std::cout << "Using genesis block from file \"" << fc::absolute( genesis_file ).string() << "\"\n";
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 

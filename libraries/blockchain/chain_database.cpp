@@ -92,7 +92,8 @@ FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 namespace bts { namespace blockchain {
 
    // register exceptions here so it doesn't get optimized out by the linker
-   FC_REGISTER_EXCEPTIONS( (invalid_pts_address)
+   FC_REGISTER_EXCEPTIONS( (blockchain_exception)
+                           (invalid_pts_address)
                           (addition_overflow)
                           (addition_underthrow)
                           (asset_type_mismatch) )
