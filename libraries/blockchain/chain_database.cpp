@@ -6,6 +6,7 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/genesis_json.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -96,7 +97,8 @@ namespace bts { namespace blockchain {
                            (invalid_pts_address)
                           (addition_overflow)
                           (addition_underthrow)
-                          (asset_type_mismatch) )
+                          (asset_type_mismatch)
+                          (unsupported_chain_operation) )
 
 
    namespace detail

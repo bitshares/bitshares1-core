@@ -21,6 +21,9 @@ namespace bts { namespace blockchain {
        share_type         amount;
        /** any data required by the claim_condition */
        std::vector<char> claim_input_data;
+
+
+       void evaluate( transaction_evaluation_state& eval_state );
    };
 
 
@@ -44,6 +47,8 @@ namespace bts { namespace blockchain {
         */
        share_type                       amount;
        withdraw_condition               condition;
+
+       void evaluate( transaction_evaluation_state& eval_state );
    };
 
 } } // bts::blockchain 

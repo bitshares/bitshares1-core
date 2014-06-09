@@ -44,6 +44,8 @@ namespace bts { namespace blockchain {
        share_type          maximum_share_supply;
 
        int64_t             precision;
+
+       void evaluate( transaction_evaluation_state& eval_state );
    };
 
    /**
@@ -59,6 +61,8 @@ namespace bts { namespace blockchain {
        std::string          description;
        fc::variant          public_data;
        account_id_type      issuer_account_id;
+
+       void evaluate( transaction_evaluation_state& eval_state );
    };
 
    /**
@@ -74,6 +78,8 @@ namespace bts { namespace blockchain {
 
        issue_asset_operation( asset a = asset() ):amount(a){}
        asset            amount;
+
+       void evaluate( transaction_evaluation_state& eval_state );
    };
 
 } } // bts::blockchain 

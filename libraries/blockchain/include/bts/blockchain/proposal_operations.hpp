@@ -14,6 +14,8 @@ namespace bts { namespace blockchain {
       std::string           body;
       std::string           proposal_type; // alert, bug fix, feature upgrade, property change, etc
       fc::variant           data;  // data that is unique to the proposal
+
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
    struct vote_proposal_operation
@@ -24,7 +26,8 @@ namespace bts { namespace blockchain {
       fc::time_point_sec                               timestamp;
       fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;
       string                                           message;
-     // fc::enum_type<uint8_t,proposal_vote::vote_type>  vote;
+     
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
 } } // bts::blockchain

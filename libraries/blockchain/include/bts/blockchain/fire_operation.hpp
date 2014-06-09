@@ -40,6 +40,8 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,reason_type> reason;
       name_id_type                       delegate_id;
       std::vector<char>                  data;
+
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
 } } // bts::blockchain
