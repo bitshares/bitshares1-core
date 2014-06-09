@@ -830,6 +830,21 @@
          "aliases" : ["balance"]
       },
       {
+         "method_name" : "wallet_account_list_public_keys",
+         "description" : "Lists all public keys in this account",
+         "return_type" : "public_key_summary_array",
+         "parameters"  : [
+           {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "the account for which public keys should be listed",
+                "default_value" : "*"
+           }
+         ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "aliases": ["public_keys"]
+      },
+      {
          "method_name"  : "wallet_withdraw_delegate_pay",
          "description"  : "Used to transfer some of the delegates pay from their balance",
          "return_type"  : "signed_transaction",

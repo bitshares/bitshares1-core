@@ -2359,6 +2359,17 @@ namespace bts { namespace wallet {
        }
        return obj;
    }
+
+   public_key_summary wallet::get_public_key_summary( const public_key_type& pubkey ) const
+   {
+       public_key_summary summary;
+       //summary.hex = string( pubkey.key_data );
+       summary.native_pubkey = string( pubkey );
+       summary.native_address = string( address( pubkey ) );
+       summary.pts_normal_address = string( pts_address( pubkey, false, 56 ) );
+       return summary;
+   }
+
    vector<public_key_type> wallet::get_public_keys_in_account( const string& account_name )const
    {
       public_key_type  account_public_key = get_account_public_key( account_name );

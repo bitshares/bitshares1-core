@@ -79,7 +79,6 @@ namespace bts { namespace blockchain {
        friend bool operator != ( const public_key_type& p1, const public_key_type& p2);
    };
 
-
    struct proposal_vote_id_type
    {
       proposal_vote_id_type( proposal_id_type proposal_id_arg = 0, name_id_type delegate_id_arg = 0 )

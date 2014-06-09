@@ -12,6 +12,17 @@ namespace bts { namespace wallet {
 
 using namespace bts::blockchain;
 
+struct public_key_summary
+{
+    string    hex;
+    string    native_pubkey;
+    string    native_address;
+    string    pts_normal_address;
+    string    pts_compressed_address;
+    string    btc_normal_address;
+    string    btc_compressed_address;
+};
+
 struct pretty_transaction
 {
     int32_t                                     block_num;
@@ -164,6 +175,7 @@ struct pretty_remove_collateral_op
 
 }} // bts::wallet
 
+FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
 FC_REFLECT( bts::wallet::pretty_transaction, (block_num)(trx_num)(trx_id)(created_time)(received_time)(amount)(fees)(to_account)(from_account)(memo_message)(fees));
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
