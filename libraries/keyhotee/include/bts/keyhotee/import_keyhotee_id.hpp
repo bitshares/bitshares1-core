@@ -25,7 +25,6 @@ namespace bts {namespace keyhotee
     */
    struct profile_config
    {
-       profile_config() {}
    
        std::string firstname;
        std::string middlename;
