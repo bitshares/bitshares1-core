@@ -1217,9 +1217,9 @@ namespace bts { namespace client {
        try {
           auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
           
-          auto sig = private_key.sign( fc::sha256::hash(message) );
-          
-          return std::string((char*)&sig, sizeof(sig));
+          auto sig = private_key.sign_compact( fc::sha256::hash(message) );
+
+          return fc::to_base58( (char *)sig.data, sizeof(sig) );
           
        } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("message", message) ) }
 
@@ -1233,12 +1233,16 @@ namespace bts { namespace client {
     bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
     {
        try {
-          auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
+          fc::ecc::compact_signature sig;
+          fc::from_base58(signature, (char*)sig.data, sizeof(sig));
           
-          fc::ecc::signature sig;
-          std::strcpy( sig.data, signature.c_str() );
+          auto key_summery = _wallet->get_public_key_summary(fc::ecc::public_key(sig, fc::sha256::hash(message)));
           
-          return private_key.verify( fc::sha256::hash(message), sig);
+          return ( key_summery.native_address == address
+                  || key_summery.btc_normal_address == address
+                  || key_summery.btc_compressed_address == address
+                  || key_summery.pts_normal_address == address
+                  || key_summery.pts_compressed_address == address );
           
        } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("signature", signature)("message", message) ) }
 
