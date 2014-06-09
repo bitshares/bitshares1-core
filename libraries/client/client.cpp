@@ -1184,11 +1184,15 @@ namespace bts { namespace client {
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::address, int64_t >& to_address_amounts, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::public_key_type, int64_t >& to_address_amounts, const std::string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
-
+        try {
+            for ( auto address_amount : to_address_amounts )
+            {
+                bitcoin_sendfrom(fromaccount, address_amount.first, address_amount.second, comment);
+            }
+        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_amounts", to_address_amounts)("comment", comment) ) }
+    
     bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
     {
         FC_ASSERT(false, "Not implemented");

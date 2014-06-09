@@ -322,8 +322,8 @@
           },
           {
               "name" : "to_address_amounts",
-              "type" : "map< address, amount >",
-              "description" : "the address to send"
+              "type" : "map< std::string, amount >",
+              "description" : "the public_key to send"
           },
           {
               "name" : "comment",
