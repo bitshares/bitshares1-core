@@ -1115,8 +1115,8 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     fc::variant_object info = client_processes[i].rpc_client->get_info();
-    initial_block_counts.push_back((uint32_t)info["blocks"].as_int64());
-    BOOST_TEST_MESSAGE("Client " << i << " has " << info["blocks"].as_int64() << " blocks");
+    initial_block_counts.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
+    BOOST_TEST_MESSAGE("Client " << i << " has " << info["blockchain_head_block_num"].as_int64() << " blocks");
   }
 
   // verify that each client has a different block count
@@ -1158,7 +1158,7 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
       fc::variant_object info = client_processes[i].rpc_client->get_info();
-      final_block_counts.push_back((uint32_t)info["blocks"].as_int64());
+      final_block_counts.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
     }
 
     // verify that all clients have the same block count
