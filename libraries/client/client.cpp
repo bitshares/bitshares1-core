@@ -1548,24 +1548,6 @@ namespace bts { namespace client {
     */
    namespace detail  {
 
-/*
-    balances client_impl::wallet_get_balance( const string& symbol, 
-                                         const string& account_name ) const
-    { try {
-        vector<asset> all_balances = _wallet->get_balances( symbol ,account_name);
-       
-        balances all_results(all_balances.size());
-        for( uint32_t i = 0; i < all_balances.size(); ++i )
-        {
-           all_results[i].first  = all_balances[i].amount;
-           all_results[i].second = _chain_db->get_asset_symbol( all_balances[i].asset_id ); 
-        }
-        if( all_results.size() == 0 )
-           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
-        return all_results;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
-    */
-
 
     void client_impl::wallet_add_contact_account( const string& account_name, 
                                              const public_key_type& contact_key )
