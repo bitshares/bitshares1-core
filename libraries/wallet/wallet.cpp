@@ -783,7 +783,7 @@ namespace bts { namespace wallet {
       else if( account_name == string() )
       {
          auto registered_account = my->_blockchain->get_account_record( import_public_key );
-         FC_ASSERT( registered_account );
+         FC_ASSERT( registered_account, "the key must belong to a registered account or an account name must be specified" );
  
          add_contact_account( registered_account->name, import_public_key );
          return import_private_key( key, registered_account->name );

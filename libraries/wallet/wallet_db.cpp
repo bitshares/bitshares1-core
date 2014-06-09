@@ -268,10 +268,12 @@ namespace bts{ namespace wallet {
          }
          else
          {
+            /*
             ilog( "WALLET: storing public key ${key} under account named '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                   ("account_name",get_account_name(key_to_store.account_address)) );
+                  */
          }
 
          store_record( key_itr->second );
