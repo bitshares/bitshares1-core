@@ -118,6 +118,7 @@ namespace bts { namespace wallet {
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
 
+         void remove_item( int32_t index );
       private:
         void store_generic_record( int32_t index, const generic_wallet_record& r );
         unique_ptr<detail::wallet_db_impl> my;
