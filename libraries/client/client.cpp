@@ -1178,7 +1178,12 @@ namespace bts { namespace client {
             // using the key string as the temporary local account name for this temporary key.
             std::string to_account_name(toaddresskey);
             wallet_add_contact_account(to_account_name, toaddresskey);
-            auto trx = wallet_transfer(amount, BTS_ADDRESS_PREFIX, fromaccount, to_account_name, comment);
+            auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
+                                               fromaccount, to_account_name,
+                                               comment, true );
+            
+            network_broadcast_transaction( trx );
+            
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
