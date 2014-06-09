@@ -1384,6 +1384,8 @@ namespace bts { namespace client {
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
           std::cout << "Running in daemon mode, ignoring console\n";
+          auto cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
+          this->set_cli( cli );
           rpc_server->wait_on_quit();
       }
       else 
@@ -1405,6 +1407,7 @@ namespace bts { namespace client {
     #else
         auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
     #endif
+        this->set_cli(cli.get());
         cli->process_commands();
         cli->wait();
       } 
