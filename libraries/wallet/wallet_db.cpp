@@ -514,6 +514,7 @@ namespace bts{ namespace wallet {
       FC_ASSERT( ! has_private_key(address(acct.owner_key)), "you can only remove contact accounts");
 
       accounts.erase( acct.index );
+      remove_item( acct.index );
       keys.erase( address(acct.owner_key) );
       address_to_account.erase( address(acct.owner_key) );
       for( auto time_key_pair : acct.active_key_history )
@@ -598,4 +599,8 @@ namespace bts{ namespace wallet {
       store_record( war );
    }
 
+   void wallet_db::remove_item( int32_t index )
+   {
+      my->_records.remove( index );
+   }
 } } // bts::wallet

@@ -5,7 +5,6 @@ add_subdirectory( utils )
 
 # the following includes QT Wallet into the build (optional)
 set(INCLUDE_QT_WALLET FALSE CACHE BOOL "Include QT Wallet")
-set(QT_WALLET_PATH "${CMAKE_SOURCE_DIR}/../qt_wallet" CACHE PATH "Specify QT Wallet path")
 if(${INCLUDE_QT_WALLET})
-  add_subdirectory( ${QT_WALLET_PATH} "${CMAKE_BINARY_DIR}/programs/qt_wallet" )
+  add_subdirectory( qt_wallet "${CMAKE_BINARY_DIR}/programs/qt_wallet" )
 endif()

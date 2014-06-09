@@ -193,6 +193,39 @@
         "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
       },
       {
+          "method_name": "wallet_import_keyhotee",
+          "description": "Create the key from keyhotee config and import it to the wallet, creating a new account using this key",
+          "return_type": "void",
+          "parameters" : [
+          {
+              "name" : "firstname",
+              "type" : "name"
+              "description" : "first name in keyhotee profile config, for salting the seed of private key"
+          },
+          {
+              "name" : "middlename",
+              "type" : "name",
+              "description" : "middle name in keyhotee profile config, for salting the seed of private key"
+          },
+          {
+              "name" : "lastname",
+              "type" : "name",
+              "description" : "last name in keyhotee profile config, for salting the seed of private key"
+          },
+          {
+              "name" : "brainkey",
+              "type" : "brainkey",
+              "description" : "brainkey in keyhotee profile config, for salting the seed of private key"
+          },
+          {
+              "name" : "keyhoteeid",
+              "type" : "keyhoteeid",
+              "description" : "using keyhotee id as account name"
+          }
+          ],
+          "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+      },
+      {
         "method_name": "wallet_close",
         "description": "Closes the curent wallet if one is open",
         "return_type": "void",

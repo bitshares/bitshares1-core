@@ -18,6 +18,7 @@
 #include <bts/bitcoin/multibit.hpp>
 #include <bts/bitcoin/electrum.hpp>
 #include <bts/bitcoin/armory.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
 
 namespace bts { namespace wallet {
 
@@ -356,50 +357,58 @@ namespace bts { namespace wallet {
           switch( (withdraw_condition_types) op.condition.type )
           {
              case withdraw_signature_type:
-                cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
-                break;
-             case withdraw_by_account_type:
+             //   cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
+             //   break;
+            // case withdraw_with_signature:
              {
-                for( auto key : keys )
+                auto deposit = op.condition.as<withdraw_with_signature>();
+                if( _wallet_db.has_private_key( deposit.owner ) )
                 {
-                   auto deposit = op.condition.as<withdraw_by_account>();
-                   omemo_status status = deposit.decrypt_memo_data( key );
-                   if( status.valid() )
-                   {
-                      _wallet_db.cache_memo( *status, key, _wallet_password );
-                      if( status->memo_flags == from_memo )
-                      {
-                         trx_rec.memo_message = status->get_message();
-                         trx_rec.amount       = asset( op.amount, op.condition.asset_id );
-                         trx_rec.from_account = status->from;
-                         trx_rec.to_account   = key.get_public_key();
-                         //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
-                      }
-                      else
-                      {
-                         //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                         //ilog( "op: ${op}", ("op",op) );
-                         trx_rec.memo_message = status->get_message();
-                         trx_rec.from_account = key.get_public_key();
-                         trx_rec.to_account   = status->from;
-                         //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                      }
-                      cache_deposit = true;
-                      break;
-                   }
+                   cache_deposit = true;
                 }
-                break;
-             }
+                else if( deposit.memo )
+                {
+                   for( auto key : keys )
+                   {
+                      omemo_status status = deposit.decrypt_memo_data( key );
+                      if( status.valid() )
+                      {
+                         _wallet_db.cache_memo( *status, key, _wallet_password );
+                         if( status->memo_flags == from_memo )
+                         {
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.amount       = asset( op.amount, op.condition.asset_id );
+                            trx_rec.from_account = status->from;
+                            trx_rec.to_account   = key.get_public_key();
+                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                         }
+                         else
+                         {
+                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                            //ilog( "op: ${op}", ("op",op) );
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.from_account = key.get_public_key();
+                            trx_rec.to_account   = status->from;
+                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                         }
+                         cache_deposit = true;
+                         break;
+                      }
+                   }
+                   break;
+                }
              // TODO: support other withdraw types here..
-          }
-          if( cache_deposit )
-          {
-             if( !cache_balance( op.balance_id() ) )
-             {
-                elog( "unable to cache balance ${b}", ("b",op) );
              }
-          }
-          return cache_deposit;
+        }
+        if( cache_deposit )
+        {
+           if( !cache_balance( op.balance_id() ) )
+           {
+              elog( "unable to cache balance ${b}", ("b",op) );
+           }
+        }
+        return cache_deposit;
+
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
       bool wallet_impl::cache_balance( const balance_id_type& balance_id )
@@ -488,7 +497,7 @@ namespace bts { namespace wallet {
          extended_private_key epk( private_key_type::generate() );
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
-      my->_wallet_db.set_property( last_unlocked_scanned_block_number, my->_blockchain->get_head_block_num() );
+      my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
       my->_wallet_db.close();
@@ -595,7 +604,7 @@ namespace bts { namespace wallet {
            });
          }
       }
-      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as_int64(), 
+      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_sec", timeout.count()/1000000 ) ) }
 
@@ -1006,7 +1015,7 @@ namespace bts { namespace wallet {
        auto asset_id = asset_rec->id;
 
        int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-       share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
+       share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
@@ -1217,7 +1226,7 @@ namespace bts { namespace wallet {
       auto asset_id = asset_rec->id;
 
       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer(real_amount_to_transfer * asset_rec->precision);
+      share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
 
@@ -1912,6 +1921,27 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+    
+    void wallet::import_keyhotee( const std::string& firstname,
+                                 const std::string& middlename,
+                                 const std::string& lastname,
+                                 const std::string& brainkey,
+                                 const std::string& keyhoteeid )
+    { try {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        FC_ASSERT( is_valid_account_name( keyhoteeid ) );
+        // TODO: what will keyhoteeid's validation be like, they have different rules?
+        
+        bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
+        
+        auto private_key = bts::keyhotee::import_keyhotee_id(config, keyhoteeid);
+        
+        import_private_key(private_key, keyhoteeid, true);
+        
+        scan_chain( 0, 1 );
+    } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
+                            ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
    vector<asset> wallet::get_balance( const string& symbol, 
                               const string& account_name )const

@@ -337,14 +337,32 @@
       },
       {
           "type_name" : "size",
-          "cpp_parameter_type" : "int64_t",
-          "cpp_return_type" : "int64_t",
+          "cpp_parameter_type" : "uint64_t",
+          "cpp_return_type" : "uint64_t",
           "cpp_include_file" : "stdint.h",
           "default_example" : 10
       },
       {
           "type_name" : "map< address, amount >",
           "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >"
+      },
+      {
+          "type_name" : "name",
+          "cpp_return_type" : "std::string",
+          "cpp_include_file" : "string",
+          "default_example" : "George"
+      },
+      {
+          "type_name" : "brainkey",
+          "cpp_return_type" : "std::string",
+          "cpp_include_file" : "string",
+          "default_example" : "*1+1!=2"
+      },
+      {
+          "type_name" : "keyhoteeid",
+          "cpp_return_type" : "std::string",
+          "cpp_include_file" : "string",
+          "default_example" : "Alice"
       }
     ]
 }

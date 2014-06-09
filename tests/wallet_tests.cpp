@@ -238,8 +238,8 @@ BOOST_AUTO_TEST_CASE( client_tests )
       my_cli->wait();
       */
           
-      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
-      auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
+      auto my_cli = new bts::cli::cli( my_client, &std::cin, &std::cerr);  
+      auto your_cli = new bts::cli::cli( your_client, &std::cin, &std::cerr);      
 
       my_cli->execute_command_line( "help");
       my_cli->execute_command_line( "blockchain_list_delegates" );
@@ -397,8 +397,8 @@ BOOST_AUTO_TEST_CASE( delegate_proposals )
       auto your_client = std::make_shared<client>(network);
       your_client->open( your_dir.path() );
 
-      auto my_cli = new bts::cli::cli( my_client, std::cin, std::cerr);  
-      auto your_cli = new bts::cli::cli( your_client, std::cin, std::cerr);      
+      auto my_cli = new bts::cli::cli( my_client, &std::cin, &std::cerr);  
+      auto your_cli = new bts::cli::cli( your_client, &std::cin, &std::cerr);      
 
       my_client->wallet_create( "my_wallet", password );
       my_client->wallet_unlock( fc::seconds(999999999), password );

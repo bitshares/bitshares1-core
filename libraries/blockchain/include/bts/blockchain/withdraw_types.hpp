@@ -14,8 +14,7 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
-      withdraw_option_type      = 4,
-      withdraw_by_account_type     = 5
+      withdraw_option_type      = 4
    };
 
    /**
@@ -50,15 +49,6 @@ namespace bts { namespace blockchain {
       std::vector<char>                                 data;
    };
 
-   struct withdraw_with_signature 
-   {
-      static const uint8_t    type;
-      withdraw_with_signature( const address owner_arg = address() )
-      :owner(owner_arg){}
-
-      address                 owner; 
-   };
-
    enum memo_flags_enum
    {
       from_memo = 0, ///< default memo type, the public key is who the deposit is from
@@ -86,6 +76,14 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<memo_data>         omemo_data;
 
+
+
+   struct titan_memo
+   {
+      public_key_type   one_time_key;
+      vector<char>      encrypted_memo_data;
+   };
+
    struct memo_status : public memo_data
    {
       memo_status():has_valid_signature(false){}
@@ -99,10 +97,10 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<memo_status> omemo_status;
 
-   struct withdraw_by_account
+   struct withdraw_with_signature 
    {
       static const uint8_t    type;
-      withdraw_by_account( const address owner_arg = address() )
+      withdraw_with_signature( const address owner_arg = address() )
       :owner(owner_arg){}
 
       omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
@@ -116,18 +114,17 @@ namespace bts { namespace blockchain {
       memo_data    decrypt_memo_data( const fc::sha512& secret )const;
       void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
 
-      public_key_type         one_time_key;
-      std::vector<char>       encrypted_memo_data;
       address                 owner; 
+      optional<titan_memo>    memo;
    };
-
 
    struct withdraw_with_multi_sig
    {
-      static const uint8_t              type;
+      static const uint8_t    type;
 
-      uint32_t             required;
-      std::vector<address> owners; 
+      uint32_t                required;
+      std::vector<address>    owners; 
+      optional<titan_memo>    memo;
    };
 
    /**
@@ -148,10 +145,11 @@ namespace bts { namespace blockchain {
    {
       static const uint8_t type;
 
-      address              payee;
-      address              payor;
-      fc::time_point_sec   timeout;
-      fc::ripemd160        password_hash;
+      address                         payee;
+      address                         payor;
+      fc::time_point_sec              timeout;
+      fc::ripemd160                   password_hash;
+      optional<titan_memo>            memo;
    };
 
    struct withdraw_option
@@ -181,15 +179,14 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         (withdraw_multi_sig_type)
         (withdraw_password_type)
         (withdraw_option_type) 
-        (withdraw_by_account_type) 
         )
 
+FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
-FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner) )
-FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners) )
-FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash) )
+FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner)(memo) )
+FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
+FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
-FC_REFLECT( bts::blockchain::withdraw_by_account, (one_time_key)(encrypted_memo_data)(owner) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
 FC_REFLECT_DERIVED( bts::blockchain::memo_status, 

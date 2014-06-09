@@ -5,6 +5,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/fire_operation.hpp>
+#include <bts/blockchain/genesis_json.hpp>
 
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -105,7 +106,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr),_observer(nullptr){}
 
-            void                       initialize_genesis(fc::path genesis_file);
+            void                       initialize_genesis(fc::optional<fc::path> genesis_file);
 
 
             block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
@@ -816,7 +817,7 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::path genesis_file )
+   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
    { try {
       bool is_new_data_dir = !fc::exists( data_dir );
       try
@@ -1310,7 +1311,7 @@ namespace bts { namespace blockchain {
       return next_block;
    }
 
-   void detail::chain_database_impl::initialize_genesis(fc::path genesis_file)
+   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    { try {
       if( self->chain_id() != digest_type() )
       {
@@ -1319,23 +1320,33 @@ namespace bts { namespace blockchain {
          return;
       }
 
-
-      std::cout << "Initializing genesis state from "<< genesis_file.generic_string() << "\n";
-      FC_ASSERT( fc::exists( genesis_file ), "Genesis file '${file}' was not found.", ("file",genesis_file) );
-
       genesis_block_config config;
-      if( genesis_file.extension() == ".json" )
+      if (genesis_file)
       {
-         config = fc::json::from_file(genesis_file).as<genesis_block_config>();
-      }
-      else if( genesis_file.extension() == ".dat" )
-      {
-         fc::ifstream in( genesis_file );
-         fc::raw::unpack( in, config );
+        // this will only happen during testing
+        std::cout << "Initializing genesis state from "<< genesis_file->generic_string() << "\n";
+        FC_ASSERT( fc::exists( *genesis_file ), "Genesis file '${file}' was not found.", ("file", *genesis_file) );
+
+        if( genesis_file->extension() == ".json" )
+        {
+           config = fc::json::from_file(*genesis_file).as<genesis_block_config>();
+        }
+        else if( genesis_file->extension() == ".dat" )
+        {
+           fc::ifstream in( *genesis_file );
+           fc::raw::unpack( in, config );
+        }
+        else
+        {
+           FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file->extension() ) );
+        }
       }
       else
       {
-         FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file.extension() ) );
+        // this is the usual case
+        std::cout << "Initializing genesis state from built-in genesis file\n";
+        std::string genesis_file_contents = get_builtin_genesis_json_as_string();
+        config = fc::json::from_string(genesis_file_contents).as<genesis_block_config>();
       }
 
       fc::sha256::encoder enc;

@@ -4,7 +4,7 @@
       {
            "method_name" : "bitcoin_getaccountaddress",
            "description" : "Returns a current bitshare address for receiving payments to this account. If <account_name> does not exist, it will be created along with an associated new address that will be returned.",
-           "return_type"  : "address",
+           "return_type"  : "public_key",
            "parameters" : [
                  {
                     "name" : "account_name",
@@ -21,8 +21,8 @@
            "return_type"  : "account_record",
            "parameters" : [
                  {
-                    "name" : "account_address",
-                    "type" : "address",
+                    "name" : "account_key",
+                    "type" : "public_key",
                     "description" : "the address of this account"
                  }
               ],
@@ -35,9 +35,9 @@
           "return_type"  : "std::string",
           "parameters" : [
           {
-              "name" : "bitshares_address",
+              "name" : "bts_address",
               "type" : "address",
-              "description" : "bitshares address of the private key"
+              "description" : "bitshares address of the private key, base58 string hash of public key"
           }
           ],
           "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
@@ -46,7 +46,7 @@
       {
           "method_name" : "bitcoin_encryptwallet",
           "description" : "Encrypts the wallet with <passphrase>.",
-          "return_type"  : "bool",
+          "return_type"  : "void",
           "parameters" : [
           {
               "name" : "passphrase",
@@ -54,7 +54,7 @@
               "description" : "the passphrase for encrypt"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
           "aliases" : [ "encryptwallet" ]
       },
       {
@@ -200,12 +200,12 @@
       },
       {
           "method_name": "bitcoin_getreceivedbyaddress",
-          "description": "Returns the amount received by <bitcoinaddress> in transactions with at least [minconf] confirmations. It correctly handles the case where someone has sent to the address in multiple transactions. ",
+          "description": "Returns the amount received by <bitcoinaddress> in transactions. It correctly handles the case where someone has sent to the address in multiple transactions. ",
           "return_type": "amount",
           "parameters" :
           [
           {
-              "name" : "address",
+              "name" : "bts_address",
               "type" : "address",
               "description" : "The received address"
           }
@@ -290,8 +290,8 @@
               "description" : "the source account(s) to draw the shares from"
           },
           {
-              "name" : "address",
-              "type" : "address",
+              "name" : "toaddresskey",
+              "type" : "public_key",
               "description" : "the address to send"
           },
           {

@@ -24,14 +24,14 @@ namespace bts { namespace cli {
    class cli
    {
       public:
-          cli( const client_ptr& client, std::istream& input_stream, std::ostream& output_stream);
+          cli( const client_ptr& client, std::istream* input_stream = nullptr, std::ostream* output_stream = nullptr);
           virtual ~cli();
           void set_input_log_stream(boost::optional<std::ostream&> input_log_stream);
 
           void process_commands();
 
           //Parse and execute a command line. Returns false if line is a quit command.
-          bool execute_command_line(const std::string& line);
+          bool execute_command_line(const std::string& line, std::ostream* output = nullptr);
           void confirm_and_broadcast(signed_transaction& tx);
           void wait();
           void quit();
