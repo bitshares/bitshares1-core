@@ -4,41 +4,31 @@
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
+#include <bts/net/upnp.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/git_revision.hpp>
+#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_server.hpp>
+#include <bts/api/common_api.hpp>
+
 #include <fc/reflect/variant.hpp>
 #include <fc/io/fstream.hpp>
+#include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
+#include <fc/network/resolve.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
-#include <fc/network/resolve.hpp>
+#include <fc/log/file_appender.hpp>
+#include <fc/log/logger_config.hpp>
 
-#include <bts/rpc/rpc_client.hpp>
-#include <bts/api/common_api.hpp>
-
-#include <bts/rpc/rpc_server.hpp>
-
-#include <bts/utilities/git_revision.hpp>
+#include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
 
 #include <boost/program_options.hpp>
-
-#include <bts/net/upnp.hpp>
-#include <bts/blockchain/chain_database.hpp>
-#include <bts/rpc/rpc_server.hpp>
-#include <bts/cli/cli.hpp>
-#include <bts/utilities/git_revision.hpp>
-#include <fc/filesystem.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/log/file_appender.hpp>
-#include <fc/log/logger_config.hpp>
-#include <fc/io/json.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/git_revision.hpp>
-#include <fc/io/json.hpp>
-
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
