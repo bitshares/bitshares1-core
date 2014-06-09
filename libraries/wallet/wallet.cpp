@@ -2051,8 +2051,8 @@ namespace bts { namespace wallet {
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
-   vector<asset> wallet::get_balance( const string& symbol, 
-                              const string& account_name )const
+   vector<asset> wallet::get_balances( const string& symbol, 
+                                       const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( account_name == "*" || is_valid_account_name( account_name ) );

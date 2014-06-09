@@ -316,8 +316,8 @@ namespace bts { namespace wallet {
          typedef unordered_map<string, map<string, share_type> >  account_balance_summary_type;
          account_balance_summary_type          get_account_balances()const;
 
-         vector<asset>                         get_balance( const string& symbol = string("*"),
-                                                            const string& account_name  = string("*") )const;
+         vector<asset>                         get_balances( const string& symbol = string("*"),
+                                                             const string& account_name  = string("*") )const;
          ///@}
 
          vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
