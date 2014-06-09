@@ -564,7 +564,8 @@ namespace bts{ namespace wallet {
                                       const public_key_type& to,
                                       time_point_sec created,
                                       time_point_sec received,
-                                      public_key_type from
+                                      public_key_type from,
+                                      const vector<public_key_type> extra_to
                                       )
    { try {
       auto trx_id = trx.id();

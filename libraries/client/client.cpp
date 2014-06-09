@@ -38,6 +38,7 @@
 #include <fc/reflect/variant.hpp>
 #include <fc/git_revision.hpp>
 #include <fc/io/json.hpp>
+#include <fc/crypto/elliptic.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -1063,8 +1064,17 @@ namespace bts { namespace client {
     {
         try {
             std::vector<std::string> addresses;
-            auto account = wallet_get_account(account_name);
-            addresses.push_back(std::string(account.active_address()));
+            auto public_keys = _wallet->get_public_keys_in_account(account_name);
+            for ( auto key : public_keys )
+            {
+                auto key_summary = _wallet->get_public_key_summary(key);
+                addresses.push_back( key_summary.native_address );
+                addresses.push_back( key_summary.pts_normal_address );
+                addresses.push_back( key_summary.pts_compressed_address );
+                addresses.push_back( key_summary.btc_normal_address );
+                addresses.push_back( key_summary.btc_compressed_address );
+            }
+            
             return addresses;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
@@ -1164,45 +1174,73 @@ namespace bts { namespace client {
             return trxs;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("count", count)("from", from) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const public_key_type& toaddresskey, int64_t amount, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const std::string& toaddresskey, int64_t amount, const std::string& comment)
     {
         try {
-            // using the key string as the temporary local account name for this temporary key.
-            std::string to_account_name(toaddresskey);
-            wallet_add_contact_account(to_account_name, toaddresskey);
-            auto trx = wallet_transfer(amount, BTS_ADDRESS_PREFIX, fromaccount, to_account_name, comment);
+            auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
+                                               fromaccount, toaddresskey,
+                                               comment, true );
+            
+            network_broadcast_transaction( trx );
+            
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::address, int64_t >& to_address_amounts, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< std::string, int64_t >& to_address_amounts, const std::string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
-
+        try {
+           std::unordered_map< std::string, double > to_address_amount_map;
+           for ( auto address_amount : to_address_amounts )
+           {
+              to_address_amount_map[address_amount.first] = address_amount.second;
+           }
+           
+           auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
+           
+           network_broadcast_transaction(trx);
+           
+           return trx.id();
+        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_amounts", to_address_amounts)("comment", comment) ) }
+    
     bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
+        FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
     }
 
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
-        FC_ASSERT(false, "Not implemented");
+        FC_ASSERT(false, "Not implemented, wallet_set_priorty_fee need to be implemented first.");
     }
 
     std::string detail::client_impl::bitcoin_signmessage(const std::string& address, const std::string& message)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
+          
+          auto sig = private_key.sign( fc::sha256::hash(message) );
+          
+          return std::string((char*)&sig, sizeof(sig));
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("message", message) ) }
 
-    std::string detail::client_impl::bitcoin_validatemessage(const std::string& address)
+    fc::variant detail::client_impl::bitcoin_validateaddress(const std::string& address)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          return variant( _wallet->get_public_key_summary(public_key_type(address)) );
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address) ) }
 
     bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
+          
+          fc::ecc::signature sig;
+          std::strcpy( sig.data, signature.c_str() );
+          
+          return private_key.verify( fc::sha256::hash(message), sig);
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("signature", signature)("message", message) ) }
 
     void detail::client_impl::bitcoin_walletlock()
     {
@@ -1216,7 +1254,8 @@ namespace bts { namespace client {
 
     void detail::client_impl::bitcoin_walletpassphrasechange(const std::string& oldpassphrase, const std::string& newpassphrase)
     {
-        FC_ASSERT(false, "Not implemented");
+       _wallet->unlock(oldpassphrase);
+       _wallet->change_passphrase(newpassphrase);
     }
 
     void detail::client_impl::stop()

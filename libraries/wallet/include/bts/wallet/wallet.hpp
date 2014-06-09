@@ -202,6 +202,26 @@ namespace bts { namespace wallet {
 
          /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
+          *  and producing a single output. The only different aspect with transfer_asset is that
+          *  this will send to a address.
+          */
+         signed_transaction  transfer_asset_to_address( double real_amount_to_transfer,
+                                          const string& amount_to_transfer_symbol,
+                                          const string& from_account_name,
+                                          const string& to_address,
+                                          const string& memo_message,
+                                          bool sign );
+         /**
+          * This transfer works like a bitcoin sendmany transaction combining multiple inputs
+          * and producing a single output.
+          */
+         signed_transaction  transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
+                                                     const string& from_account_name,
+                                                     const std::unordered_map< std::string, double >& to_address_amounts,
+                                                     const string& memo_message,
+                                                     bool sign );
+         /**
+          *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
          signed_transaction  transfer_asset( double real_amount_to_transfer,
