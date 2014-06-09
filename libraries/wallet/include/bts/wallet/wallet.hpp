@@ -166,8 +166,7 @@ namespace bts { namespace wallet {
                             const std::string& middlename,
                             const std::string& lastname,
                             const std::string& brainkey,
-                            const std::string& keyhoteeid,
-                            const std::string& account_name );
+                            const std::string& keyhoteeid );
 
          public_key_type import_private_key( const private_key_type& key,
                                              const string& account_name,

@@ -1926,23 +1926,22 @@ namespace bts { namespace wallet {
                                  const std::string& middlename,
                                  const std::string& lastname,
                                  const std::string& brainkey,
-                                 const std::string& keyhoteeid,
-                                 const std::string& account_name )
+                                 const std::string& keyhoteeid )
     { try {
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
-        FC_ASSERT( is_valid_account_name( account_name ) );
+        FC_ASSERT( is_valid_account_name( keyhoteeid ) );
         // TODO: what will keyhoteeid's validation be like, they have different rules?
         
         bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
         
         auto private_key = bts::keyhotee::import_keyhotee_id(config, keyhoteeid);
         
-        import_private_key(private_key, account_name, true);
+        import_private_key(private_key, keyhoteeid, true);
         
         scan_chain( 0, 1 );
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
-                            ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid)("account_name",account_name) ) }
+                            ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
    vector<asset> wallet::get_balance( const string& symbol, 
                               const string& account_name )const

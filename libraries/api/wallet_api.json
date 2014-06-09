@@ -221,11 +221,6 @@
               "name" : "keyhoteeid",
               "type" : "keyhoteeid",
               "description" : "keyhoteeid, TODO"
-          },
-          {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
           }
           ],
           "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]

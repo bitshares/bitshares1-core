@@ -695,10 +695,9 @@ namespace bts { namespace client {
                                                      const std::string& middlename,
                                                      const std::string& lastname,
                                                      const std::string& brainkey,
-                                                     const std::string& keyhoteeid,
-                                                     const std::string& account_name)
+                                                     const std::string& keyhoteeid)
     {
-        _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid, account_name);
+        _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
     }
 
     void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import, 
