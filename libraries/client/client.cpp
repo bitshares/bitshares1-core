@@ -1729,6 +1729,17 @@ namespace bts { namespace client {
        return _wallet->get_unspent_balances( account_name, symbol );
     }
 
+    vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
+    {
+        auto summaries = vector<public_key_summary>();
+        auto keys = _wallet->get_public_keys_in_account( account_name );
+        summaries.reserve( keys.size() );
+        for (auto key : keys)
+        {
+            summaries.push_back(_wallet->get_public_key_summary( key ));
+        }
+        return summaries;
+    }
 
    unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance() 
    {

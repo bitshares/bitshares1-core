@@ -69,6 +69,7 @@ namespace bts { namespace wallet {
          private_key_type get_account_private_key( const string& account_name )const;
          public_key_type  get_account_public_key( const string& account_name )const;
 
+         public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
          vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
          
          /**

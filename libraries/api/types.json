@@ -184,6 +184,18 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "public_key_summary",
+        "cpp_return_type" : "bts::wallet::public_key_summary",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "public_key_summary_array",
+        "container_type" : "array",
+        "contained_type" : "public_key_summary",
+        "default_example" : "TODO"      
+      },
+      {
         "type_name" : "signed_transaction",
         "cpp_return_type" : "bts::blockchain::signed_transaction",
         "cpp_include_file" : "bts/blockchain/transaction.hpp",
