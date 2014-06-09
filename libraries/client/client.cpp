@@ -1413,7 +1413,7 @@ namespace bts { namespace client {
         //also echo input to the log file
         cli->set_input_log_stream(console_log);
     #else
-        auto cli = std::make_shared<bts::cli::cli>( client, std::cin, std::cout );
+        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
     #endif
         cli->process_commands();
         cli->wait();
