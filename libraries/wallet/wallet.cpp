@@ -870,6 +870,18 @@ namespace bts { namespace wallet {
          if( progress_callback )
             progress_callback( block_num, min_end );
       }
+
+      for( auto acct : my->_wallet_db.accounts )
+      {
+         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.first );
+         if (blockchain_acct_rec.valid())
+         {
+             blockchain::account_record& brec = acct.second;
+             brec = *blockchain_acct_rec;
+             my->_wallet_db.cache_account( acct.second );
+         }
+      }
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
 
