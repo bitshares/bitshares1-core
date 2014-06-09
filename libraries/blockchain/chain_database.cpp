@@ -1379,7 +1379,7 @@ namespace bts { namespace blockchain {
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.set_active_key( fc::time_point_sec(),  name.owner );
+         rec.set_active_key( bts::blockchain::now(),  name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )
