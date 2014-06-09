@@ -372,7 +372,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() )
+               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
