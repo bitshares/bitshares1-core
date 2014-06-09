@@ -85,7 +85,15 @@ string extract_commands_from_log_file(fc::path test_file)
   return extract_commands_from_log_stream(test_input);
 }
 
-BOOST_AUTO_TEST_CASE( client_tests )
 { try {
 
 } FC_LOG_AND_RETHROW() }
+
+
+struct test_file
+{
+       test_file(fc::path result_file, fc::path expected_result_file);
+
+  bool perform_test(); //compare two files, return true if the files match
+};
+

@@ -828,7 +828,11 @@ namespace bts { namespace cli {
 
                   if( _out ) (*_out) << std::setw(12) << "ID";
                   if( _out ) (*_out) << std::setw(25) << "NAME";
+                  if( _out ) (*_out) << std::setw(20) << "VOTES FOR";
+                  if( _out ) (*_out) << std::setw(20) << "VOTES AGAINST";
                   if( _out ) (*_out) << std::setw(20) << "NET VOTES";
+                  if( _out ) (*_out) << std::setw(16) << "BLOCKS PRODUCED";
+                  if( _out ) (*_out) << std::setw(16) << "BLOCKS MISSED";
                   if( _out ) (*_out) << "\n---------------------------------------------------------\n";
 
                   if (current < num_active)
@@ -844,6 +848,11 @@ namespace bts { namespace cli {
 
                       if( _out ) (*_out) << std::setw(12) << delegate_rec.id;
                       if( _out ) (*_out) << std::setw(25) << delegate_rec.name;
+                      
+                      if( _out ) (*_out) << std::setw(20) << delegate_rec.votes_for();
+                      if( _out ) (*_out) << std::setw(20) << delegate_rec.votes_against();
+
+
                       std::stringstream ss;
                       auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
                       FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
@@ -851,6 +860,10 @@ namespace bts { namespace cli {
                       ss << percent;
                       ss << " %";
                       if( _out ) (*_out) << std::setw(20) << ss.str();
+
+                      if( _out ) (*_out) << std::setw(16) << delegate_rec.delegate_info->blocks_produced;
+                      if( _out ) (*_out) << std::setw(16) << delegate_rec.delegate_info->blocks_missed;
+
                       if( _out ) (*_out) << "\n";
                       current++;
                   }
@@ -967,7 +980,7 @@ namespace bts { namespace cli {
 
             void print_contact_account_list(const std::vector<wallet_account_record> account_records)
             {
-                if( _out ) (*_out) << std::setw( 25 ) << std::left << "NAME";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
@@ -977,11 +990,11 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 24);
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
                     if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
@@ -1004,7 +1017,7 @@ namespace bts { namespace cli {
 
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
-                if( _out ) (*_out) << std::setw( 25 ) << std::left << "NAME";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
                 if( _out ) (*_out) << std::setw( 25 ) << std::left << "BALANCE";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
@@ -1017,11 +1030,11 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 24);
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
                     auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
@@ -1046,7 +1059,7 @@ namespace bts { namespace cli {
 
             void print_registered_account_list(const vector<account_record> account_records, int32_t count )
             {
-                if( _out ) (*_out) << std::setw( 25 ) << std::left << "NAME";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "VOTES FOR";
@@ -1059,11 +1072,11 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 14) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(25) << pretty_shorten(acct.name, 24);
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
                     
                     if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );

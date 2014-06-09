@@ -5,6 +5,7 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
+#include <memory>
 
 
 namespace bts { namespace rpc {
@@ -30,13 +31,14 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc_stubs::common_api_client
+    class client : public bts::rpc_stubs::common_api_client, public std::enable_shared_from_this<client>
     {
        public:
                   client();
                   client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
 
+         void configure_from_command_line(int argc, char** argv);
          void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
          void set_cli( bts::cli::cli* cli );
 
