@@ -1,6 +1,7 @@
 #include <bts/keyhotee/import_keyhotee_id.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/sha512.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace keyhotee {
     class extended_private_key

@@ -303,7 +303,7 @@ int main( int argc, char** argv )
         TeeStream cout_with_log(my_tee);
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( &cout_with_log );
-        auto cli = std::make_shared<bts::cli::cli>( client, std::cin, cout_with_log );
+        auto cli = std::make_shared<bts::cli::cli>( client, &std::cin, &cout_with_log );
         //also echo input to the log file
         cli->set_input_log_stream(console_log);
 #else
