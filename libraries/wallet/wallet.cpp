@@ -104,7 +104,7 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                //ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
+                ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
                 _wallet_db.cache_balance( bal_rec );
               }
          } );
@@ -790,6 +790,9 @@ namespace bts { namespace wallet {
       }
       else
       {
+         FC_ASSERT( is_receive_account(account_name), 
+                    "You can only import keys into receive accounts." );
+
          FC_ASSERT( is_valid_account_name( account_name ) );
          auto current_account = my->_wallet_db.lookup_account( account_name );
          if( !current_account && create_account )
@@ -797,7 +800,6 @@ namespace bts { namespace wallet {
             add_contact_account( account_name, key.get_public_key() );
             return import_private_key( key, account_name, false );
          }
-         FC_ASSERT( current_account.valid(), "You must create an account before importing a key" );
 
          auto pub_key = key.get_public_key();
          address key_address(pub_key);
