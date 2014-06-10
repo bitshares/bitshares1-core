@@ -4,7 +4,7 @@
       {
            "method_name" : "bitcoin_getaccountaddress",
            "description" : "Returns a current bitshare address for receiving payments to this account. If <account_name> does not exist, it will be created along with an associated new address that will be returned.",
-           "return_type"  : "public_key",
+           "return_type"  : "address",
            "parameters" : [
                  {
                     "name" : "account_name",
@@ -21,8 +21,8 @@
            "return_type"  : "account_record",
            "parameters" : [
                  {
-                    "name" : "account_key",
-                    "type" : "public_key",
+                    "name" : "account_address",
+                    "type" : "address",
                     "description" : "the address of this account"
                  }
               ],
@@ -31,11 +31,11 @@
       },
       {
           "method_name" : "bitcoin_dumpprivkey",
-          "description" : "Reveals the private key corresponding to <bitcoinaddress>",
+          "description" : "Reveals the private key corresponding to <bitsharesaddress>",
           "return_type"  : "std::string",
           "parameters" : [
           {
-              "name" : "bts_address",
+              "name" : "account_address",
               "type" : "address",
               "description" : "bitshares address of the private key, base58 string hash of public key"
           }
@@ -205,7 +205,7 @@
           "parameters" :
           [
           {
-              "name" : "bts_address",
+              "name" : "account_address",
               "type" : "address",
               "description" : "The received address"
           }
@@ -290,7 +290,7 @@
               "description" : "the source account(s) to draw the shares from"
           },
           {
-              "name" : "toaddresskey",
+              "name" : "toaddress",
               "type" : "address",
               "description" : "the address to send"
           },

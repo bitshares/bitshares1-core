@@ -505,6 +505,7 @@ namespace bts { namespace wallet {
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
       my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
+      my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_DEFAULT_PRIORITY_FEE) );
       my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
 
       my->_wallet_db.close();
@@ -1888,9 +1889,21 @@ namespace bts { namespace wallet {
    asset wallet::get_priority_fee( const string& symbol )const
    {
       // TODO: support price conversion using price from blockchain
-      return asset( 10000, 0 ); // TODO: actually read the value set
+      auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
+      if ( priority_fee.is_null() )
+      {
+         return asset( BTS_DEFAULT_PRIORITY_FEE, 0 );
+      }
+      else
+      {
+         return asset( priority_fee.as<uint64_t>(), 0 );
+      }
    }
-
+   
+   void wallet::set_priority_fee( uint64_t fee )
+   {
+      my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(fee) );
+   }
    
    pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_rec ) const
    {
@@ -2561,7 +2574,7 @@ namespace bts { namespace wallet {
           obj( "last_unlocked_scanned_block_number", my->_wallet_db.get_property( last_unlocked_scanned_block_number ) );
           obj( "last_locked_scanned_block_number", my->_wallet_db.get_property( last_locked_scanned_block_number ) );
           obj( "next_child_key_index", my->_wallet_db.get_property( next_child_key_index ) );
-          obj( "default_transaction_fee", my->_wallet_db.get_property( default_transaction_fee ) );
+          obj( "default_transaction_priority_fee", get_priority_fee() );
           obj( "state", "open" );
           obj( "locked", is_locked() );
           obj( "file", fc::absolute(my->_current_wallet_path) );

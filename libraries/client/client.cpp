@@ -15,6 +15,7 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/config.hpp>
 
 #include <fc/reflect/variant.hpp>
 #include <fc/io/fstream.hpp>
@@ -44,6 +45,7 @@
 using namespace boost;
    using std::string;
 
+const string BTS_MESSAGE_MAGIC = "Bitshares Signed Message:\n";
 
 struct config
 {
@@ -991,12 +993,12 @@ namespace bts { namespace client {
 
     void detail::client_impl::network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)
     {
-      _p2p_node->set_allowed_peers(allowed_peers);      
+      _p2p_node->set_allowed_peers( allowed_peers );
     }
 
     void detail::client_impl::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
-      _p2p_node->set_advanced_node_parameters(params);
+      _p2p_node->set_advanced_node_parameters( params );
     }
 
     fc::variant_object detail::client_impl::network_get_advanced_node_parameters() const
@@ -1009,29 +1011,36 @@ namespace bts { namespace client {
       if (_p2p_node)
       {
         if (command == "add")
-          _p2p_node->add_node(node);
+          _p2p_node->add_node( node );
       }
     }
     
-    public_key_type detail::client_impl::bitcoin_getaccountaddress(const string &account_name)
+    address detail::client_impl::bitcoin_getaccountaddress(const string& account_name)
     {
-        return wallet_account_create(account_name);
-    }
+       try {
+          FC_ASSERT( _wallet->is_valid_account_name( account_name ) );
+          if ( _wallet->is_valid_account( account_name ) )
+          {
+             return address( _wallet->get_account_public_key( account_name ) );
+          }
+          
+          return _wallet->get_new_address( account_name );
+       } FC_CAPTURE_AND_RETHROW( (account_name) ) }
     
-    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const public_key_type &account_key)
+    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const address& account_address)
     {
         try {
-            auto opt_account = _wallet->get_account_record(address(account_key));
+            auto opt_account = _wallet->get_account_record(account_address);
             if( opt_account.valid() )
                 return *opt_account;
-            FC_ASSERT(false, "Invalid Account Key: ${account_key}", ("account_key",account_key) );
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_key", account_key) ) }
+            FC_ASSERT(false, "Invalid Account Key: ${account_address}", ("account_address",account_address) );
+        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
     
-    string detail::client_impl::bitcoin_dumpprivkey(const address& bts_address){
+    string detail::client_impl::bitcoin_dumpprivkey(const address& account_address){
         try {
-            auto wif_private_key = bts::utilities::key_to_wif(_wallet->get_private_key(address(bts_address)));
+            auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
             return wif_private_key;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
+        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
     void detail::client_impl::bitcoin_encryptwallet(const string& passphrase)
     {
@@ -1058,7 +1067,7 @@ namespace bts { namespace client {
        for ( auto key : public_keys )
            addresses.push_back( address(key) );
        return addresses;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
+    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
     int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
     { try {
@@ -1073,32 +1082,32 @@ namespace bts { namespace client {
        }
        return 0;
 
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
     bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
     {
-        return blockchain_get_block(block_id);
+       return blockchain_get_block(block_id);
     }
 
     uint32_t detail::client_impl::bitcoin_getblockcount() const
     {
-        return blockchain_get_blockcount();
+       return blockchain_get_blockcount();
     }
 
     bts::blockchain::block_id_type detail::client_impl::bitcoin_getblockhash(uint32_t block_number) const
     {
-        return blockchain_get_blockhash(block_number);
+       return blockchain_get_blockhash(block_number);
     }
 
     uint32_t detail::client_impl::bitcoin_getconnectioncount() const
     {
-        return network_get_connection_count();
+       return network_get_connection_count();
     }
 
     fc::variant_object detail::client_impl::bitcoin_getinfo() const
     {
-        return get_info();
+       return get_info();
     }
 
     bts::blockchain::address detail::client_impl::bitcoin_getnewaddress(const string& account_name)
@@ -1106,126 +1115,134 @@ namespace bts { namespace client {
        return _wallet->get_new_address( account_name );
     }
 
-    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const address& bts_address)
+    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const address& account_address)
     {
-        try {
-            auto balance = _chain_db->get_balance_record(bts_address);
-            if (balance.valid() && balance->asset_id() == 0)
-            {
-                return balance->balance;
-            }
-            else
-            {
-                return 0;
-            }
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
+       try {
+          auto balance = _chain_db->get_balance_record( account_address );
+          if (balance.valid() && balance->asset_id() == 0)
+          {
+             return balance->balance;
+          }
+          else
+          {
+             return 0;
+          }
+       } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
     void detail::client_impl::bitcoin_importprivkey(const string& wif_key, const string& account_name, bool rescan)
     {
-        wallet_import_private_key(wif_key, account_name, rescan);
+       wallet_import_private_key(wif_key, account_name, rescan);
     }
     
     std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
     {
-        FC_ASSERT(false, "Not implemented");
+       return _wallet->get_account_balances();
     }
 
     std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
     {
-        try {
-            auto trx_history = wallet_account_transaction_history(account_name);
-            trx_history.reserve(trx_history.size());
-            
-            std::vector<bts::wallet::pretty_transaction> trxs;
-            
-            uint64_t index = 0;
-            for ( auto trx : trx_history )
-            {
-                if ( index >= from )
-                {
-                    trxs.push_back( trx );
-                }
-                
-                if ( trxs.size() >= count )
-                {
-                    break;
-                }
-                index ++;
-            }
-            return trxs;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("count", count)("from", from) ) }
+       try {
+          auto trx_history = wallet_account_transaction_history( account_name );
+          trx_history.reserve(trx_history.size());
+          
+          std::vector<bts::wallet::pretty_transaction> trxs;
+          
+          uint64_t index = 0;
+          for ( auto trx : trx_history )
+          {
+             if ( index >= from )
+             {
+                trxs.push_back( trx );
+             }
+             
+             if ( trxs.size() >= count )
+             {
+                break;
+             }
+             index ++;
+          }
+          return trxs;
+       } FC_CAPTURE_AND_RETHROW( (account_name)(count)(from) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const string& fromaccount, const address& toaddresskey, int64_t amount, const string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const string& fromaccount, const address& toaddress, int64_t amount, const string& comment)
     {
-        try {
-            auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
-                                               fromaccount, toaddresskey,
-                                               comment, true );
-            
-            network_broadcast_transaction( trx );
-            
-            return trx.id();
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
+      
+       try {
+          auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
+                                                         fromaccount, toaddress,
+                                                         comment, true );
+          
+          network_broadcast_transaction( trx );
+          
+          return trx.id();
+       } FC_CAPTURE_AND_RETHROW( (fromaccount)(toaddress)(amount)(comment) ) }
 
     bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< address, int64_t >& to_address_amounts, const string& comment)
     {
-        try {
-           std::unordered_map< address, double > to_address_amount_map;
-           for ( auto address_amount : to_address_amounts )
-           {
-              to_address_amount_map[address_amount.first] = address_amount.second;
-           }
-           
-           auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
-           
-           network_broadcast_transaction(trx);
-           
-           return trx.id();
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_amounts", to_address_amounts)("comment", comment) ) }
-    
+       try {
+          std::unordered_map< address, double > to_address_amount_map;
+          for ( auto address_amount : to_address_amounts )
+          {
+             to_address_amount_map[address_amount.first] = address_amount.second;
+          }
+          
+          auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
+          
+          network_broadcast_transaction(trx);
+          
+          return trx.id();
+       } FC_CAPTURE_AND_RETHROW( (fromaccount)(to_address_amounts)(comment) ) }
+   
     bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const address& address, int64_t amount, const string& comment)
     {
-        FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
+       FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
     }
 
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
-        FC_ASSERT(false, "Not implemented, wallet_set_priorty_fee need to be implemented first.");
+       _wallet->set_priority_fee( amount );
     }
 
     string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)
     { try {
-          FC_ASSERT( !"Not Implemented" );
-          /*
-          auto magic = "BitShares Signed Message:\n" + message;
-          auto private_key = _wallet->get_private_key(address_to_sign_with);
-          
-          auto sig = private_key.sign_compact( fc::sha256::hash(magic) );
-
-          return fc::to_base58( (char *)sig.data, sizeof(sig) );
-          */
-          
+       auto private_key = _wallet->get_private_key(address_to_sign_with);
+       
+       auto sig = private_key.sign_compact( fc::sha256::hash( BTS_MESSAGE_MAGIC + message ) );
+       
+       return fc::to_base58( (char *)sig.data, sizeof(sig) );
+    
     } FC_CAPTURE_AND_RETHROW( (address_to_sign_with)(message) ) }
+   
+    bool detail::client_impl::bitcoin_verifymessage(const address& address_to_verify_with, const string& signature, const string& message)
+    { try {
+       fc::ecc::compact_signature sig;
+       fc::from_base58(signature, (char*)sig.data, sizeof(sig));
+       
+       return address_to_verify_with ==  address(fc::ecc::public_key(sig, fc::sha256::hash( BTS_MESSAGE_MAGIC + message)));
+    } FC_CAPTURE_AND_RETHROW( (address_to_verify_with)(signature)(message) ) }
 
     fc::variant detail::client_impl::bitcoin_validateaddress(const address& address_to_validate )
     { try {
-        FC_ASSERT( !"Not Implemented" );
-        //  return variant( _wallet->get_public_key_summary(address_to_validate) );
+       fc::mutable_variant_object obj("address",address_to_validate);
+       
+       auto opt_account = _wallet->get_account_record(address_to_validate);
+       if ( opt_account.valid() )
+       {
+          obj( "account", *opt_account );
+       }
+       else {
+          auto opt_register_account = _chain_db->get_account_record( address_to_validate );
+          if ( opt_register_account.valid() )
+          {
+             obj( "account", *opt_register_account );
+          }
+       }
+       
+       obj( "ismine", _wallet->is_receive_address( address_to_validate ) );
+       obj( "isvalid", address::is_valid( string(address_to_validate) ) );
+       
+       return obj;
     } FC_CAPTURE_AND_RETHROW( (address_to_validate) ) }
-
-    bool detail::client_impl::bitcoin_verifymessage(const address& address_to_verify_with, const string& signature, const string& message)
-    {
-       FC_ASSERT( !"Not Implemented" );
-       /*
-       try {
-          fc::ecc::compact_signature sig;
-          fc::from_base58(signature, (char*)sig.data, sizeof(sig));
-          
-          return address_to_verify_with ==  address(fc::ecc::public_key(sig, fc::sha256::hash(message)));
-          
-       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("signature", signature)("message", message) ) }
-       */
-    }
 
     void detail::client_impl::bitcoin_walletlock()
     {
@@ -1821,6 +1838,18 @@ namespace bts { namespace client {
       network_broadcast_transaction( trx );
       return trx;
    }
+   
+   asset client_impl::wallet_set_priority_fee( int64_t fee )
+   {
+      if (fee >= 0)
+      {
+         _wallet->set_priority_fee(fee);
+      }
+      
+      auto current_fee = _wallet->get_priority_fee();
+      return current_fee;
+   }
+      
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {
       return _chain_db->get_proposals( first, count );
@@ -1835,4 +1864,5 @@ namespace bts { namespace client {
    {
      return my.get();
    }
+   
 } } // bts::client
