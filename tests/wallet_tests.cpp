@@ -1,6 +1,7 @@
 #define BOOST_TEST_MODULE BlockchainTests2
 #include <boost/test/unit_test.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/genesis_config.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE( master_test )
    vector<fc::ecc::private_key> delegate_private_keys;
 
    genesis_block_config config;
-   config.precision         = BTS_BLOCKCHAIN_PRECISION
+   config.precision         = BTS_BLOCKCHAIN_PRECISION;
    config.timestamp         = bts::blockchain::now();
    config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
    config.base_name         = BTS_BLOCKCHAIN_NAME;
@@ -80,29 +81,29 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
-      name_config delegate_name;
+      name_config delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
       delegate_private_keys.push_back( fc::ecc::private_key::generate() );
       delegate_account.owner = delegate_private_keys.back().get_public_key();
       delegate_account.is_delegate = true;
 
       config.names.push_back(delegate_account);
-      balances.push_back( std::make_pair( pts_address( delegate_account.owner, BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) ) );
+      config.balances.push_back( std::make_pair( pts_address( delegate_account.owner), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
    }
 
    fc::temp_directory clienta_dir;
-   fc::json::save_to_file( config, clienta_dir / "genesis.json" );
+   fc::json::save_to_file( config, clienta_dir.path() / "genesis.json" );
 
    fc::temp_directory clientb_dir;
-   fc::json::save_to_file( config, clientb_dir / "genesis.json" );
+   fc::json::save_to_file( config, clientb_dir.path() / "genesis.json" );
 
-   auto sim_network = std::make_shared<simulated_network>();
+   auto sim_network = std::make_shared<bts::net::simulated_network>();
 
    auto clienta = std::make_shared<client>(sim_network);
-   clienta->open( clienta_dir.path(), clienta_dir / "genesis.json" );
+   clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
 
    auto clientb = std::make_shared<client>(sim_network);
-   clientb->open( clienta_dir.path(), clientb_dir / "genesis.json" );
+   clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
 
 
 } FC_LOG_AND_RETHROW() }

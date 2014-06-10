@@ -424,29 +424,6 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "wallet_get_balance",
-        "description": "",
-        "return_type": "asset_array",
-        "parameters" : 
-          [
-            { 
-              "name" : "symbol", 
-              "type" : "asset_symbol", 
-              "description" : "The type of account, ie: XTS, GLD, USD or * for everything",
-              "default_value" : "*"
-            },
-            { 
-              "name" : "account_name", 
-              "type" : "receive_account_name", 
-              "description" : "The account to list the balance of.",
-              "default_value" : "*"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
-        "aliases" : [ "get_balance" ]
-      },
-      {
         "method_name": "wallet_multipart_transfer",
         "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
@@ -828,6 +805,21 @@
          "parameters"     : [],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : ["balance"]
+      },
+      {
+         "method_name" : "wallet_account_list_public_keys",
+         "description" : "Lists all public keys in this account",
+         "return_type" : "public_key_summary_array",
+         "parameters"  : [
+           {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "the account for which public keys should be listed",
+                "default_value" : "*"
+           }
+         ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "aliases": ["public_keys"]
       },
       {
          "method_name"  : "wallet_withdraw_delegate_pay",

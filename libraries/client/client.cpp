@@ -19,6 +19,7 @@
 #include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
+#include <fc/crypto/elliptic.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
@@ -362,7 +363,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() )
+               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
@@ -1053,15 +1054,24 @@ namespace bts { namespace client {
     {
         try {
             std::vector<std::string> addresses;
-            auto account = wallet_get_account(account_name);
-            addresses.push_back(std::string(account.active_address()));
+            auto public_keys = _wallet->get_public_keys_in_account(account_name);
+            for ( auto key : public_keys )
+            {
+                auto key_summary = _wallet->get_public_key_summary(key);
+                addresses.push_back( key_summary.native_address );
+                addresses.push_back( key_summary.pts_normal_address );
+                addresses.push_back( key_summary.pts_compressed_address );
+                addresses.push_back( key_summary.btc_normal_address );
+                addresses.push_back( key_summary.btc_compressed_address );
+            }
+            
             return addresses;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
     int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
     {
         try {
-            vector<asset> all_balances = _wallet->get_balance( BTS_ADDRESS_PREFIX ,account_name);
+            vector<asset> all_balances = _wallet->get_balances( BTS_ADDRESS_PREFIX ,account_name);
             
             for( uint32_t i = 0; i < all_balances.size(); ++i )
             {
@@ -1154,45 +1164,77 @@ namespace bts { namespace client {
             return trxs;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("count", count)("from", from) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const public_key_type& toaddresskey, int64_t amount, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const std::string& toaddresskey, int64_t amount, const std::string& comment)
     {
         try {
-            // using the key string as the temporary local account name for this temporary key.
-            std::string to_account_name(toaddresskey);
-            wallet_add_contact_account(to_account_name, toaddresskey);
-            auto trx = wallet_transfer(amount, BTS_ADDRESS_PREFIX, fromaccount, to_account_name, comment);
+            auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
+                                               fromaccount, toaddresskey,
+                                               comment, true );
+            
+            network_broadcast_transaction( trx );
+            
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::address, int64_t >& to_address_amounts, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< std::string, int64_t >& to_address_amounts, const std::string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
-
+        try {
+           std::unordered_map< std::string, double > to_address_amount_map;
+           for ( auto address_amount : to_address_amounts )
+           {
+              to_address_amount_map[address_amount.first] = address_amount.second;
+           }
+           
+           auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
+           
+           network_broadcast_transaction(trx);
+           
+           return trx.id();
+        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_amounts", to_address_amounts)("comment", comment) ) }
+    
     bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
+        FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
     }
 
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
-        FC_ASSERT(false, "Not implemented");
+        FC_ASSERT(false, "Not implemented, wallet_set_priorty_fee need to be implemented first.");
     }
 
     std::string detail::client_impl::bitcoin_signmessage(const std::string& address, const std::string& message)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
+          
+          auto sig = private_key.sign_compact( fc::sha256::hash(message) );
 
-    std::string detail::client_impl::bitcoin_validatemessage(const std::string& address)
+          return fc::to_base58( (char *)sig.data, sizeof(sig) );
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("message", message) ) }
+
+    fc::variant detail::client_impl::bitcoin_validateaddress(const std::string& address)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          return variant( _wallet->get_public_key_summary(public_key_type(address)) );
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address) ) }
 
     bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
+       try {
+          fc::ecc::compact_signature sig;
+          fc::from_base58(signature, (char*)sig.data, sizeof(sig));
+          
+          auto key_summery = _wallet->get_public_key_summary(fc::ecc::public_key(sig, fc::sha256::hash(message)));
+          
+          return ( key_summery.native_address == address
+                  || key_summery.btc_normal_address == address
+                  || key_summery.btc_compressed_address == address
+                  || key_summery.pts_normal_address == address
+                  || key_summery.pts_compressed_address == address );
+          
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("signature", signature)("message", message) ) }
 
     void detail::client_impl::bitcoin_walletlock()
     {
@@ -1206,7 +1248,8 @@ namespace bts { namespace client {
 
     void detail::client_impl::bitcoin_walletpassphrasechange(const std::string& oldpassphrase, const std::string& newpassphrase)
     {
-        FC_ASSERT(false, "Not implemented");
+       _wallet->unlock(oldpassphrase);
+       _wallet->change_passphrase(newpassphrase);
     }
 
     void detail::client_impl::stop()
@@ -1374,6 +1417,8 @@ namespace bts { namespace client {
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
           std::cout << "Running in daemon mode, ignoring console\n";
+          auto cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
+          this->set_cli( cli );
           rpc_server->wait_on_quit();
       }
       else 
@@ -1395,6 +1440,7 @@ namespace bts { namespace client {
     #else
         auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
     #endif
+        this->set_cli(cli.get());
         cli->process_commands();
         cli->wait();
       } 
@@ -1497,23 +1543,6 @@ namespace bts { namespace client {
    namespace detail  {
 
 
-    balances client_impl::wallet_get_balance( const string& symbol, 
-                                         const string& account_name ) const
-    { try {
-        vector<asset> all_balances = _wallet->get_balance( symbol ,account_name);
-       
-        balances all_results(all_balances.size());
-        for( uint32_t i = 0; i < all_balances.size(); ++i )
-        {
-           all_results[i].first  = all_balances[i].amount;
-           all_results[i].second = _chain_db->get_asset_symbol( all_balances[i].asset_id ); 
-        }
-        if( all_results.size() == 0 )
-           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
-        return all_results;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
-
-
     void client_impl::wallet_add_contact_account( const string& account_name, 
                                              const public_key_type& contact_key )
     {
@@ -1585,17 +1614,12 @@ namespace bts { namespace client {
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
       fc::variant wallet_balance_shares;
-      if (_wallet->is_open())
-        wallet_balance_shares = wallet_get_balance();
-      else
-        wallet_balance_shares = "[wallet is not open]";
 
       info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
       info["blockchain_head_block_time"]                 = _chain_db->now();
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
-      info["wallet_balance"]                             = wallet_balance_shares;
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )
@@ -1635,6 +1659,29 @@ namespace bts { namespace client {
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
+    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    {
+        auto state = blockchain_security_state();
+        auto required_confirmations = _chain_db->get_required_confirmations();
+        auto participation_rate = _chain_db->get_average_delegate_participation();
+        state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        state.participation_rate = participation_rate;
+        if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+            && participation_rate > .9)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::green;
+        } 
+        else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
+                 || participation_rate < .6)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::red;
+        }
+        else
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::yellow;
+        }
+        return state;
+    }
 
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
@@ -1700,6 +1747,17 @@ namespace bts { namespace client {
        return _wallet->get_unspent_balances( account_name, symbol );
     }
 
+    vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
+    {
+        auto summaries = vector<public_key_summary>();
+        auto keys = _wallet->get_public_keys_in_account( account_name );
+        summaries.reserve( keys.size() );
+        for (auto key : keys)
+        {
+            summaries.push_back(_wallet->get_public_key_summary( key ));
+        }
+        return summaries;
+    }
 
    unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance() 
    {

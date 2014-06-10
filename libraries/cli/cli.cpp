@@ -1037,7 +1037,7 @@ namespace bts { namespace cli {
                         if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
-                    auto balance = _client->get_wallet()->get_balance( BTS_ADDRESS_PREFIX, acct.name );
+                    auto balance = _client->get_wallet()->get_balances( BTS_ADDRESS_PREFIX, acct.name );
                     if( _out ) (*_out) << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
 
                     if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
