@@ -841,6 +841,7 @@ namespace bts { namespace wallet {
       if( key.valid() )
       {
          import_private_key( *key, account_name, create_account );
+         return key->get_public_key();
       }
       
       FC_ASSERT( false, "Error parsing WIF private key" );
