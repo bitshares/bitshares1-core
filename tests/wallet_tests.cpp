@@ -86,11 +86,12 @@ BOOST_AUTO_TEST_CASE( master_test )
       name_config delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
       delegate_private_keys.push_back( fc::ecc::private_key::generate() );
-      delegate_account.owner = delegate_private_keys.back().get_public_key();
+      auto delegate_public_key = delegate_private_keys.back().get_public_key();
+      delegate_account.owner = delegate_public_key;
       delegate_account.is_delegate = true;
 
       config.names.push_back(delegate_account);
-      config.balances.push_back( std::make_pair( pts_address((fc::ecc::public_key)delegate_account.owner), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+      config.balances.push_back( std::make_pair( pts_address(delegate_public_key), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
    }
 
    fc::temp_directory clienta_dir;
