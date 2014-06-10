@@ -1248,7 +1248,7 @@ BOOST_AUTO_TEST_CASE(net_split_test)
 {
   // This checks whether we can create a connected network, then force it to separate
   // into two isolated groups
-  client_processes.resize(50);
+  client_processes.resize(20);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -1294,7 +1294,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
 {
   /* Note: on Windows, boost::process imposes a limit of 64 child processes,
            we should max out at 55 or less to give ourselves some wiggle room */
-  client_processes.resize(5);
+  client_processes.resize(20);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -1377,6 +1377,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
     }
     if (even_are_same && odd_are_same)
     {
+      BOOST_TEST_MESSAGE("All clients are in sync with " << block_counts_after_initial_sync[0] << " blocks");
       clients_in_sync = true;
       break;
     }
