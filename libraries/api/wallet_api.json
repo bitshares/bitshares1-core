@@ -107,7 +107,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the path to the bitcoin wallet you would like to import."
            },
            {
@@ -130,7 +130,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the armory wallet"
            },
            {
@@ -153,7 +153,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the electrum wallet"
            },
            {
@@ -176,7 +176,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the multibit wallet"
            },
            {
