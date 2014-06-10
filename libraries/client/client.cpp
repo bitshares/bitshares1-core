@@ -1136,7 +1136,7 @@ namespace bts { namespace client {
     
     std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
     {
-       FC_ASSERT( !"Not implemented" );
+       return _wallet->get_account_balances();
     }
 
     std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
