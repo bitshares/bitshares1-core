@@ -1019,7 +1019,7 @@ namespace bts { namespace client {
     {
        try {
           FC_ASSERT( _wallet->is_valid_account_name( account_name ) );
-          if ( _wallet->is_valid_account_name( account_name ) )
+          if ( _wallet->is_valid_account( account_name ) )
           {
              return address( _wallet->get_account_public_key( account_name ) );
           }
