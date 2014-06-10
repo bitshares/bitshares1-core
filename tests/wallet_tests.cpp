@@ -86,7 +86,8 @@ BOOST_AUTO_TEST_CASE( master_test )
       name_config delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
       delegate_private_keys.push_back( fc::ecc::private_key::generate() );
-      delegate_account.owner = delegate_private_keys.back().get_public_key();
+      auto delegate_public_key = delegate_private_keys.back().get_public_key();
+      delegate_account.owner = delegate_public_key;
       delegate_account.is_delegate = true;
 
       config.names.push_back(delegate_account);

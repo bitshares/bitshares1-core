@@ -568,7 +568,7 @@ namespace bts{ namespace wallet {
                                       time_point_sec created,
                                       time_point_sec received,
                                       public_key_type from,
-                                      const vector<public_key_type> extra_to
+                                      const vector<address>& extra_addresses
                                       )
    { try {
       auto trx_id = trx.id();
@@ -579,14 +579,15 @@ namespace bts{ namespace wallet {
       if( data.index == 0 ) data.index = new_index();
 
       data.trx = trx;
-      data.transaction_id = trx.id();
-      data.amount         = amount;
-      data.fees           = fees;
-      data.to_account     = to;
-      data.from_account   = from;
-      data.created_time   = created;
-      data.received_time  = received;
-      data.memo_message   = memo_message;
+      data.transaction_id  = trx.id();
+      data.amount          = amount;
+      data.fees            = fees;
+      data.to_account      = to;
+      data.from_account    = from;
+      data.created_time    = created;
+      data.received_time   = received;
+      data.memo_message    = memo_message;
+      data.extra_addresses = extra_addresses;
       store_record( data );
       transactions[trx_id] = data;
 

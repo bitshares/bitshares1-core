@@ -5,13 +5,6 @@
 
 namespace bts { namespace blockchain {
 
-/**
- *  The C keyword 'not' is not friendly on VC++ but we still want to use
- *  it for readability, so we will have the pre-processor convert it to the
- *  more traditional form
- */
-#define not !
-#define not_eq !=
  
    /**
     *  @note in this method we are using 'this->' to refer to member variables for
@@ -19,10 +12,10 @@ namespace bts { namespace blockchain {
     */
    void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( not is_power_of_ten( this->precision ) )
+      if( NOT is_power_of_ten( this->precision ) )
          FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
 
-      if( not eval_state._current_state->is_valid_symbol_name( this->symbol ) )
+      if( NOT eval_state._current_state->is_valid_symbol_name( this->symbol ) )
          FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
       if( this->maximum_share_supply <= 0 )
@@ -32,13 +25,13 @@ namespace bts { namespace blockchain {
       if( current_asset_record )
          FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
 
-      if( issuer_account_id not_eq asset_record::market_issued_asset )
+      if( issuer_account_id != asset_record::market_issued_asset )
       {
          auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
-         if( not issuer_account_record )
+         if( NOT issuer_account_record )
             FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
 
-         if( not eval_state.check_signature( issuer_account_record->active_address() ) )
+         if( NOT eval_state.check_signature( issuer_account_record->active_address() ) )
             FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record) );
       }
 
@@ -68,25 +61,25 @@ namespace bts { namespace blockchain {
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       auto current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
-      if( not current_asset_record )
+      if( NOT current_asset_record )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
 
       auto issuer_account_record = eval_state._current_state->get_account_record( current_asset_record->issuer_account_id );
 
-      if( not issuer_account_record )
+      if( NOT issuer_account_record )
          FC_CAPTURE_AND_THROW( unknown_account_id, (current_asset_record->issuer_account_id) );
 
-      if( not eval_state.check_signature(issuer_account_record->active_address()) )
+      if( NOT eval_state.check_signature(issuer_account_record->active_address()) )
           FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record->active_key()) );
 
-      if( this->issuer_account_id not_eq current_asset_record->issuer_account_id )
+      if( this->issuer_account_id != current_asset_record->issuer_account_id )
       {
           auto new_issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
 
-          if( not new_issuer_account_record )
+          if( NOT new_issuer_account_record )
               FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
 
-          if( not eval_state.check_signature(new_issuer_account_record->active_address()) )
+          if( NOT eval_state.check_signature(new_issuer_account_record->active_address()) )
               FC_CAPTURE_AND_THROW( missing_signature, (new_issuer_account_record->active_key()) );
       }
 
@@ -108,19 +101,19 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( negative_issue, (amount) );
 
       auto current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
-      if( not current_asset_record )
+      if( NOT current_asset_record )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (amount.asset_id) );
 
       auto issuer_account_record = eval_state._current_state->get_account_record( current_asset_record->issuer_account_id );
-      if( not issuer_account_record ) 
+      if( NOT issuer_account_record ) 
          FC_CAPTURE_AND_THROW( unknown_account_id, (current_asset_record->issuer_account_id) );
 
-      if( not eval_state.check_signature( issuer_account_record->active_address() ) ) 
+      if( NOT eval_state.check_signature( issuer_account_record->active_address() ) ) 
       {
          FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record->active_key()) );
       }
 
-      if( not current_asset_record->can_issue( this->amount ) )
+      if( NOT current_asset_record->can_issue( this->amount ) )
       {
          FC_CAPTURE_AND_THROW( over_issue, (amount)(current_asset_record) );
       }
