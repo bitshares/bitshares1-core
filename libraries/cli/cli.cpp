@@ -1134,7 +1134,7 @@ namespace bts { namespace cli {
                 if( _out ) (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
                 if( _out ) (*_out) << std::setw( 20 ) << "FEE";
                 if( _out ) (*_out) << std::setw( 14 ) << "VOTE";
-                if( _out ) (*_out) << std::setw( 42 ) << "ID";
+                if( _out ) (*_out) << std::setw( 8 ) << "ID";
                 if( _out ) (*_out) << "\n---------------------------------------------------------------------------------------------------";
                 if( _out ) (*_out) <<   "--------------------------------------------------------------------------------------------------\n";
                 if( _out ) (*_out) << std::right; 
@@ -1216,7 +1216,7 @@ namespace bts { namespace cli {
 
                     if( _out ) (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 42 ) << string( tx.trx_id );
+                    if( _out ) (*_out) << std::setw( 8 ) << string( tx.trx_id ).substr(0, 8);
 
                     if( _out ) (*_out) << std::right << "\n";
                 }
