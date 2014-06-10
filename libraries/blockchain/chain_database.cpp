@@ -1014,7 +1014,9 @@ namespace bts { namespace blockchain {
    /** return the timestamp from the head block */
    fc::time_point_sec   chain_database::now()const
    {
-      return my->_head_block_header.timestamp;
+      if( my->_head_block_header.block_num )
+         return my->_head_block_header.timestamp;
+      return bts::blockchain::now();
    }
 
          /** return the current fee rate in millishares */

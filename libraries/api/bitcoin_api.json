@@ -185,7 +185,7 @@
       {
           "method_name": "bitcoin_getnewaddress",
           "description": "Returns a new bitcoin address for receiving payments. If [account] is specified payments received with the address will be credited to [account].",
-          "return_type": "public_key",
+          "return_type": "address",
           "parameters" :
           [
           {
@@ -322,7 +322,7 @@
           },
           {
               "name" : "to_address_amounts",
-              "type" : "map< public_key, amount >",
+              "type" : "map< address, amount >",
               "description" : "the public_key to send"
           },
           {

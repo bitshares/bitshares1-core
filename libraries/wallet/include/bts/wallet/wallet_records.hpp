@@ -144,7 +144,6 @@ namespace bts { namespace wallet {
        transaction_id_type       transaction_id;
        optional<public_key_type> to_account;
        optional<public_key_type> from_account;
-       vector<public_key_type>   extra_to_accounts;
        asset                     amount;
        share_type                fees;
        std::string               memo_message;
@@ -153,6 +152,7 @@ namespace bts { namespace wallet {
        fc::time_point            received_time;
        /** the number of times this transaction has been transmitted */
        uint32_t                  transmit_count;
+       vector<address>           extra_addresses;
    };
 
  

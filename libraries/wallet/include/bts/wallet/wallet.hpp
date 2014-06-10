@@ -213,7 +213,7 @@ namespace bts { namespace wallet {
          signed_transaction  transfer_asset_to_address( double real_amount_to_transfer,
                                           const string& amount_to_transfer_symbol,
                                           const string& from_account_name,
-                                          const string& to_address,
+                                          const address& to_address,
                                           const string& memo_message,
                                           bool sign );
          /**
@@ -222,7 +222,7 @@ namespace bts { namespace wallet {
           */
          signed_transaction  transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
                                                      const string& from_account_name,
-                                                     const std::unordered_map< std::string, double >& to_address_amounts,
+                                                     const std::unordered_map< address, double >& to_address_amounts,
                                                      const string& memo_message,
                                                      bool sign );
          /**

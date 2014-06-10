@@ -88,12 +88,12 @@ namespace bts { namespace blockchain {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
          if( fee.second > 0 )
          {
-            if( fee.first == 0 )
+            if( fee.first == 0 && fee.second < required_fees.amount )
                FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(required_fees.amount) );
 
             auto asset_record = _current_state->get_asset_record( fee.first );
-            if( not asset_record )
-            FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
+            if( !asset_record )
+              FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
 
             asset_record->collected_fees += fee.second;
             asset_record->current_share_supply -= fee.second;

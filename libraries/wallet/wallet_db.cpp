@@ -32,7 +32,10 @@ namespace bts{ namespace wallet {
               if( account_to_load.id != 0 )
               {
                 auto current_account_id_itr = self->account_id_to_account.find( account_to_load.id );
-                FC_ASSERT( current_account_id_itr == self->account_id_to_account.end() );
+                if( current_account_id_itr != self->account_id_to_account.end() )
+                    FC_ASSERT( current_account_id_itr->second == account_to_load.index, "", 
+                                ("current_account_id_tr",*current_account_id_itr)
+                                ("account_to_load.index",account_to_load.index) );
                 self->account_id_to_account[ account_to_load.id ] = account_to_load.index;
               }
 
@@ -40,7 +43,7 @@ namespace bts{ namespace wallet {
               FC_ASSERT( current_name_itr == self->name_to_account.end() );
               self->name_to_account[ account_to_load.name ] = account_to_load.index;
 
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_load",account_to_load) )  }
+           } FC_CAPTURE_AND_RETHROW( (account_to_load) ) } 
 
            void load_key_record( const wallet_key_record& key_to_load )
            { try {
@@ -398,7 +401,7 @@ namespace bts{ namespace wallet {
 
    void wallet_db::add_contact_account( const account_record& blockchain_account,
                                         const variant& private_data  )
-   {
+   { try {
       wallet_account_record war;
       account_record& tmp  = war;
       tmp = blockchain_account;
@@ -424,8 +427,8 @@ namespace bts{ namespace wallet {
          my->load_key_record( new_key );
          store_key( new_key );
       }
+   } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
 
-   }
    void wallet_db::add_contact_account( const string& new_account_name, 
                                         const public_key_type& new_account_key,
                                         const variant& private_data )
@@ -565,7 +568,7 @@ namespace bts{ namespace wallet {
                                       time_point_sec created,
                                       time_point_sec received,
                                       public_key_type from,
-                                      const vector<public_key_type> extra_to
+                                      const vector<address>& extra_addresses
                                       )
    { try {
       auto trx_id = trx.id();
@@ -576,14 +579,15 @@ namespace bts{ namespace wallet {
       if( data.index == 0 ) data.index = new_index();
 
       data.trx = trx;
-      data.transaction_id = trx.id();
-      data.amount         = amount;
-      data.fees           = fees;
-      data.to_account     = to;
-      data.from_account   = from;
-      data.created_time   = created;
-      data.received_time  = received;
-      data.memo_message   = memo_message;
+      data.transaction_id  = trx.id();
+      data.amount          = amount;
+      data.fees            = fees;
+      data.to_account      = to;
+      data.from_account    = from;
+      data.created_time    = created;
+      data.received_time   = received;
+      data.memo_message    = memo_message;
+      data.extra_addresses = extra_addresses;
       store_record( data );
       transactions[trx_id] = data;
 

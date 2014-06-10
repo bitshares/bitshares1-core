@@ -296,8 +296,8 @@
       },
       {
         "type_name" : "address",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string"
+        "cpp_return_type" : "bts::blockchain::address",
+        "cpp_include_file" : "bts/blockchain/address.hpp"
       },
       {
         "type_name" : "full_block",
@@ -360,8 +360,9 @@
           "default_example" : 10
       },
       {
-          "type_name" : "map< public_key, amount >",
-          "cpp_return_type" : "std::unordered_map< std::string, int64_t >"
+          "type_name" : "map< address, amount >",
+          "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >",
+          "cpp_include_file" : "bts/blockchain/address.hpp"
       },
       {
           "type_name" : "name",

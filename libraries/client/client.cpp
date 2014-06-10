@@ -42,12 +42,13 @@
 
 #include <boost/lexical_cast.hpp>
 using namespace boost;
+   using std::string;
 
 
 struct config
 {
    config( ) : 
-      default_peers(std::vector<std::string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
+      default_peers(std::vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
       ignore_console(false)
       {
       }
@@ -91,7 +92,7 @@ struct config
    }
 
    bts::rpc::rpc_server::config rpc;
-   std::vector<std::string>     default_peers;
+   std::vector<string>     default_peers;
    bool                         ignore_console;
    fc::logging_config           logging;
 };
@@ -109,19 +110,19 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
 {
    // parse command-line options
    program_options::options_description option_config("Allowed options");
-   option_config.add_options()("data-dir", program_options::value<std::string>(), "configuration data directory")
+   option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
                               ("help", "display this help message")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
-                              ("connect-to", program_options::value<std::vector<std::string> >(), "set remote host to connect to")
+                              ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
-                              ("rpcuser", program_options::value<std::string>(), "username for JSON-RPC") // default arguments are in config.json
-                              ("rpcpassword", program_options::value<std::string>(), "password for JSON-RPC")
+                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcpassword", program_options::value<string>(), "password for JSON-RPC")
                               ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
-                              ("genesis-config", program_options::value<std::string>(), 
+                              ("genesis-config", program_options::value<string>(), 
                                "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
@@ -223,7 +224,7 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
    fc::path datadir;
    if (option_variables.count("data-dir"))
    {
-     datadir = fc::path(option_variables["data-dir"].as<std::string>().c_str());
+     datadir = fc::path(option_variables["data-dir"].as<string>().c_str());
    }
    else
    {
@@ -553,11 +554,11 @@ namespace bts { namespace client {
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       std::string client_impl::execute_command_line(const std::string& input) const
+       string client_impl::execute_command_line(const string& input) const
        {
            if (_cli)
            {
-               std::stringstream output;
+              std::stringstream output;
                _cli->execute_command_line( input, &output );
                return output.str();
            }
@@ -606,7 +607,7 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-        if( not my->_cli )
+        if( !my->_cli )
            my->_cli = new cli::cli( shared_from_this() );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
@@ -950,11 +951,11 @@ namespace bts { namespace client {
       _wallet->import_armory_wallet(filename, passphrase, account_name);
     }
     
-    void detail::client_impl::wallet_import_keyhotee(const std::string& firstname,
-                                                     const std::string& middlename,
-                                                     const std::string& lastname,
-                                                     const std::string& brainkey,
-                                                     const std::string& keyhoteeid)
+    void detail::client_impl::wallet_import_keyhotee(const string& firstname,
+                                                     const string& middlename,
+                                                     const string& lastname,
+                                                     const string& brainkey,
+                                                     const string& keyhoteeid)
     {
         _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
     }
@@ -1022,7 +1023,7 @@ namespace bts { namespace client {
       }
     }
     
-    public_key_type detail::client_impl::bitcoin_getaccountaddress(const std::string &account_name)
+    public_key_type detail::client_impl::bitcoin_getaccountaddress(const string &account_name)
     {
         return wallet_account_create(account_name);
     }
@@ -1036,18 +1037,18 @@ namespace bts { namespace client {
             FC_ASSERT(false, "Invalid Account Key: ${account_key}", ("account_key",account_key) );
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_key", account_key) ) }
     
-    std::string detail::client_impl::bitcoin_dumpprivkey(const std::string& bts_address){
+    string detail::client_impl::bitcoin_dumpprivkey(const address& bts_address){
         try {
             auto wif_private_key = bts::utilities::key_to_wif(_wallet->get_private_key(address(bts_address)));
             return wif_private_key;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
 
-    void detail::client_impl::bitcoin_encryptwallet(const std::string& passphrase)
+    void detail::client_impl::bitcoin_encryptwallet(const string& passphrase)
     {
         wallet_change_passphrase(passphrase);
     }
 
-    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const std::string& command)
+    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const string& command)
     {
         network_add_node(node, command);
     }
@@ -1057,37 +1058,32 @@ namespace bts { namespace client {
         wallet_export_to_json(destination);
     }
 
-    std::vector<std::string> detail::client_impl::bitcoin_getaddressesbyaccount(const std::string& account_name)
-    {
-        try {
-            std::vector<std::string> addresses;
-            auto public_keys = _wallet->get_public_keys_in_account(account_name);
-            for ( auto key : public_keys )
-            {
-                auto key_summary = _wallet->get_public_key_summary(key);
-                addresses.push_back( key_summary.native_address );
-                addresses.push_back( key_summary.pts_normal_address );
-                addresses.push_back( key_summary.pts_compressed_address );
-                addresses.push_back( key_summary.btc_normal_address );
-                addresses.push_back( key_summary.btc_compressed_address );
-            }
-            
-            return addresses;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
+    std::vector<address> detail::client_impl::bitcoin_getaddressesbyaccount(const string& account_name)
+    { try {
+       std::vector<address> addresses;
+       auto public_keys = _wallet->get_public_keys_in_account(account_name);
 
-    int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
-    {
-        try {
-           auto balances = _wallet->get_account_balances();
-           auto itr = balances.find( account_name );
-           if( itr != balances.end() )
-           {
-              auto bitr = itr->second.find( BTS_BLOCKCHAIN_SYMBOL );
-              if( bitr != itr->second.end() )
-                 return bitr->second;
-           }
-           return 0;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+       addresses.reserve(public_keys.size());
+
+       for ( auto key : public_keys )
+           addresses.push_back( address(key) );
+       return addresses;
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
+
+    int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
+    { try {
+
+       auto balances = _wallet->get_account_balances();
+       auto itr = balances.find( account_name );
+       if( itr != balances.end() )
+       {
+          auto bitr = itr->second.find( BTS_BLOCKCHAIN_SYMBOL );
+          if( bitr != itr->second.end() )
+             return bitr->second;
+       }
+       return 0;
+
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
     bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
@@ -1115,15 +1111,15 @@ namespace bts { namespace client {
         return get_info();
     }
 
-    bts::blockchain::public_key_type detail::client_impl::bitcoin_getnewaddress(const std::string& account_name)
+    bts::blockchain::address detail::client_impl::bitcoin_getnewaddress(const string& account_name)
     {
-        return wallet_account_create(account_name);
+       return _wallet->get_new_address( account_name );
     }
 
-    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const std::string& bts_address)
+    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const address& bts_address)
     {
         try {
-            auto balance = _chain_db->get_balance_record(address(bts_address));
+            auto balance = _chain_db->get_balance_record(bts_address);
             if (balance.valid() && balance->asset_id() == 0)
             {
                 return balance->balance;
@@ -1134,17 +1130,17 @@ namespace bts { namespace client {
             }
         } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
 
-    void detail::client_impl::bitcoin_importprivkey(const std::string& wif_key, const std::string& account_name, bool rescan)
+    void detail::client_impl::bitcoin_importprivkey(const string& wif_key, const string& account_name, bool rescan)
     {
         wallet_import_private_key(wif_key, account_name, rescan);
     }
     
-    std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
+    std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
     {
         FC_ASSERT(false, "Not implemented");
     }
 
-    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const std::string& account_name, uint64_t count, uint64_t from)
+    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
     {
         try {
             auto trx_history = wallet_account_transaction_history(account_name);
@@ -1169,7 +1165,7 @@ namespace bts { namespace client {
             return trxs;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("count", count)("from", from) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const std::string& toaddresskey, int64_t amount, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const string& fromaccount, const address& toaddresskey, int64_t amount, const string& comment)
     {
         try {
             auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
@@ -1181,10 +1177,10 @@ namespace bts { namespace client {
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< std::string, int64_t >& to_address_amounts, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< address, int64_t >& to_address_amounts, const string& comment)
     {
         try {
-           std::unordered_map< std::string, double > to_address_amount_map;
+           std::unordered_map< address, double > to_address_amount_map;
            for ( auto address_amount : to_address_amounts )
            {
               to_address_amount_map[address_amount.first] = address_amount.second;
@@ -1197,7 +1193,7 @@ namespace bts { namespace client {
            return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_amounts", to_address_amounts)("comment", comment) ) }
     
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const address& address, int64_t amount, const string& comment)
     {
         FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
     }
@@ -1207,51 +1203,51 @@ namespace bts { namespace client {
         FC_ASSERT(false, "Not implemented, wallet_set_priorty_fee need to be implemented first.");
     }
 
-    std::string detail::client_impl::bitcoin_signmessage(const std::string& address, const std::string& message)
-    {
-       try {
-          auto private_key = _wallet->get_private_key(bts::blockchain::address(address));
+    string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)
+    { try {
+          FC_ASSERT( !"Not Implemented" );
+          /*
+          auto magic = "BitShares Signed Message:\n" + message;
+          auto private_key = _wallet->get_private_key(address_to_sign_with);
           
-          auto sig = private_key.sign_compact( fc::sha256::hash(message) );
+          auto sig = private_key.sign_compact( fc::sha256::hash(magic) );
 
           return fc::to_base58( (char *)sig.data, sizeof(sig) );
+          */
           
-       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("message", message) ) }
+    } FC_CAPTURE_AND_RETHROW( (address_to_sign_with)(message) ) }
 
-    fc::variant detail::client_impl::bitcoin_validateaddress(const std::string& address)
-    {
-       try {
-          return variant( _wallet->get_public_key_summary(public_key_type(address)) );
-          
-       } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address) ) }
+    fc::variant detail::client_impl::bitcoin_validateaddress(const address& address_to_validate )
+    { try {
+        FC_ASSERT( !"Not Implemented" );
+        //  return variant( _wallet->get_public_key_summary(address_to_validate) );
+    } FC_CAPTURE_AND_RETHROW( (address_to_validate) ) }
 
-    bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
+    bool detail::client_impl::bitcoin_verifymessage(const address& address_to_verify_with, const string& signature, const string& message)
     {
+       FC_ASSERT( !"Not Implemented" );
+       /*
        try {
           fc::ecc::compact_signature sig;
           fc::from_base58(signature, (char*)sig.data, sizeof(sig));
           
-          auto key_summery = _wallet->get_public_key_summary(fc::ecc::public_key(sig, fc::sha256::hash(message)));
-          
-          return ( key_summery.native_address == address
-                  || key_summery.btc_normal_address == address
-                  || key_summery.btc_compressed_address == address
-                  || key_summery.pts_normal_address == address
-                  || key_summery.pts_compressed_address == address );
+          return address_to_verify_with ==  address(fc::ecc::public_key(sig, fc::sha256::hash(message)));
           
        } FC_RETHROW_EXCEPTIONS( warn, "", ("address",address)("signature", signature)("message", message) ) }
+       */
+    }
 
     void detail::client_impl::bitcoin_walletlock()
     {
         wallet_lock();
     }
 
-    void detail::client_impl::bitcoin_walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
+    void detail::client_impl::bitcoin_walletpassphrase(const string& passphrase, const fc::microseconds& timeout)
     {
         wallet_unlock(timeout, passphrase);
     }
 
-    void detail::client_impl::bitcoin_walletpassphrasechange(const std::string& oldpassphrase, const std::string& newpassphrase)
+    void detail::client_impl::bitcoin_walletpassphrasechange(const string& oldpassphrase, const string& newpassphrase)
     {
        _wallet->unlock(oldpassphrase);
        _wallet->change_passphrase(newpassphrase);
@@ -1297,7 +1293,7 @@ namespace bts { namespace client {
 
       fc::optional<fc::path> genesis_file_path;
       if (option_variables.count("genesis-config"))
-        genesis_file_path = option_variables["genesis-config"].as<std::string>();
+        genesis_file_path = option_variables["genesis-config"].as<string>();
 
       this->open( datadir, genesis_file_path );
       this->run_delegate();
@@ -1311,9 +1307,9 @@ namespace bts { namespace client {
         // First, override any config parameters they
         // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
         if (option_variables.count("rpcuser"))
-          cfg.rpc.rpc_user = option_variables["rpcuser"].as<std::string>();
+          cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
         if (option_variables.count("rpcpassword"))
-            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<std::string>();
+            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
         if (option_variables.count("rpcport"))
             cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
         if (option_variables.count("httpport"))
@@ -1397,7 +1393,7 @@ namespace bts { namespace client {
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
         std::cout << "port " << actual_p2p_endpoint.port();
       else
-        std::cout << (std::string)actual_p2p_endpoint;
+        std::cout << (string)actual_p2p_endpoint;
       if (option_variables.count("p2p-port"))
       {
         uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
@@ -1409,13 +1405,13 @@ namespace bts { namespace client {
 
       if (option_variables.count("connect-to"))
       {
-          std::vector<std::string> hosts = option_variables["connect-to"].as<std::vector<std::string>>();
+          std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
           for( auto peer : hosts )
             this->connect_to_peer( peer );
       }
       else
       {
-        for (std::string default_peer : cfg.default_peers)
+        for (string default_peer : cfg.default_peers)
           this->connect_to_peer(default_peer);
       }
 
@@ -1493,7 +1489,7 @@ namespace bts { namespace client {
         } catch (...) {
             auto pos = remote_endpoint.find(':');
             uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
-            std::string hostname = remote_endpoint.substr( 0, pos );
+            string hostname = remote_endpoint.substr( 0, pos );
             auto eps = fc::resolve(hostname, port);
             if ( eps.size() > 0 )
             {
@@ -1770,10 +1766,10 @@ namespace bts { namespace client {
          return _wallet->get_account_balances();
       else
       {
-         if( not _chain_db->is_valid_account_name( account_name ) )
+         if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
-         if( not _wallet->is_receive_account( account_name ) )
+         if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
          auto all = _wallet->get_account_balances();

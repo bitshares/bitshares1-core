@@ -132,6 +132,8 @@ namespace bts { namespace wallet {
       bool wallet_impl::address_in_account( const address& address_to_check, 
                                             const address& account_address )const
       { try {
+         if( address_to_check == account_address )
+            return true;
          auto opt_key = _wallet_db.lookup_key( address_to_check );
          if( !opt_key.valid() )
             return false;
@@ -144,10 +146,15 @@ namespace bts { namespace wallet {
                                                  signed_transaction& trx, 
                                                  unordered_set<address>& required_signatures )
       {
+         wlog( "${amount}", ("amount",amount) );
          share_type remaining = amount;
          for( auto& balance_item : _wallet_db.balances )
          {
             auto owner = balance_item.second.owner();
+            //auto oaccount = _wallet_db.lookup_account( owner );
+            //string name = oaccount ? oaccount->name : string(owner);
+            //ilog( "${name} owner ${owner} == ${from_account}  ${item}", ("name",name)("owner",owner)("from_account",from_account_address)("item",balance_item) );
+
             if( balance_item.second.asset_id() == asset_id && 
                 address_in_account( owner, from_account_address ) )
             {
@@ -156,8 +163,8 @@ namespace bts { namespace wallet {
                   if( remaining > balance_item.second.balance )
                   {
                      trx.withdraw( balance_item.first, balance_item.second.balance );
-                     balance_item.second.balance = 0;
                      remaining -= balance_item.second.balance;
+                     balance_item.second.balance = 0;
                      required_signatures.insert( balance_item.second.owner() );
                      _wallet_db.store_record( balance_item.second );
                   }
@@ -716,14 +723,18 @@ namespace bts { namespace wallet {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( !account_key.valid() );
          if( current_registered_account.valid() )
+         {
             my->_wallet_db.add_contact_account( *current_registered_account, private_data );
+         }
          else
+         {
             my->_wallet_db.add_contact_account( account_name, key, private_data );
+         }
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
       }
 
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) } 
 
 
    owallet_account_record    wallet::get_account( const string& account_name )
@@ -880,7 +891,7 @@ namespace bts { namespace wallet {
          {
              blockchain::account_record& brec = acct.second;
              brec = *blockchain_acct_rec;
-             my->_wallet_db.cache_account( acct.second );
+             my->_wallet_db.store_record( acct.second );
          }
       }
 
@@ -1033,7 +1044,7 @@ namespace bts { namespace wallet {
        auto asset_id = asset_rec->id;
 
        int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-       share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
+       share_type amount_to_transfer((share_type)(real_amount_to_transfer * precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
@@ -1223,11 +1234,11 @@ namespace bts { namespace wallet {
                                       ("amount_to_withdraw",amount_to_withdraw ) ) }
 
    signed_transaction  wallet::transfer_asset_to_address( double real_amount_to_transfer,
-                                                  const string& amount_to_transfer_symbol,
-                                                  const string& from_account_name,
-                                                  const string& to_address,
-                                                  const string& memo_message,
-                                                  bool sign )
+                                                          const string& amount_to_transfer_symbol,
+                                                          const string& from_account_name,
+                                                          const address& to_address,
+                                                          const string& memo_message,
+                                                          bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1239,18 +1250,168 @@ namespace bts { namespace wallet {
       auto asset_id = asset_rec->id;
       
       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
+      share_type amount_to_transfer = real_amount_to_transfer * precision;
       asset asset_to_transfer( amount_to_transfer, asset_id );
-      
+
+      private_key_type sender_private_key  = get_account_private_key( from_account_name );
+      public_key_type  sender_public_key   = sender_private_key.get_public_key();
+      address          sender_account_address( sender_private_key.get_public_key() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
         
-      public_key_type  receiver_public_key = public_key_type(to_address);
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      if( required_fees.asset_id == asset_to_transfer.asset_id )
+      {
+         my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
+                                      required_fees.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+      }
+      else
+      {
+         my->withdraw_to_transaction( asset_to_transfer.amount,
+                                      asset_to_transfer.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+         
+         my->withdraw_to_transaction( required_fees.amount,
+                                      required_fees.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+      }
+
+      trx.deposit( to_address, asset_to_transfer, select_delegate_vote() );
+
+      if( sign )
+      {
+         sign_transaction( trx, required_signatures );
+         my->_wallet_db.cache_transaction( trx, asset_to_transfer,
+                                          required_fees.amount,
+                                          memo_message,
+                                          public_key_type(),
+                                          bts::blockchain::now(),
+                                          bts::blockchain::now(),
+                                          sender_public_key,
+                                          vector<address>{to_address}
+                                          );
+      }
+      return trx;
+      
+   } FC_RETHROW_EXCEPTIONS( warn, "",
+                            ("real_amount_to_transfer",real_amount_to_transfer)
+                            ("amount_to_transfer_symbol",amount_to_transfer_symbol)
+                            ("from_account_name",from_account_name)
+                            ("to_address",to_address)
+                            ("memo_message",memo_message) ) }
+    
+   signed_transaction  wallet::transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
+                                                       const string& from_account_name,
+                                                       const std::unordered_map< address, double >& to_address_amounts,
+                                                       const string& memo_message,
+                                                       bool sign )
+   {
+      try {
+         FC_ASSERT( is_open() );
+         FC_ASSERT( is_unlocked() );
+         FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
+         FC_ASSERT( is_receive_account( from_account_name ) );
+         FC_ASSERT( to_address_amounts.size() > 0 );
+         
+         auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+         FC_ASSERT( asset_rec.valid() );
+         auto asset_id = asset_rec->id;
+         
+         int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+         
+         private_key_type sender_private_key  = get_account_private_key( from_account_name );
+         public_key_type  sender_public_key   = sender_private_key.get_public_key();
+         address          sender_account_address( sender_private_key.get_public_key() );
+         
+         signed_transaction     trx;
+         unordered_set<address> required_signatures;
+         
+         asset total_asset_to_transfer( 0, asset_id );
+         auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+         
+         vector<address> to_addresses;
+         for ( auto address_amount : to_address_amounts )
+         {
+            auto real_amount_to_transfer = address_amount.second;
+            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
+            asset asset_to_transfer( amount_to_transfer, asset_id );
+            
+            my->withdraw_to_transaction( amount_to_transfer,
+                                        asset_to_transfer.asset_id,
+                                        sender_account_address,
+                                        trx, required_signatures );
+            
+            total_asset_to_transfer += asset_to_transfer;
+             
+            trx.deposit( address_amount.first, asset_to_transfer, select_delegate_vote() );
+             
+            to_addresses.push_back( address_amount.first );
+         }
+         
+         my->withdraw_to_transaction( required_fees.amount,
+                                     required_fees.asset_id,
+                                     sender_account_address,
+                                     trx, required_signatures );
+         
+         
+         if( sign )
+         {
+            sign_transaction( trx, required_signatures );
+            my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
+                                             required_fees.amount,
+                                             memo_message,
+                                             public_key_type(),
+                                             bts::blockchain::now(),
+                                             bts::blockchain::now(),
+                                             sender_public_key,
+                                             to_addresses
+                                             );
+         }
+         return trx;
+      } FC_RETHROW_EXCEPTIONS( warn, "",
+                              ("amount_to_transfer_symbol",amount_to_transfer_symbol)
+                              ("from_account_name",from_account_name)
+                              ("to_address_amounts",to_address_amounts)
+                              ("memo_message",memo_message) ) }
+   
+   signed_transaction   wallet::transfer_asset( double real_amount_to_transfer,
+                                        const string& amount_to_transfer_symbol,
+                                        const string& from_account_name,
+                                        const string& to_account_name,
+                                        const string& memo_message,
+                                        bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
+       FC_ASSERT( is_receive_account( from_account_name ) );
+       FC_ASSERT( is_valid_account( to_account_name ) );
+       FC_ASSERT( is_unique_account( to_account_name ), 
+                  "Local account name conflicts with registered name, "
+                  "please rename your local account before attempting a transfer",
+                  ("to_account_name",to_account_name) );
+
+      auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      FC_ASSERT( asset_rec.valid() );
+      auto asset_id = asset_rec->id;
+      
+      int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+
+      share_type amount_to_transfer = real_amount_to_transfer * precision;
+      asset asset_to_transfer( amount_to_transfer, asset_id );
+
+      public_key_type  receiver_public_key = get_account_public_key( to_account_name );
       private_key_type sender_private_key  = get_account_private_key( from_account_name );
       public_key_type  sender_public_key   = sender_private_key.get_public_key();
       address          sender_account_address( sender_private_key.get_public_key() );
         
       signed_transaction     trx;
       unordered_set<address> required_signatures;
-        
         
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -1262,7 +1423,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->withdraw_to_transaction( amount_to_transfer,
+         my->withdraw_to_transaction( asset_to_transfer.amount,
                                        asset_to_transfer.asset_id,
                                        sender_account_address,
                                        trx, required_signatures );
@@ -1294,123 +1455,12 @@ namespace bts { namespace wallet {
                                           );
       }
       return trx;
-      
-   } FC_RETHROW_EXCEPTIONS( warn, "",
-                            ("real_amount_to_transfer",real_amount_to_transfer)
-                            ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-                            ("from_account_name",from_account_name)
-                            ("to_address",to_address)
-                            ("memo_message",memo_message) ) }
-    
-   signed_transaction  wallet::transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
-                                                       const string& from_account_name,
-                                                       const std::unordered_map< std::string, double >& to_address_amounts,
-                                                       const string& memo_message,
-                                                       bool sign )
-   {
-      try {
-         FC_ASSERT( is_open() );
-         FC_ASSERT( is_unlocked() );
-         FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-         FC_ASSERT( is_receive_account( from_account_name ) );
-         FC_ASSERT( to_address_amounts.size() > 0 );
-         
-         auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
-         FC_ASSERT( asset_rec.valid() );
-         auto asset_id = asset_rec->id;
-         
-         int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-         
-         private_key_type sender_private_key  = get_account_private_key( from_account_name );
-         public_key_type  sender_public_key   = sender_private_key.get_public_key();
-         address          sender_account_address( sender_private_key.get_public_key() );
-         
-         signed_transaction     trx;
-         unordered_set<address> required_signatures;
-         
-         asset total_asset_to_transfer( 0, asset_id );
-         auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
-         
-         vector<public_key_type> to_public_keys;
-         for ( auto address_amount : to_address_amounts )
-         {
-            auto real_amount_to_transfer = address_amount.second;
-            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
-            asset asset_to_transfer( amount_to_transfer, asset_id );
-            
-            public_key_type  receiver_public_key = public_key_type(address_amount.first);
-            
-            my->withdraw_to_transaction( amount_to_transfer,
-                                        asset_to_transfer.asset_id,
-                                        sender_account_address,
-                                        trx, required_signatures );
-            
-            total_asset_to_transfer += asset_to_transfer;
-            
-            trx.deposit_to_account( receiver_public_key,
-                                   asset_to_transfer,
-                                   sender_private_key,
-                                   memo_message,
-                                   select_delegate_vote(),
-                                   sender_private_key.get_public_key(),
-                                   from_memo );
-            to_public_keys.push_back( receiver_public_key );
-         }
-         
-         my->withdraw_to_transaction( required_fees.amount,
-                                     required_fees.asset_id,
-                                     sender_account_address,
-                                     trx, required_signatures );
-         
-         
-         if( sign )
-         {
-            sign_transaction( trx, required_signatures );
-            my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
-                                             required_fees.amount,
-                                             memo_message,
-                                             to_public_keys[0],
-                                             bts::blockchain::now(),
-                                             bts::blockchain::now(),
-                                             sender_public_key,
-                                             std::vector<public_key_type>( to_public_keys.begin() + 1, to_public_keys.end() )
-                                             );
-         }
-         return trx;
-      } FC_RETHROW_EXCEPTIONS( warn, "",
-                              ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-                              ("from_account_name",from_account_name)
-                              ("to_address_amounts",to_address_amounts)
-                              ("memo_message",memo_message) ) }
-   
-   signed_transaction   wallet::transfer_asset( double real_amount_to_transfer,
-                                        const string& amount_to_transfer_symbol,
-                                        const string& from_account_name,
-                                        const string& to_account_name,
-                                        const string& memo_message,
-                                        bool sign )
-   { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-       FC_ASSERT( is_receive_account( from_account_name ) );
-       FC_ASSERT( is_valid_account( to_account_name ) );
-       FC_ASSERT( is_unique_account( to_account_name ), 
-                  "Local account name conflicts with registered name, "
-                  "please rename your local account before attempting a transfer",
-                  ("to_account_name",to_account_name) );
 
-      public_key_type  receiver_public_key = get_account_public_key( to_account_name );
-
-      return transfer_asset_to_address(real_amount_to_transfer, amount_to_transfer_symbol, from_account_name, std::string(receiver_public_key), memo_message, sign);
-
-   } FC_RETHROW_EXCEPTIONS( warn, "", 
-         ("real_amount_to_transfer",real_amount_to_transfer)
-         ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-         ("from_account_name",from_account_name)
-         ("to_account_name",to_account_name)
-         ("memo_message",memo_message) ) }
-
+   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
+                             (amount_to_transfer_symbol)
+                             (from_account_name)
+                             (to_account_name)
+                             (memo_message ) ) }
 
    wallet_transaction_record wallet::register_account( const string& account_to_register,
                                                 const variant& public_data,

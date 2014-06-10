@@ -135,9 +135,12 @@ namespace bts { namespace blockchain {
                    parent_record = eval_state._current_state->get_account_record( parent_name );
                 }
              }
-             string message = "updating the active key for this account requires the signature "
-                              "of the owner or one of their parent accounts";
-             FC_CAPTURE_AND_THROW( missing_signature, (message) );
+             if( !verified )
+             {
+                string message = "updating the active key for this account requires the signature "
+                                 "of the owner or one of their parent accounts";
+                FC_CAPTURE_AND_THROW( missing_signature, (message) );
+             }
          }
       }
       else
@@ -163,9 +166,12 @@ namespace bts { namespace blockchain {
                 }
              }
          }
-         string message = "updating the active key for this account requires the signature "
-                          "of the owner or one of their parent accounts";
-         FC_CAPTURE_AND_THROW( missing_signature, (message) );
+         if( !verified )
+         {
+            string message = "updating the active key for this account requires the signature "
+                             "of the owner or one of their parent accounts";
+            FC_CAPTURE_AND_THROW( missing_signature, (message) );
+         }
       }
 
       if( this->public_data.valid() )
