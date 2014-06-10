@@ -7,10 +7,10 @@ namespace bts { namespace blockchain {
    void submit_proposal_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
        auto delegate_record = eval_state._current_state->get_account_record( submitting_delegate_id );
-       if( not delegate_record ) 
+       if( !delegate_record ) 
           FC_CAPTURE_AND_THROW( unknown_account_id, (submitting_delegate_id) );
 
-       if( not delegate_record->is_delegate() )
+       if( !delegate_record->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (delegate_record) );
 
        proposal_record new_proposal;
@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
        new_proposal.proposal_type = this->proposal_type;
        new_proposal.data = this->data;
 
-       if( not eval_state.check_signature(delegate_record->active_address()) )
+       if( !eval_state.check_signature(delegate_record->active_address()) )
           FC_CAPTURE_AND_THROW( missing_signature, (delegate_record->active_key()) );
 
        eval_state._current_state->store_proposal_record( new_proposal );
@@ -38,20 +38,20 @@ namespace bts { namespace blockchain {
        ///  signed by a registered delegate
        auto delegate_id = id.delegate_id;
        auto delegate_record = eval_state._current_state->get_account_record( delegate_id );
-       if( not delegate_record ) 
+       if( !delegate_record ) 
           FC_CAPTURE_AND_THROW( unknown_account_id, (delegate_id) );
 
-       if( not delegate_record->is_delegate() )
+       if( !delegate_record->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (delegate_record) );
 
-       if( not eval_state._current_state->is_active_delegate(delegate_id)  )
+       if( !eval_state._current_state->is_active_delegate(delegate_id)  )
           FC_CAPTURE_AND_THROW( not_an_active_delegate, (delegate_record) );
 
-       if( not eval_state.check_signature(delegate_record->active_address()) )
+       if( !eval_state.check_signature(delegate_record->active_address()) )
           FC_CAPTURE_AND_THROW( missing_signature, (delegate_record->active_key()) );
 
        auto proposal_record = eval_state._current_state->get_proposal_record( id.proposal_id );
-       if( not proposal_record )
+       if( !proposal_record )
           FC_CAPTURE_AND_THROW( unknown_proposal_id, (id.proposal_id) );
 
        proposal_vote new_vote;

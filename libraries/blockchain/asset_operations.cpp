@@ -11,10 +11,10 @@ namespace bts { namespace blockchain {
     */
    void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( not is_power_of_ten( this->precision ) )
+      if( !is_power_of_ten( this->precision ) )
          FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
 
-      if( not eval_state._current_state->is_valid_symbol_name( this->symbol ) )
+      if( !eval_state._current_state->is_valid_symbol_name( this->symbol ) )
          FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
       if( this->maximum_share_supply <= 0 )
@@ -27,10 +27,10 @@ namespace bts { namespace blockchain {
       if( issuer_account_id != asset_record::market_issued_asset )
       {
          auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
-         if( not issuer_account_record )
+         if( !issuer_account_record )
             FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
 
-         if( not eval_state.check_signature( issuer_account_record->active_address() ) )
+         if( !eval_state.check_signature( issuer_account_record->active_address() ) )
             FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record) );
       }
 
@@ -60,25 +60,25 @@ namespace bts { namespace blockchain {
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       auto current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
-      if( not current_asset_record )
+      if( !current_asset_record )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
 
       auto issuer_account_record = eval_state._current_state->get_account_record( current_asset_record->issuer_account_id );
 
-      if( not issuer_account_record )
+      if( !issuer_account_record )
          FC_CAPTURE_AND_THROW( unknown_account_id, (current_asset_record->issuer_account_id) );
 
-      if( not eval_state.check_signature(issuer_account_record->active_address()) )
+      if( !eval_state.check_signature(issuer_account_record->active_address()) )
           FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record->active_key()) );
 
       if( this->issuer_account_id != current_asset_record->issuer_account_id )
       {
           auto new_issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
 
-          if( not new_issuer_account_record )
+          if( !new_issuer_account_record )
               FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
 
-          if( not eval_state.check_signature(new_issuer_account_record->active_address()) )
+          if( !eval_state.check_signature(new_issuer_account_record->active_address()) )
               FC_CAPTURE_AND_THROW( missing_signature, (new_issuer_account_record->active_key()) );
       }
 
@@ -100,19 +100,19 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( negative_issue, (amount) );
 
       auto current_asset_record = eval_state._current_state->get_asset_record( this->amount.asset_id );
-      if( not current_asset_record )
+      if( !current_asset_record )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (amount.asset_id) );
 
       auto issuer_account_record = eval_state._current_state->get_account_record( current_asset_record->issuer_account_id );
-      if( not issuer_account_record ) 
+      if( !issuer_account_record ) 
          FC_CAPTURE_AND_THROW( unknown_account_id, (current_asset_record->issuer_account_id) );
 
-      if( not eval_state.check_signature( issuer_account_record->active_address() ) ) 
+      if( !eval_state.check_signature( issuer_account_record->active_address() ) ) 
       {
          FC_CAPTURE_AND_THROW( missing_signature, (issuer_account_record->active_key()) );
       }
 
-      if( not current_asset_record->can_issue( this->amount ) )
+      if( !current_asset_record->can_issue( this->amount ) )
       {
          FC_CAPTURE_AND_THROW( over_issue, (amount)(current_asset_record) );
       }

@@ -607,7 +607,7 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-        if( not my->_cli )
+        if( !my->_cli )
            my->_cli = new cli::cli( shared_from_this() );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
@@ -1766,10 +1766,10 @@ namespace bts { namespace client {
          return _wallet->get_account_balances();
       else
       {
-         if( not _chain_db->is_valid_account_name( account_name ) )
+         if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
-         if( not _wallet->is_receive_account( account_name ) )
+         if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
          auto all = _wallet->get_account_balances();
