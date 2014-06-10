@@ -111,17 +111,34 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "wallet_create walletb masterpassword" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_create walleta masterpassword" ) << "\n";
 
+   int even = 0;
    for( auto key : delegate_private_keys )
-      std::cerr << clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
-
+   {
+      if( (even++)%2 )
+         std::cerr << clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+      else
+         std::cerr << clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+      if( even >= 4 ) break;
+   }
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    std::cerr << clienta->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
-
    std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
-   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate37" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate1" ) << "\n";
+
+   wlog( "------------------  CLIENT B  -----------------------------------" );
+   std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance delegate0" ) << "\n";
+
    std::cerr << clientb->execute_command_line( "wallet_account_create b-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_balance b-account" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
 
+   std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate0" );
+   produce_block( clienta );
+   std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
+
+   //std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
+   //std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
 
 } FC_LOG_AND_RETHROW() }
 

@@ -715,14 +715,18 @@ namespace bts { namespace wallet {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( !account_key.valid() );
          if( current_registered_account.valid() )
+         {
             my->_wallet_db.add_contact_account( *current_registered_account, private_data );
+         }
          else
+         {
             my->_wallet_db.add_contact_account( account_name, key, private_data );
+         }
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
       }
 
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("public_key",key) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) } 
 
 
    owallet_account_record    wallet::get_account( const string& account_name )
@@ -879,7 +883,7 @@ namespace bts { namespace wallet {
          {
              blockchain::account_record& brec = acct.second;
              brec = *blockchain_acct_rec;
-             my->_wallet_db.cache_account( acct.second );
+             my->_wallet_db.store_record( acct.second );
          }
       }
 
