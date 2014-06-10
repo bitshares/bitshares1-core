@@ -599,8 +599,6 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-        if( !my->_cli )
-           my->_cli = new cli::cli( shared_from_this() );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
@@ -1469,7 +1467,7 @@ namespace bts { namespace client {
         my->_cli->set_input_log_stream(console_log);
     #else
         //don't create a log file, just output to console
-        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
+        my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
     #endif
         my->_cli->process_commands();
         my->_cli->wait();
