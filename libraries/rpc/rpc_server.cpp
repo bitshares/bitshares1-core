@@ -68,7 +68,7 @@ namespace bts { namespace rpc {
 
          std::string help(const std::string& command_name) const;
 
-         std::string make_short_description(const bts::api::method_data& method_data) const
+         std::string make_short_description(const bts::api::method_data& method_data, bool show_decription = true) const
          {
            std::string help_string;
            std::stringstream short_description;
@@ -85,7 +85,15 @@ namespace bts { namespace rpc {
              else 
                help_string += std::string("[") + parameter.name + std::string("] ");
            }
-           short_description << help_string << "  " << method_data.description << "\n";
+           short_description << help_string;
+           if (show_decription)
+           {
+              short_description << "  " << method_data.description << "\n";
+           }
+           else
+           {
+              short_description << "\n";
+           }
            help_string = short_description.str();
            return help_string;
          }
@@ -490,8 +498,8 @@ namespace bts { namespace rpc {
       if (command_name.empty()) //if no arguments, display list of commands with short description
       {
         for (const method_map_type::value_type& method_data_pair : _method_map)
-          if (method_data_pair.second.name[0] != '_') // hide undocumented commands
-            help_string += make_short_description(method_data_pair.second);
+          if (method_data_pair.second.name[0] != '_' && method_data_pair.second.name.substr(0, 8) != "bitcoin_") // hide undocumented commands
+            help_string += make_short_description(method_data_pair.second, false);
       }
       else
       { //display detailed description of requested command
