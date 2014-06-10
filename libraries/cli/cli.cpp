@@ -1024,7 +1024,6 @@ namespace bts { namespace cli {
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
                 if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
-                if( _out ) (*_out) << std::setw( 25 ) << std::left << "BALANCE";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
