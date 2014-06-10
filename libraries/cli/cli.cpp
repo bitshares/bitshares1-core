@@ -242,7 +242,10 @@ namespace bts { namespace cli {
                      std::getline( *_input_stream, line );
                   #endif
                   if (_input_log_stream)
+                    {
+                    if (_out) _out->flush();
                     *_input_log_stream << line << std::endl;
+                    }
                   }
 
                   boost::trim(line);
