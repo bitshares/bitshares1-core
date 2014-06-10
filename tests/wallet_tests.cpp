@@ -19,6 +19,7 @@
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
+using namespace bts::utilities;
 using namespace bts::client;
 using namespace bts::cli;
 
@@ -45,6 +46,7 @@ BOOST_AUTO_TEST_CASE( wif_format_test )
    auto priv_key = fc::variant( "0c28fca386c7a227600b2fe50b7cae11ec86d3bf1fbe471be89827e19d72aa1d" ).as<fc::ecc::private_key>();
    FC_ASSERT( bts::utilities::key_to_wif(priv_key) == "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ" );
    FC_ASSERT( bts::utilities::wif_to_key( "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ" ).valid() );
+   wif_to_key( key_to_wif( fc::ecc::private_key::generate() ) );
   } FC_LOG_AND_RETHROW() 
 }
 
@@ -104,6 +106,17 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    auto clientb = std::make_shared<client>(sim_network);
    clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
+
+   std::cerr << clientb->execute_command_line( "help" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_create walletb masterpassword" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_create walleta masterpassword" ) << "\n";
+
+   for( auto key : delegate_private_keys )
+      std::cerr << clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+
+   std::cerr << clienta->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
+
+   std::cerr << clientb->execute_command_line( "wallet_account_create b-account" ) << "\n";
 
 
 } FC_LOG_AND_RETHROW() }
