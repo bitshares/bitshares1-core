@@ -737,7 +737,7 @@ namespace bts { namespace blockchain {
       { try {
          FC_ASSERT( _head_block_header.block_num > 0 );
 
-         // update the is_included flag on the fork data
+           // update the is_included flag on the fork data
          mark_included( _head_block_id, false );
 
          // update the block_num_to_block_id index
@@ -745,16 +745,14 @@ namespace bts { namespace blockchain {
 
          auto previous_block_id = _head_block_header.previous;
 
-         // fetch the undo state for the head block
-         auto undo_state = _undo_state_db.fetch( _head_block_id );
-         undo_state.set_prev_state( self->shared_from_this() );
-         undo_state.apply_changes();
+         bts::blockchain::pending_chain_state_ptr undo_state = std::make_shared<bts::blockchain::pending_chain_state>(_undo_state_db.fetch( _head_block_id ));
+         undo_state->set_prev_state( self->shared_from_this() );
+         undo_state->apply_changes();
 
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         if( _observer ) _observer->state_changed(undo_state.shared_from_this());
-
+         if( _observer ) _observer->state_changed(undo_state);
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
