@@ -226,8 +226,8 @@ bool test_file::compare_files()
     return false;
 
   //files may be equal since they have the same size, so check further
-  std::ifstream lhs(_result_file.string());
-  std::ifstream rhs(_expected_result_file.string());
+  std::ifstream lhs(_result_file.string().c_str());
+  std::ifstream rhs(_expected_result_file.string().c_str());
 
   typedef std::istreambuf_iterator<char> istreambuf_iterator;
   return std::equal( istreambuf_iterator(lhs),  istreambuf_iterator(), istreambuf_iterator(rhs));
