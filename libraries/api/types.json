@@ -383,9 +383,8 @@
           "default_example" : "Alice"
       },
       {
-         "type_name" : "assettype",
-         "cpp_return_type" : "bts::blockchain::asset",
-         "cpp_include_file" : "bts/blockchain/asset.hpp"
+         "type_name" : "map< account_name, share_type >",
+         "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
       }
     ]
 }

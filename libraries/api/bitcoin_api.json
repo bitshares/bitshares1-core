@@ -242,7 +242,7 @@
       {
           "method_name"    : "bitcoin_listaccounts",
           "description"    : "Returns Object that has account names as keys, account balances as values. TODO: balance in result type is asset",
-          "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
+          "return_type"    : "map< account_name, share_type >",
           "parameters"     : [],
           "prerequisites"  : ["json_authenticated","wallet_open"],
           "aliases" : ["listaccounts"]

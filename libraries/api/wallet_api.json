@@ -860,13 +860,12 @@
       {
          "method_name"  : "wallet_set_priority_fee",
          "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "assettype",
+         "return_type"  : "void",
          "parameters"   : [
          {
             "name" : "fee",
             "type" : "amount",
-            "description" : "the prioty fee to be setted. Optional, if not provided, will return the current fee.",
-            "default_value" : -1
+            "description" : "the prioty fee to be setted."
          }
          ],
          "prerequisites"  : ["json_authenticated","wallet_open"],
