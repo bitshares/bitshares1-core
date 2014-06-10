@@ -1177,10 +1177,10 @@ namespace bts { namespace client {
             return trx.id();
         } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< string, int64_t >& to_address_amounts, const string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< address, int64_t >& to_address_amounts, const string& comment)
     {
         try {
-           std::unordered_map< string, double > to_address_amount_map;
+           std::unordered_map< address, double > to_address_amount_map;
            for ( auto address_amount : to_address_amounts )
            {
               to_address_amount_map[address_amount.first] = address_amount.second;

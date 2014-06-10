@@ -1291,7 +1291,8 @@ namespace bts { namespace wallet {
                                           public_key_type(),
                                           bts::blockchain::now(),
                                           bts::blockchain::now(),
-                                          sender_public_key
+                                          sender_public_key,
+                                          vector<address>{to_address}
                                           );
       }
       return trx;
@@ -1305,7 +1306,7 @@ namespace bts { namespace wallet {
     
    signed_transaction  wallet::transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
                                                        const string& from_account_name,
-                                                       const std::unordered_map< std::string, double >& to_address_amounts,
+                                                       const std::unordered_map< address, double >& to_address_amounts,
                                                        const string& memo_message,
                                                        bool sign )
    {
@@ -1332,14 +1333,12 @@ namespace bts { namespace wallet {
          asset total_asset_to_transfer( 0, asset_id );
          auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
          
-         vector<public_key_type> to_public_keys;
+         vector<address> to_addresses;
          for ( auto address_amount : to_address_amounts )
          {
             auto real_amount_to_transfer = address_amount.second;
             share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
             asset asset_to_transfer( amount_to_transfer, asset_id );
-            
-            public_key_type  receiver_public_key = public_key_type(address_amount.first);
             
             my->withdraw_to_transaction( amount_to_transfer,
                                         asset_to_transfer.asset_id,
@@ -1347,15 +1346,10 @@ namespace bts { namespace wallet {
                                         trx, required_signatures );
             
             total_asset_to_transfer += asset_to_transfer;
-            
-            trx.deposit_to_account( receiver_public_key,
-                                   asset_to_transfer,
-                                   sender_private_key,
-                                   memo_message,
-                                   select_delegate_vote(),
-                                   sender_private_key.get_public_key(),
-                                   from_memo );
-            to_public_keys.push_back( receiver_public_key );
+             
+            trx.deposit( address_amount.first, asset_to_transfer, select_delegate_vote() );
+             
+            to_addresses.push_back( address_amount.first );
          }
          
          my->withdraw_to_transaction( required_fees.amount,
@@ -1370,11 +1364,11 @@ namespace bts { namespace wallet {
             my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
                                              required_fees.amount,
                                              memo_message,
-                                             to_public_keys[0],
+                                             public_key_type(),
                                              bts::blockchain::now(),
                                              bts::blockchain::now(),
                                              sender_public_key,
-                                             std::vector<public_key_type>( to_public_keys.begin() + 1, to_public_keys.end() )
+                                             to_addresses
                                              );
          }
          return trx;
