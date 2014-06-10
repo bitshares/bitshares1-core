@@ -13,6 +13,9 @@ namespace bts { namespace blockchain {
 
    namespace detail { class chain_database_impl; }
 
+   class transaction_evaluation_state;
+   typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
+
    struct block_summary
    {
       full_block                                    block_data;

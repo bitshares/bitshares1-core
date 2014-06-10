@@ -55,7 +55,7 @@ namespace bts { namespace client {
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
          bts::net::node_ptr         get_node()const;
 
-         fc::path                            get_data_dir() const;
+         fc::path                   get_data_dir() const;
 
          // returns true if the client is connected to the network
          bool is_connected() const;

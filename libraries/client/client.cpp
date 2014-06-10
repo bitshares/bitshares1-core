@@ -4,42 +4,34 @@
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
+#include <bts/net/upnp.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/git_revision.hpp>
+#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_server.hpp>
+#include <bts/api/common_api.hpp>
+#include <bts/wallet/exceptions.hpp>
+
 #include <fc/reflect/variant.hpp>
 #include <fc/io/fstream.hpp>
+#include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
+#include <fc/network/resolve.hpp>
+#include <fc/crypto/elliptic.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
-#include <fc/network/resolve.hpp>
+#include <fc/log/file_appender.hpp>
+#include <fc/log/logger_config.hpp>
 
-#include <bts/rpc/rpc_client.hpp>
-#include <bts/api/common_api.hpp>
-
-#include <bts/rpc/rpc_server.hpp>
-
-#include <bts/utilities/git_revision.hpp>
+#include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
 
 #include <boost/program_options.hpp>
-
-#include <bts/net/upnp.hpp>
-#include <bts/blockchain/chain_database.hpp>
-#include <bts/rpc/rpc_server.hpp>
-#include <bts/cli/cli.hpp>
-#include <bts/utilities/git_revision.hpp>
-#include <fc/filesystem.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/log/file_appender.hpp>
-#include <fc/log/logger_config.hpp>
-#include <fc/io/json.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/git_revision.hpp>
-#include <fc/io/json.hpp>
-#include <fc/crypto/elliptic.hpp>
-
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
@@ -292,6 +284,9 @@ config load_config( const fc::path& datadir )
 
 namespace bts { namespace client {
 
+   using namespace bts::wallet;
+   using namespace bts::blockchain;
+
     namespace detail
     {
        class client_impl : public bts::net::node_delegate,
@@ -299,7 +294,7 @@ namespace bts { namespace client {
        {
           public:
             client_impl(bts::client::client* self) :
-              _self(self),_cli(nullptr)
+              _self(self),_cli()
             { try {
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
@@ -611,6 +606,8 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
+        if( not my->_cli )
+           my->_cli = new cli::cli( shared_from_this() );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
@@ -1081,17 +1078,15 @@ namespace bts { namespace client {
     int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
     {
         try {
-            vector<asset> all_balances = _wallet->get_balances( BTS_ADDRESS_PREFIX ,account_name);
-            
-            for( uint32_t i = 0; i < all_balances.size(); ++i )
-            {
-                if ( all_balances[i].asset_id )
-                {
-                    return all_balances[i].amount;
-                }
-            }
-            
-            return 0;
+           auto balances = _wallet->get_account_balances();
+           auto itr = balances.find( account_name );
+           if( itr != balances.end() )
+           {
+              auto bitr = itr->second.find( BTS_BLOCKCHAIN_SYMBOL );
+              if( bitr != itr->second.end() )
+                 return bitr->second;
+           }
+           return 0;
         } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
 
@@ -1769,9 +1764,25 @@ namespace bts { namespace client {
         return summaries;
     }
 
-   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance() 
+   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance( const string& account_name ) 
    {
-      return _wallet->get_account_balances();
+      if( account_name == string() || account_name == "*")
+         return _wallet->get_account_balances();
+      else
+      {
+         if( not _chain_db->is_valid_account_name( account_name ) )
+            FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
+
+         if( not _wallet->is_receive_account( account_name ) )
+            FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+
+         auto all = _wallet->get_account_balances();
+
+         unordered_map<string, map<string,int64_t> > tmp;
+         tmp[account_name] = all[account_name];
+         tmp[account_name][BTS_BLOCKCHAIN_SYMBOL] = all[account_name][BTS_BLOCKCHAIN_SYMBOL];
+         return tmp;
+      }
    }
 
 

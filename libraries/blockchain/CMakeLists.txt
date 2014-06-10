@@ -27,6 +27,11 @@ add_custom_command(OUTPUT ${generated_genesis_file}
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
+             balance_operations.cpp
+             account_operations.cpp
+             proposal_operations.cpp
+             asset_operations.cpp
+             transaction_evaluation_state.cpp
              time.cpp
              extended_address.cpp
              address.cpp

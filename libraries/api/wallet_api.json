@@ -802,7 +802,14 @@
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total balances of all accounts sorted by account and asset",
          "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
-         "parameters"     : [],
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
+            "default_value" : "*"
+         }
+         ],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : ["balance"]
       },

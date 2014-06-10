@@ -106,7 +106,7 @@ namespace bts { namespace wallet {
               auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
+                //ilog( "     found balance ${id}  ${amount}", ("id",bal_rec.id())("amount", _blockchain->to_pretty_asset(bal_rec.get_balance()) ) );
                 _wallet_db.cache_balance( bal_rec );
               }
          } );
@@ -841,6 +841,7 @@ namespace bts { namespace wallet {
       if( key.valid() )
       {
          import_private_key( *key, account_name, create_account );
+         return key->get_public_key();
       }
       
       FC_ASSERT( false, "Error parsing WIF private key" );
@@ -2063,6 +2064,7 @@ namespace bts { namespace wallet {
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
+    /*
    vector<asset> wallet::get_balances( const string& symbol, 
                                        const string& account_name )const
    { try {
@@ -2112,6 +2114,7 @@ namespace bts { namespace wallet {
          result.push_back( asset() );
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
+   */
 
    vector<string> wallet::list() const
    {
@@ -2453,7 +2456,6 @@ namespace bts { namespace wallet {
             result[name][symbol] = item.second;
          }
       }
-      ilog( "${r}", ("r",result) );
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 

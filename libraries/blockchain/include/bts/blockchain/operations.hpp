@@ -5,6 +5,8 @@
 
 namespace bts { namespace blockchain {
 
+   class transaction_evaluation_state;
+
    enum operation_type_enum
    {
       null_op_type                = 0,
