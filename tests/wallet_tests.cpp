@@ -134,7 +134,14 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "wallet_account_balance b-account" ) << "\n";
 
    std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate0" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
+   std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
+   std::cerr << clientb->execute_command_line( "wallet_account_update_registration b-account delegate0 { \"ip\":\"localhost\"} true" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
+   produce_block( clienta );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
 
    //std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
