@@ -3,6 +3,15 @@
 #include <bts/blockchain/withdraw_types.hpp>
 #include <fc/time.hpp>
 
+/**
+ *  The C keyword 'not' is not friendly on VC++ but we still want to use
+ *  it for readability, so we will have the pre-processor convert it to the
+ *  more traditional form.  The goal here is to make the understanding of
+ *  the validation logic as english-like as possible.
+ */
+#define not !
+#define not_eq !=
+
 namespace bts { namespace blockchain {
 
    class transaction_evaluation_state;
