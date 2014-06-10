@@ -55,7 +55,7 @@ namespace bts { namespace wallet {
    enum property_enum
    {
       next_record_number,
-      default_transaction_fee,
+      default_transaction_priority_fee,
       next_child_key_index,
       last_locked_scanned_block_number,
       last_unlocked_scanned_block_number
@@ -179,7 +179,7 @@ namespace bts { namespace wallet {
 
 FC_REFLECT_ENUM( bts::wallet::property_enum,
                     (next_record_number)
-                    (default_transaction_fee)
+                    (default_transaction_priority_fee)
                     (next_child_key_index)
                     (last_locked_scanned_block_number)
                     (last_unlocked_scanned_block_number)

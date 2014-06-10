@@ -76,6 +76,11 @@ namespace bts { namespace wallet {
           *  @returns the priority fee paid denominated in the given asset symbol.
           */
          asset   get_priority_fee( const string& symbol = BTS_ADDRESS_PREFIX )const;
+      
+         /**
+          *  Set the default priority fee added to new transactions for this wallet.
+          */
+         void    set_priority_fee( uint64_t fee );
          ///@}
 
          /**

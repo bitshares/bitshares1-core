@@ -93,5 +93,7 @@ namespace bts { namespace client {
 
 } } // bts::client
 
+extern const std::string BTS_MESSAGE_MAGIC;
+
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 
