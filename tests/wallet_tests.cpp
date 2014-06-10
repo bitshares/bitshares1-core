@@ -12,13 +12,15 @@
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
-#include <iostream>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <fc/network/http/connection.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
+#include <iostream>
+#include <fstream>
 
 
 using namespace bts::blockchain;
@@ -341,15 +343,18 @@ BOOST_AUTO_TEST_CASE( regression_test )
     while (std::getline(test_config_file,line))
     {
       //parse line into argc/argv format for boost program_options
-    #ifdef UNIX
+      int argc = 0; 
+      char** argv = nullptr;
+    #ifndef WIN32 // then UNIX 
       //use wordexp
       wordexp_t wordexp_result;
       wordexp(line.c_str(), &wordexp_result, 0);
       auto option_variables = parse_option_variables(wordexp_result.we_wordc, wordexp_result.we_wordv);
+      argv = wordexp_result.we_wordv;
+      argc = wordexp_result.we_wordc;
     #else
       //use ExpandEnvironmentStrings and CommandLineToArgvW
-      int argc;
-      char** argv = CommandLineToArgvA(line.c_str(),&argc);
+      argv = CommandLineToArgvA(line.c_str(),&argc);
       auto option_variables = parse_option_variables(argc, argv);
     #endif
       //extract input command file from cmdline options
@@ -360,7 +365,7 @@ BOOST_AUTO_TEST_CASE( regression_test )
       //run client with cmdline options
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
       client->configure_from_command_line(argc,argv);
-    #ifdef UNIX
+    #ifndef WIN32 // then UNIX 
       wordfree(&wordexp_result);
     #else
       GlobalFree(argv);
