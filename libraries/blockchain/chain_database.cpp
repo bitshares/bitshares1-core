@@ -1750,5 +1750,28 @@ namespace bts { namespace blockchain {
          return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
+   vector<market_order>  chain_database::get_market_bids( const string& quote_symbol, 
+                                                          const string& base_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = get_asset_id( base_symbol );
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+       //auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr  = my->_bid_db.begin();
+       while( market_itr.valid() )
+       {
+          results.push_back( {market_itr.key(), market_itr.value()} );
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
 } } // namespace bts::blockchain

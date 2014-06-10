@@ -166,19 +166,20 @@ namespace bts { namespace blockchain {
   {
     try 
     {
-        ilog( "${a} / ${b}", ("a",a)("b",b) );
+        if( a.asset_id == b.asset_id )
+           FC_CAPTURE_AND_THROW( asset_divide_by_self );
+
         price p;
         auto l = a; auto r = b;
         if( l.asset_id < r.asset_id ) { std::swap(l,r); }
         ilog( "${a} / ${b}", ("a",l)("b",r) );
 
+        if( r.amount == 0 )
+           FC_CAPTURE_AND_THROW( asset_divide_by_zero, (r) );
+
         p.base_asset_id = r.asset_id;
         p.quote_asset_id = l.asset_id;
 
-        //fc::uint128 bl(l.amount);
-        //fc::uint128 bl(r.amount);
-
-       // p.ratio = (bl* BTS_PRICE_PRECISION) / br;
         fc::bigint bl = l.amount;
         fc::bigint br = r.amount;
         fc::bigint result = (bl * fc::bigint(BTS_PRICE_PRECISION)) / br;

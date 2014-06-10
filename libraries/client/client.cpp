@@ -1873,6 +1873,14 @@ namespace bts { namespace client {
    {
       return _chain_db->get_proposal_votes( proposal_id );
    }
+
+   vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
+                                                                       const string& base_symbol,
+                                                                       int64_t limit  )
+   {
+      return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

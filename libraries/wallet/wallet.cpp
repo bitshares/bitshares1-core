@@ -13,6 +13,7 @@
 
 #include <fc/io/json.hpp>
 #include <iostream>
+#include <sstream>
 
 #include <algorithm>
 
@@ -148,7 +149,7 @@ namespace bts { namespace wallet {
                                                  const address& from_account_address,
                                                  signed_transaction& trx, 
                                                  unordered_set<address>& required_signatures )
-      {
+      { try {
          wlog( "${amount}", ("amount",amount) );
          share_type remaining = amount;
          for( auto& balance_item : _wallet_db.balances )
@@ -183,11 +184,10 @@ namespace bts { namespace wallet {
               }
             }
          }
-         FC_ASSERT( !"Insufficient Funds", "Requested ${required} but only ${available} available",
-                    ("required", _blockchain->to_pretty_asset( asset(amount,asset_id) ) )
-                    ("available", _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) ) )
-                  );
-      }
+         auto required = _blockchain->to_pretty_asset( asset(amount,asset_id) );
+         auto available = _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) );
+         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
+      } FC_CAPTURE_AND_RETHROW( (amount)(asset_id)(from_account_address)(trx)(required_signatures) ) }
 
 
       secret_hash_type wallet_impl::get_secret( uint32_t block_num, 
@@ -673,12 +673,13 @@ namespace bts { namespace wallet {
     */
    address  wallet::get_new_address( const string& account_name )
    { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
+      if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+      if( NOT is_receive_account(account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
-      FC_ASSERT( !current_account.valid() );
+      FC_ASSERT( current_account.valid() );
 
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, 
                                                           current_account->account_address );
@@ -1808,11 +1809,6 @@ namespace bts { namespace wallet {
     *  it will have a higher asset id, say 20.   
     *
     *  @code
-    *    if( quantity_symbol > quote_symbol )
-    *        real_quantity = real_quantity * price_per_unit
-    *        price_per_unit = 1/price_per_unit
-    *        swap( quantity_symbol, quote_symbol )
-    *    
     *    if( quantity_symbol < quote_symbol ) 
     *       If your quantity_symbol is XTS then
     *         amount_withdrawn = real_quantity * price_per_unit USD
@@ -1825,7 +1821,7 @@ namespace bts { namespace wallet {
    signed_transaction  wallet::submit_bid( const string& from_account_name,
                                            double real_quantity, 
                                            const string& quantity_symbol,
-                                           double price_per_unit,
+                                           double quote_price,
                                            const string& quote_symbol,
                                            bool sign )
    { try {
@@ -1837,10 +1833,10 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity <= 0 )
           FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
-       if( price_per_unit <= 0 )
-          FC_CAPTURE_AND_THROW( invalid_price, (price_per_unit) );
+       if( quote_price <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
        if( quote_symbol == quantity_symbol )
-          FC_CAPTURE_AND_THROW( invalid_price, (price_per_unit)(quantity_symbol)(quote_symbol) );
+          FC_CAPTURE_AND_THROW( invalid_price, (quote_price)(quantity_symbol)(quote_symbol) );
        
        auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
        auto base_asset_record  = my->_blockchain->get_asset_record( quantity_symbol );
@@ -1850,18 +1846,24 @@ namespace bts { namespace wallet {
        if( NOT base_asset_record ) 
           FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quantity_symbol) );
 
+       auto from_account_key = get_account_public_key( from_account_name );
+       auto& to_account_key = from_account_key;
+
        if( quote_asset_record->id < base_asset_record->id )
        {
-          real_quantity *= price_per_unit;
-          price_per_unit = 1.0 / price_per_unit;
-          std::swap( quote_asset_record, base_asset_record );
+          // force user to submit an ask rather than a bid
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_symbol)(quantity_symbol) );
        }
 
-       asset bid_share_quantity( real_quantity * base_asset_record->get_precision(), base_asset_record->id );
-       asset quote_price( price_per_unit * quote_asset_record->get_precision(), quote_asset_record->id );
-       asset one_quantity( base_asset_record->get_precision(), quote_asset_record->id );
+       double cost = real_quantity * quote_price;
 
-       auto bid_price = quote_price / one_quantity;
+       asset cost_shares( cost *  quote_asset_record->get_precision(), quote_asset_record->id );
+       asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
+       asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
+
+       auto quote_price_shares = price_shares / base_one_quantity;
+       ilog( "quote price float: ${p}", ("p",quote_price) );
+       ilog( "quote price shares: ${p}", ("p",quote_price_shares) );
 
        auto owner_address = get_new_address( from_account_name );
 
@@ -1869,22 +1871,69 @@ namespace bts { namespace wallet {
        unordered_set<address>     required_signatures;
        required_signatures.insert(owner_address);
 
-       // withdraw to transaction bid_share_quantity + fee
-       if( bid_share_quantity.asset_id == 0 )
-          trx.bid( bid_share_quantity, bid_price, owner_address, select_delegate_vote() );
+       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       address          from_address( from_private_key.get_public_key() );
+
+       auto required_fees = get_priority_fee(BTS_BLOCKCHAIN_SYMBOL);
+
+       if( cost_shares.asset_id == 0 )
+       {
+          my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
+                                       0, 
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+       }
        else
-          trx.bid( bid_share_quantity, bid_price, owner_address, 0 );
+       {
+          /// TODO: determine if we can pay our fees in cost.asset_id
+          ///        quote_asset_record->symbol );
+
+          my->withdraw_to_transaction( cost_shares.amount,
+                                       cost_shares.asset_id,
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+          // pay our fees in XTS
+          my->withdraw_to_transaction( required_fees.amount,
+                                       0,
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+       }
+
+       // withdraw to transaction cost_share_quantity + fee
+       if( cost_shares.asset_id == 0 )
+          trx.bid( cost_shares, quote_price_shares, owner_address, select_delegate_vote() );
+       else
+          trx.bid( cost_shares, quote_price_shares, owner_address, 0 );
 
        if( sign )
        {
            sign_transaction( trx, required_signatures );
-           // TODO: cache transaction
+
+           std::stringstream memoss;
+           memoss << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
+           memoss << quote_price << " " << quote_asset_record->symbol;
+
+           auto memo_message = memoss.str();
+
+           my->_wallet_db.cache_transaction( trx, cost_shares,
+                                             required_fees.amount,
+                                             memo_message, 
+                                             from_account_key,
+                                             bts::blockchain::now(),
+                                             bts::blockchain::now(),
+                                             to_account_key
+                                           );
+
+           my->_blockchain->store_pending_transaction( trx );
        }
 
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
-                             (price_per_unit)(quote_symbol)(sign) ) }
+                             (quote_price)(quote_symbol)(sign) ) }
 
    asset wallet::get_priority_fee( const string& symbol )const
    {
@@ -2093,6 +2142,11 @@ namespace bts { namespace wallet {
                   break;
               }
               case withdraw_pay_op_type:
+              {
+                 pretty_trx.add_operation( op );
+                 break;
+              }
+              case bid_op_type:
               {
                  pretty_trx.add_operation( op );
                  break;
