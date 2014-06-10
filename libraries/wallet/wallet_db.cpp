@@ -23,25 +23,25 @@ namespace bts{ namespace wallet {
 
            void load_account_record( const wallet_account_record& account_to_load )
            { try {
-              self->accounts[account_to_load.index] = account_to_load;
+              self->accounts[account_to_load.wallet_record_index] = account_to_load;
 
-              auto current_index_itr = self->address_to_account.find( account_to_load.account_address );
-              FC_ASSERT( current_index_itr == self->address_to_account.end() );
-              self->address_to_account[ account_to_load.account_address ]= account_to_load.index;
+              auto current_index_itr = self->address_to_account_wallet_record_index.find( account_to_load.account_address );
+              FC_ASSERT( current_index_itr == self->address_to_account_wallet_record_index.end() );
+              self->address_to_account_wallet_record_index[ account_to_load.account_address ]= account_to_load.wallet_record_index;
               
               if( account_to_load.id != 0 )
               {
-                auto current_account_id_itr = self->account_id_to_account.find( account_to_load.id );
-                if( current_account_id_itr != self->account_id_to_account.end() )
-                    FC_ASSERT( current_account_id_itr->second == account_to_load.index, "", 
+                auto current_account_id_itr = self->account_id_to_wallet_record_index.find( account_to_load.id );
+                if( current_account_id_itr != self->account_id_to_wallet_record_index.end() )
+                    FC_ASSERT( current_account_id_itr->second == account_to_load.wallet_record_index, "", 
                                 ("current_account_id_tr",*current_account_id_itr)
-                                ("account_to_load.index",account_to_load.index) );
-                self->account_id_to_account[ account_to_load.id ] = account_to_load.index;
+                                ("account_to_load.index",account_to_load.wallet_record_index) );
+                self->account_id_to_wallet_record_index[ account_to_load.id ] = account_to_load.wallet_record_index;
               }
 
-              auto current_name_itr = self->name_to_account.find( account_to_load.name );
-              FC_ASSERT( current_name_itr == self->name_to_account.end() );
-              self->name_to_account[ account_to_load.name ] = account_to_load.index;
+              auto current_name_itr = self->name_to_account_wallet_record_index.find( account_to_load.name );
+              FC_ASSERT( current_name_itr == self->name_to_account_wallet_record_index.end() );
+              self->name_to_account_wallet_record_index[ account_to_load.name ] = account_to_load.wallet_record_index;
 
            } FC_CAPTURE_AND_RETHROW( (account_to_load) ) } 
 
@@ -147,9 +147,9 @@ namespace bts{ namespace wallet {
       my->_records.close();
       keys.clear();
       wallet_master_key.reset();
-      address_to_account.clear();
-      account_id_to_account.clear();
-      name_to_account.clear();
+      address_to_account_wallet_record_index.clear();
+      account_id_to_wallet_record_index.clear();
+      name_to_account_wallet_record_index.clear();
       accounts.clear();
       transactions.clear();
       balances.clear();
@@ -159,7 +159,7 @@ namespace bts{ namespace wallet {
 
    bool wallet_db::is_open()const { return my->_records.is_open(); }
 
-   int32_t wallet_db::new_index()
+   int32_t wallet_db::new_wallet_record_index()
    {
       auto next_rec_num = get_property( next_record_number );
       int32_t next_rec_number = 2;
@@ -224,7 +224,7 @@ namespace bts{ namespace wallet {
           if( property_id == property_enum::next_record_number )
               properties[property_id] = wallet_property_record( wallet_property(property_id, v), 1 );
           else
-              properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_index() );
+              properties[property_id] = wallet_property_record( wallet_property(property_id, v), new_wallet_record_index() );
       }
       store_record( properties[property_id] );
    }
@@ -243,8 +243,8 @@ namespace bts{ namespace wallet {
    }
    owallet_account_record wallet_db::lookup_account( account_id_type aid )const
    {
-      auto itr = account_id_to_account.find(aid);
-      if( itr != account_id_to_account.end() )
+      auto itr = account_id_to_wallet_record_index.find(aid);
+      if( itr != account_id_to_wallet_record_index.end() )
       {
          auto aitr = accounts.find( itr->second );
          FC_ASSERT( accounts.end() != aitr );
@@ -284,7 +284,7 @@ namespace bts{ namespace wallet {
       }
       else
       {
-         auto r = wallet_key_record( key_to_store, new_index() );
+         auto r = wallet_key_record( key_to_store, new_wallet_record_index() );
          store_record( keys[key_to_store.get_address()] = r );
          
          auto key = key_to_store.public_key;
@@ -306,7 +306,7 @@ namespace bts{ namespace wallet {
            if (id_trx_pair.second.block_num == 0)
            {
                transactions.erase(id_trx_pair.first);
-               my->_records.remove( id_trx_pair.second.index );
+               my->_records.remove( id_trx_pair.second.wallet_record_index );
            }
        }
    }
@@ -332,7 +332,7 @@ namespace bts{ namespace wallet {
       auto input_records = fc::json::from_file<std::vector<generic_wallet_record> >( import_file_name );
       for( auto r : input_records )
       {
-         store_generic_record( r.get_index(), r );
+         store_generic_record( r.get_wallet_record_index(), r );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("import_file_name",import_file_name)
                                       ("wallet_to_create",wallet_to_create) ) }
@@ -408,7 +408,7 @@ namespace bts{ namespace wallet {
       war.private_data = private_data;
       war.account_address = address(blockchain_account.owner_key);
 
-      war.index = new_index();
+      war.wallet_record_index = new_wallet_record_index();
       store_record( war );
       my->load_account_record( war );
 
@@ -421,7 +421,7 @@ namespace bts{ namespace wallet {
       else
       {
          wallet_key_record new_key;
-         new_key.index = new_index();
+         new_key.wallet_record_index = new_wallet_record_index();
          new_key.account_address = address(blockchain_account.owner_key);
          new_key.public_key = blockchain_account.active_key();
          my->load_key_record( new_key );
@@ -433,12 +433,12 @@ namespace bts{ namespace wallet {
                                         const public_key_type& new_account_key,
                                         const variant& private_data )
    {
-      auto current_account_itr = name_to_account.find( new_account_name );
-      FC_ASSERT( current_account_itr == name_to_account.end(), 
+      auto current_account_itr = name_to_account_wallet_record_index.find( new_account_name );
+      FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(), 
                  "Account with name ${name} already exists", 
                  ("name",new_account_name) );
-      auto current_address_itr = address_to_account.find( new_account_key );
-      FC_ASSERT( current_address_itr == address_to_account.end(), 
+      auto current_address_itr = address_to_account_wallet_record_index.find( new_account_key );
+      FC_ASSERT( current_address_itr == address_to_account_wallet_record_index.end(), 
                  "Account with address ${address} already exists", 
                  ("name",new_account_key) );
 
@@ -450,7 +450,7 @@ namespace bts{ namespace wallet {
       war.set_active_key( fc::time_point::now(), new_account_key );
       war.private_data = private_data;
 
-      war.index = new_index();
+      war.wallet_record_index = new_wallet_record_index();
       store_record( war );
       my->load_account_record( war );
 
@@ -463,7 +463,7 @@ namespace bts{ namespace wallet {
       else
       {
          wallet_key_record new_key;
-         new_key.index = new_index();
+         new_key.wallet_record_index = new_wallet_record_index();
          new_key.account_address = address(new_account_key);
          new_key.public_key = new_account_key;
          my->load_key_record( new_key );
@@ -473,8 +473,8 @@ namespace bts{ namespace wallet {
    }
    owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )const
    {
-      auto address_index_itr = address_to_account.find( address_of_public_key );
-      if( address_index_itr != address_to_account.end() )
+      auto address_index_itr = address_to_account_wallet_record_index.find( address_of_public_key );
+      if( address_index_itr != address_to_account_wallet_record_index.end() )
       {
          auto account_itr = accounts.find( address_index_itr->second );
          FC_ASSERT( account_itr != accounts.end(),
@@ -486,8 +486,8 @@ namespace bts{ namespace wallet {
 
    owallet_account_record wallet_db::lookup_account( const string& account_name )const
    {
-      auto name_index_itr = name_to_account.find( account_name );
-      if( name_index_itr != name_to_account.end() )
+      auto name_index_itr = name_to_account_wallet_record_index.find( account_name );
+      if( name_index_itr != name_to_account_wallet_record_index.end() )
       {
          auto account_itr = accounts.find( name_index_itr->second );
          FC_ASSERT( account_itr != accounts.end(),
@@ -502,7 +502,7 @@ namespace bts{ namespace wallet {
       owallet_balance_record current_bal = lookup_balance(balance_id);
       if( !current_bal.valid() )
       {
-         wallet_balance_record new_rec( balance_to_cache, new_index() );
+         wallet_balance_record new_rec( balance_to_cache, new_wallet_record_index() );
          store_record( new_rec );
          balances[balance_id] = new_rec;
       }
@@ -521,16 +521,16 @@ namespace bts{ namespace wallet {
       auto acct = *opt_account;
       FC_ASSERT( ! has_private_key(address(acct.owner_key)), "you can only remove contact accounts");
 
-      accounts.erase( acct.index );
-      remove_item( acct.index );
+      accounts.erase( acct.wallet_record_index );
+      remove_item( acct.wallet_record_index );
       keys.erase( address(acct.owner_key) );
-      address_to_account.erase( address(acct.owner_key) );
+      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
       for( auto time_key_pair : acct.active_key_history )
       {
           keys.erase( address(time_key_pair.second) );
-          address_to_account.erase( address(time_key_pair.second) );
+          address_to_account_wallet_record_index.erase( address(time_key_pair.second) );
       }
-      name_to_account.erase( account_name );
+      name_to_account_wallet_record_index.erase( account_name );
    }
 
    void wallet_db::rename_account( const string& old_account_name, 
@@ -544,22 +544,24 @@ namespace bts{ namespace wallet {
       FC_ASSERT( opt_old_acct.valid() );
       auto acct = *opt_old_acct;
       acct.name = new_account_name;
-      name_to_account[acct.name] = acct.index;
-      accounts[acct.index] = acct;
-      address_to_account[address(acct.owner_key)] = acct.index;
+      name_to_account_wallet_record_index[acct.name] = acct.wallet_record_index;
+      accounts[acct.wallet_record_index] = acct;
+      address_to_account_wallet_record_index[address(acct.owner_key)] = acct.wallet_record_index;
       for (auto time_key_pair : acct.active_key_history)
-          address_to_account[address(time_key_pair.second)] = acct.index;
+          address_to_account_wallet_record_index[address(time_key_pair.second)] = acct.wallet_record_index;
 
    }
 
    void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
    { try {
       wallet_transaction_record data;
-      if( trx_to_store.index == 0 )
-         trx_to_store.index = new_index();
+      if( trx_to_store.wallet_record_index == 0 )
+         trx_to_store.wallet_record_index = new_wallet_record_index();
       store_record( trx_to_store );
       transactions[trx_to_store.trx.id()] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
+
+
    wallet_transaction_record wallet_db::cache_transaction( const signed_transaction& trx,
                                       const asset&  amount,
                                       share_type fees,
@@ -576,7 +578,7 @@ namespace bts{ namespace wallet {
 
       wallet_transaction_record data;
       if( itr != transactions.end() ) data = itr->second;
-      if( data.index == 0 ) data.index = new_index();
+      if( data.wallet_record_index == 0 ) data.wallet_record_index = new_wallet_record_index();
 
       data.trx = trx;
       data.transaction_id  = trx.id();
@@ -601,10 +603,11 @@ namespace bts{ namespace wallet {
 
    void wallet_db::cache_account( const wallet_account_record& war )
    {
-      accounts[war.index] = war;
+      accounts[war.wallet_record_index] = war;
       if( war.id != 0 )
       {
-         account_id_to_account[war.id] = war.index;
+         account_id_to_wallet_record_index[war.id] = war.wallet_record_index;
+         name_to_account_wallet_record_index[war.name] = war.wallet_record_index;
       }
       store_record( war );
    }

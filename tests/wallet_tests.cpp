@@ -115,46 +115,61 @@ BOOST_AUTO_TEST_CASE( master_test )
    int even = 0;
    for( auto key : delegate_private_keys )
    {
-      if( (even++)%2 )
-         std::cerr << clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
-      else
-         std::cerr << clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
-      if( even >= 4 ) break;
+      if( even >= 30 )
+      {
+         if( (even++)%2 )
+         {
+            std::cerr << "client a key: "<< even<<" "<< clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+         }
+         else
+         {
+            std::cerr << "client b key: "<< even<<" "<< clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+         }
+         if( even >= 34 ) break;
+      }
+      else ++even;
    }
+
    wlog( "------------------  CLIENT A  -----------------------------------" );
    std::cerr << clienta->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
-   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate1" ) << "\n";
    std::cerr << clienta->execute_command_line( "unlock 999999999 masterpassword" ) << "\n";
+   std::cerr << clienta->execute_command_line( "scan 0 100" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clienta->execute_command_line( "close" ) << "\n";
+   std::cerr << clienta->execute_command_line( "open walleta" ) << "\n";
+   std::cerr << clienta->execute_command_line( "unlock 99999999 masterpassword" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate31" ) << "\n";
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_account_balance delegate0" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance delegate30" ) << "\n";
    std::cerr << clientb->execute_command_line( "unlock 999999999 masterpassword" ) << "\n";
 
    std::cerr << clientb->execute_command_line( "wallet_account_create b-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_balance b-account" ) << "\n";
 
-   std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate0" );
+   std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate30" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
-   std::cerr << clientb->execute_command_line( "wallet_account_update_registration b-account delegate0 { \"ip\":\"localhost\"} true" );
+   std::cerr << clientb->execute_command_line( "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} true" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   std::cerr << clienta->execute_command_line( "wallet_transfer 33 XTS delegate1 b-account first-memo" ) << "\n";
-   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_transfer 33 XTS delegate31 b-account first-memo" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate31" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    produce_block( clientb );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate31" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
@@ -168,8 +183,12 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "wallet_set_delegate_trust_level b-account 1" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate2 c-account to-me" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate0 c-account to-me" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate32 c-account to-me" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate30 c-account to-me" ) << "\n";
+   wlog( "------------------  CLIENT A  -----------------------------------" );
+   std::cerr << clienta->execute_command_line( "wallet_set_delegate_trust_level b-account 1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_transfer 100000 XTS delegate31 b-account to-b" ) << "\n";
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";

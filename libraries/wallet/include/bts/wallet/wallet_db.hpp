@@ -27,13 +27,13 @@ namespace bts { namespace wallet {
          bool is_open()const;
 
          template<typename T>
-         void store_record( T t )
+         void store_record( T record_to_store )
          {
-            if( t.index == 0 ) 
-               t.index = new_index();
-            store_generic_record( t.index, generic_wallet_record( t ) );
+            if( record_to_store.wallet_record_index == 0 ) 
+               record_to_store.wallet_record_index = new_wallet_record_index();
+            store_generic_record( record_to_store.wallet_record_index, generic_wallet_record( record_to_store ) );
          }
-         int32_t              new_index();
+         int32_t              new_wallet_record_index();
          int32_t              new_key_child_index();
          fc::ecc::private_key new_private_key( const fc::sha512& password, 
                                                const address& parent_account_address = address() );
@@ -109,10 +109,11 @@ namespace bts { namespace wallet {
  
          unordered_map<address,wallet_key_record>                         keys;
          unordered_map<address,address>                                   btc_to_bts_address;
-         unordered_map<address,int32_t>                                   address_to_account;
-         unordered_map<account_id_type,int32_t>                           account_id_to_account;
-         map<string,int32_t>                                              name_to_account;
+         unordered_map<address,int32_t>                                   address_to_account_wallet_record_index;
+         unordered_map<account_id_type,int32_t>                           account_id_to_wallet_record_index;
+         map<string,int32_t>                                              name_to_account_wallet_record_index;
 
+         /** maps wallet_record_index to accounts */
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
          unordered_map< balance_id_type,wallet_balance_record >           balances;
