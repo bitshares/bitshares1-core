@@ -113,20 +113,22 @@ namespace bts { namespace wallet {
       }
       void wallet_impl::scan_registered_accounts()
       {
-         _blockchain->scan_accounts( [=]( const blockchain::account_record& account_rec )
+         _blockchain->scan_accounts( [=]( const blockchain::account_record& scanned_account_record )
          {
-              auto key_rec =_wallet_db.lookup_key( account_rec.active_key() );
+              // TODO: check owner key as well!
+              auto key_rec =_wallet_db.lookup_key( scanned_account_record.active_key() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                 auto a = _wallet_db.lookup_account( key_rec->account_address );
-                 if( a.valid() )
+                 auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
+                 if( existing_account_record.valid() )
                  {
-                    account_record& ar = *a;
-                    ar = account_rec;
-                    _wallet_db.store_record( *a );
+                    account_record& blockchain_account_record = *existing_account_record;
+                    blockchain_account_record = scanned_account_record;
+                    _wallet_db.store_record( *existing_account_record );
                  }
               }
          } );
+         ilog( "account scan complete" );
       }
 
       bool wallet_impl::address_in_account( const address& address_to_check, 
@@ -286,10 +288,8 @@ namespace bts { namespace wallet {
           FC_ASSERT( account_name_rec.valid() );
 
           blockchain::account_record& tmp  = *opt_account;
-          tmp = *account_name_rec; //->id = account_name_rec->id;
-          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
-          _wallet_db.store_record( *opt_account );
-          _wallet_db.accounts[ opt_account->index ] = *opt_account;
+          tmp = *account_name_rec;
+          _wallet_db.cache_account( *opt_account );
 
           return false;
       }
@@ -316,10 +316,8 @@ namespace bts { namespace wallet {
           FC_ASSERT( account_name_rec.valid() );
 
           blockchain::account_record& tmp  = *opt_account;
-          tmp = *account_name_rec; //->id = account_name_rec->id;
-          _wallet_db.account_id_to_account[account_name_rec->id] = opt_account->index;
-          _wallet_db.store_record( *opt_account );
-          _wallet_db.accounts[ opt_account->index ] = *opt_account;
+          tmp = *account_name_rec; 
+          _wallet_db.cache_account( *opt_account );
 
           return false;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
@@ -702,6 +700,7 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
+      idump( (account_name) );
 
       auto current_registered_account = my->_blockchain->get_account_record( account_name );
 
@@ -715,6 +714,7 @@ namespace bts { namespace wallet {
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
          current_account->private_data = private_data;
+         idump( (*current_account) );
          my->_wallet_db.store_record( *current_account );
          return;
       }
@@ -886,7 +886,7 @@ namespace bts { namespace wallet {
 
       for( auto acct : my->_wallet_db.accounts )
       {
-         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.first );
+         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
          if (blockchain_acct_rec.valid())
          {
              blockchain::account_record& brec = acct.second;
@@ -2127,57 +2127,6 @@ namespace bts { namespace wallet {
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
-    /*
-   vector<asset> wallet::get_balances( const string& symbol, 
-                                       const string& account_name )const
-   { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( account_name == "*" || is_valid_account_name( account_name ) );
-
-      asset_id_type filter_asset_id;
-      if( symbol != "*" )
-      {
-         auto opt_asset_record = my->_blockchain->get_asset_record( symbol );
-         FC_ASSERT( opt_asset_record.valid(), "Unable to find asset for symbol '${s}'", ("s",symbol) );
-         filter_asset_id = opt_asset_record->id;
-      }
-
-
-      address filter_address;
-
-      if( account_name != "*" )
-      {
-         auto war = my->_wallet_db.lookup_account( account_name );
-         FC_ASSERT( war.valid(), "Unable to find Wallet Account '${account_name}'", ("account_name",account_name) );
-
-         auto account_key = my->_wallet_db.lookup_key( war->account_address );
-         FC_ASSERT( account_key.valid() && account_key->has_private_key(), "Not your account" );
-         //ilog( "account: ${war}", ("war",war) );
-        // ilog( "account key: ${key}", ("key",account_key) );
-         filter_address = war->account_address;
-      }
-
-      map<asset_id_type,share_type> balances;
-      for( auto b : my->_wallet_db.balances )
-      {
-            auto key_rec = my->_wallet_db.lookup_key( b.second.owner() );
-            if( key_rec.valid() && (account_name == std::string("*") || 
-                                    key_rec->account_address == filter_address) )
-            {
-               auto bal = b.second.get_balance();
-               if( symbol == "*" ||  bal.asset_id == filter_asset_id )
-                  balances[bal.asset_id] += bal.amount;
-            }
-      };
-      vector<asset> result;
-      result.reserve( balances.size() );
-      for( auto item : balances )
-         result.push_back( asset( item.second, item.first ) );
-      if( result.size() == 0 )
-         result.push_back( asset() );
-      return result;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
-   */
 
    vector<string> wallet::list() const
    {
@@ -2197,7 +2146,7 @@ namespace bts { namespace wallet {
    bool  wallet::is_sending_address( const address& addr )const
    { try {
       return !is_receive_address( addr );
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
 
    bool  wallet::is_receive_address( const address& addr )const
@@ -2206,7 +2155,7 @@ namespace bts { namespace wallet {
       if( key_rec.valid() )
          return key_rec->has_private_key();
       return false;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    vector<wallet_account_record> wallet::list_contact_accounts() const
    { try {
@@ -2221,11 +2170,10 @@ namespace bts { namespace wallet {
          }
       }
       return contact_accounts;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    vector<wallet_account_record> wallet::list_receive_accounts() const
    { try {
-
       vector<wallet_account_record> receive_accounts;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
       receive_accounts.reserve( my->_wallet_db.accounts.size() );
@@ -2238,7 +2186,7 @@ namespace bts { namespace wallet {
       }
       return receive_accounts;
 
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::clear_pending_transactions()
    {
@@ -2358,9 +2306,9 @@ namespace bts { namespace wallet {
       {
          for (auto delegate_id : active_delegates)
             for (auto against_acct : against_candidates)
-                if( against_acct.id== delegate_id )
+                if( against_acct.id == delegate_id )
                 {
-                    if (delegate_id == 0)
+                    if( delegate_id == 0 )
                     {
                         FC_ASSERT(!"WARNING - delegate id 0 bug @ 1");
                         return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
@@ -2372,11 +2320,11 @@ namespace bts { namespace wallet {
       {
          // find first delegate who is not active
          bool active = false;
-         for (auto for_acct : for_candidates)
+         for( auto for_acct : for_candidates )
          {
-            for (auto delegate_id : active_delegates)
+            for( auto delegate_id : active_delegates )
             {
-                if (for_acct.id== delegate_id)
+                if( for_acct.id == delegate_id )
                 {
                     active = true;
                     break;
@@ -2389,7 +2337,7 @@ namespace bts { namespace wallet {
             }
             else
             {
-                if (for_acct.id == 0)
+                if( for_acct.id == 0 )
                 {
                     FC_ASSERT(!"WARNING - delegate id 0 bug @ 2");
                     return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
@@ -2403,7 +2351,7 @@ namespace bts { namespace wallet {
          account_id_type winner;
          for( auto candidate : for_candidates )
          {
-            auto acct_rec = my->_blockchain->get_account_record( candidate.id);
+            auto acct_rec = my->_blockchain->get_account_record( candidate.id );
             FC_ASSERT(acct_rec);
             if (acct_rec->net_votes() < min)
             {

@@ -32,7 +32,7 @@ namespace bts { namespace wallet {
        template<typename RecordType>
        RecordType as()const;
 
-       int32_t get_index()const 
+       int32_t get_wallet_record_index()const 
        { try {
           FC_ASSERT( data.is_object() );
           FC_ASSERT( data.get_object().contains( "index" ) );
@@ -48,8 +48,8 @@ namespace bts { namespace wallet {
    {
       enum { type  = RecordType };
 
-      base_record( int32_t idx = 0 ):index(idx){}
-      int32_t index;
+      base_record( int32_t idx = 0 ):wallet_record_index(idx){}
+      int32_t wallet_record_index;
    };
 
    enum property_enum
@@ -102,8 +102,8 @@ namespace bts { namespace wallet {
    struct wallet_record : public base_record<RecordTypeNumber>, public RecordTypeName
    {
       wallet_record(){}
-      wallet_record( const RecordTypeName& rec, int32_t index = 0 )
-      :base_record<RecordTypeNumber>(index),RecordTypeName(rec){}
+      wallet_record( const RecordTypeName& rec, int32_t wallet_record_index = 0 )
+      :base_record<RecordTypeNumber>(wallet_record_index),RecordTypeName(rec){}
    };
 
 
@@ -245,8 +245,8 @@ namespace fc {
       static void visit( const Visitor& visitor )
       {
           { 
-            typedef decltype(((bts::wallet::base_record<N>*)nullptr)->index) member_type;  
-            visitor.TEMPLATE operator()<member_type,bts::wallet::base_record<N>,&bts::wallet::base_record<N>::index>( "index" ); 
+            typedef decltype(((bts::wallet::base_record<N>*)nullptr)->wallet_record_index) member_type;  
+            visitor.TEMPLATE operator()<member_type,bts::wallet::base_record<N>,&bts::wallet::base_record<N>::wallet_record_index>( "index" ); 
           }
           
           fc::reflector<Type>::visit( visitor );

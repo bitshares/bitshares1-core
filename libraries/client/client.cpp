@@ -113,6 +113,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    // parse command-line options
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
+                              ("input-log", program_options::value<std::string>(), "log file with CLI commands to execute at startup")
                               ("help", "display this help message")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
@@ -131,15 +132,11 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("version", "print the version information for bts_xt_client");
 
 
-
-  program_options::positional_options_description positional_config;
-  positional_config.add("data-dir", 1);
-
   program_options::variables_map option_variables;
   try
   {
     program_options::store(program_options::command_line_parser(argc, argv).
-      options(option_config).positional(positional_config).run(), option_variables);
+      options(option_config).run(), option_variables);
     program_options::notify(option_variables);
   }
   catch (program_options::error&)
@@ -307,7 +304,7 @@ namespace bts { namespace client {
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-            virtual ~client_impl()override {}
+            virtual ~client_impl()override { delete _cli; }
 
             void delegate_loop();
 
@@ -592,11 +589,6 @@ namespace bts { namespace client {
       my->_p2p_node = network_to_connect_to;
     }
 
-    void client::set_cli( bts::cli::cli* cli)
-    {
-        my->_cli = cli;
-    }
-
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
     { try {
         my->_chain_db->open( data_dir / "chain", genesis_file_path );
@@ -609,8 +601,6 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-        if( !my->_cli )
-           my->_cli = new cli::cli( shared_from_this() );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
@@ -1295,6 +1285,31 @@ namespace bts { namespace client {
 
     //JSON-RPC Method Implementations END
 
+
+    string extract_commands_from_log_stream(std::istream& log_stream)
+    {
+      string command_list;
+      string line;
+      while (std::getline(log_stream,line))
+      {
+        //if line begins with a prompt, add to input buffer
+        size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+        if (prompt_position != string::npos )
+        { 
+          size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+          command_list += line.substr(command_start_position);
+          command_list += "\n";
+        }
+      }
+      return command_list;
+    }
+
+    string extract_commands_from_log_file(fc::path test_file)
+    {
+      std::ifstream test_input(test_file.string());
+      return extract_commands_from_log_stream(test_input);
+    }
+
     void client::configure_from_command_line(int argc, char** argv)
     {
       // parse command-line options
@@ -1435,12 +1450,19 @@ namespace bts { namespace client {
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
           std::cout << "Running in daemon mode, ignoring console\n";
-          auto cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          this->set_cli( cli );
+          my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
           rpc_server->wait_on_quit();
       }
       else 
       {
+        //CLI will default to taking input from cin unless a input log file is specified via command-line options
+        std::unique_ptr<std::istream> input_stream_holder;
+        if (option_variables.count("input-log"))
+        {
+          string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
+          input_stream_holder.reset(new std::stringstream(input_commands));
+        }
+        std::istream* input_stream = input_stream_holder ? input_stream_holder.get() : &std::cin;
 
     #ifdef _DEBUG
         //tee cli output to the console and a log file
@@ -1452,15 +1474,20 @@ namespace bts { namespace client {
         TeeStream cout_with_log(my_tee);
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( &cout_with_log );
-        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &cout_with_log );
-        //also echo input to the log file
-        cli->set_input_log_stream(console_log);
+
+        //if input log specified, just output to log file (we're testing), else output to console and log file
+        if (input_stream_holder)
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &console_log );
+        else
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &cout_with_log );
+        //echo command input to the log file
+        my->_cli->set_input_log_stream(console_log);
     #else
-        auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
+        //don't create a log file, just output to console
+        my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
     #endif
-        this->set_cli(cli.get());
-        cli->process_commands();
-        cli->wait();
+        my->_cli->process_commands();
+        my->_cli->wait();
       } 
 
     }

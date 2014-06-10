@@ -12,10 +12,16 @@
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
-#include <iostream>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <fc/network/http/connection.hpp>
+
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+
+#include <iostream>
+#include <fstream>
+
 
 using namespace bts::blockchain;
 using namespace bts::wallet;
@@ -115,46 +121,61 @@ BOOST_AUTO_TEST_CASE( master_test )
    int even = 0;
    for( auto key : delegate_private_keys )
    {
-      if( (even++)%2 )
-         std::cerr << clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
-      else
-         std::cerr << clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
-      if( even >= 4 ) break;
+      if( even >= 30 )
+      {
+         if( (even++)%2 )
+         {
+            std::cerr << "client a key: "<< even<<" "<< clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+         }
+         else
+         {
+            std::cerr << "client b key: "<< even<<" "<< clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+         }
+         if( even >= 34 ) break;
+      }
+      else ++even;
    }
+
    wlog( "------------------  CLIENT A  -----------------------------------" );
    std::cerr << clienta->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
-   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate1" ) << "\n";
    std::cerr << clienta->execute_command_line( "unlock 999999999 masterpassword" ) << "\n";
+   std::cerr << clienta->execute_command_line( "scan 0 100" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clienta->execute_command_line( "close" ) << "\n";
+   std::cerr << clienta->execute_command_line( "open walleta" ) << "\n";
+   std::cerr << clienta->execute_command_line( "unlock 99999999 masterpassword" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate31" ) << "\n";
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_account_balance delegate0" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance delegate30" ) << "\n";
    std::cerr << clientb->execute_command_line( "unlock 999999999 masterpassword" ) << "\n";
 
    std::cerr << clientb->execute_command_line( "wallet_account_create b-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_balance b-account" ) << "\n";
 
-   std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate0" );
+   std::cerr << clientb->execute_command_line( "wallet_account_register b-account delegate30" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
-   std::cerr << clientb->execute_command_line( "wallet_account_update_registration b-account delegate0 { \"ip\":\"localhost\"} true" );
+   std::cerr << clientb->execute_command_line( "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} true" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   std::cerr << clienta->execute_command_line( "wallet_transfer 33 XTS delegate1 b-account first-memo" ) << "\n";
-   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_transfer 33 XTS delegate31 b-account first-memo" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate31" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    produce_block( clientb );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate31" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
@@ -168,8 +189,12 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "wallet_set_delegate_trust_level b-account 1" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate2 c-account to-me" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate0 c-account to-me" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate32 c-account to-me" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_transfer 100000 XTS delegate30 c-account to-me" ) << "\n";
+   wlog( "------------------  CLIENT A  -----------------------------------" );
+   std::cerr << clienta->execute_command_line( "wallet_set_delegate_trust_level b-account 1" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_transfer 100000 XTS delegate31 b-account to-b" ) << "\n";
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
@@ -181,30 +206,183 @@ BOOST_AUTO_TEST_CASE( master_test )
 } FC_LOG_AND_RETHROW() }
 
 
-#include <fstream>
 
-string extract_commands_from_log_stream(std::istream& log_stream)
+class test_file
 {
-  string command_list;
-  string line;
-  while (std::getline(log_stream,line))
-  {
-    //if line begins with a prompt, add to input buffer
-    size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
-    if (prompt_position != string::npos )
-    { 
-      size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
-      command_list += line.substr(command_start_position);
-      command_list += "\n";
-    }
+  fc::path _result_file;
+  fc::path _expected_result_file;
+public:
+       test_file(fc::path result_file, fc::path expected_result_file)
+         : _result_file(result_file), _expected_result_file(expected_result_file) {}
+
+  bool compare_files(); //compare two files, return true if the files match
+};
+
+bool test_file::compare_files()
+{
+  //first check if files are equal size, if not, files are different
+  size_t result_file_size = boost::filesystem::file_size(_result_file.string());
+  size_t expected_result_file_size = boost::filesystem::file_size(_expected_result_file.string());
+  bool file_sizes_equal = (result_file_size == expected_result_file_size);
+  if (!file_sizes_equal)
+    return false;
+
+  //files may be equal since they have the same size, so check further
+  std::ifstream lhs(_result_file.string().c_str());
+  std::ifstream rhs(_expected_result_file.string().c_str());
+
+  typedef std::istreambuf_iterator<char> istreambuf_iterator;
+  return std::equal( istreambuf_iterator(lhs),  istreambuf_iterator(), istreambuf_iterator(rhs));
+}
+
+#ifdef WIN32
+#include <Windows.h>
+char** CommandLineToArgvA(const char* CmdLine, int* _argc)
+{
+  char** argv;
+  char*  _argv;
+  unsigned long   len;
+  uint32_t   argc;
+  CHAR   a;
+  uint32_t   i, j;
+
+  bool  in_QM;
+  bool  in_TEXT;
+  bool  in_SPACE;
+
+  len = strlen(CmdLine);
+  i = ((len+2)/2)*sizeof(void*) + sizeof(void*);
+
+  argv = (char**)GlobalAlloc(GMEM_FIXED,
+      i + (len+2)*sizeof(CHAR));
+
+  _argv = (char*)(((PUCHAR)argv)+i);
+
+  argc = 0;
+  argv[argc] = _argv;
+  in_QM = false;
+  in_TEXT = false;
+  in_SPACE = true;
+  i = 0;
+  j = 0;
+
+  while( a = CmdLine[i] ) {
+      if(in_QM) {
+          if(a == '\"') {
+              in_QM = false;
+          } else {
+              _argv[j] = a;
+              j++;
+          }
+      } else {
+          switch(a) {
+          case '\"':
+              in_QM = true;
+              in_TEXT = true;
+              if(in_SPACE) {
+                  argv[argc] = _argv+j;
+                  argc++;
+              }
+              in_SPACE = false;
+              break;
+          case ' ':
+          case '\t':
+          case '\n':
+          case '\r':
+              if(in_TEXT) {
+                  _argv[j] = '\0';
+                  j++;
+              }
+              in_TEXT = false;
+              in_SPACE = true;
+              break;
+          default:
+              in_TEXT = true;
+              if(in_SPACE) {
+                  argv[argc] = _argv+j;
+                  argc++;
+              }
+              _argv[j] = a;
+              j++;
+              in_SPACE = false;
+              break;
+          }
+      }
+      i++;
   }
-  return command_list;
-}
+  _argv[j] = '\0';
+  argv[argc] = NULL;
 
-string extract_commands_from_log_file(fc::path test_file)
+  (*_argc) = argc;
+  return argv;
+}
+#else //UNIX
+  #include <wordexp.h>
+#endif
+
+using namespace boost;
+program_options::variables_map parse_option_variables(int argc, char** argv);
+
+
+BOOST_AUTO_TEST_CASE( regression_test )
 {
-  std::ifstream test_input(test_file.string());
-  return extract_commands_from_log_stream(test_input);
+  try 
+  {
+  //for each test directory in full test
+  //  open testconfig file
+  //  for each line in testconfig file
+  //    add a verify_file object that knows the name of the input command file and the generated log file
+  //    start a process with that command line
+  //  wait for all processes to shutdown
+  //  for each verify_file object,
+  //    compare generated log files in datadirs to golden reference file (i.e. input command files)
+
+    vector<test_file> tests;
+    std::ifstream test_config_file("test.config");
+    string line;
+    while (std::getline(test_config_file,line))
+    {
+      //parse line into argc/argv format for boost program_options
+      int argc = 0; 
+      char** argv = nullptr;
+    #ifndef WIN32 // then UNIX 
+      //use wordexp
+      wordexp_t wordexp_result;
+      wordexp(line.c_str(), &wordexp_result, 0);
+      auto option_variables = parse_option_variables(wordexp_result.we_wordc, wordexp_result.we_wordv);
+      argv = wordexp_result.we_wordv;
+      argc = wordexp_result.we_wordc;
+    #else
+      //use ExpandEnvironmentStrings and CommandLineToArgvW
+      argv = CommandLineToArgvA(line.c_str(),&argc);
+      auto option_variables = parse_option_variables(argc, argv);
+    #endif
+      //extract input command file from cmdline options
+      fc::path input_file( option_variables["input-log"].as<std::string>() ); 
+      std::ifstream input_stream(input_file.string());
+      fc::path expected_result_file = input_file;
+
+      //run client with cmdline options
+      bts::client::client_ptr client = std::make_shared<bts::client::client>();
+      client->configure_from_command_line(argc,argv);
+    #ifndef WIN32 // then UNIX 
+      wordfree(&wordexp_result);
+    #else
+      GlobalFree(argv);
+    #endif
+
+      //add a test that compares input command file to client's log file
+      fc::path result_file = client->get_data_dir() / "console.log";
+      tests.push_back( test_file(result_file,expected_result_file) );
+    } //end while not eof
+    for (test_file current_test : tests)
+    {
+      //current_test.compare_files();
+      FC_ASSERT(current_test.compare_files(), "Results mismatch with golden reference log");
+    }
+  } 
+  catch ( const fc::exception& e )
+  {
+    elog( "${e}", ("e",e.to_detail_string() ) );
+  }
 }
-
-
