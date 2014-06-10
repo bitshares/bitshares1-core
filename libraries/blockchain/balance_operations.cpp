@@ -43,7 +43,7 @@ namespace bts { namespace blockchain {
        }
 
        auto cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
-       if( not cur_record )
+       if( !cur_record )
        {
           cur_record = balance_record( this->condition );
        }
@@ -69,7 +69,7 @@ namespace bts { namespace blockchain {
        
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
-      if( not current_balance_record ) 
+      if( !current_balance_record ) 
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
       if( this->amount > current_balance_record->balance ) 
@@ -83,7 +83,7 @@ namespace bts { namespace blockchain {
          case withdraw_signature_type:  
          {
             auto owner = current_balance_record->condition.as<withdraw_with_signature>().owner;
-            if( not eval_state.check_signature( owner ) )
+            if( !eval_state.check_signature( owner ) )
                FC_CAPTURE_AND_THROW( missing_signature, (owner) );
             break;
          }
@@ -105,12 +105,12 @@ namespace bts { namespace blockchain {
             try {
                if( password_condition.timeout < eval_state._current_state->now() )
                {
-                  if( not eval_state.check_signature( password_condition.payor ) )
+                  if( !eval_state.check_signature( password_condition.payor ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
                }
                else 
                {
-                  if( not eval_state.check_signature( password_condition.payee ) )
+                  if( !eval_state.check_signature( password_condition.payee ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
                   if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
                      FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
@@ -131,12 +131,12 @@ namespace bts { namespace blockchain {
             try {
                if( eval_state._current_state->now() > option.date )
                {
-                  if( not eval_state.check_signature( option.optionor ) )
+                  if( !eval_state.check_signature( option.optionor ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (option.optionor) );
                }
                else // the option hasn't expired
                {
-                  if( not eval_state.check_signature( option.optionee ) )
+                  if( !eval_state.check_signature( option.optionee ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
 
                   auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
