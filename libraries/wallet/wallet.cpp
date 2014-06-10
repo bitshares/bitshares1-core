@@ -1233,11 +1233,11 @@ namespace bts { namespace wallet {
                                       ("amount_to_withdraw",amount_to_withdraw ) ) }
 
    signed_transaction  wallet::transfer_asset_to_address( double real_amount_to_transfer,
-                                                  const string& amount_to_transfer_symbol,
-                                                  const string& from_account_name,
-                                                  const string& to_address,
-                                                  const string& memo_message,
-                                                  bool sign )
+                                                          const string& amount_to_transfer_symbol,
+                                                          const string& from_account_name,
+                                                          const address& to_address,
+                                                          const string& memo_message,
+                                                          bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1249,11 +1249,52 @@ namespace bts { namespace wallet {
       auto asset_id = asset_rec->id;
       
       int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-      share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
+      share_type amount_to_transfer = real_amount_to_transfer * precision;
       asset asset_to_transfer( amount_to_transfer, asset_id );
-      
+
+      private_key_type sender_private_key  = get_account_private_key( from_account_name );
+      public_key_type  sender_public_key   = sender_private_key.get_public_key();
+      address          sender_account_address( sender_private_key.get_public_key() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
         
-      public_key_type  receiver_public_key = public_key_type(to_address);
+      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      if( required_fees.asset_id == asset_to_transfer.asset_id )
+      {
+         my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
+                                      required_fees.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+      }
+      else
+      {
+         my->withdraw_to_transaction( asset_to_transfer.amount,
+                                      asset_to_transfer.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+         
+         my->withdraw_to_transaction( required_fees.amount,
+                                      required_fees.asset_id,
+                                      sender_account_address,
+                                      trx, required_signatures );
+      }
+
+      trx.deposit( to_address, asset_to_transfer, select_delegate_vote() );
+
+      if( sign )
+      {
+         sign_transaction( trx, required_signatures );
+         my->_wallet_db.cache_transaction( trx, asset_to_transfer,
+                                          required_fees.amount,
+                                          memo_message,
+                                          public_key_type(),
+                                          bts::blockchain::now(),
+                                          bts::blockchain::now(),
+                                          sender_public_key
+                                          );
+      }
+      return trx;
       
    } FC_RETHROW_EXCEPTIONS( warn, "",
                             ("real_amount_to_transfer",real_amount_to_transfer)

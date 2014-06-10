@@ -296,7 +296,7 @@
       },
       {
         "type_name" : "address",
-        "cpp_return_type" : "std::string",
+        "cpp_return_type" : "bts::blockchain::address",
         "cpp_include_file" : "string"
       },
       {
