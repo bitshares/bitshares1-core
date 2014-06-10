@@ -1,6 +1,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/market_operations.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw_variant.hpp>
 
@@ -34,6 +35,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       return true;
    }();
 

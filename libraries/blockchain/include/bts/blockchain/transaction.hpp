@@ -29,15 +29,15 @@ namespace bts { namespace blockchain {
 
       digest_type                      digest( const digest_type& chain_id )const;
 
-      fc::optional<fc::time_point_sec> expiration;
+      optional<fc::time_point_sec> expiration;
       /**
        *  Some transactions such as bids/asks/options require a payout
        *  as a condition of claiming the funds.  Ie: to claim a bid, you 
        *  must pay the bidder the proper amount.  When making this payout
        *  the system needs to know which delegate_id to use. 
        */
-      fc::optional<name_id_type>       delegate_id; // delegate being voted for in required payouts
-      std::vector<operation>           operations; 
+      optional<account_id_type>       delegate_id; // delegate being voted for in required payouts
+      vector<operation>           operations; 
 
       void issue( const asset& amount_to_issue );
 
@@ -49,47 +49,53 @@ namespace bts { namespace blockchain {
 
       void deposit( const address& addr, 
                     const asset& amount, 
-                    name_id_type delegate_id );
+                    account_id_type delegate_id );
 
       void deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,
-                                const std::string& memo_message,
-                                name_id_type delegate_id,
+                                const string& memo_message,
+                                account_id_type delegate_id,
                                 const fc::ecc::public_key& memo_public_key,
                                 memo_flags_enum memo_type = from_memo );
 
 
-      void register_account( const std::string& name, 
-                         const fc::variant& public_data, 
+      void register_account( const string& name, 
+                         const variant& public_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
                          bool as_delegate = false );
 
-      void update_account( name_id_type name_id, 
-                        const fc::optional<fc::variant>& public_data, 
-                        const fc::optional<public_key_type>& active, 
+      void update_account( account_id_type name_id, 
+                        const optional<variant>& public_data, 
+                        const optional<public_key_type>& active, 
                         bool as_delegate = false );
 
-      void submit_proposal( name_id_type delegate_id,
-                            const std::string& subject,
-                            const std::string& body,
-                            const std::string& proposal_type,
-                            const fc::variant& public_data);
+      void submit_proposal( account_id_type delegate_id,
+                            const string& subject,
+                            const string& body,
+                            const string& proposal_type,
+                            const variant& public_data);
 
       void vote_proposal(proposal_id_type proposal_id, 
-                         name_id_type voter_id, 
+                         account_id_type voter_id, 
                          proposal_vote::vote_type vote,
                          const string& message );
 
 
-      void create_asset( const std::string& symbol, 
-                         const std::string& name, 
-                         const std::string& description,
-                         const fc::variant& data,
-                         name_id_type issuer_id,
+      void create_asset( const string& symbol, 
+                         const string& name, 
+                         const string& description,
+                         const variant& data,
+                         account_id_type issuer_id,
                          share_type   max_share_supply,
                          int64_t      precision );
+
+      void bid( const asset& quantity, 
+                const price& price_per_unit, 
+                const address& owner,
+                account_id_type delegate_id = 0 );
+
    }; // transaction
 
    struct transaction_summary_details
@@ -98,9 +104,9 @@ namespace bts { namespace blockchain {
        *  Bitcoin compatibility 
        */
       ///@{ 
-        std::string        account;
-        std::string        category;
-        std::string        address; 
+        string        account;
+        string        category;
+        string        address; 
         share_type         amount; 
       ///@}
         asset_id_type      asset_id;
@@ -122,13 +128,13 @@ namespace bts { namespace blockchain {
       transaction_id_type                        txid;
       fc::time_point_sec                         time;
       fc::time_point_sec                         timereceived;
-      std::vector<transaction_summary_details>   details;
-      std::vector<char>                          hex;
+      vector<transaction_summary_details>   details;
+      vector<char>                          hex;
       ///@}
 
-      std::vector<asset>                         fees;
-      std::vector<asset>                         amounts;
-      fc::variant                                public_data;
+      vector<asset>                         fees;
+      vector<asset>                         amounts;
+      variant                                public_data;
    }; // transaction_summary
 
 
@@ -138,10 +144,10 @@ namespace bts { namespace blockchain {
       size_t                                  data_size()const;
       void                                    sign( const fc::ecc::private_key& signer, const digest_type& chain_id );
 
-      std::vector<fc::ecc::compact_signature> signatures;
+      vector<fc::ecc::compact_signature> signatures;
    };
-   typedef std::vector<signed_transaction> signed_transactions;
-   typedef fc::optional<signed_transaction> osigned_transaction;
+   typedef vector<signed_transaction> signed_transactions;
+   typedef optional<signed_transaction> osigned_transaction;
 
 
    struct transaction_location
@@ -153,7 +159,7 @@ namespace bts { namespace blockchain {
       uint32_t trx_num;
    };
 
-   typedef fc::optional<transaction_location> otransaction_location;
+   typedef optional<transaction_location> otransaction_location;
 
 
 } } // bts::blockchain 

@@ -181,7 +181,7 @@ namespace bts { namespace cli {
             void process_commands()
             { 
               try {
-                  FC_ASSERT( _input_stream != nullptr );
+                 FC_ASSERT( _input_stream != nullptr );
                  string line = get_line(get_prompt());
                  while (_input_stream->good() && !_quit )
                  {
@@ -192,11 +192,13 @@ namespace bts { namespace cli {
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
-              catch ( const fc::exception&)
+              catch ( const fc::exception& e)
               {
                  if( _out ) (*_out) << "\nshutting down\n";
+                 elog( "${e}", ("e",e.to_detail_string() ) );
                  _rpc_server->shutdown_rpc_server();
               }
+              wlog( "process commands exiting" );
               // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
               // Tell the RPC server to close, which will allow the process to exit.
               _cin_complete.cancel();
@@ -1395,10 +1397,12 @@ namespace bts { namespace cli {
   {
      if( my->_cin_complete.valid() )
      {
+        ilog( "\n\n cin complete \n\n" );
         my->_cin_complete.cancel();
         if( my->_cin_complete.ready() )
            my->_cin_complete.wait();
      }
+     ilog( "\n\nwaiting on server to quit\n\n" );
      my->_rpc_server->wait_on_quit();
   }
 
