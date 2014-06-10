@@ -380,6 +380,11 @@
           "cpp_return_type" : "std::string",
           "cpp_include_file" : "string",
           "default_example" : "Alice"
+      },
+      {
+         "type_name" : "assettype",
+         "cpp_return_type" : "bts::blockchain::asset",
+         "cpp_include_file" : "bts/blockchain/asset.hpp"
       }
     ]
 }

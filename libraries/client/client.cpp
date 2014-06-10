@@ -1798,6 +1798,18 @@ namespace bts { namespace client {
       network_broadcast_transaction( trx );
       return trx;
    }
+   
+   asset client_impl::wallet_set_priority_fee( int64_t fee )
+   {
+      if (fee >= 0)
+      {
+         _wallet->set_priority_fee(fee);
+      }
+      
+      auto current_fee = _wallet->get_priority_fee();
+      return current_fee;
+   }
+      
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {
       return _chain_db->get_proposals( first, count );
@@ -1812,4 +1824,5 @@ namespace bts { namespace client {
    {
      return my.get();
    }
+   
 } } // bts::client
