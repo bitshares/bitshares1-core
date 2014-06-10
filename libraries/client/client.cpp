@@ -1270,6 +1270,31 @@ namespace bts { namespace client {
 
     //JSON-RPC Method Implementations END
 
+
+    string extract_commands_from_log_stream(std::istream& log_stream)
+    {
+      string command_list;
+      string line;
+      while (std::getline(log_stream,line))
+      {
+        //if line begins with a prompt, add to input buffer
+        size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+        if (prompt_position != string::npos )
+        { 
+          size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+          command_list += line.substr(command_start_position);
+          command_list += "\n";
+        }
+      }
+      return command_list;
+    }
+
+    string extract_commands_from_log_file(fc::path test_file)
+    {
+      std::ifstream test_input(test_file.string());
+      return extract_commands_from_log_stream(test_input);
+    }
+
     void client::configure_from_command_line(int argc, char** argv)
     {
       // parse command-line options
@@ -1410,12 +1435,19 @@ namespace bts { namespace client {
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
           std::cout << "Running in daemon mode, ignoring console\n";
-          auto cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          this->set_cli( cli );
+          my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
           rpc_server->wait_on_quit();
       }
       else 
       {
+        //CLI will default to taking input from cin unless a input log file is specified via command-line options
+        std::unique_ptr<std::istream> input_stream_holder;
+        if (option_variables.count("input-log"))
+        {
+          string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
+          input_stream_holder.reset(new std::stringstream(input_commands));
+        }
+        std::istream* input_stream = input_stream_holder ? input_stream_holder.get() : &std::cin;
 
     #ifdef _DEBUG
         //tee cli output to the console and a log file
@@ -1428,27 +1460,15 @@ namespace bts { namespace client {
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( &cout_with_log );
 
-        std::istream* input_stream = &std::cin;
-        if (option_variables.count("input-log"))
-        {
-          std::ifstream input_log(option_variables["input-log"].as<string>());
-          string line;
-          string input_commands;
-          while (std::getline(input_log,line))
-          {
-            size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
-            if (prompt_position != string::npos)
-            {
-              input_commands += line.substr(prompt_position+strlen(CLI_PROMPT_SUFFIX));
-              input_commands += "\n";
-            }
-          }
-          std::stringstream* input_stream = new std::stringstream(input_commands);
-        }
-        my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &cout_with_log );
-        //also echo input to the log file
+        //if input log specified, just output to log file (we're testing), else output to console and log file
+        if (input_stream_holder)
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &console_log );
+        else
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &cout_with_log );
+        //echo command input to the log file
         my->_cli->set_input_log_stream(console_log);
     #else
+        //don't create a log file, just output to console
         auto cli = std::make_shared<bts::cli::cli>( this->shared_from_this(), &std::cin, &std::cout );
     #endif
         my->_cli->process_commands();
