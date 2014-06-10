@@ -93,7 +93,8 @@ namespace bts { namespace cli {
               try
               {
                 arguments = _self->parse_interactive_command(buffered_argument_stream, command);
-                ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
+                // NOTE: arguments here have not been filtered for private keys or passwords
+                // ilog( "command: ${c} ${a}", ("c",command)("a",arguments) ); 
                 command_is_valid = true;
               }
               catch( const rpc::unknown_method& )
@@ -1037,8 +1038,8 @@ namespace bts { namespace cli {
                         if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
-                    auto balance = _client->get_wallet()->get_balances( BTS_ADDRESS_PREFIX, acct.name );
-                    if( _out ) (*_out) << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
+                   // auto balance = _client->get_wallet()->get_balances( BTS_ADDRESS_PREFIX, acct.name );
+                   // if( _out ) (*_out) << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
 
                     if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
 

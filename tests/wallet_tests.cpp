@@ -116,7 +116,11 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    std::cerr << clienta->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
 
+   std::cerr << clienta->execute_command_line( "wallet_account_balance" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_balance delegate37" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_create b-account" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance b-account" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
 
 
 } FC_LOG_AND_RETHROW() }
