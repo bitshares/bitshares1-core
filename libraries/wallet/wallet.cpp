@@ -1579,7 +1579,7 @@ namespace bts { namespace wallet {
                                       ("description", description)
                                       ( "issuer_account", issuer_account_name) ) }
 
-   signed_transaction  wallet::issue_asset( share_type amount_to_issue, 
+   signed_transaction  wallet::issue_asset( double amount_to_issue, 
                                             const string& symbol,                                               
                                             const string& to_account_name,
                                             const string& memo_message,
@@ -1600,7 +1600,7 @@ namespace bts { namespace wallet {
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
-      asset shares_to_issue( amount_to_issue, asset_record->id );
+      asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( issuer_account->name ),

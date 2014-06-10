@@ -110,9 +110,11 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    auto clienta = std::make_shared<client>(sim_network);
    clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
+   clienta->configure_from_command_line( 0, nullptr );
 
    auto clientb = std::make_shared<client>(sim_network);
    clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
+   clientb->configure_from_command_line( 0, nullptr );
 
    std::cerr << clientb->execute_command_line( "help" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_create walletb masterpassword" ) << "\n";
@@ -199,6 +201,15 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_list_delegates" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_asset_create USD Dollar b-account \"paper bucks\" null 1000000000 1000" ) << "\n";
+   produce_block( clientb );
+   std::cerr << clientb->execute_command_line( "blockchain_list_registered_assets" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_asset_issue 1000 USD c-account \"iou\"" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
+   produce_block( clientb );
+   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
 
    //std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    //std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";

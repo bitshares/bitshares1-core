@@ -251,7 +251,7 @@ namespace bts { namespace wallet {
                                            int64_t  precision = 0,
                                            bool sign = true );
 
-         signed_transaction  issue_asset( share_type amount, 
+         signed_transaction  issue_asset( double amount, 
                                           const string& symbol,                                               
                                           const string& to_account_name,
                                           const string& memo_message,
