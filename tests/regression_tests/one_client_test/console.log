@@ -1,0 +1,122 @@
+(wallet closed) >>> help
+about                                                                                                 Returns version number and associated information for this client
+bitcoin_addnode <node> <command>                                                                      Attempts add or remove <node> from the peer list or try a connection to <node> once, see network_add_node
+bitcoin_backupwallet <destination>                                                                    Safely backup wallet data to destination, which can be a directory or a path with filename.
+bitcoin_dumpprivkey <bts_address>                                                                     Reveals the private key corresponding to <bitcoinaddress>
+bitcoin_encryptwallet <passphrase>                                                                    Encrypts the wallet with <passphrase>.
+bitcoin_getaccount <account_key>                                                                      Returns the account associated with the given address.
+bitcoin_getaccountaddress <account_name>                                                              Returns a current bitshare address for receiving payments to this account. If <account_name> does not exist, it will be created along with an associated new address that will be returned.
+bitcoin_getaddressesbyaccount <account_name>                                                          Returns the list of addresses for the given account.
+bitcoin_getbalance [account_name]                                                                     If [account] is not specified, returns the server's total available balance.
+If [account] is specified, returns the balance in the account.
+bitcoin_getblock <block_id>                                                                           eturns information about the block with the given hash.
+bitcoin_getblockcount                                                                                 Returns the number of blocks in the longest block chain
+bitcoin_getblockhash <block_number>                                                                   Returns hash of block in best-block-chain at index provided
+bitcoin_getconnectioncount                                                                            Returns the number of fully-established connections to other nodes
+bitcoin_getinfo                                                                                       Returns an object containing various state info.
+bitcoin_getnewaddress <account_name>                                                                  Returns a new bitcoin address for receiving payments. If [account] is specified payments received with the address will be credited to [account].
+bitcoin_getreceivedbyaddress <bts_address>                                                            Returns the amount received by <bitcoinaddress> in transactions. It correctly handles the case where someone has sent to the address in multiple transactions. 
+bitcoin_importprivkey <wif_key> [account_name] [rescan]                                               Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions.
+bitcoin_listaccounts                                                                                  Returns Object that has account names as keys, account balances as values. TODO: balance in result type is asset
+bitcoin_listtransactions [account_name] [count] [from]                                                Returns up to [count] most recent transactions skipping the first [from] transactions for account [account]. If [account] not provided it'll return recent transactions from all accounts.
+bitcoin_sendfrom <fromaccount> <toaddresskey> <amount> [comment]                                      TODO: <amount> is a real and is rounded to 8 decimal places. Will send the given amount to the given address, ensuring the account has a valid balance using [minconf] confirmations. Returns the transaction ID if successful (not in JSON object).
+bitcoin_sendmany <fromaccount> <to_address_amounts> [comment]                                         amounts are double-precision floating point numbers
+bitcoin_sendtoaddress <address> <amount> [comment]                                                    <amount> is a real and is rounded to 8 decimal places. Returns the transaction ID <txid> if successful.
+bitcoin_settrxfee <amount>                                                                            <amount> is a real and is rounded to the nearest 0.00000001.
+bitcoin_signmessage <address> <message>                                                               Sign a message with the private key of an address.
+bitcoin_validateaddress <address>                                                                     Return information about <address>.
+bitcoin_verifymessage <address> <signature> <message>                                                 Verify a signed message.
+bitcoin_walletlock                                                                                    Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked.
+bitcoin_walletpassphrase <passphrase> <timeout>                                                       Stores the wallet decryption key in memory for <timeout> seconds.
+bitcoin_walletpassphrasechange <oldpassphrase> <newpassphrase>                                        Changes the wallet passphrase from <oldpassphrase> to <newpassphrase>
+blockchain_get_account_record <account_name>                                                          Retrieves the name record
+blockchain_get_account_record_by_id <name_id>                                                         Retrieves the name record for the given name_id
+blockchain_get_asset_record <symbol>                                                                  Retrieves the asset record by the ticker symbol
+blockchain_get_asset_record_by_id <asset_id>                                                          Retrieves the asset record by the id
+blockchain_get_block <block_id>                                                                       Retrieves the block header for the given block hash
+blockchain_get_block_by_number <block_number>                                                         Retrieves the block header for the given block number
+blockchain_get_blockcount                                                                             Returns the number of blocks in the longest block chain
+blockchain_get_blockhash <block_number>                                                               Returns hash of block in best-block-chain at index provided
+blockchain_get_config                                                                                 Returns static configuration parameters about the blockchain.
+blockchain_get_pending_transactions                                                                   Return a list of transactions that are not yet in a block.
+blockchain_get_proposal_votes <proposal_id>                                                           Returns the list votes filed for a given proposal.
+blockchain_get_security_state                                                                         Returns information about blockchain security level
+blockchain_get_transaction <transaction_id>                                                           Get detailed information about an in-wallet transaction
+blockchain_list_delegates [first] [count]                                                             Returns the list of delegates sorted by vote
+blockchain_list_proposals [first] [count]                                                             Returns the list of delegates sorted by vote
+blockchain_list_registered_accounts [first_account_name] [limit]                                      Returns registered accounts starting with a given name upto a the limit provided
+blockchain_list_registered_assets [first_symbol] [limit]                                              Returns registered assets starting with a given name upto a the limit provided
+execute_command_line <input>                                                                          Execute the given command as if it were typed on the CLI
+get_info                                                                                              Returns version number and associated information for this client
+help [command_name]                                                                                   display a list of commands, or detailed help on an individual command
+network_add_node <node> <command>                                                                     Attempts add or remove <node> from the peer list or try a connection to <node> once
+network_broadcast_transaction <transaction_to_broadcast>                                              Broadcast a previously-created signed transaction to the network
+network_get_advanced_node_parameters                                                                  Sets advanced node parameters, used for setting up automated tests
+network_get_block_propagation_data <block_hash>                                                       Returns the time the block was first seen by this client
+network_get_connection_count                                                                          Returns the number of fully-established connections to other nodes
+network_get_info                                                                                      Returns assorted information about the network settings and connections
+network_get_peer_info                                                                                 Returns data about each connected node
+network_get_transaction_propagation_data <transaction_id>                                             Returns the time the transaction was first seen by this client
+network_set_advanced_node_parameters <params>                                                         Sets advanced node parameters, used for setting up automated tests
+network_set_allowed_peers <allowed_peers>                                                             Sets the list of peers this node is allowed to connect to
+stop                                                                                                  shut down the RPC server and exit this client
+validate_address <address>                                                                            Return information about given BitShares address
+wallet_account_balance                                                                                Lists the total balances of all accounts sorted by account and asset
+wallet_account_create <account_name> [private_data]                                                   Add new account for receiving payments
+wallet_account_list_public_keys [account_name]                                                        Lists all public keys in this account
+wallet_account_register <account_name> <pay_from_account> [public_data] [as_delegate]                 Updates the data published about a given account
+wallet_account_rename <current_account_name> <new_account_name>                                       Rename an account in wallet
+wallet_account_transaction_history [account_name]                                                     Lists all transactions for the specified account
+wallet_account_update_registration <account_name> <pay_from_account> [public_data] [as_delegate]      Updates the data published about a given account
+wallet_add_contact_account <account_name> <account_key>                                               Add new account for sending payments
+wallet_asset_create <symbol> <asset_name> <issuer_name> [description] [data] [maximum_share_supply] [precision]   Creates a new user issued asset
+wallet_asset_issue <amount> <symbol> <to_account_name> <memo_message>                                 Issues new shares of a given asset type
+wallet_change_passphrase <passphrase>                                                                 Change the password of the current wallet
+wallet_clear_pending_transactions                                                                     Clear "stuck" pending transactions from the wallet.
+wallet_close                                                                                          Closes the curent wallet if one is open
+wallet_create <wallet_name> <new_passphrase>                                                          Creates a wallet with the given name
+wallet_create_from_json <json_filename> <wallet_name>                                                 Creates a new wallet from an exported JSON file
+wallet_export_to_json <json_filename>                                                                 Exports the current wallet to a JSON file
+wallet_get_account <account_name>                                                                     TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet
+wallet_get_info                                                                                       Extra information about the wallet.
+wallet_get_name                                                                                       Returns the wallet name passed to wallet_open
+wallet_get_pretty_transaction <transaction>                                                           Return a pretty JSON representation of a transaction
+wallet_import_armory <wallet_filename> <passphrase> <account_name>                                    Imports a armory wallet
+wallet_import_bitcoin <wallet_filename> <passphrase> <account_name>                                   Imports a bitcoin wallet
+wallet_import_electrum <wallet_filename> <passphrase> <account_name>                                  Imports a electrum wallet
+wallet_import_keyhotee <firstname> <middlename> <lastname> <brainkey> <keyhoteeid>                    Create the key from keyhotee config and import it to the wallet, creating a new account using this key
+wallet_import_multibit <wallet_filename> <passphrase> <account_name>                                  Imports a multibit wallet
+wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                      Loads the private key into the specified account
+wallet_list                                                                                           Return a list of wallets in the current data directory
+wallet_list_contact_accounts                                                                          Lists all foreign addresses and their labels associated with this wallet
+wallet_list_receive_accounts                                                                          TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet
+wallet_list_unspent_balances [account_name] [symbol]                                                  Lists the unspent balances that are controlled by this wallet
+wallet_lock                                                                                           Lock the private keys in wallet, disables spending commands until unlocked
+wallet_multipart_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message]   Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.
+wallet_open <wallet_name>                                                                             Opens the wallet of the given name
+wallet_open_file <wallet_file>                                                                        Opens the wallet at the given path
+wallet_remove_contact_account <account_name>                                                          Remove a contact account from your wallet
+wallet_rescan_blockchain [first_block_number] [num_blocks]                                            Scans the transaction history for operations relevant to this wallet.
+wallet_set_delegate_trust_level <delegate_name> [trust_level]                                         Updates the trust placed in a given delegate
+wallet_submit_proposal <delegate_account_name> <subject> <body> <proposal_type> <data>                Submit a proposal to the delegates for voting
+wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message]   Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+wallet_unlock <timeout> <passphrase>                                                                  Unlock the private keys in the wallet to enable spending operations
+wallet_vote_proposal <name> <proposal_id> <vote> [message]                                            Vote on a proposal
+wallet_withdraw_delegate_pay <delegate_name> <to_account_name> <amount_to_withdraw> <memo>            Used to transfer some of the delegates pay from their balance
+(wallet closed) >>> wallet_list
+13
+boost::filesystem::directory_iterator::construct: The system cannot find the path specified: "c:/gh/DANTEST\wallets": 
+    {"what":"boost::filesystem::directory_iterator::construct: The system cannot find the path specified: \"c:/gh/DANTEST\\wallets\""}
+    th_a  common_api_client.cpp:362 bts::rpc_stubs::common_api_client::wallet_list
+
+    {"command":"wallet_list"}
+    th_a  cli.cpp:579 bts::cli::detail::cli_impl::execute_command
+(wallet closed) >>> wallet_list
+13
+boost::filesystem::directory_iterator::construct: The system cannot find the path specified: "c:/gh/DANTEST\wallets": 
+    {"what":"boost::filesystem::directory_iterator::construct: The system cannot find the path specified: \"c:/gh/DANTEST\\wallets\""}
+    th_a  common_api_client.cpp:362 bts::rpc_stubs::common_api_client::wallet_list
+
+    {"command":"wallet_list"}
+    th_a  cli.cpp:579 bts::cli::detail::cli_impl::execute_command
+(wallet closed) >>> quit

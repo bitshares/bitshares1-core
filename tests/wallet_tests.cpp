@@ -370,6 +370,34 @@ using namespace boost;
 program_options::variables_map parse_option_variables(int argc, char** argv);
 
 
+void create_genesis_block(fc::path genesis_json_file)
+{
+   vector<fc::ecc::private_key> delegate_private_keys;
+
+   genesis_block_config config;
+   config.precision         = BTS_BLOCKCHAIN_PRECISION;
+   config.timestamp         = bts::blockchain::now();
+   config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
+   config.base_name         = BTS_BLOCKCHAIN_NAME;
+   config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
+   config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
+
+   for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
+   {
+      name_config delegate_account;
+      delegate_account.name = "delegate" + fc::to_string(i);
+      delegate_private_keys.push_back( fc::ecc::private_key::generate() );
+      auto delegate_public_key = delegate_private_keys.back().get_public_key();
+      delegate_account.owner = delegate_public_key;
+      delegate_account.is_delegate = true;
+
+      config.names.push_back(delegate_account);
+      config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+   }
+
+   fc::json::save_to_file( config, genesis_json_file);
+}
+
 BOOST_AUTO_TEST_CASE( regression_test )
 {
   try 
@@ -383,33 +411,55 @@ BOOST_AUTO_TEST_CASE( regression_test )
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
+    auto sim_network = std::make_shared<bts::net::simulated_network>();
+
+    //create a small genesis block to reduce test startup time
+    fc::temp_directory temp_dir;
+    fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
+    create_genesis_block(genesis_json_file);
+
+    //select the test to run
+    fc::path regression_tests_dir = "regression_tests";
+    fc::path test_dir = regression_tests_dir / "two_client_test";
+    fc::path test_config_file_name = "test.config";
+
+    //change current working directory to test directory
+    boost::filesystem::current_path(test_dir.string());
+
+    //open test configuration file (contains one line per client to create)
+    std::ifstream test_config_file(test_config_file_name.string());
+
     vector<test_file> tests;
-    std::ifstream test_config_file("test.config");
     string line;
     while (std::getline(test_config_file,line))
     {
+      //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
+      line += " --genesis-config " + genesis_json_file.string();
+
       //parse line into argc/argv format for boost program_options
       int argc = 0; 
       char** argv = nullptr;
     #ifndef WIN32 // then UNIX 
-      //use wordexp
+      //use wordexp to get argv/arc
       wordexp_t wordexp_result;
       wordexp(line.c_str(), &wordexp_result, 0);
       auto option_variables = parse_option_variables(wordexp_result.we_wordc, wordexp_result.we_wordv);
       argv = wordexp_result.we_wordv;
       argc = wordexp_result.we_wordc;
     #else
-      //use ExpandEnvironmentStrings and CommandLineToArgvW
+      //use ExpandEnvironmentStrings and CommandLineToArgv to get argv/arc
       argv = CommandLineToArgvA(line.c_str(),&argc);
       auto option_variables = parse_option_variables(argc, argv);
     #endif
-      //extract input command file from cmdline options
+      //extract input command file from cmdline options so that we can compare against output log
       fc::path input_file( option_variables["input-log"].as<std::string>() ); 
       std::ifstream input_stream(input_file.string());
       fc::path expected_result_file = input_file;
 
       //run client with cmdline options
-      bts::client::client_ptr client = std::make_shared<bts::client::client>();
+      bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
+//      bts::client::client_ptr client = std::make_shared<bts::client::client>();
+
       client->configure_from_command_line(argc,argv);
     #ifndef WIN32 // then UNIX 
       wordfree(&wordexp_result);
