@@ -1098,7 +1098,7 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    { try {
-      auto now = fc::time_point(bts::blockchain::now());
+      fc::time_point_sec now = bts::blockchain::now();
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       if( next_block_time == my->_blockchain->now().sec_since_epoch() )

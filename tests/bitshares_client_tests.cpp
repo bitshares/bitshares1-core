@@ -112,6 +112,7 @@ uint16_t bts_xt_client_test_config::base_http_port = 22100;
 #define WALLET_PASSPHRASE "testtesttest"
 #define WALLET_NAME "default"
 #define INITIAL_BALANCE 1000
+#define INITIAL_BALANCE_ACCOUNT "initialbalanceaccount"
 
 BOOST_GLOBAL_FIXTURE(bts_xt_client_test_config);
 
@@ -212,7 +213,7 @@ struct bts_client_process : managed_process
   bts::wallet::wallet_ptr wallet; // used during initial creation, closed after that
   bts::blockchain::chain_database_ptr blockchain;
 
-  uint64_t expected_balance; // for use in individual tests to track the expected balance after a transfer
+  bts::blockchain::share_type expected_balance; // for use in individual tests to track the expected balance after a transfer
 
   bts_client_process() : initial_balance(0) {}
   void set_process_number(uint32_t process_num)
@@ -362,64 +363,83 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
 {
   const uint32_t initial_block_count = 400; // generate this many blocks
   fc::time_point_sec genesis_block_time(((bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) - (initial_block_count + 1)) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-  bts::blockchain::advance_time(genesis_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
 
-  // create a blockchain
+  bts::blockchain::start_simulated_time(genesis_block_time);
+
+  // create a master blockchain
+  // we can only have a few wallet/chain databases open at a time because of the large number of 
+  // files handles each leveldb eats up.  So if we're trying to generate a staggered blockchain
+  // for 50 clients, we can't do them all at once.  Instead, we create a single blockchain first,
+  // then initialize clients' blockchains one-at-a-time from the master. 
   genesis_block.timestamp = genesis_block_time;
   fc::path genesis_json = bts_xt_client_test_config::config_directory / "genesis.json";
   fc::json::save_to_file(genesis_block, genesis_json, true);
 
-  // create all of the wallets and leave them open
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    fc::remove_all(client_processes[i].config_dir);
-    fc::create_directories(client_processes[i].config_dir);
-    client_processes[i].blockchain = std::make_shared<bts::blockchain::chain_database>();
-    client_processes[i].blockchain->open(client_processes[i].config_dir / "chain", genesis_json);
-    client_processes[i].wallet = std::make_shared<bts::wallet::wallet>(client_processes[i].blockchain);
-    fc::path wallet_dir = client_processes[i].config_dir / "wallets";
-    fc::create_directories(wallet_dir);
-    client_processes[i].wallet->set_data_directory(wallet_dir);
-    client_processes[i].wallet->create(WALLET_NAME, WALLET_PASSPHRASE);
-    client_processes[i].wallet->unlock(WALLET_PASSPHRASE, fc::microseconds::maximum());
-    client_processes[i].wallet->create_account("delegatekeys");
-  }
-
+  bts::blockchain::chain_database_ptr master_blockchain = std::make_shared<bts::blockchain::chain_database>();
+  fc::path master_data_dir = bts_xt_client_test_config::config_directory / "master_blockchain";
+  fc::remove_all(master_data_dir);
+  master_blockchain->open(master_data_dir / "chain", genesis_json);
+  bts::wallet::wallet_ptr master_wallet = std::make_shared<bts::wallet::wallet>(master_blockchain);
+  fc::path master_wallet_dir = master_data_dir / "wallets";
+  master_wallet->set_data_directory(master_wallet_dir);
+  master_wallet->create(WALLET_NAME, WALLET_PASSPHRASE);
+  master_wallet->unlock(WALLET_PASSPHRASE, fc::microseconds::maximum());
+  master_wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
-  {
-    unsigned client_for_this_delegate = i % client_processes.size();
-    client_processes[client_for_this_delegate].wallet->import_private_key(delegate_keys[i], "delegatekeys");
-    client_processes[client_for_this_delegate].wallet->scan_state();
-  }
+    master_wallet->import_private_key(delegate_keys[i], "delegatekeys");
+  master_wallet->scan_state();
 
+  // master wallet is created and ready to go.  Fill it with the desired number of blocks
   uint32_t current_block_count = 0;
   for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)
   {
-    // generate a block
-    // the first client will always have the complete blockchain, so use it for building the blockchain.
-    // earlier clients will have progressively shorter chains
     bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-    fc::time_point_sec my_next_block_time = client_processes[0].wallet->next_block_production_time();
-    bts::blockchain::advance_time(my_next_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
-    bts::blockchain::full_block next_block = client_processes[0].blockchain->generate_block(my_next_block_time);
-    client_processes[0].wallet->sign_block(next_block);
+    bts::blockchain::full_block next_block = master_blockchain->generate_block(bts::blockchain::now());
+    master_wallet->sign_block(next_block);
+    master_blockchain->push_block(next_block);
+    master_wallet->scan_chain(master_blockchain->get_head_block_num());
+  }
 
-    // push it on the clients' block chains
-    for (unsigned i = 0; i < client_processes.size(); ++i)
-    {
-      uint32_t number_of_blocks_for_this_client = initial_block_count * (client_processes.size() - i) / client_processes.size();
-      if (current_block_count <= number_of_blocks_for_this_client)
-      {
-        client_processes[i].blockchain->push_block(next_block);
-        client_processes[i].wallet->scan_chain(client_processes[i].blockchain->get_head_block_num());
-      }
-    }
-  }
-  for (unsigned i = 0; i < client_processes.size(); ++i)
+  // great, we have the full blockchain now.  Create blockchains and wallets for each client
+  // and initialize them with a subset of the blocks.  also, portion out all of the delegates
+  // to the clients
+
+  // create all of the wallets and leave them open
+  for (unsigned client_index = 0; client_index < client_processes.size(); ++client_index)
   {
-    client_processes[i].blockchain.reset();
-    client_processes[i].wallet.reset();
+    fc::remove_all(client_processes[client_index].config_dir);
+    fc::create_directories(client_processes[client_index].config_dir);
+    client_processes[client_index].blockchain = std::make_shared<bts::blockchain::chain_database>();
+    client_processes[client_index].blockchain->open(client_processes[client_index].config_dir / "chain", genesis_json);
+    client_processes[client_index].wallet = std::make_shared<bts::wallet::wallet>(client_processes[client_index].blockchain);
+    fc::path wallet_dir = client_processes[client_index].config_dir / "wallets";
+    fc::create_directories(wallet_dir);
+    client_processes[client_index].wallet->set_data_directory(wallet_dir);
+    client_processes[client_index].wallet->create(WALLET_NAME, WALLET_PASSPHRASE);
+    client_processes[client_index].wallet->unlock(WALLET_PASSPHRASE, fc::microseconds::maximum());
+    client_processes[client_index].wallet->create_account("delegatekeys");
+    client_processes[client_index].wallet->import_private_key(delegate_keys[client_index], "delegatekeys");
+    client_processes[client_index].wallet->scan_state();
+
+    for (unsigned delegate_index = 0; delegate_index < delegate_keys.size(); ++delegate_index)
+      if (delegate_index % client_processes.size() == client_index)
+      {
+        client_processes[client_index].wallet->import_private_key(delegate_keys[delegate_index], "delegatekeys");
+        client_processes[client_index].wallet->scan_state();
+      }
+
+    // this client's wallet and blockchain are initialized.  Now give it some blocks from the master blockchain
+    uint32_t number_of_blocks_for_this_client = initial_block_count * (client_processes.size() - client_index) / client_processes.size();
+    for (unsigned block_number = 1; block_number <= number_of_blocks_for_this_client; ++block_number)
+    {
+      client_processes[client_index].blockchain->push_block(master_blockchain->get_block(block_number));
+      client_processes[client_index].wallet->scan_chain(client_processes[client_index].blockchain->get_head_block_num());
+    }
+    client_processes[client_index].blockchain.reset();
+    client_processes[client_index].wallet.reset();
   }
+
+  BOOST_TEST_MESSAGE("Last generated block's timestamp: " << (std::string)fc::time_point(bts::blockchain::now()) << ", wall clock time is " << (std::string)fc::time_point::now());
 }
 
 void bts_client_launcher_fixture::create_forked_wallets()
@@ -543,10 +563,10 @@ void bts_client_launcher_fixture::import_initial_balances()
   BOOST_TEST_MESSAGE("Importing initial keys and verifying initial balances");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    client_processes[i].rpc_client->wallet_account_create("initialbalanceaccount");
-    client_processes[i].rpc_client->wallet_import_private_key(key_to_wif(client_processes[i].private_key), "initialbalanceaccount");
+    client_processes[i].rpc_client->wallet_account_create(INITIAL_BALANCE_ACCOUNT);
+    client_processes[i].rpc_client->wallet_import_private_key(key_to_wif(client_processes[i].private_key), INITIAL_BALANCE_ACCOUNT);
     client_processes[i].rpc_client->wallet_rescan_blockchain(0);
-    BOOST_CHECK_EQUAL(client_processes[i].rpc_client->wallet_get_balance()[0].first, client_processes[i].initial_balance);
+    BOOST_CHECK_EQUAL(client_processes[i].rpc_client->wallet_account_balance()[INITIAL_BALANCE_ACCOUNT]["XTS"], client_processes[i].initial_balance);
   }
 }
 
@@ -555,7 +575,8 @@ void bts_client_launcher_fixture::register_delegates()
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
   {
     int client_for_this_delegate = i % client_processes.size();
-    client_processes[i].rpc_client->wallet_account_create("delegatekey");
+    if (i < client_processes.size())
+      client_processes[client_for_this_delegate].rpc_client->wallet_account_create("delegatekey");
     client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]), "delegatekey");
     client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
   }
@@ -829,8 +850,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Verifying all clients have zero balance after opening wallet");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    auto balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
-    BOOST_CHECK(balance == bts::blockchain::share_type());
+    BOOST_CHECK(client_processes[i].rpc_client->wallet_account_balance().empty());
   }
 
   BOOST_TEST_MESSAGE("Testing unlocking wallets");
@@ -928,16 +948,18 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   {
     uint32_t next_client_index = (i + 1) % client_processes.size();
     bts::blockchain::public_key_type destination_address = client_processes[next_client_index].rpc_client->wallet_account_create("circletest");
-    auto destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first;
+    bts::blockchain::share_type destination_initial_balance = client_processes[next_client_index].rpc_client->wallet_account_balance()["circletest"]["XTS"];
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
-    const uint32_t amount_to_transfer = 1000000;
+    bts::blockchain::share_type amount_to_transfer = 10;
     client_processes[i].rpc_client->wallet_add_contact_account("nextclient", destination_address);
-    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", "initialbalanceaccount", "nextclient");
+    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", INITIAL_BALANCE_ACCOUNT, "nextclient");
     fc::time_point transfer_time = fc::time_point::now();
     for (;;)
     {
       fc::usleep(fc::milliseconds(500));
-      if (client_processes[next_client_index].rpc_client->wallet_get_balance()[0].first == destination_initial_balance + amount_to_transfer)
+      int64_t precision = client_processes[next_client_index].rpc_client->blockchain_get_asset_record("XTS")->precision;
+      bts::blockchain::share_type new_account_balance = client_processes[next_client_index].rpc_client->wallet_account_balance()["circletest"]["XTS"];
+      if (new_account_balance == destination_initial_balance + amount_to_transfer * precision)
       {
         BOOST_TEST_MESSAGE("Client " << next_client_index << " received 1MBTS from client " << i);
         break;
@@ -1011,7 +1033,7 @@ BOOST_AUTO_TEST_CASE(thousand_transactions_per_block)
 
   uint64_t total_balances_received = 0;
   for (unsigned i = 1; i < client_processes.size(); ++i)
-    total_balances_received += (client_processes[i].rpc_client->wallet_get_balance()[0].first - initial_balance_for_each_node);
+    total_balances_received += (client_processes[i].rpc_client->wallet_account_balance()["test"]["XTS"] - initial_balance_for_each_node);
 
   BOOST_TEST_MESSAGE("Received " << total_balances_received << " in total");
   BOOST_CHECK(total_balances_received == total_amount_to_transfer);
@@ -1149,23 +1171,11 @@ BOOST_AUTO_TEST_CASE(untracked_transactions)
   BOOST_TEST_MESSAGE("That's about " << (total_number_of_transactions / run_time_in_seconds) << " transactions per second");
 }
 
-BOOST_AUTO_TEST_CASE(bignum)
-{
-  // Test whether math using big numbers works in 32-bit code.  (it doesn't)  
-  bts::blockchain::asset big_asset(8000000000000000000);
-  bts::blockchain::asset big_divisor(1000000);
-  bts::blockchain::price dividend = big_asset / big_divisor;
-  BOOST_CHECK_EQUAL(dividend, 8000000000000);
-
-  BOOST_CHECK_EQUAL((bts::blockchain::asset(1000000) * fc::uint128_t(1000000, 0)).amount, 
-                    bts::blockchain::asset(1000000000000).amount);
-}
-
 BOOST_AUTO_TEST_CASE(simple_sync_test)
 {
   /* Note: on Windows, boost::process imposes a limit of 64 child processes,
            we should max out at 55 or less to give ourselves some wiggle room */
-  client_processes.resize(5);
+  client_processes.resize(30);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -1564,7 +1574,7 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
 
     // get everyone's initial balance
     for (unsigned i = 0;i < client_processes.size(); ++i)
-      client_processes[i].expected_balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
+      client_processes[i].expected_balance = client_processes[i].rpc_client->wallet_account_balance()[INITIAL_BALANCE_ACCOUNT]["XTS"];
 
     // disconnect a few nodes
     for (uint32_t i : disconnect_node_indices)
@@ -1595,7 +1605,7 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
     // verify that the transfers succeeded
     for (uint32_t i : transaction_destination_indices)
     {
-      uint64_t actual_balance = client_processes[i].rpc_client->wallet_get_balance()[0].first;
+      uint64_t actual_balance = client_processes[i].rpc_client->wallet_account_balance()[INITIAL_BALANCE_ACCOUNT]["XTS"];
       BOOST_CHECK_EQUAL(client_processes[i].expected_balance, actual_balance);
     }
 
@@ -1653,7 +1663,7 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
     client_processes[0].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[0].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
 
-    auto endpoint = fc::ip::endpoint( fc::ip::address("127.0.0.1"), client_processes[0].rpc_port );
+    fc::ip::endpoint endpoint(fc::ip::address("127.0.0.1"), client_processes[0].rpc_port);
     auto socket = std::make_shared<fc::tcp_socket>();
     try 
     {
@@ -1668,7 +1678,7 @@ BOOST_AUTO_TEST_CASE( oversize_message_test )
     fc::buffered_istream_ptr buffered_istream = std::make_shared<fc::buffered_istream>(socket);
     fc::buffered_ostream_ptr buffered_ostream = std::make_shared<fc::buffered_ostream>(socket);
 
-    auto oversize = garbage_message( MAX_MESSAGE_SIZE * 500 ) ;
+    bts::net::message oversize = garbage_message( MAX_MESSAGE_SIZE * 500 ) ;
     *buffered_ostream << fc::variant( oversize.data ).as_string();
     buffered_ostream->flush();
 
