@@ -267,6 +267,8 @@ namespace bts { namespace wallet {
                                          const string& quote_symbol,
                                          bool sign = true );
 
+         signed_transaction  cancel_market_order( const address& owner_address );
+
          owallet_account_record get_account( const string& account_name );
 
          /**

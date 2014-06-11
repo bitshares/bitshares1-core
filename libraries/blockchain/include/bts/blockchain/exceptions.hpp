@@ -67,4 +67,5 @@ namespace bts { namespace blockchain {
 
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,  bts::blockchain::evaluation_error, 37002, "unknown market order" );
 } }

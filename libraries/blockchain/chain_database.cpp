@@ -1750,6 +1750,16 @@ namespace bts { namespace blockchain {
          return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
+
+   optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_bid_db.find(key);
+       if( market_itr.valid() )
+          return market_order { bid_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
    vector<market_order>  chain_database::get_market_bids( const string& quote_symbol, 
                                                           const string& base_symbol, 
                                                           uint32_t limit  )
@@ -1764,7 +1774,7 @@ namespace bts { namespace blockchain {
        auto market_itr  = my->_bid_db.begin();
        while( market_itr.valid() )
        {
-          results.push_back( {market_itr.key(), market_itr.value()} );
+          results.push_back( {bid_order, market_itr.key(), market_itr.value()} );
 
           if( results.size() == limit ) 
              return results;

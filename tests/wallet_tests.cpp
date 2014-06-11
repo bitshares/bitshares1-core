@@ -66,6 +66,7 @@ void produce_block( T my_client )
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
+      bts::blockchain::advance_time( 1 );
 }
 
 
@@ -231,6 +232,14 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
+   auto result = clientb->wallet_market_order_list( "USD", "XTS" );
+   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) ) << "\n";
+   produce_block( clientb );
+   std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history" ) << "\n";
+   std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    // THis is an invalid order
    //std::cerr << clientb->execute_command_line( "bid c-account 210 USD 5.40 XTS" ) << "\n";
    //produce_block( clientb );

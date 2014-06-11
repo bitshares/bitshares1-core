@@ -80,6 +80,7 @@ namespace bts { namespace wallet {
              bool scan_update_account( const update_account_operation& op );
              bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
              bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
+             bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
 
              bool cache_balance( const balance_id_type& balance_id );
 
@@ -254,6 +255,9 @@ namespace bts { namespace wallet {
                    case issue_asset_op_type:
                      cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
                      break;
+                   case bid_op_type:
+                     cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
+                     break;
                }
             }
             if( cache_trx )
@@ -355,6 +359,20 @@ namespace bts { namespace wallet {
          */
          return false;
       }
+
+      bool wallet_impl::scan_bid( wallet_transaction_record& trx_rec, const bid_operation& bid_op )
+      { try {
+          auto okey_rec = _wallet_db.lookup_key( bid_op.bid_index.owner ); 
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             auto order = _blockchain->get_market_bid( bid_op.bid_index );
+             //FC_ASSERT( order.valid() );
+             if( order.valid() )
+                _wallet_db.market_orders[ bid_op.bid_index.owner ].order = *order;
+             return true;
+          }
+          return false;
+      } FC_CAPTURE_AND_RETHROW( (bid_op) ) } 
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -1818,6 +1836,89 @@ namespace bts { namespace wallet {
     *         price_per_unit   = 1 / price_per_unit
     *  @endcode
     */
+   signed_transaction  wallet::cancel_market_order( const address& owner_address )
+   { try {
+        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+
+        auto order_itr = my->_wallet_db.market_orders.find( owner_address );
+        if( order_itr == my->_wallet_db.market_orders.end() )
+           FC_CAPTURE_AND_THROW( unknown_market_order, (owner_address) );
+
+        auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
+        if( NOT owner_key_record )
+           FC_CAPTURE_AND_THROW( unknown_address, (owner_address) );
+
+        auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
+        FC_ASSERT( account_key_record.valid() );
+
+        auto from_address = owner_key_record->account_address;
+        auto from_account_key = account_key_record->public_key;
+        auto& to_account_key = from_account_key;
+
+        market_order_status& order = order_itr->second;
+        asset balance = order.get_balance();
+
+        auto required_fees = get_priority_fee(BTS_BLOCKCHAIN_SYMBOL);
+
+        if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
+
+        signed_transaction trx;
+        unordered_set<address>     required_signatures;
+        required_signatures.insert( owner_address );
+
+        trx.bid( -balance, order.order.market_index.order_price, owner_address, 0 );
+
+        if( balance.asset_id == 0 )
+        {
+           asset deposit_amount = balance;
+
+           if( required_fees.amount < balance.amount )
+           {
+              deposit_amount -= required_fees;
+              trx.deposit( owner_address, balance,
+                           select_delegate_vote() );
+           }
+           else
+           {
+              FC_CAPTURE_AND_THROW( fee_greater_than_amount, (balance)(required_fees) );
+           }
+        }
+        else
+        {
+           trx.deposit( owner_address, balance,
+                        select_delegate_vote() );
+
+           my->withdraw_to_transaction( required_fees.amount,
+                                        0,
+                                        from_address,  // get address of account
+                                        trx, 
+                                        required_signatures );
+        }
+      
+        sign_transaction( trx, required_signatures );
+
+        // TODO: get quantity @ price for for memo
+        std::stringstream memoss;
+        memoss << "cancel order " << string(owner_address);
+        // real_quantity << " " << base_asset_record->symbol << " @ ";
+        // memoss << quote_price << " " << quote_asset_record->symbol;
+
+        auto memo_message = memoss.str();
+
+        my->_wallet_db.cache_transaction( trx, balance,
+                                          required_fees.amount,
+                                          memo_message, 
+                                          from_account_key,
+                                          bts::blockchain::now(),
+                                          bts::blockchain::now(),
+                                          to_account_key
+                                        );
+
+        my->_blockchain->store_pending_transaction( trx );
+
+        return trx;
+   } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
    signed_transaction  wallet::submit_bid( const string& from_account_name,
                                            double real_quantity, 
                                            const string& quantity_symbol,
@@ -1825,10 +1926,8 @@ namespace bts { namespace wallet {
                                            const string& quote_symbol,
                                            bool sign )
    { try {
-       if( NOT is_open() )
-          FC_CAPTURE_AND_THROW( wallet_closed );
-       if( NOT is_unlocked() )
-          FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
        if( NOT is_receive_account(from_account_name) )
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity <= 0 )
