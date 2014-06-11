@@ -1459,6 +1459,7 @@ namespace bts { namespace blockchain {
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
       base_asset.collected_fees = 0;
+      base_asset.registration_date = config.timestamp;
       self->store_asset_record( base_asset );
 
       block_fork_data gen_fork;
