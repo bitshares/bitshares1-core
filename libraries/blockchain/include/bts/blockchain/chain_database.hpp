@@ -81,7 +81,7 @@ namespace bts { namespace blockchain {
          signed_block_header           get_head_block()const;
          uint32_t                      get_head_block_num()const;
          block_id_type                 get_head_block_id()const;
-         osigned_transaction           get_transaction( const transaction_id_type& trx_id )const;
+         osigned_transaction           get_transaction( const transaction_id_type& trx_id, bool exact = true )const;
          virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
 
          vector<account_record >       get_accounts( const string& first, uint32_t count )const;

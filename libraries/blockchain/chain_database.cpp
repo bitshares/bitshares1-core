@@ -1176,17 +1176,33 @@ namespace bts { namespace blockchain {
 
 
 
-   osigned_transaction chain_database::get_transaction( const transaction_id_type& trx_id )const
+   osigned_transaction chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
-
       auto trx_loc = get_transaction_location( trx_id );
-      ilog( "block_number: ${trx_loc}", ("trx_loc",trx_loc) );
-      if( !trx_loc ) return osigned_transaction();
-      auto block_id = my->_block_num_to_id_db.fetch( trx_loc->block_num );
-      auto block_data = my->_block_id_to_block_db.fetch( block_id );
-      FC_ASSERT( block_data.user_transactions.size() > trx_loc->trx_num );
+      if( trx_loc )
+      {
+         auto block_id = my->_block_num_to_id_db.fetch( trx_loc->block_num );
+         auto block_data = my->_block_id_to_block_db.fetch( block_id );
+         FC_ASSERT( block_data.user_transactions.size() > trx_loc->trx_num );
+      }
+      else if( !exact )
+      {
+         auto itr = my->_processed_transaction_id_db.lower_bound( trx_id );
+         if( itr.valid() )
+         {
+            auto id = itr.key();
 
-      return block_data.user_transactions[ trx_loc->trx_num ];
+            auto trx_loc = itr.value();
+            if( memcmp( (char*)&id, (const char*)&trx_id, 4 ) != 0 )
+               return osigned_transaction();
+
+            auto block_id = my->_block_num_to_id_db.fetch( trx_loc.block_num );
+            auto block_data = my->_block_id_to_block_db.fetch( block_id );
+            FC_ASSERT( block_data.user_transactions.size() > trx_loc.trx_num );
+            return block_data.user_transactions[ trx_loc.trx_num ];
+         }
+      }
+      return osigned_transaction();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_id",trx_id) ) }
 
    void    chain_database::scan_assets( function<void( const asset_record& )> callback )

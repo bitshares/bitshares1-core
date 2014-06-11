@@ -51,7 +51,6 @@ namespace bts { namespace wallet {
              {
                 if( !_use_deterministic_one_time_keys )
                 {
-                   elog( "GENERATING RANDOM" );
                    return fc::ecc::private_key::generate();
                 }
                 return _wallet_db.new_private_key( _wallet_password );
@@ -162,7 +161,6 @@ namespace bts { namespace wallet {
                                                  signed_transaction& trx, 
                                                  unordered_set<address>& required_signatures )
       { try {
-         wlog( "${amount}", ("amount",amount) );
          share_type remaining = amount;
          for( auto& balance_item : _wallet_db.balances )
          {

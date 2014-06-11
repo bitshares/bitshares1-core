@@ -351,7 +351,12 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "close" ) << "\n";
    std::cerr << clientb->execute_command_line( "open walletb" ) << "\n";
    std::cerr << clientb->execute_command_line( "unlock 99999999 newmasterpassword" ) << "\n";
-   std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39ca174" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39ca1" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39ca" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39" ) << "\n";
+
+   std::cerr << clientb->execute_command_line( "wallet_transfer 20 USD c-account delegate31 c-d31" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_get_pending_transactions" ) << " \n";
 
    
    // THis is an invalid order
