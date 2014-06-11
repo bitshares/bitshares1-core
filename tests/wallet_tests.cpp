@@ -226,14 +226,16 @@ BOOST_AUTO_TEST_CASE( master_test )
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    std::cerr << clientb->execute_command_line( "bid c-account 120 XTS 4.50 USD" ) << "\n";
+   std::cerr << clientb->execute_command_line( "bid c-account 40 XTS 2.50 USD" ) << "\n";
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "bid c-account 210 USD 5.40 XTS" ) << "\n";
-   produce_block( clientb );
-   std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
-   std::cerr << clientb->execute_command_line( "balance" ) << "\n";
-   std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS 100" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
+   // THis is an invalid order
+   //std::cerr << clientb->execute_command_line( "bid c-account 210 USD 5.40 XTS" ) << "\n";
+   //produce_block( clientb );
+  // std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";
+ //  std::cerr << clientb->execute_command_line( "balance" ) << "\n";
 
    //std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    //std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
