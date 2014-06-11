@@ -31,6 +31,7 @@ add_library( bts_blockchain
              account_operations.cpp
              proposal_operations.cpp
              asset_operations.cpp
+             market_operations.cpp
              transaction_evaluation_state.cpp
              time.cpp
              extended_address.cpp

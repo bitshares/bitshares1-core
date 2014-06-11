@@ -758,7 +758,7 @@ namespace bts { namespace client {
     }
 
 
-    signed_transaction  detail::client_impl::wallet_asset_issue(const share_type& amount,
+    signed_transaction  detail::client_impl::wallet_asset_issue(double real_amount,
                                                    const string& symbol,
                                                    const string& to_account_name,
                                                    const string& memo_message
@@ -766,7 +766,7 @@ namespace bts { namespace client {
     {
       //rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
       //bool sign = (flag != client::do_not_sign);
-      auto issue_asset_trx = _wallet->issue_asset(amount,symbol,to_account_name, memo_message, true);
+      auto issue_asset_trx = _wallet->issue_asset(real_amount,symbol,to_account_name, memo_message, true);
       //if (flag == client::sign_and_broadcast)
           network_broadcast_transaction(issue_asset_trx);
       return issue_asset_trx;
@@ -1323,6 +1323,11 @@ namespace bts { namespace client {
 
     void client::configure_from_command_line(int argc, char** argv)
     {
+      if( argc == 0 && argv == nullptr )
+      {
+        my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+        return;
+      }
       // parse command-line options
       auto option_variables = parse_option_variables(argc,argv);
 
@@ -1836,6 +1841,16 @@ namespace bts { namespace client {
       }
    }
 
+   signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
+                                                             double quantity, const string& quantity_symbol,
+                                                             double quote_price, const string& quote_symbol )
+   {
+      auto trx = _wallet->submit_bid( from_account, quantity, quantity_symbol, 
+                                                    quote_price, quote_symbol, true );
+      
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name, 
                                                                  const string& to_account_name, 

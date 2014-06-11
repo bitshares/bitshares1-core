@@ -249,13 +249,23 @@ namespace bts { namespace wallet {
                                            const string& issuer_name,
                                            share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
                                            int64_t  precision = 0,
-                                           const bool sign = true );
+                                           bool sign = true );
 
-         signed_transaction  issue_asset( share_type amount, 
+         signed_transaction  issue_asset( double amount, 
                                           const string& symbol,                                               
                                           const string& to_account_name,
                                           const string& memo_message,
-                                          const bool sign = true );
+                                          bool sign = true );
+
+         /**
+          *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
+          */
+         signed_transaction  submit_bid( const string& from_account_name,
+                                         double real_quantity, 
+                                         const string& quantity_symbol,
+                                         double price_per_unit,
+                                         const string& quote_symbol,
+                                         bool sign = true );
 
          owallet_account_record get_account( const string& account_name );
 
@@ -268,27 +278,27 @@ namespace bts { namespace wallet {
                                               const variant& json_data,
                                               bool  as_delegate, 
                                               const string& pay_with_account_name,
-                                              const bool sign = true );
+                                              bool sign = true );
 
          wallet_transaction_record update_registered_account( const string& account_name,
                                                        const string& pay_from_account,
                                                        optional<variant> json_data,
                                                        optional<public_key_type> active = optional<public_key_type>(),
                                                        bool as_delegate = false,
-                                                       const bool sign = true );
+                                                       bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,
                                              const string& body,
                                              const string& proposal_type,
                                              const variant& data,
-                                             const bool sign = true );
+                                             bool sign = true );
 
          signed_transaction vote_proposal( const string& delegate_account_name, 
                                            proposal_id_type proposal_id, 
                                            proposal_vote::vote_type vote,
                                            const string& message = string(),
-                                           const bool sign = true);
+                                           bool sign = true);
 
 
          ///@} Transaction Generation Methods

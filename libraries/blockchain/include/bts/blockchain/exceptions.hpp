@@ -12,6 +12,8 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( unsupported_chain_operation, bts::blockchain::blockchain_exception, 30005, "unsupported chain operation" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unknown_transaction, bts::blockchain::blockchain_exception, 30006, "unknown transaction" ); 
    FC_DECLARE_DERIVED_EXCEPTION( duplicate_transaction, bts::blockchain::blockchain_exception, 30007, "duplicate transaction" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( zero_amount, bts::blockchain::blockchain_exception, 30008, "zero amount" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( zero_price, bts::blockchain::blockchain_exception, 30009, "zero price" ); 
 
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
@@ -54,6 +56,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_asset_amount, bts::blockchain::evaluation_error, 35005, "invalid asset amount" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_issue, bts::blockchain::evaluation_error, 35006, "negative issue" );
    FC_DECLARE_DERIVED_EXCEPTION( over_issue, bts::blockchain::evaluation_error, 35007, "over issue" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_asset_symbol, bts::blockchain::evaluation_error, 35008, "unknown asset symbol" );
 
    FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,  bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,  bts::blockchain::evaluation_error, 36002, "insufficient fee" );

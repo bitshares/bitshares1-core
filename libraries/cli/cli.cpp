@@ -181,7 +181,7 @@ namespace bts { namespace cli {
             void process_commands()
             { 
               try {
-                  FC_ASSERT( _input_stream != nullptr );
+                 FC_ASSERT( _input_stream != nullptr );
                  string line = get_line(get_prompt());
                  while (_input_stream->good() && !_quit )
                  {
@@ -192,11 +192,13 @@ namespace bts { namespace cli {
                  } // while cin.good
                  _rpc_server->shutdown_rpc_server();
               } 
-              catch ( const fc::exception&)
+              catch ( const fc::exception& e)
               {
                  if( _out ) (*_out) << "\nshutting down\n";
+                 elog( "${e}", ("e",e.to_detail_string() ) );
                  _rpc_server->shutdown_rpc_server();
               }
+              wlog( "process commands exiting" );
               // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
               // Tell the RPC server to close, which will allow the process to exit.
               _cin_complete.cancel();
@@ -984,7 +986,7 @@ namespace bts { namespace cli {
 
             void print_contact_account_list(const std::vector<wallet_account_record> account_records)
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
@@ -994,7 +996,7 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
@@ -1021,8 +1023,7 @@ namespace bts { namespace cli {
 
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
-                if( _out ) (*_out) << std::setw( 25 ) << std::left << "BALANCE";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
@@ -1034,7 +1035,7 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
@@ -1063,7 +1064,7 @@ namespace bts { namespace cli {
 
             void print_registered_account_list(const vector<account_record> account_records, int32_t count )
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME";
+                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
                 if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
                 if( _out ) (*_out) << std::setw( 15 ) << "VOTES FOR";
@@ -1076,7 +1077,7 @@ namespace bts { namespace cli {
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 24) + " (delegate)";
+                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
@@ -1133,7 +1134,7 @@ namespace bts { namespace cli {
                 if( _out ) (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
                 if( _out ) (*_out) << std::setw( 20 ) << "FEE";
                 if( _out ) (*_out) << std::setw( 14 ) << "VOTE";
-                if( _out ) (*_out) << std::setw( 42 ) << "ID";
+                if( _out ) (*_out) << std::setw( 8 ) << "ID";
                 if( _out ) (*_out) << "\n---------------------------------------------------------------------------------------------------";
                 if( _out ) (*_out) <<   "--------------------------------------------------------------------------------------------------\n";
                 if( _out ) (*_out) << std::right; 
@@ -1215,7 +1216,7 @@ namespace bts { namespace cli {
 
                     if( _out ) (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 42 ) << string( tx.trx_id );
+                    if( _out ) (*_out) << std::setw( 8 ) << string( tx.trx_id ).substr(0, 8);
 
                     if( _out ) (*_out) << std::right << "\n";
                 }
@@ -1395,10 +1396,12 @@ namespace bts { namespace cli {
   {
      if( my->_cin_complete.valid() )
      {
+        ilog( "\n\n cin complete \n\n" );
         my->_cin_complete.cancel();
         if( my->_cin_complete.ready() )
            my->_cin_complete.wait();
      }
+     ilog( "\n\nwaiting on server to quit\n\n" );
      my->_rpc_server->wait_on_quit();
   }
 

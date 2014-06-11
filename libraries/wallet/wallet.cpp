@@ -4,6 +4,7 @@
 #include <bts/wallet/config.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
@@ -1322,8 +1323,6 @@ namespace bts { namespace wallet {
          FC_ASSERT( asset_rec.valid() );
          auto asset_id = asset_rec->id;
          
-         int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-         
          private_key_type sender_private_key  = get_account_private_key( from_account_name );
          public_key_type  sender_public_key   = sender_private_key.get_public_key();
          address          sender_account_address( sender_private_key.get_public_key() );
@@ -1338,7 +1337,7 @@ namespace bts { namespace wallet {
          for ( auto address_amount : to_address_amounts )
          {
             auto real_amount_to_transfer = address_amount.second;
-            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->precision));
+            share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->get_precision()));
             asset asset_to_transfer( amount_to_transfer, asset_id );
             
             my->withdraw_to_transaction( amount_to_transfer,
@@ -1400,9 +1399,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( asset_rec.valid() );
       auto asset_id = asset_rec->id;
       
-      int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
-
-      share_type amount_to_transfer = real_amount_to_transfer * precision;
+      share_type amount_to_transfer = real_amount_to_transfer * asset_rec->get_precision();
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
       public_key_type  receiver_public_key = get_account_public_key( to_account_name );
@@ -1466,7 +1463,7 @@ namespace bts { namespace wallet {
                                                 const variant& public_data,
                                                 bool as_delegate,
                                                 const string& pay_with_account_name,
-                                                const bool sign )
+                                                bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1538,7 +1535,7 @@ namespace bts { namespace wallet {
                                              const string& issuer_account_name,
                                              share_type max_share_supply, 
                                              int64_t precision,
-                                             const bool sign  )
+                                             bool sign  )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1582,11 +1579,11 @@ namespace bts { namespace wallet {
                                       ("description", description)
                                       ( "issuer_account", issuer_account_name) ) }
 
-   signed_transaction  wallet::issue_asset( share_type amount_to_issue, 
+   signed_transaction  wallet::issue_asset( double amount_to_issue, 
                                             const string& symbol,                                               
                                             const string& to_account_name,
                                             const string& memo_message,
-                                            const bool sign )
+                                            bool sign )
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1603,7 +1600,7 @@ namespace bts { namespace wallet {
       auto issuer_account = my->_blockchain->get_account_record( asset_record->issuer_account_id );
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
-      asset shares_to_issue( amount_to_issue, asset_record->id );
+      asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    get_account_public_key( issuer_account->name ),
@@ -1639,7 +1636,7 @@ namespace bts { namespace wallet {
                                                                 optional<variant> public_data,
                                                                 optional<public_key_type> new_active_key,
                                                                 bool as_delegate,
-                                                                const bool sign )
+                                                                bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1700,7 +1697,7 @@ namespace bts { namespace wallet {
                                        const string& body,
                                        const string& proposal_type,
                                        const variant& data,
-                                       const bool sign  )
+                                       bool sign  )
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1739,7 +1736,7 @@ namespace bts { namespace wallet {
                                              proposal_id_type proposal_id, 
                                              proposal_vote::vote_type vote,
                                              const string& message,
-                                             const bool sign )
+                                             bool sign )
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1786,10 +1783,108 @@ namespace bts { namespace wallet {
       if( sign )
       {
           sign_transaction( trx, required_signatures );
+           // TODO: cache transaction
       }
 
       return trx;
    }
+
+   /***
+    *  @param from_account_name - the account that will fund the bid
+    *  @param real_quantity - the total number of items desired (ie: 10 BTC)
+    *  @param quantity_symbol - the symbol for real quantity (ie: BTC)
+    *  @param price_per_unit  - the quote price (ie: $600 USD )
+    *  @param quote_symbol    - the symbol of the quote price (ie: USD)
+    *
+    *  The total funds required by this wallet will be:
+    *    
+    *      real_quantity * price_per_unit 
+    *
+    *  @note there are two possible markets USD / BTC and BTC / USD that
+    *  have an inverce price relationship.  We always assume that the
+    *  quote unit is greater than the base unit (in asset_id).  
+    *
+    *  Because the base shares are asset id 0 (ie: XTS), then if someone issues USD
+    *  it will have a higher asset id, say 20.   
+    *
+    *  @code
+    *    if( quantity_symbol > quote_symbol )
+    *        real_quantity = real_quantity * price_per_unit
+    *        price_per_unit = 1/price_per_unit
+    *        swap( quantity_symbol, quote_symbol )
+    *    
+    *    if( quantity_symbol < quote_symbol ) 
+    *       If your quantity_symbol is XTS then
+    *         amount_withdrawn = real_quantity * price_per_unit USD
+    *         price_per_unit   = price_per_unit
+    *       If your quantity_symbol is USD then:
+    *         amount_withdrawn = real_quantity / price_per_unit USD
+    *         price_per_unit   = 1 / price_per_unit
+    *  @endcode
+    */
+   signed_transaction  wallet::submit_bid( const string& from_account_name,
+                                           double real_quantity, 
+                                           const string& quantity_symbol,
+                                           double price_per_unit,
+                                           const string& quote_symbol,
+                                           bool sign )
+   { try {
+       if( NOT is_open() )
+          FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() )
+          FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_receive_account(from_account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+       if( real_quantity <= 0 )
+          FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
+       if( price_per_unit <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (price_per_unit) );
+       if( quote_symbol == quantity_symbol )
+          FC_CAPTURE_AND_THROW( invalid_price, (price_per_unit)(quantity_symbol)(quote_symbol) );
+       
+       auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
+       auto base_asset_record  = my->_blockchain->get_asset_record( quantity_symbol );
+
+       if( NOT quote_asset_record ) 
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
+       if( NOT base_asset_record ) 
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quantity_symbol) );
+
+       if( quote_asset_record->id < base_asset_record->id )
+       {
+          real_quantity *= price_per_unit;
+          price_per_unit = 1.0 / price_per_unit;
+          std::swap( quote_asset_record, base_asset_record );
+       }
+
+       asset bid_share_quantity( real_quantity * base_asset_record->get_precision(), base_asset_record->id );
+       asset quote_price( price_per_unit * quote_asset_record->get_precision(), quote_asset_record->id );
+       asset one_quantity( base_asset_record->get_precision(), quote_asset_record->id );
+
+       auto bid_price = quote_price / one_quantity;
+
+       auto owner_address = get_new_address( from_account_name );
+
+       signed_transaction trx;
+       unordered_set<address>     required_signatures;
+       required_signatures.insert(owner_address);
+
+       // withdraw to transaction bid_share_quantity + fee
+       if( bid_share_quantity.asset_id == 0 )
+          trx.bid( bid_share_quantity, bid_price, owner_address, select_delegate_vote() );
+       else
+          trx.bid( bid_share_quantity, bid_price, owner_address, 0 );
+
+       if( sign )
+       {
+           sign_transaction( trx, required_signatures );
+           // TODO: cache transaction
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)
+                             (real_quantity)(quantity_symbol)
+                             (price_per_unit)(quote_symbol)(sign) ) }
 
    asset wallet::get_priority_fee( const string& symbol )const
    {

@@ -39,53 +39,19 @@ namespace bts { namespace blockchain {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
    }
 
-#if 0
+   void transaction::bid( const asset& quantity, 
+                          const price& price_per_unit, 
+                          const address& owner,
+                          account_id_type delegate_id  )
+   {
+      bid_operation op;
+      op.amount = quantity.amount;
+      op.bid_index.order_price = price_per_unit;
+      op.bid_index.owner = owner;
+      op.delegate_id = delegate_id;
 
-   void transaction_evaluation_state::evaluate_bid( const bid_operation& op )
-   { try {
-      FC_ASSERT( op.amount != 0 );
-
-      market_index_key bid_index(op.bid_price,op.owner);
-      auto cur_bid  = _current_state->get_bid_record( bid_index );
-      if( !cur_bid )
-      {  // then this is a new bid
-         cur_bid = order_record( 0, op.delegate_id );
-      }
-
-      if( op.get_amount().asset_id == BASE_ASSET_ID )
-      {
-         auto delegate_record = _current_state->get_account_record( abs(op.delegate_id) );
-         FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-         if( cur_bid->balance )
-            sub_vote( cur_bid->delegate_id, cur_bid->balance );
-
-         cur_bid->delegate_id = op.delegate_id;
-         cur_bid->balance      += op.amount;
-         FC_ASSERT( cur_bid->balance >= 0 );
-
-         if( cur_bid->balance )
-            add_vote( cur_bid->delegate_id, cur_bid->balance );
-      }
-      else
-      {
-         cur_bid->balance      += op.amount;
-         FC_ASSERT( cur_bid->balance > 0 );
-      }
-
-      if( op.amount < 0 ) // we are withdrawing part or all of the bid (canceling the bid)
-      { // this is effectively a withdraw and move to deposit...
-         add_balance( -op.get_amount() );  
-         add_required_signature( op.owner );
-      }
-      else if( op.amount > 0 ) // we are adding more value to the bid (increasing the amount, but not price)
-      { // this is similar to a deposit
-         sub_balance( balance_id_type(), op.get_amount() );
-      }
-
-      _current_state->store_bid_record( bid_index, *cur_bid );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
-
-#endif 
+      operations.emplace_back(op);
+   }
 
    void transaction::withdraw( const balance_id_type& account, 
                                share_type             amount )

@@ -11,12 +11,13 @@ namespace bts { namespace blockchain {
    }
 
    deposit_operation::deposit_operation( const address& owner, 
-                                                     const asset& amnt, 
-                                                     name_id_type delegate_id )
+                                         const asset& amnt, 
+                                         name_id_type delegate_id )
    {
       FC_ASSERT( amnt.amount > 0 );
       amount = amnt.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ), amnt.asset_id, delegate_id );
+      condition = withdraw_condition( withdraw_with_signature( owner ), 
+                                      amnt.asset_id, delegate_id );
    }
 
 
