@@ -454,7 +454,9 @@ void run_regression_test(fc::path test_dir, bool with_network)
       argc = wordexp_result.we_wordc;
     #else
       //use ExpandEnvironmentStrings and CommandLineToArgv to get argv/arc
-      argv = CommandLineToArgvA(line.c_str(),&argc);
+      char expanded_line[40000];
+      ExpandEnvironmentStrings(line.c_str(),expanded_line,sizeof(expanded_line));
+      argv = CommandLineToArgvA(expanded_line,&argc);
       auto option_variables = parse_option_variables(argc, argv);
     #endif
       //extract input command file from cmdline options so that we can compare against output log
