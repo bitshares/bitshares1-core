@@ -56,6 +56,12 @@
               "name" : "new_passphrase", 
               "type" : "new_passphrase", 
               "description" : "a passphrase for encrypting the wallet"
+            },
+            { 
+              "name" : "brain_key", 
+              "type" : "new_passphrase", 
+              "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
+              "default_value" : ""
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -199,7 +205,7 @@
           "parameters" : [
           {
               "name" : "firstname",
-              "type" : "name"
+              "type" : "name",
               "description" : "first name in keyhotee profile config, for salting the seed of private key"
           },
           {
@@ -904,7 +910,43 @@
          ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : [ "bid" ]
+      },
+      {
+         "method_name" : "wallet_market_order_list",
+         "return_type" : "market_order_status_array",
+         "parameters"  : [
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the quote symbol of the market"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the base symbol of the market"
+            },
+            {
+               "name" : "limit",
+               "type" : "int64_t",
+               "description" : "the maximum number of items to return",
+               "default_value" : -1
+            }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "aliases" : [ "list_orders" ]
+      },
+      {
+         "method_name" : "wallet_market_cancel_order",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "order_id",
+               "type" : "address",
+               "description" : "the address of the order to cancel"
+            }
+          ],
+         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "aliases" : [ "cancel_order" ]
       }
-      
     ]
 }

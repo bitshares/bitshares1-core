@@ -27,7 +27,7 @@ private
   end
 
   def js_pass_params(method)
-    param_names = method['parameters'].map { |p| "'#{p['name']}'" }
+    param_names = method['parameters'].map { |p| "#{p['name']}" }
     return '' if param_names.empty?
     ', [' + param_names.join(', ') + ']'
   end

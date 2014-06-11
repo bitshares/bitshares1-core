@@ -2,8 +2,14 @@ if( UNIX AND NOT APPLE )
   set(rt_library rt )
 endif()
 
+add_library( deterministic_openssl_rand deterministic_openssl_rand.cpp deterministic_openssl_rand.cpp)
+target_link_libraries( deterministic_openssl_rand fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${rt_library} )
+
 add_executable( wallet_tests wallet_tests.cpp )
 target_link_libraries( wallet_tests bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
+
+add_executable( dev_tests dev_tests.cpp )
+target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
 
 #add_executable( chain_database_tests chain_database_tests.cpp )
 #target_link_libraries( chain_database_tests bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library})
@@ -38,6 +44,10 @@ if( WIN32 )
    message("boost date_time ${Boost_DATE_TIME_LIBRARY}")
    message("boost libraries ${Boost_LIBRARIES}")
 endif (WIN32)
+
+add_executable( deterministic_signature_test deterministic_signature_test.cpp)
+target_link_libraries( deterministic_signature_test deterministic_openssl_rand fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${rt_library} )
+
 
 #if( false )
 #   add_executable( simple_net_test_client simple_net_test_client.cpp )

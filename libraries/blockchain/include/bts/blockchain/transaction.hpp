@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
                                 const string& memo_message,
                                 account_id_type delegate_id,
                                 const fc::ecc::public_key& memo_public_key,
+                                fc::ecc::private_key one_time_private_key,
                                 memo_flags_enum memo_type = from_memo );
 
 

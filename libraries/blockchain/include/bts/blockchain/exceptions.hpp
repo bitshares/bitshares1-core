@@ -14,6 +14,8 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( duplicate_transaction, bts::blockchain::blockchain_exception, 30007, "duplicate transaction" ); 
    FC_DECLARE_DERIVED_EXCEPTION( zero_amount, bts::blockchain::blockchain_exception, 30008, "zero amount" ); 
    FC_DECLARE_DERIVED_EXCEPTION( zero_price, bts::blockchain::blockchain_exception, 30009, "zero price" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_self, bts::blockchain::blockchain_exception, 30010, "asset divide by self" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_zero, bts::blockchain::blockchain_exception, 30010, "asset divide by zero" ); 
 
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
@@ -61,5 +63,9 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,  bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,  bts::blockchain::evaluation_error, 36002, "insufficient fee" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_fee,  bts::blockchain::evaluation_error, 36003, "negative fee" );
-   FC_DECLARE_DERIVED_EXCEPTION( missing_deposit,  bts::blockchain::evaluation_error, 36004, "missing_deposit" );
+   FC_DECLARE_DERIVED_EXCEPTION( missing_deposit,  bts::blockchain::evaluation_error, 36004, "missing deposit" );
+
+
+   FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,  bts::blockchain::evaluation_error, 37002, "unknown market order" );
 } }

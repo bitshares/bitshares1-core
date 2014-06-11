@@ -23,11 +23,14 @@
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/network/ntp.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
@@ -426,6 +429,9 @@ namespace bts { namespace client {
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
        {
+         auto bin = fc::raw::pack( trx );
+         auto hex_str = fc::to_hex( bin.data(), bin.size() );
+         ilog( "trx hex: ${hex}", ("hex", hex_str ) );
          _chain_db->store_pending_transaction(trx); // throws exception if invalid trx.
        }
 
@@ -569,10 +575,17 @@ namespace bts { namespace client {
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
+         std::ostringstream message;
+         message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+         // this notification is currently broken, so it would spam the terminal if we enabled it
+         // _cli->display_status_message(message.str());
        }
 
        void client_impl::connection_count_changed(uint32_t c)
        {
+         std::ostringstream message;
+         message << "--- there are now " << c << " active connections to the p2p network";
+         _cli->display_status_message(message.str());
        }
 
     } // end namespace detail
@@ -601,6 +614,17 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
+
+        fc::async( [](){  
+            auto ntp_time = fc::ntp::get_time();
+            auto delta_time = ntp_time - fc::time_point::now();
+            if( delta_time.to_seconds() != 0 )
+            {
+               wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
+               bts::blockchain::advance_time( delta_time.to_seconds() );
+            }
+        } );
+
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
@@ -657,9 +681,12 @@ namespace bts { namespace client {
       _wallet->open(wallet_name);
     }
 
-    void detail::client_impl::wallet_create(const string& wallet_name, const string& password)
+    void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-      _wallet->create(wallet_name,password);
+       if( brain_key.size() < 32 ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < 8 ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
+      _wallet->create(wallet_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
@@ -1880,6 +1907,28 @@ namespace bts { namespace client {
    {
       return _chain_db->get_proposal_votes( proposal_id );
    }
+
+   vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
+                                                                       const string& base_symbol,
+                                                                       int64_t limit  )
+   {
+      return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
+   }
+
+   vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
+                                                                 const string& base_symbol,
+                                                                 int64_t limit  )
+   {
+      return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
+   }
+
+   signed_transaction client_impl::wallet_market_cancel_order( const address& order_address )
+   {
+      auto trx = _wallet->cancel_market_order( order_address );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

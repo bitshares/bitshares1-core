@@ -62,6 +62,7 @@ static void decrypt_key ( const std::string& passphrase, const std::vector<unsig
 
 static std::vector<fc::ecc::private_key> _import_multibit_wallet( const fc::path& wallet_dat, const std::string& passphrase )
 {
+
   std::vector<fc::ecc::private_key> imported_keys;
   std::vector<std::vector<unsigned char>> encrypted_keys;
 
@@ -178,10 +179,10 @@ static std::vector<fc::ecc::private_key> _import_multibit_wallet( const fc::path
 }
 
 std::vector<fc::ecc::private_key> import_multibit_wallet( const fc::path& wallet_dat, const std::string& passphrase )
-{  try {
+{ try {
+     if( !fc::exists( wallet_dat ) )
+        FC_CAPTURE_AND_THROW( fc::file_not_found_exception, (wallet_dat) );
      return _import_multibit_wallet( wallet_dat, passphrase );
-  }
-  FC_RETHROW_EXCEPTIONS( warn, "" )
-}
+} FC_CAPTURE_AND_RETHROW( (wallet_dat) ) }
 
 } } // bts::bitcoin

@@ -22,6 +22,13 @@ namespace bts { namespace wallet {
          virtual ~wallet();
 
          /**
+          *  To generate predictable test resutls we need an option
+          *  to use deterministiic keys rather than purely random
+          *  one-time keys.
+          */
+         void use_detininistic_one_time_keys( bool state );
+
+         /**
           *  Wallet File Management
           */
          ///@{
@@ -170,11 +177,11 @@ namespace bts { namespace wallet {
                                      const string& wallet_dat_passphrase,
                                      const string& account_name );
        
-         void import_keyhotee( const std::string& firstname,
-                            const std::string& middlename,
-                            const std::string& lastname,
-                            const std::string& brainkey,
-                            const std::string& keyhoteeid );
+         void import_keyhotee( const string& firstname,
+                            const string& middlename,
+                            const string& lastname,
+                            const string& brainkey,
+                            const string& keyhoteeid );
 
          public_key_type import_private_key( const private_key_type& key,
                                              const string& account_name,
@@ -222,7 +229,7 @@ namespace bts { namespace wallet {
           */
          signed_transaction  transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
                                                      const string& from_account_name,
-                                                     const std::unordered_map< address, double >& to_address_amounts,
+                                                     const unordered_map< address, double >& to_address_amounts,
                                                      const string& memo_message,
                                                      bool sign );
          /**
@@ -266,6 +273,8 @@ namespace bts { namespace wallet {
                                          double price_per_unit,
                                          const string& quote_symbol,
                                          bool sign = true );
+
+         signed_transaction  cancel_market_order( const address& owner_address );
 
          owallet_account_record get_account( const string& account_name );
 
@@ -323,45 +332,47 @@ namespace bts { namespace wallet {
          //public_key_type                            get_new_public_key( const string& account_name );
 
          /*
-         std::unordered_map<address,string>    get_receive_addresses()const;
-         std::unordered_map<address,string>    get_send_addresses()const;
+         unordered_map<address,string>    get_receive_addresses()const;
+         unordered_map<address,string>    get_send_addresses()const;
          */
 
          
          typedef unordered_map<string, map<string, share_type> >  account_balance_summary_type;
-         account_balance_summary_type          get_account_balances()const;
+         account_balance_summary_type                             get_account_balances()const;
 
          //vector<asset>                         get_balances( const string& symbol = string("*"),
          //                                                    const string& account_name  = string("*") )const;
          ///@}
 
+         vector<market_order_status>           get_market_orders( const string& quote, const string& base )const;
+
          vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
-         vector<pretty_transaction>     get_pretty_transaction_history( const string& account_name = string() )const;
+         vector<pretty_transaction>            get_pretty_transaction_history( const string& account_name = string() )const;
 
-         vector<wallet_balance_record>  get_unspent_balances( const string& account_name,
-                                                             const string& sybmol ) const;
+         vector<wallet_balance_record>         get_unspent_balances( const string& account_name,
+                                                                     const string& sybmol ) const;
 
-         optional<wallet_account_record>        get_account_record( const address& addr)const;
+         optional<wallet_account_record>       get_account_record( const address& addr)const;
          /*
          optional<address>                      get_owning_address( const balance_id_type& id )const;
 
-         std::unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
+         unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
          */
 
          /*
-         std::unordered_map<account_id_type,       wallet_name_record>         names( const string& account_name = "*" )const;
-         std::unordered_map<asset_id_type,      wallet_asset_record>        assets( const string& account_name = "*" )const;
+         unordered_map<account_id_type,       wallet_name_record>         names( const string& account_name = "*" )const;
+         unordered_map<asset_id_type,      wallet_asset_record>        assets( const string& account_name = "*" )const;
          */
 
          /** signs transaction with the specified keys for the specified addresses */
-         void             sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs );
+         void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
       private:
-         std::unique_ptr<detail::wallet_impl> my;
+         unique_ptr<detail::wallet_impl> my;
    };
 
-   typedef std::shared_ptr<wallet> wallet_ptr;
+   typedef shared_ptr<wallet> wallet_ptr;
 
 } } // bts::wallet
 

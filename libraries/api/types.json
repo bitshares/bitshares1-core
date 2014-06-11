@@ -251,6 +251,15 @@
          "cpp_return_type" : "std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> >"
       },
       {
+         "type_name" : "market_order",
+         "cpp_return_type" : "bts::blockchain::market_order"
+      },
+      {
+         "type_name" : "market_order_array",
+         "container_type" : "array",
+         "contained_type" : "market_order"
+      },
+      {
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",
@@ -381,6 +390,15 @@
           "cpp_return_type" : "std::string",
           "cpp_include_file" : "string",
           "default_example" : "Alice"
+      },
+      {
+         "type_name" : "market_order_status",
+         "cpp_return_type" : "bts::wallet::market_order_status"
+      },
+      {
+         "type_name" : "market_order_status_array",
+         "container_type" : "array",
+         "contained_type" : "market_order_status"
       },
       {
          "type_name" : "map< account_name, share_type >",

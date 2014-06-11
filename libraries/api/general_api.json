@@ -76,7 +76,7 @@
           [
             { 
               "name" : "input", 
-              "type" : "std::string", 
+              "type" : "passphrase", 
               "description" : "The entire command input as if it were a CLI input"
             }
           ],

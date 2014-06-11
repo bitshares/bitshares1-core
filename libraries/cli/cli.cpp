@@ -26,11 +26,23 @@
 
 
 #ifdef HAVE_READLINE
-#include <readline/history.h>
-#include <readline/readline.h>
+# include <readline/readline.h>
+# include <readline/history.h>
+// I don't know exactly what version of readline we need.  I know the 4.2 version that ships on some macs is
+// missing some functions we require.  We're developing against 6.3, but probably anything in the 6.x 
+// series is fine
+# if RL_VERSION_MAJOR < 6
+#  ifdef _MSC_VER
+#   pragma message("You have an old version of readline installed that might not support some of the features we need")
+#   pragma message("Readline support will not be compiled in")
+#  else
+#   warning "You have an old version of readline installed that might not support some of the features we need"
+#   warning "Readline support will not be compiled in"
+#  endif
+#  undef HAVE_READLINE
+# endif
 #endif
 
-//#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
@@ -136,7 +148,6 @@ namespace bts { namespace cli {
 
             bool execute_command_line(const string& line)
             { try {
-              ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
               /** 
                *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
@@ -206,11 +217,6 @@ namespace bts { namespace cli {
 
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
-              return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
-            }
-
-            string get_line_internal( const string& prompt, bool no_echo )
-            {
                   if( _quit ) return std::string();
                   FC_ASSERT( _input_stream != nullptr );
 
@@ -221,7 +227,7 @@ namespace bts { namespace cli {
                       if( _out ) (*_out) << prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      std::getline( *_input_stream, line );
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                       fc::set_console_echo(true);
                       if( _out ) (*_out) << std::endl;
                   }
@@ -234,14 +240,12 @@ namespace bts { namespace cli {
                      if(line_read && *line_read)
                          add_history(line_read);
                      if( line_read == nullptr )
-                     {
                         FC_THROW_EXCEPTION( fc::eof_exception, "" );
-                     }
                      line = line_read;
                      free(line_read);
                   #else
-                      if( _out ) (*_out) <<prompt;
-                     std::getline( *_input_stream, line );
+                     if( _out ) (*_out) <<prompt;
+                     _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
                   if (_input_log_stream)
                     {
@@ -1124,26 +1128,22 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
-                if( _out ) (*_out) << std::setw(  3 ) << std::right << "#";
                 if( _out ) (*_out) << std::setw(  7 ) << "BLK" << ".";
                 if( _out ) (*_out) << std::setw(  5 ) << std::left << "TRX";
                 if( _out ) (*_out) << std::setw( 20 ) << "TIMESTAMP";
                 if( _out ) (*_out) << std::setw( 20 ) << "FROM";
                 if( _out ) (*_out) << std::setw( 20 ) << "TO";
-                if( _out ) (*_out) << std::setw( 25 ) << "MEMO";
+                if( _out ) (*_out) << std::setw( 35 ) << "MEMO";
                 if( _out ) (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
-                if( _out ) (*_out) << std::setw( 20 ) << "FEE";
-                if( _out ) (*_out) << std::setw( 14 ) << "VOTE";
-                if( _out ) (*_out) << std::setw( 8 ) << "ID";
+                if( _out ) (*_out) << std::setw( 20 ) << "FEE    ";
+                if( _out ) (*_out) << std::setw( 12 ) << "ID";
                 if( _out ) (*_out) << "\n---------------------------------------------------------------------------------------------------";
-                if( _out ) (*_out) <<   "--------------------------------------------------------------------------------------------------\n";
+                if( _out ) (*_out) <<   "-------------------------------------------------------------------------\n";
                 if( _out ) (*_out) << std::right; 
                 
                 int count = 1;
                 for( auto tx : txs )
                 {
-                    /* Print index */
-                    if( _out ) (*_out) << std::setw( 3 ) << count;
                     count++;
 
                     /* Print block and transaction numbers */
@@ -1167,7 +1167,7 @@ namespace bts { namespace cli {
                     if( _out ) (*_out) << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
 
                     // Print "memo" on transaction
-                    if( _out ) (*_out) << std::setw( 25 ) << pretty_shorten(tx.memo_message, 24);
+                    if( _out ) (*_out) << std::setw( 35 ) << pretty_shorten(tx.memo_message, 34);
 
                     /* Print amount */
                     {
@@ -1211,17 +1211,16 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(14) << "N/A";
                     }
 
                     if( _out ) (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 8 ) << string( tx.trx_id ).substr(0, 8);
+                    if( _out ) (*_out) << std::setw( 16 ) << string( fc::to_base58( fc::raw::pack(tx.trx_id) ) ).substr(0, 8);
 
                     if( _out ) (*_out) << std::right << "\n";
                 }
             }
-
+            void display_status_message(const std::string& message);
 #ifdef HAVE_READLINE
             typedef std::map<string, bts::api::method_data> method_data_map_type;
             method_data_map_type _method_data_map;
@@ -1240,6 +1239,7 @@ namespace bts { namespace cli {
     static cli_impl* cli_impl_instance = NULL;
     extern "C" char** json_completion_function(const char* text, int start, int end);
     extern "C" int control_c_handler(int count, int key);
+    extern "C" int get_character(FILE* stream);
 #endif
 
     cli_impl::cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream) : 
@@ -1256,6 +1256,7 @@ namespace bts { namespace cli {
          cli_impl_instance = this;
          _method_data_is_initialized = false;
          rl_attempted_completion_function = &json_completion_function;
+         rl_getc_function = &get_character;
       }
 #ifndef __APPLE__
       // TODO: find out why this isn't defined on APPL
@@ -1280,7 +1281,10 @@ namespace bts { namespace cli {
         }
       }
     }
-
+    extern "C" int get_character(FILE* stream)
+    {
+      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }).wait();
+    }
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {
       return cli_impl_instance->json_command_completion_generator(text, state);
@@ -1308,9 +1312,17 @@ namespace bts { namespace cli {
         _command_completion_generator_iter = _method_alias_map.lower_bound(text);
       else
         ++_command_completion_generator_iter;
-      if (_command_completion_generator_iter != _method_alias_map.end() &&
-          _command_completion_generator_iter->second.compare(0, strlen(text), text) == 0)
-        return strdup(_command_completion_generator_iter->second.c_str());
+
+      while (_command_completion_generator_iter != _method_alias_map.end())
+      {
+        if (!_command_completion_generator_iter->first.compare(0, strlen(text), text) == 0)
+          break; // no more matches starting with this prefix
+
+        if (_command_completion_generator_iter->second == _command_completion_generator_iter->first) // suppress completing aliases
+          return strdup(_command_completion_generator_iter->second.c_str());
+        else
+          ++_command_completion_generator_iter;  
+      }
 
       rl_attempted_completion_over = 1; // suppress default filename completion
       return 0;
@@ -1360,6 +1372,26 @@ namespace bts { namespace cli {
     }
 
 #endif
+    void cli_impl::display_status_message(const std::string& message)
+    {
+#ifdef HAVE_READLINE
+      char* saved_line = rl_copy_text(0, rl_end);
+      char* saved_prompt = strdup(rl_prompt);
+      int saved_point = rl_point;
+      rl_set_prompt("");
+      rl_replace_line("", 0);
+      rl_redisplay();
+      std::cout << message << "\n";
+      rl_set_prompt(saved_prompt);
+      rl_replace_line(saved_line, 0);
+      rl_point = saved_point;
+      rl_redisplay();
+      free(saved_line);
+      free(saved_prompt);
+#else
+      // not supported; no way for us to restore the prompt, so just swallow the message
+#endif
+    }
 
   } // end namespace detail
 
@@ -1373,7 +1405,12 @@ namespace bts { namespace cli {
   {
     my->_input_log_stream = input_log_stream;
   } 
-  
+ 
+  void cli::display_status_message(const std::string& message)
+  {
+    my->display_status_message(message);
+  }
+ 
   void cli::process_commands()
   {
     ilog( "starting to process interactive commands" );

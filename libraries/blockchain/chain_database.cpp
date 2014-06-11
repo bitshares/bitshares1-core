@@ -737,7 +737,7 @@ namespace bts { namespace blockchain {
       { try {
          FC_ASSERT( _head_block_header.block_num > 0 );
 
-         // update the is_included flag on the fork data
+           // update the is_included flag on the fork data
          mark_included( _head_block_id, false );
 
          // update the block_num_to_block_id index
@@ -745,16 +745,14 @@ namespace bts { namespace blockchain {
 
          auto previous_block_id = _head_block_header.previous;
 
-         // fetch the undo state for the head block
-         auto undo_state = _undo_state_db.fetch( _head_block_id );
-         undo_state.set_prev_state( self->shared_from_this() );
-         undo_state.apply_changes();
+         bts::blockchain::pending_chain_state_ptr undo_state = std::make_shared<bts::blockchain::pending_chain_state>(_undo_state_db.fetch( _head_block_id ));
+         undo_state->set_prev_state( self->shared_from_this() );
+         undo_state->apply_changes();
 
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         if( _observer ) _observer->state_changed(undo_state.shared_from_this());
-
+         if( _observer ) _observer->state_changed(undo_state);
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
@@ -1459,6 +1457,7 @@ namespace bts { namespace blockchain {
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
       base_asset.collected_fees = 0;
+      base_asset.registration_date = config.timestamp;
       self->store_asset_record( base_asset );
 
       block_fork_data gen_fork;
@@ -1750,5 +1749,39 @@ namespace bts { namespace blockchain {
          return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
+
+   optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_bid_db.find(key);
+       if( market_itr.valid() )
+          return market_order { bid_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+   vector<market_order>  chain_database::get_market_bids( const string& quote_symbol, 
+                                                          const string& base_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = get_asset_id( base_symbol );
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+       //auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr  = my->_bid_db.begin();
+       while( market_itr.valid() )
+       {
+          results.push_back( {bid_order, market_itr.key(), market_itr.value()} );
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       ilog( "end of db" );
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
 } } // namespace bts::blockchain

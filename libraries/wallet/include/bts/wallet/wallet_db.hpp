@@ -48,6 +48,7 @@ namespace bts { namespace wallet {
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
+         void cache_order( const bts::blockchain::market_order& );
 
          void clear_pending_transactions();
 
@@ -105,13 +106,15 @@ namespace bts { namespace wallet {
          void create_from_json( const fc::path& file_to_import, 
                                 const fc::path& wallet_to_create );
 
-         fc::optional<wallet_master_key_record>                 wallet_master_key;
+         fc::optional<wallet_master_key_record>                           wallet_master_key;
  
-         unordered_map<address,wallet_key_record>                         keys;
-         unordered_map<address,address>                                   btc_to_bts_address;
-         unordered_map<address,int32_t>                                   address_to_account_wallet_record_index;
-         unordered_map<account_id_type,int32_t>                           account_id_to_wallet_record_index;
-         map<string,int32_t>                                              name_to_account_wallet_record_index;
+         unordered_map< address, wallet_key_record >                      keys;
+         unordered_map< address, address >                                btc_to_bts_address;
+         unordered_map< address, int32_t >                                address_to_account_wallet_record_index;
+         unordered_map< account_id_type, int32_t >                        account_id_to_wallet_record_index;
+         map< string, int32_t >                                           name_to_account_wallet_record_index;
+
+         unordered_map<address,wallet_market_order_status_record>         market_orders;
 
          /** maps wallet_record_index to accounts */
          unordered_map< int32_t,wallet_account_record >                   accounts;
