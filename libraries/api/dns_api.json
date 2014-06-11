@@ -28,7 +28,7 @@
         },
         {
             "method_name": "domain_first_bid",
-            "description": "A first bid, which must be linked to a pre_bid".
+            "description": "A first bid, which must be linked to a pre_bid",
             "return_type": "transaction_id_type",
             "parameters": 
             [
@@ -52,7 +52,7 @@
         },
         {
             "method_name": "domain_bid",
-            "description": "Place a bid on a domain that is already in an auction."
+            "description": "Place a bid on a domain that is already in an auction.",
             "return_type": "transaction_id_type",
             "parameters": 
             [
@@ -76,7 +76,7 @@
         },
         {
             "method_name": "domain_bid",
-            "description": "Place a bid on a domain that is already in an auction."
+            "description": "Place a bid on a domain that is already in an auction.",
             "return_type": "transaction_id_type",
             "parameters": 
             [
@@ -119,7 +119,7 @@
         },
         {
             "method_name": "update_domain",
-            "description": "Update a domain's value and/or owner."
+            "description": "Update a domain's value and/or owner.",
             "return_type": "transaction_id_type",
             "parameters": 
             [
