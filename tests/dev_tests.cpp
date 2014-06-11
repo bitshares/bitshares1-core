@@ -347,6 +347,12 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_change_passphrase newmasterpassword" ) << "\n";
+   std::cerr << clientb->execute_command_line( "close" ) << "\n";
+   std::cerr << clientb->execute_command_line( "open walletb" ) << "\n";
+   std::cerr << clientb->execute_command_line( "unlock 99999999 newmasterpassword" ) << "\n";
+
+   
    // THis is an invalid order
    //std::cerr << clientb->execute_command_line( "bid c-account 210 USD 5.40 XTS" ) << "\n";
    //produce_block( clientb );

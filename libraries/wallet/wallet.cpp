@@ -658,11 +658,30 @@ namespace bts { namespace wallet {
       my->_wallet_relocker_done.cancel();
    }
    void wallet::change_passphrase( const string& new_passphrase )
-   {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
-      FC_ASSERT( !"TODO - Implement CHange Passphrase" );
-   }
+   { try {
+      if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+      if( new_passphrase.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
+      FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
+
+      auto new_password = fc::sha512::hash( new_passphrase.c_str(), new_passphrase.size() );
+
+      for( auto key : my->_wallet_db.keys )
+      {
+         if( key.second.has_private_key() )
+         {
+            auto priv_key = key.second.decrypt_private_key( my->_wallet_password );
+            key.second.encrypt_private_key( new_password, priv_key );
+            my->_wallet_db.store_record( key.second );
+         }
+      }
+
+      auto master_key = my->_wallet_db.wallet_master_key->decrypt_key( my->_wallet_password );
+      my->_wallet_db.wallet_master_key->encrypt_key( new_password, master_key );
+      my->_wallet_db.store_record( *my->_wallet_db.wallet_master_key );
+
+      my->_wallet_password = new_password;
+   } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::is_unlocked()const
    {
