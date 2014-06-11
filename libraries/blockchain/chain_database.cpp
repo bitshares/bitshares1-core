@@ -1546,6 +1546,12 @@ namespace bts { namespace blockchain {
       auto itr = my->_fork_db.find( block_id );
       return itr.valid();
    }
+  bool chain_database::is_included_block( const block_id_type& block_id ) const
+  {
+    block_fork_data record = my->_fork_db.fetch(block_id);
+    return record.is_included;
+  }
+
    uint32_t chain_database::get_block_num( const block_id_type& block_id )const
    { try {
       if( block_id == block_id_type() )

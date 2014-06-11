@@ -1451,9 +1451,10 @@ namespace bts { namespace net {
     {
       std::vector<item_hash_t> blockchain_synopsis = create_blockchain_synopsis_for_peer(peer);
       item_hash_t last_item_seen = blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back();
-      ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}", 
+      ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}, (full request is ${blockchain_synopsis})", 
            ("last_item_seen", last_item_seen)
-           ("peer", peer->get_remote_endpoint()));
+           ("peer", peer->get_remote_endpoint())
+           ("blockchain_synopsis", blockchain_synopsis));
       peer->item_ids_requested_from_peer = boost::make_tuple(item_id(_sync_item_type, last_item_seen), fc::time_point::now());
       //std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis(last_item_id_seen.item_type, last_item_id_seen.item_hash);
       //assert(last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back());

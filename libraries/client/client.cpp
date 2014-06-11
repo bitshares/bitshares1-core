@@ -579,9 +579,13 @@ namespace bts { namespace client {
         {
           try
           {
-            last_seen_block_num = _chain_db->get_block_num(item_hash);
-            last_seen_block_hash = item_hash;
-            break;
+            uint32_t block_num = _chain_db->get_block_num(item_hash);
+            if (_chain_db->is_included_block(item_hash))
+            {
+              last_seen_block_num = block_num;
+              last_seen_block_hash = item_hash;
+              break;
+            }
           }
           catch (fc::key_not_found_exception&)
           {
@@ -655,38 +659,47 @@ namespace bts { namespace client {
           // for now, assume it's not on a fork
           try
           {
-            high_block_num = _chain_db->get_block_num(reference_point);
-            // didn't throw, so no fork
-            non_fork_high_block_num = high_block_num;
+            if (_chain_db->is_included_block(reference_point))
+            {
+              // block is a block we know about and is on the main chain
+              uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
+              high_block_num = reference_point_block_num;
+              non_fork_high_block_num = high_block_num;
+            }
+            else
+            {
+              // block is a block we know about, but it is on a fork
+              try
+              {
+                fork_history = _chain_db->get_fork_history(reference_point);
+                assert(fork_history.size() >= 2);
+                assert(fork_history.front() == reference_point);
+                block_id_type last_non_fork_block = fork_history.back();
+                fork_history.pop_back();
+                boost::reverse(fork_history);
+                try
+                {
+                  non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
+                }
+                catch (const fc::key_not_found_exception&)
+                {
+                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+                }
+                high_block_num = non_fork_high_block_num + fork_history.size();
+                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+              }
+              catch (const fc::exception&)
+              {
+                // unable to get fork history for some reason.  maybe not linked?
+                // we can't return a synopsis of its chain
+                return synopsis;
+              }
+            }
           }
           catch (const fc::key_not_found_exception&)
           {
-            // it is either on a fork or we've never seen it
-            try
-            {
-              fork_history = _chain_db->get_fork_history(reference_point);
-              assert(fork_history.size() >= 2);
-              assert(fork_history.front() == reference_point);
-              block_id_type last_non_fork_block = fork_history.back();
-              fork_history.pop_back();
-              boost::reverse(fork_history);
-              try
-              {
-                non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-              }
-              catch (const fc::key_not_found_exception&)
-              {
-                assert(!"get_fork_history() returned a history that doesn't link to the main chain");
-              }
-              high_block_num = non_fork_high_block_num + fork_history.size();
-              assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
-            }
-            catch (const fc::exception&)
-            {
-              // unable to get fork history for some reason.  maybe not linked, maybe we've never seen
-              // the block at all.  Either way, we can't return a synopsis of its chain
-              return synopsis;
-            }
+            // we've never seen this block
+            return synopsis;
           }
         }
         else
