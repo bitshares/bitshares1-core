@@ -470,7 +470,9 @@ BOOST_AUTO_TEST_CASE( regression_test )
       //add a test that compares input command file to client's log file
       fc::path result_file = client->get_data_dir() / "console.log";
       tests.push_back( test_file(result_file,expected_result_file) );
-    } //end while not eof
+    } //end while not end of test config file
+
+    //check each client's log file against it's golden reference log file
     for (test_file current_test : tests)
     {
       //current_test.compare_files();
