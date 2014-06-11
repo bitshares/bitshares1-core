@@ -797,7 +797,26 @@ namespace bts { namespace wallet {
    {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_valid_account_name( account_name ) );
-      return my->_wallet_db.lookup_account( account_name );
+      auto local_account = my->_wallet_db.lookup_account( account_name );
+      if( local_account )
+      {
+        auto chain_account = my->_blockchain->get_account_record( account_name );
+        if( chain_account )
+        {
+           if( local_account->owner_key == chain_account->owner_key )
+           {
+               blockchain::account_record& bca = *local_account;
+               bca = *chain_account;
+               my->_wallet_db.store_record( *local_account );
+           }
+           else
+           {
+              wlog( "local account is owned by someone different public key than blockchain account" );
+              wdump( (local_account)(chain_account) );
+           }
+        }
+      }
+      return local_account;
    }
 
    void  wallet::remove_contact_account( const string& account_name )
