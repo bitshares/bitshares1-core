@@ -22,6 +22,13 @@ namespace bts { namespace wallet {
          virtual ~wallet();
 
          /**
+          *  To generate predictable test resutls we need an option
+          *  to use deterministiic keys rather than purely random
+          *  one-time keys.
+          */
+         void use_detininistic_one_time_keys( bool state );
+
+         /**
           *  Wallet File Management
           */
          ///@{

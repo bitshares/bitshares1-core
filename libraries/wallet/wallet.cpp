@@ -45,6 +45,17 @@ namespace bts { namespace wallet {
              fc::time_point     _scheduled_lock_time;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
+             bool               _use_deterministic_one_time_keys;
+
+             fc::ecc::private_key create_one_time_key()
+             {
+                if( !_use_deterministic_one_time_keys )
+                {
+                   elog( "GENERATING RANDOM" );
+                   return fc::ecc::private_key::generate();
+                }
+                return _wallet_db.new_private_key( _wallet_password );
+             }
 
             /**
              * This method is called anytime the blockchain state changes including
@@ -464,6 +475,7 @@ namespace bts { namespace wallet {
    :my( new detail::wallet_impl() )
    {
       my->self = this;
+      my->_use_deterministic_one_time_keys = false;
       my->_blockchain = blockchain;
       my->_blockchain->set_observer( my.get() );
    }
@@ -523,6 +535,7 @@ namespace bts { namespace wallet {
       }
       else
       {
+         elog( "generating random" );
          extended_private_key epk( private_key_type::generate() );
          new_master_key.encrypt_key( my->_wallet_password, epk );
       }
@@ -1137,7 +1150,9 @@ namespace bts { namespace wallet {
                                         memo_message,
                                         select_delegate_vote(),
                                         sender_private_key.get_public_key(),
-                                        from_memo );
+                                        my->create_one_time_key(),
+                                        from_memo
+                                        );
              }
              if( amount_of_change > total_fee )
              {
@@ -1147,7 +1162,9 @@ namespace bts { namespace wallet {
                                         memo_message,
                                         select_delegate_vote(),
                                         receiver_public_key,
-                                        to_memo );
+                                        my->create_one_time_key(),
+                                        to_memo
+                                        );
 
                 /** randomly shuffle change to prevent analysis */
                 if( rand() % 2 ) 
@@ -1245,7 +1262,9 @@ namespace bts { namespace wallet {
                                memo_message,
                                delegate_account_record->id, // vote for yourself
                                delegate_private_key.get_public_key(),
-                               from_memo );
+                               my->create_one_time_key(),
+                               from_memo
+                               );
 
        if( sign )
        {
@@ -1460,7 +1479,9 @@ namespace bts { namespace wallet {
                               memo_message,
                               select_delegate_vote(),
                               sender_private_key.get_public_key(),
-                              from_memo );
+                              my->create_one_time_key(),
+                              from_memo
+                              );
         
       if( sign )
       {
@@ -1645,7 +1666,9 @@ namespace bts { namespace wallet {
                               memo_message,
                               0,
                               sender_private_key.get_public_key(),
-                              from_memo );
+                              my->create_one_time_key(),
+                              from_memo
+                              );
 
       if( sign )
           sign_transaction( trx, required_signatures );
@@ -2789,6 +2812,11 @@ namespace bts { namespace wallet {
       }
       return results;
    } FC_CAPTURE_AND_RETHROW( (quote)(base) ) }
+
+   void wallet::use_detininistic_one_time_keys( bool state )
+   {
+      my->_use_deterministic_one_time_keys = state;
+   }
 
 } } // bts::wallet
 

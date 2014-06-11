@@ -23,11 +23,13 @@
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
+#include <fc/io/raw.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
@@ -426,6 +428,9 @@ namespace bts { namespace client {
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
        {
+         auto bin = fc::raw::pack( trx );
+         auto hex_str = fc::to_hex( bin.data(), bin.size() );
+         ilog( "trx hex: ${hex}", ("hex", hex_str ) );
          _chain_db->store_pending_transaction(trx); // throws exception if invalid trx.
        }
 
