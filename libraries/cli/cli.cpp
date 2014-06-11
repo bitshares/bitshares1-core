@@ -206,11 +206,6 @@ namespace bts { namespace cli {
 
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
-              return _cin_thread.async( [=](){ return get_line_internal( prompt, no_echo ); } ).wait();
-            }
-
-            string get_line_internal( const string& prompt, bool no_echo )
-            {
                   if( _quit ) return std::string();
                   FC_ASSERT( _input_stream != nullptr );
 
@@ -221,7 +216,7 @@ namespace bts { namespace cli {
                       if( _out ) (*_out) << prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      std::getline( *_input_stream, line );
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                       fc::set_console_echo(true);
                       if( _out ) (*_out) << std::endl;
                   }
@@ -234,14 +229,12 @@ namespace bts { namespace cli {
                      if(line_read && *line_read)
                          add_history(line_read);
                      if( line_read == nullptr )
-                     {
                         FC_THROW_EXCEPTION( fc::eof_exception, "" );
-                     }
                      line = line_read;
                      free(line_read);
                   #else
-                      if( _out ) (*_out) <<prompt;
-                     std::getline( *_input_stream, line );
+                     if( _out ) (*_out) <<prompt;
+                     _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
                   if (_input_log_stream)
                     {
@@ -1221,7 +1214,7 @@ namespace bts { namespace cli {
                     if( _out ) (*_out) << std::right << "\n";
                 }
             }
-
+            void display_status_message(const std::string& message);
 #ifdef HAVE_READLINE
             typedef std::map<string, bts::api::method_data> method_data_map_type;
             method_data_map_type _method_data_map;
@@ -1240,6 +1233,7 @@ namespace bts { namespace cli {
     static cli_impl* cli_impl_instance = NULL;
     extern "C" char** json_completion_function(const char* text, int start, int end);
     extern "C" int control_c_handler(int count, int key);
+    extern "C" int get_character(FILE* stream);
 #endif
 
     cli_impl::cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream) : 
@@ -1256,6 +1250,7 @@ namespace bts { namespace cli {
          cli_impl_instance = this;
          _method_data_is_initialized = false;
          rl_attempted_completion_function = &json_completion_function;
+         rl_getc_function = &get_character;
       }
 #ifndef __APPLE__
       // TODO: find out why this isn't defined on APPL
@@ -1280,7 +1275,10 @@ namespace bts { namespace cli {
         }
       }
     }
-
+    extern "C" int get_character(FILE* stream)
+    {
+      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }).wait();
+    }
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {
       return cli_impl_instance->json_command_completion_generator(text, state);
@@ -1308,9 +1306,17 @@ namespace bts { namespace cli {
         _command_completion_generator_iter = _method_alias_map.lower_bound(text);
       else
         ++_command_completion_generator_iter;
-      if (_command_completion_generator_iter != _method_alias_map.end() &&
-          _command_completion_generator_iter->second.compare(0, strlen(text), text) == 0)
-        return strdup(_command_completion_generator_iter->second.c_str());
+
+      while (_command_completion_generator_iter != _method_alias_map.end())
+      {
+        if (!_command_completion_generator_iter->first.compare(0, strlen(text), text) == 0)
+          break; // no more matches starting with this prefix
+
+        if (_command_completion_generator_iter->second == _command_completion_generator_iter->first) // suppress completing aliases
+          return strdup(_command_completion_generator_iter->second.c_str());
+        else
+          ++_command_completion_generator_iter;  
+      }
 
       rl_attempted_completion_over = 1; // suppress default filename completion
       return 0;
@@ -1360,6 +1366,26 @@ namespace bts { namespace cli {
     }
 
 #endif
+    void cli_impl::display_status_message(const std::string& message)
+    {
+#ifdef HAVE_READLINE
+      char* saved_line = rl_copy_text(0, rl_end);
+      char* saved_prompt = strdup(rl_prompt);
+      int saved_point = rl_point;
+      rl_set_prompt("");
+      rl_replace_line("", 0);
+      rl_redisplay();
+      std::cout << message << "\n";
+      rl_set_prompt(saved_prompt);
+      rl_replace_line(saved_line, 0);
+      rl_point = saved_point;
+      rl_redisplay();
+      free(saved_line);
+      free(saved_prompt);
+#else
+      // not supported; no way for us to restore the prompt, so just swallow the message
+#endif
+    }
 
   } // end namespace detail
 
@@ -1373,7 +1399,12 @@ namespace bts { namespace cli {
   {
     my->_input_log_stream = input_log_stream;
   } 
-  
+ 
+  void cli::display_status_message(const std::string& message)
+  {
+    my->display_status_message(message);
+  }
+ 
   void cli::process_commands()
   {
     ilog( "starting to process interactive commands" );

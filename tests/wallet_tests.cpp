@@ -405,7 +405,9 @@ void create_genesis_block(fc::path genesis_json_file)
    fc::json::save_to_file( config, genesis_json_file);
 }
 
-void run_regression_test(fc::path test_dir)
+fc::path get_data_dir(const program_options::variables_map& option_variables);
+
+void run_regression_test(fc::path test_dir, bool with_network)
 {
   //  open testconfig file
   //  for each line in testconfig file
@@ -461,10 +463,17 @@ void run_regression_test(fc::path test_dir)
       fc::path expected_result_file = input_file;
 
       //run client with cmdline options
-      bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
-//      bts::client::client_ptr client = std::make_shared<bts::client::client>();
+      if (with_network)
+      {
+        FC_ASSERT("Not implemented yet!")
+      }
+      else
+      {
+        bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
+        client->configure_from_command_line(argc,argv);
+      }
 
-      client->configure_from_command_line(argc,argv);
+
     #ifndef WIN32 // then UNIX 
       wordfree(&wordexp_result);
     #else
@@ -472,7 +481,7 @@ void run_regression_test(fc::path test_dir)
     #endif
 
       //add a test that compares input command file to client's log file
-      fc::path result_file = client->get_data_dir() / "console.log";
+      fc::path result_file = ::get_data_dir(option_variables) / "console.log";
       tests.push_back( test_file(result_file,expected_result_file) );
     } //end while not end of test config file
 
@@ -492,7 +501,7 @@ void run_regression_test(fc::path test_dir)
   boost::filesystem::current_path(original_working_directory);
 }
 
-BOOST_AUTO_TEST_CASE( regression_tests )
+void run_all_regression_tests(bool with_network)
 {
   //for each test directory in full test
     fc::path regression_tests_dir = "regression_tests";
@@ -502,7 +511,17 @@ BOOST_AUTO_TEST_CASE( regression_tests )
     {
       if (fc::is_directory( *directory_itr ))
       {
-        run_regression_test( *directory_itr );
+        run_regression_test( *directory_itr, with_network );
       }
     }
+}
+
+BOOST_AUTO_TEST_CASE( regression_tests_without_network )
+{
+  run_all_regression_tests(false);
+}
+
+BOOST_AUTO_TEST_CASE(regression_tests)
+{
+  run_all_regression_tests(true);
 }

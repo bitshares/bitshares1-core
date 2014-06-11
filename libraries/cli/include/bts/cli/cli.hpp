@@ -27,7 +27,7 @@ namespace bts { namespace cli {
           cli( const client_ptr& client, std::istream* input_stream = nullptr, std::ostream* output_stream = nullptr);
           virtual ~cli();
           void set_input_log_stream(boost::optional<std::ostream&> input_log_stream);
-
+          void display_status_message(const std::string& message);
           void process_commands();
 
           //Parse and execute a command line. Returns false if line is a quit command.
