@@ -2669,5 +2669,23 @@ namespace bts { namespace wallet {
       }
       return account_keys;
    }
+
+   vector<market_order_status>  wallet::get_market_orders( const string& quote, const string& base )const
+   { try {
+      auto quote_asset_id = my->_blockchain->get_asset_id( quote );
+      auto base_asset_id  = my->_blockchain->get_asset_id( base );
+
+      vector<market_order_status> results;
+      for( auto item : my->_wallet_db.market_orders )
+      {
+         if( item.second.order.market_index.order_price.quote_asset_id == quote_asset_id &&
+             item.second.order.market_index.order_price.base_asset_id  == base_asset_id  )
+         {
+            results.push_back( market_order_status( item.second ) );
+         }
+      }
+      return results;
+   } FC_CAPTURE_AND_RETHROW( (quote)(base) ) }
+
 } } // bts::wallet
 

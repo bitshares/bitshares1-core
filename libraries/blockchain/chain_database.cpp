@@ -1771,6 +1771,7 @@ namespace bts { namespace blockchain {
 
           ++market_itr;
        }
+       ilog( "end of db" );
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 

@@ -1881,6 +1881,13 @@ namespace bts { namespace client {
       return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
    }
 
+   vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
+                                                                 const string& base_symbol,
+                                                                 int64_t limit  )
+   {
+      return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

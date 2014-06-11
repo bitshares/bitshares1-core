@@ -19,7 +19,9 @@ namespace bts { namespace blockchain {
       }
       friend bool operator < ( const market_index_key& a, const market_index_key& b )
       {
-         return a.order_price < b.order_price && a.owner == b.owner;
+         if( a.order_price < b.order_price ) return true;
+         if( a.order_price > b.order_price ) return false;
+         return  a.owner < b.owner;
       }
    };
 

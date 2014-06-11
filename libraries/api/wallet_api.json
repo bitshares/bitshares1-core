@@ -906,6 +906,29 @@
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : [ "bid" ]
       }
-      
+      {
+         "method_name" : "wallet_market_order_list",
+         "return_type" : "market_order_status_array",
+         "parameters"  : [
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the quote symbol of the market"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the base symbol of the market"
+            },
+            {
+               "name" : "limit",
+               "type" : "int64_t",
+               "description" : "the maximum number of items to return",
+               "default_value" : -1
+            }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "aliases" : [ "list_orders" ]
+      }
     ]
 }

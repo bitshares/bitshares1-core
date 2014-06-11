@@ -18,6 +18,7 @@ namespace bts { namespace wallet {
       asset_record_type          = 5,
       balance_record_type        = 6,
       property_record_type       = 7,
+      market_order_type          = 8
    };
 
    struct generic_wallet_record
@@ -155,7 +156,22 @@ namespace bts { namespace wallet {
        vector<address>           extra_addresses;
    };
 
- 
+   enum order_type_enum
+   {
+      bid_order,
+      ask_order,
+      short_order,
+      cover_order
+   };
+
+   struct market_order_status
+   {
+      market_order_status():type(bid_order),proceeds(0){}
+      order_type_enum                  type;
+      bts::blockchain::market_order    order;
+      share_type                       proceeds;
+   };
+
 
    /** cached blockchain data */
    typedef wallet_record< bts::blockchain::asset_record,   asset_record_type       >  wallet_asset_record;
@@ -167,13 +183,15 @@ namespace bts { namespace wallet {
    typedef wallet_record< key_data,                        key_record_type         >  wallet_key_record;
    typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
+   typedef wallet_record< market_order_status,             market_order_type       >  wallet_market_order_status_record;
 
-   typedef fc::optional<wallet_transaction_record>     owallet_transaction_record;
-   typedef fc::optional<wallet_master_key_record>      owallet_master_key_record;
-   typedef fc::optional<wallet_key_record>             owallet_key_record;
-   typedef fc::optional<wallet_account_record>         owallet_account_record;
-   typedef fc::optional<wallet_property_record>        owallet_property_record;
-   typedef fc::optional<wallet_balance_record>         owallet_balance_record;
+   typedef optional< wallet_transaction_record >            owallet_transaction_record;
+   typedef optional< wallet_master_key_record >             owallet_master_key_record;
+   typedef optional< wallet_key_record >                    owallet_key_record;
+   typedef optional< wallet_account_record >                owallet_account_record;
+   typedef optional< wallet_property_record >               owallet_property_record;
+   typedef optional< wallet_balance_record >                owallet_balance_record;
+   typedef optional< wallet_market_order_status_record >    owallet_market_order_record;
 
 } } // bts::wallet
 
@@ -193,6 +211,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
                    (balance_record_type)
                    (asset_record_type)
                    (property_record_type)
+                   (market_order_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
@@ -212,6 +231,9 @@ FC_REFLECT( bts::wallet::transaction_data,
             (block_num)
             (transmit_count) )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
+
+FC_REFLECT_ENUM( bts::wallet::order_type_enum, (bid_order)(ask_order)(short_order)(cover_order) );
+FC_REFLECT( bts::wallet::market_order_status, (type)(order)(proceeds) )
 
 
 
