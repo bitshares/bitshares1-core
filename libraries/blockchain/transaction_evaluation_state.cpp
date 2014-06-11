@@ -220,6 +220,16 @@ namespace bts { namespace blockchain {
          balance_itr->second += amount.amount;
    }
 
+   /**
+    *  Throws if the asset is not known to the blockchain.
+    */
+   void transaction_evaluation_state::validate_asset( const asset& asset_to_validate )const
+   {
+      auto asset_rec = _current_state->get_asset_record( asset_to_validate.asset_id );
+      if( NOT asset_rec ) 
+         FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
+   }
+
 
 } } 
 

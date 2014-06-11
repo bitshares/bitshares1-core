@@ -61,6 +61,8 @@ namespace bts { namespace blockchain {
           */
          void add_vote( name_id_type delegate_id, share_type amount );
          void sub_vote( name_id_type delegate_id, share_type amount );
+
+         void validate_asset( const asset& a )const;
          
          signed_transaction                               trx;
          std::unordered_set<address>                      signed_keys;

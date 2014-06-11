@@ -1888,6 +1888,13 @@ namespace bts { namespace client {
       return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
    }
 
+   signed_transaction client_impl::wallet_market_cancel_order( const address& order_address )
+   {
+      auto trx = _wallet->cancel_market_order( order_address );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const

@@ -929,6 +929,19 @@
          ],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : [ "list_orders" ]
+      },
+      {
+         "method_name" : "wallet_market_cancel_order",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "order_id",
+               "type" : "address",
+               "description" : "the address of the order to cancel"
+            }
+          ],
+         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "aliases" : [ "cancel_order" ]
       }
     ]
 }

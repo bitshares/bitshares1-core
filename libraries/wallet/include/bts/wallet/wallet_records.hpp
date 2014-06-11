@@ -156,17 +156,14 @@ namespace bts { namespace wallet {
        vector<address>           extra_addresses;
    };
 
-   enum order_type_enum
-   {
-      bid_order,
-      ask_order,
-      short_order,
-      cover_order
-   };
 
    struct market_order_status
    {
       market_order_status():type(bid_order),proceeds(0){}
+
+      asset get_balance()const;
+      asset get_proceeds()const;
+
       order_type_enum                  type;
       bts::blockchain::market_order    order;
       share_type                       proceeds;
@@ -232,8 +229,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (transmit_count) )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
-FC_REFLECT_ENUM( bts::wallet::order_type_enum, (bid_order)(ask_order)(short_order)(cover_order) );
-FC_REFLECT( bts::wallet::market_order_status, (type)(order)(proceeds) )
+FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds) )
 
 
 

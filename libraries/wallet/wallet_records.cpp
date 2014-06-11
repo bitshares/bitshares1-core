@@ -40,4 +40,37 @@ namespace bts { namespace wallet {
       auto plain_text = fc::aes_decrypt( password, encrypted_private_key );
       return fc::raw::unpack<fc::ecc::private_key>( plain_text );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("password",password)("key_data",*this) ) }
+
+   asset market_order_status::get_balance()const
+   {
+      asset_id_type asset_id;
+      switch( type )
+      {
+         case bid_order:
+            asset_id = order.market_index.order_price.quote_asset_id;
+            break;
+         case ask_order:
+            asset_id = order.market_index.order_price.base_asset_id;
+            break;
+         default:
+            FC_ASSERT( !"Not Implemented" );
+      }
+      return asset( order.state.balance, asset_id );
+   }
+   asset market_order_status::get_proceeds()const
+   {
+      asset_id_type asset_id;
+      switch( type )
+      {
+         case bid_order:
+            asset_id = order.market_index.order_price.base_asset_id;
+            break;
+         case ask_order:
+            asset_id = order.market_index.order_price.quote_asset_id;
+            break;
+         default:
+            FC_ASSERT( !"Not Implemented" );
+      }
+      return asset( proceeds, asset_id );
+   }
 } }

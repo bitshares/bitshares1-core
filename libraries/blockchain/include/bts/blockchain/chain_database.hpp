@@ -117,6 +117,7 @@ namespace bts { namespace blockchain {
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = uint32_t(-1))const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
 
+         optional<market_order>             get_market_bid( const market_index_key& )const;
          vector<market_order>               get_market_bids( const string& quote_symbol, 
                                                              const string& base_symbol, 
                                                              uint32_t limit = uint32_t(-1) );
