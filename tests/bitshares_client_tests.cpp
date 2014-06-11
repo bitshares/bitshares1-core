@@ -1424,6 +1424,12 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
       fc::variant_object info = client_processes[i].rpc_client->get_info();
       block_counts_after_net_join.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
     }
+    std::ostringstream block_count_stream;
+    for (uint32_t count : block_counts_after_net_join)
+    {
+      block_count_stream << count << ", ";
+    }
+    BOOST_TEST_MESSAGE("After reconnecting the network, head block counts " << block_count_stream.str());
     bool all_are_in_sync = true;
     for (unsigned i = 0; i < client_processes.size(); ++i)
       all_are_in_sync = all_are_in_sync && block_counts_after_net_join[i] == block_counts_after_net_join[0];
