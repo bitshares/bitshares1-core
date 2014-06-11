@@ -1835,7 +1835,7 @@ namespace bts { namespace net {
               std::set<peer_connection_ptr> peers_we_need_to_sync_to;
               for (const peer_connection_ptr& peer : _active_connections)
               {
-                if (peer->ids_of_items_to_get.empty())
+                if (peer->ids_of_items_to_get.empty() || block_caused_fork_switch)
                 {
                   ilog("Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint()));
                   // we don't know for sure that this peer has the item we just received.
@@ -2054,10 +2054,10 @@ namespace bts { namespace net {
         fc::time_point message_validated_time;
         try
         {
-          bool block_caused_fork_switch = _delegate->handle_message(message_to_process);
+          bool message_caused_fork_switch = _delegate->handle_message(message_to_process);
           // for now, we assume an "ordinary" message won't cause us to switch forks (which
           // is curently the case.  if this changes, add some logic to handle it here)
-          assert(!block_caused_fork_switch);
+          assert(!message_caused_fork_switch);
           message_validated_time = fc::time_point::now();
         }
         catch (fc::exception& e)
