@@ -683,8 +683,8 @@ namespace bts { namespace client {
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-       if( brain_key.size() < 32 ) FC_CAPTURE_AND_THROW( brain_key_too_short );
-       if( password.size() < 8 ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
        if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
       _wallet->create(wallet_name,password, brain_key );
     }
@@ -930,9 +930,12 @@ namespace bts { namespace client {
     */
 
 
-    osigned_transaction detail::client_impl::blockchain_get_transaction(const transaction_id_type& transaction_id) const
+    osigned_transaction detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
-      return _chain_db->get_transaction(transaction_id);
+      auto hex_val = fc::to_hex( fc::from_base58( transaction_id ) );
+      idump( (hex_val) );
+      auto id = variant( string(hex_val) ).as<transaction_id_type>();
+      return _chain_db->get_transaction(id, exact);
     }
 
     full_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const

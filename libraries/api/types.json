@@ -85,6 +85,12 @@
         "default_example" : "TODO"      
       },
       {
+        "type_name" : "string",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "wallet_transfer"
+      },
+      {
         "type_name" : "method_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",

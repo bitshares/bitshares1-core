@@ -94,8 +94,14 @@
         "parameters" : [
             {
               "name" : "transaction_id", 
-              "type" : "transaction_id", 
-              "description" : "the transaction to return"
+              "type" : "string", 
+              "description" : "the base58 transaction ID to return"
+            },
+            {
+               "name" : "exact",
+               "type" : "bool",
+               "description" : "whether or not a partial match is ok",
+               "default_value" : false
             }
         ],
         "is_const" : true,

@@ -1215,7 +1215,7 @@ namespace bts { namespace cli {
 
                     if( _out ) (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 16 ) << string( fc::to_base58( fc::raw::pack(tx.trx_id) ) ).substr(0, 8);
+                    if( _out ) (*_out) << std::setw( 16 ) << fc::to_base58( (char*)&tx.trx_id, 6 ) ;// << "  " << string(tx.trx_id);
 
                     if( _out ) (*_out) << std::right << "\n";
                 }
