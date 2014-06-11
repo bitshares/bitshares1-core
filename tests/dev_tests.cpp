@@ -355,6 +355,9 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39ca" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_get_transaction d387d39" ) << "\n";
 
+   std::cerr << clientb->execute_command_line( "wallet_transfer 20 USD c-account delegate31 c-d31" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_get_pending_transactions" ) << " \n";
+
    
    // THis is an invalid order
    //std::cerr << clientb->execute_command_line( "bid c-account 210 USD 5.40 XTS" ) << "\n";

@@ -1178,7 +1178,6 @@ namespace bts { namespace blockchain {
 
    osigned_transaction chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
-      edump( (trx_id) );
       auto trx_loc = get_transaction_location( trx_id );
       if( trx_loc )
       {
@@ -1192,7 +1191,6 @@ namespace bts { namespace blockchain {
          if( itr.valid() )
          {
             auto id = itr.key();
-            wdump( (itr.key())(itr.value()));
 
             auto trx_loc = itr.value();
             if( memcmp( (char*)&id, (const char*)&trx_id, 4 ) != 0 )
