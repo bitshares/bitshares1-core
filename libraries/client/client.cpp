@@ -569,10 +569,17 @@ namespace bts { namespace client {
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
+         std::ostringstream message;
+         message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+         // this notification is currently broken, so it would spam the terminal if we enabled it
+         // _cli->display_status_message(message.str());
        }
 
        void client_impl::connection_count_changed(uint32_t c)
        {
+         std::ostringstream message;
+         message << "--- there are now " << c << " active connections to the p2p network";
+         _cli->display_status_message(message.str());
        }
 
     } // end namespace detail
