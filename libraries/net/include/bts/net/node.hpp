@@ -38,10 +38,12 @@ namespace bts { namespace net {
           *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
+          *  @returns true if this message caused the blockchain to switch forks, false if it did not
+          *
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual void handle_message( const message& ) = 0;
+         virtual bool handle_message( const message& ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should

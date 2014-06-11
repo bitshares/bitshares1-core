@@ -319,13 +319,13 @@ namespace bts { namespace client {
             void delegate_loop();
             void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
-            void on_new_block(const full_block& block, const block_id_type& block_id);
+            bool on_new_block(const full_block& block, const block_id_type& block_id);
             void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
             virtual bool has_item(const bts::net::item_id& id) override;
-            virtual void handle_message(const bts::net::message&) override;
+            virtual bool handle_message(const bts::net::message&) override;
             virtual std::vector<bts::net::item_hash_t> get_item_ids(uint32_t item_type,
                                                                     const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                                     uint32_t& remaining_item_count,
@@ -502,22 +502,20 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       void client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
+       bool client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
        {
          try
          {
            ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}",
                 ("num", _chain_db->get_head_block_num())("block", block));
            if (_chain_db->is_known_block(block_id))
+           {
              ilog("The block we just received is one I've already seen, ignoring it");
+             return false;
+           }
            else
-             _chain_db->push_block(block);
-         }
-         catch (fc::exception& e)
-         {
-           wlog("Error pushing block ${block}: ${error}", ("block", block)("error", e.to_string()));
-           throw;
-         }
+             return _chain_db->push_block(block);
+         } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block}", ("block", block));
        }
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
@@ -542,7 +540,7 @@ namespace bts { namespace client {
          return false;
        }
 
-       void client_impl::handle_message(const bts::net::message& message_to_handle)
+       bool client_impl::handle_message(const bts::net::message& message_to_handle)
        {
          switch (message_to_handle.msg_type)
          {
@@ -550,15 +548,14 @@ namespace bts { namespace client {
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
                 ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
-                on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
-                break;
+                return on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
               }
             case trx_message_type:
               {
                 trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
                 ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
                 on_new_transaction(trx_message_to_handle.trx);
-                break;
+                return false;
               }
          }
        }

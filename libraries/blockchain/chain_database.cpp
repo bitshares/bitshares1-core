@@ -1035,7 +1035,7 @@ namespace bts { namespace blockchain {
     *  Adds the block to the database and manages any reorganizations as a result.
     *
     */
-   void chain_database::push_block( const full_block& block_data )
+   bool chain_database::push_block( const full_block& block_data )
    { try {
       auto block_id        = block_data.id();
       auto current_head_id = my->_head_block_id;
@@ -1046,12 +1046,13 @@ namespace bts { namespace blockchain {
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
-         return my->extend_chain( block_data );
+         my->extend_chain( block_data );
       }
       else if( fork.can_link() && block_data.block_num > my->_head_block_header.block_num )
       {
          try {
             my->switch_to_fork( block_id );
+            return true; // switched forks
          }
          catch ( const fc::exception& e )
          {
@@ -1059,6 +1060,7 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
+      return false; // didn't switch forks
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
 

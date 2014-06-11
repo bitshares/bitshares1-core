@@ -1375,7 +1375,10 @@ namespace bts { namespace net {
         if (!originating_peer->we_need_sync_items_from_peer &&
             !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
             !_delegate->has_item(peers_last_item_seen))
+        {
+          ilog("sync: restarting sync with peer ${peer}", ("peer", originating_peer->get_remote_endpoint()));
           start_synchronizing_with_peer(originating_peer->shared_from_this());
+        }
       }
       else
       {
@@ -1796,6 +1799,7 @@ namespace bts { namespace net {
             _received_sync_items.erase(received_block_iter);
 
             bool client_accepted_block = false;
+            bool block_caused_fork_switch = false;
             try
             {
               ilog("sync: this block is a potential first block, passing it to the client");
@@ -1809,7 +1813,7 @@ namespace bts { namespace net {
               if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                             block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
               {
-                _delegate->handle_message(block_message_to_process);
+                block_caused_fork_switch = _delegate->handle_message(block_message_to_process);
                 _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
               }
               else
@@ -1975,10 +1979,11 @@ namespace bts { namespace net {
           // we don't know they're the same (for the peer in normal operation, it has only told us the
           // message id, for the peer in the sync case we only known the block_id).
           fc::time_point message_validated_time;
+          bool block_caused_fork_switch = false;
           if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
                         block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
           {
-            _delegate->handle_message(block_message_to_process);
+            block_caused_fork_switch = _delegate->handle_message(block_message_to_process);
             message_validated_time = fc::time_point::now();
             _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
           }
@@ -2049,7 +2054,10 @@ namespace bts { namespace net {
         fc::time_point message_validated_time;
         try
         {
-          _delegate->handle_message(message_to_process);
+          bool block_caused_fork_switch = _delegate->handle_message(message_to_process);
+          // for now, we assume an "ordinary" message won't cause us to switch forks (which
+          // is curently the case.  if this changes, add some logic to handle it here)
+          assert(!block_caused_fork_switch);
           message_validated_time = fc::time_point::now();
         }
         catch (fc::exception& e)
