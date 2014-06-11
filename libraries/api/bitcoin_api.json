@@ -215,7 +215,7 @@
       },
       {
           "method_name": "bitcoin_importprivkey",
-          "description": "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions.",
+          "description": "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions, see wallet_dump_private_key.",
           "return_type": "void",
           "parameters" : [
           {

@@ -988,6 +988,12 @@ namespace bts { namespace client {
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
     }
+   
+    string detail::client_impl::wallet_dump_private_key(const address& account_address){
+      try {
+         auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
+         return wif_private_key;
+      } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
