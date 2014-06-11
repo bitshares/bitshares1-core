@@ -136,7 +136,6 @@ namespace bts { namespace cli {
 
             bool execute_command_line(const string& line)
             { try {
-              ilog( "${c}", ("c",line) );
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
               /** 
                *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
