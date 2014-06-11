@@ -26,11 +26,23 @@
 
 
 #ifdef HAVE_READLINE
-#include <readline/history.h>
-#include <readline/readline.h>
+# include <readline/readline.h>
+# include <readline/history.h>
+// I don't know exactly what version of readline we need.  I know the 4.2 version that ships on some macs is
+// missing some functions we require.  We're developing against 6.3, but probably anything in the 6.x 
+// series is fine
+# if RL_VERSION_MAJOR < 6
+#  ifdef _MSC_VER
+#   pragma message("You have an old version of readline installed that might not support some of the features we need")
+#   pragma message("Readline support will not be compiled in")
+#  else
+#   warning "You have an old version of readline installed that might not support some of the features we need"
+#   warning "Readline support will not be compiled in"
+#  endif
+#  undef HAVE_READLINE
+# endif
 #endif
 
-//#undef HAVE_READLINE
 namespace bts { namespace cli {
 
   namespace detail
