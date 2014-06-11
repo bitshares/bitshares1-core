@@ -164,9 +164,10 @@ namespace bts { namespace wallet {
       asset get_balance()const;
       asset get_proceeds()const;
 
-      order_type_enum                  type;
-      bts::blockchain::market_order    order;
-      share_type                       proceeds;
+      order_type_enum                      type;
+      bts::blockchain::market_order        order;
+      share_type                           proceeds;
+      unordered_set<transaction_id_type>   transactions;
    };
 
 
@@ -229,7 +230,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (transmit_count) )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
-FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds) )
+FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 
 
 

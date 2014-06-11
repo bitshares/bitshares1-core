@@ -369,6 +369,10 @@ namespace bts { namespace wallet {
              //FC_ASSERT( order.valid() );
              if( order.valid() )
                 _wallet_db.market_orders[ bid_op.bid_index.owner ].order = *order;
+             else
+                _wallet_db.market_orders[ bid_op.bid_index.owner ].order.state.balance = 0;
+
+             _wallet_db.market_orders[ bid_op.bid_index.owner ].transactions.insert( trx_rec.trx.id() );
              return true;
           }
           return false;
@@ -1900,7 +1904,7 @@ namespace bts { namespace wallet {
 
         // TODO: get quantity @ price for for memo
         std::stringstream memoss;
-        memoss << "cancel order " << string(owner_address);
+        memoss << "cancel order " << string(owner_address).substr(3);
         // real_quantity << " " << base_asset_record->symbol << " @ ";
         // memoss << quote_price << " " << quote_asset_record->symbol;
 

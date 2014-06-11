@@ -56,6 +56,12 @@
               "name" : "new_passphrase", 
               "type" : "new_passphrase", 
               "description" : "a passphrase for encrypting the wallet"
+            },
+            { 
+              "name" : "brain_key", 
+              "type" : "new_passphrase", 
+              "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
+              "default_value" : ""
             }
           ],
         "prerequisites" : ["json_authenticated"]

@@ -657,9 +657,12 @@ namespace bts { namespace client {
       _wallet->open(wallet_name);
     }
 
-    void detail::client_impl::wallet_create(const string& wallet_name, const string& password)
+    void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-      _wallet->create(wallet_name,password);
+       if( brain_key.size() < 32 ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < 8 ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
+      _wallet->create(wallet_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
