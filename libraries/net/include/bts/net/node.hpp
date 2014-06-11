@@ -125,7 +125,7 @@ namespace bts { namespace net {
 
         void      load_configuration( const fc::path& configuration_directory );
 
-        void      connect_to_p2p_network();
+        virtual void      connect_to_p2p_network();
 
         /**
          *  Add endpoint to internal level_map database of potential nodes
@@ -137,7 +137,7 @@ namespace bts { namespace net {
         /**
          *  Attempt to connect to the specified endpoint immediately.
          */
-        void      connect_to( const fc::ip::endpoint& ep );
+        virtual void connect_to( const fc::ip::endpoint& ep );
 
         /**
          *  Specifies the network interface and port upon which incoming
@@ -155,7 +155,7 @@ namespace bts { namespace net {
          * as the value previously passed in to listen_on_endpoint, unless we 
          * were unable to bind to that port.
          */
-        fc::ip::endpoint get_actual_listening_endpoint() const;
+        virtual fc::ip::endpoint get_actual_listening_endpoint() const;
 
         /**
          *  @return a list of peers that are currently connected.
@@ -175,7 +175,7 @@ namespace bts { namespace net {
          *  Node starts the process of fetching all items after item_id of the
          *  given item_type.   During this process messages are not broadcast.
          */
-        void      sync_from( const item_id& );
+        virtual void      sync_from( const item_id& );
 
         bool      is_connected()const;
 
@@ -201,6 +201,11 @@ namespace bts { namespace net {
     class simulated_network : public node
     {
        public:
+         void      connect_to_p2p_network() override {}
+         void connect_to(const fc::ip::endpoint& ep) override {}
+         fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }
+
+         void      sync_from( const item_id& ) override {}
          void broadcast(const message& item_to_broadcast) override;
          void add_node_delegate(node_delegate* node_delegate_to_add);
        private:
