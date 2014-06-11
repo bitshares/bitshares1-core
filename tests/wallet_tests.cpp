@@ -398,11 +398,8 @@ void create_genesis_block(fc::path genesis_json_file)
    fc::json::save_to_file( config, genesis_json_file);
 }
 
-BOOST_AUTO_TEST_CASE( regression_test )
+void run_regression_test(fc::path test_dir)
 {
-  try 
-  {
-  //for each test directory in full test
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file
@@ -411,24 +408,24 @@ BOOST_AUTO_TEST_CASE( regression_test )
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
-    auto sim_network = std::make_shared<bts::net::simulated_network>();
+  //save off current working directory and change current working directory to test directory
+  fc::path original_working_directory = boost::filesystem::current_path();
+  try 
+  {
+    std::cout << "*** Executing " << test_dir.string() << std::endl;
+    boost::filesystem::current_path(test_dir.string());
 
     //create a small genesis block to reduce test startup time
     fc::temp_directory temp_dir;
     fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
     create_genesis_block(genesis_json_file);
 
-    //select the test to run
-    fc::path regression_tests_dir = "regression_tests";
-    fc::path test_dir = regression_tests_dir / "two_client_test";
-    fc::path test_config_file_name = "test.config";
-
-    //change current working directory to test directory
-    boost::filesystem::current_path(test_dir.string());
-
     //open test configuration file (contains one line per client to create)
+    fc::path test_config_file_name = "test.config";
     std::ifstream test_config_file(test_config_file_name.string());
 
+    //create one client per line and run each client's input commands
+    auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
     string line;
     while (std::getline(test_config_file,line))
@@ -483,4 +480,22 @@ BOOST_AUTO_TEST_CASE( regression_test )
   {
     elog( "${e}", ("e",e.to_detail_string() ) );
   }
+
+  //restore original working directory
+  boost::filesystem::current_path(original_working_directory);
+}
+
+BOOST_AUTO_TEST_CASE( regression_tests )
+{
+  //for each test directory in full test
+    fc::path regression_tests_dir = "regression_tests";
+    fc::path test_dir;// = regression_tests_dir / "two_client_test";
+    fc::directory_iterator end_itr; // constructs terminator
+    for (fc::directory_iterator directory_itr(regression_tests_dir); directory_itr != end_itr; ++directory_itr)
+    {
+      if (fc::is_directory( *directory_itr ))
+      {
+        run_regression_test( *directory_itr );
+      }
+    }
 }
