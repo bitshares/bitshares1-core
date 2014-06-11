@@ -1128,26 +1128,22 @@ namespace bts { namespace cli {
             void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
-                if( _out ) (*_out) << std::setw(  3 ) << std::right << "#";
                 if( _out ) (*_out) << std::setw(  7 ) << "BLK" << ".";
                 if( _out ) (*_out) << std::setw(  5 ) << std::left << "TRX";
                 if( _out ) (*_out) << std::setw( 20 ) << "TIMESTAMP";
                 if( _out ) (*_out) << std::setw( 20 ) << "FROM";
                 if( _out ) (*_out) << std::setw( 20 ) << "TO";
-                if( _out ) (*_out) << std::setw( 25 ) << "MEMO";
+                if( _out ) (*_out) << std::setw( 35 ) << "MEMO";
                 if( _out ) (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
-                if( _out ) (*_out) << std::setw( 20 ) << "FEE";
-                if( _out ) (*_out) << std::setw( 14 ) << "VOTE";
-                if( _out ) (*_out) << std::setw( 8 ) << "ID";
+                if( _out ) (*_out) << std::setw( 20 ) << "FEE    ";
+                if( _out ) (*_out) << std::setw( 12 ) << "ID";
                 if( _out ) (*_out) << "\n---------------------------------------------------------------------------------------------------";
-                if( _out ) (*_out) <<   "--------------------------------------------------------------------------------------------------\n";
+                if( _out ) (*_out) <<   "-------------------------------------------------------------------------\n";
                 if( _out ) (*_out) << std::right; 
                 
                 int count = 1;
                 for( auto tx : txs )
                 {
-                    /* Print index */
-                    if( _out ) (*_out) << std::setw( 3 ) << count;
                     count++;
 
                     /* Print block and transaction numbers */
@@ -1171,7 +1167,7 @@ namespace bts { namespace cli {
                     if( _out ) (*_out) << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
 
                     // Print "memo" on transaction
-                    if( _out ) (*_out) << std::setw( 25 ) << pretty_shorten(tx.memo_message, 24);
+                    if( _out ) (*_out) << std::setw( 35 ) << pretty_shorten(tx.memo_message, 34);
 
                     /* Print amount */
                     {
@@ -1215,12 +1211,11 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(14) << "N/A";
                     }
 
                     if( _out ) (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 8 ) << string( tx.trx_id ).substr(0, 8);
+                    if( _out ) (*_out) << std::setw( 16 ) << string( fc::to_base58( fc::raw::pack(tx.trx_id) ) ).substr(0, 8);
 
                     if( _out ) (*_out) << std::right << "\n";
                 }
