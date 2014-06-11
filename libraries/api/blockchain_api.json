@@ -29,6 +29,15 @@
         "aliases" : ["getblockcount"]
       },
       {
+        "method_name": "blockchain_get_security_state",
+        "description": "Returns information about blockchain security level",
+        "return_type": "blockchain_security_state",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["alert_state", "security_state"]
+      },
+      {
         "method_name": "blockchain_list_registered_accounts",
         "description": "Returns registered accounts starting with a given name upto a the limit provided",
         "return_type": "account_record_array",
@@ -238,6 +247,31 @@
         "is_const" : true,
         "aliases" : ["get_proposal_votes"],
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name" : "blockchain_market_list_bids",
+        "description" : "Returns the bid side of the order book for a given market",
+        "return_type" : "market_order_array",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+              "name" : "limit",
+              "type" : "int64_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_bids"]
       }
     ]
 }

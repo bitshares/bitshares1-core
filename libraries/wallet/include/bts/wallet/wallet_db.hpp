@@ -27,13 +27,13 @@ namespace bts { namespace wallet {
          bool is_open()const;
 
          template<typename T>
-         void store_record( T t )
+         void store_record( T record_to_store )
          {
-            if( t.index == 0 ) 
-               t.index = new_index();
-            store_generic_record( t.index, generic_wallet_record( t ) );
+            if( record_to_store.wallet_record_index == 0 ) 
+               record_to_store.wallet_record_index = new_wallet_record_index();
+            store_generic_record( record_to_store.wallet_record_index, generic_wallet_record( record_to_store ) );
          }
-         int32_t              new_index();
+         int32_t              new_wallet_record_index();
          int32_t              new_key_child_index();
          fc::ecc::private_key new_private_key( const fc::sha512& password, 
                                                const address& parent_account_address = address() );
@@ -48,6 +48,7 @@ namespace bts { namespace wallet {
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
+         void cache_order( const bts::blockchain::market_order& );
 
          void clear_pending_transactions();
 
@@ -58,12 +59,13 @@ namespace bts { namespace wallet {
          }
 
          wallet_transaction_record  cache_transaction( const signed_transaction& trx,
-                                 const asset& amount, share_type fees,
-                                 const string& memo_message,
+                                 const asset&           amount, share_type fees,
+                                 const string&          memo_message,
                                  const public_key_type& to,
-                                 time_point_sec received = time_point_sec(),
-                                 time_point_sec created = time_point_sec(),
-                                 public_key_type from = public_key_type()
+                                 time_point_sec         received = time_point_sec(),
+                                 time_point_sec         created = time_point_sec(),
+                                 public_key_type        from = public_key_type(),
+                                 const vector<address>& extra_addresses = vector<address>()
                                  );
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const
@@ -104,14 +106,17 @@ namespace bts { namespace wallet {
          void create_from_json( const fc::path& file_to_import, 
                                 const fc::path& wallet_to_create );
 
-         fc::optional<wallet_master_key_record>                 wallet_master_key;
+         fc::optional<wallet_master_key_record>                           wallet_master_key;
  
-         unordered_map<address,wallet_key_record>                         keys;
-         unordered_map<address,address>                                   btc_to_bts_address;
-         unordered_map<address,int32_t>                                   address_to_account;
-         unordered_map<account_id_type,int32_t>                           account_id_to_account;
-         map<string,int32_t>                                              name_to_account;
+         unordered_map< address, wallet_key_record >                      keys;
+         unordered_map< address, address >                                btc_to_bts_address;
+         unordered_map< address, int32_t >                                address_to_account_wallet_record_index;
+         unordered_map< account_id_type, int32_t >                        account_id_to_wallet_record_index;
+         map< string, int32_t >                                           name_to_account_wallet_record_index;
 
+         unordered_map<address,wallet_market_order_status_record>         market_orders;
+
+         /** maps wallet_record_index to accounts */
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
          unordered_map< balance_id_type,wallet_balance_record >           balances;

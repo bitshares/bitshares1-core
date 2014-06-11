@@ -107,7 +107,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the path to the bitcoin wallet you would like to import."
            },
            {
@@ -130,7 +130,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the armory wallet"
            },
            {
@@ -153,7 +153,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the electrum wallet"
            },
            {
@@ -176,7 +176,7 @@
         "parameters" : [
            {
               "name" : "wallet_filename",
-              "type" : "filename"
+              "type" : "filename",
               "description" : "the multibit wallet"
            },
            {
@@ -199,7 +199,7 @@
           "parameters" : [
           {
               "name" : "firstname",
-              "type" : "name"
+              "type" : "name",
               "description" : "first name in keyhotee profile config, for salting the seed of private key"
           },
           {
@@ -422,29 +422,6 @@
           ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_get_balance",
-        "description": "",
-        "return_type": "asset_array",
-        "parameters" : 
-          [
-            { 
-              "name" : "symbol", 
-              "type" : "asset_symbol", 
-              "description" : "The type of account, ie: XTS, GLD, USD or * for everything",
-              "default_value" : "*"
-            },
-            { 
-              "name" : "account_name", 
-              "type" : "receive_account_name", 
-              "description" : "The account to list the balance of.",
-              "default_value" : "*"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
-        "aliases" : [ "get_balance" ]
       },
       {
         "method_name": "wallet_multipart_transfer",
@@ -718,7 +695,7 @@
          "parameters"  : [
                {
                   "name" : "amount",
-                  "type" : "share_type",
+                  "type" : "real_amount",
                   "description" : "the amount of shares to issue"
                },
                {
@@ -825,9 +802,31 @@
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total balances of all accounts sorted by account and asset",
          "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
-         "parameters"     : [],
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
+            "default_value" : "*"
+         }
+         ],
          "prerequisites"  : ["json_authenticated","wallet_open"],
          "aliases" : ["balance"]
+      },
+      {
+         "method_name" : "wallet_account_list_public_keys",
+         "description" : "Lists all public keys in this account",
+         "return_type" : "public_key_summary_array",
+         "parameters"  : [
+           {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "the account for which public keys should be listed",
+                "default_value" : "*"
+           }
+         ],
+         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "aliases": ["public_keys"]
       },
       {
          "method_name"  : "wallet_withdraw_delegate_pay",
@@ -857,7 +856,79 @@
          ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : ["pay_delegate"]
+      },
+      {
+         "method_name"  : "wallet_set_priority_fee",
+         "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
+         "return_type"  : "assettype",
+         "parameters"   : [
+         {
+            "name" : "fee",
+            "type" : "amount",
+            "description" : "the prioty fee to be setted. Optional, if not provided, will return the current fee.",
+            "default_value" : -1
+         }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "aliases" : ["set_priority_fee"]
+      },
+      {
+         "method_name" : "wallet_market_submit_bid",
+         "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the bid"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to buy"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to buy"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to pay"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to pay with"
+            }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "aliases" : [ "bid" ]
+      },
+      {
+         "method_name" : "wallet_market_order_list",
+         "return_type" : "market_order_status_array",
+         "parameters"  : [
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the quote symbol of the market"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the base symbol of the market"
+            },
+            {
+               "name" : "limit",
+               "type" : "int64_t",
+               "description" : "the maximum number of items to return",
+               "default_value" : -1
+            }
+         ],
+         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "aliases" : [ "list_orders" ]
       }
-
     ]
 }

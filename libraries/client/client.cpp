@@ -4,31 +4,288 @@
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
+#include <bts/net/upnp.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/utilities/key_conversion.hpp>
+#include <bts/utilities/git_revision.hpp>
+#include <bts/rpc/rpc_client.hpp>
+#include <bts/rpc/rpc_server.hpp>
+#include <bts/api/common_api.hpp>
+#include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/config.hpp>
+
 #include <fc/reflect/variant.hpp>
 #include <fc/io/fstream.hpp>
+#include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
+#include <fc/network/resolve.hpp>
+#include <fc/crypto/elliptic.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
-#include <fc/network/resolve.hpp>
+#include <fc/log/file_appender.hpp>
+#include <fc/log/logger_config.hpp>
 
-#include <bts/rpc/rpc_client.hpp>
-#include <bts/api/common_api.hpp>
-
-#include <bts/rpc/rpc_server.hpp>
-
-#include <bts/utilities/git_revision.hpp>
+#include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
+
+#include <boost/program_options.hpp>
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <fstream>
 
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 #include <boost/lexical_cast.hpp>
+using namespace boost;
+   using std::string;
+
+const string BTS_MESSAGE_MAGIC = "Bitshares Signed Message:\n";
+
+struct config
+{
+   config( ) : 
+      default_peers(std::vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
+      ignore_console(false)
+      {
+      }
+
+   void init_default_logger( const fc::path& data_dir )
+   {
+          fc::logging_config cfg;
+          
+          fc::file_appender::config ac;
+          ac.filename = data_dir / "default.log";
+          ac.truncate = false;
+          ac.flush    = true;
+
+          std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
+          
+          fc::file_appender::config ac_rpc;
+          ac_rpc.filename = data_dir / "rpc.log";
+          ac_rpc.truncate = false;
+          ac_rpc.flush    = true;
+
+          std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
+          
+          cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
+          cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+          
+          fc::logger_config dlc;
+          dlc.level = fc::log_level::debug;
+          dlc.name = "default";
+          dlc.appenders.push_back("default");
+          
+          fc::logger_config dlc_rpc;
+          dlc_rpc.level = fc::log_level::debug;
+          dlc_rpc.name = "rpc";
+          dlc_rpc.appenders.push_back("rpc");
+          
+          cfg.loggers.push_back(dlc);
+          cfg.loggers.push_back(dlc_rpc);
+          
+          // fc::configure_logging( cfg );
+          logging = cfg;
+   }
+
+   bts::rpc::rpc_server::config rpc;
+   std::vector<string>     default_peers;
+   bool                         ignore_console;
+   fc::logging_config           logging;
+};
+
+FC_REFLECT( config, (rpc)(default_peers)(ignore_console)(logging) )
+
+void print_banner();
+void configure_logging(const fc::path&);
+fc::path get_data_dir(const program_options::variables_map& option_variables);
+config   load_config( const fc::path& datadir );
+void  load_and_configure_chain_database(const fc::path& datadir,
+                                        const program_options::variables_map& option_variables);
+
+program_options::variables_map parse_option_variables(int argc, char** argv)
+{
+   // parse command-line options
+   program_options::options_description option_config("Allowed options");
+   option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
+                              ("input-log", program_options::value<std::string>(), "log file with CLI commands to execute at startup")
+                              ("help", "display this help message")
+                              ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
+                              ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
+                              ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
+                              ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
+                              ("server", "enable JSON-RPC server")
+                              ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
+                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcpassword", program_options::value<string>(), "password for JSON-RPC")
+                              ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
+                              ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
+                              ("genesis-config", program_options::value<string>(), 
+                               "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
+                              ("clear-peer-database", "erase all information in the peer database")
+                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
+                              ("version", "print the version information for bts_xt_client");
+
+
+  program_options::variables_map option_variables;
+  try
+  {
+    program_options::store(program_options::command_line_parser(argc, argv).
+      options(option_config).run(), option_variables);
+    program_options::notify(option_variables);
+  }
+  catch (program_options::error&)
+  {
+    std::cerr << "Error parsing command-line options\n\n";
+    std::cerr << option_config << "\n";
+    exit(1);
+  }
+
+   if (option_variables.count("help"))
+   {
+     std::cout << option_config << "\n";
+     exit(0);
+   }
+   /* //DLNFIX restore this code
+   if (option_variables.count("version"))
+   {
+     std::cout << "bts_xt_client built on " << __DATE__ << " at " << __TIME__ << "\n";
+     std::cout << "  bitshares_toolkit revision: " << bts::utilities::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
+     std::cout << "                 fc revision: " << fc::git_revision_sha << "\n";
+     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
+     exit(0);
+   }
+   */
+  return option_variables;
+}
+
+
+void print_banner()
+{
+    std::cout<<"================================================================\n";
+    std::cout<<"=                                                              =\n";
+    std::cout<<"=             Welcome to BitShares "<< std::setw(5) << std::left << BTS_ADDRESS_PREFIX<<"                       =\n";
+    std::cout<<"=                                                              =\n";
+    std::cout<<"=  This software is in alpha testing and is not suitable for   =\n";
+    std::cout<<"=  real monetary transactions or trading.  Use at your own     =\n";
+    std::cout<<"=  risk.                                                       =\n";
+    std::cout<<"=                                                              =\n";
+    std::cout<<"=  Type 'help' for usage information.                          =\n";
+    std::cout<<"================================================================\n";
+}
+
+void configure_logging(const fc::path& data_dir)
+{
+    fc::logging_config cfg;
+    
+    fc::file_appender::config ac;
+    ac.filename = data_dir / "default.log";
+    ac.truncate = false;
+    ac.flush    = true;
+
+    std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
+    
+    fc::file_appender::config ac_rpc;
+    ac_rpc.filename = data_dir / "rpc.log";
+    ac_rpc.truncate = false;
+    ac_rpc.flush    = true;
+
+    std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
+    
+    cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
+    cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+    
+    fc::logger_config dlc;
+    dlc.level = fc::log_level::debug;
+    dlc.name = "default";
+    dlc.appenders.push_back("default");
+    
+    fc::logger_config dlc_rpc;
+    dlc_rpc.level = fc::log_level::debug;
+    dlc_rpc.name = "rpc";
+    dlc_rpc.appenders.push_back("rpc");
+    
+    cfg.loggers.push_back(dlc);
+    cfg.loggers.push_back(dlc_rpc);
+    
+    fc::configure_logging( cfg );
+}
+
+
+fc::path get_data_dir(const program_options::variables_map& option_variables)
+{ try {
+   fc::path datadir;
+   if (option_variables.count("data-dir"))
+   {
+     datadir = fc::path(option_variables["data-dir"].as<string>().c_str());
+   }
+   else
+   {
+#ifdef WIN32
+     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+#elif defined( __APPLE__ )
+     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+#else
+     datadir = fc::app_path() / ".BitShares" BTS_ADDRESS_PREFIX;
+#endif
+   }
+   return datadir;
+
+} FC_RETHROW_EXCEPTIONS( warn, "error loading config" ) }
+
+void load_and_configure_chain_database( const fc::path& datadir,
+                                        const program_options::variables_map& option_variables)
+{ try {
+
+  if (option_variables.count("resync-blockchain"))
+  {
+    std::cout << "Deleting old copy of the blockchain in \"" << ( datadir / "chain" ).generic_string() << "\"\n";
+    try
+    {
+      fc::remove_all(datadir / "chain");
+    }
+    catch (const fc::exception& e)
+    {
+      std::cout << "Error while deleting old copy of the blockchain: " << e.what() << "\n";
+      std::cout << "You may need to manually delete your blockchain and relaunch bitshares_client\n";
+    }
+  }
+  else
+  {
+    std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
+  }
+
+} FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
+
+config load_config( const fc::path& datadir )
+{ try {
+      auto config_file = datadir/"config.json";
+      config cfg;
+      if( fc::exists( config_file ) )
+      {
+         std::cout << "Loading config \"" << config_file.generic_string()  << "\"\n";
+         cfg = fc::json::from_file( config_file ).as<config>();
+      }
+      else
+      {
+         std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
+         fc::json::save_to_file( cfg, config_file );
+      }
+      return cfg;
+} FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
+
+
 
 namespace bts { namespace client {
+
+   using namespace bts::wallet;
+   using namespace bts::blockchain;
 
     namespace detail
     {
@@ -37,7 +294,7 @@ namespace bts { namespace client {
        {
           public:
             client_impl(bts::client::client* self) :
-              _self(self),_cli(nullptr)
+              _self(self),_cli()
             { try {
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
@@ -47,7 +304,7 @@ namespace bts { namespace client {
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-            virtual ~client_impl()override {}
+            virtual ~client_impl()override { delete _cli; }
 
             void delegate_loop();
 
@@ -111,7 +368,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() )
+               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
@@ -296,11 +553,11 @@ namespace bts { namespace client {
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       std::string client_impl::execute_command_line(const std::string& input) const
+       string client_impl::execute_command_line(const string& input) const
        {
            if (_cli)
            {
-               std::stringstream output;
+              std::stringstream output;
                _cli->execute_command_line( input, &output );
                return output.str();
            }
@@ -330,11 +587,6 @@ namespace bts { namespace client {
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-    }
-
-    void client::set_cli( bts::cli::cli* cli)
-    {
-        my->_cli = cli;
     }
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
@@ -506,7 +758,7 @@ namespace bts { namespace client {
     }
 
 
-    signed_transaction  detail::client_impl::wallet_asset_issue(const share_type& amount,
+    signed_transaction  detail::client_impl::wallet_asset_issue(double real_amount,
                                                    const string& symbol,
                                                    const string& to_account_name,
                                                    const string& memo_message
@@ -514,7 +766,7 @@ namespace bts { namespace client {
     {
       //rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
       //bool sign = (flag != client::do_not_sign);
-      auto issue_asset_trx = _wallet->issue_asset(amount,symbol,to_account_name, memo_message, true);
+      auto issue_asset_trx = _wallet->issue_asset(real_amount,symbol,to_account_name, memo_message, true);
       //if (flag == client::sign_and_broadcast)
           network_broadcast_transaction(issue_asset_trx);
       return issue_asset_trx;
@@ -691,11 +943,11 @@ namespace bts { namespace client {
       _wallet->import_armory_wallet(filename, passphrase, account_name);
     }
     
-    void detail::client_impl::wallet_import_keyhotee(const std::string& firstname,
-                                                     const std::string& middlename,
-                                                     const std::string& lastname,
-                                                     const std::string& brainkey,
-                                                     const std::string& keyhoteeid)
+    void detail::client_impl::wallet_import_keyhotee(const string& firstname,
+                                                     const string& middlename,
+                                                     const string& lastname,
+                                                     const string& brainkey,
+                                                     const string& keyhoteeid)
     {
         _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
     }
@@ -741,12 +993,12 @@ namespace bts { namespace client {
 
     void detail::client_impl::network_set_allowed_peers(const vector<bts::net::node_id_t>& allowed_peers)
     {
-      _p2p_node->set_allowed_peers(allowed_peers);      
+      _p2p_node->set_allowed_peers( allowed_peers );
     }
 
     void detail::client_impl::network_set_advanced_node_parameters(const fc::variant_object& params)
     {
-      _p2p_node->set_advanced_node_parameters(params);
+      _p2p_node->set_advanced_node_parameters( params );
     }
 
     fc::variant_object detail::client_impl::network_get_advanced_node_parameters() const
@@ -759,36 +1011,43 @@ namespace bts { namespace client {
       if (_p2p_node)
       {
         if (command == "add")
-          _p2p_node->add_node(node);
+          _p2p_node->add_node( node );
       }
     }
     
-    public_key_type detail::client_impl::bitcoin_getaccountaddress(const std::string &account_name)
+    address detail::client_impl::bitcoin_getaccountaddress(const string& account_name)
     {
-        return wallet_account_create(account_name);
-    }
+       try {
+          FC_ASSERT( _wallet->is_valid_account_name( account_name ) );
+          if ( _wallet->is_valid_account( account_name ) )
+          {
+             return address( _wallet->get_account_public_key( account_name ) );
+          }
+          
+          return _wallet->get_new_address( account_name );
+       } FC_CAPTURE_AND_RETHROW( (account_name) ) }
     
-    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const public_key_type &account_key)
+    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const address& account_address)
     {
         try {
-            auto opt_account = _wallet->get_account_record(address(account_key));
+            auto opt_account = _wallet->get_account_record(account_address);
             if( opt_account.valid() )
                 return *opt_account;
-            FC_ASSERT(false, "Invalid Account Key: ${account_key}", ("account_key",account_key) );
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_key", account_key) ) }
+            FC_ASSERT(false, "Invalid Account Key: ${account_address}", ("account_address",account_address) );
+        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
     
-    std::string detail::client_impl::bitcoin_dumpprivkey(const std::string& bts_address){
+    string detail::client_impl::bitcoin_dumpprivkey(const address& account_address){
         try {
-            auto wif_private_key = bts::utilities::key_to_wif(_wallet->get_private_key(address(bts_address)));
+            auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
             return wif_private_key;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
+        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
-    void detail::client_impl::bitcoin_encryptwallet(const std::string& passphrase)
+    void detail::client_impl::bitcoin_encryptwallet(const string& passphrase)
     {
         wallet_change_passphrase(passphrase);
     }
 
-    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const std::string& command)
+    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const string& command)
     {
         network_add_node(node, command);
     }
@@ -798,164 +1057,207 @@ namespace bts { namespace client {
         wallet_export_to_json(destination);
     }
 
-    std::vector<std::string> detail::client_impl::bitcoin_getaddressesbyaccount(const std::string& account_name)
-    {
-        try {
-            std::vector<std::string> addresses;
-            auto account = wallet_get_account(account_name);
-            addresses.push_back(std::string(account.active_address()));
-            return addresses;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
+    std::vector<address> detail::client_impl::bitcoin_getaddressesbyaccount(const string& account_name)
+    { try {
+       std::vector<address> addresses;
+       auto public_keys = _wallet->get_public_keys_in_account(account_name);
 
-    int64_t detail::client_impl::bitcoin_getbalance(const std::string& account_name)
-    {
-        try {
-            vector<asset> all_balances = _wallet->get_balance( BTS_ADDRESS_PREFIX ,account_name);
-            
-            for( uint32_t i = 0; i < all_balances.size(); ++i )
-            {
-                if ( all_balances[i].asset_id )
-                {
-                    return all_balances[i].amount;
-                }
-            }
-            
-            return 0;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+       addresses.reserve(public_keys.size());
+
+       for ( auto key : public_keys )
+           addresses.push_back( address(key) );
+       return addresses;
+    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+    int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
+    { try {
+
+       auto balances = _wallet->get_account_balances();
+       auto itr = balances.find( account_name );
+       if( itr != balances.end() )
+       {
+          auto bitr = itr->second.find( BTS_BLOCKCHAIN_SYMBOL );
+          if( bitr != itr->second.end() )
+             return bitr->second;
+       }
+       return 0;
+
+    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
     bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
     {
-        return blockchain_get_block(block_id);
+       return blockchain_get_block(block_id);
     }
 
     uint32_t detail::client_impl::bitcoin_getblockcount() const
     {
-        return blockchain_get_blockcount();
+       return blockchain_get_blockcount();
     }
 
     bts::blockchain::block_id_type detail::client_impl::bitcoin_getblockhash(uint32_t block_number) const
     {
-        return blockchain_get_blockhash(block_number);
+       return blockchain_get_blockhash(block_number);
     }
 
     uint32_t detail::client_impl::bitcoin_getconnectioncount() const
     {
-        return network_get_connection_count();
+       return network_get_connection_count();
     }
 
     fc::variant_object detail::client_impl::bitcoin_getinfo() const
     {
-        return get_info();
+       return get_info();
     }
 
-    bts::blockchain::public_key_type detail::client_impl::bitcoin_getnewaddress(const std::string& account_name)
+    bts::blockchain::address detail::client_impl::bitcoin_getnewaddress(const string& account_name)
     {
-        return wallet_account_create(account_name);
+       return _wallet->get_new_address( account_name );
     }
 
-    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const std::string& bts_address)
+    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const address& account_address)
     {
-        try {
-            auto balance = _chain_db->get_balance_record(address(bts_address));
-            if (balance.valid() && balance->asset_id() == 0)
-            {
-                return balance->balance;
-            }
-            else
-            {
-                return 0;
-            }
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("bts_address",bts_address) ) }
+       try {
+          auto balance = _chain_db->get_balance_record( account_address );
+          if (balance.valid() && balance->asset_id() == 0)
+          {
+             return balance->balance;
+          }
+          else
+          {
+             return 0;
+          }
+       } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
-    void detail::client_impl::bitcoin_importprivkey(const std::string& wif_key, const std::string& account_name, bool rescan)
+    void detail::client_impl::bitcoin_importprivkey(const string& wif_key, const string& account_name, bool rescan)
     {
-        wallet_import_private_key(wif_key, account_name, rescan);
+       wallet_import_private_key(wif_key, account_name, rescan);
     }
     
-    std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
+    std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
     {
-        FC_ASSERT(false, "Not implemented");
+       return _wallet->get_account_balances();
     }
 
-    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const std::string& account_name, uint64_t count, uint64_t from)
+    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
     {
-        try {
-            auto trx_history = wallet_account_transaction_history(account_name);
-            trx_history.reserve(trx_history.size());
-            
-            std::vector<bts::wallet::pretty_transaction> trxs;
-            
-            uint64_t index = 0;
-            for ( auto trx : trx_history )
-            {
-                if ( index >= from )
-                {
-                    trxs.push_back( trx );
-                }
-                
-                if ( trxs.size() >= count )
-                {
-                    break;
-                }
-                index ++;
-            }
-            return trxs;
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("count", count)("from", from) ) }
+       try {
+          auto trx_history = wallet_account_transaction_history( account_name );
+          trx_history.reserve(trx_history.size());
+          
+          std::vector<bts::wallet::pretty_transaction> trxs;
+          
+          uint64_t index = 0;
+          for ( auto trx : trx_history )
+          {
+             if ( index >= from )
+             {
+                trxs.push_back( trx );
+             }
+             
+             if ( trxs.size() >= count )
+             {
+                break;
+             }
+             index ++;
+          }
+          return trxs;
+       } FC_CAPTURE_AND_RETHROW( (account_name)(count)(from) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const std::string& fromaccount, const public_key_type& toaddresskey, int64_t amount, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const string& fromaccount, const address& toaddress, int64_t amount, const string& comment)
     {
-        try {
-            // using the key string as the temporary local account name for this temporary key.
-            std::string to_account_name(toaddresskey);
-            wallet_add_contact_account(to_account_name, toaddresskey);
-            auto trx = wallet_transfer(amount, BTS_ADDRESS_PREFIX, fromaccount, to_account_name, comment);
-            return trx.id();
-        } FC_RETHROW_EXCEPTIONS( warn, "", ("from_account_name",fromaccount)("to_address_key", toaddresskey)("amount", amount)("comment", comment) ) }
+      
+       try {
+          auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
+                                                         fromaccount, toaddress,
+                                                         comment, true );
+          
+          network_broadcast_transaction( trx );
+          
+          return trx.id();
+       } FC_CAPTURE_AND_RETHROW( (fromaccount)(toaddress)(amount)(comment) ) }
 
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const std::string& fromaccount, const std::unordered_map< bts::blockchain::address, int64_t >& to_address_amounts, const std::string& comment)
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< address, int64_t >& to_address_amounts, const string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
-    }
-
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const std::string& address, int64_t amount, const std::string& comment)
+       try {
+          std::unordered_map< address, double > to_address_amount_map;
+          for ( auto address_amount : to_address_amounts )
+          {
+             to_address_amount_map[address_amount.first] = address_amount.second;
+          }
+          
+          auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
+          
+          network_broadcast_transaction(trx);
+          
+          return trx.id();
+       } FC_CAPTURE_AND_RETHROW( (fromaccount)(to_address_amounts)(comment) ) }
+   
+    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const address& address, int64_t amount, const string& comment)
     {
-        FC_ASSERT(false, "Not implemented");
+       FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
     }
 
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
-        FC_ASSERT(false, "Not implemented");
+       _wallet->set_priority_fee( amount );
     }
 
-    std::string detail::client_impl::bitcoin_signmessage(const std::string& address, const std::string& message)
-    {
-        FC_ASSERT(false, "Not implemented");
-    }
+    string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)
+    { try {
+       auto private_key = _wallet->get_private_key(address_to_sign_with);
+       
+       auto sig = private_key.sign_compact( fc::sha256::hash( BTS_MESSAGE_MAGIC + message ) );
+       
+       return fc::to_base58( (char *)sig.data, sizeof(sig) );
+    
+    } FC_CAPTURE_AND_RETHROW( (address_to_sign_with)(message) ) }
+   
+    bool detail::client_impl::bitcoin_verifymessage(const address& address_to_verify_with, const string& signature, const string& message)
+    { try {
+       fc::ecc::compact_signature sig;
+       fc::from_base58(signature, (char*)sig.data, sizeof(sig));
+       
+       return address_to_verify_with ==  address(fc::ecc::public_key(sig, fc::sha256::hash( BTS_MESSAGE_MAGIC + message)));
+    } FC_CAPTURE_AND_RETHROW( (address_to_verify_with)(signature)(message) ) }
 
-    std::string detail::client_impl::bitcoin_validatemessage(const std::string& address)
-    {
-        FC_ASSERT(false, "Not implemented");
-    }
-
-    bool detail::client_impl::bitcoin_verifymessage(const std::string& address, const std::string& signature, const std::string& message)
-    {
-        FC_ASSERT(false, "Not implemented");
-    }
+    fc::variant detail::client_impl::bitcoin_validateaddress(const address& address_to_validate )
+    { try {
+       fc::mutable_variant_object obj("address",address_to_validate);
+       
+       auto opt_account = _wallet->get_account_record(address_to_validate);
+       if ( opt_account.valid() )
+       {
+          obj( "account", *opt_account );
+       }
+       else {
+          auto opt_register_account = _chain_db->get_account_record( address_to_validate );
+          if ( opt_register_account.valid() )
+          {
+             obj( "account", *opt_register_account );
+          }
+       }
+       
+       obj( "ismine", _wallet->is_receive_address( address_to_validate ) );
+       obj( "isvalid", address::is_valid( string(address_to_validate) ) );
+       
+       return obj;
+    } FC_CAPTURE_AND_RETHROW( (address_to_validate) ) }
 
     void detail::client_impl::bitcoin_walletlock()
     {
         wallet_lock();
     }
 
-    void detail::client_impl::bitcoin_walletpassphrase(const std::string& passphrase, const fc::microseconds& timeout)
+    void detail::client_impl::bitcoin_walletpassphrase(const string& passphrase, const fc::microseconds& timeout)
     {
         wallet_unlock(timeout, passphrase);
     }
 
-    void detail::client_impl::bitcoin_walletpassphrasechange(const std::string& oldpassphrase, const std::string& newpassphrase)
+    void detail::client_impl::bitcoin_walletpassphrasechange(const string& oldpassphrase, const string& newpassphrase)
     {
-        FC_ASSERT(false, "Not implemented");
+       _wallet->unlock(oldpassphrase);
+       _wallet->change_passphrase(newpassphrase);
     }
 
     void detail::client_impl::stop()
@@ -982,6 +1284,219 @@ namespace bts { namespace client {
 
 
     //JSON-RPC Method Implementations END
+
+
+    string extract_commands_from_log_stream(std::istream& log_stream)
+    {
+      string command_list;
+      string line;
+      while (std::getline(log_stream,line))
+      {
+        //if line begins with a prompt, add to input buffer
+        size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+        if (prompt_position != string::npos )
+        { 
+          size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+          command_list += line.substr(command_start_position);
+          command_list += "\n";
+        }
+      }
+      return command_list;
+    }
+
+    string extract_commands_from_log_file(fc::path test_file)
+    {
+      std::ifstream test_input(test_file.string());
+      return extract_commands_from_log_stream(test_input);
+    }
+
+    void client::configure_from_command_line(int argc, char** argv)
+    {
+      if( argc == 0 && argv == nullptr )
+      {
+        my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+        return;
+      }
+      // parse command-line options
+      auto option_variables = parse_option_variables(argc,argv);
+
+      fc::path datadir = ::get_data_dir(option_variables);
+      ::configure_logging(datadir);
+
+      auto cfg   = load_config(datadir);
+      std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+
+      load_and_configure_chain_database(datadir, option_variables);
+
+      fc::optional<fc::path> genesis_file_path;
+      if (option_variables.count("genesis-config"))
+        genesis_file_path = option_variables["genesis-config"].as<string>();
+
+      this->open( datadir, genesis_file_path );
+      this->run_delegate();
+
+      //maybe clean this up later
+      bts::rpc::rpc_server_ptr rpc_server = get_rpc_server();
+
+      if( option_variables.count("server") || option_variables.count("daemon") )
+      {
+        // the user wants us to launch the RPC server.
+        // First, override any config parameters they
+        // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
+        if (option_variables.count("rpcuser"))
+          cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
+        if (option_variables.count("rpcpassword"))
+            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
+        if (option_variables.count("rpcport"))
+            cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+        if (option_variables.count("httpport"))
+            cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
+
+        if (cfg.rpc.rpc_user.empty() ||
+            cfg.rpc.rpc_password.empty())
+        {
+          std::cout << "Error starting RPC server\n";
+          std::cout << "You specified " << (option_variables.count("server") ? "--server" : "--daemon") << " on the command line,\n";
+          std::cout << "but did not provide a username or password to authenticate RPC connections.\n";
+          std::cout << "You can provide these by using --rpcuser=username and --rpcpassword=password on the\n";
+          std::cout << "command line, or by setting the \"rpc_user\" and \"rpc_password\" properties in the\n";
+          std::cout << "config file.\n";
+          exit(1);
+        }
+
+        // launch the RPC servers
+        bool rpc_success = rpc_server->configure(cfg.rpc);
+
+        // this shouldn't fail due to the above checks, but just to be safe...
+        if (!rpc_success)
+          std::cerr << "Error starting rpc server\n\n";
+
+        fc::optional<fc::ip::endpoint> actual_rpc_endpoint = rpc_server->get_rpc_endpoint();
+        if (actual_rpc_endpoint)
+        {
+          std::cout << "Starting JSON RPC server on port " << actual_rpc_endpoint->port();
+          if (actual_rpc_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+            std::cout << " (localhost only)";
+          std::cout << "\n";
+        }
+
+        fc::optional<fc::ip::endpoint> actual_httpd_endpoint = rpc_server->get_httpd_endpoint();
+        if (actual_httpd_endpoint)
+        {
+          std::cout << "Starting HTTP JSON RPC server on port " << actual_httpd_endpoint->port();
+          if (actual_httpd_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+            std::cout << " (localhost only)";
+          std::cout << "\n";
+        }
+      }
+      else
+      {
+        std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
+      }
+
+      this->configure( datadir );
+
+      if (option_variables.count("maximum-number-of-connections"))
+      {
+        fc::mutable_variant_object params;
+        params["maximum_number_of_connections"] = option_variables["maximum-number-of-connections"].as<uint16_t>();
+        this->network_set_advanced_node_parameters(params);
+      }
+
+      if (option_variables.count("p2p-port"))
+      {
+          uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
+          this->listen_on_port(p2pport);
+
+          if( option_variables["upnp"].as<bool>() )
+          {
+            std::cout << "Attempting to map P2P port " << p2pport << " with UPNP...\n";
+            auto upnp_service = new bts::net::upnp_service();
+            upnp_service->map_port( p2pport );
+            fc::usleep( fc::seconds(3) );
+          }
+      }
+
+      if (option_variables.count("clear-peer-database"))
+      {
+        std::cout << "Erasing old peer database\n";
+        this->get_node()->clear_peer_database();
+      }
+
+      // fire up the p2p , 
+      this->connect_to_p2p_network();
+      fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
+      std::cout << "Listening for P2P connections on ";
+      if (actual_p2p_endpoint.get_address() == fc::ip::address())
+        std::cout << "port " << actual_p2p_endpoint.port();
+      else
+        std::cout << (string)actual_p2p_endpoint;
+      if (option_variables.count("p2p-port"))
+      {
+        uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
+        if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
+          std::cout << " (unable to bind to the desired port " << p2p_port << ")";
+      }
+      std::cout << "\n";
+
+
+      if (option_variables.count("connect-to"))
+      {
+          std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
+          for( auto peer : hosts )
+            this->connect_to_peer( peer );
+      }
+      else
+      {
+        for (string default_peer : cfg.default_peers)
+          this->connect_to_peer(default_peer);
+      }
+
+      if( option_variables.count("daemon") || cfg.ignore_console )
+      {
+          std::cout << "Running in daemon mode, ignoring console\n";
+          my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
+          rpc_server->wait_on_quit();
+      }
+      else 
+      {
+        //CLI will default to taking input from cin unless a input log file is specified via command-line options
+        std::unique_ptr<std::istream> input_stream_holder;
+        if (option_variables.count("input-log"))
+        {
+          string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
+          input_stream_holder.reset(new std::stringstream(input_commands));
+        }
+        std::istream* input_stream = input_stream_holder ? input_stream_holder.get() : &std::cin;
+
+    #ifdef _DEBUG
+        //tee cli output to the console and a log file
+        fc::path console_log_file = datadir / "console.log";
+        std::ofstream console_log(console_log_file.string());
+        typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
+        typedef boost::iostreams::stream<TeeDevice> TeeStream;
+        TeeDevice my_tee(std::cout, console_log); 
+        TeeStream cout_with_log(my_tee);
+        //force flushing to console and log file whenever cin input is required
+        std::cin.tie( &cout_with_log );
+
+        //if input log specified, just output to log file (we're testing), else output to console and log file
+        if (input_stream_holder)
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &console_log );
+        else
+          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &cout_with_log );
+        //echo command input to the log file
+        my->_cli->set_input_log_stream(console_log);
+    #else
+        //don't create a log file, just output to console
+        my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
+    #endif
+        my->_cli->process_commands();
+        my->_cli->wait();
+      } 
+
+    }
+
 
     void client::run_delegate( )
     {
@@ -1023,7 +1538,7 @@ namespace bts { namespace client {
         } catch (...) {
             auto pos = remote_endpoint.find(':');
             uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
-            std::string hostname = remote_endpoint.substr( 0, pos );
+            string hostname = remote_endpoint.substr( 0, pos );
             auto eps = fc::resolve(hostname, port);
             if ( eps.size() > 0 )
             {
@@ -1076,23 +1591,6 @@ namespace bts { namespace client {
     * Detail Implementation 
     */
    namespace detail  {
-
-
-    balances client_impl::wallet_get_balance( const string& symbol, 
-                                         const string& account_name ) const
-    { try {
-        vector<asset> all_balances = _wallet->get_balance( symbol ,account_name);
-       
-        balances all_results(all_balances.size());
-        for( uint32_t i = 0; i < all_balances.size(); ++i )
-        {
-           all_results[i].first  = all_balances[i].amount;
-           all_results[i].second = _chain_db->get_asset_symbol( all_balances[i].asset_id ); 
-        }
-        if( all_results.size() == 0 )
-           all_results.push_back( std::make_pair( 0, BTS_ADDRESS_PREFIX ) );
-        return all_results;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)("account_name",account_name) ) }
 
 
     void client_impl::wallet_add_contact_account( const string& account_name, 
@@ -1166,17 +1664,12 @@ namespace bts { namespace client {
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
       fc::variant wallet_balance_shares;
-      if (_wallet->is_open())
-        wallet_balance_shares = wallet_get_balance();
-      else
-        wallet_balance_shares = "[wallet is not open]";
 
       info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
       info["blockchain_head_block_time"]                 = _chain_db->now();
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
-      info["wallet_balance"]                             = wallet_balance_shares;
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )
@@ -1216,6 +1709,29 @@ namespace bts { namespace client {
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
+    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    {
+        auto state = blockchain_security_state();
+        auto required_confirmations = _chain_db->get_required_confirmations();
+        auto participation_rate = _chain_db->get_average_delegate_participation();
+        state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        state.participation_rate = participation_rate;
+        if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+            && participation_rate > .9)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::green;
+        } 
+        else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
+                 || participation_rate < .6)
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::red;
+        }
+        else
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::yellow;
+        }
+        return state;
+    }
 
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
@@ -1281,12 +1797,49 @@ namespace bts { namespace client {
        return _wallet->get_unspent_balances( account_name, symbol );
     }
 
+    vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
+    {
+        auto summaries = vector<public_key_summary>();
+        auto keys = _wallet->get_public_keys_in_account( account_name );
+        summaries.reserve( keys.size() );
+        for (auto key : keys)
+        {
+            summaries.push_back(_wallet->get_public_key_summary( key ));
+        }
+        return summaries;
+    }
 
-   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance() 
+   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance( const string& account_name ) 
    {
-      return _wallet->get_account_balances();
+      if( account_name == string() || account_name == "*")
+         return _wallet->get_account_balances();
+      else
+      {
+         if( !_chain_db->is_valid_account_name( account_name ) )
+            FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
+
+         if( !_wallet->is_receive_account( account_name ) )
+            FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+
+         auto all = _wallet->get_account_balances();
+
+         unordered_map<string, map<string,int64_t> > tmp;
+         tmp[account_name] = all[account_name];
+         tmp[account_name][BTS_BLOCKCHAIN_SYMBOL] = all[account_name][BTS_BLOCKCHAIN_SYMBOL];
+         return tmp;
+      }
    }
 
+   signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
+                                                             double quantity, const string& quantity_symbol,
+                                                             double quote_price, const string& quote_symbol )
+   {
+      auto trx = _wallet->submit_bid( from_account, quantity, quantity_symbol, 
+                                                    quote_price, quote_symbol, true );
+      
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name, 
                                                                  const string& to_account_name, 
@@ -1300,6 +1853,18 @@ namespace bts { namespace client {
       network_broadcast_transaction( trx );
       return trx;
    }
+   
+   asset client_impl::wallet_set_priority_fee( int64_t fee )
+   {
+      if (fee >= 0)
+      {
+         _wallet->set_priority_fee(fee);
+      }
+      
+      auto current_fee = _wallet->get_priority_fee();
+      return current_fee;
+   }
+      
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {
       return _chain_db->get_proposals( first, count );
@@ -1308,10 +1873,26 @@ namespace bts { namespace client {
    {
       return _chain_db->get_proposal_votes( proposal_id );
    }
+
+   vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
+                                                                       const string& base_symbol,
+                                                                       int64_t limit  )
+   {
+      return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
+   }
+
+   vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
+                                                                 const string& base_symbol,
+                                                                 int64_t limit  )
+   {
+      return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const
    {
      return my.get();
    }
+   
 } } // bts::client

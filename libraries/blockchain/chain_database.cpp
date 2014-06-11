@@ -6,6 +6,7 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/genesis_json.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -92,10 +93,12 @@ FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 namespace bts { namespace blockchain {
 
    // register exceptions here so it doesn't get optimized out by the linker
-   FC_REGISTER_EXCEPTIONS( (invalid_pts_address)
+   FC_REGISTER_EXCEPTIONS( (blockchain_exception)
+                           (invalid_pts_address)
                           (addition_overflow)
                           (addition_underthrow)
-                          (asset_type_mismatch) )
+                          (asset_type_mismatch)
+                          (unsupported_chain_operation) )
 
 
    namespace detail
@@ -1011,7 +1014,9 @@ namespace bts { namespace blockchain {
    /** return the timestamp from the head block */
    fc::time_point_sec   chain_database::now()const
    {
-      return my->_head_block_header.timestamp;
+      if( my->_head_block_header.block_num )
+         return my->_head_block_header.timestamp;
+      return bts::blockchain::now();
    }
 
          /** return the current fee rate in millishares */
@@ -1035,15 +1040,13 @@ namespace bts { namespace blockchain {
       }
       return oasset_record();
    }
-   oaccount_record      chain_database::get_account_record( const address& owner )const
+   oaccount_record      chain_database::get_account_record( const address& account_owner )const
    { try {
-      auto itr = my->_address_to_account_db.find( owner );
+      auto itr = my->_address_to_account_db.find( account_owner );
       if( itr.valid() )
-      {
          return get_account_record( itr.value() );
-      }
       return oaccount_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("owner",owner) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_owner) ) }
 
    obalance_record      chain_database::get_balance_record( const balance_id_type& balance_id )const
    {
@@ -1051,56 +1054,52 @@ namespace bts { namespace blockchain {
    }
 
    oaccount_record         chain_database::get_account_record( account_id_type account_id )const
-   {
+   { try {
       return my->_account_db.fetch_optional( account_id );
-   }
+   } FC_CAPTURE_AND_RETHROW( (account_id) ) }
 
    asset_id_type        chain_database::get_asset_id( const string& symbol )const
    { try {
       auto arec = get_asset_record( symbol );
       FC_ASSERT( arec.valid() );
       return arec->id;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
    bool                 chain_database::is_valid_symbol( const string& symbol )const
-   {
+   { try {
       return get_asset_record(symbol).valid();
-   }
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
    
    oasset_record        chain_database::get_asset_record( const string& symbol )const
    { try {
        auto symbol_id_itr = my->_symbol_index_db.find( symbol );
        if( symbol_id_itr.valid() )
-       {
           return get_asset_record( symbol_id_itr.value() );
-       }
-       else
-          wlog( "    unable to find '${symbol}'", ("symbol",symbol) );
        return oasset_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-   oaccount_record         chain_database::get_account_record( const string& name )const
+   oaccount_record         chain_database::get_account_record( const string& account_name )const
    { try {
-       auto account_id_itr = my->_account_index_db.find( name );
+       auto account_id_itr = my->_account_index_db.find( account_name );
        if( account_id_itr.valid() )
           return get_account_record( account_id_itr.value() );
        return oaccount_record();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("name",name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
-   void chain_database::store_asset_record( const asset_record& r )
+   void chain_database::store_asset_record( const asset_record& asset_to_store )
    { try {
-       if( r.is_null() )
+       if( asset_to_store.is_null() )
        {
-          my->_asset_db.remove( r.id );
-          my->_symbol_index_db.remove( r.symbol );
+          my->_asset_db.remove( asset_to_store.id );
+          my->_symbol_index_db.remove( asset_to_store.symbol );
        }
        else
        {
-          my->_asset_db.store( r.id, r );
-          my->_symbol_index_db.store( r.symbol, r.id );
+          my->_asset_db.store( asset_to_store.id, asset_to_store );
+          my->_symbol_index_db.store( asset_to_store.symbol, asset_to_store.id );
        }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
+   } FC_CAPTURE_AND_RETHROW( (asset_to_store) ) }
 
 
    void chain_database::store_balance_record( const balance_record& r )
@@ -1379,7 +1378,7 @@ namespace bts { namespace blockchain {
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.set_active_key( fc::time_point_sec(),  name.owner );
+         rec.set_active_key( bts::blockchain::now(),  name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )
@@ -1751,5 +1750,29 @@ namespace bts { namespace blockchain {
          return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
+   vector<market_order>  chain_database::get_market_bids( const string& quote_symbol, 
+                                                          const string& base_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = get_asset_id( base_symbol );
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+       //auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr  = my->_bid_db.begin();
+       while( market_itr.valid() )
+       {
+          results.push_back( {market_itr.key(), market_itr.value()} );
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       ilog( "end of db" );
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
 } } // namespace bts::blockchain

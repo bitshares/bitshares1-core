@@ -58,9 +58,10 @@ namespace bts { namespace blockchain {
         return address(active_key());
     }
     void account_record::set_active_key( time_point_sec now, const public_key_type& new_key )
-    {
+    { try {
+        FC_ASSERT( now != fc::time_point_sec() );
         active_key_history[now] = new_key;
-    }
+    } FC_CAPTURE_AND_RETHROW( (now)(new_key) ) }
 
     public_key_type account_record::active_key()const
     {

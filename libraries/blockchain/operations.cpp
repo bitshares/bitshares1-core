@@ -1,6 +1,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/market_operations.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw_variant.hpp>
 
@@ -34,28 +35,9 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       return true;
    }();
-
-   balance_id_type  deposit_operation::balance_id()const
-   {
-      return condition.get_address();
-   }
-
-   deposit_operation::deposit_operation( const address& owner, 
-                                                     const asset& amnt, 
-                                                     name_id_type delegate_id )
-   {
-      FC_ASSERT( amnt.amount > 0 );
-      amount = amnt.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ), amnt.asset_id, delegate_id );
-   }
-
-   register_account_operation::register_account_operation( const std::string& n, 
-                                                   const fc::variant& d, 
-                                                   const public_key_type& owner, 
-                                                   const public_key_type& active, bool as_delegate )
-   :name(n),public_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
 
    operation_factory& operation_factory::instance()
    {

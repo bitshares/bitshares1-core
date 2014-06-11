@@ -5,6 +5,7 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
+#include <memory>
 
 
 namespace bts { namespace rpc {
@@ -30,15 +31,15 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc_stubs::common_api_client
+    class client : public bts::rpc_stubs::common_api_client, public std::enable_shared_from_this<client>
     {
        public:
                   client();
                   client(bts::net::simulated_network_ptr network_to_connect_to);
          virtual ~client();
 
+         void configure_from_command_line(int argc, char** argv);
          void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
-         void set_cli( bts::cli::cli* cli );
 
          /**
           *  Produces a block every 30 seconds if there is at least
@@ -53,7 +54,7 @@ namespace bts { namespace client {
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
          bts::net::node_ptr         get_node()const;
 
-         fc::path                            get_data_dir() const;
+         fc::path                   get_data_dir() const;
 
          // returns true if the client is connected to the network
          bool is_connected() const;
@@ -91,6 +92,8 @@ namespace bts { namespace client {
     typedef shared_ptr<client_notification> client_notification_ptr;
 
 } } // bts::client
+
+extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 

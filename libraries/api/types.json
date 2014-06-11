@@ -7,6 +7,11 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+        "type_name" : "blockchain_security_state",
+        "cpp_return_type" : "bts::blockchain::blockchain_security_state",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
         "type_name" : "account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -184,6 +189,18 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "public_key_summary",
+        "cpp_return_type" : "bts::wallet::public_key_summary",
+        "cpp_include_file" : "bts/wallet/pretty.hpp",
+        "default_example" : "TODO"
+      },
+      {
+        "type_name" : "public_key_summary_array",
+        "container_type" : "array",
+        "contained_type" : "public_key_summary",
+        "default_example" : "TODO"      
+      },
+      {
         "type_name" : "signed_transaction",
         "cpp_return_type" : "bts::blockchain::signed_transaction",
         "cpp_include_file" : "bts/blockchain/transaction.hpp",
@@ -234,6 +251,15 @@
          "cpp_return_type" : "std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> >"
       },
       {
+         "type_name" : "market_order",
+         "cpp_return_type" : "bts::blockchain::market_order"
+      },
+      {
+         "type_name" : "market_order_array",
+         "container_type" : "array",
+         "contained_type" : "market_order"
+      },
+      {
         "type_name" : "amount",
         "cpp_parameter_type" : "int64_t",
         "cpp_return_type" : "int64_t",
@@ -279,8 +305,8 @@
       },
       {
         "type_name" : "address",
-        "cpp_return_type" : "std::string",
-        "cpp_include_file" : "string"
+        "cpp_return_type" : "bts::blockchain::address",
+        "cpp_include_file" : "bts/blockchain/address.hpp"
       },
       {
         "type_name" : "full_block",
@@ -344,7 +370,8 @@
       },
       {
           "type_name" : "map< address, amount >",
-          "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >"
+          "cpp_return_type" : "std::unordered_map< bts::blockchain::address, int64_t >",
+          "cpp_include_file" : "bts/blockchain/address.hpp"
       },
       {
           "type_name" : "name",
@@ -363,6 +390,20 @@
           "cpp_return_type" : "std::string",
           "cpp_include_file" : "string",
           "default_example" : "Alice"
+      },
+      {
+         "type_name" : "assettype",
+         "cpp_return_type" : "bts::blockchain::asset",
+         "cpp_include_file" : "bts/blockchain/asset.hpp"
+      },
+      {
+         "type_name" : "market_order_status",
+         "cpp_return_type" : "bts::wallet::market_order_status"
+      },
+      {
+         "type_name" : "market_order_status_array",
+         "container_type" : "array",
+         "contained_type" : "market_order_status"
       }
     ]
 }

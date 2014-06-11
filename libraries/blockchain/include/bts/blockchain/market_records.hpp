@@ -19,9 +19,12 @@ namespace bts { namespace blockchain {
       }
       friend bool operator < ( const market_index_key& a, const market_index_key& b )
       {
-         return a.order_price < b.order_price && a.owner == b.owner;
+         if( a.order_price < b.order_price ) return true;
+         if( a.order_price > b.order_price ) return false;
+         return  a.owner < b.owner;
       }
    };
+
 
    struct order_record 
    {
@@ -35,6 +38,12 @@ namespace bts { namespace blockchain {
       name_id_type delegate_id;
    };
    typedef fc::optional<order_record> oorder_record;
+
+   struct market_order 
+   {
+      market_index_key market_index;
+      order_record     state;
+   };
 
    struct collateral_record
    {
@@ -52,3 +61,4 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::order_record, (balance)(delegate_id) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance)(delegate_id) );
+FC_REFLECT( bts::blockchain::market_order, (market_index)(state) );

@@ -13,6 +13,9 @@ namespace bts { namespace blockchain {
 
    namespace detail { class chain_database_impl; }
 
+   class transaction_evaluation_state;
+   typedef std::shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
+
    struct block_summary
    {
       full_block                                    block_data;
@@ -113,6 +116,10 @@ namespace bts { namespace blockchain {
          vector<account_record>             get_delegate_records_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1))const;
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = uint32_t(-1))const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
+
+         vector<market_order>               get_market_bids( const string& quote_symbol, 
+                                                             const string& base_symbol, 
+                                                             uint32_t limit = uint32_t(-1) );
 
          void                               scan_assets( function<void( const asset_record& )> callback );
          void                               scan_balances( function<void( const balance_record& )> callback );

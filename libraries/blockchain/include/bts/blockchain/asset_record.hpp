@@ -34,6 +34,8 @@ namespace bts { namespace blockchain {
       bool is_market_issued()const   { return issuer_account_id == market_issued_asset; }
       asset_record make_null()const { asset_record cpy(*this); cpy.issuer_account_id = -1; return cpy; }
 
+      uint64_t get_precision()const {  return precision ? precision : 1; }
+
       asset_id_type       id;
       std::string         symbol;
       std::string         name;

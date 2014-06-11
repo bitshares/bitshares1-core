@@ -15,11 +15,10 @@ namespace bts { namespace blockchain {
       static const operation_type_enum type; 
       register_account_operation():is_delegate(false){}
 
-      register_account_operation( const std::string& name, 
-                              const fc::variant& public_data, 
-                              const public_key_type& owner, 
-                              const public_key_type& active, 
-                              bool  as_delegate = false );
+      register_account_operation( const std::string& n, 
+                                  const fc::variant& d, 
+                                  const public_key_type& owner, 
+                                  const public_key_type& active, bool as_delegate );
       
       std::string                 name;
       fc::variant                 public_data;
@@ -36,6 +35,8 @@ namespace bts { namespace blockchain {
        *  This data does not effect validation rules.
        */
       optional<account_meta_info> meta_data;
+
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
    struct update_account_operation
@@ -49,6 +50,8 @@ namespace bts { namespace blockchain {
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
       bool                              is_delegate;
+
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
    struct withdraw_pay_operation
@@ -62,6 +65,8 @@ namespace bts { namespace blockchain {
 
       share_type                       amount;
       account_id_type                  account_id;
+
+      void evaluate( transaction_evaluation_state& eval_state );
    };
 
 } } // bts::blockchain
