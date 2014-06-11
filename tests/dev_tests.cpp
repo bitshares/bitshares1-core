@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "deterministic_openssl_rand.hpp"
 
 
 using namespace bts::blockchain;
@@ -77,6 +78,7 @@ void produce_block( T my_client )
 BOOST_AUTO_TEST_CASE( master_test )
 { try {
    bts::blockchain::start_simulated_time(fc::time_point::from_iso_string( "20200101T000000" ));
+   set_random_seed_for_testing( fc::sha512() );
 
    vector<fc::ecc::private_key> delegate_private_keys = 
       fc::json::from_string( R"(["3feb0fde257e07abce682c924289d62bdd20b2b4e4c7381a9b1e1c587da26a50",
@@ -214,9 +216,6 @@ BOOST_AUTO_TEST_CASE( master_test )
    clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
    clientb->configure_from_command_line( 0, nullptr );
 
-   clienta->get_wallet()->use_detininistic_one_time_keys( true );
-   clientb->get_wallet()->use_detininistic_one_time_keys( true );
-
    std::cerr << clientb->execute_command_line( "help" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_create walletb masterpassword brain1000000000000000000000000000000000000000000009999999999999990" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_create walleta masterpassword brain2000000000000000000000000000000000000000000000999999999999999" ) << "\n";
@@ -275,8 +274,6 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history delegate31" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history" ) << "\n";
-   std::cerr << clienta->execute_command_line( "blockchain_get_config" ) << "\n";
-   return;
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    produce_block( clientb );

@@ -30,6 +30,7 @@
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/raw.hpp>
+#include <fc/network/ntp.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
@@ -613,6 +614,17 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
+
+        fc::async( [](){  
+            auto ntp_time = fc::ntp::get_time();
+            auto delta_time = ntp_time - fc::time_point::now();
+            if( delta_time.to_seconds() != 0 )
+            {
+               wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
+               bts::blockchain::advance_time( delta_time.to_seconds() );
+            }
+        } );
+
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
