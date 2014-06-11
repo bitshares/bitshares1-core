@@ -199,7 +199,7 @@
           "parameters" : [
           {
               "name" : "firstname",
-              "type" : "name"
+              "type" : "name",
               "description" : "first name in keyhotee profile config, for salting the seed of private key"
           },
           {
@@ -905,7 +905,7 @@
          ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : [ "bid" ]
-      }
+      },
       {
          "method_name" : "wallet_market_order_list",
          "return_type" : "market_order_status_array",

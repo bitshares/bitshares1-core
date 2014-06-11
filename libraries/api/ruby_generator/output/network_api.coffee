@@ -12,7 +12,7 @@ class NetworkAPI
   #   std::string `command` - 'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once, example: add
   # return_type: `void`
   add_node: (node, command) ->
-    @rpc.request('network_add_node', ['node', 'command']).then (response) ->
+    @rpc.request('network_add_node', [node, command]).then (response) ->
       response.result
 
   # Returns the number of fully-established connections to other nodes
@@ -34,7 +34,7 @@ class NetworkAPI
   #   signed_transaction `transaction_to_broadcast` - The transaction to broadcast to the network
   # return_type: `transaction_id`
   broadcast_transaction: (transaction_to_broadcast) ->
-    @rpc.request('network_broadcast_transaction', ['transaction_to_broadcast']).then (response) ->
+    @rpc.request('network_broadcast_transaction', [transaction_to_broadcast]).then (response) ->
       response.result
 
   # Sets advanced node parameters, used for setting up automated tests
@@ -42,7 +42,7 @@ class NetworkAPI
   #   json_object `params` - A JSON object containing the name/value pairs for the parameters to set
   # return_type: `void`
   set_advanced_node_parameters: (params) ->
-    @rpc.request('network_set_advanced_node_parameters', ['params']).then (response) ->
+    @rpc.request('network_set_advanced_node_parameters', [params]).then (response) ->
       response.result
 
   # Sets advanced node parameters, used for setting up automated tests
@@ -57,7 +57,7 @@ class NetworkAPI
   #   transaction_id `transaction_id` - the id of the transaction
   # return_type: `message_propagation_data`
   get_transaction_propagation_data: (transaction_id) ->
-    @rpc.request('network_get_transaction_propagation_data', ['transaction_id']).then (response) ->
+    @rpc.request('network_get_transaction_propagation_data', [transaction_id]).then (response) ->
       response.result
 
   # Returns the time the block was first seen by this client
@@ -65,7 +65,7 @@ class NetworkAPI
   #   block_id_type `block_hash` - the id of the block
   # return_type: `message_propagation_data`
   get_block_propagation_data: (block_hash) ->
-    @rpc.request('network_get_block_propagation_data', ['block_hash']).then (response) ->
+    @rpc.request('network_get_block_propagation_data', [block_hash]).then (response) ->
       response.result
 
   # Sets the list of peers this node is allowed to connect to
@@ -73,7 +73,14 @@ class NetworkAPI
   #   node_id_list `allowed_peers` - the list of allowable peers
   # return_type: `void`
   set_allowed_peers: (allowed_peers) ->
-    @rpc.request('network_set_allowed_peers', ['allowed_peers']).then (response) ->
+    @rpc.request('network_set_allowed_peers', [allowed_peers]).then (response) ->
+      response.result
+
+  # Returns assorted information about the network settings and connections
+  # parameters: 
+  # return_type: `json_object`
+  get_info:  ->
+    @rpc.request('network_get_info').then (response) ->
       response.result
 
 
