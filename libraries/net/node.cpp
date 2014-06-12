@@ -1768,6 +1768,7 @@ namespace bts { namespace net {
       ilog("Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint()));
       display_current_connections();
       trigger_p2p_network_connect_loop();
+      _delegate->connection_count_changed(_active_connections.size());
     }
 
     void node_impl::process_backlog_of_sync_blocks()
