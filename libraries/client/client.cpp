@@ -613,13 +613,26 @@ namespace bts { namespace client {
         my->_p2p_node->set_node_delegate(my.get());
 
         fc::async( [](){  
-            auto ntp_time = fc::ntp::get_time();
-            auto delta_time = ntp_time - fc::time_point::now();
-            if( delta_time.to_seconds() != 0 )
-            {
-               wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
-               bts::blockchain::advance_time( delta_time.to_seconds() );
-            }
+            auto start_query =  fc::time_point::now();
+            auto query_time = fc::seconds(0);
+          
+            /**
+             *  Query the NTP server, if the query takes to long
+             *  we assume the time is bad and will query again. When
+             *  we get a response in a timely manner we adjust our 
+             *  blockchain time if the delta time is greater than 1 sec.
+             */
+            do {
+               start_query =  fc::time_point::now();
+               auto ntp_time = fc::ntp::get_time();
+               auto delta_time = ntp_time - fc::time_point::now();
+               query_time = fc::time_point::now() - start_query;
+               if( query_time < fc::seconds(2) && delta_time.to_seconds() != 0 )
+               {
+                  wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
+                  bts::blockchain::advance_time( delta_time.to_seconds() );
+               }
+            } while( query_time > fc::seconds(1) ); 
         } );
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }

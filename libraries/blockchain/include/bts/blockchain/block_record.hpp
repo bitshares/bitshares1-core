@@ -14,6 +14,7 @@ namespace bts { namespace blockchain {
       fc::ripemd160  random_seed;
    };
 
+
    struct transaction_record : public transaction_evaluation_state
    {
       transaction_record(){}
