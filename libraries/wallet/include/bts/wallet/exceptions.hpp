@@ -15,5 +15,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,    bts::wallet::wallet_exception, 20012, "unknown market order" );
   FC_DECLARE_DERIVED_EXCEPTION( fee_greater_than_amount, bts::wallet::wallet_exception, 20013, "fee greater than amount" );
   FC_DECLARE_DERIVED_EXCEPTION( unknown_address,         bts::wallet::wallet_exception, 20014, "unknown address" );
+  FC_DECLARE_DERIVED_EXCEPTION( brain_key_too_short,     bts::wallet::wallet_exception, 20015, "brain key is too short" );
+  FC_DECLARE_DERIVED_EXCEPTION( password_too_short,      bts::wallet::wallet_exception, 20016, "password too short" );
   // registered in wallet.cpp
 } } // bts::wallet

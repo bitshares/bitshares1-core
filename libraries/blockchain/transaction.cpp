@@ -81,10 +81,10 @@ namespace bts { namespace blockchain {
                                          const std::string& memo_message,
                                          account_id_type delegate_id,
                                          const fc::ecc::public_key& memo_pub_key,
-                                         memo_flags_enum memo_type )
+                                         fc::ecc::private_key one_time_private_key,
+                                         memo_flags_enum memo_type
+                                         )
    {
-      fc::ecc::private_key one_time_private_key = fc::ecc::private_key::generate();
-
       withdraw_with_signature by_account;
       by_account.encrypt_memo_data( one_time_private_key,
                                  receiver_key,

@@ -68,8 +68,7 @@ namespace bts { namespace blockchain {
          std::unordered_set<address>                      signed_keys;
          
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
-         uint32_t                                         validation_error_code;
-         fc::variant                                      validation_error_data;
+         optional<fc::exception>                          validation_error;
          
          
          /** every time a deposit is made this balance is increased
@@ -124,8 +123,7 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for)(votes_against) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state, 
            (trx)(signed_keys)
-           (validation_error_code)
-           (validation_error_data)
+           (validation_error)
            (required_deposits)
            (provided_deposits)
            (deposits)(withdraws)(balance)(net_delegate_votes)(balance) )

@@ -23,11 +23,14 @@
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
 #include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/network/ntp.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
@@ -45,7 +48,7 @@
 using namespace boost;
    using std::string;
 
-const string BTS_MESSAGE_MAGIC = "Bitshares Signed Message:\n";
+const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 
 struct config
 {
@@ -569,10 +572,17 @@ namespace bts { namespace client {
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
+         std::ostringstream message;
+         message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+         // this notification is currently broken, so it would spam the terminal if we enabled it
+         // _cli->display_status_message(message.str());
        }
 
        void client_impl::connection_count_changed(uint32_t c)
        {
+         std::ostringstream message;
+         message << "--- there are now " << c << " active connections to the p2p network";
+         _cli->display_status_message(message.str());
        }
 
     } // end namespace detail
@@ -601,6 +611,17 @@ namespace bts { namespace client {
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
+
+        fc::async( [](){  
+            auto ntp_time = fc::ntp::get_time();
+            auto delta_time = ntp_time - fc::time_point::now();
+            if( delta_time.to_seconds() != 0 )
+            {
+               wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
+               bts::blockchain::advance_time( delta_time.to_seconds() );
+            }
+        } );
+
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
                              
 
@@ -657,9 +678,12 @@ namespace bts { namespace client {
       _wallet->open(wallet_name);
     }
 
-    void detail::client_impl::wallet_create(const string& wallet_name, const string& password)
+    void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-      _wallet->create(wallet_name,password);
+       if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
+      _wallet->create(wallet_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
@@ -903,9 +927,12 @@ namespace bts { namespace client {
     */
 
 
-    osigned_transaction detail::client_impl::blockchain_get_transaction(const transaction_id_type& transaction_id) const
+    osigned_transaction detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
-      return _chain_db->get_transaction(transaction_id);
+    //  auto hex_val = fc::to_hex( fc::from_base58( transaction_id ) );
+    //  idump( (hex_val) );
+      auto id = variant( transaction_id ).as<transaction_id_type>();
+      return _chain_db->get_transaction(id, exact);
     }
 
     full_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
@@ -961,6 +988,12 @@ namespace bts { namespace client {
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
     }
+   
+    string detail::client_impl::wallet_dump_private_key(const address& account_address){
+      try {
+         auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
+         return wif_private_key;
+      } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
@@ -1134,9 +1167,20 @@ namespace bts { namespace client {
        wallet_import_private_key(wif_key, account_name, rescan);
     }
     
-    std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
+    std::unordered_map< string, bts::blockchain::share_type > detail::client_impl::bitcoin_listaccounts()
     {
-       return _wallet->get_account_balances();
+       auto account_blances = _wallet->get_account_balances();
+       
+       std::unordered_map< string, bts::blockchain::share_type > account_bts_balances;
+       for ( auto account_blance : account_blances )
+       {
+          if ( account_blance.second.find( BTS_BLOCKCHAIN_SYMBOL ) != account_blance.second.end() )
+          {
+             account_bts_balances[ account_blance.first ] = account_blance.second[ BTS_BLOCKCHAIN_SYMBOL ];
+          }
+       }
+       
+       return account_bts_balances;
     }
 
     std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
@@ -1854,16 +1898,12 @@ namespace bts { namespace client {
       return trx;
    }
    
-   asset client_impl::wallet_set_priority_fee( int64_t fee )
+   void client_impl::wallet_set_priority_fee( int64_t fee )
    {
-      if (fee >= 0)
-      {
+      try {
+         FC_ASSERT( fee >= 0, "Priority fee should be non negative." );
          _wallet->set_priority_fee(fee);
-      }
-      
-      auto current_fee = _wallet->get_priority_fee();
-      return current_fee;
-   }
+      } FC_CAPTURE_AND_RETHROW( (fee) ) }
       
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {

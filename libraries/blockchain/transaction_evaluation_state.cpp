@@ -19,8 +19,7 @@ namespace bts { namespace blockchain {
       withdraws.clear();
       net_delegate_votes.clear();
       required_deposits.clear();
-      validation_error_code = 0;
-      validation_error_data = fc::variant();
+      validation_error.reset();
    }
 
    bool transaction_evaluation_state::check_signature( const address& a )const
@@ -113,30 +112,39 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
    { try {
       reset();
-
-      auto trx_id = trx_arg.id();
-      otransaction_location known_transaction_location = _current_state->get_transaction_location( trx_id );
-      if( known_transaction_location )
-         FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction_location) );
-
-      trx = trx_arg;
-      auto digest = trx_arg.digest( _chain_id );
-      for( auto sig : trx.signatures )
+      try {
+        if( trx_arg.expiration && *trx_arg.expiration < _current_state->now() )
+           FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now()) );
+       
+        auto trx_id = trx_arg.id();
+        otransaction_location known_transaction_location = _current_state->get_transaction_location( trx_id );
+        if( known_transaction_location )
+           FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction_location) );
+       
+        trx = trx_arg;
+        auto digest = trx_arg.digest( _chain_id );
+        for( auto sig : trx.signatures )
+        {
+           auto key = fc::ecc::public_key( sig, digest ).serialize();
+           signed_keys.insert( address(key) );
+           signed_keys.insert( address(pts_address(key,false,56) ) );
+           signed_keys.insert( address(pts_address(key,true,56) )  );
+           signed_keys.insert( address(pts_address(key,false,0) )  );
+           signed_keys.insert( address(pts_address(key,true,0) )   );
+        }
+        for( auto op : trx.operations )
+        {
+           evaluate_operation( op );
+        }
+        post_evaluate();
+        validate_required_fee();
+        update_delegate_votes();
+      } 
+      catch ( const fc::exception& e )
       {
-         auto key = fc::ecc::public_key( sig, digest ).serialize();
-         signed_keys.insert( address(key) );
-         signed_keys.insert( address(pts_address(key,false,56) ) );
-         signed_keys.insert( address(pts_address(key,true,56) )  );
-         signed_keys.insert( address(pts_address(key,false,0) )  );
-         signed_keys.insert( address(pts_address(key,true,0) )   );
+         validation_error = e;
+         throw;
       }
-      for( auto op : trx.operations )
-      {
-         evaluate_operation( op );
-      }
-      post_evaluate();
-      validate_required_fee();
-      update_delegate_votes();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx_arg) ) }
 
 

@@ -20,15 +20,11 @@ namespace bts { namespace blockchain {
       if( !eval_state.check_signature( owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (bid_index.owner) );
 
-      idump( (this->bid_index) );
-
       asset delta_amount  = this->get_amount();
 
       eval_state.validate_asset( delta_amount );
 
       auto current_bid   = eval_state._current_state->get_bid_record( this->bid_index );
-
-      idump( (current_bid) );
 
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
@@ -50,8 +46,6 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the bid
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-
-      wdump( (current_bid) );
       
       if( delta_amount.asset_id == 0 )
       {
@@ -61,7 +55,6 @@ namespace bts { namespace blockchain {
 
       current_bid->balance     += this->amount;
       current_bid->delegate_id = this->delegate_id;
-      edump( (current_bid) );
 
       if( delta_amount.asset_id == 0 )
         eval_state.add_vote( current_bid->delegate_id, this->amount );
@@ -69,7 +62,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_bid_record( this->bid_index, *current_bid );
 
       auto check   = eval_state._current_state->get_bid_record( this->bid_index );
-      edump( (check) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

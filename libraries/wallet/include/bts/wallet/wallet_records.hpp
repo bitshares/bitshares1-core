@@ -127,7 +127,7 @@ namespace bts { namespace wallet {
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
        bool                     valid_from_signature;
-       omemo_data               memo;
+       optional<string>         memo;
 
        address                  get_address()const { return address( public_key ); }
        bool                     has_private_key()const;
@@ -138,7 +138,7 @@ namespace bts { namespace wallet {
 
    struct transaction_data
    {
-       transaction_data():fees(0),transmit_count(0){}
+       transaction_data():fees(0),block_num(0),transmit_count(0){}
        transaction_data( const signed_transaction& t ):trx(t),fees(0),block_num(0),transmit_count(0){}
 
        signed_transaction        trx;
@@ -164,9 +164,10 @@ namespace bts { namespace wallet {
       asset get_balance()const;
       asset get_proceeds()const;
 
-      order_type_enum                  type;
-      bts::blockchain::market_order    order;
-      share_type                       proceeds;
+      order_type_enum                      type;
+      bts::blockchain::market_order        order;
+      share_type                           proceeds;
+      unordered_set<transaction_id_type>   transactions;
    };
 
 
@@ -229,7 +230,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (transmit_count) )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
-FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds) )
+FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 
 
 

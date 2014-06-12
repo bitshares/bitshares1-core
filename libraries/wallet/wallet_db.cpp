@@ -353,7 +353,7 @@ namespace bts{ namespace wallet {
    {
       key_data data;
       data.account_address = address(account_key.get_public_key());
-      data.memo = memo_data(memo);
+      //data.memo = memo_data(memo);
       data.valid_from_signature = memo.has_valid_signature;
       data.encrypt_private_key( password, memo.owner_private_key );
 

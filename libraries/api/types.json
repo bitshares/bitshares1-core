@@ -85,6 +85,12 @@
         "default_example" : "TODO"      
       },
       {
+        "type_name" : "string",
+        "cpp_return_type" : "std::string",
+        "cpp_include_file" : "string",
+        "default_example" : "wallet_transfer"
+      },
+      {
         "type_name" : "method_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -392,11 +398,6 @@
           "default_example" : "Alice"
       },
       {
-         "type_name" : "assettype",
-         "cpp_return_type" : "bts::blockchain::asset",
-         "cpp_include_file" : "bts/blockchain/asset.hpp"
-      },
-      {
          "type_name" : "market_order_status",
          "cpp_return_type" : "bts::wallet::market_order_status"
       },
@@ -404,6 +405,10 @@
          "type_name" : "market_order_status_array",
          "container_type" : "array",
          "contained_type" : "market_order_status"
+      },
+      {
+         "type_name" : "map< account_name, share_type >",
+         "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
       }
     ]
 }

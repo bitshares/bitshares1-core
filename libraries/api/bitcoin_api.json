@@ -215,7 +215,7 @@
       },
       {
           "method_name": "bitcoin_importprivkey",
-          "description": "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions.",
+          "description": "Adds a private key (as returned by dumpprivkey) to your wallet. This may take a while, as a rescan is done, looking for existing transactions, see wallet_dump_private_key.",
           "return_type": "void",
           "parameters" : [
           {
@@ -242,7 +242,7 @@
       {
           "method_name"    : "bitcoin_listaccounts",
           "description"    : "Returns Object that has account names as keys, account balances as values. TODO: balance in result type is asset",
-          "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
+          "return_type"    : "map< account_name, share_type >",
           "parameters"     : [],
           "prerequisites"  : ["json_authenticated","wallet_open"],
           "aliases" : ["listaccounts"]

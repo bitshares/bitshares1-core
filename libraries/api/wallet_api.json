@@ -56,6 +56,12 @@
               "name" : "new_passphrase", 
               "type" : "new_passphrase", 
               "description" : "a passphrase for encrypting the wallet"
+            },
+            { 
+              "name" : "brain_key", 
+              "type" : "new_passphrase", 
+              "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
+              "default_value" : ""
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -860,13 +866,12 @@
       {
          "method_name"  : "wallet_set_priority_fee",
          "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "assettype",
+         "return_type"  : "void",
          "parameters"   : [
          {
             "name" : "fee",
             "type" : "amount",
-            "description" : "the prioty fee to be setted. Optional, if not provided, will return the current fee.",
-            "default_value" : -1
+            "description" : "the prioty fee to be setted."
          }
          ],
          "prerequisites"  : ["json_authenticated","wallet_open"],
@@ -942,6 +947,20 @@
           ],
          "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
          "aliases" : [ "cancel_order" ]
+      },
+      {
+         "method_name" : "wallet_dump_private_key",
+         "description" : "Reveals the private key corresponding to <bitsharesaddress>",
+         "return_type"  : "std::string",
+         "parameters" : [
+         {
+            "name" : "account_address",
+            "type" : "address",
+            "description" : "bitshares address of the private key, base58 string hash of public key"
+         }
+         ],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+         "aliases" : [ "dump_private_key" ]
       }
     ]
 }
