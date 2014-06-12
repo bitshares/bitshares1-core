@@ -60,32 +60,39 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block                    generate_block( time_point_sec timestamp );
+         full_block               generate_block( time_point_sec timestamp );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the
           *  database was first created.
           */
-         digest_type                   chain_id()const;
+         digest_type              chain_id()const;
 
-         bool                          is_known_block( const block_id_type& block_id )const;
+         bool                     is_known_block( const block_id_type& block_id )const;
 
-         fc::ripemd160                 get_current_random_seed()const override;
-         public_key_type               get_signing_delegate_key( time_point_sec )const;
-         account_id_type               get_signing_delegate_id( time_point_sec )const;
-         uint32_t                      get_block_num( const block_id_type& )const;
-         signed_block_header           get_block_header( const block_id_type& )const;
-         signed_block_header           get_block_header( uint32_t block_num )const;
-         full_block                    get_block( const block_id_type& )const;
-         full_block                    get_block( uint32_t block_num )const;
-         signed_block_header           get_head_block()const;
-         uint32_t                      get_head_block_num()const;
-         block_id_type                 get_head_block_id()const;
-         osigned_transaction           get_transaction( const transaction_id_type& trx_id, bool exact = true )const;
-         virtual otransaction_location get_transaction_location( const transaction_id_type& trx_id )const override;
+         fc::ripemd160            get_current_random_seed()const override;
+         public_key_type          get_signing_delegate_key( time_point_sec )const;
+         account_id_type          get_signing_delegate_id( time_point_sec )const;
+         uint32_t                 get_block_num( const block_id_type& )const;
+         signed_block_header      get_block_header( const block_id_type& )const;
+         signed_block_header      get_block_header( uint32_t block_num )const;
+         full_block               get_block( const block_id_type& )const;
+         full_block               get_block( uint32_t block_num )const;
+         signed_block_header      get_head_block()const;
+         uint32_t                 get_head_block_num()const;
+         block_id_type            get_head_block_id()const;
 
-         vector<account_record >       get_accounts( const string& first, uint32_t count )const;
-         vector<asset_record>          get_assets( const string& first_symbol, uint32_t count )const;
+         virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
+                                                       bool exact = true )const override;
+
+         virtual void             store_transaction( const transaction_id_type&, 
+                                                     const transaction_record&  ) override;
+
+         vector<account_record >  get_accounts( const string& first, 
+                                                uint32_t count )const;
+
+         vector<asset_record>     get_assets( const string& first_symbol, 
+                                              uint32_t count )const;
 
          /** should perform any chain reorganization required
           *
@@ -144,8 +151,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_asset_record( const asset_record& r )override;
          virtual void                       store_balance_record( const balance_record& r )override;
          virtual void                       store_account_record( const account_record& r )override;
-         virtual void                       store_transaction_location( const transaction_id_type&,
-                                                                  const transaction_location& loc )override;
 
          virtual void                       store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;

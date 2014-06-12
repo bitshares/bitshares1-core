@@ -127,8 +127,3 @@ namespace fc {
    void from_variant( const variant& var,  bts::blockchain::operation& vo );
 }
 
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/account_operations.hpp>
-#include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>

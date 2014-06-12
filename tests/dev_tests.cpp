@@ -4,7 +4,7 @@
 
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
-   disable_logging();
+//   disable_logging();
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_list_receive_accounts" );
    exec( clienta, "wallet_account_balance" );
@@ -126,6 +126,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    enable_logging();
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
+   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 
 
    exec( clientb, "wallet_account_transaction_history" );

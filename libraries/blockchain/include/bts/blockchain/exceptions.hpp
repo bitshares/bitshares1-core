@@ -15,7 +15,8 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( zero_amount, bts::blockchain::blockchain_exception, 30008, "zero amount" ); 
    FC_DECLARE_DERIVED_EXCEPTION( zero_price, bts::blockchain::blockchain_exception, 30009, "zero price" ); 
    FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_self, bts::blockchain::blockchain_exception, 30010, "asset divide by self" ); 
-   FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_zero, bts::blockchain::blockchain_exception, 30010, "asset divide by zero" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_zero, bts::blockchain::blockchain_exception, 30011, "asset divide by zero" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( new_database_version, bts::blockchain::blockchain_exception, 30012, "new database version" ); 
 
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );

@@ -1,6 +1,11 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/fire_operation.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/account_operations.hpp>
+#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/error_codes.hpp>

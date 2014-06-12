@@ -53,8 +53,22 @@ namespace bts { namespace blockchain {
       for( auto record : asks )           prev_state->store_ask_record( record.first, record.second );
       for( auto record : shorts )         prev_state->store_short_record( record.first, record.second );
       for( auto record : collateral )     prev_state->store_collateral_record( record.first, record.second );
-      for( auto record : unique_transactions ) 
-         prev_state->store_transaction_location( record.first, record.second );
+      for( auto record : transactions )   prev_state->store_transaction( record.first, record.second );
+   }
+
+   otransaction_record  pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
+                                                              bool exact  )const
+   {
+      auto itr = transactions.find( trx_id );
+      if( itr != transactions.end() ) return itr->second;
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_transaction( trx_id, exact );
+   }
+
+   void pending_chain_state::store_transaction( const transaction_id_type& id,
+                                                const transaction_record& rec )
+   {
+      transactions[id] = rec;
    }
 
    void  pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
@@ -101,6 +115,14 @@ namespace bts { namespace blockchain {
          if( !!prev_address ) undo_state->store_balance_record( *prev_address );
          else undo_state->store_balance_record( record.second.make_null() );
       }
+
+      for( auto record : transactions ) 
+      {
+         auto prev_trx = prev_state->get_transaction( record.first );
+         if( !!prev_trx ) undo_state->store_transaction( record.first, *prev_trx );
+         else undo_state->store_transaction( record.first, transaction_record() );
+      }
+
       for( auto record : bids )
       {
          auto prev_value = prev_state->get_bid_record( record.first );
@@ -141,23 +163,6 @@ namespace bts { namespace blockchain {
       return v;
    }
 
-   void pending_chain_state::store_transaction_location( const transaction_id_type& id,
-                                                         const transaction_location& loc )
-   {
-      unique_transactions[id] = loc;
-   }
-
-   otransaction_location pending_chain_state::get_transaction_location( const transaction_id_type& trx_id )const
-   {
-      otransaction_location loc;
-      auto tran_itr = unique_transactions.find( trx_id );
-      if( tran_itr != unique_transactions.end() ) 
-        return tran_itr->second;
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) 
-        return prev_state->get_transaction_location( trx_id );
-      return loc;
-   }
 
    oasset_record        pending_chain_state::get_asset_record( asset_id_type asset_id )const
    {

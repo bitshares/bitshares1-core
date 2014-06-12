@@ -417,8 +417,13 @@ void run_regression_test(fc::path test_dir, bool with_network)
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
-  //save off current working directory and change current working directory to test directory
+  // caller of this routine should have made sure we are already in bitshares_toolkit/test/regression_tests dir,
+  // so we pop dirs to create regression_tests_results as sibling to bitshares_toolkit source directory
+  // (because we don't want the test results to be inadvertantly added to git repo).
   fc::path original_working_directory = boost::filesystem::current_path();
+  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path().parent_path();
+  regression_test_output_directory /= "regression_tests_output";
+
   try 
   {
     std::cout << "*** Executing " << test_dir.string() << std::endl;
@@ -442,6 +447,16 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
 
+      //if no data-dir specified, put in ../bitshares_toolkit/regression_tests/${test dir}/${client_name}
+      string client_name = line.substr(0, line.find(' '));
+      size_t data_dir_position = line.find("--data-dir");
+      if (data_dir_position == string::npos)
+      {
+        fc::path default_data_dir = regression_test_output_directory / test_dir / client_name;
+        line += " --data-dir=" + default_data_dir.string();
+      }
+
+
       //parse line into argc/argv format for boost program_options
       int argc = 0; 
       char** argv = nullptr;
@@ -454,9 +469,12 @@ void run_regression_test(fc::path test_dir, bool with_network)
       argc = wordexp_result.we_wordc;
     #else
       //use ExpandEnvironmentStrings and CommandLineToArgv to get argv/arc
-      argv = CommandLineToArgvA(line.c_str(),&argc);
+      char expanded_line[40000];
+      ExpandEnvironmentStrings(line.c_str(),expanded_line,sizeof(expanded_line));
+      argv = CommandLineToArgvA(expanded_line,&argc);
       auto option_variables = parse_option_variables(argc, argv);
     #endif
+
       //extract input command file from cmdline options so that we can compare against output log
       fc::path input_file( option_variables["input-log"].as<std::string>() ); 
       std::ifstream input_stream(input_file.string());
@@ -503,17 +521,24 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
 void run_all_regression_tests(bool with_network)
 {
-  //for each test directory in full test
-    fc::path regression_tests_dir = "regression_tests";
-    fc::path test_dir;// = regression_tests_dir / "two_client_test";
-    fc::directory_iterator end_itr; // constructs terminator
-    for (fc::directory_iterator directory_itr(regression_tests_dir); directory_itr != end_itr; ++directory_itr)
+  //save off current working directory and change current working directory to regression_tests directory
+  fc::path original_working_directory = boost::filesystem::current_path();
+  fc::path regression_tests_dir = "regression_tests";
+  boost::filesystem::current_path(regression_tests_dir.string());
+
+  //for each test directory in regression_tests directory
+    fc::path test_dir;
+    fc::directory_iterator end_itr; // constructs terminating position for iterator
+    for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
     {
       if (fc::is_directory( *directory_itr ))
       {
         run_regression_test( *directory_itr, with_network );
       }
     }
+
+  //restore original directory
+  boost::filesystem::current_path(original_working_directory.string());
 }
 
 BOOST_AUTO_TEST_CASE( regression_tests_without_network )

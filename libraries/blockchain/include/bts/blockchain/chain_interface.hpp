@@ -7,6 +7,7 @@
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/market_records.hpp>
+#include <bts/blockchain/block_record.hpp>
 
 namespace bts { namespace blockchain {
    typedef fc::optional<signed_transaction> osigned_transaction;
@@ -32,7 +33,8 @@ namespace bts { namespace blockchain {
        *  are present.  Less than 60% and you
        *  are on the minority chain.
        */
-      confirmation_requirement = 6
+      confirmation_requirement = 6,
+      database_version         = 7 // database version, to know when we need to upgrade
    };
    typedef uint32_t chain_property_type;
 
@@ -85,7 +87,12 @@ namespace bts { namespace blockchain {
          virtual obalance_record            get_balance_record( const balance_id_type& id )const            = 0;
          virtual oaccount_record            get_account_record( account_id_type id )const                   = 0;
          virtual oaccount_record            get_account_record( const address& owner )const                 = 0;
-         virtual otransaction_location      get_transaction_location( const transaction_id_type& )const     = 0;
+
+         virtual otransaction_record        get_transaction( const transaction_id_type& trx_id, 
+                                                             bool exact = true )const  = 0;
+
+         virtual void                       store_transaction( const transaction_id_type&, 
+                                                                const transaction_record&  ) = 0;
                                                                                                           
          virtual oasset_record              get_asset_record( const std::string& symbol )const              = 0;
          virtual oaccount_record            get_account_record( const std::string& name )const              = 0;
@@ -99,8 +106,6 @@ namespace bts { namespace blockchain {
          virtual void                       store_asset_record( const asset_record& r )                     = 0;
          virtual void                       store_balance_record( const balance_record& r )                 = 0;
          virtual void                       store_account_record( const account_record& r )                 = 0;
-         virtual void                       store_transaction_location( const transaction_id_type&,
-                                                                        const transaction_location& loc )   = 0;
 
          virtual void                       apply_deterministic_updates(){}
 
@@ -123,5 +128,7 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (last_proposal_id)
                  (last_random_seed_id)
                  (chain_id)
-                 (confirmation_requirement) )
+                 (confirmation_requirement)
+                 (active_delegate_list_id)
+                 (database_version) )
 
