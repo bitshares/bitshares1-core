@@ -563,6 +563,7 @@ namespace bts { namespace client {
                 return false;
               }
          }
+         return false;
        }
 
       /**
@@ -2105,6 +2106,10 @@ namespace bts { namespace client {
       auto trx = _wallet->cancel_market_order( order_address );
       network_broadcast_transaction( trx );
       return trx;
+   }
+   bts::wallet::wallet::account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )
+   {
+      return _wallet->get_account_vote_summary( account_name );
    }
 
    } // namespace detail

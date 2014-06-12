@@ -713,6 +713,22 @@ namespace bts { namespace cli {
                 string help_string = result.as<string>();
                 if( _out ) (*_out) << help_string << "\n";
               }
+              else if( method_name == "wallet_account_vote_summary" )
+              {
+                  if( !_out ) return;
+
+                     (*_out) << std::setw(25) << std::left << "Delegate"
+                            << std::setw(15) << "For"
+                            << std::setw(15) << "Against\n";
+                     (*_out) <<"--------------------------------------------------------------\n";
+                  auto votes = result.as<bts::wallet::wallet::account_vote_summary_type>();
+                  for( auto vote : votes )
+                  {
+                     (*_out) << std::setw(25) << vote.first 
+                            << std::setw(15) << vote.second.votes_for 
+                            << std::setw(15) << vote.second.votes_against <<"\n";
+                  }
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<vector<pretty_transaction>>();

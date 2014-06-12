@@ -2813,7 +2813,7 @@ namespace bts { namespace wallet {
    {
       return my->_wallet_db.lookup_account( addr );
    }
-   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   wallet::wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
       unordered_map<account_id_type, vote_status> raw_votes;
       for( auto b : my->_wallet_db.balances )
@@ -2834,7 +2834,8 @@ namespace bts { namespace wallet {
       account_vote_summary_type result;
       for( auto item : raw_votes )
       {
-         // TODO: lookup name and substitute
+         auto delegate_account = my->_blockchain->get_account_record( item.first );
+         result[delegate_account->name] = item.second;
       }
       return result;
    }

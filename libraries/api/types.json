@@ -435,6 +435,10 @@
          "type_name" : "block_record_array",
          "container_type" : "array",
          "contained_type" : "block_record"
+      },
+      {
+         "type_name" : "account_vote_summary",
+         "cpp_return_type" : "bts::wallet::wallet::account_vote_summary_type"
       }
     ]
 }

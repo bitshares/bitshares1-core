@@ -389,4 +389,5 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-//FC_REFLECT( bts::wallet::delegate_trust_status, (user_trust_level) )
+
+FC_REFLECT( bts::wallet::vote_status, (votes_for)(votes_against) )
