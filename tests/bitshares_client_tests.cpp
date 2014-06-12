@@ -606,7 +606,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
         boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, _directed_graph);
       }
     }
-    BOOST_CHECK_GE(peers_info.size(), std::min(_desired_number_of_connections, client_processes.size() - 1));
+    BOOST_CHECK_GE(peers_info.size(), std::min<size_t>(_desired_number_of_connections, client_processes.size() - 1));
     BOOST_CHECK_LE(peers_info.size(), _maximum_number_of_connections);
   }
 
