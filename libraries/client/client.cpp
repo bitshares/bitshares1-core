@@ -573,7 +573,7 @@ namespace bts { namespace client {
                                                                   uint32_t& remaining_item_count,
                                                                   uint32_t limit /* = 2000 */)
       {
-        limit = 20; // for testing
+        // limit = 20; // for testing
         FC_ASSERT(item_type == bts::client::block_message_type);
         uint32_t last_seen_block_num = 1;
         bts::net::item_hash_t last_seen_block_hash;
