@@ -1,14 +1,10 @@
 #pragma once
-#include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/extended_address.hpp>
+#include <bts/blockchain/account_record.hpp>
+#include <bts/blockchain/operations.hpp>
 
 namespace bts { namespace blockchain { 
 
-   struct account_meta_info
-   {
-      fc::unsigned_int type;
-      vector<char>     data;
-   };
 
    struct register_account_operation
    {
@@ -71,7 +67,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(is_delegate)(meta_data) )
 FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(is_delegate) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )

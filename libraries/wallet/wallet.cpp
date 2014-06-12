@@ -5,6 +5,12 @@
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/proposal_operations.hpp>
+#include <bts/blockchain/fire_operation.hpp>
+#include <bts/blockchain/account_operations.hpp>
+#include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
@@ -2180,12 +2186,12 @@ namespace bts { namespace wallet {
       auto pretty_trx = pretty_transaction();
      
       auto trx = trx_rec.trx;
-      auto loc = my->_blockchain->get_transaction_location( trx.id() );
+      auto loc = my->_blockchain->get_transaction( trx.id() );
    
       if (loc)
       {
-          pretty_trx.block_num = loc->block_num;
-          pretty_trx.trx_num = loc->trx_num;
+          pretty_trx.block_num = loc->chain_location.block_num;
+          pretty_trx.trx_num = loc->chain_location.trx_num;
       } 
       else /* to_pretty_trx will often be called for transactions that are not in the chain yet */ 
       { 

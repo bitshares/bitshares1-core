@@ -90,7 +90,7 @@
       {
         "method_name": "blockchain_get_transaction",
         "description": "Get detailed information about an in-wallet transaction",
-        "return_type": "optional_signed_transaction",
+        "return_type": "optional_blockchain_transaction_record",
         "parameters" : [
             {
               "name" : "transaction_id", 

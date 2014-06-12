@@ -79,7 +79,7 @@ namespace bts { namespace blockchain {
              }
              if( !is_delegates_key ) FC_CAPTURE_AND_THROW( not_a_delegate_signature, (signee)(delegate_record) );
 
-             auto trx_loc = eval_state._current_state->get_transaction_location( testimony.transaction_id );
+             auto trx_loc = eval_state._current_state->get_transaction( testimony.transaction_id );
              // delegate said it was valid, but it is invalid
              if( !trx_loc && testimony.valid )
              {

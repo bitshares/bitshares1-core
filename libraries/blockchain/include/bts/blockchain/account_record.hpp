@@ -1,9 +1,14 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
+
+   struct account_meta_info
+   {
+      fc::unsigned_int type;
+      vector<char>     data;
+   };
 
    struct delegate_stats
    {
@@ -63,6 +68,7 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<account_record> oaccount_record;
 } }
+FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 
 FC_REFLECT( bts::blockchain::account_record,
             (id)(name)(public_data)(owner_key)(active_key_history)(delegate_info)(registration_date)(last_update)(meta_data)

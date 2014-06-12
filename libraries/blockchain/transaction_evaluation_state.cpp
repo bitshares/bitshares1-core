@@ -1,3 +1,4 @@
+#include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 
@@ -117,9 +118,9 @@ namespace bts { namespace blockchain {
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now()) );
        
         auto trx_id = trx_arg.id();
-        otransaction_location known_transaction_location = _current_state->get_transaction_location( trx_id );
-        if( known_transaction_location )
-           FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction_location) );
+        otransaction_record known_transaction= _current_state->get_transaction( trx_id );
+        if( known_transaction )
+           FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction) );
        
         trx = trx_arg;
         auto digest = trx_arg.digest( _chain_id );

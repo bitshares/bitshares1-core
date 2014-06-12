@@ -6,6 +6,7 @@
 #pragma once
 
 #include <bts/blockchain/address.hpp>
+#include <bts/blockchain/extended_address.hpp>
 #include <fc/variant.hpp>
 
 namespace bts { namespace wallet {

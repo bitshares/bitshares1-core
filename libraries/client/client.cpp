@@ -927,10 +927,8 @@ namespace bts { namespace client {
     */
 
 
-    osigned_transaction detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
+    otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
-    //  auto hex_val = fc::to_hex( fc::from_base58( transaction_id ) );
-    //  idump( (hex_val) );
       auto id = variant( transaction_id ).as<transaction_id_type>();
       return _chain_db->get_transaction(id, exact);
     }

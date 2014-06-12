@@ -168,7 +168,9 @@ namespace bts { namespace blockchain {
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type>                          _block_num_to_id_db;
             // all blocks from any fork..
-            bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
+            //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
+            bts::db::level_map<block_id_type,block_record>                      _block_id_to_block_record_db;
+            bts::db::level_map<transaction_id_type,transaction_record>          _id_to_transaction_record_db;
 
             // used to revert block state in the event of a fork
             // bts::db::level_map<uint32_t,undo_data>                              _block_num_to_undo_data_db;
@@ -197,22 +199,37 @@ namespace bts { namespace blockchain {
             bts::db::level_map< market_index_key, collateral_record >           _collateral_db;
 
             /** used to prevent duplicate processing */
-            bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
+            // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
             void open_database( const fc::path& data_dir );
       };
       void chain_database_impl::open_database( const fc::path& data_dir )
-      {
+      { try {
+          _property_db.open( data_dir / "property_db" );
+          auto database_version = _property_db.fetch_optional( chain_property_enum::database_version );
+          if( !database_version || database_version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
+          {
+                wlog( "old database version, upgrade and re-sync" );
+                _property_db.close();
+                fc::remove_all( data_dir );
+                fc::create_directories( data_dir );
+                _property_db.open( data_dir / "property_db" );
+                self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
+          }
+          else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
+          {
+             FC_CAPTURE_AND_THROW( new_database_version, (database_version)(BTS_BLOCKCHAIN_DATABASE_VERSION) ); 
+          }
           _fork_number_db.open( data_dir / "fork_number_db" );
           _fork_db.open( data_dir / "fork_db" );
-          _property_db.open( data_dir / "property_db" );
           _proposal_db.open( data_dir / "proposal_db" );
           _proposal_vote_db.open( data_dir / "proposal_vote_db" );
 
           _undo_state_db.open( data_dir / "undo_state_db" );
 
           _block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
-          _block_id_to_block_db.open( data_dir / "block_id_to_block_db" );
+          _block_id_to_block_record_db.open( data_dir / "block_id_to_block_record_db" );
+          _id_to_transaction_record_db.open( data_dir / "id_to_transaction_record_db" );
 
           _pending_transaction_db.open( data_dir / "pending_transaction_db" );
 
@@ -230,8 +247,7 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "short_db" );
           _collateral_db.open( data_dir / "collateral_db" );
 
-          _processed_transaction_id_db.open( data_dir / "processed_transaction_id_db" );
-      }
+      } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
       {
@@ -340,7 +356,9 @@ namespace bts { namespace blockchain {
            //     ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
 
           // first of all store this block at the given block number
-          _block_id_to_block_db.store( block_id, block_data );
+          _block_id_to_block_record_db.store( block_id, block_record( block_data, 
+                                                                      block_data.block_size(), 
+                                                                      self->get_current_random_seed()) );
 
           // update the parallel block list
           std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
@@ -459,7 +477,7 @@ namespace bts { namespace blockchain {
 
                transaction_location trx_loc( block_num, trx_num );
                //ilog( "store trx location: ${loc}", ("loc",trx_loc) );
-               pending_state->store_transaction_location( trx.id(), trx_loc );
+               pending_state->store_transaction( trx.id(), transaction_record( trx_loc, *trx_eval_state)  );
                ++trx_num;
             }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
@@ -524,6 +542,9 @@ namespace bts { namespace blockchain {
       {
          _head_block_header = block_data;
          _head_block_id = block_data.id();
+         _block_id_to_block_record_db.store( block_data.id(), block_record( block_data, 
+                                                                     block_data.block_size(), 
+                                                                     self->get_current_random_seed()) );
       }
 
       /**
@@ -888,7 +909,9 @@ namespace bts { namespace blockchain {
       my->_undo_state_db.close();
 
       my->_block_num_to_id_db.close();
-      my->_block_id_to_block_db.close();
+      // my->_block_id_to_block_db.close();
+      my->_block_id_to_block_record_db.close();
+      my->_id_to_transaction_record_db.close();
 
       my->_pending_transaction_db.close();
 
@@ -906,7 +929,7 @@ namespace bts { namespace blockchain {
       my->_short_db.close();
       my->_collateral_db.close();
 
-      my->_processed_transaction_id_db.close();
+     // my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_id_type chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
@@ -957,8 +980,21 @@ namespace bts { namespace blockchain {
 
    full_block           chain_database::get_block( const block_id_type& block_id )const
    { try {
-      return my->_block_id_to_block_db.fetch(block_id);
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      full_block result;
+      auto block_record = my->_block_id_to_block_record_db.fetch(block_id);
+
+      signed_block_header& result_header = result;
+      result_header = block_record;
+      result.user_transactions.reserve( block_record.user_transaction_ids.size() );
+
+      for( auto trx_id : block_record.user_transaction_ids )
+      {
+         auto otrx_record = get_transaction( trx_id );
+         if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
+         result.user_transactions.emplace_back( otrx_record->trx );
+      }
+      return result;
+   } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
    full_block           chain_database::get_block( uint32_t block_num )const
    { try {
@@ -969,11 +1005,6 @@ namespace bts { namespace blockchain {
    signed_block_header  chain_database::get_head_block()const
    {
       return my->_head_block_header;
-   }
-
-   otransaction_location chain_database::get_transaction_location( const transaction_id_type& trx_id )const
-   {
-      return my->_processed_transaction_id_db.fetch_optional( trx_id );
    }
 
    /**
@@ -1168,44 +1199,32 @@ namespace bts { namespace blockchain {
        }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
 
-   void  chain_database::store_transaction_location( const transaction_id_type& trx_id,
-                                                     const transaction_location& loc )
+
+   otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
-       my->_processed_transaction_id_db.store( trx_id, loc );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("id", trx_id)("location",loc) ) }
+      auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
+      if( trx_rec || exact ) return trx_rec;
+      
+      auto itr = my->_id_to_transaction_record_db.lower_bound( trx_id );
+      if( itr.valid() )
+      {
+         auto id = itr.key();
 
+         if( memcmp( (char*)&id, (const char*)&trx_id, 4 ) != 0 )
+            return otransaction_record();
 
+         return itr.value();
+      }
+      return otransaction_record();
+   } FC_CAPTURE_AND_RETHROW( (trx_id)(exact) ) }
 
-   osigned_transaction chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
+   void chain_database::store_transaction( const transaction_id_type& record_id, 
+                                           const transaction_record& record_to_store ) 
    { try {
-      auto trx_loc = get_transaction_location( trx_id );
-      if( trx_loc )
-      {
-         auto block_id = my->_block_num_to_id_db.fetch( trx_loc->block_num );
-         auto block_data = my->_block_id_to_block_db.fetch( block_id );
-         FC_ASSERT( block_data.user_transactions.size() > trx_loc->trx_num );
-      }
-      else if( !exact )
-      {
-         auto itr = my->_processed_transaction_id_db.lower_bound( trx_id );
-         if( itr.valid() )
-         {
-            auto id = itr.key();
+      my->_id_to_transaction_record_db.store( record_id, record_to_store );
+   } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
-            auto trx_loc = itr.value();
-            if( memcmp( (char*)&id, (const char*)&trx_id, 4 ) != 0 )
-               return osigned_transaction();
-
-            auto block_id = my->_block_num_to_id_db.fetch( trx_loc.block_num );
-            auto block_data = my->_block_id_to_block_db.fetch( block_id );
-            FC_ASSERT( block_data.user_transactions.size() > trx_loc.trx_num );
-            return block_data.user_transactions[ trx_loc.trx_num ];
-         }
-      }
-      return osigned_transaction();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_id",trx_id) ) }
-
-   void    chain_database::scan_assets( function<void( const asset_record& )> callback )
+   void chain_database::scan_assets( function<void( const asset_record& )> callback )
    {
         auto asset_itr = my->_asset_db.begin();
         while( asset_itr.valid() )
@@ -1262,9 +1281,7 @@ namespace bts { namespace blockchain {
    }
    bool chain_database::is_known_transaction( const transaction_id_type& trx_id )
    {
-      auto pending_itr = my->_pending_transaction_db.find( trx_id );
-      if( pending_itr.valid() ) return true;
-      return !!get_transaction_location( trx_id );
+      return my->_id_to_transaction_record_db.find( trx_id ).valid();
    }
 
    full_block chain_database::generate_block( fc::time_point_sec timestamp )
@@ -1498,14 +1515,14 @@ namespace bts { namespace blockchain {
    }
    bool chain_database::is_known_block( const block_id_type& block_id )const
    {
-      auto itr = my->_block_id_to_block_db.find( block_id );
+      auto itr = my->_fork_db.find( block_id );
       return itr.valid();
    }
    uint32_t chain_database::get_block_num( const block_id_type& block_id )const
    { try {
       if( block_id == block_id_type() )
          return 0;
-      return my->_block_id_to_block_db.fetch( block_id ).block_num;
+      return my->_block_id_to_block_record_db.fetch( block_id ).block_num;
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to find block ${block_id}", ("block_id", block_id) ) }
 
     uint32_t         chain_database::get_head_block_num()const
