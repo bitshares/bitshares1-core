@@ -2117,7 +2117,7 @@ namespace bts { namespace wallet {
                                            );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
-           key_rec->memo = "ORDER-" + variant( fc::ecc::public_key_data(order_key) ).as_string().substr(0,8);
+           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
            my->_blockchain->store_pending_transaction( trx );
        }

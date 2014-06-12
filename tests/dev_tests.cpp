@@ -125,6 +125,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    wlog( "------------------  CLIENT A  -----------------------------------" );
    enable_logging();
    exec( clientb, "wallet_market_order_list USD XTS" );
+   exec( clientb, "wallet_account_transaction_history" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
