@@ -2813,6 +2813,31 @@ namespace bts { namespace wallet {
    {
       return my->_wallet_db.lookup_account( addr );
    }
+   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   {
+      unordered_map<account_id_type, vote_status> raw_votes;
+      for( auto b : my->_wallet_db.balances )
+      {
+          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             asset bal = b.second.get_balance();
+             if( bal.asset_id == 0 )
+             {
+                if( b.second.delegate_id() < 0 )
+                   raw_votes[ -b.second.delegate_id() ].votes_against += bal.amount;
+                else
+                   raw_votes[ b.second.delegate_id()  ].votes_for += bal.amount;
+             }
+          }
+      }
+      account_vote_summary_type result;
+      for( auto item : raw_votes )
+      {
+         // TODO: lookup name and substitute
+      }
+      return result;
+   }
 
    wallet::account_balance_summary_type    wallet::get_account_balances()const
    { try {
