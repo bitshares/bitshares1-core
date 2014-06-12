@@ -419,6 +419,10 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
   //save off current working directory and change current working directory to test directory
   fc::path original_working_directory = boost::filesystem::current_path();
+  //pop test and bitshares_toolkit dirs, then add regression_tests_results as sibling to src directory
+  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path();
+  regression_test_output_directory /= "regression_tests_results";
+
   try 
   {
     std::cout << "*** Executing " << test_dir.string() << std::endl;
@@ -442,6 +446,16 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
 
+      //if no data-dir specified, put in ../bitshares_toolkit/regression_tests/${test dir}/${client_name}
+      string client_name = line.substr(0, line.find(' '));
+      size_t data_dir_position = line.find("--data-dir");
+      if (data_dir_position == string::npos)
+      {
+        fc::path default_data_dir = regression_test_output_directory / test_dir / client_name;
+        line += " --data-dir=" + default_data_dir.string();
+      }
+
+
       //parse line into argc/argv format for boost program_options
       int argc = 0; 
       char** argv = nullptr;
@@ -459,6 +473,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       argv = CommandLineToArgvA(expanded_line,&argc);
       auto option_variables = parse_option_variables(argc, argv);
     #endif
+
       //extract input command file from cmdline options so that we can compare against output log
       fc::path input_file( option_variables["input-log"].as<std::string>() ); 
       std::ifstream input_stream(input_file.string());
