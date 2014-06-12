@@ -159,12 +159,16 @@ namespace bts { namespace wallet {
 
    struct market_order_status
    {
-      market_order_status():type(bid_order),proceeds(0){}
+      market_order_status():proceeds(0){}
 
-      asset get_balance()const;
-      asset get_proceeds()const;
+      order_type_enum get_type()const;
+      string          get_id()const;
 
-      order_type_enum                      type;
+      asset           get_balance()const; // funds available for this order
+      asset           get_proceeds()const;
+      asset           get_quantity()const;
+      price           get_price()const;
+
       bts::blockchain::market_order        order;
       share_type                           proceeds;
       unordered_set<transaction_id_type>   transactions;

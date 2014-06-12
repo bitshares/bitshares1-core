@@ -124,15 +124,16 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_get_pending_transactions" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    enable_logging();
+   exec( clientb, "wallet_market_order_list USD XTS" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
-   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
+//   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 
 
-   exec( clientb, "wallet_account_transaction_history" );
-   exec( clientb, "blockchain_get_transaction 6f28bd04" );
-   exec( clientb, "blockchain_list_current_round_active_delegates" );
-   exec( clientb, "blockchain_list_blocks" );
+//   exec( clientb, "wallet_account_transaction_history" );
+//   exec( clientb, "blockchain_get_transaction 6f28bd04" );
+//   exec( clientb, "blockchain_list_current_round_active_delegates" );
+//   exec( clientb, "blockchain_list_blocks" );
 
 
 

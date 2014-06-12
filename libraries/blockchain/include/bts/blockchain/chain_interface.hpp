@@ -58,6 +58,7 @@ namespace bts { namespace blockchain {
 
          /** convers an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
+         string                             to_pretty_price( const price& a )const;
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 

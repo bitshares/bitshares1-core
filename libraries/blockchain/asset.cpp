@@ -189,6 +189,7 @@ namespace bts { namespace blockchain {
     } FC_RETHROW_EXCEPTIONS( warn, "${a} / ${b}", ("a",a)("b",b) );
   }
 
+
   /**
    *  Assuming a.type is either the numerator.type or denominator.type in
    *  the price equation, return the number of the other asset type that
@@ -214,7 +215,7 @@ namespace bts { namespace blockchain {
             }
 
             asset rtn;
-            rtn.amount = amnt;
+            rtn.amount = amnt.to_int64();
             rtn.asset_id = p.quote_asset_id;
 
             ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
@@ -227,8 +228,9 @@ namespace bts { namespace blockchain {
             fc::bigint pri( p.ratio ); // 64.64
 
             auto result = amt / pri;  // 64.64
-            //auto test_result = result;
-            //ilog( "test result: ${r}", ("r", std::string(test_result >>= 60) ) );
+//            ilog( "amt: ${amt} / ${pri}", ("amt",string(amt))("pri",string(pri) ) );
+ //           ilog( "${r}", ("r",string(result) ) );
+
             auto lg2 = result.log2();
             if( lg2 >= 128 )
             {
@@ -239,8 +241,9 @@ namespace bts { namespace blockchain {
             }
           //  result += 5000000000; // TODO: evaluate this rounding factor..
             asset r;
-            r.amount    = result;
+            r.amount    = result.to_int64();
             r.asset_id  = p.base_asset_id;
+            ilog( "r.amount = ${r}", ("r",r.amount) );
             ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
             return r;
         }

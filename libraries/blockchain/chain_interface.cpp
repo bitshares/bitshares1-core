@@ -1,5 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <fc/io/json.hpp>
 #include <algorithm>
 #include <sstream>
@@ -102,21 +103,33 @@ namespace bts{ namespace blockchain {
       return active.end() != std::find( active.begin(), active.end(), delegate_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_id",delegate_id) ) }
 
+
+   string  chain_interface::to_pretty_price( const price& price_to_pretty_print )const
+   { try {
+      auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );
+      if( !obase_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.base_asset_id) );
+
+      auto oquote_asset = get_asset_record( price_to_pretty_print.quote_asset_id );
+      if( !oquote_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.quote_asset_id) );
+
+      auto tmp = price_to_pretty_print;
+      tmp.ratio *= obase_asset->get_precision();
+      tmp.ratio /= oquote_asset->get_precision();
+
+
+      return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
+
+   } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
+
+
    string  chain_interface::to_pretty_asset( const asset& a )const
    {
       auto oasset = get_asset_record( a.asset_id );
       if( oasset )
       {
-         if( oasset->precision )
-         {
-            string decimal = fc::to_string(oasset->precision + a.amount%oasset->precision);
-            decimal[0] = '.';
-            return fc::to_pretty_string( a.amount / oasset->precision) +  decimal + " " + oasset->symbol;
-         }
-         else
-         {
-            return fc::to_pretty_string( a.amount ) + " " + oasset->symbol;
-         }
+         string decimal = fc::to_string(oasset->get_precision() + a.amount%oasset->get_precision());
+         decimal[0] = '.';
+         return fc::to_pretty_string( a.amount / oasset->get_precision()) +  decimal + " " + oasset->symbol;
       }
       else
          return fc::to_pretty_string( a.amount ) + " ???";
