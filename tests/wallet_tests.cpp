@@ -417,11 +417,12 @@ void run_regression_test(fc::path test_dir, bool with_network)
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
-  //save off current working directory and change current working directory to test directory
+  // caller of this routine should have made sure we are already in bitshares_toolkit/test/regression_tests dir,
+  // so we pop dirs to create regression_tests_results as sibling to bitshares_toolkit source directory
+  // (because we don't want the test results to be inadvertantly added to git repo).
   fc::path original_working_directory = boost::filesystem::current_path();
-  //pop test and bitshares_toolkit dirs, then add regression_tests_results as sibling to src directory
-  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path();
-  regression_test_output_directory /= "regression_tests_results";
+  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path().parent_path();
+  regression_test_output_directory /= "regression_tests_output";
 
   try 
   {
@@ -520,17 +521,24 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
 void run_all_regression_tests(bool with_network)
 {
-  //for each test directory in full test
-    fc::path regression_tests_dir = "regression_tests";
-    fc::path test_dir;// = regression_tests_dir / "two_client_test";
-    fc::directory_iterator end_itr; // constructs terminator
-    for (fc::directory_iterator directory_itr(regression_tests_dir); directory_itr != end_itr; ++directory_itr)
+  //save off current working directory and change current working directory to regression_tests directory
+  fc::path original_working_directory = boost::filesystem::current_path();
+  fc::path regression_tests_dir = "regression_tests";
+  boost::filesystem::current_path(regression_tests_dir.string());
+
+  //for each test directory in regression_tests directory
+    fc::path test_dir;
+    fc::directory_iterator end_itr; // constructs terminating position for iterator
+    for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
     {
       if (fc::is_directory( *directory_itr ))
       {
         run_regression_test( *directory_itr, with_network );
       }
     }
+
+  //restore original directory
+  boost::filesystem::current_path(original_working_directory.string());
 }
 
 BOOST_AUTO_TEST_CASE( regression_tests_without_network )

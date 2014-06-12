@@ -1,0 +1,89 @@
+/** @defgroup regression_testing Regression Testing
+
+The regression testing system allows the recording and playback of command-line
+interface (CLI-based) tests. These tests are aimed at detecting regressions in
+bitshares clients at the functional level. 
+
+Verification is performed by comparing the results of the command-line
+interface log session for each client against a golden-reference log session.
+Input for each client from the testcomes from these same golden reference log
+files.
+
+The tests are stored in bitshares_toolkit\test as follows:
+
+regression_tests\
+  one_client_test\
+    test.config
+    client.log
+  two_client_test\
+    test.config
+    client1.log
+	client2.log
+  ...
+
+In the above example, two_client_test consists of a single test run that
+launches two clients. The test.config file tells the test how to configure the
+two clients, and in this example contains:
+
+@code
+client1 --input-log=client1.log --upnp=false
+client2 --input-log=client2.log --upnp=false
+@endcode
+
+The --input-log says to create one client named client1 and send it CLI input
+commands from clien1.log and create a second client named client2 and send
+it CLI input commands from client2.log. Each client can also be configured
+with other bitshares_command line arguments as desired (e.g. --unpn=false).
+
+Regression Test Results Directories
+-----------------------------------
+
+If no data-dir is supplied as a command-line argument (this is the preferred
+operation for regression tests except for one's testing this specific functionality),
+the regression test run will be recorded in an output directory parallel to the
+bitshares_toolkit source directory. For example, if your source is located in:
+
+@code
+\gh\bitshare_toolkit
+@endcode
+
+then the regression tests output will be stored as:
+
+@code
+\gh\regression_tests_output\
+  one_client_test\
+    client.log
+  two_client_test\
+    client1.log
+	client2.log
+@endcode
+
+The CLI output logs in these directories can be visually diffed for changes whenever
+there is a mismatch between an input log file located under the regression_tests directory and
+the corresponding output log file located under the regression_tests_output directory.
+
+Launching the Regression Tests
+------------------------------
+Currently, regression tests are inappropriately located in "wallet_test".
+To run the tests, run:
+
+@code
+cd bitshares_toolkit\test
+wallet_tests  -t regression_tests_without_network
+@endcode
+
+Creating a Regression Test
+--------------------------
+To create a regression test, you need to do perform the following steps:
+
+1. Create a new test directory under test\regression_tests (e.g. my_test)
+2. record a log session using the bitshares client for each client that will
+   be involved in your test, and copy the console.log for that client to your
+   test directory, renaming the log files so that they don't conflict with each other.
+3. Create a test.config in your test directory that specifies on each line the
+   command-line arguments for a single client. The first parameter on the line
+   should be used to name each client. Try to use useful client names when possible.
+   For example, if your test is performing a transfer from one client to another,
+   you could name the first client "sender" and the second client "receiver".
+
+*/
