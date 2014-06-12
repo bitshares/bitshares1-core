@@ -2,7 +2,7 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
-set (USE_PCH 1)
+#set (USE_PCH 1)
 if (USE_PCH)
   list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
   include (cotire)
@@ -98,3 +98,52 @@ add_subdirectory( "${LEVEL_DB_DIR}"    )
 add_subdirectory( vendor/miniupnp/miniupnpc )
 add_subdirectory( programs )
 add_subdirectory( tests )
+
+
+
+
+SET(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
+set(CPACK_PACKAGE_NAME "bitshares")
+set(CPACK_PACKAGE_VENDOR "Invictus Innovations, Inc.")
+set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_DESCRIPTION "A client for the BitShares XTS network")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A secure digital messaging platform")
+set(CPACK_PACKAGE_EXECUTABLES "Keyhotee;Keyhotee")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/BitShares/LICENSE.md")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Keyhotee ${CPACK_PACKAGE_VERSION}")
+
+if(WIN32)
+ SET(CPACK_GENERATOR "ZIP;NSIS")
+ set(CPACK_PACKAGE_NAME "Keyhotee") # override above
+ set(CPACK_NSIS_CONTACT "contact.us@invictus-innovations.com")
+ set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
+ set(CPACK_NSIS_PACKAGE_NAME "BitShares XTS v${CPACK_PACKAGE_VERSION}")
+ set(CPACK_NSIS_DISPLAY_NAME "${CPACK_NSIS_PACKAGE_NAME}")
+ set(CPACK_NSIS_URL_INFO_ABOUT "http://invictus.io")
+ set(CPACK_NSIS_HELP_LINK "https://bitsharestalk.org/index.php?board=2.0")
+ set(CPACK_NSIS_MENU_LINKS
+     "https://bitsharestalk.org/index.php?board=2.0" "Keyhotee Development Forum"
+     "http://invictus.io" "Invictus Innovations Website")
+ set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"Keyhotee\\\"")
+ # it seems like windows zip files usually don't have a single directory inside them, unix tgz frequently do
+ SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+
+ include(CPack)
+endif(WIN32)
+
+if(APPLE)
+  set(CPACK_GENERATOR "DragNDrop")
+  set(CPACK_PACKAGE_VENDOR "www.invictus.io")
+endif()
+
+if(LINUX)
+  # Linux gets a .tgz
+  SET(CPACK_GENERATOR "TGZ")
+  SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 1)
+endif(LINUX)
+
+
+
