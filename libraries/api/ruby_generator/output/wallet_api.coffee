@@ -33,9 +33,10 @@ class WalletAPI
   # parameters: 
   #   wallet_name `wallet_name` - name of the wallet to create
   #   new_passphrase `new_passphrase` - a passphrase for encrypting the wallet
+  #   new_passphrase `brain_key` - a strong passphrase that will be used to generate all private keys, defaults to a large random number
   # return_type: `void`
-  create: (wallet_name, new_passphrase) ->
-    @rpc.request('wallet_create', [wallet_name, new_passphrase]).then (response) ->
+  create: (wallet_name, new_passphrase, brain_key) ->
+    @rpc.request('wallet_create', [wallet_name, new_passphrase, brain_key]).then (response) ->
       response.result
 
   # Returns the wallet name passed to wallet_open
@@ -393,8 +394,8 @@ class WalletAPI
 
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.
   # parameters: 
-  #   amount `fee` - the prioty fee to be setted. Optional, if not provided, will return the current fee.
-  # return_type: `assettype`
+  #   amount `fee` - the prioty fee to be setted.
+  # return_type: `void`
   set_priority_fee: (fee) ->
     @rpc.request('wallet_set_priority_fee', [fee]).then (response) ->
       response.result
@@ -411,7 +412,7 @@ class WalletAPI
     @rpc.request('wallet_market_submit_bid', [from_account_name, quantity, quantity_symbol, quote_price, quote_symbol]).then (response) ->
       response.result
 
-  # 
+  # List an order list of a specific market
   # parameters: 
   #   asset_symbol `quote_symbol` - the quote symbol of the market
   #   asset_symbol `base_symbol` - the base symbol of the market
@@ -419,6 +420,22 @@ class WalletAPI
   # return_type: `market_order_status_array`
   market_order_list: (quote_symbol, base_symbol, limit) ->
     @rpc.request('wallet_market_order_list', [quote_symbol, base_symbol, limit]).then (response) ->
+      response.result
+
+  # Cancel an order
+  # parameters: 
+  #   address `order_id` - the address of the order to cancel
+  # return_type: `signed_transaction`
+  market_cancel_order: (order_id) ->
+    @rpc.request('wallet_market_cancel_order', [order_id]).then (response) ->
+      response.result
+
+  # Reveals the private key corresponding to <bitsharesaddress>
+  # parameters: 
+  #   address `account_address` - bitshares address of the private key, base58 string hash of public key
+  # return_type: `std::string`
+  dump_private_key: (account_address) ->
+    @rpc.request('wallet_dump_private_key', [account_address]).then (response) ->
       response.result
 
 
