@@ -2214,13 +2214,13 @@ namespace bts { namespace wallet {
       if( trx_rec.from_account )
          pretty_trx.from_account = get_key_label( *trx_rec.from_account );
       else 
-         pretty_trx.from_account = "unknown";
+         pretty_trx.from_account = "UNKNOWN"; // account id's are all lower, so we use UPPER to make it clear
 
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
          pretty_trx.to_account = get_key_label( *trx_rec.to_account );
       else
-         pretty_trx.to_account = "unknown";
+         pretty_trx.to_account = "UNKNOWN"; 
 
       for( auto op : trx.operations )
       {
