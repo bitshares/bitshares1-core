@@ -401,6 +401,21 @@ namespace bts { namespace client {
           return _chain_db->current_round_active_delegates();
        }
 
+       vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
+       {
+          FC_ASSERT( count <= 1000 );
+          vector<block_record> result;
+
+          int32_t last = std::min<int32_t>( first+count, _chain_db->get_head_block_num() );
+          result.reserve( last-first );
+
+          for( int32_t block_num = first; block_num < last; ++block_num )
+             result.push_back( *_chain_db->get_block_record( block_num ) );
+
+
+          return result;
+       }
+
        signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;

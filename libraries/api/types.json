@@ -426,6 +426,15 @@
       {
          "type_name" : "map< account_name, share_type >",
          "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
+      },
+      {
+         "type_name" : "block_record",
+         "cpp_return_type" : "bts::blockchain::block_record"
+      },
+      {
+         "type_name" : "block_record_array",
+         "container_type" : "array",
+         "contained_type" : "block_record"
       }
     ]
 }

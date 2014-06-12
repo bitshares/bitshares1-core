@@ -971,17 +971,32 @@ namespace bts { namespace blockchain {
       pend_state->apply_changes();
 
       return trx_eval_state;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }
+   } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
    signed_block_header  chain_database::get_block_header( const block_id_type& block_id )const
    { try {
-      return get_block( block_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      return *get_block_record( block_id );
+   } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
    signed_block_header  chain_database::get_block_header( uint32_t block_num )const
    { try {
-      return get_block( block_num );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num) ) }
+      return *get_block_record( get_block_id( block_num ) );
+   } FC_CAPTURE_AND_RETHROW( (block_num) ) }
+
+   oblock_record chain_database::get_block_record( const block_id_type& block_id ) const
+   { try {
+      return my->_block_id_to_block_record_db.fetch_optional(block_id);
+   } FC_CAPTURE_AND_RETHROW( (block_id) ) }
+
+   oblock_record chain_database::get_block_record( uint32_t block_num ) const
+   { try {
+      return get_block_record( get_block_id( block_num ) );
+   } FC_CAPTURE_AND_RETHROW( (block_num) ) }
+
+   block_id_type chain_database::get_block_id( uint32_t block_num ) const
+   { try {
+      return my->_block_num_to_id_db.fetch( block_num );
+   } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
    full_block           chain_database::get_block( const block_id_type& block_id )const
    { try {

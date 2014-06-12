@@ -286,6 +286,27 @@
          "parameters"  : [],
          "aliases"     : ["current_delegates"],
          "prerequisites" : ["json_authenticated"]
+      },
+      {
+         "method_name" : "blockchain_list_blocks",
+         "description" : "Returns the block headers for blocks in a range",
+         "return_type" : "block_record_array",
+         "parameters"  : [
+            {
+               "name" : "first_block_number",
+               "type" : "int32_t",
+               "description" : "the first block to list",
+               "default_value" : 1
+            },
+            {
+               "name" : "limit",
+               "type" : "uint32_t",
+               "description" : "the maximum number of blocks to return",
+               "default_value" : 20 
+            }
+         ] 
+         "aliases" : ["list_blocks"],
+         "prerequisites" : ["json_authenticated"]
       }
     ]
 }

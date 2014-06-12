@@ -81,6 +81,9 @@ namespace bts { namespace blockchain {
          signed_block_header      get_head_block()const;
          uint32_t                 get_head_block_num()const;
          block_id_type            get_head_block_id()const;
+         block_id_type            get_block_id( uint32_t block_num )const;
+         oblock_record            get_block_record( const block_id_type& block_id )const;
+         oblock_record            get_block_record( uint32_t block_num )const;
 
          virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
                                                        bool exact = true )const override;
