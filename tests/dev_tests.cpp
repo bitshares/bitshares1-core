@@ -130,6 +130,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 
 
    exec( clientb, "wallet_account_transaction_history" );
+   exec( clientb, "blockchain_get_transaction 6f28bd04" );
+   exec( clientb, "blockchain_list_current_round_active_delegates" );
 
 
 

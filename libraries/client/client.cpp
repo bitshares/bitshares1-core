@@ -396,6 +396,11 @@ namespace bts { namespace client {
          }
        } // delegate_loop
 
+       vector<account_id_type> client_impl::blockchain_list_current_round_active_delegates()
+       {
+          return _chain_db->current_round_active_delegates();
+       }
+
        signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;

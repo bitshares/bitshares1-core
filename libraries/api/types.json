@@ -332,9 +332,14 @@
         "cpp_include_file" : "bts/blockchain/block.hpp"
       },
       {
-        "type_name" : "name_id_type",
-        "cpp_return_type" : "bts::blockchain::name_id_type",
+        "type_name" : "account_id_type",
+        "cpp_return_type" : "bts::blockchain::account_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
+         "type_name" : "account_id_array",
+         "container_type" : "array",
+         "contained_type" : "account_id_type"
       },
       {
         "type_name" : "asset_record",
