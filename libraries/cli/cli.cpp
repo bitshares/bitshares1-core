@@ -715,7 +715,7 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_account_transaction_history")
               {
-                  auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
+                  auto tx_history_summary = result.as<vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
               }
               else if (method_name == "wallet_account_balance" )
@@ -966,7 +966,7 @@ namespace bts { namespace cli {
                 return str.substr(0, size - 3) + "...";
             }
 
-            void print_contact_account_list(const std::vector<wallet_account_record> account_records)
+            void print_contact_account_list(const vector<wallet_account_record> account_records)
             {
                 if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
@@ -1103,7 +1103,7 @@ namespace bts { namespace cli {
                 }
             }
 
-            void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
+            void print_transaction_history(const vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
                 if( _out ) (*_out) << std::setw(  7 ) << "BLK" << ".";
@@ -1249,7 +1249,7 @@ namespace bts { namespace cli {
       if (!_method_data_is_initialized)
       {
         _method_data_is_initialized = true;
-        std::vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
+        vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
         for (const bts::api::method_data& method_data : method_data_list)
         {
           _method_data_map[method_data.name] = method_data;
