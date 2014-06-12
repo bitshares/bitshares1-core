@@ -33,7 +33,7 @@ namespace bts { namespace cli {
           //Parse and execute a command line. Returns false if line is a quit command.
           bool execute_command_line(const std::string& line, std::ostream* output = nullptr);
           void confirm_and_broadcast(signed_transaction& tx);
-          void wait();
+          void wait_till_cli_shutdown();
           void quit();
 
           // hooks to implement custom behavior for interactive command, if the default json-style behavior is undesirable

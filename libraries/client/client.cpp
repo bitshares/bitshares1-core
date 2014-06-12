@@ -1498,7 +1498,7 @@ namespace bts { namespace client {
       {
           std::cout << "Running in daemon mode, ignoring console\n";
           my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          rpc_server->wait_on_quit();
+          rpc_server->wait_till_rpc_server_shutdown();
       }
       else 
       {
@@ -1534,7 +1534,7 @@ namespace bts { namespace client {
         my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
     #endif
         my->_cli->process_commands();
-        my->_cli->wait();
+        my->_cli->wait_till_cli_shutdown();
       } 
 
     }
@@ -1833,6 +1833,12 @@ namespace bts { namespace client {
       }
       return result;
     }
+
+    void client_impl::wait(uint32_t wait_time) const
+    {
+      fc::usleep(fc::seconds(wait_time));
+    }
+
 
     vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
     {

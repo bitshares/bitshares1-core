@@ -1421,7 +1421,7 @@ namespace bts { namespace cli {
   {
     try
     {
-      wait();
+      wait_till_cli_shutdown();
     }
     catch( const fc::exception& e )
     {
@@ -1429,7 +1429,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void cli::wait()
+  void cli::wait_till_cli_shutdown()
   {
      if( my->_cin_complete.valid() )
      {
@@ -1439,7 +1439,7 @@ namespace bts { namespace cli {
            my->_cin_complete.wait();
      }
      ilog( "\n\nwaiting on server to quit\n\n" );
-     my->_rpc_server->wait_on_quit();
+     my->_rpc_server->wait_till_rpc_server_shutdown();
   }
 
   void cli::quit()
