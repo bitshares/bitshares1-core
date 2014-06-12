@@ -48,7 +48,7 @@
 using namespace boost;
    using std::string;
 
-const string BTS_MESSAGE_MAGIC = "Bitshares Signed Message:\n";
+const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 
 struct config
 {
@@ -988,6 +988,12 @@ namespace bts { namespace client {
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
     }
+   
+    string detail::client_impl::wallet_dump_private_key(const address& account_address){
+      try {
+         auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
+         return wif_private_key;
+      } FC_CAPTURE_AND_RETHROW( (account_address) ) }
 
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
@@ -1161,9 +1167,20 @@ namespace bts { namespace client {
        wallet_import_private_key(wif_key, account_name, rescan);
     }
     
-    std::unordered_map< string, std::map<string, bts::blockchain::share_type> > detail::client_impl::bitcoin_listaccounts()
+    std::unordered_map< string, bts::blockchain::share_type > detail::client_impl::bitcoin_listaccounts()
     {
-       return _wallet->get_account_balances();
+       auto account_blances = _wallet->get_account_balances();
+       
+       std::unordered_map< string, bts::blockchain::share_type > account_bts_balances;
+       for ( auto account_blance : account_blances )
+       {
+          if ( account_blance.second.find( BTS_BLOCKCHAIN_SYMBOL ) != account_blance.second.end() )
+          {
+             account_bts_balances[ account_blance.first ] = account_blance.second[ BTS_BLOCKCHAIN_SYMBOL ];
+          }
+       }
+       
+       return account_bts_balances;
     }
 
     std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
@@ -1881,16 +1898,12 @@ namespace bts { namespace client {
       return trx;
    }
    
-   asset client_impl::wallet_set_priority_fee( int64_t fee )
+   void client_impl::wallet_set_priority_fee( int64_t fee )
    {
-      if (fee >= 0)
-      {
+      try {
+         FC_ASSERT( fee >= 0, "Priority fee should be non negative." );
          _wallet->set_priority_fee(fee);
-      }
-      
-      auto current_fee = _wallet->get_priority_fee();
-      return current_fee;
-   }
+      } FC_CAPTURE_AND_RETHROW( (fee) ) }
       
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {

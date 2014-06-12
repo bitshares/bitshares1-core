@@ -68,6 +68,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
 #target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library})
 
 add_subdirectory( bitcoin )
+add_subdirectory( client_rpc_tests )
 
 if( false )
    add_subdirectory( dns )
