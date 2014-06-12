@@ -127,7 +127,7 @@ namespace bts { namespace wallet {
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
        bool                     valid_from_signature;
-       omemo_data               memo;
+       optional<string>         memo;
 
        address                  get_address()const { return address( public_key ); }
        bool                     has_private_key()const;

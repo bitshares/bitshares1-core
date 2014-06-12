@@ -738,6 +738,26 @@ namespace bts { namespace wallet {
       return new_priv_key.get_public_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+   /**
+    *  Creates a new private key under the specified account. This key
+    *  will not be valid for sending TITAN transactions to, but will
+    *  be able to receive payments directly.
+    */
+   public_key_type  wallet::get_new_public_key( const string& account_name )
+   { try {
+      if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+      if( NOT is_receive_account(account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+
+      auto current_account = my->_wallet_db.lookup_account( account_name );
+      FC_ASSERT( current_account.valid() );
+
+      auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, 
+                                                          current_account->account_address );
+      return new_priv_key.get_public_key();
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
 
    /**
     *  A contact is an account for which this wallet does not have the private
@@ -1963,7 +1983,7 @@ namespace bts { namespace wallet {
 
         // TODO: get quantity @ price for for memo
         std::stringstream memoss;
-        memoss << "cancel order " << string(owner_address).substr(3);
+        memoss << "cancel " << variant(owner_key_record->memo).as_string(); //order " << string( variant( owner_addressowner_address).substr(3);
         // real_quantity << " " << base_asset_record->symbol << " @ ";
         // memoss << quote_price << " " << quote_asset_record->symbol;
 
@@ -1972,10 +1992,10 @@ namespace bts { namespace wallet {
         my->_wallet_db.cache_transaction( trx, balance,
                                           required_fees.amount,
                                           memo_message, 
-                                          from_account_key,
+                                          to_account_key, //from_account_key,
                                           bts::blockchain::now(),
                                           bts::blockchain::now(),
-                                          to_account_key
+                                          owner_key_record->public_key
                                         );
 
         my->_blockchain->store_pending_transaction( trx );
@@ -2027,11 +2047,12 @@ namespace bts { namespace wallet {
        ilog( "quote price float: ${p}", ("p",quote_price) );
        ilog( "quote price shares: ${p}", ("p",quote_price_shares) );
 
-       auto owner_address = get_new_address( from_account_name );
+       auto order_key = get_new_public_key( from_account_name );
+       auto order_address = order_key;
 
        signed_transaction trx;
        unordered_set<address>     required_signatures;
-       required_signatures.insert(owner_address);
+       required_signatures.insert(order_address);
 
        private_key_type from_private_key  = get_account_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
@@ -2066,9 +2087,9 @@ namespace bts { namespace wallet {
 
        // withdraw to transaction cost_share_quantity + fee
        if( cost_shares.asset_id == 0 )
-          trx.bid( cost_shares, quote_price_shares, owner_address, select_delegate_vote() );
+          trx.bid( cost_shares, quote_price_shares, order_address, select_delegate_vote() );
        else
-          trx.bid( cost_shares, quote_price_shares, owner_address, 0 );
+          trx.bid( cost_shares, quote_price_shares, order_address, 0 );
 
        if( sign )
        {
@@ -2083,12 +2104,15 @@ namespace bts { namespace wallet {
            my->_wallet_db.cache_transaction( trx, cost_shares,
                                              required_fees.amount,
                                              memo_message, 
-                                             from_account_key,
+                                             order_key,
                                              bts::blockchain::now(),
                                              bts::blockchain::now(),
-                                             to_account_key
+                                             from_account_key
                                            );
 
+           auto key_rec = my->_wallet_db.lookup_key( order_key );
+           key_rec->memo = "ORDER-" + variant( fc::ecc::public_key_data(order_key) ).as_string().substr(0,8);
+           my->_wallet_db.store_key(*key_rec);
            my->_blockchain->store_pending_transaction( trx );
        }
 
@@ -2115,6 +2139,41 @@ namespace bts { namespace wallet {
    {
       my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(fee) );
    }
+
+   string wallet::get_key_label( const public_key_type& key )const
+   { try {
+       auto acct_record = my->_wallet_db.lookup_account( key );
+       if (acct_record)
+       {
+          // pretty_trx.from_me = my->_wallet_db.has_private_key( address( key ) );
+           return acct_record->name;
+       }
+       else
+       {
+           auto registered_account = my->_blockchain->get_account_record( key );
+           if( registered_account.valid() )
+              return registered_account->name;
+           else
+           {
+              auto key_rec  = my->_wallet_db.lookup_key( key );
+              wdump( (key_rec) );
+              if(  key_rec )
+              {
+                 if( key_rec->memo )
+                 {
+                    return *key_rec->memo;
+                 }
+                 else
+                 {
+                    acct_record = my->_wallet_db.lookup_account( key_rec->account_address ); 
+                    if( acct_record )
+                       return  acct_record->name;
+                 }
+              }
+           }
+       }
+       return string( key );
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
    
    pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_rec ) const
    {
@@ -2147,50 +2206,15 @@ namespace bts { namespace wallet {
 
       pretty_trx.from_account = "";
       if( trx_rec.from_account )
-      {
-          auto acct_record = my->_wallet_db.lookup_account( *trx_rec.from_account );
-          if (acct_record)
-          {
-              pretty_trx.from_me = my->_wallet_db.has_private_key( address( *trx_rec.from_account ) );
-              pretty_trx.from_account = acct_record->name;
-          }
-          else
-          {
-              auto registered_account = my->_blockchain->get_account_record( *trx_rec.from_account );
-              if( registered_account.valid() )
-                 pretty_trx.from_account = registered_account->name;
-              else
-                 pretty_trx.from_account = string( *trx_rec.from_account );
-          }
-      }
+         pretty_trx.from_account = get_key_label( *trx_rec.from_account );
       else 
-      {
          pretty_trx.from_account = "unknown";
-      }
 
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
-      {
-
-          auto acct_record = my->_wallet_db.lookup_account( *trx_rec.to_account );
-          if (acct_record)
-          {
-              pretty_trx.to_me = my->_wallet_db.has_private_key( address( *trx_rec.to_account ) );
-              pretty_trx.to_account = acct_record->name;
-          }
-          else
-          {
-              auto registered_account = my->_blockchain->get_account_record( *trx_rec.to_account );
-              if( registered_account.valid() )
-                 pretty_trx.to_account = registered_account->name;
-              else
-                 pretty_trx.to_account = string( *trx_rec.to_account );
-          }
-      }
+         pretty_trx.to_account = get_key_label( *trx_rec.to_account );
       else
-      {
          pretty_trx.to_account = "unknown";
-      }
 
       for( auto op : trx.operations )
       {
