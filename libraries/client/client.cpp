@@ -310,6 +310,7 @@ namespace bts { namespace client {
             virtual ~client_impl()override { delete _cli; }
 
             void delegate_loop();
+            void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
             /* Implement chain_client_impl */
             // @{
@@ -352,6 +353,68 @@ namespace bts { namespace client {
             // virtual void some_method(const string& some_arg) override;
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations
        };
+
+      //should this function be moved to rpc server eventually? probably...
+      void client_impl::configure_rpc_server(config& cfg, 
+                                             const program_options::variables_map& option_variables)
+      {
+        if( option_variables.count("server") || option_variables.count("daemon") )
+        {
+          // the user wants us to launch the RPC server.
+          // First, override any config parameters they
+          // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
+          if (option_variables.count("rpcuser"))
+            cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
+          if (option_variables.count("rpcpassword"))
+              cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
+          if (option_variables.count("rpcport"))
+              cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+          if (option_variables.count("httpport"))
+              cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
+
+          if (cfg.rpc.rpc_user.empty() ||
+              cfg.rpc.rpc_password.empty())
+          {
+            std::cout << "Error starting RPC server\n";
+            std::cout << "You specified " << (option_variables.count("server") ? "--server" : "--daemon") << " on the command line,\n";
+            std::cout << "but did not provide a username or password to authenticate RPC connections.\n";
+            std::cout << "You can provide these by using --rpcuser=username and --rpcpassword=password on the\n";
+            std::cout << "command line, or by setting the \"rpc_user\" and \"rpc_password\" properties in the\n";
+            std::cout << "config file.\n";
+            exit(1);
+          }
+
+          // launch the RPC servers
+          bool rpc_success = _rpc_server->configure(cfg.rpc);
+
+          // this shouldn't fail due to the above checks, but just to be safe...
+          if (!rpc_success)
+            std::cerr << "Error starting rpc server\n\n";
+
+          fc::optional<fc::ip::endpoint> actual_rpc_endpoint = _rpc_server->get_rpc_endpoint();
+          if (actual_rpc_endpoint)
+          {
+            std::cout << "Starting JSON RPC server on port " << actual_rpc_endpoint->port();
+            if (actual_rpc_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+              std::cout << " (localhost only)";
+            std::cout << "\n";
+          }
+
+          fc::optional<fc::ip::endpoint> actual_httpd_endpoint = _rpc_server->get_httpd_endpoint();
+          if (actual_httpd_endpoint)
+          {
+            std::cout << "Starting HTTP JSON RPC server on port " << actual_httpd_endpoint->port();
+            if (actual_httpd_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+              std::cout << " (localhost only)";
+            std::cout << "\n";
+          }
+        }
+        else
+        {
+          std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
+        }
+
+      }
 
        void client_impl::delegate_loop()
        {
@@ -1385,6 +1448,19 @@ namespace bts { namespace client {
       return extract_commands_from_log_stream(test_input);
     }
 
+
+    //RPC server and CLI configuration rules:
+    //if daemon mode requested
+    //  start RPC server only (no CLI input)
+    //else
+    //  start RPC server if requested
+    //  start CLI
+    //  if input log
+    //    cli.processs_commands in input log
+    //    wait till finished
+    //  set input stream to cin
+    //  cli.process_commands from cin
+    //  wait till finished
     void client::configure_from_command_line(int argc, char** argv)
     {
       if( argc == 0 && argv == nullptr )
@@ -1410,64 +1486,7 @@ namespace bts { namespace client {
       this->open( datadir, genesis_file_path );
       this->run_delegate();
 
-      //maybe clean this up later
-      bts::rpc::rpc_server_ptr rpc_server = get_rpc_server();
-
-      if( option_variables.count("server") || option_variables.count("daemon") )
-      {
-        // the user wants us to launch the RPC server.
-        // First, override any config parameters they
-        // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
-        if (option_variables.count("rpcuser"))
-          cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
-        if (option_variables.count("rpcpassword"))
-            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
-        if (option_variables.count("rpcport"))
-            cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
-        if (option_variables.count("httpport"))
-            cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
-
-        if (cfg.rpc.rpc_user.empty() ||
-            cfg.rpc.rpc_password.empty())
-        {
-          std::cout << "Error starting RPC server\n";
-          std::cout << "You specified " << (option_variables.count("server") ? "--server" : "--daemon") << " on the command line,\n";
-          std::cout << "but did not provide a username or password to authenticate RPC connections.\n";
-          std::cout << "You can provide these by using --rpcuser=username and --rpcpassword=password on the\n";
-          std::cout << "command line, or by setting the \"rpc_user\" and \"rpc_password\" properties in the\n";
-          std::cout << "config file.\n";
-          exit(1);
-        }
-
-        // launch the RPC servers
-        bool rpc_success = rpc_server->configure(cfg.rpc);
-
-        // this shouldn't fail due to the above checks, but just to be safe...
-        if (!rpc_success)
-          std::cerr << "Error starting rpc server\n\n";
-
-        fc::optional<fc::ip::endpoint> actual_rpc_endpoint = rpc_server->get_rpc_endpoint();
-        if (actual_rpc_endpoint)
-        {
-          std::cout << "Starting JSON RPC server on port " << actual_rpc_endpoint->port();
-          if (actual_rpc_endpoint->get_address() == fc::ip::address("127.0.0.1"))
-            std::cout << " (localhost only)";
-          std::cout << "\n";
-        }
-
-        fc::optional<fc::ip::endpoint> actual_httpd_endpoint = rpc_server->get_httpd_endpoint();
-        if (actual_httpd_endpoint)
-        {
-          std::cout << "Starting HTTP JSON RPC server on port " << actual_httpd_endpoint->port();
-          if (actual_httpd_endpoint->get_address() == fc::ip::address("127.0.0.1"))
-            std::cout << " (localhost only)";
-          std::cout << "\n";
-        }
-      }
-      else
-      {
-        std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
-      }
+      my->configure_rpc_server(cfg,option_variables);
 
       this->configure( datadir );
 
@@ -1531,7 +1550,7 @@ namespace bts { namespace client {
       {
           std::cout << "Running in daemon mode, ignoring console\n";
           my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          rpc_server->wait_till_rpc_server_shutdown();
+          get_rpc_server()->wait_till_rpc_server_shutdown();
       }
       else 
       {

@@ -66,6 +66,9 @@ namespace bts { namespace cli {
 
             cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream);
 
+            void process_commands();
+
+
             string get_prompt()const
             {
               string wallet_name =  _client->get_wallet()->get_wallet_name();
@@ -189,31 +192,6 @@ namespace bts { namespace cli {
               return true;
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",line) ) }
 
-            void process_commands()
-            { 
-              try {
-                 FC_ASSERT( _input_stream != nullptr );
-                 string line = get_line(get_prompt());
-                 while (_input_stream->good() && !_quit )
-                 {
-                   if (!execute_command_line(line))
-                     break;
-                   if( !_quit )
-                      line = get_line( get_prompt() );
-                 } // while cin.good
-                 _rpc_server->shutdown_rpc_server();
-              } 
-              catch ( const fc::exception& e)
-              {
-                 if( _out ) (*_out) << "\nshutting down\n";
-                 elog( "${e}", ("e",e.to_detail_string() ) );
-                 _rpc_server->shutdown_rpc_server();
-              }
-              wlog( "process commands exiting" );
-              // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
-              // Tell the RPC server to close, which will allow the process to exit.
-              _cin_complete.cancel();
-            } 
 
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
@@ -1392,6 +1370,32 @@ namespace bts { namespace cli {
       // not supported; no way for us to restore the prompt, so just swallow the message
 #endif
     }
+
+    void cli_impl::process_commands()
+    { 
+      try {
+          FC_ASSERT( _input_stream != nullptr );
+          string line = get_line(get_prompt());
+          while (_input_stream->good() && !_quit )
+          {
+            if (!execute_command_line(line))
+              break;
+            if( !_quit )
+              line = get_line( get_prompt() );
+          } // while cin.good
+          _rpc_server->shutdown_rpc_server();
+      } 
+      catch ( const fc::exception& e)
+      {
+          if( _out ) (*_out) << "\nshutting down\n";
+          elog( "${e}", ("e",e.to_detail_string() ) );
+          _rpc_server->shutdown_rpc_server();
+      }
+      wlog( "process commands exiting" );
+      // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
+      // Tell the RPC server to close, which will allow the process to exit.
+      _cin_complete.cancel();
+    } 
 
   } // end namespace detail
 
