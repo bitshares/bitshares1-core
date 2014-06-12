@@ -913,6 +913,7 @@
       },
       {
          "method_name" : "wallet_market_order_list",
+         "description" : "List an order list of a specific market",
          "return_type" : "market_order_status_array",
          "parameters"  : [
             {
@@ -937,6 +938,7 @@
       },
       {
          "method_name" : "wallet_market_cancel_order",
+         "description" : "Cancel an order",
          "return_type" : "signed_transaction",
          "parameters"  : [
             {
