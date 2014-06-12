@@ -129,6 +129,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
+                              ("disable-default-peers", "disable automatic connection to default peers")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
                               ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
@@ -506,15 +507,19 @@ namespace bts { namespace client {
        {
          try
          {
-           ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}",
-                ("num", _chain_db->get_head_block_num())("block", block));
+           ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}, current head block is ${num}",
+                ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
            if (_chain_db->is_known_block(block_id))
            {
              ilog("The block we just received is one I've already seen, ignoring it");
              return false;
            }
            else
-             return _chain_db->push_block(block);
+           {
+             bool result = _chain_db->push_block(block);
+             ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+             return result;
+           }
          } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block}", ("block", block));
        }
 
@@ -1651,7 +1656,7 @@ namespace bts { namespace client {
           for( auto peer : hosts )
             this->connect_to_peer( peer );
       }
-      else
+      else if (!option_variables.count("disable-default-peers"))
       {
         for (string default_peer : cfg.default_peers)
           this->connect_to_peer(default_peer);

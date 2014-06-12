@@ -944,7 +944,8 @@ namespace bts { namespace blockchain {
    account_id_type chain_database::get_signing_delegate_id( fc::time_point_sec sec )const
    { try {
       FC_ASSERT( sec + 3600 >= my->_head_block_header.timestamp, 
-                 "local clock is over 1 hour behind most recent delegate", ("sec",sec) );
+                 "local clock is over 1 hour behind most recent delegate, head block timestamp ${head_time}, requested time ${requested_time}",
+                 ("head_time", my->_head_block_header.timestamp)("requested_time",sec) );
 
       uint64_t  interval_number = sec.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       uint32_t  delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);

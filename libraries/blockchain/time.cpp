@@ -18,6 +18,7 @@ fc::time_point_sec now()
 void start_simulated_time( const fc::time_point& t )
 {
    simulated_time = t.sec_since_epoch();
+   adjusted_time_sec = 0;
 }
 
 } } // bts::blockchain

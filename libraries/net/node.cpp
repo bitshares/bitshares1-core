@@ -377,7 +377,7 @@ namespace bts { namespace net {
       void display_current_connections();
       uint32_t calculate_unsynced_block_count_from_all_peers();
       std::vector<item_hash_t> create_blockchain_synopsis_for_peer(const peer_connection* peer);
-      void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer);
+      void fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, bool reset_fork_tracking_data_for_peer = false);
 
       fc::variant_object generate_hello_user_data();
       void parse_hello_user_data_for_peer(peer_connection* originating_peer, const fc::variant_object& user_data);
@@ -1383,6 +1383,13 @@ namespace bts { namespace net {
       else
       {
         ilog("sync: peer is out of sync, sending peer ${count} items ids: ${item_ids}", ("count", reply_message.item_hashes_available.size())("item_ids", reply_message.item_hashes_available));
+        if (!originating_peer->we_need_sync_items_from_peer &&
+            !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
+            !_delegate->has_item(peers_last_item_seen))
+        {
+          ilog("sync: restarting sync with peer ${peer}", ("peer", originating_peer->get_remote_endpoint()));
+          start_synchronizing_with_peer(originating_peer->shared_from_this());
+        }
       }
       originating_peer->send_message(reply_message);
 
@@ -1450,8 +1457,14 @@ namespace bts { namespace net {
       return synopsis;
     }
 
-    void node_impl::fetch_next_batch_of_item_ids_from_peer(peer_connection* peer)
+    void node_impl::fetch_next_batch_of_item_ids_from_peer(peer_connection* peer, bool reset_fork_tracking_data_for_peer /* = false */)
     {
+      if (reset_fork_tracking_data_for_peer)
+      {
+        peer->last_block_delegate_has_seen = item_hash_t();
+        peer->last_block_number_delegate_has_seen = 0;
+      }
+
       std::vector<item_hash_t> blockchain_synopsis = create_blockchain_synopsis_for_peer(peer);
       item_hash_t last_item_seen = blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back();
       ilog("sync: sending a request for the next items after ${last_item_seen} to peer ${peer}, (full request is ${blockchain_synopsis})", 
@@ -1835,7 +1848,7 @@ namespace bts { namespace net {
               std::set<peer_connection_ptr> peers_we_need_to_sync_to;
               for (const peer_connection_ptr& peer : _active_connections)
               {
-                if (peer->ids_of_items_to_get.empty() || block_caused_fork_switch)
+                if (peer->ids_of_items_to_get.empty())
                 {
                   ilog("Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint()));
                   // we don't know for sure that this peer has the item we just received.
@@ -1874,14 +1887,8 @@ namespace bts { namespace net {
                   else
                   {
                     // the peer's list of sync items is nonempty, and its first item doesn't match
-                    // the one we just accepted.
-                    // 
-                    // This probably means that this peer is offering us garbage (its blockchain
-                    // should match everyone else's blockchain).  We could see this during a fork,
-                    // though.  I'm not certain if we've settled on what a fork looks like at this
-                    // level, so I'm just leaving the peer connected here.  If it turns out
-                    // that forks are impossible or won't effect sync behavior, we should disconnect 
-                    // the offending peer here.
+                    // the one we just accepted.  This happens when we're synchronizing with 
+                    // peers on two different forks.
                     ilog("Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint())("hash", peer->ids_of_items_to_get.front()));
                   }
                 }

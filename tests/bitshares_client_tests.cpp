@@ -261,6 +261,7 @@ void bts_client_process::launch(uint32_t process_number,
   options.push_back("--p2p-port");
   options.push_back(boost::lexical_cast<std::string>(p2p_port));
   options.push_back("--upnp=false");
+  options.push_back("--disable-default-peers");
 
   if (genesis_block)
   {
@@ -362,6 +363,7 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
 void bts_client_launcher_fixture::create_unsynchronized_wallets()
 {
   const uint32_t initial_block_count = 400; // generate this many blocks
+  bts::blockchain::start_simulated_time(fc::time_point_sec(0)); // restore real time
   fc::time_point_sec genesis_block_time(((bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) - (initial_block_count + 1)) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
   bts::blockchain::start_simulated_time(genesis_block_time);
@@ -439,7 +441,10 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     client_processes[client_index].wallet.reset();
   }
 
-  BOOST_TEST_MESSAGE("Last generated block's timestamp: " << (std::string)fc::time_point(bts::blockchain::now()) << ", wall clock time is " << (std::string)fc::time_point::now());
+  fc::time_point_sec head_block_timestamp = master_blockchain->get_head_block().timestamp;
+  bts::blockchain::start_simulated_time(fc::time_point_sec(0)); // restore real time
+  BOOST_REQUIRE(head_block_timestamp <= bts::blockchain::now());
+  BOOST_TEST_MESSAGE("Last generated block's timestamp: " << (std::string)fc::time_point(head_block_timestamp) << ", wall clock time is " << (std::string)fc::time_point(bts::blockchain::now()));
 }
 
 void bts_client_launcher_fixture::create_forked_wallets()
@@ -601,7 +606,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
         boost::add_edge(peer_p2p_port - bts_xt_client_test_config::base_p2p_port, i, _directed_graph);
       }
     }
-    BOOST_CHECK_GE(peers_info.size(), _desired_number_of_connections);
+    BOOST_CHECK_GE(peers_info.size(), std::min(_desired_number_of_connections, client_processes.size() - 1));
     BOOST_CHECK_LE(peers_info.size(), _maximum_number_of_connections);
   }
 
@@ -619,7 +624,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 
     std::vector<int> component(boost::num_vertices(_undirected_graph));
     number_of_partitions = boost::connected_components(_undirected_graph, &component[0]);
-    BOOST_CHECK(number_of_partitions == 1);
+    //BOOST_CHECK(number_of_partitions == 1);
     if (number_of_partitions != 1)
     {
       std::vector<std::vector<int> > nodes_by_component(number_of_partitions);
@@ -1175,7 +1180,7 @@ BOOST_AUTO_TEST_CASE(simple_sync_test)
 {
   /* Note: on Windows, boost::process imposes a limit of 64 child processes,
            we should max out at 55 or less to give ourselves some wiggle room */
-  client_processes.resize(30);
+  client_processes.resize(3);
 
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
@@ -1309,6 +1314,37 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
   establish_rpc_connections();
   get_node_ids();
 
+  trigger_network_connections();
+
+  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
+  // time (happens due to the race of starting a lot of clients at once), they will have time
+  // to retry before we start checking to see how they did
+  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
+
+  int partition_count = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_fork_resolution_test" / "pre_split_map.dot");
+  BOOST_CHECK_EQUAL(partition_count, 1);
+
+  bool clients_in_sync = false;
+  for (int loop = 0; loop < 5; ++loop)
+  {
+    std::vector<uint32_t> final_block_counts;
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+      final_block_counts.push_back(client_processes[i].rpc_client->blockchain_get_blockcount());
+
+    // verify that all clients have the same block count
+    std::sort(final_block_counts.begin(), final_block_counts.end());
+    final_block_counts.erase(std::unique(final_block_counts.begin(), final_block_counts.end()),
+                               final_block_counts.end());
+    if (final_block_counts.size() == 1)
+    {
+      clients_in_sync = true;
+      break;
+    }
+  }
+  BOOST_REQUIRE(clients_in_sync);
+  BOOST_TEST_MESSAGE("After initial network connections are established, all clients are in sync");
+
+  BOOST_TEST_MESSAGE("Partitioning network");
   // partition the network into two disconnected sets, even and odd
   std::vector<bts::net::node_id_t> even_node_ids;
   std::vector<bts::net::node_id_t> odd_node_ids;
@@ -1320,121 +1356,102 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].rpc_client->network_set_allowed_peers(i % 2 == 0 ? even_node_ids : odd_node_ids);
 
-  // get the current block count for each client
-  std::vector<uint32_t> initial_block_counts;
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    fc::variant_object info = client_processes[i].rpc_client->get_info();
-    initial_block_counts.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
-    BOOST_TEST_MESSAGE("Client " << i << " has " << info["blockchain_head_block_num"].as_int64() << " blocks");
-  }
-
-  // tell all the peers to connect to their network.  
-  // we do this manually here to make even nodes connect to peer 0, odd nodes connect to peer 1
-  BOOST_TEST_MESSAGE("Triggering network connections between active processes");
-
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-  {
-    fc::mutable_variant_object parameters;
-    parameters["peer_connection_retry_timeout"] = _peer_connection_retry_timeout; // seconds
-    parameters["desired_number_of_connections"] = _desired_number_of_connections;
-    parameters["maximum_number_of_connections"] = _maximum_number_of_connections;
-    client_processes[i].rpc_client->network_set_advanced_node_parameters(parameters);
-    client_processes[i].rpc_client->network_add_node(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port + (i % 2)), "add");
-    fc::usleep(fc::milliseconds(500));
-  }
-
-  // wait a bit longer than the retry timeout so that if any nodes failed to connect the first
-  // time (happens due to the race of starting a lot of clients at once), they will have time
-  // to retry before we start checking to see how they did
-  fc::usleep(fc::seconds(_peer_connection_retry_timeout * 5 / 2));
-
-  int number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_fork_resolution_test" / "initial_network_map.dot");
+  fc::usleep(fc::seconds(15));
+  int number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_fork_resolution_test" / "post_split_map.dot");
   BOOST_REQUIRE_EQUAL(number_of_partitions, 2);
-
-  // when checking that the clients are in sync, check a few times.  We might 
-  // be checking while a 30-second block comes in and end up with two different
-  // block counts, even if everything is otherwise in sync.
-  // here we're verifying that all even clients are in sync with themseleves, and all
-  // odd clients are in sync with themselves.
-  bool clients_in_sync = false;
-  for (int loop = 0; loop < 5; ++loop)
-  {
-    std::vector<uint32_t> block_counts_after_initial_sync;
-    for (unsigned i = 0; i < client_processes.size(); ++i)
-    {
-      fc::variant_object info = client_processes[i].rpc_client->get_info();
-      block_counts_after_initial_sync.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
-    }
-    bool even_are_same = true;
-    bool odd_are_same = true;
-    for (unsigned i = 0; i < client_processes.size(); ++i)
-    {
-      if (i % 2)
-        odd_are_same = odd_are_same && block_counts_after_initial_sync[i] == block_counts_after_initial_sync[1];
-      else
-        even_are_same = even_are_same && block_counts_after_initial_sync[i] == block_counts_after_initial_sync[0];
-    }
-    if (even_are_same && odd_are_same)
-    {
-      BOOST_TEST_MESSAGE("All clients are in sync with " << block_counts_after_initial_sync[0] << " blocks");
-      clients_in_sync = true;
-      break;
-    }
-  }
-  BOOST_REQUIRE(clients_in_sync);
-
+  BOOST_TEST_MESSAGE("Network is now divided in two");
   BOOST_TEST_MESSAGE("Opening and unlocking wallets to allow the delegates to produce blocks");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
     client_processes[i].rpc_client->wallet_open(WALLET_NAME);
     BOOST_CHECK_NO_THROW(client_processes[i].rpc_client->wallet_unlock(fc::microseconds::maximum(), WALLET_PASSPHRASE));
   }
+  BOOST_TEST_MESSAGE("Waiting a bit to allow a fork to happen");
+  fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * 11));
 
-  fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * 3));
-
-  std::vector<bts::blockchain::block_id_type> head_block_ids;
-  for (unsigned i = 0; i < client_processes.size(); ++i)
+  BOOST_TEST_MESSAGE("Checking to see if a resolvable fork exists");
+  clients_in_sync = false;
+  bool resolvable_fork_exists = false;
+  for (int loop = 0; loop < 5; ++loop)
   {
-    uint32_t head_block_num = client_processes[i].rpc_client->blockchain_get_blockcount();
-    bts::blockchain::block_id_type head_block_id = client_processes[i].rpc_client->blockchain_get_blockhash(head_block_num);
-    head_block_ids.push_back(head_block_id);
+    std::vector<uint32_t> block_counts_after_fork;
+    std::vector<bts::blockchain::block_id_type> block_hashes_after_fork;
+    
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+    {
+      uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_blockcount();
+      block_counts_after_fork.push_back(head_block_number);
+      block_hashes_after_fork.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(head_block_number));
+    }
+
+    bool even_are_same = true;
+    bool odd_are_same = true;
+    for (unsigned i = 0; i < client_processes.size(); ++i)
+    {
+      if (i % 2)
+        odd_are_same = odd_are_same && 
+                       block_counts_after_fork[i] == block_counts_after_fork[1] &&
+                       block_hashes_after_fork[i] == block_hashes_after_fork[1];
+      else
+        even_are_same = even_are_same && 
+                        block_counts_after_fork[i] == block_counts_after_fork[0] &&
+                        block_hashes_after_fork[i] == block_hashes_after_fork[0];
+    }
+
+    std::ostringstream block_count_stream;
+    for (uint32_t count : block_counts_after_fork)
+    {
+      block_count_stream << count << ", ";
+    }
+    BOOST_TEST_MESSAGE("After initial sync, head block counts " << block_count_stream.str());
+
+    if (even_are_same && odd_are_same)
+    {
+      BOOST_TEST_MESSAGE("All clients are in sync with evens having " << block_counts_after_fork[0] << " blocks, odds having " << block_counts_after_fork[1] << " blocks");
+      clients_in_sync = true;
+      resolvable_fork_exists = block_hashes_after_fork[0] != block_hashes_after_fork[1] &&
+                               block_counts_after_fork[0] != block_counts_after_fork[1];
+      if (resolvable_fork_exists)
+        break;
+      else
+      {
+        BOOST_TEST_MESSAGE("A fork exists, but both chains have the same length.  Waiting another block interval to break the deadlock");
+        fc::usleep(fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+      }
+    }
   }
-  bool fork_exists = false;
-  for (unsigned i = 0; i < client_processes.size(); ++i)
-    if (head_block_ids[i] != head_block_ids[0])
-      fork_exists = true;
-  BOOST_CHECK(fork_exists);
+  BOOST_REQUIRE(clients_in_sync);
+  BOOST_REQUIRE(resolvable_fork_exists);
+  BOOST_TEST_MESSAGE("We have a good fork, now reconnecting the two partitions to allow fork resolution");
 
   // looking good so far.  Now let the two halves of the network see each other
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].rpc_client->network_set_allowed_peers(std::vector<bts::blockchain::transaction_id_type>());
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].rpc_client->network_add_node(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port + ((i + 1) % 2)), "add");
+  BOOST_TEST_MESSAGE("Reconnection triggered, now we wait");
   fc::usleep(fc::seconds(_peer_connection_retry_timeout * 2));
   number_of_partitions = verify_network_connectivity(bts_xt_client_test_config::config_directory / "simple_fork_resolution_test" / "joined_network_map.dot");
   BOOST_REQUIRE_EQUAL(number_of_partitions, 1);
 
+  BOOST_TEST_MESSAGE("Let's see if we resolved the fork");
   clients_in_sync = false;
   for (int loop = 0; loop < 5; ++loop)
   {
-    std::vector<uint32_t> block_counts_after_net_join;
+    std::vector<bts::blockchain::block_id_type> block_hashes_after_net_join;
+
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      fc::variant_object info = client_processes[i].rpc_client->get_info();
-      block_counts_after_net_join.push_back((uint32_t)info["blockchain_head_block_num"].as_int64());
+      uint32_t block_num = client_processes[i].rpc_client->blockchain_get_blockcount();
+      block_hashes_after_net_join.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(block_num));
     }
-    std::ostringstream block_count_stream;
-    for (uint32_t count : block_counts_after_net_join)
-    {
-      block_count_stream << count << ", ";
-    }
-    BOOST_TEST_MESSAGE("After reconnecting the network, head block counts " << block_count_stream.str());
+
     bool all_are_in_sync = true;
     for (unsigned i = 0; i < client_processes.size(); ++i)
-      all_are_in_sync = all_are_in_sync && block_counts_after_net_join[i] == block_counts_after_net_join[0];
+      all_are_in_sync = all_are_in_sync && block_hashes_after_net_join[i] == block_hashes_after_net_join[0];
     if (all_are_in_sync)
     {
+      BOOST_TEST_MESSAGE("All clients are now in sync with their head block " << (std::string)block_hashes_after_net_join.front());
       clients_in_sync = true;
       break;
     }
