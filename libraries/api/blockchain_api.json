@@ -304,7 +304,7 @@
                "description" : "the maximum number of blocks to return",
                "default_value" : 20 
             }
-         ] 
+         ], 
          "aliases" : ["list_blocks"],
          "prerequisites" : ["json_authenticated"]
       }

@@ -55,10 +55,11 @@ class BlockchainAPI
 
   # Get detailed information about an in-wallet transaction
   # parameters: 
-  #   transaction_id `transaction_id` - the transaction to return
-  # return_type: `optional_signed_transaction`
-  blockchain_get_transaction: (transaction_id) ->
-    @rpc.request('blockchain_get_transaction', [transaction_id]).then (response) ->
+  #   string `transaction_id` - the base58 transaction ID to return
+  #   bool `exact` - whether or not a partial match is ok
+  # return_type: `optional_blockchain_transaction_record`
+  blockchain_get_transaction: (transaction_id, exact) ->
+    @rpc.request('blockchain_get_transaction', [transaction_id, exact]).then (response) ->
       response.result
 
   # Retrieves the block header for the given block hash
@@ -85,12 +86,12 @@ class BlockchainAPI
     @rpc.request('blockchain_get_account_record', [account_name]).then (response) ->
       response.result
 
-  # Retrieves the name record for the given name_id
+  # Retrieves the name record for the given account_id
   # parameters: 
-  #   name_id_type `name_id` - the id of the name record to retrieve
+  #   account_id_type `account_id` - the id of the name record to retrieve
   # return_type: `optional_account_record`
-  blockchain_get_account_record_by_id: (name_id) ->
-    @rpc.request('blockchain_get_account_record_by_id', [name_id]).then (response) ->
+  blockchain_get_account_record_by_id: (account_id) ->
+    @rpc.request('blockchain_get_account_record_by_id', [account_id]).then (response) ->
       response.result
 
   # Retrieves the asset record by the ticker symbol
@@ -143,6 +144,22 @@ class BlockchainAPI
   # return_type: `market_order_array`
   blockchain_market_list_bids: (quote_symbol, base_symbol, limit) ->
     @rpc.request('blockchain_market_list_bids', [quote_symbol, base_symbol, limit]).then (response) ->
+      response.result
+
+  # returns the order of delegates that is fixed for the current round
+  # parameters: 
+  # return_type: `account_id_array`
+  blockchain_list_current_round_active_delegates:  ->
+    @rpc.request('blockchain_list_current_round_active_delegates').then (response) ->
+      response.result
+
+  # Returns the block headers for blocks in a range
+  # parameters: 
+  #   int32_t `first_block_number` - the first block to list
+  #   uint32_t `limit` - the maximum number of blocks to return
+  # return_type: `block_record_array`
+  blockchain_list_blocks: (first_block_number, limit) ->
+    @rpc.request('blockchain_list_blocks', [first_block_number, limit]).then (response) ->
       response.result
 
 
