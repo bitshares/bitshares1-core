@@ -8,8 +8,9 @@ target_link_libraries( deterministic_openssl_rand fc ${BOOST_LIBRARIES} ${OPENSS
 add_executable( wallet_tests wallet_tests.cpp )
 target_link_libraries( wallet_tests bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
 
-add_executable( dev_tests dev_tests.cpp )
-target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
+# dev tests disabled because uncommitted dev_fixture.hpp causing build errors
+#add_executable( dev_tests dev_tests.cpp )
+#target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
 
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
