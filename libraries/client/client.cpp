@@ -1945,12 +1945,12 @@ namespace bts { namespace client {
         state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > .9)
+            && participation_rate > 90)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
         } 
         else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
-                 || participation_rate < .6)
+                 || participation_rate < 60)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::red;
         }
