@@ -2113,6 +2113,11 @@ namespace bts { namespace client {
       return _wallet->get_account_vote_summary( account_name );
    }
 
+   string client_impl::wallet_account_export_private_key( const string& account_name )
+   {
+      return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
+   }
+
    } // namespace detail
 
    bts::api::common_api* client::get_impl() const
