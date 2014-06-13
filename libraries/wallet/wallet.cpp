@@ -2813,7 +2813,7 @@ namespace bts { namespace wallet {
    {
       return my->_wallet_db.lookup_account( addr );
    }
-   wallet::wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
       unordered_map<account_id_type, vote_status> raw_votes;
       for( auto b : my->_wallet_db.balances )
