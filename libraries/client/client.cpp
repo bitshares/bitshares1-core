@@ -1,5 +1,3 @@
-#include <algorithm>
-
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
@@ -35,12 +33,19 @@
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
 
+
+#include <boost/range/adaptor/reversed.hpp>
+#include <boost/range/algorithm/reverse.hpp>
+#include <boost/range/adaptor/reversed.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <fstream>
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 
@@ -122,6 +127,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
+                              ("disable-default-peers", "disable automatic connection to default peers")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
                               ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
@@ -132,7 +138,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
-                              ("version", "print the version information for bts_xt_client");
+                              ("version", "print the version information for bts_xt_client")
+                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), "Limit total bandwidth to this many bytes per second");
 
 
   program_options::variables_map option_variables;
@@ -310,18 +317,17 @@ namespace bts { namespace client {
             virtual ~client_impl()override { delete _cli; }
 
             void delegate_loop();
+            void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
-            /* Implement chain_client_impl */
-            // @{
-            virtual void on_new_block(const full_block& block);
-            virtual void on_new_transaction(const signed_transaction& trx);
-            /// @}
+            block_fork_data on_new_block(const full_block& block, const block_id_type& block_id);
+            void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
             virtual bool has_item(const bts::net::item_id& id) override;
-            virtual void handle_message(const bts::net::message&) override;
-            virtual vector<bts::net::item_hash_t> get_item_ids(const bts::net::item_id& from_id,
+            virtual bool handle_message(const bts::net::message&) override;
+            virtual std::vector<bts::net::item_hash_t> get_item_ids(uint32_t item_type,
+                                                                    const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
@@ -330,9 +336,12 @@ namespace bts { namespace client {
                 FC_ASSERT( _chain_db != nullptr );
                 return _chain_db->chain_id(); 
             }
-            virtual vector<bts::net::item_hash_t> get_blockchain_synopsis() override;
+            virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type, 
+                                                                               bts::net::item_hash_t reference_point = bts::net::item_hash_t(),
+                                                                               uint32_t number_of_blocks_after_reference_point = 0) override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
+            virtual uint32_t get_block_number(bts::net::item_hash_t block_id) override;
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
@@ -353,6 +362,68 @@ namespace bts { namespace client {
 #include <bts/rpc_stubs/common_api_overrides.ipp> //include auto-generated RPC API declarations
        };
 
+      //should this function be moved to rpc server eventually? probably...
+      void client_impl::configure_rpc_server(config& cfg, 
+                                             const program_options::variables_map& option_variables)
+      {
+        if( option_variables.count("server") || option_variables.count("daemon") )
+        {
+          // the user wants us to launch the RPC server.
+          // First, override any config parameters they
+          // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
+          if (option_variables.count("rpcuser"))
+            cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
+          if (option_variables.count("rpcpassword"))
+              cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
+          if (option_variables.count("rpcport"))
+              cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+          if (option_variables.count("httpport"))
+              cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
+
+          if (cfg.rpc.rpc_user.empty() ||
+              cfg.rpc.rpc_password.empty())
+          {
+            std::cout << "Error starting RPC server\n";
+            std::cout << "You specified " << (option_variables.count("server") ? "--server" : "--daemon") << " on the command line,\n";
+            std::cout << "but did not provide a username or password to authenticate RPC connections.\n";
+            std::cout << "You can provide these by using --rpcuser=username and --rpcpassword=password on the\n";
+            std::cout << "command line, or by setting the \"rpc_user\" and \"rpc_password\" properties in the\n";
+            std::cout << "config file.\n";
+            exit(1);
+          }
+
+          // launch the RPC servers
+          bool rpc_success = _rpc_server->configure(cfg.rpc);
+
+          // this shouldn't fail due to the above checks, but just to be safe...
+          if (!rpc_success)
+            std::cerr << "Error starting rpc server\n\n";
+
+          fc::optional<fc::ip::endpoint> actual_rpc_endpoint = _rpc_server->get_rpc_endpoint();
+          if (actual_rpc_endpoint)
+          {
+            std::cout << "Starting JSON RPC server on port " << actual_rpc_endpoint->port();
+            if (actual_rpc_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+              std::cout << " (localhost only)";
+            std::cout << "\n";
+          }
+
+          fc::optional<fc::ip::endpoint> actual_httpd_endpoint = _rpc_server->get_httpd_endpoint();
+          if (actual_httpd_endpoint)
+          {
+            std::cout << "Starting HTTP JSON RPC server on port " << actual_httpd_endpoint->port();
+            if (actual_httpd_endpoint->get_address() == fc::ip::address("127.0.0.1"))
+              std::cout << " (localhost only)";
+            std::cout << "\n";
+          }
+        }
+        else
+        {
+          std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
+        }
+
+      }
+
        void client_impl::delegate_loop()
        {
           fc::usleep( fc::seconds( 1 ) );
@@ -371,7 +442,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
+               if( _wallet->is_unlocked() && network_get_connection_count() >= 5 )
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
@@ -379,7 +450,7 @@ namespace bts { namespace client {
                      full_block next_block = _chain_db->generate_block( next_block_time );
                      _wallet->sign_block( next_block );
 
-                     on_new_block(next_block);
+                     on_new_block(next_block, next_block.id());
                      _p2p_node->broadcast(block_message( next_block ));
                   }
                   catch ( const fc::exception& e )
@@ -396,6 +467,26 @@ namespace bts { namespace client {
          }
        } // delegate_loop
 
+       vector<account_id_type> client_impl::blockchain_list_current_round_active_delegates()
+       {
+          return _chain_db->current_round_active_delegates();
+       }
+
+       vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
+       {
+          FC_ASSERT( count <= 1000 );
+          vector<block_record> result;
+
+          int32_t last = std::min<int32_t>( first+count, _chain_db->get_head_block_num() );
+          result.reserve( last-first );
+
+          for( int32_t block_num = first; block_num < last; ++block_num )
+             result.push_back( *_chain_db->get_block_record( block_num ) );
+
+
+          return result;
+       }
+
        signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;
@@ -411,20 +502,26 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       void client_impl::on_new_block(const full_block& block)
+       block_fork_data client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
        {
          try
          {
-           ilog("Received block ${new_block_num} from the server, current head block is ${num}",
-                ("num", _chain_db->get_head_block_num())("new_block_num", block.block_num));
+           ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}, current head block is ${num}",
+                ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
+           auto fork_data = _chain_db->get_block_fork_data( block_id );
 
-           _chain_db->push_block(block);
-         }
-         catch (fc::exception& e)
-         {
-           wlog("Error pushing block ${block}: ${error}", ("block", block)("error", e.to_string()));
-           throw;
-         }
+           if( fork_data && fork_data->is_known )
+           {
+             ilog("The block we just received is one I've already seen, ignoring it");
+             return *fork_data;
+           }
+           else
+           {
+             auto result = _chain_db->push_block(block);
+             ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+             return result;
+           }
+         } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block}", ("block", block));
        }
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
@@ -449,7 +546,7 @@ namespace bts { namespace client {
          return false;
        }
 
-       void client_impl::handle_message(const bts::net::message& message_to_handle)
+       bool client_impl::handle_message(const bts::net::message& message_to_handle)
        {
          switch (message_to_handle.msg_type)
          {
@@ -457,77 +554,182 @@ namespace bts { namespace client {
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
                 ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
-                on_new_block(block_message_to_handle.block);
-                break;
+                block_fork_data d = on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
+                // TODO... what/
+                return false;
               }
             case trx_message_type:
               {
                 trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
                 ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
                 on_new_transaction(trx_message_to_handle.trx);
-                break;
+                return false;
               }
          }
+         return false;
        }
 
-       /**
-        *  Get the hash of all blocks after from_id
-        */
-       vector<bts::net::item_hash_t> client_impl::get_item_ids(const bts::net::item_id& from_id,
-                                                                    uint32_t& remaining_item_count,
-                                                                    uint32_t limit /* = 2000 */)
-       {
-         FC_ASSERT(from_id.item_type == bts::client::block_message_type);
-         ilog("head_block is ${head_block_num}", ("head_block_num", _chain_db->get_head_block_num()));
-
-         uint32_t last_seen_block_num;
-         try
-         {
-           last_seen_block_num = _chain_db->get_block_num(from_id.item_hash);
-         }
-         catch (fc::key_not_found_exception&)
-         {
-           if (from_id.item_hash == bts::net::item_hash_t())
-             last_seen_block_num = 0;
-           else
-           {
-             remaining_item_count = 0;
-             return vector<bts::net::item_hash_t>();
-           }
-         }
-         remaining_item_count = _chain_db->get_head_block_num() - last_seen_block_num;
-         uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
-         vector<bts::net::item_hash_t> hashes_to_return;
-         hashes_to_return.reserve(items_to_get_this_iteration);
-         for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
-         {
-           ++last_seen_block_num;
-           signed_block_header header;
-           try
-           {
-             header = _chain_db->get_block(last_seen_block_num);
-           }
-           catch (fc::key_not_found_exception&)
-           {
-             elog( "attempting to fetch last_seen ${i}", ("i",last_seen_block_num) );
-             throw;
-             // assert( !"I assume this can never happen");
-           }
-           hashes_to_return.push_back(header.id());
-         }
-         remaining_item_count -= items_to_get_this_iteration;
-         return hashes_to_return;
-       }
-
-      vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis()
+      /**
+      *  Get the hash of all blocks after from_id
+      */
+      std::vector<bts::net::item_hash_t> client_impl::get_item_ids(uint32_t item_type,
+                                                                  const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
+                                                                  uint32_t& remaining_item_count,
+                                                                  uint32_t limit /* = 2000 */)
       {
-        vector<bts::net::item_hash_t> synopsis;
-        uint32_t high_block_num = _chain_db->get_head_block_num();
+        // limit = 20; // for testing
+        FC_ASSERT(item_type == bts::client::block_message_type);
+        uint32_t last_seen_block_num = 1;
+        bts::net::item_hash_t last_seen_block_hash;
+        for (const bts::net::item_hash_t& item_hash : boost::adaptors::reverse(blockchain_synopsis))
+        {
+          try
+          {
+            uint32_t block_num = _chain_db->get_block_num(item_hash);
+            if (_chain_db->is_included_block(item_hash))
+            {
+              last_seen_block_num = block_num;
+              last_seen_block_hash = item_hash;
+              break;
+            }
+          }
+          catch (fc::key_not_found_exception&)
+          {
+          }
+        }
+
+        std::vector<bts::net::item_hash_t> hashes_to_return;
+        uint32_t head_block_num = _chain_db->get_head_block_num();
+        if (head_block_num == 0)
+        {
+          remaining_item_count = 0;
+          return hashes_to_return; // we have no blocks
+        }
+
+        if (last_seen_block_num > head_block_num)
+        {
+          // We were getting this condition during testing when one of the blocks is invalid because 
+          // its timestamp was in the future.  It was accepted in to the database, but never linked to
+          // the chain.  We've fixed the test and it doesn't seem likely that this would happen in a
+          // production environment.
+
+          //wlog("last_seen_block_num(${last_seen}) > head_block_num(${head})", ("last_seen", last_seen_block_num)("head", head_block_num));
+          //wlog("last_seen_block(${last_seen}) > head_block(${head})", ("last_seen", last_seen_block_hash)("head", _chain_db->get_head_block_id()));
+          //int num = rand() % 100;
+          //fc::path dot_filename(std::string("E:\\fork") + boost::lexical_cast<std::string>(num) + ".dot");
+          //_chain_db->export_fork_graph(dot_filename);
+          //wlog("Graph written to file ${dot_filename}", ("dot_filename", dot_filename));
+
+          assert(false);
+          // and work around it
+          last_seen_block_num = head_block_num;
+        }
+
+        remaining_item_count = head_block_num - last_seen_block_num + 1;
+        uint32_t items_to_get_this_iteration = std::min(limit, remaining_item_count);
+        hashes_to_return.reserve(items_to_get_this_iteration);
+        for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
+        {
+          signed_block_header header;
+          try
+          {
+            header = _chain_db->get_block(last_seen_block_num);
+          }
+          catch (fc::key_not_found_exception&)
+          {
+            ilog("chain_database::get_block failed to return block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number", 
+                 ("last_seen_block_num",last_seen_block_num));
+            assert( !"I assume this can never happen");
+          }
+          hashes_to_return.push_back(header.id());
+          ++last_seen_block_num;
+        }
+        remaining_item_count -= items_to_get_this_iteration;
+        return hashes_to_return;
+      }
+
+      std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis(uint32_t item_type, 
+                                                                              bts::net::item_hash_t reference_point /* = bts::net::item_hash_t() */, 
+                                                                              uint32_t number_of_blocks_after_reference_point /* = 0 */)
+      {
+        FC_ASSERT(item_type == bts::client::block_message_type);
+        std::vector<bts::net::item_hash_t> synopsis;
+        uint32_t high_block_num = 0;
+        uint32_t non_fork_high_block_num = 0;
+        std::vector<block_id_type> fork_history;
+
+        if (reference_point != bts::net::item_hash_t())
+        {
+          // the node is asking for a summary of the block chain up to a specified
+          // block, which may or may not be on a fork
+          // for now, assume it's not on a fork
+          try
+          {
+            if (_chain_db->is_included_block(reference_point))
+            {
+              // block is a block we know about and is on the main chain
+              uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
+              assert(reference_point_block_num > 0);
+              high_block_num = reference_point_block_num;
+              non_fork_high_block_num = high_block_num;
+            }
+            else
+            {
+              // block is a block we know about, but it is on a fork
+              try
+              {
+                fork_history = _chain_db->get_fork_history(reference_point);
+                assert(fork_history.size() >= 2);
+                assert(fork_history.front() == reference_point);
+                block_id_type last_non_fork_block = fork_history.back();
+                fork_history.pop_back();
+                boost::reverse(fork_history);
+                try
+                {
+                  non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
+                  assert(non_fork_high_block_num > 0);
+                }
+                catch (const fc::key_not_found_exception&)
+                {
+                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+                }
+                high_block_num = non_fork_high_block_num + fork_history.size();
+                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+              }
+              catch (const fc::exception& e)
+              {
+                // unable to get fork history for some reason.  maybe not linked?
+                // we can't return a synopsis of its chain
+                elog("Unable to construct a blockchain synopsis for reference hash ${hash}: ${exception}", ("hash", reference_point)("exception", e));
+                return synopsis;
+              }
+            }
+          }
+          catch (const fc::key_not_found_exception&)
+          {
+            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
+            // we've never seen this block
+            return synopsis;
+          }
+        }
+        else
+        {
+          // no reference point specified, summarize the whole block chain
+          high_block_num = _chain_db->get_head_block_num();
+          non_fork_high_block_num = high_block_num;
+          if (high_block_num == 0)
+            return synopsis; // we have no blocks
+        }
+
+        uint32_t true_high_block_num = high_block_num + number_of_blocks_after_reference_point;
         uint32_t low_block_num = 1;
         do
         {
-          synopsis.push_back(_chain_db->get_block(low_block_num).id());
-          low_block_num += ((high_block_num - low_block_num + 2) / 2);
+          if (low_block_num <= non_fork_high_block_num)
+            synopsis.push_back(_chain_db->get_block(low_block_num).id());
+          else
+            synopsis.push_back(fork_history[low_block_num - non_fork_high_block_num - 1]);
+          low_block_num += ((true_high_block_num - low_block_num + 2) / 2);
         }
         while (low_block_num <= high_block_num);
 
@@ -582,7 +784,13 @@ namespace bts { namespace client {
        {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
-         _cli->display_status_message(message.str());
+         if( _cli )
+            _cli->display_status_message(message.str());
+       }
+
+       uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
+       {
+         return _chain_db->get_block_num(block_id);
        }
 
     } // end namespace detail
@@ -613,13 +821,26 @@ namespace bts { namespace client {
         my->_p2p_node->set_node_delegate(my.get());
 
         fc::async( [](){  
-            auto ntp_time = fc::ntp::get_time();
-            auto delta_time = ntp_time - fc::time_point::now();
-            if( delta_time.to_seconds() != 0 )
-            {
-               wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
-               bts::blockchain::advance_time( delta_time.to_seconds() );
-            }
+            auto start_query =  fc::time_point::now();
+            auto query_time = fc::seconds(0);
+          
+            /**
+             *  Query the NTP server, if the query takes to long
+             *  we assume the time is bad and will query again. When
+             *  we get a response in a timely manner we adjust our 
+             *  blockchain time if the delta time is greater than 1 sec.
+             */
+            do {
+               start_query =  fc::time_point::now();
+               auto ntp_time = fc::ntp::get_time();
+               auto delta_time = ntp_time - fc::time_point::now();
+               query_time = fc::time_point::now() - start_query;
+               if( query_time < fc::seconds(2) && delta_time.to_seconds() != 0 )
+               {
+                  wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
+                  bts::blockchain::advance_time( delta_time.to_seconds() );
+               }
+            } while( query_time > fc::seconds(1) ); 
         } );
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
@@ -1352,6 +1573,19 @@ namespace bts { namespace client {
       return extract_commands_from_log_stream(test_input);
     }
 
+
+    //RPC server and CLI configuration rules:
+    //if daemon mode requested
+    //  start RPC server only (no CLI input)
+    //else
+    //  start RPC server if requested
+    //  start CLI
+    //  if input log
+    //    cli.processs_commands in input log
+    //    wait till finished
+    //  set input stream to cin
+    //  cli.process_commands from cin
+    //  wait till finished
     void client::configure_from_command_line(int argc, char** argv)
     {
       if( argc == 0 && argv == nullptr )
@@ -1377,64 +1611,7 @@ namespace bts { namespace client {
       this->open( datadir, genesis_file_path );
       this->run_delegate();
 
-      //maybe clean this up later
-      bts::rpc::rpc_server_ptr rpc_server = get_rpc_server();
-
-      if( option_variables.count("server") || option_variables.count("daemon") )
-      {
-        // the user wants us to launch the RPC server.
-        // First, override any config parameters they
-        // bts::rpc::rpc_server::config rpc_config(cfg.rpc);
-        if (option_variables.count("rpcuser"))
-          cfg.rpc.rpc_user = option_variables["rpcuser"].as<string>();
-        if (option_variables.count("rpcpassword"))
-            cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
-        if (option_variables.count("rpcport"))
-            cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
-        if (option_variables.count("httpport"))
-            cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
-
-        if (cfg.rpc.rpc_user.empty() ||
-            cfg.rpc.rpc_password.empty())
-        {
-          std::cout << "Error starting RPC server\n";
-          std::cout << "You specified " << (option_variables.count("server") ? "--server" : "--daemon") << " on the command line,\n";
-          std::cout << "but did not provide a username or password to authenticate RPC connections.\n";
-          std::cout << "You can provide these by using --rpcuser=username and --rpcpassword=password on the\n";
-          std::cout << "command line, or by setting the \"rpc_user\" and \"rpc_password\" properties in the\n";
-          std::cout << "config file.\n";
-          exit(1);
-        }
-
-        // launch the RPC servers
-        bool rpc_success = rpc_server->configure(cfg.rpc);
-
-        // this shouldn't fail due to the above checks, but just to be safe...
-        if (!rpc_success)
-          std::cerr << "Error starting rpc server\n\n";
-
-        fc::optional<fc::ip::endpoint> actual_rpc_endpoint = rpc_server->get_rpc_endpoint();
-        if (actual_rpc_endpoint)
-        {
-          std::cout << "Starting JSON RPC server on port " << actual_rpc_endpoint->port();
-          if (actual_rpc_endpoint->get_address() == fc::ip::address("127.0.0.1"))
-            std::cout << " (localhost only)";
-          std::cout << "\n";
-        }
-
-        fc::optional<fc::ip::endpoint> actual_httpd_endpoint = rpc_server->get_httpd_endpoint();
-        if (actual_httpd_endpoint)
-        {
-          std::cout << "Starting HTTP JSON RPC server on port " << actual_httpd_endpoint->port();
-          if (actual_httpd_endpoint->get_address() == fc::ip::address("127.0.0.1"))
-            std::cout << " (localhost only)";
-          std::cout << "\n";
-        }
-      }
-      else
-      {
-        std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
-      }
+      my->configure_rpc_server(cfg,option_variables);
 
       this->configure( datadir );
 
@@ -1457,6 +1634,12 @@ namespace bts { namespace client {
             upnp_service->map_port( p2pport );
             fc::usleep( fc::seconds(3) );
           }
+      }
+
+      if (option_variables.count("total-bandwidth-limit"))
+      {
+        this->get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(), 
+                                                    option_variables["total-bandwidth-limit"].as<uint32_t>());
       }
 
       if (option_variables.count("clear-peer-database"))
@@ -1488,7 +1671,7 @@ namespace bts { namespace client {
           for( auto peer : hosts )
             this->connect_to_peer( peer );
       }
-      else
+      else if (!option_variables.count("disable-default-peers"))
       {
         for (string default_peer : cfg.default_peers)
           this->connect_to_peer(default_peer);
@@ -1498,7 +1681,7 @@ namespace bts { namespace client {
       {
           std::cout << "Running in daemon mode, ignoring console\n";
           my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          rpc_server->wait_on_quit();
+          get_rpc_server()->wait_till_rpc_server_shutdown();
       }
       else 
       {
@@ -1533,8 +1716,11 @@ namespace bts { namespace client {
         //don't create a log file, just output to console
         my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
     #endif
+        //my->_chain_db->export_fork_graph("fork_history.dot");
+        //my->_chain_db->export_new_fork_graph("new_fork_history.dot");
+
         my->_cli->process_commands();
-        my->_cli->wait();
+        my->_cli->wait_till_cli_shutdown();
       } 
 
     }
@@ -1834,6 +2020,12 @@ namespace bts { namespace client {
       return result;
     }
 
+    void client_impl::wait(uint32_t wait_time) const
+    {
+      fc::usleep(fc::seconds(wait_time));
+    }
+
+
     vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
     {
        return _wallet->get_unspent_balances( account_name, symbol );
@@ -1931,6 +2123,15 @@ namespace bts { namespace client {
       auto trx = _wallet->cancel_market_order( order_address );
       network_broadcast_transaction( trx );
       return trx;
+   }
+   bts::wallet::wallet::account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )
+   {
+      return _wallet->get_account_vote_summary( account_name );
+   }
+
+   string client_impl::wallet_account_export_private_key( const string& account_name )
+   {
+      return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
    } // namespace detail

@@ -963,6 +963,27 @@
          ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
          "aliases" : [ "dump_private_key" ]
+      },
+      {
+         "method_name" : "wallet_account_vote_summary",
+         "description" : "Returns the allocation of votes by this account",
+         "return_type" : "account_vote_summary",
+         "parameters"  : [
+            {
+                "name" :  "account_name",
+                "type" : "account_name",
+                "description" : "the account to report votes on"
+            }
+          ]
+          "aliases" : ["votes"],
+          "prerequisites" : ["json_authenticated", "wallet_open"]
+      },
+      {
+         "method_name" : "wallet_account_export_private_key",
+         "description" : "returns the private key for this account in WIF format"
+         "return_type" : "string",
+         "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
+         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"]
       }
     ]
 }

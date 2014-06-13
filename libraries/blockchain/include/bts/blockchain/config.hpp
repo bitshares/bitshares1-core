@@ -6,7 +6,7 @@
  */
 #define BTS_BLOCKCHAIN_VERSION                      (101)
 #define BTS_WALLET_VERSION                          (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION             (100)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION             (101)
 
 #define BTS_NETWORK_DEFAULT_P2P_PORT                8764
 

@@ -44,7 +44,7 @@ namespace bts { namespace wallet {
    asset market_order_status::get_balance()const
    {
       asset_id_type asset_id;
-      switch( type )
+      switch( get_type() )
       {
          case bid_order:
             asset_id = order.market_index.order_price.quote_asset_id;
@@ -57,10 +57,37 @@ namespace bts { namespace wallet {
       }
       return asset( order.state.balance, asset_id );
    }
+
+   asset market_order_status::get_quantity()const
+   {
+      switch( get_type() )
+      {
+         case bid_order:
+         { // balance is in USD  divide by price
+            return get_balance() * get_price();
+         }
+         case ask_order:
+         default:
+            FC_ASSERT( !"Not Implemented" );
+      }
+      return get_balance() * get_price();
+   }
+   price market_order_status::get_price()const
+   {
+      return  order.market_index.order_price;
+   }
+
+   order_type_enum market_order_status::get_type()const { return order.type; }
+
+   string          market_order_status::get_id()const
+   {
+      return "ORDER-" + fc::variant( order.market_index.owner ).as_string().substr(3,8);
+   }
+
    asset market_order_status::get_proceeds()const
    {
       asset_id_type asset_id;
-      switch( type )
+      switch( get_type() )
       {
          case bid_order:
             asset_id = order.market_index.order_price.base_asset_id;

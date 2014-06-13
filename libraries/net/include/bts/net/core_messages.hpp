@@ -83,11 +83,13 @@ namespace bts { namespace net {
   {
     static const core_message_type_enum type;
 
-    item_id last_item_seen;
+    uint32_t item_type;
+    std::vector<item_hash_t> blockchain_synopsis;
 
     fetch_blockchain_item_ids_message() {}
-    fetch_blockchain_item_ids_message(const item_id& last_item_seen) :
-      last_item_seen(last_item_seen)
+    fetch_blockchain_item_ids_message(uint32_t item_type, const std::vector<item_hash_t>& blockchain_synopsis) :
+      item_type(item_type),
+      blockchain_synopsis(blockchain_synopsis)
     {}
   };
 
@@ -228,7 +230,7 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum, (item_ids_inventory_message_t
 FC_REFLECT( bts::net::item_id, (item_type)(item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_available) )
 FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)(item_type)(item_hashes_available) )
-FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (last_item_seen) )
+FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (item_type)(blockchain_synopsis) )
 FC_REFLECT( bts::net::fetch_items_message, (item_type)(items_to_fetch) )
 FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
 FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_address)(inbound_port)(outbound_port)(node_id)(chain_id)(user_data) )

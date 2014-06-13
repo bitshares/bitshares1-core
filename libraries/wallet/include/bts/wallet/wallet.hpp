@@ -15,6 +15,14 @@ namespace bts { namespace wallet {
    /** args: current_block, last_block */
    typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
 
+   struct vote_status
+   {
+      vote_status():votes_for(0),votes_against(0){}
+
+      int64_t votes_for;
+      int64_t votes_against;
+   };
+
    class wallet
    {
       public:
@@ -339,6 +347,9 @@ namespace bts { namespace wallet {
          */
 
          
+         typedef map<string, vote_status >  account_vote_summary_type;
+         account_vote_summary_type get_account_vote_summary( const string& account_name )const;
+
          typedef unordered_map<string, map<string, share_type> >  account_balance_summary_type;
          account_balance_summary_type                             get_account_balances()const;
 
@@ -378,4 +389,5 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-//FC_REFLECT( bts::wallet::delegate_trust_status, (user_trust_level) )
+
+FC_REFLECT( bts::wallet::vote_status, (votes_for)(votes_against) )

@@ -576,7 +576,7 @@ namespace bts { namespace rpc {
     try 
     {
       close();
-      wait();
+      wait_till_rpc_server_shutdown();
       // just to be safe, destroy the  servers inside this try/catch block in case they throw
       my->_tcp_serv.reset();
       my->_httpd.reset();
@@ -700,7 +700,7 @@ namespace bts { namespace rpc {
       my->_accept_loop_complete.cancel();
   }
 
-  void rpc_server::wait()
+  void rpc_server::wait_till_rpc_server_shutdown()
   {
     try
     {
@@ -715,12 +715,6 @@ namespace bts { namespace rpc {
     catch (const fc::canceled_exception&)
     {
     }
-  }
-
-
-  void rpc_server::wait_on_quit()
-  {
-    wait();
   }
 
   void rpc_server::shutdown_rpc_server()

@@ -38,10 +38,12 @@ namespace bts { namespace net {
           *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
+          *  @returns true if this message caused the blockchain to switch forks, false if it did not
+          *
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual void handle_message( const message& ) = 0;
+         virtual bool handle_message( const message& ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
@@ -50,9 +52,10 @@ namespace bts { namespace net {
           *  in our blockchain after the last item returned in the result,
           *  or 0 if the result contains the last item in the blockchain
           */
-         virtual std::vector<item_hash_t> get_item_ids( const item_id& from_id,
-                                                        uint32_t& remaining_item_count,
-                                                        uint32_t limit = 2000 ) = 0;
+         virtual std::vector<item_hash_t> get_item_ids(uint32_t item_type,
+                                                       const std::vector<item_hash_t>& blockchain_synopsis,
+                                                       uint32_t& remaining_item_count,
+                                                       uint32_t limit = 2000) = 0;
 
          /**
           *  Given the hash of the requested data, fetch the body.
@@ -76,7 +79,7 @@ namespace bts { namespace net {
           *     &c.
           *   the last item in the list will be the hash of the most recent block on our preferred chain
           */
-         virtual std::vector<item_hash_t> get_blockchain_synopsis() = 0;
+         virtual std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, bts::net::item_hash_t reference_point = bts::net::item_hash_t(), uint32_t number_of_blocks_after_reference_point = 0) = 0;
 
          /**
           *  Call this after the call to handle_message succeeds.
@@ -91,6 +94,8 @@ namespace bts { namespace net {
           *  Call any time the number of connected peers changes.
           */
          virtual void     connection_count_changed( uint32_t c ) = 0;
+
+         virtual uint32_t get_block_number(item_hash_t block_id) = 0;
    };
 
    /**
@@ -163,7 +168,7 @@ namespace bts { namespace net {
         std::vector<peer_status> get_connected_peers()const;
 
         /** return the number of peers we're actively connected to */
-        uint32_t get_connection_count() const;
+        virtual uint32_t get_connection_count() const;
 
         /**
          *  Add message to outgoing inventory list, notify peers that
@@ -192,6 +197,8 @@ namespace bts { namespace net {
          */
         void clear_peer_database();
 
+        void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
+
         fc::variant_object network_get_info() const;
 
       private:
@@ -208,6 +215,7 @@ namespace bts { namespace net {
          void      sync_from( const item_id& ) override {}
          void broadcast(const message& item_to_broadcast) override;
          void add_node_delegate(node_delegate* node_delegate_to_add);
+        virtual uint32_t get_connection_count() const override { return 8; }
        private:
          std::vector<bts::net::node_delegate*> network_nodes;
     };

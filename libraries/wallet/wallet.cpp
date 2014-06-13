@@ -48,7 +48,8 @@ namespace bts { namespace wallet {
              chain_database_ptr _blockchain;
              path               _data_directory;
              path               _current_wallet_path;
-             fc::time_point     _scheduled_lock_time;
+             fc::time_point_sec _scheduled_lock_time;
+             fc::promise<void>::ptr _wallet_shutting_down_promise;
              fc::future<void>   _wallet_relocker_done;
              fc::sha512         _wallet_password;
              bool               _use_deterministic_one_time_keys;
@@ -581,13 +582,15 @@ namespace bts { namespace wallet {
    void wallet::close()
    { try {
       my->_wallet_db.close();
-      if( my->_wallet_relocker_done.valid() )
+      if( my->_wallet_relocker_done.valid() && 
+          !my->_wallet_relocker_done.ready() &&
+          my->_wallet_shutting_down_promise )
       {
-         lock();
-         my->_wallet_relocker_done.cancel();
-         if( my->_wallet_relocker_done.ready() ) 
-           my->_wallet_relocker_done.wait();
+        ilog("setting relocker promise");
+        my->_wallet_shutting_down_promise->set_value();
+        my->_wallet_relocker_done.wait();
       }
+      my->_scheduled_lock_time = fc::time_point_sec();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    string wallet::get_wallet_name()const
@@ -631,25 +634,52 @@ namespace bts { namespace wallet {
 
       if( timeout == microseconds::maximum() )
       {
-         my->_scheduled_lock_time = fc::time_point::maximum();
+         my->_scheduled_lock_time = fc::time_point_sec::maximum();
       }
       else
       {
-         my->_scheduled_lock_time = fc::time_point::now() + timeout;
-         if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
-         {
-           my->_wallet_relocker_done = fc::async([this](){
-             while( !my->_wallet_relocker_done.canceled() )
-             {
-               if (fc::time_point::now() > my->_scheduled_lock_time)
-               {
-                 lock();
-                 return;
-               }
-               fc::usleep(microseconds(200000));
-             }
-           });
-         }
+        // the API lets users specify a 64-bit time offset that can't be represented in our 32-bit time_point_sec class,
+        // so safely convert it to 32-bit here.
+        uint64_t relock_seconds_in_the_future = timeout.count() / fc::seconds(1).count();
+        uint64_t relock_seconds_since_epoch = bts::blockchain::now().sec_since_epoch() + relock_seconds_in_the_future;
+        uint32_t relock_seconds_since_epoch_32 = (int32_t)std::min<uint64_t>(relock_seconds_since_epoch, 
+                                                                             std::numeric_limits<uint32_t>::max());        
+        my->_scheduled_lock_time = fc::time_point_sec(relock_seconds_since_epoch_32);
+        ilog("Checking wallet relocker task");
+        if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
+        {
+          ilog("Wallet relocker task not running");
+          my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
+          my->_wallet_relocker_done = fc::async([this](){
+            ilog("Starting wallet relocker task");
+            struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
+            for (;;)
+            {
+              if (bts::blockchain::now() > my->_scheduled_lock_time)
+              {
+                lock();
+                ilog("leaving relocker after relock");
+                return;
+              }
+              // if the promise is set, the wallet is shutting down and we need to exit the relocker
+              if (my->_wallet_shutting_down_promise->ready())
+              {
+                ilog("leaving relocker task because promise is ready");
+                return;
+              }
+              try
+              {
+                my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
+                ilog("leaving relocker task because promise waited");
+                return;
+              }
+              catch (const fc::timeout_exception&)
+              {
+              }
+            }
+          });
+          ilog("Wallet relocker task launched");
+        }
       }
       scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
@@ -659,7 +689,6 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::time_point();
-      my->_wallet_relocker_done.cancel();
    }
    void wallet::change_passphrase( const string& new_passphrase )
    { try {
@@ -1069,7 +1098,7 @@ namespace bts { namespace wallet {
     */
    fc::time_point_sec wallet::next_block_production_time()const
    { try {
-      auto now = fc::time_point(bts::blockchain::now());
+      fc::time_point_sec now = bts::blockchain::now();
       uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       if( next_block_time == my->_blockchain->now().sec_since_epoch() )
@@ -2117,7 +2146,7 @@ namespace bts { namespace wallet {
                                            );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
-           key_rec->memo = "ORDER-" + variant( fc::ecc::public_key_data(order_key) ).as_string().substr(0,8);
+           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
            my->_blockchain->store_pending_transaction( trx );
        }
@@ -2214,13 +2243,13 @@ namespace bts { namespace wallet {
       if( trx_rec.from_account )
          pretty_trx.from_account = get_key_label( *trx_rec.from_account );
       else 
-         pretty_trx.from_account = "unknown";
+         pretty_trx.from_account = "UNKNOWN"; // account id's are all lower, so we use UPPER to make it clear
 
       pretty_trx.to_account = "";
       if( trx_rec.to_account )
          pretty_trx.to_account = get_key_label( *trx_rec.to_account );
       else
-         pretty_trx.to_account = "unknown";
+         pretty_trx.to_account = "UNKNOWN"; 
 
       for( auto op : trx.operations )
       {
@@ -2783,6 +2812,32 @@ namespace bts { namespace wallet {
    optional<wallet_account_record>         wallet::get_account_record( const address& addr)const
    {
       return my->_wallet_db.lookup_account( addr );
+   }
+   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   {
+      unordered_map<account_id_type, vote_status> raw_votes;
+      for( auto b : my->_wallet_db.balances )
+      {
+          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             asset bal = b.second.get_balance();
+             if( bal.asset_id == 0 )
+             {
+                if( b.second.delegate_id() < 0 )
+                   raw_votes[ -b.second.delegate_id() ].votes_against += bal.amount;
+                else
+                   raw_votes[ b.second.delegate_id()  ].votes_for += bal.amount;
+             }
+          }
+      }
+      account_vote_summary_type result;
+      for( auto item : raw_votes )
+      {
+         auto delegate_account = my->_blockchain->get_account_record( item.first );
+         result[delegate_account->name] = item.second;
+      }
+      return result;
    }
 
    wallet::account_balance_summary_type    wallet::get_account_balances()const

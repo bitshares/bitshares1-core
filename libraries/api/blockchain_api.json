@@ -152,12 +152,12 @@
       },
       {
         "method_name": "blockchain_get_account_record_by_id",
-        "description": "Retrieves the name record for the given name_id",
+        "description": "Retrieves the name record for the given account_id",
         "return_type": "optional_account_record",
         "parameters" : [
             {
-              "name" : "name_id", 
-              "type" : "name_id_type", 
+              "name" : "account_id", 
+              "type" : "account_id_type", 
               "description" : "the id of the name record to retrieve"
             }
         ],
@@ -278,6 +278,35 @@
         ],
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["market_bids"]
+      },
+      {
+         "method_name" : "blockchain_list_current_round_active_delegates",
+         "description" : "returns the order of delegates that is fixed for the current round",
+         "return_type" : "account_id_array",
+         "parameters"  : [],
+         "aliases"     : ["current_delegates"],
+         "prerequisites" : ["json_authenticated"]
+      },
+      {
+         "method_name" : "blockchain_list_blocks",
+         "description" : "Returns the block headers for blocks in a range",
+         "return_type" : "block_record_array",
+         "parameters"  : [
+            {
+               "name" : "first_block_number",
+               "type" : "int32_t",
+               "description" : "the first block to list",
+               "default_value" : 1
+            },
+            {
+               "name" : "limit",
+               "type" : "uint32_t",
+               "description" : "the maximum number of blocks to return",
+               "default_value" : 20 
+            }
+         ], 
+         "aliases" : ["list_blocks"],
+         "prerequisites" : ["json_authenticated"]
       }
     ]
 }

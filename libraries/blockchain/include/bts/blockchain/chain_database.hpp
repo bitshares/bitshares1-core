@@ -22,6 +22,36 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr                       applied_changes;
    };
 
+   struct block_fork_data
+   {
+      block_fork_data():is_linked(false),is_included(false),is_known(false){}
+
+      bool invalid()const
+      {
+         if( !!is_valid ) return !*is_valid;
+         return false;
+      }
+      bool valid()const
+      {
+         if( !!is_valid ) return *is_valid;
+         return false;
+      }
+      bool can_link()const
+      {
+         return is_linked && !invalid();
+      }
+
+      std::unordered_set<block_id_type> next_blocks; ///< IDs of all blocks that come after
+      bool                              is_linked;   ///< is linked to genesis block
+
+      /** if at any time this block was determiend to be valid or invalid then this
+       * flag will be set.
+       */
+      fc::optional<bool>         is_valid;
+      bool                       is_included; ///< is included in the current chain database
+      bool                       is_known; ///< do we know the content of this block
+   };
+
    class chain_observer
    {
       public:
@@ -56,6 +86,7 @@ namespace bts { namespace blockchain {
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                     is_known_transaction( const transaction_id_type& trx_id );
          void                                     export_fork_graph( const fc::path& filename )const;
+         void export_new_fork_graph( const fc::path& filename )const;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
@@ -68,7 +99,10 @@ namespace bts { namespace blockchain {
           */
          digest_type              chain_id()const;
 
-         bool                     is_known_block( const block_id_type& block_id )const;
+         optional<block_fork_data> get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
+         bool                      is_known_block( const block_id_type& id )const;
+         bool                      is_included_block( const block_id_type& id )const;
+         //optional<block_fork_data>                      is_included_block( const block_id_type& block_id )const;
 
          fc::ripemd160            get_current_random_seed()const override;
          public_key_type          get_signing_delegate_key( time_point_sec )const;
@@ -81,6 +115,9 @@ namespace bts { namespace blockchain {
          signed_block_header      get_head_block()const;
          uint32_t                 get_head_block_num()const;
          block_id_type            get_head_block_id()const;
+         block_id_type            get_block_id( uint32_t block_num )const;
+         oblock_record            get_block_record( const block_id_type& block_id )const;
+         oblock_record            get_block_record( uint32_t block_num )const;
 
          virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
                                                        bool exact = true )const override;
@@ -100,8 +137,9 @@ namespace bts { namespace blockchain {
           *  this state can be used by wallets to scan for changes without the wallets
           *  having to process raw transactions.
           **/
-         virtual void push_block( const full_block& block_data );
+         block_fork_data push_block( const full_block& block_data );
 
+         vector<block_id_type> get_fork_history( const block_id_type& id );
 
          /**
           *  Evaluate the transaction and return the results.
@@ -118,6 +156,7 @@ namespace bts { namespace blockchain {
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
+         vector<account_id_type>            current_round_active_delegates()const;
                                             
          vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1) )const;
          vector<account_record>             get_delegate_records_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1))const;
@@ -176,3 +215,4 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
+FC_REFLECT( bts::blockchain::block_fork_data, (next_blocks)(is_linked)(is_valid)(is_included)(is_known) )

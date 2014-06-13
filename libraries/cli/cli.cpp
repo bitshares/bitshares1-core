@@ -66,6 +66,9 @@ namespace bts { namespace cli {
 
             cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream);
 
+            void process_commands();
+
+
             string get_prompt()const
             {
               string wallet_name =  _client->get_wallet()->get_wallet_name();
@@ -189,31 +192,6 @@ namespace bts { namespace cli {
               return true;
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",line) ) }
 
-            void process_commands()
-            { 
-              try {
-                 FC_ASSERT( _input_stream != nullptr );
-                 string line = get_line(get_prompt());
-                 while (_input_stream->good() && !_quit )
-                 {
-                   if (!execute_command_line(line))
-                     break;
-                   if( !_quit )
-                      line = get_line( get_prompt() );
-                 } // while cin.good
-                 _rpc_server->shutdown_rpc_server();
-              } 
-              catch ( const fc::exception& e)
-              {
-                 if( _out ) (*_out) << "\nshutting down\n";
-                 elog( "${e}", ("e",e.to_detail_string() ) );
-                 _rpc_server->shutdown_rpc_server();
-              }
-              wlog( "process commands exiting" );
-              // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
-              // Tell the RPC server to close, which will allow the process to exit.
-              _cin_complete.cancel();
-            } 
 
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
@@ -735,10 +713,31 @@ namespace bts { namespace cli {
                 string help_string = result.as<string>();
                 if( _out ) (*_out) << help_string << "\n";
               }
+              else if( method_name == "wallet_account_vote_summary" )
+              {
+                  if( !_out ) return;
+
+                     (*_out) << std::setw(25) << std::left << "Delegate"
+                            << std::setw(15) << "For"
+                            << std::setw(15) << "Against\n";
+                     (*_out) <<"--------------------------------------------------------------\n";
+                  auto votes = result.as<bts::wallet::wallet::account_vote_summary_type>();
+                  for( auto vote : votes )
+                  {
+                     (*_out) << std::setw(25) << vote.first 
+                            << std::setw(15) << vote.second.votes_for 
+                            << std::setw(15) << vote.second.votes_against <<"\n";
+                  }
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
-                  auto tx_history_summary = result.as<std::vector<pretty_transaction>>();
+                  auto tx_history_summary = result.as<vector<pretty_transaction>>();
                   print_transaction_history(tx_history_summary);
+              }
+              else if( method_name == "wallet_market_order_list" )
+              {
+                  auto order_list = result.as<vector<market_order_status> >();
+                  print_wallet_market_order_list( order_list );
               }
               else if (method_name == "wallet_account_balance" )
               {
@@ -988,7 +987,7 @@ namespace bts { namespace cli {
                 return str.substr(0, size - 3) + "...";
             }
 
-            void print_contact_account_list(const std::vector<wallet_account_record> account_records)
+            void print_contact_account_list(const vector<wallet_account_record> account_records)
             {
                 if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 if( _out ) (*_out) << std::setw( 64 ) << "KEY";
@@ -1124,22 +1123,49 @@ namespace bts { namespace cli {
 
                 }
             }
+            void print_wallet_market_order_list( const vector<market_order_status>& order_list )
+            {
+                if( !_out ) return;
 
-            void print_transaction_history(const std::vector<bts::wallet::pretty_transaction> txs)
+                std::ostream& out = *_out;
+
+                out << std::setw( 40 ) << std::left << "ID";
+                out << std::setw( 10 )  << "TYPE";
+                out << std::setw( 20 ) << "QUANTITY";
+                out << std::setw( 20 ) << "PRICE";
+                out << std::setw( 20 ) << "COST";
+                out << "\n";
+                out <<"-----------------------------------------------------------------------------------------------------------\n";
+
+                for( auto order : order_list )
+                {
+                   out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
+                   out << std::setw( 10  )  << variant( order.get_type() ).as_string();
+                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
+                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
+                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );
+                   out << "\n";
+                }
+                out << "\n";
+            }
+
+            void print_transaction_history(const vector<bts::wallet::pretty_transaction> txs)
             {
                 /* Print header */
-                if( _out ) (*_out) << std::setw(  7 ) << "BLK" << ".";
-                if( _out ) (*_out) << std::setw(  5 ) << std::left << "TRX";
-                if( _out ) (*_out) << std::setw( 20 ) << "TIMESTAMP";
-                if( _out ) (*_out) << std::setw( 20 ) << "FROM";
-                if( _out ) (*_out) << std::setw( 20 ) << "TO";
-                if( _out ) (*_out) << std::setw( 35 ) << "MEMO";
-                if( _out ) (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
-                if( _out ) (*_out) << std::setw( 20 ) << "FEE    ";
-                if( _out ) (*_out) << std::setw( 12 ) << "ID";
-                if( _out ) (*_out) << "\n---------------------------------------------------------------------------------------------------";
-                if( _out ) (*_out) <<   "-------------------------------------------------------------------------\n";
-                if( _out ) (*_out) << std::right; 
+                if( !_out ) return;
+
+                (*_out) << std::setw(  7 ) << "BLK" << ".";
+                (*_out) << std::setw(  5 ) << std::left << "TRX";
+                (*_out) << std::setw( 20 ) << "TIMESTAMP";
+                (*_out) << std::setw( 20 ) << "FROM";
+                (*_out) << std::setw( 20 ) << "TO";
+                (*_out) << std::setw( 35 ) << "MEMO";
+                (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
+                (*_out) << std::setw( 20 ) << "FEE    ";
+                (*_out) << std::setw( 12 ) << "ID";
+                (*_out) << "\n---------------------------------------------------------------------------------------------------";
+                (*_out) <<   "-------------------------------------------------------------------------\n";
+                (*_out) << std::right; 
                 
                 int count = 1;
                 for( auto tx : txs )
@@ -1149,40 +1175,40 @@ namespace bts { namespace cli {
                     /* Print block and transaction numbers */
                     if (tx.block_num == -1)
                     {
-                        if( _out ) (*_out) << std::setw( 13 ) << std::left << "   pending";
+                        (*_out) << std::setw( 13 ) << std::left << "   pending";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw( 7 ) << tx.block_num << ".";
-                        if( _out ) (*_out) << std::setw( 5 ) << std::left << tx.trx_num;
+                        (*_out) << std::setw( 7 ) << tx.block_num << ".";
+                        (*_out) << std::setw( 5 ) << std::left << tx.trx_num;
                     }
 
                     /* Print timestamp */
-                    if( _out ) (*_out) << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
+                     (*_out) << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
 
                     // Print "from" account
-                    if( _out ) (*_out) << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
+                     (*_out) << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
                     
                     // Print "to" account
-                    if( _out ) (*_out) << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
+                     (*_out) << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
 
                     // Print "memo" on transaction
-                    if( _out ) (*_out) << std::setw( 35 ) << pretty_shorten(tx.memo_message, 34);
+                     (*_out) << std::setw( 35 ) << pretty_shorten(tx.memo_message, 34);
 
                     /* Print amount */
                     {
-                        if( _out ) (*_out) << std::right;
+                        (*_out) << std::right;
                         std::stringstream ss;
                         ss << _client->get_chain()->to_pretty_asset(tx.amount);
-                        if( _out ) (*_out) << std::setw( 20 ) << ss.str();
+                        (*_out) << std::setw( 20 ) << ss.str();
                     }
 
                     /* Print fee */
                     {
-                        if( _out ) (*_out) << std::right;
+                        (*_out) << std::right;
                         std::stringstream ss;
                         ss << _client->get_chain()->to_pretty_asset( asset(tx.fees,0 ));
-                        if( _out ) (*_out) << std::setw( 20 ) << ss.str();
+                        (*_out) << std::setw( 20 ) << ss.str();
                     }
 
                     if( _out ) (*_out) << std::right;
@@ -1207,17 +1233,17 @@ namespace bts { namespace cli {
                     }
                     if (has_deposit)
                     {
-                        if( _out ) (*_out) << std::setw(14) << ss.str();
+                        (*_out) << std::setw(14) << ss.str();
                     }
                     else
                     {
                     }
 
-                    if( _out ) (*_out) << std::right;
+                    (*_out) << std::right;
                     /* Print transaction ID */
-                    if( _out ) (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
+                    (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
 
-                    if( _out ) (*_out) << std::right << "\n";
+                    (*_out) << std::right << "\n";
                 }
             }
             void display_status_message(const std::string& message);
@@ -1271,7 +1297,7 @@ namespace bts { namespace cli {
       if (!_method_data_is_initialized)
       {
         _method_data_is_initialized = true;
-        std::vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
+        vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
         for (const bts::api::method_data& method_data : method_data_list)
         {
           _method_data_map[method_data.name] = method_data;
@@ -1393,6 +1419,32 @@ namespace bts { namespace cli {
 #endif
     }
 
+    void cli_impl::process_commands()
+    { 
+      try {
+          FC_ASSERT( _input_stream != nullptr );
+          string line = get_line(get_prompt());
+          while (_input_stream->good() && !_quit )
+          {
+            if (!execute_command_line(line))
+              break;
+            if( !_quit )
+              line = get_line( get_prompt() );
+          } // while cin.good
+          _rpc_server->shutdown_rpc_server();
+      } 
+      catch ( const fc::exception& e)
+      {
+          if( _out ) (*_out) << "\nshutting down\n";
+          elog( "${e}", ("e",e.to_detail_string() ) );
+          _rpc_server->shutdown_rpc_server();
+      }
+      wlog( "process commands exiting" );
+      // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
+      // Tell the RPC server to close, which will allow the process to exit.
+      _cin_complete.cancel();
+    } 
+
   } // end namespace detail
 
   cli::cli( const client_ptr& client, std::istream* input_stream, std::ostream* output_stream)
@@ -1421,7 +1473,7 @@ namespace bts { namespace cli {
   {
     try
     {
-      wait();
+      wait_till_cli_shutdown();
     }
     catch( const fc::exception& e )
     {
@@ -1429,7 +1481,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void cli::wait()
+  void cli::wait_till_cli_shutdown()
   {
      if( my->_cin_complete.valid() )
      {
@@ -1439,7 +1491,7 @@ namespace bts { namespace cli {
            my->_cin_complete.wait();
      }
      ilog( "\n\nwaiting on server to quit\n\n" );
-     my->_rpc_server->wait_on_quit();
+     my->_rpc_server->wait_till_rpc_server_shutdown();
   }
 
   void cli::quit()
