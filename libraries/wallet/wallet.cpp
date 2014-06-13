@@ -1106,9 +1106,13 @@ namespace bts { namespace wallet {
 
       uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
+      auto sorted_delegates = my->_blockchain->get_active_delegates();
       while( next_block_time < last_block_time )
       {
-         auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
+         uint64_t  interval_number = next_block_time / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+         uint32_t  delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
+
+         auto id = sorted_delegates[delegate_pos]; //my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
          auto delegate_record = my->_blockchain->get_account_record( id );
          FC_ASSERT( delegate_record.valid(), "", ("delegate_id",id ) );
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
