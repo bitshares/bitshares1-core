@@ -1605,19 +1605,88 @@ namespace bts { namespace blockchain {
           while( fork_itr.valid() )
           {
              auto fork_data = fork_itr.value();
-             ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
-             for( auto next : fork_data.next_blocks )
+             uint32_t block_num = -1;
+             try
              {
-                out << '"' << std::string ( fork_itr.key() ) <<"\" "
-                    << "[label=<" << std::string ( fork_itr.key() ).substr(0,5) << ">,color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
-                    << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
-                out << '"' << std::string ( next ) <<"\" -> \"" << std::string( fork_itr.key() ) << "\";\n";
+                block_num = get_block_num(fork_itr.key());
+             }
+             catch (const fc::key_not_found_exception&)
+             {
+              //out << "// key_not_found "
+             }
+             if (block_num > 1300)
+             {
+               ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
+               for( auto next : fork_data.next_blocks )
+               {
+                  out << '"' << std::string ( fork_itr.key() ) <<"\" "
+                      << "[label=<" << std::string ( fork_itr.key() ).substr(0,5) << ">,color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
+                      << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
+                  out << '"' << std::string ( next ) <<"\" -> \"" << std::string( fork_itr.key() ) << "\";\n";
+               }
             }
              ++fork_itr;
           }
        out << "}"; 
     }
+    void chain_database::export_new_fork_graph( const fc::path& filename )const
+    {
+      std::ofstream out( filename.generic_string().c_str() );
+      out << "digraph G { \n"; 
+      out << "rankdir=LR;\n";
+        
+      const uint32_t starting_block_num = 1300;
+      bool first = true;
+      fc::time_point_sec start_time;
+      std::map<uint32_t, std::vector<block_record> > nodes_by_rank;
+      //std::set<uint32_t> ranks_in_use;
+      for ( auto block_itr = my->_block_id_to_block_record_db.begin(); block_itr.valid(); ++block_itr)
+      {
+        block_record block_record = block_itr.value();
+        if (first)
+        {
+          first = false;
+          start_time = block_record.timestamp;
+        }
+        if (block_record.block_num > starting_block_num)
+        {
+          uint32_t rank = (block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
+          //ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
+          nodes_by_rank[rank].push_back(block_record);
+        }
+      }
+
+      for (auto item : nodes_by_rank)
+      {
+        out << "{rank=same l" << item.first << "[style=invis, shape=point] ";
+        for (auto record : item.second)
+          out << "; \"" << std::string(record.id()) << "\"";
+        out << ";}\n";
+      }
+      for (auto blocks_at_time : nodes_by_rank)
+      {
+        for (auto block : blocks_at_time.second)
+        {
+          out << '"' << std::string ( block.id() ) <<"\" "
+              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
+          out << '"' << std::string ( block.id() ) <<"\" -> \"" << std::string( block.previous ) << "\";\n";
+        }
+      }
+      out << "edge[style=invis];\n";
+
+      bool first2 = true;
+      for (auto item : nodes_by_rank)
+      {
+        if (first2)
+          first2 = false;
+        else
+          out << "->";
+        out << "l" << item.first;
+      }
+      out << ";\n";
+      out << "}";   
+    }
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
       return my->_property_db.fetch( property_id );
