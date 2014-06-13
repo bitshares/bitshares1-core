@@ -1612,9 +1612,9 @@ namespace bts { namespace net {
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if (new_number_of_unfetched_items != _total_number_of_unfetched_items)
         {
+          _total_number_of_unfetched_items = new_number_of_unfetched_items;
           _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type,
                                  _total_number_of_unfetched_items);
-          _total_number_of_unfetched_items = new_number_of_unfetched_items;
         }
         else if (new_number_of_unfetched_items == 0)
           _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type, 0);
@@ -1842,7 +1842,7 @@ namespace bts { namespace net {
               if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                             block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
               {
-                block_caused_fork_switch = _delegate->handle_message(block_message_to_process);
+                block_caused_fork_switch = _delegate->handle_message(block_message_to_process, true);
                 _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
               }
               else
@@ -2006,7 +2006,7 @@ namespace bts { namespace net {
           if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
                         block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
           {
-            block_caused_fork_switch = _delegate->handle_message(block_message_to_process);
+            block_caused_fork_switch = _delegate->handle_message(block_message_to_process, false);
             message_validated_time = fc::time_point::now();
             _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
           }
@@ -2077,7 +2077,7 @@ namespace bts { namespace net {
         fc::time_point message_validated_time;
         try
         {
-          bool message_caused_fork_switch = _delegate->handle_message(message_to_process);
+          bool message_caused_fork_switch = _delegate->handle_message(message_to_process, false);
           // for now, we assume an "ordinary" message won't cause us to switch forks (which
           // is curently the case.  if this changes, add some logic to handle it here)
           assert(!message_caused_fork_switch);
@@ -2789,7 +2789,7 @@ namespace bts { namespace net {
   void simulated_network::broadcast( const message& item_to_broadcast )
   {
       for(node_delegate* network_node : network_nodes)
-        network_node->handle_message(item_to_broadcast);
+        network_node->handle_message(item_to_broadcast, false);
   }
 
   void simulated_network::add_node_delegate(node_delegate* node_delegate_to_add)

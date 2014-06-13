@@ -38,12 +38,13 @@ namespace bts { namespace net {
           *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
+          *  @param sync_mode true if the message was fetched through the sync process, false during normal operation
           *  @returns true if this message caused the blockchain to switch forks, false if it did not
           *
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual bool handle_message( const message& ) = 0;
+         virtual bool handle_message( const message&, bool sync_mode ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
