@@ -22,6 +22,36 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr                       applied_changes;
    };
 
+   struct block_fork_data
+   {
+      block_fork_data():is_linked(false),is_included(false),is_known(false){}
+
+      bool invalid()const
+      {
+         if( !!is_valid ) return !*is_valid;
+         return false;
+      }
+      bool valid()const
+      {
+         if( !!is_valid ) return *is_valid;
+         return false;
+      }
+      bool can_link()const
+      {
+         return is_linked && !invalid();
+      }
+
+      std::unordered_set<block_id_type> next_blocks; ///< IDs of all blocks that come after
+      bool                              is_linked;   ///< is linked to genesis block
+
+      /** if at any time this block was determiend to be valid or invalid then this
+       * flag will be set.
+       */
+      fc::optional<bool>         is_valid;
+      bool                       is_included; ///< is included in the current chain database
+      bool                       is_known; ///< do we know the content of this block
+   };
+
    class chain_observer
    {
       public:
@@ -68,8 +98,10 @@ namespace bts { namespace blockchain {
           */
          digest_type              chain_id()const;
 
-         bool                     is_known_block( const block_id_type& block_id )const;
-         bool                          is_included_block( const block_id_type& block_id )const;
+         optional<block_fork_data> get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
+         bool                      is_known_block( const block_id_type& id )const;
+         bool                      is_included_block( const block_id_type& id )const;
+         //optional<block_fork_data>                      is_included_block( const block_id_type& block_id )const;
 
          fc::ripemd160            get_current_random_seed()const override;
          public_key_type          get_signing_delegate_key( time_point_sec )const;
@@ -104,9 +136,9 @@ namespace bts { namespace blockchain {
           *  this state can be used by wallets to scan for changes without the wallets
           *  having to process raw transactions.
           **/
-         virtual bool push_block( const full_block& block_data );
+         block_fork_data push_block( const full_block& block_data );
 
-         std::vector<block_id_type> get_fork_history( const block_id_type& id );
+         vector<block_id_type> get_fork_history( const block_id_type& id );
 
          /**
           *  Evaluate the transaction and return the results.
@@ -182,3 +214,4 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
+FC_REFLECT( bts::blockchain::block_fork_data, (next_blocks)(is_linked)(is_valid)(is_included)(is_known) )

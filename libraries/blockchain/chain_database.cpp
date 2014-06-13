@@ -58,35 +58,6 @@ struct fee_index
 };
 FC_REFLECT( fee_index, (_fees)(_trx) )
 
-struct block_fork_data
-{
-   block_fork_data():is_linked(false),is_included(false){}
-
-   bool invalid()const
-   {
-      if( !!is_valid ) return !*is_valid;
-      return false;
-   }
-   bool valid()const
-   {
-      if( !!is_valid ) return *is_valid;
-      return false;
-   }
-   bool can_link()const
-   {
-      return is_linked && !invalid();
-   }
-
-   std::unordered_set<block_id_type> next_blocks; ///< IDs of all blocks that come after
-   bool                              is_linked;   ///< is linked to genesis block
-
-   /** if at any time this block was determiend to be valid or invalid then this
-    * flag will be set.
-    */
-   fc::optional<bool>         is_valid;
-   bool                       is_included; ///< is included in the current chain database
-};
-FC_REFLECT( block_fork_data, (next_blocks)(is_linked)(is_valid)(is_included) )
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 
 
@@ -116,7 +87,7 @@ namespace bts { namespace blockchain {
             void                       clear_pending(  const full_block& blk );
             void                       switch_to_fork( const block_id_type& block_id );
             void                       extend_chain( const full_block& blk );
-            std::vector<block_id_type> get_fork_history( const block_id_type& id );
+            vector<block_id_type>      get_fork_history( const block_id_type& id );
             void                       pop_block();
             void                       mark_invalid( const block_id_type& id );
             void                       mark_included( const block_id_type& id, bool state );
@@ -361,7 +332,7 @@ namespace bts { namespace blockchain {
                                                                       self->get_current_random_seed()) );
 
           // update the parallel block list
-          std::vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
+          vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
           if (std::find( parallel_blocks.begin(), parallel_blocks.end(), block_id ) == parallel_blocks.end())
           {
             // don't add the block to the list if it's already there.
@@ -384,7 +355,8 @@ namespace bts { namespace blockchain {
           }
           else
           {
-             ilog( "           we don't know about its previous: ${p}", ("p",block_data.previous) );
+             elog( "           we don't know about its previous: ${p}", ("p",block_data.previous) );
+             
              // create it... we do not know about the previous block so
              // we must create it and assume it is not linked...
              prev_fork_data.next_blocks.insert(block_id);
@@ -395,6 +367,7 @@ namespace bts { namespace blockchain {
 
           block_fork_data current_fork;
           auto cur_itr = _fork_db.find( block_id );
+          current_fork.is_known = true;
           if( cur_itr.valid() )
           {
              current_fork = cur_itr.value();
@@ -405,17 +378,16 @@ namespace bts { namespace blockchain {
                 // we found the missing link
                 current_fork.is_linked = true;
                 recursive_mark_as_linked( current_fork.next_blocks );
-                _fork_db.store( block_id, current_fork );
              }
           }
           else
           {
              current_fork.is_linked = prev_fork_data.is_linked;
              //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
-             _fork_db.store( block_id, current_fork );
           }
+          _fork_db.store( block_id, current_fork );
           return current_fork;
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       void chain_database_impl::mark_invalid( const block_id_type& block_id )
       {
@@ -447,7 +419,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::switch_to_fork( const block_id_type& block_id )
       { try {
          ilog( "switch from fork ${id} to ${to_id}", ("id",_head_block_id)("to_id",block_id) );
-         std::vector<block_id_type> history = get_fork_history( block_id );
+         vector<block_id_type> history = get_fork_history( block_id );
          FC_ASSERT( history.size() > 0 );
          while( history.back() != _head_block_id )
          {
@@ -459,7 +431,7 @@ namespace bts { namespace blockchain {
             ilog( "    extend ${i}", ("i",history[i]) );
             extend_chain( self->get_block( history[i] ) );
          }
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
 
       void chain_database_impl::apply_transactions( uint32_t block_num,
@@ -612,7 +584,7 @@ namespace bts { namespace blockchain {
 
               pending_state->store_account_record( *delegate_rec );
           }
-          while( headblock_timestamp != produced_block.timestamp );
+          while( headblock_timestamp < produced_block.timestamp );
 
           required_confirmations -= 1;
           if( required_confirmations < 1 )
@@ -1036,7 +1008,7 @@ namespace bts { namespace blockchain {
     *  Adds the block to the database and manages any reorganizations as a result.
     *
     */
-   bool chain_database::push_block( const full_block& block_data )
+   block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
       auto block_id        = block_data.id();
       auto current_head_id = my->_head_block_id;
@@ -1053,7 +1025,7 @@ namespace bts { namespace blockchain {
       {
          try {
             my->switch_to_fork( block_id );
-            return true; // switched forks
+            return fork; // switched forks
          }
          catch ( const fc::exception& e )
          {
@@ -1061,7 +1033,7 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
-      return false; // didn't switch forks
+      return fork; // didn't switch forks
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
 
@@ -1528,6 +1500,7 @@ namespace bts { namespace blockchain {
       gen_fork.is_valid = true;
       gen_fork.is_included = true;
       gen_fork.is_linked = true;
+      gen_fork.is_known = true;
       _fork_db.store( block_id_type(), gen_fork );
 
       self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
@@ -1544,16 +1517,21 @@ namespace bts { namespace blockchain {
    {
       my->_observer = observer;
    }
+
    bool chain_database::is_known_block( const block_id_type& block_id )const
    {
-      auto itr = my->_fork_db.find( block_id );
-      return itr.valid();
+      auto fork_data = get_block_fork_data( block_id );
+      return fork_data && fork_data->is_known;
    }
-  bool chain_database::is_included_block( const block_id_type& block_id ) const
-  {
-    block_fork_data record = my->_fork_db.fetch(block_id);
-    return record.is_included;
-  }
+   bool chain_database::is_included_block( const block_id_type& block_id )const
+   {
+      auto fork_data = get_block_fork_data( block_id );
+      return fork_data && fork_data->is_included;
+   }
+   optional<block_fork_data> chain_database::get_block_fork_data( const block_id_type& id )const
+   {
+      return my->_fork_db.fetch_optional(id); 
+   }
 
    uint32_t chain_database::get_block_num( const block_id_type& block_id )const
    { try {
@@ -1620,6 +1598,7 @@ namespace bts { namespace blockchain {
 
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
+            ilog( "property ${p}", ("p",property_id) );
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
 

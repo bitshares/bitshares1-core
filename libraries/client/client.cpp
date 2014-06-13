@@ -1,5 +1,3 @@
-#include <algorithm>
-
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
@@ -320,7 +318,7 @@ namespace bts { namespace client {
             void delegate_loop();
             void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
-            bool on_new_block(const full_block& block, const block_id_type& block_id);
+            block_fork_data on_new_block(const full_block& block, const block_id_type& block_id);
             void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
@@ -443,7 +441,7 @@ namespace bts { namespace client {
             }
             else
             {
-               if( _wallet->is_unlocked() && network_get_connection_count() > 0)
+               if( _wallet->is_unlocked() && network_get_connection_count() >= 5 )
                {
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
                   try {
@@ -503,20 +501,22 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       bool client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
+       block_fork_data client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
        {
          try
          {
            ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}, current head block is ${num}",
                 ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
-           if (_chain_db->is_known_block(block_id))
+           auto fork_data = _chain_db->get_block_fork_data( block_id );
+
+           if( fork_data && fork_data->is_known )
            {
              ilog("The block we just received is one I've already seen, ignoring it");
-             return false;
+             return *fork_data;
            }
            else
            {
-             bool result = _chain_db->push_block(block);
+             auto result = _chain_db->push_block(block);
              ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
              return result;
            }
@@ -553,7 +553,9 @@ namespace bts { namespace client {
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
                 ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
-                return on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
+                block_fork_data d = on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
+                // TODO... what/
+                return false;
               }
             case trx_message_type:
               {
