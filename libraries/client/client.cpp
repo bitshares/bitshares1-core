@@ -523,6 +523,18 @@ namespace bts { namespace client {
              if (sync_mode && !result.is_linked)
                 FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
              ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+
+             if (_cli && 
+                 result.is_included && 
+                 (fc::time_point::now() - block.timestamp) > fc::minutes(5) &&
+                 _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(30)))
+             {
+                std::ostringstream message;
+                message << "--- syncing with p2p network, our last block was created " << fc::get_approximate_relative_time_string(block.timestamp);
+                _cli->display_status_message(message.str());
+                _last_sync_status_message_time = fc::time_point::now();
+             }
+
              return result;
            }
          } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block}", ("block", block));
@@ -778,15 +790,16 @@ namespace bts { namespace client {
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         std::ostringstream message;
-         if (item_count > 100)
-            message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
-         else if (item_count == 0)
-            message << "--- in sync with p2p network";
-         // this notification is currently broken, so it would spam the terminal if we enabled it
-         if (_cli)
+         if (_cli && _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(10)))
+         {
+           std::ostringstream message;
+           if (item_count > 100)
+              message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+           else if (item_count == 0)
+              message << "--- in sync with p2p network";
            _cli->display_status_message(message.str());
-         _last_sync_status_message_time = fc::time_point::now();
+           _last_sync_status_message_time = fc::time_point::now();
+         }
        }
 
        void client_impl::connection_count_changed(uint32_t c)

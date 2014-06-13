@@ -1524,6 +1524,12 @@ namespace bts { namespace net {
         {
           ilog("sync: peer said we're up-to-date, entering normal operation with this peer");
           originating_peer->we_need_sync_items_from_peer = false;
+
+          uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
+          if (new_number_of_unfetched_items == 0)
+            _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type, 0);
+          _total_number_of_unfetched_items = new_number_of_unfetched_items;
+
           return;
         }
 
@@ -1611,13 +1617,9 @@ namespace bts { namespace net {
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if (new_number_of_unfetched_items != _total_number_of_unfetched_items)
-        {
-          _total_number_of_unfetched_items = new_number_of_unfetched_items;
           _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type,
-                                 _total_number_of_unfetched_items);
-        }
-        else if (new_number_of_unfetched_items == 0)
-          _delegate->sync_status(blockchain_item_ids_inventory_message_received.item_type, 0);
+                                 new_number_of_unfetched_items);
+        _total_number_of_unfetched_items = new_number_of_unfetched_items;
         
         if (blockchain_item_ids_inventory_message_received.total_remaining_item_count != 0)
         {

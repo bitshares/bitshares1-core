@@ -1024,12 +1024,18 @@ namespace bts { namespace blockchain {
       {
          // attempt to extend chain
          my->extend_chain( block_data );
+         optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+         FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+         fork = *new_fork_data;
       }
       else if( fork.can_link() && block_data.block_num > my->_head_block_header.block_num )
       {
          try {
             my->switch_to_fork( block_id );
-            return fork; // switched forks
+            optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+            FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+            fork = *new_fork_data;
+            return fork;
          }
          catch ( const fc::exception& e )
          {
@@ -1037,7 +1043,7 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
-      return fork; // didn't switch forks
+      return fork;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
 
