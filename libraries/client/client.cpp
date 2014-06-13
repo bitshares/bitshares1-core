@@ -138,7 +138,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
-                              ("version", "print the version information for bts_xt_client");
+                              ("version", "print the version information for bts_xt_client")
+                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), "Limit total bandwidth to this many bytes per second");
 
 
   program_options::variables_map option_variables;
@@ -668,6 +669,7 @@ namespace bts { namespace client {
             {
               // block is a block we know about and is on the main chain
               uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
+              assert(reference_point_block_num > 0);
               high_block_num = reference_point_block_num;
               non_fork_high_block_num = high_block_num;
             }
@@ -685,6 +687,7 @@ namespace bts { namespace client {
                 try
                 {
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
+                  assert(non_fork_high_block_num > 0);
                 }
                 catch (const fc::key_not_found_exception&)
                 {
@@ -693,16 +696,18 @@ namespace bts { namespace client {
                 high_block_num = non_fork_high_block_num + fork_history.size();
                 assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
               }
-              catch (const fc::exception&)
+              catch (const fc::exception& e)
               {
                 // unable to get fork history for some reason.  maybe not linked?
                 // we can't return a synopsis of its chain
+                elog("Unable to construct a blockchain synopsis for reference hash ${hash}: ${exception}", ("hash", reference_point)("exception", e));
                 return synopsis;
               }
             }
           }
           catch (const fc::key_not_found_exception&)
           {
+            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
             // we've never seen this block
             return synopsis;
           }
@@ -1631,6 +1636,12 @@ namespace bts { namespace client {
           }
       }
 
+      if (option_variables.count("total-bandwidth-limit"))
+      {
+        this->get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(), 
+                                                    option_variables["total-bandwidth-limit"].as<uint32_t>());
+      }
+
       if (option_variables.count("clear-peer-database"))
       {
         std::cout << "Erasing old peer database\n";
@@ -1705,6 +1716,9 @@ namespace bts { namespace client {
         //don't create a log file, just output to console
         my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
     #endif
+        //my->_chain_db->export_fork_graph("fork_history.dot");
+        //my->_chain_db->export_new_fork_graph("new_fork_history.dot");
+
         my->_cli->process_commands();
         my->_cli->wait_till_cli_shutdown();
       } 

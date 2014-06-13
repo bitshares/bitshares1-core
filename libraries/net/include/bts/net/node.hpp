@@ -197,6 +197,8 @@ namespace bts { namespace net {
          */
         void clear_peer_database();
 
+        void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
+
         fc::variant_object network_get_info() const;
 
       private:

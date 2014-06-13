@@ -24,6 +24,7 @@
 #include <fc/io/json.hpp>
 #include <fc/io/enum_type.hpp>
 #include <fc/crypto/rand.hpp>
+#include <fc/network/rate_limiting.hpp>
 
 #include <bts/net/node.hpp>
 #include <bts/net/peer_database.hpp>
@@ -343,6 +344,8 @@ namespace bts { namespace net {
 
       blockchain_tied_message_cache _message_cache; /// cache message we have received and might be required to provide to other peers via inventory requests
 
+      fc::rate_limiting_group _rate_limiter;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -440,6 +443,7 @@ namespace bts { namespace net {
       node_id_t get_node_id() const;
       void set_allowed_peers(const std::vector<node_id_t>& allowed_peers);
       void clear_peer_database();
+      void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
       fc::variant_object network_get_info() const;
     }; // end class node_impl
 
@@ -577,7 +581,8 @@ namespace bts { namespace net {
       _peer_inactivity_timeout(45),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0),
-      _user_agent_string("bts::net::node")
+      _user_agent_string("bts::net::node"),
+      _rate_limiter(0, 0)
     {
       fc::rand_pseudo_bytes(_node_id.data(), 20);
     }
@@ -653,7 +658,7 @@ namespace bts { namespace net {
                iter != _potential_peer_db.end() && is_wanting_new_connections();
                ++iter)
           {
-            ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
+            //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
             if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
                 ((iter->last_connection_disposition != last_connection_failed && 
                   iter->last_connection_disposition != last_connection_rejected &&
@@ -1440,6 +1445,15 @@ namespace bts { namespace net {
       number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
 
       std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis(_sync_item_type, reference_point, number_of_blocks_after_reference_point);
+      
+      // if we passed in a reference point, we believe it is one the client has already accepted and should
+      // be able to generate a synopsis based on it
+      if (reference_point != item_hash_t() && synopsis.empty())
+      {
+        synopsis = _delegate->get_blockchain_synopsis(_sync_item_type, reference_point, number_of_blocks_after_reference_point);
+      }
+      assert(reference_point == item_hash_t() || !synopsis.empty());
+
       if (number_of_blocks_after_reference_point)
       {
         // then the synopsis is incomplete, add the missing elements from ids_of_items_to_get
@@ -1759,6 +1773,7 @@ namespace bts { namespace net {
     void node_impl::on_connection_closed(peer_connection* originating_peer)
     {
       peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
+      _rate_limiter.remove_tcp_socket(&originating_peer->get_socket());
       if (_closing_connections.find(originating_peer_ptr) != _closing_connections.end())
         _closing_connections.erase(originating_peer_ptr);
       else if (_active_connections.find(originating_peer_ptr) != _active_connections.end())
@@ -2126,6 +2141,7 @@ namespace bts { namespace net {
           ilog("accepted inbound connection from ${remote_endpoint}", ("remote_endpoint", new_peer->get_socket().remote_endpoint()));
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert(new_peer);
+          _rate_limiter.add_tcp_socket(&new_peer->get_socket());
 
           fc::async([=]() { accept_connection_task(new_peer); });
 
@@ -2357,6 +2373,7 @@ namespace bts { namespace net {
       new_peer->set_remote_endpoint(remote_endpoint);
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert(new_peer);
+      _rate_limiter.add_tcp_socket(&new_peer->get_socket());
       fc::async([=](){ connect_to_task(new_peer, remote_endpoint); });
     }
 
@@ -2632,6 +2649,12 @@ namespace bts { namespace net {
       _potential_peer_db.clear();
     }
 
+    void node_impl::set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second)
+    {
+      _rate_limiter.set_upload_limit(upload_bytes_per_second);
+      _rate_limiter.set_download_limit(download_bytes_per_second);
+    }
+
     fc::variant_object node_impl::network_get_info() const
     {
       fc::mutable_variant_object info;
@@ -2752,6 +2775,12 @@ namespace bts { namespace net {
   {
     my->clear_peer_database();
   }
+
+  void node::set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second)
+  {
+    my->set_total_bandwidth_limit(upload_bytes_per_second, download_bytes_per_second);
+  }
+
   fc::variant_object node::network_get_info() const
   {
     return my->network_get_info();
