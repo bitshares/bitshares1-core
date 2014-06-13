@@ -777,7 +777,8 @@ namespace bts { namespace client {
        {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
-         _cli->display_status_message(message.str());
+         if( _cli )
+            _cli->display_status_message(message.str());
        }
 
        uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
