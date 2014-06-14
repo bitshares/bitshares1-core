@@ -34,6 +34,7 @@ namespace bts { namespace net {
     uint64_t get_total_bytes_received() const;
     fc::time_point get_last_message_sent_time() const;
     fc::time_point get_last_message_received_time() const;
+    fc::time_point get_connection_time() const;
   private:
     std::unique_ptr<detail::message_oriented_connection_impl> my;
   };

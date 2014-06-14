@@ -9,6 +9,7 @@
 #include <fc/time.hpp>
 #include <fc/variant_object.hpp>
 
+
 #include <vector>
 
 namespace bts { namespace net {
@@ -33,6 +34,8 @@ namespace bts { namespace net {
 
   enum core_message_type_enum
   {
+    block_message_type = 1000,//bts::client::block_message_type,
+    trx_message_type   = 1001,//bts::client::trx_message_type,
     item_ids_inventory_message_type            = 5001,
     blockchain_item_ids_inventory_message_type = 5002,
     fetch_blockchain_item_ids_message_type     = 5003,
@@ -226,7 +229,20 @@ namespace bts { namespace net {
 
 } } // bts::client
 
-FC_REFLECT_ENUM( bts::net::core_message_type_enum, (item_ids_inventory_message_type)(blockchain_item_ids_inventory_message_type)(fetch_blockchain_item_ids_message_type)(fetch_items_message_type)(hello_message_type)(address_request_message_type))
+FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
+                 (block_message_type)
+                 (trx_message_type)
+                 (item_ids_inventory_message_type)
+                 (blockchain_item_ids_inventory_message_type)
+                 (fetch_blockchain_item_ids_message_type)
+                 (fetch_items_message_type)
+                 (item_not_available_message_type)
+                 (hello_message_type)
+                 (hello_reply_message_type)
+                 (connection_rejected_message_type)
+                 (address_request_message_type)
+                 (address_message_type)
+                 )
 FC_REFLECT( bts::net::item_id, (item_type)(item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_available) )
 FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)(item_type)(item_hashes_available) )

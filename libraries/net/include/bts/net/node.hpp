@@ -8,6 +8,8 @@
 
 namespace bts { namespace net {
 
+  using fc::variant_object;
+
    namespace detail { class node_impl; }
 
   // during network development, we need to track message propagation across the network
@@ -202,6 +204,7 @@ namespace bts { namespace net {
         void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
 
         fc::variant_object network_get_info() const;
+        fc::variant_object get_handshaking_connections() const;
 
         std::vector<potential_peer_record> get_potential_peers()const;
 

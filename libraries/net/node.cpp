@@ -67,6 +67,8 @@ namespace bts { namespace net {
       connection_state state;
       boost::tribool is_firewalled;
 
+      fc::time_point get_connection_time()const { return _message_connection.get_connection_time(); }
+
       /// data about the peer node
       /// @{
       node_id_t        node_id;
@@ -232,9 +234,16 @@ namespace bts { namespace net {
                                                       _message_cache.get<block_clock_index>().lower_bound(block_clock - cache_duration_in_blocks));
     }
 
-    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash)
+    void blockchain_tied_message_cache::cache_message(const message& message_to_cache, 
+                                                      const message_hash_type& hash_of_message_to_cache, 
+                                                      const message_propagation_data& propagation_data, 
+                                                      const fc::uint160_t& message_content_hash)
     {
-      _message_cache.insert(message_info(hash_of_message_to_cache, message_to_cache, block_clock, propagation_data, message_content_hash));
+      _message_cache.insert(message_info(hash_of_message_to_cache, 
+                                         message_to_cache, 
+                                         block_clock, 
+                                         propagation_data, 
+                                         message_content_hash));
     }
 
     message blockchain_tied_message_cache::get_message(const message_hash_type& hash_of_message_to_lookup)
@@ -445,6 +454,7 @@ namespace bts { namespace net {
       void clear_peer_database();
       void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
       fc::variant_object network_get_info() const;
+      variant_object get_handshaking_connections()const;
     }; // end class node_impl
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -618,92 +628,98 @@ namespace bts { namespace net {
     void node_impl::p2p_network_connect_loop()
     {
       for (;;)
-      {
-        ilog("Starting an iteration of p2p_network_connect_loop().");
-        display_current_connections();
+      { 
+        try {
+           ilog("Starting an iteration of p2p_network_connect_loop().");
+           display_current_connections();
 
-        // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
-        if (!_add_once_node_list.empty())
+           // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
+           if (!_add_once_node_list.empty())
+           {
+             std::list<potential_peer_record> add_once_node_list;
+             add_once_node_list.swap(_add_once_node_list);
+             ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
+             for (const potential_peer_record& add_once_peer : add_once_node_list)
+             {
+               ilog("    ${peer}", ("peer", add_once_peer.endpoint));
+             }
+             for (const potential_peer_record& add_once_peer : add_once_node_list)
+             {
+               // see if we have an existing connection to that peer.  If we do, disconnect them and
+               // then try to connect the next time through the loop
+               peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
+               if (existing_connection_ptr)
+               {
+                 wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
+                 disconnect_from_peer(existing_connection_ptr.get());
+                 _add_once_node_list.push_back(add_once_peer);
+               }
+               else
+                 connect_to(add_once_peer.endpoint);
+             }
+             ilog("Done processing \"add once\" node list");
+           }
+
+           while (is_wanting_new_connections())
+           {
+             bool initiated_connection_this_pass = false;
+             _potential_peer_database_updated = false;
+
+             for ( peer_database::iterator iter = _potential_peer_db.begin();
+                  iter != _potential_peer_db.end() && is_wanting_new_connections();
+                  ++iter)
+             {
+               //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
+               if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
+                   ((iter->last_connection_disposition != last_connection_failed && 
+                     iter->last_connection_disposition != last_connection_rejected &&
+                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
+                    iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
+               {
+                 connect_to(iter->endpoint);
+                 initiated_connection_this_pass = true;
+               }
+             }
+
+             if (!initiated_connection_this_pass && !_potential_peer_database_updated)
+               break;
+           }
+
+           display_current_connections();
+
+
+
+           // if we broke out of the while loop, that means either we have connected to enough nodes, or
+           // we don't have any good candidates to connect to right now.
+           try
+           {
+             _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
+             if (is_wanting_new_connections() || !_add_once_node_list.empty())
+             {
+               if (is_wanting_new_connections())
+                 ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+               else
+                 ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
+               _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
+             }
+             else
+             {
+               ilog("I don't need any more connections, waiting forever until something changes");
+               _retrigger_connect_loop_promise->wait();
+             }
+           }
+           catch (fc::timeout_exception&)
+           {
+             // we timed out; loop around and try retry 
+           }
+           _retrigger_connect_loop_promise.reset();
+        } 
+        catch ( const fc::exception& e ) 
         {
-          std::list<potential_peer_record> add_once_node_list;
-          add_once_node_list.swap(_add_once_node_list);
-          ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
-          for (const potential_peer_record& add_once_peer : add_once_node_list)
-          {
-            ilog("    ${peer}", ("peer", add_once_peer.endpoint));
-          }
-          for (const potential_peer_record& add_once_peer : add_once_node_list)
-          {
-            // see if we have an existing connection to that peer.  If we do, disconnect them and
-            // then try to connect the next time through the loop
-            peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
-            if (existing_connection_ptr)
-            {
-              wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
-              disconnect_from_peer(existing_connection_ptr.get());
-              _add_once_node_list.push_back(add_once_peer);
-            }
-            else
-              connect_to(add_once_peer.endpoint);
-          }
-          ilog("Done processing \"add once\" node list");
-        }
-
-        while (is_wanting_new_connections())
-        {
-          bool initiated_connection_this_pass = false;
-          _potential_peer_database_updated = false;
-
-          for ( peer_database::iterator iter = _potential_peer_db.begin();
-               iter != _potential_peer_db.end() && is_wanting_new_connections();
-               ++iter)
-          {
-            //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
-            if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
-                ((iter->last_connection_disposition != last_connection_failed && 
-                  iter->last_connection_disposition != last_connection_rejected &&
-                  iter->last_connection_disposition != last_connection_handshaking_failed) ||
-                 iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
-            {
-              connect_to(iter->endpoint);
-              initiated_connection_this_pass = true;
-            }
-          }
-
-          if (!initiated_connection_this_pass && !_potential_peer_database_updated)
-            break;
-        }
-
-        display_current_connections();
-
-
-
-        // if we broke out of the while loop, that means either we have connected to enough nodes, or
-        // we don't have any good candidates to connect to right now.
-        try
-        {
-          _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
-          if (is_wanting_new_connections() || !_add_once_node_list.empty())
-          {
-            if (is_wanting_new_connections())
-              ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
-            else
-              ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
-            _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
-          }
-          else
-          {
-            ilog("I don't need any more connections, waiting forever until something changes");
-            _retrigger_connect_loop_promise->wait();
-          }
-        }
-        catch (fc::timeout_exception&)
-        {
-          // we timed out; loop around and try retry 
-        }
-        _retrigger_connect_loop_promise.reset();
-      }
-    }
+          elog( "${e}", ("e",e.to_detail_string() ) );
+        }  // catch
+      }// for( ;; )
+    } 
 
     void node_impl::trigger_p2p_network_connect_loop()
     {
@@ -1010,7 +1026,8 @@ namespace bts { namespace net {
     void node_impl::on_message(peer_connection* originating_peer, const message& received_message)
     {
       message_hash_type message_hash = received_message.id();
-      //ilog("handling message ${hash} size ${size} from peer ${endpoint}", ("hash", message_hash)("size", received_message.size)("endpoint", originating_peer->get_remote_endpoint()));
+      ilog("handling message ${type} ${hash} size ${size} from peer ${endpoint}", 
+           ("type", bts::net::core_message_type_enum(received_message.msg_type))("hash", message_hash)("size", received_message.size)("endpoint", originating_peer->get_remote_endpoint()));
       switch (received_message.msg_type)
       {
       case core_message_type_enum::hello_message_type:
@@ -2439,6 +2456,16 @@ namespace bts { namespace net {
       ilog("--------- END MEMORY USAGE ------------");
     }
 
+    fc::variant_object node_impl::get_handshaking_connections()const
+    {
+      fc::mutable_variant_object result;
+      for (const peer_connection_ptr& peer : _handshaking_connections)
+      {
+         result( std::string( *peer->get_remote_endpoint() ), fc::variant(peer->state) );
+      }
+       return result;
+    }
+
     void node_impl::disconnect_from_peer(peer_connection* peer_to_disconnect)
     {
       _closing_connections.insert(peer_to_disconnect->shared_from_this());
@@ -2482,7 +2509,7 @@ namespace bts { namespace net {
         peer_details["lastrecv"] = peer->get_last_message_received_time().sec_since_epoch();
         peer_details["bytessent"] = peer->get_total_bytes_sent();
         peer_details["bytesrecv"] = peer->get_total_bytes_received();
-        peer_details["conntime"] = ""; // TODO: fill me for bitcoin compatibility
+        peer_details["conntime"] = peer->get_connection_time(); 
         peer_details["pingtime"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["pingwait"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["version"] = ""; // TODO: fill me for bitcoin compatibility
@@ -2798,6 +2825,12 @@ namespace bts { namespace net {
     return my->network_get_info();
   }
 
+  fc::variant_object node::get_handshaking_connections()const
+  {
+     return my->get_handshaking_connections();
+  }
+     
+     
   void simulated_network::broadcast( const message& item_to_broadcast )
   {
       for(node_delegate* network_node : network_nodes)
