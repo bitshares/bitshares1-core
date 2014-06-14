@@ -66,6 +66,7 @@ namespace bts { namespace blockchain {
           *  This method is called anytime a block is applied to the chain.
           */
          virtual void block_applied( const block_summary& summary ) = 0;
+         virtual void on_pending_transaction( const transaction_evaluation_state_ptr& ) {}
    };
 
    class chain_database : public chain_interface, public std::enable_shared_from_this<chain_database>
@@ -77,7 +78,9 @@ namespace bts { namespace blockchain {
          void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file );
          void close();
 
-         void set_observer( chain_observer* observer );
+         void add_observer( chain_observer* observer );
+         void remove_observer( chain_observer* observer );
+
          void sanity_check()const;
 
          double get_average_delegate_participation()const;

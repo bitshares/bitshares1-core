@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            chain_database_impl():self(nullptr),_observer(nullptr){}
+            chain_database_impl():self(nullptr){}
 
             void                       initialize_genesis(fc::optional<fc::path> genesis_file);
 
@@ -124,7 +124,7 @@ namespace bts { namespace blockchain {
             pending_chain_state_ptr                                             _pending_trx_state;
 
             chain_database*                                                     self;
-            chain_observer*                                                     _observer;
+            unordered_set<chain_observer*>                                      _observers;
             digest_type                                                         _chain_id;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> >           _fork_number_db;
@@ -688,11 +688,17 @@ namespace bts { namespace blockchain {
             mark_invalid( block_id );
             throw;
          }
-         if( _observer ) try { 
-            _observer->block_applied( summary );
-         } catch ( const fc::exception& e )
+
+         // just in case something changes while calling observer
+         auto tmp = _observers;
+         for( auto o : tmp )
          {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
+            try { 
+               o->block_applied( summary );
+            } catch ( const fc::exception& e )
+            {
+               wlog( "${e}", ("e",e.to_detail_string() ) );
+            }
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
@@ -753,7 +759,8 @@ namespace bts { namespace blockchain {
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         if( _observer ) _observer->state_changed(undo_state);
+         auto tmp = _observers;
+         for( auto o : tmp ) o->state_changed( undo_state );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
@@ -1517,9 +1524,9 @@ namespace bts { namespace blockchain {
       self->sanity_check();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::set_observer( chain_observer* observer )
+   void chain_database::add_observer( chain_observer* observer )
    {
-      my->_observer = observer;
+      my->_observers.insert(observer);
    }
 
    bool chain_database::is_known_block( const block_id_type& block_id )const

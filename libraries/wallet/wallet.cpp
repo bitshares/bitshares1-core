@@ -482,7 +482,7 @@ namespace bts { namespace wallet {
       my->self = this;
       my->_use_deterministic_one_time_keys = false;
       my->_blockchain = blockchain;
-      my->_blockchain->set_observer( my.get() );
+      my->_blockchain->add_observer( my.get() );
    }
 
    wallet::~wallet()
