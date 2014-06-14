@@ -405,6 +405,7 @@ namespace bts { namespace net {
       void on_fetch_items_message(peer_connection* originating_peer, const fetch_items_message& fetch_items_message_received);
       void on_item_not_available_message(peer_connection* originating_peer, const item_not_available_message& item_not_available_message_received);
       void on_item_ids_inventory_message(peer_connection* originating_peer, const item_ids_inventory_message& item_ids_inventory_message_received);
+      void on_closing_connection_message(peer_connection* originating_peer, const closing_connection_message& closing_connection_message_received);
       void on_connection_closed(peer_connection* originating_peer);
 
       void process_backlog_of_sync_blocks();
@@ -428,7 +429,10 @@ namespace bts { namespace net {
 
       void dump_node_status();
       
-      void disconnect_from_peer(peer_connection* originating_peer);
+      void disconnect_from_peer(peer_connection* originating_peer,
+                                const std::string& reason_for_disconnect,
+                                bool caused_by_error = false,
+                                const fc::oexception& additional_data = fc::oexception());
 
       // methods implementing node's public interface
       void set_node_delegate(node_delegate* del);
@@ -599,6 +603,13 @@ namespace bts { namespace net {
 
     node_impl::~node_impl()
     {
+      for (const peer_connection_ptr& active_peer : _active_connections)
+      {
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*active_peer->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
+
       try
       {
         close();
@@ -628,96 +639,95 @@ namespace bts { namespace net {
     void node_impl::p2p_network_connect_loop()
     {
       for (;;)
-      { 
-        try {
-           ilog("Starting an iteration of p2p_network_connect_loop().");
-           display_current_connections();
-
-           // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
-           if (!_add_once_node_list.empty())
-           {
-             std::list<potential_peer_record> add_once_node_list;
-             add_once_node_list.swap(_add_once_node_list);
-             ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
-             for (const potential_peer_record& add_once_peer : add_once_node_list)
-             {
-               ilog("    ${peer}", ("peer", add_once_peer.endpoint));
-             }
-             for (const potential_peer_record& add_once_peer : add_once_node_list)
-             {
-               // see if we have an existing connection to that peer.  If we do, disconnect them and
-               // then try to connect the next time through the loop
-               peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
-               if (existing_connection_ptr)
-               {
-                 wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
-                 disconnect_from_peer(existing_connection_ptr.get());
-                 _add_once_node_list.push_back(add_once_peer);
-               }
-               else
-                 connect_to(add_once_peer.endpoint);
-             }
-             ilog("Done processing \"add once\" node list");
-           }
-
-           while (is_wanting_new_connections())
-           {
-             bool initiated_connection_this_pass = false;
-             _potential_peer_database_updated = false;
-
-             for ( peer_database::iterator iter = _potential_peer_db.begin();
-                  iter != _potential_peer_db.end() && is_wanting_new_connections();
-                  ++iter)
-             {
-               //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
-               if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
-                   ((iter->last_connection_disposition != last_connection_failed && 
-                     iter->last_connection_disposition != last_connection_rejected &&
-                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
-                    iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
-               {
-                 connect_to(iter->endpoint);
-                 initiated_connection_this_pass = true;
-               }
-             }
-
-             if (!initiated_connection_this_pass && !_potential_peer_database_updated)
-               break;
-           }
-
-           display_current_connections();
-
-
-
-           // if we broke out of the while loop, that means either we have connected to enough nodes, or
-           // we don't have any good candidates to connect to right now.
-           try
-           {
-             _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
-             if (is_wanting_new_connections() || !_add_once_node_list.empty())
-             {
-               if (is_wanting_new_connections())
-                 ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
-               else
-                 ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
-               _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
-             }
-             else
-             {
-               ilog("I don't need any more connections, waiting forever until something changes");
-               _retrigger_connect_loop_promise->wait();
-             }
-           }
-           catch (fc::timeout_exception&)
-           {
-             // we timed out; loop around and try retry 
-           }
-           _retrigger_connect_loop_promise.reset();
-        } 
-        catch ( const fc::exception& e ) 
-        {
+      {
+         try {
+          ilog("Starting an iteration of p2p_network_connect_loop().");
+          display_current_connections();
+         
+          // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
+          if (!_add_once_node_list.empty())
+          {
+            std::list<potential_peer_record> add_once_node_list;
+            add_once_node_list.swap(_add_once_node_list);
+            ilog("Processing \"add once\" node list containing ${count} peers:", ("count", add_once_node_list.size()));
+            for (const potential_peer_record& add_once_peer : add_once_node_list)
+            {
+              ilog("    ${peer}", ("peer", add_once_peer.endpoint));
+            }
+            for (const potential_peer_record& add_once_peer : add_once_node_list)
+            {
+              // see if we have an existing connection to that peer.  If we do, disconnect them and
+              // then try to connect the next time through the loop
+              peer_connection_ptr existing_connection_ptr = get_connection_to_endpoint(add_once_peer.endpoint);
+              if (existing_connection_ptr)
+              {
+                wlog("I'm trying to do an \"add once\" connection to endpoint ${peer}, but I already have a connection in progress to that peer.  I'll disconnect and reconnect.", ("peer", add_once_peer.endpoint));
+                disconnect_from_peer(existing_connection_ptr.get(), "User forced a reconnect to your node");
+                _add_once_node_list.push_back(add_once_peer);
+              }
+              else
+                connect_to(add_once_peer.endpoint);
+            }
+            ilog("Done processing \"add once\" node list");
+          }
+         
+          while (is_wanting_new_connections())
+          {
+            bool initiated_connection_this_pass = false;
+            _potential_peer_database_updated = false;
+         
+            for ( peer_database::iterator iter = _potential_peer_db.begin();
+                 iter != _potential_peer_db.end() && is_wanting_new_connections();
+                 ++iter)
+            {
+              //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
+              if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
+                  ((iter->last_connection_disposition != last_connection_failed && 
+                    iter->last_connection_disposition != last_connection_rejected &&
+                    iter->last_connection_disposition != last_connection_handshaking_failed) ||
+                   iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
+              {
+                connect_to(iter->endpoint);
+                initiated_connection_this_pass = true;
+              }
+            }
+         
+            if (!initiated_connection_this_pass && !_potential_peer_database_updated)
+              break;
+          }
+         
+          display_current_connections();
+         
+         
+         
+          // if we broke out of the while loop, that means either we have connected to enough nodes, or
+          // we don't have any good candidates to connect to right now.
+          try
+          {
+            _retrigger_connect_loop_promise = fc::promise<void>::ptr(new fc::promise<void>());
+            if (is_wanting_new_connections() || !_add_once_node_list.empty())
+            {
+              if (is_wanting_new_connections())
+                ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
+              else
+                ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
+              _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
+            }
+            else
+            {
+              ilog("I don't need any more connections, waiting forever until something changes");
+              _retrigger_connect_loop_promise->wait();
+            }
+          }
+          catch (fc::timeout_exception& e)
+          {
+            elog( "${e}", ("e",e.to_detail_string() ) );
+          }  // catch
+       } 
+       catch ( const fc::exception& e )
+       {
           elog( "${e}", ("e",e.to_detail_string() ) );
-        }  // catch
+       }
       }// for( ;; )
     } 
 
@@ -949,7 +959,13 @@ namespace bts { namespace net {
           }
 
         for (const peer_connection_ptr& peer : peers_to_disconnect)
-          disconnect_from_peer(peer.get());
+        {
+          fc::exception detailed_error(FC_LOG_MESSAGE(warn, "Disconnecting due to inactivity", 
+                                                      ("last_message_received_seconds_ago", (peer->get_last_message_received_time() - fc::time_point::now()).count() / fc::seconds(1).count())
+                                                      ("last_message_sent_seconds_ago", (peer->get_last_message_sent_time() - fc::time_point::now()).count() / fc::seconds(1).count())
+                                                      ("inactivity_timeout", _active_connections.find(peer) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout)));
+          disconnect_from_peer(peer.get(), "Disconnecting due to inactivity", false, detailed_error);
+        }
         fc::usleep(fc::seconds(15));
       }
     }
@@ -1060,6 +1076,9 @@ namespace bts { namespace net {
       case core_message_type_enum::item_ids_inventory_message_type:
         on_item_ids_inventory_message(originating_peer, received_message.as<item_ids_inventory_message>());
         break;
+      case core_message_type_enum::closing_connection_message_type:
+        on_closing_connection_message(originating_peer, received_message.as<closing_connection_message>());
+        break;
       case bts::client::message_type_enum::block_message_type:
         if (originating_peer->we_need_sync_items_from_peer)
           process_block_during_sync(originating_peer, received_message, message_hash);
@@ -1125,7 +1144,7 @@ namespace bts { namespace net {
                                                          rejection_message.str());
          originating_peer->state = peer_connection::connection_rejected_sent;
          originating_peer->send_message(message(connection_rejected));
-         disconnect_from_peer( originating_peer );
+         disconnect_from_peer(originating_peer, "You are on a different chain from me");
          return;
       }
 
@@ -1238,7 +1257,7 @@ namespace bts { namespace net {
         // probably need to think through that case.  We're not attempting that
         // yet, though, so it's ok to just disconnect here.
         wlog("unexpected hello_message from peer, disconnecting");
-        disconnect_from_peer(originating_peer);
+        disconnect_from_peer(originating_peer, "Received a unexpected hello_message");
       }
     }
 
@@ -1272,7 +1291,7 @@ namespace bts { namespace net {
         {
           ilog("Established a connection with peer ${peer}, but I'm already connected to it.  Closing the connection", 
                ("peer", originating_peer->get_remote_endpoint()));
-          disconnect_from_peer(originating_peer);
+          disconnect_from_peer(originating_peer, "I'm already connected to you");
         }
 #ifdef ENABLE_P2P_DEBUGGING_API
         else if (!_allowed_peers.empty() && 
@@ -1280,7 +1299,7 @@ namespace bts { namespace net {
         {
           ilog("Established a connection with peer ${peer}, but it's not in my _accepted_peers list.  Closing the connection", 
                ("peer", originating_peer->get_remote_endpoint()));
-          disconnect_from_peer(originating_peer);
+          disconnect_from_peer(originating_peer, "You're not in my accepted_peers list");
         }
 #endif // ENABLE_P2P_DEBUGGING_API        
         else
@@ -1322,6 +1341,14 @@ namespace bts { namespace net {
     void node_impl::on_address_request_message(peer_connection* originating_peer, const address_request_message& address_request_message_received)
     {
       ilog("Received an address request message");
+
+      for (const peer_connection_ptr& active_peer : _active_connections)
+      {
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*active_peer->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
+
       address_message reply;
       reply.addresses.reserve(_potential_peer_db.size());
       for (const potential_peer_record& record : _potential_peer_db)
@@ -1341,7 +1368,7 @@ namespace bts { namespace net {
         trigger_p2p_network_connect_loop();
 
       if (originating_peer->state == peer_connection::connection_rejected)      
-        disconnect_from_peer(originating_peer);
+        disconnect_from_peer(originating_peer, "You rejected my connection request (hello message) so I'm disconnecting");
       else
       {
         if (!originating_peer->is_firewalled)
@@ -1789,6 +1816,29 @@ namespace bts { namespace net {
       
     }
 
+    void node_impl::on_closing_connection_message(peer_connection* originating_peer, const closing_connection_message& closing_connection_message_received)
+    {
+      if (closing_connection_message_received.closing_due_to_error)
+      {
+        elog("Peer ${peer} is disconnecting us because of an error: ${msg}, exception: ${error}", 
+             ("peer", originating_peer->get_remote_endpoint())
+             ("msg", closing_connection_message_received.reason_for_closing)
+             ("error", closing_connection_message_received.error));
+        std::ostringstream message;
+        message << "Peer " << fc::variant(originating_peer->get_remote_endpoint()).as_string() << 
+                  " disconnected us: " << closing_connection_message_received.reason_for_closing;
+
+        _delegate->error_encountered(message.str(), 
+                                     closing_connection_message_received.error);
+      }
+      else
+      {
+        ilog("Peer ${peer} is disconnecting us because: ${msg}", 
+             ("peer", originating_peer->get_remote_endpoint())
+             ("msg", closing_connection_message_received.reason_for_closing));
+      }
+    }
+
     void node_impl::on_connection_closed(peer_connection* originating_peer)
     {
       peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
@@ -1796,7 +1846,13 @@ namespace bts { namespace net {
       if (_closing_connections.find(originating_peer_ptr) != _closing_connections.end())
         _closing_connections.erase(originating_peer_ptr);
       else if (_active_connections.find(originating_peer_ptr) != _active_connections.end())
+      {
         _active_connections.erase(originating_peer_ptr);
+
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer_ptr->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
       else if (_handshaking_connections.find(originating_peer_ptr) != _handshaking_connections.end())
         _handshaking_connections.erase(originating_peer_ptr);
       ilog("Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint()));
@@ -1846,6 +1902,8 @@ namespace bts { namespace net {
             bts::client::block_message block_message_to_process = *received_block_iter;
             _received_sync_items.erase(received_block_iter);
 
+            fc::oexception handle_message_exception;
+
             bool client_accepted_block = false;
             bool block_caused_fork_switch = false;
             try
@@ -1869,9 +1927,10 @@ namespace bts { namespace net {
 
               client_accepted_block = true;
             }
-            catch (fc::exception&)
+            catch (fc::exception& e)
             {
               wlog("sync: client rejected sync block sent by peer");
+              handle_message_exception = e;
             }
 
             if (client_accepted_block)
@@ -1945,7 +2004,7 @@ namespace bts { namespace net {
               for (const peer_connection_ptr& peer : peers_to_disconnect)
               {
                 wlog("disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint()));
-                disconnect_from_peer(peer.get());
+                disconnect_from_peer(peer.get(), "You offered us a block that we reject as invalid", true, handle_message_exception);
               }
               break;
             }              
@@ -1970,7 +2029,9 @@ namespace bts { namespace net {
         wlog("received a sync block ${block_id} I didn't ask for from peer ${endpoint}, disconnecting from peer", 
              ("endpoint", originating_peer->get_remote_endpoint())
              ("block_id",block_message_to_process.block_id));
-        disconnect_from_peer(originating_peer);
+        fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a sync block that I didn't ask for, block_id: ${block_id}", 
+                                                    ("block_id", block_message_to_process.block_id)));
+        disconnect_from_peer(originating_peer, "You sent me a sync block that I didn't ask for", true, detailed_error);
         return;
       }
       else
@@ -2003,7 +2064,9 @@ namespace bts { namespace net {
       if (iter == originating_peer->items_requested_from_peer.end())
       {
         wlog("received a block I didn't ask for from peer ${endpoint}, disconnecting from peer", ("endpoint", originating_peer->get_remote_endpoint()));
-        disconnect_from_peer(originating_peer);
+        fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a block that I didn't ask for, block_id: ${block_id}", 
+                                                    ("block_id", block_message_to_process.block_id)));
+        disconnect_from_peer(originating_peer, "You sent me a block that I didn't ask for", true, detailed_error);
         return;
       }
       else
@@ -2051,7 +2114,7 @@ namespace bts { namespace net {
           broadcast(message_to_process, propagation_data);
           _message_cache.block_accepted();
         }
-        catch (fc::exception&)
+        catch (fc::exception& e)
         {
           // client rejected the block.  Disconnect the client and any other clients that offered us this block
           wlog("client rejected block sent by peer");
@@ -2063,7 +2126,7 @@ namespace bts { namespace net {
           for (const peer_connection_ptr& peer : peers_to_disconnect)
           {
             wlog("disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint()));
-            disconnect_from_peer(peer.get());
+            disconnect_from_peer(peer.get(), "You offered me a block that I have deemed to be invalid", true, e);
           }
         }
       }
@@ -2084,7 +2147,9 @@ namespace bts { namespace net {
       {
         wlog("received a message I didn't ask for from peer ${endpoint}, disconnecting from peer", 
              ("endpoint", originating_peer->get_remote_endpoint()));
-        disconnect_from_peer(originating_peer);
+        fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a message that I didn't ask for, message_hash: ${message_hash}", 
+                                                    ("message_hash", message_hash)));
+        disconnect_from_peer(originating_peer, "You sent me a message that I didn't request", true, detailed_error);
         return;
       }
       else
@@ -2136,6 +2201,7 @@ namespace bts { namespace net {
 
     void node_impl::close()
     {
+
       _tcp_server.close();
       if (_accept_loop_complete.valid())
       {
@@ -2466,11 +2532,35 @@ namespace bts { namespace net {
        return result;
     }
 
-    void node_impl::disconnect_from_peer(peer_connection* peer_to_disconnect)
+    void node_impl::disconnect_from_peer(peer_connection* peer_to_disconnect,
+                                         const std::string& reason_for_disconnect,
+                                         bool caused_by_error /* = false */,
+                                         const fc::oexception& error /* = fc::oexception() */)
     {
       _closing_connections.insert(peer_to_disconnect->shared_from_this());
       _handshaking_connections.erase(peer_to_disconnect->shared_from_this());
       _active_connections.erase(peer_to_disconnect->shared_from_this());
+
+      closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
+      peer_to_disconnect->send_message(closing_message);
+
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
+      updated_peer_record.last_seen_time = fc::time_point::now();
+      if (error)
+        updated_peer_record.last_error = error;
+      else
+        updated_peer_record.last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
+      _potential_peer_db.update_entry(updated_peer_record);
+
+      // notify the user.  This will be useful in testing, but we might want to remove it later;
+      // it makes good sense to notify the user if other nodes think she is behaving badly, but
+      // if we're just detecting and dissconnecting other badly-behaving nodes, they don't really care.
+      std::ostringstream error_message;
+      error_message << "I am disconnecting peer " << fc::variant(peer_to_disconnect->get_remote_endpoint()).as_string() <<
+                       " for reason: " << reason_for_disconnect;
+      if (caused_by_error)
+        _delegate->error_encountered(error_message.str(), fc::oexception());
+
       peer_to_disconnect->close_connection();
     }
 
@@ -2670,7 +2760,7 @@ namespace bts { namespace net {
           if (_allowed_peers.find(peer->node_id) == _allowed_peers.end())
             peers_to_disconnect.push_back(peer);
       for (const peer_connection_ptr& peer : peers_to_disconnect)
-        disconnect_from_peer(peer.get());
+        disconnect_from_peer(peer.get(), "My allowed_peers list has changed, and you're no longer allowed.  Bye.");
 #endif // ENABLE_P2P_DEBUGGING_API
     }
     void node_impl::clear_peer_database()

@@ -12,5 +12,6 @@ namespace bts { namespace net {
   const core_message_type_enum connection_rejected_message::type           = core_message_type_enum::connection_rejected_message_type;
   const core_message_type_enum address_request_message::type               = core_message_type_enum::address_request_message_type;
   const core_message_type_enum address_message::type                       = core_message_type_enum::address_message_type;
+  const core_message_type_enum closing_connection_message::type            = core_message_type_enum::closing_connection_message_type;
 
 } } // bts::client

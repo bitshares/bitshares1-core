@@ -8,6 +8,7 @@
 #include <fc/reflect/reflect.hpp>
 #include <fc/time.hpp>
 #include <fc/variant_object.hpp>
+#include <fc/exception/exception.hpp>
 
 
 #include <vector>
@@ -46,6 +47,7 @@ namespace bts { namespace net {
     connection_rejected_message_type           = 5008,
     address_request_message_type               = 5009,
     address_message_type                       = 5010,
+    closing_connection_message_type            = 5011
   };
 
   const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
@@ -227,6 +229,24 @@ namespace bts { namespace net {
     std::vector<address_info> addresses;
   };
 
+  struct closing_connection_message
+  {
+    static const core_message_type_enum type;
+
+    std::string        reason_for_closing;
+    bool               closing_due_to_error;
+    fc::oexception     error;
+
+    closing_connection_message() : closing_due_to_error(false) {}
+    closing_connection_message(const std::string& reason_for_closing, 
+                               bool closing_due_to_error = false, 
+                               const fc::oexception& error = fc::oexception()) :
+      reason_for_closing(reason_for_closing),
+      closing_due_to_error(closing_due_to_error),
+      error(error)
+    {}
+  };
+
 } } // bts::client
 
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
@@ -242,6 +262,7 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum,
                  (connection_rejected_message_type)
                  (address_request_message_type)
                  (address_message_type)
+                 (closing_connection_message_type)
                  )
 FC_REFLECT( bts::net::item_id, (item_type)(item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_available) )
@@ -255,6 +276,7 @@ FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_ve
 FC_REFLECT_EMPTY( bts::net::address_request_message )
 FC_REFLECT( bts::net::address_info, (remote_endpoint)(last_seen_time) )
 FC_REFLECT( bts::net::address_message, (addresses) )
+FC_REFLECT( bts::net::closing_connection_message, (reason_for_closing)(closing_due_to_error)(error) )
 
 #include <unordered_map>
 #include <fc/crypto/city.hpp>
