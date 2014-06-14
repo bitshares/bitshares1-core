@@ -437,8 +437,8 @@ namespace bts { namespace client {
          {
             auto now = fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
-            ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
-                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+           // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+           //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
             if( next_block_time < (now + -1) ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
@@ -446,26 +446,24 @@ namespace bts { namespace client {
                continue;
             }
             else
-            {
-               if( _wallet->is_unlocked() && network_get_connection_count() >= 5 )
-               {
+            { 
+               try {
+                  FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
+                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT , 
+                             "Client must have ${count} connections before you may produce blocks",
+                             ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
-                  try {
-                     fc::usleep( (next_block_time - now) );
-                     full_block next_block = _chain_db->generate_block( next_block_time );
-                     _wallet->sign_block( next_block );
 
-                     on_new_block(next_block, next_block.id(), false);
-                     _p2p_node->broadcast(block_message( next_block ));
-                  }
-                  catch ( const fc::exception& e )
-                  {
-                     wlog( "${e}", ("e",e.to_detail_string() ) );
-                  }
-               }
-               else
+                  fc::usleep( (next_block_time - now) );
+                  full_block next_block = _chain_db->generate_block( next_block_time );
+                  _wallet->sign_block( next_block );
+
+                  on_new_block(next_block, next_block.id(), false);
+                  _p2p_node->broadcast(block_message( next_block ));
+               } 
+               catch ( const fc::exception& e )
                {
-                  elog( "unable to produce block because wallet is locked" );
+                  _exception_db.store( fc::time_point::now(), e);
                }
             }
             fc::usleep( fc::seconds(1) );
