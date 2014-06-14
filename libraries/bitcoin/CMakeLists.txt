@@ -1,6 +1,3 @@
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
-
 set(private_include_directories)
 
 # This library depends upon BDB, if BDB is not found then it compiles out support for BDB 
@@ -17,7 +14,8 @@ endif()
 file(GLOB HEADERS "include/bts/*.hpp")
 
 add_library( bitcoin ${sources} ${HEADERS})
-target_link_libraries( bitcoin fc ${BDB_LIBRARIES} )
+target_link_libraries( bitcoin PUBLIC fc PRIVATE ${BDB_LIBRARIES} bts_blockchain)
 target_include_directories( bitcoin 
-                            PRIVATE ${private_include_directories}
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+  PRIVATE ${private_include_directories} "${CMAKE_CURRENT_SOURCE_DIR}/../wallet/include"
+  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
