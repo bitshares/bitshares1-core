@@ -1,7 +1,3 @@
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/wallet/include" )
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/net/include" )
-include_directories( "${CMAKE_SOURCE_DIR}/libraries/client/include" )
-
 file(GLOB HEADERS "include/bts/rpc/*.hpp")
 
 add_library( bts_rpc 
@@ -11,8 +7,8 @@ add_library( bts_rpc
            )
 
 target_link_libraries( bts_rpc 
-                       PUBLIC bts_rpc_stubs bts_api 
-                       PRIVATE bts_client fc bts_db bts_blockchain bts_utilities leveldb)
+                       PUBLIC bts_blockchain bts_rpc_stubs bts_api bts_wallet bts_client bts_net fc 
+                       PRIVATE bts_db bts_utilities leveldb)
 target_include_directories( bts_rpc 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 if (USE_PCH)

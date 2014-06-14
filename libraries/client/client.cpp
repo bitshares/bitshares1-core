@@ -482,10 +482,10 @@ namespace bts { namespace client {
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
-          int32_t last = std::min<int32_t>( first+count, _chain_db->get_head_block_num() );
+          int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
           result.reserve( last-first );
 
-          for( int32_t block_num = first; block_num < last; ++block_num )
+          for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
 
 

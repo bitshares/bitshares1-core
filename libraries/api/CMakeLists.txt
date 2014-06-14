@@ -57,6 +57,7 @@ add_library(bts_api STATIC ${HEADERS} "conversion_functions.cpp" ${json_descript
 target_include_directories(bts_api
                            PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include" 
                                   "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(bts_api PUBLIC fc)
 
 add_library(bts_rpc_stubs ${generated_rpc_stubs_files})
 target_link_libraries( bts_rpc_stubs 

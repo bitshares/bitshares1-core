@@ -92,10 +92,6 @@ IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
    SET(Boost_LIBRARIES ${BOOST_LIBRARIES_TEMP} ${Boost_LIBRARIES})
 ENDIF()
 
-include_directories( libraries/fc/include )
-include_directories( libraries/blockchain/include )
-include_directories( ${Boost_INCLUDE_DIR} )
-
 add_subdirectory( libraries )
 add_subdirectory( "${LEVEL_DB_DIR}"    )
 add_subdirectory( vendor/miniupnp/miniupnpc )
