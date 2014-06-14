@@ -107,14 +107,17 @@ namespace bts { namespace blockchain {
          bool                      is_included_block( const block_id_type& id )const;
          //optional<block_fork_data>                      is_included_block( const block_id_type& block_id )const;
 
-         fc::ripemd160            get_current_random_seed()const override;
-         public_key_type          get_signing_delegate_key( time_point_sec )const;
-         account_id_type          get_signing_delegate_id( time_point_sec )const;
-         uint32_t                 get_block_num( const block_id_type& )const;
-         signed_block_header      get_block_header( const block_id_type& )const;
-         signed_block_header      get_block_header( uint32_t block_num )const;
-         full_block               get_block( const block_id_type& )const;
-         full_block               get_block( uint32_t block_num )const;
+         fc::ripemd160               get_current_random_seed()const override;
+         public_key_type             get_signing_delegate_key( time_point_sec )const;
+         account_id_type             get_signing_delegate_id( time_point_sec )const;
+         uint32_t                    get_block_num( const block_id_type& )const;
+         signed_block_header         get_block_header( const block_id_type& )const;
+         signed_block_header         get_block_header( uint32_t block_num )const;
+         digest_block                get_block_digest( const block_id_type& )const;
+         digest_block                get_block_digest( uint32_t block_num )const;
+         full_block                  get_block( const block_id_type& )const;
+         full_block                  get_block( uint32_t block_num )const;
+         vector<transaction_record>  get_transactions_for_block( const block_id_type& )const;
          signed_block_header      get_head_block()const;
          uint32_t                 get_head_block_num()const;
          block_id_type            get_head_block_id()const;

@@ -1176,14 +1176,14 @@ namespace bts { namespace client {
       return _chain_db->get_transaction(id, exact);
     }
 
-    full_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
+    digest_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
     {
-      return _chain_db->get_block(block_id);
+      return _chain_db->get_block_digest(block_id);
     }
 
-    full_block detail::client_impl::blockchain_get_block_by_number(uint32_t block_number) const
+    digest_block detail::client_impl::blockchain_get_block_by_number(uint32_t block_number) const
     {
-      return _chain_db->get_block(block_number);
+      return _chain_db->get_block_digest(block_number);
     }
 
     void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
@@ -1359,7 +1359,7 @@ namespace bts { namespace client {
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
-    bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
+    bts::blockchain::digest_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
     {
        return blockchain_get_block(block_id);
     }
@@ -2161,7 +2161,13 @@ namespace bts { namespace client {
       return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
+   vector<transaction_record> client_impl::blockchain_get_transactions_for_block( const block_id_type& id )const
+   {
+      return _chain_db->get_transactions_for_block(id);
+   }
+
    } // namespace detail
+
 
    bts::api::common_api* client::get_impl() const
    {

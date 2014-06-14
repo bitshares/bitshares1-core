@@ -213,6 +213,11 @@
         "default_example" : "TODO"        
       },
       {
+        "type_name" : "blockchain_transaction_record_array",
+        "container_type" : "array",
+        "contained_type" : "blockchain_transaction_record"
+      },
+      {
         "type_name" : "signed_transaction",
         "cpp_return_type" : "bts::blockchain::signed_transaction",
         "cpp_include_file" : "bts/blockchain/transaction.hpp",
@@ -329,6 +334,11 @@
       {
         "type_name" : "full_block",
         "cpp_return_type" : "bts::blockchain::full_block",
+        "cpp_include_file" : "bts/blockchain/block.hpp"
+      },
+      {
+        "type_name" : "digest_block",
+        "cpp_return_type" : "bts::blockchain::digest_block",
         "cpp_include_file" : "bts/blockchain/block.hpp"
       },
       {

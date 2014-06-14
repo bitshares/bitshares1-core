@@ -986,6 +986,30 @@ namespace bts { namespace blockchain {
       return my->_block_num_to_id_db.fetch( block_num );
    } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
+   vector<transaction_record> chain_database::get_transactions_for_block( const block_id_type& block_id )const
+   {
+      auto block_record = my->_block_id_to_block_record_db.fetch(block_id);
+      vector<transaction_record> result;
+      result.reserve( block_record.user_transaction_ids.size() );
+
+      for( auto trx_id : block_record.user_transaction_ids )
+      {
+         auto otrx_record = get_transaction( trx_id );
+         if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
+         result.emplace_back( *otrx_record );
+      }
+      return result;
+   }
+   digest_block  chain_database::get_block_digest( const block_id_type& block_id )const
+   {
+      return my->_block_id_to_block_record_db.fetch(block_id);
+   }
+   digest_block  chain_database::get_block_digest( uint32_t block_num )const
+   {
+      auto block_id = my->_block_num_to_id_db.fetch( block_num );
+      return get_block_digest( block_id );
+   }
+
    full_block           chain_database::get_block( const block_id_type& block_id )const
    { try {
       full_block result;
