@@ -5,11 +5,15 @@
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/tag.hpp>
 
+#include <fc/io/raw.hpp>
+#include <fc/io/raw_variant.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 
 #include <bts/net/peer_database.hpp>
 #include <bts/db/level_pod_map.hpp>
+
+
 
 namespace bts { namespace net {
   namespace detail

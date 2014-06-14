@@ -7,6 +7,7 @@
 #include <fc/reflect/reflect.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace net {
 
