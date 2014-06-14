@@ -33,6 +33,7 @@ namespace bts { namespace api {
     std::string type;
     parameter_classification classification;
     fc::ovariant default_value;
+    parameter_data(){}
     parameter_data(const parameter_data& rhs) :
       name(rhs.name),
       type(rhs.type),
@@ -81,3 +82,6 @@ namespace bts { namespace api {
 } } // end namespace bts::api
 
 FC_REFLECT_ENUM(bts::api::method_prerequisites, (no_prerequisites)(json_authenticated)(wallet_open)(wallet_unlocked)(connected_to_network))
+FC_REFLECT_ENUM( bts::api::parameter_classification, (required_positional)(required_positional_hidden)(optional_positional)(optional_named) )
+FC_REFLECT( bts::api::parameter_data, (name)(type)(classification)(default_value) )
+FC_REFLECT( bts::api::method_data, (name)(description)(return_type)(parameters)(prerequisites)(detailed_description)(aliases) )

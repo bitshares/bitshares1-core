@@ -439,6 +439,11 @@
       {
          "type_name" : "account_vote_summary",
          "cpp_return_type" : "bts::wallet::wallet::account_vote_summary_type"
+      },
+      {
+         "type_name" : "method_map_type",
+         "cpp_return_type" : "std::map<std::string, bts::api::method_data>",
+            "cpp_include_file" : "bts/api/api_metadata.hpp"
       }
     ]
 }

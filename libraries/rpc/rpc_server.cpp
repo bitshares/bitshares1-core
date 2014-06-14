@@ -729,6 +729,11 @@ namespace bts { namespace rpc {
     return my->help(command_name);
   }
 
+  method_map_type rpc_server::meta_help()const
+  {
+     return my->_method_map;
+  }
+
   fc::optional<fc::ip::endpoint> rpc_server::get_rpc_endpoint() const
   {
     if (my->_tcp_serv)

@@ -210,7 +210,7 @@ struct chain_fixture
          my_client->get_wallet()->sign_block( b );
          my_client->get_node()->broadcast( bts::client::block_message( b ) );
          FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
-         bts::blockchain::advance_time( 1 );
+         bts::blockchain::advance_time( 7 );
    }
 
    void enable_logging()

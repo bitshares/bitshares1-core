@@ -1872,6 +1872,11 @@ namespace bts { namespace client {
     {
       return _rpc_server->help(command_name);
     }
+
+    method_map_type client_impl::meta_help() const
+    {
+      return _rpc_server->meta_help();
+    }
     
 
     variant_object client_impl::blockchain_get_config() const

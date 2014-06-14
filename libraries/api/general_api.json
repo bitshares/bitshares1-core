@@ -97,6 +97,14 @@
           ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "meta_help",
+        "description": "Returns help information as JSON data",
+        "return_type": "method_map_type",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
 
     ]
