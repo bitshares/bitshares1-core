@@ -157,7 +157,7 @@ namespace bts { namespace db {
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
 
-        iterator lower_bound( const Key& key )
+        iterator lower_bound( const Key& key )const
         { try {
            std::vector<char> kslice = fc::raw::pack( key );
            ldb::Slice key_slice( kslice.data(), kslice.size() );

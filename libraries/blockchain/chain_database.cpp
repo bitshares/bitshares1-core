@@ -1075,7 +1075,7 @@ namespace bts { namespace blockchain {
          }
       }
       return fork;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
+   } FC_CAPTURE_AND_RETHROW( (block_data) )  }
 
 
   std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
