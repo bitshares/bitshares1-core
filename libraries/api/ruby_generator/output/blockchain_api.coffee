@@ -65,15 +65,23 @@ class BlockchainAPI
   # Retrieves the block header for the given block hash
   # parameters: 
   #   block_id_type `block_id` - the id of the block to return
-  # return_type: `full_block`
+  # return_type: `digest_block`
   blockchain_get_block: (block_id) ->
     @rpc.request('blockchain_get_block', [block_id]).then (response) ->
+      response.result
+
+  # Retrieves the detailed transaction information for a block
+  # parameters: 
+  #   block_id_type `block_id` - the id of the block to return
+  # return_type: `blockchain_transaction_record_array`
+  blockchain_get_transactions_for_block: (block_id) ->
+    @rpc.request('blockchain_get_transactions_for_block', [block_id]).then (response) ->
       response.result
 
   # Retrieves the block header for the given block number
   # parameters: 
   #   uint32_t `block_number` - the number of the block to return
-  # return_type: `full_block`
+  # return_type: `digest_block`
   blockchain_get_block_by_number: (block_number) ->
     @rpc.request('blockchain_get_block_by_number', [block_number]).then (response) ->
       response.result
