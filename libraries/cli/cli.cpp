@@ -940,6 +940,10 @@ namespace bts { namespace cli {
                   if (_out) (*_out) << std::setw(25) << "ENDPOINT";
                   if (_out) (*_out) << std::setw(25) << "LAST SEEN";
                   if (_out) (*_out) << std::setw(25) << "LAST CONNECT ATTEMPT";
+                  if (_out) (*_out) << std::setw(30) << "SUCCESSFUL CONNECT ATTEMPTS";
+                  if (_out) (*_out) << std::setw(30) << "FAILED CONNECT ATTEMPTS";
+                  if (_out) (*_out) << std::setw(35) << "LAST CONNECTION DISPOSITION";
+                  if (_out) (*_out) << std::setw(30) << "LAST ERROR";
 
                   if (_out) (*_out) << "\n";
                   for (auto peer : peers)
@@ -949,6 +953,10 @@ namespace bts { namespace cli {
                       if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( seen_time );
                       auto connect_time = boost::posix_time::from_time_t(time_t(peer.last_connection_attempt_time.sec_since_epoch()));
                       if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( connect_time );
+                      if (_out) (*_out) << std::setw(30) << peer.number_of_successful_connection_attempts;
+                      if (_out) (*_out) << std::setw(30) << peer.number_of_failed_connection_attempts;
+                      if (_out) (*_out) << std::setw(35) << string( peer.last_connection_disposition );
+                      if (_out) (*_out) << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
 
                       if (_out) (*_out) << "\n";
                   }
