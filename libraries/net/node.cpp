@@ -1325,6 +1325,14 @@ namespace bts { namespace net {
     void node_impl::on_address_request_message(peer_connection* originating_peer, const address_request_message& address_request_message_received)
     {
       ilog("Received an address request message");
+
+      for (const peer_connection_ptr& active_peer : _active_connections)
+      {
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*active_peer->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
+
       address_message reply;
       reply.addresses.reserve(_potential_peer_db.size());
       for (const potential_peer_record& record : _potential_peer_db)
@@ -1822,7 +1830,13 @@ namespace bts { namespace net {
       if (_closing_connections.find(originating_peer_ptr) != _closing_connections.end())
         _closing_connections.erase(originating_peer_ptr);
       else if (_active_connections.find(originating_peer_ptr) != _active_connections.end())
+      {
         _active_connections.erase(originating_peer_ptr);
+
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer_ptr->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
       else if (_handshaking_connections.find(originating_peer_ptr) != _handshaking_connections.end())
         _handshaking_connections.erase(originating_peer_ptr);
       ilog("Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint()));
@@ -2503,6 +2517,14 @@ namespace bts { namespace net {
 
       closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
       peer_to_disconnect->send_message(closing_message);
+
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
+      updated_peer_record.last_seen_time = fc::time_point::now();
+      if (error)
+        updated_peer_record.last_error = error;
+      else
+        updated_peer_record.last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
+      _potential_peer_db.update_entry(updated_peer_record);
 
       // notify the user.  This will be useful in testing, but we might want to remove it later;
       // it makes good sense to notify the user if other nodes think she is behaving badly, but
