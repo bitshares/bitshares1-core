@@ -462,6 +462,16 @@
       {
          "type_name" : "timestamp",
          "cpp_return_type" : "fc::time_point"
+      },
+      {
+         "type_name" : "potential_peer_record",
+         "cpp_return_type" : "bts::net::potential_peer_record",
+         "cpp_return_type" : "bts/net/peer_database.hpp"
+      },
+      {
+         "type_name" : "potential_peer_record_array",
+         "container_type" : "array",
+         "contained_type" : "potential_peer_record"
       }
     ]
 }

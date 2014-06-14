@@ -127,6 +127,14 @@
         "parameters" : [],
         "is_const"   : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_list_potential_peers",
+        "description": "Returns list of potential peers",
+        "return_type": "potential_peer_record_array",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

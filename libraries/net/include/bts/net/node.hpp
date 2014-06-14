@@ -4,6 +4,7 @@
 #include <bts/net/message.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/net/peer_database.hpp>
 
 namespace bts { namespace net {
 
@@ -201,6 +202,8 @@ namespace bts { namespace net {
         void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
 
         fc::variant_object network_get_info() const;
+
+        std::vector<potential_peer_record> get_potential_peers()const;
 
       private:
         std::unique_ptr<detail::node_impl> my;

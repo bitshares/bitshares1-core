@@ -3,6 +3,7 @@
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
 #include <bts/net/upnp.hpp>
+#include <bts/net/peer_database.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -2202,6 +2203,11 @@ namespace bts { namespace client {
          ++itr;
       }
       return result;
+   }
+
+   vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
+   {
+        return _p2p_node->get_potential_peers();
    }
 
    } // namespace detail

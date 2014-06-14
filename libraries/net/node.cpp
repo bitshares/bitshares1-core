@@ -2747,6 +2747,16 @@ namespace bts { namespace net {
     return my->is_connected();
   }
 
+  std::vector<potential_peer_record> node::get_potential_peers()const
+  {
+     std::vector<potential_peer_record> result;
+     for( auto itr = my->_potential_peer_db.begin(); itr != my->_potential_peer_db.end(); ++itr )
+     {
+        result.push_back(*itr);
+     }
+     return result;
+  }
+
   void node::set_advanced_node_parameters(const fc::variant_object& params)
   {
     my->set_advanced_node_parameters(params);
