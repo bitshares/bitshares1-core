@@ -345,6 +345,7 @@ namespace bts { namespace client {
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
             virtual uint32_t get_block_number(bts::net::item_hash_t block_id) override;
+            virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
@@ -823,7 +824,8 @@ namespace bts { namespace client {
               message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
            else if (item_count == 0)
               message << "--- in sync with p2p network";
-           _cli->display_status_message(message.str());
+           if (!message.str().empty())
+             _cli->display_status_message(message.str());
            _last_sync_status_message_time = fc::time_point::now();
          }
        }
@@ -840,6 +842,16 @@ namespace bts { namespace client {
        {
          return _chain_db->get_block_num(block_id);
        }
+
+      void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
+      {
+        if (error)
+          _exception_db.store(fc::time_point::now(), *error);
+        else
+          _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
+        if( _cli )
+          _cli->display_status_message(message);
+      }
 
     } // end namespace detail
 

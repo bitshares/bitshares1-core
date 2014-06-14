@@ -98,6 +98,8 @@ namespace bts { namespace net {
          virtual void     connection_count_changed( uint32_t c ) = 0;
 
          virtual uint32_t get_block_number(item_hash_t block_id) = 0;
+
+         virtual void error_encountered(const std::string& message, const fc::oexception& error) = 0;
    };
 
    /**
