@@ -2488,14 +2488,14 @@ namespace bts { namespace wallet {
     { try {
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
-        FC_ASSERT( is_valid_account_name( keyhoteeid ) );
+        FC_ASSERT( is_valid_account_name( fc::to_lower(keyhoteeid) ) );
         // TODO: what will keyhoteeid's validation be like, they have different rules?
         
         bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
         
         auto private_key = bts::keyhotee::import_keyhotee_id(config, keyhoteeid);
         
-        import_private_key(private_key, keyhoteeid, true);
+        import_private_key(private_key, fc::to_lower(keyhoteeid), true);
         
         scan_chain( 0, 1 );
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
