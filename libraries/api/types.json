@@ -213,6 +213,11 @@
         "default_example" : "TODO"        
       },
       {
+        "type_name" : "blockchain_transaction_record_array",
+        "container_type" : "array",
+        "contained_type" : "blockchain_transaction_record"
+      },
+      {
         "type_name" : "signed_transaction",
         "cpp_return_type" : "bts::blockchain::signed_transaction",
         "cpp_include_file" : "bts/blockchain/transaction.hpp",
@@ -332,6 +337,11 @@
         "cpp_include_file" : "bts/blockchain/block.hpp"
       },
       {
+        "type_name" : "digest_block",
+        "cpp_return_type" : "bts::blockchain::digest_block",
+        "cpp_include_file" : "bts/blockchain/block.hpp"
+      },
+      {
         "type_name" : "account_id_type",
         "cpp_return_type" : "bts::blockchain::account_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
@@ -439,6 +449,11 @@
       {
          "type_name" : "account_vote_summary",
          "cpp_return_type" : "bts::wallet::wallet::account_vote_summary_type"
+      },
+      {
+         "type_name" : "method_map_type",
+         "cpp_return_type" : "std::map<std::string, bts::api::method_data>",
+            "cpp_include_file" : "bts/api/api_metadata.hpp"
       }
     ]
 }

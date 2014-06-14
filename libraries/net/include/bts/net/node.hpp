@@ -38,12 +38,13 @@ namespace bts { namespace net {
           *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
+          *  @param sync_mode true if the message was fetched through the sync process, false during normal operation
           *  @returns true if this message caused the blockchain to switch forks, false if it did not
           *
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual bool handle_message( const message& ) = 0;
+         virtual bool handle_message( const message&, bool sync_mode ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
@@ -168,7 +169,7 @@ namespace bts { namespace net {
         std::vector<peer_status> get_connected_peers()const;
 
         /** return the number of peers we're actively connected to */
-        uint32_t get_connection_count() const;
+        virtual uint32_t get_connection_count() const;
 
         /**
          *  Add message to outgoing inventory list, notify peers that
@@ -197,6 +198,8 @@ namespace bts { namespace net {
          */
         void clear_peer_database();
 
+        void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
+
         fc::variant_object network_get_info() const;
 
       private:
@@ -213,6 +216,7 @@ namespace bts { namespace net {
          void      sync_from( const item_id& ) override {}
          void broadcast(const message& item_to_broadcast) override;
          void add_node_delegate(node_delegate* node_delegate_to_add);
+        virtual uint32_t get_connection_count() const override { return 8; }
        private:
          std::vector<bts::net::node_delegate*> network_nodes;
     };

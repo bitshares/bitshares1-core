@@ -2,8 +2,11 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
-#set (USE_PCH 1)
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
+
+#set (ENABLE_INSTALLER 1)
+#set (USE_PCH 1)
+
 if (USE_PCH)
   include (cotire)
 endif(USE_PCH)
@@ -96,8 +99,40 @@ add_subdirectory( programs )
 add_subdirectory( tests )
 
 
-#set (ENABLE_INSTALLER 1)
 if (ENABLE_INSTALLER)
+
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 1)
+set(VERSION_PATCH 0)
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
+  MESSAGE(STATUS "Found web wallet source code, attempting to bundle it in the installer")
+  find_package(Lineman)
+  IF(LINEMAN_FOUND)
+    MESSAGE(STATUS "Found lineman.js in ${LINEMAN_EXECUTABLE}")
+
+    set(WEB_WALLET_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
+    set(WEB_WALLET_GENERATED "${WEB_WALLET_ROOT}/generated")
+    file(GLOB_RECURSE WEB_WALLET_SOURCES "${WEB_WALLET_ROOT}/app" "*.css" "*.coffee" "*.png" "*.jpg" "*.html" "*.ico")
+    # DEPENDS ${WEB_WALLET_SOURCES}
+    ADD_CUSTOM_COMMAND(OUTPUT "${WEB_WALLET_GENERATED}/index.html"
+                       COMMAND "${CMAKE_COMMAND}" -E remove_directory "${WEB_WALLET_GENERATED}"
+                       COMMAND "${NPM_EXECUTABLE}" install
+                       COMMAND "${LINEMAN_EXECUTABLE}" build
+                       COMMAND "${LINEMAN_EXECUTABLE}" build
+                       WORKING_DIRECTORY "${WEB_WALLET_ROOT}"
+                       DEPENDS ${WEB_WALLET_SOURCES})
+    ADD_CUSTOM_TARGET(web_wallet_htdocs ALL DEPENDS "${WEB_WALLET_GENERATED}/index.html")
+    INSTALL(FILES "${WEB_WALLET_GENERATED}/index.html" DESTINATION htdocs)
+    INSTALL(DIRECTORY "${WEB_WALLET_GENERATED}/" DESTINATION htdocs)
+  ELSE(LINEMAN_FOUND)
+    MESSAGE(WARNING "Unable to find lineman.js to process web wallet source, web wallet will be omitted")
+  ENDIF(LINEMAN_FOUND)
+endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
+
+
+include(InstallRequiredSystemLibraries)
+
 
 SET(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 set(CPACK_PACKAGE_NAME "bitshares")

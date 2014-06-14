@@ -5,6 +5,7 @@
 #include <fc/log/log_message.hpp>
 #include <bts/client/client.hpp>
 #include <bts/api/api_metadata.hpp>
+#include <bts/rpc_stubs/common_api_rpc_server.hpp>
 
 namespace bts { namespace client {
   class client;
@@ -13,6 +14,7 @@ namespace bts { namespace client {
 namespace bts { namespace rpc {
   namespace detail { class rpc_server_impl; }
 
+  typedef std::map<std::string, bts::api::method_data> method_map_type;
   /**
   *  @class rpc_server
   *  @brief provides a json-rpc interface to the bts client
@@ -50,6 +52,8 @@ namespace bts { namespace rpc {
     void wait_till_rpc_server_shutdown();
     void shutdown_rpc_server();
     std::string help(const std::string& command_name) const;
+
+    method_map_type meta_help()const;
 
     fc::optional<fc::ip::endpoint> get_rpc_endpoint() const;
     fc::optional<fc::ip::endpoint> get_httpd_endpoint() const;
