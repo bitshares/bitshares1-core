@@ -591,8 +591,8 @@ namespace bts { namespace net {
       _delegate(nullptr),
       _desired_number_of_connections(8),
       _maximum_number_of_connections(12),
-      _peer_connection_retry_timeout(60 * 5),
-      _peer_inactivity_timeout(45),
+      _peer_connection_retry_timeout(BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME),
+      _peer_inactivity_timeout( BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0),
       _user_agent_string("bts::net::node"),
@@ -680,12 +680,17 @@ namespace bts { namespace net {
                  iter != _potential_peer_db.end() && is_wanting_new_connections();
                  ++iter)
             {
-              //ilog("Last attempt was ${time_distance} seconds ago (disposition: ${disposition})", ("time_distance", (fc::time_point::now() - iter->last_connection_attempt_time).count() / fc::seconds(1).count())("disposition", iter->last_connection_disposition));
+             /**
+              *
+              *
+              */
+              auto delay_until_retry = fc::seconds(iter->number_of_failed_connection_attempts * _peer_connection_retry_timeout);
+
               if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
                   ((iter->last_connection_disposition != last_connection_failed && 
                     iter->last_connection_disposition != last_connection_rejected &&
                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
-                   iter->last_connection_attempt_time < fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout)))
+                    (fc::time_point::now() - iter->last_connection_attempt_time) > delay_until_retry ))
               {
                 connect_to(iter->endpoint);
                 initiated_connection_this_pass = true;
@@ -711,7 +716,7 @@ namespace bts { namespace net {
                 ilog("Still want to connect to more nodes, but I don't have any good candidates.  Trying again in 15 seconds");
               else
                 ilog("I still have some \"add once\" nodes to connect to.  Trying again in 15 seconds");
-              _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(15));
+              _retrigger_connect_loop_promise->wait_until(fc::time_point::now() + fc::seconds(BTS_PEER_DATABASE_RETRY_DELAY));
             }
             else
             {
@@ -943,11 +948,12 @@ namespace bts { namespace net {
               handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
               handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold)
           {
-            wlog("Disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", ("peer", handshaking_peer->get_remote_endpoint())("timeout", handshaking_timeout));            
+            wlog("Disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", 
+                 ("peer", handshaking_peer->get_remote_endpoint())("timeout", handshaking_timeout));            
             peers_to_disconnect.push_back(handshaking_peer);
           }
 
-        uint32_t active_timeout = _peer_inactivity_timeout * 10;
+        uint32_t active_timeout = _peer_inactivity_timeout * 20;
         fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
         for (const peer_connection_ptr& peer : _active_connections)
           if (peer->connection_initiation_time < active_disconnect_threshold &&
@@ -966,7 +972,7 @@ namespace bts { namespace net {
                                                       ("inactivity_timeout", _active_connections.find(peer) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout)));
           disconnect_from_peer(peer.get(), "Disconnecting due to inactivity", false, detailed_error);
         }
-        fc::usleep(fc::seconds(15));
+        fc::usleep(fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2));
       }
     }
 
