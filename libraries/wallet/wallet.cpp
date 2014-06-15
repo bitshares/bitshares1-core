@@ -1627,6 +1627,16 @@ namespace bts { namespace wallet {
                             account_public_key, // active
                             as_delegate );
 
+      auto pos = account_to_register.find( '.' );
+      if( pos != string::npos )
+      {
+          auto parent_name = account_to_register.substr( pos+1, string::npos );
+          auto opt_parent_acct = get_account( parent_name );
+          FC_ASSERT(opt_parent_acct.valid(), "You must own the parent name to register a subname!");
+          required_signatures.insert(opt_parent_acct->active_address());
+      }
+
+
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       if( as_delegate )
