@@ -1242,11 +1242,33 @@ config load_config( const fc::path& datadir )
         _wallet->scan_chain(0);
     }
    
-    string detail::client_impl::wallet_dump_private_key(const address& account_address){
+    string detail::client_impl::wallet_dump_private_key(const std::string& address_or_public_key)
+    {
       try {
-         auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
-         return wif_private_key;
-      } FC_CAPTURE_AND_RETHROW( (account_address) ) }
+          // TODO is_valid should not throw, should return false...
+         bool is_address = true;
+         try { 
+            is_address = address::is_valid(address_or_public_key);
+         }
+         catch (...)
+         {
+            is_address = false;
+         }
+         if (is_address)
+         {
+             address addr = address(address_or_public_key);
+             auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
+             return wif_private_key;
+         } 
+         else
+         {
+              public_key_type pubkey = public_key_type(address_or_public_key);
+              address addr = address(pubkey);
+              auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
+              return wif_private_key;
+         }
+    } FC_CAPTURE_AND_RETHROW( (address_or_public_key) ) }
+
 
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
