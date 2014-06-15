@@ -2196,6 +2196,10 @@ config load_config( const fc::path& datadir )
       }
       return result;
    }
+   void client_impl::blockchain_export_fork_graph( const string& filename, uint32_t starting_block_number )const
+   {
+      _chain_db->export_new_fork_graph( filename, starting_block_number );
+   }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
    {
@@ -2203,6 +2207,7 @@ config load_config( const fc::path& datadir )
    }
 
    } // namespace detail
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
    bts::api::common_api* client::get_impl() const

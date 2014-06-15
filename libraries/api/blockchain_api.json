@@ -321,6 +321,28 @@
          ], 
          "aliases" : ["list_blocks"],
          "prerequisites" : ["json_authenticated"]
+      },
+      {
+         "method_name" : "blockchain_export_fork_graph",
+         "description" : "dumps the fork data to a graphvis file",
+         "return_type" : "void",
+         "parameters"  : [
+            {
+               "name" : "filename",
+               "type" : "string",
+               "description" : "the name of the file to generate",
+               "default" : "forks.dot"
+            },
+            {
+               "name" : "starting_block_number",
+               "type" : "uint32_t",
+               "description" : "the first block number to consider",
+               "default" : "1"
+            }
+         ],
+         "is_const" : true,
+         "aliases" : ["export_forks"],
+         "prerequisites" : ["json_authenticated"]
       }
     ]
 }
