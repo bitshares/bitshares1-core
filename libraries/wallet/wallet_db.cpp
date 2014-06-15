@@ -202,6 +202,11 @@ namespace bts{ namespace wallet {
       key_data new_key;
       new_key.account_address = parent_account_address;
       new_key.encrypt_private_key( password, new_priv_key );
+      // if there is no parent account address, then the account_address of this key is itself
+      if (parent_account_address == address())
+      {
+         new_key.account_address = address(new_key.public_key);
+      }
 
       store_key( new_key );
       return new_priv_key;
