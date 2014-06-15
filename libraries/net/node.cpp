@@ -2279,6 +2279,7 @@ namespace bts { namespace net {
         // connection failed.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_failed;
         updated_peer_record.number_of_failed_connection_attempts++;
+        updated_peer_record.last_error = except;
         _potential_peer_db.update_entry(updated_peer_record);
 
         _handshaking_connections.erase(new_peer);
