@@ -2773,10 +2773,6 @@ namespace bts { namespace wallet {
          {
             FC_ASSERT( !"Not a Registered Account" );
          }
-         if( !reg_account->is_delegate() )
-         {
-            FC_ASSERT( !"Account not registered as a delegate" );
-         }
          add_contact_account( delegate_name, reg_account->active_key() );
          set_delegate_trust_level( delegate_name, trust_level );
       }
