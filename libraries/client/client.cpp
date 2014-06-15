@@ -185,7 +185,7 @@ void configure_logging(const fc::path& data_dir)
     dlc.level = fc::log_level::debug;
     dlc.name = "default";
     dlc.appenders.push_back("default");
-    dlc.appenders.push_back("stderr");
+   // dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
     dlc_rpc.level = fc::log_level::debug;

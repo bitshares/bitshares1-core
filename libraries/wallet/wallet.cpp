@@ -2921,7 +2921,7 @@ namespace bts { namespace wallet {
       vector<public_key_type> account_keys;
       for( auto key : my->_wallet_db.keys )
       {
-         if( key.second.account_address == account_address )
+         if( key.second.account_address == account_address || key.first == account_address )
             account_keys.push_back( key.second.public_key );
       }
       return account_keys;
