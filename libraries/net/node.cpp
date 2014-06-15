@@ -409,8 +409,9 @@ namespace bts { namespace net {
       void on_connection_closed(peer_connection* originating_peer);
 
       void process_backlog_of_sync_blocks();
-      void process_block_during_sync(peer_connection* originating_peer, const message& block_message, const message_hash_type& message_hash);
-      void process_block_during_normal_operation(peer_connection* originating_peer, const message& block_message, const message_hash_type& message_hash);
+      void process_block_during_sync(peer_connection* originating_peer, const bts::client::block_message& block_message, const message_hash_type& message_hash);
+      void process_block_during_normal_operation(peer_connection* originating_peer, const bts::client::block_message& block_message, const message_hash_type& message_hash);
+      void process_block_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash);
   
       void process_ordinary_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash);
 
@@ -1089,10 +1090,7 @@ namespace bts { namespace net {
         on_closing_connection_message(originating_peer, received_message.as<closing_connection_message>());
         break;
       case bts::client::message_type_enum::block_message_type:
-        if (originating_peer->we_need_sync_items_from_peer)
-          process_block_during_sync(originating_peer, received_message, message_hash);
-        else
-          process_block_during_normal_operation(originating_peer, received_message, message_hash);
+        process_block_message(originating_peer, received_message, message_hash);
         break;
       default:
         process_ordinary_message(originating_peer, received_message, message_hash);
@@ -1782,7 +1780,7 @@ namespace bts { namespace net {
       if (sync_item_iter != originating_peer->sync_items_requested_from_peer.end())
       {
         originating_peer->sync_items_requested_from_peer.erase(sync_item_iter);
-        ilog("Peer doesn't have the requested sync item.  This reqlly shouldn't happen");
+        ilog("Peer doesn't have the requested sync item.  This really shouldn't happen");
         trigger_fetch_sync_items_loop();
         return;
       }
@@ -2029,29 +2027,9 @@ namespace bts { namespace net {
       ilog("Currently backlog is ${count} blocks", ("count", _received_sync_items.size()));
     }
 
-    void node_impl::process_block_during_sync(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
+    void node_impl::process_block_during_sync(peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash)
     {
-      assert(originating_peer->we_need_sync_items_from_peer);
-      assert(message_to_process.msg_type == bts::client::message_type_enum::block_message_type);
-      bts::client::block_message block_message_to_process(message_to_process.as<bts::client::block_message>());
-      
-      // only process it if we asked for it
-      auto iter = originating_peer->sync_items_requested_from_peer.find(item_id(bts::client::block_message_type, block_message_to_process.block_id));
-      if (iter == originating_peer->sync_items_requested_from_peer.end())
-      {
-        wlog("received a sync block ${block_id} I didn't ask for from peer ${endpoint}, disconnecting from peer", 
-             ("endpoint", originating_peer->get_remote_endpoint())
-             ("block_id",block_message_to_process.block_id));
-        fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a sync block that I didn't ask for, block_id: ${block_id}", 
-                                                    ("block_id", block_message_to_process.block_id)));
-        disconnect_from_peer(originating_peer, "You sent me a sync block that I didn't ask for", true, detailed_error);
-        return;
-      }
-      else
-      {
-        ilog("received a sync block from peer ${endpoint}", ("endpoint", originating_peer->get_remote_endpoint()));
-        originating_peer->sync_items_requested_from_peer.erase(iter);
-      }
+      ilog("received a sync block from peer ${endpoint}", ("endpoint", originating_peer->get_remote_endpoint()));
 
       // add it to the front of _received_sync_items, then process _received_sync_items to try to 
       // pass as many messages as possible to the client.
@@ -2062,87 +2040,106 @@ namespace bts { namespace net {
       trigger_fetch_sync_items_loop();
     }
 
-    void node_impl::process_block_during_normal_operation(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
+    void node_impl::process_block_during_normal_operation(peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash)
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
-      dump_node_status();
+      //dump_node_status();
+      ilog("received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint()));
+      trigger_fetch_items_loop();
 
-      assert(!originating_peer->we_need_sync_items_from_peer);
-      assert(message_to_process.msg_type == bts::client::message_type_enum::block_message_type);
-      bts::client::block_message block_message_to_process(message_to_process.as<bts::client::block_message>());
-      
-      // only process it if we asked for it
-      auto iter = originating_peer->items_requested_from_peer.find(item_id(bts::client::block_message_type, message_hash));
-      if (iter == originating_peer->items_requested_from_peer.end())
+      try
       {
-        wlog("received a block I didn't ask for from peer ${endpoint}, disconnecting from peer", ("endpoint", originating_peer->get_remote_endpoint()));
-        fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a block that I didn't ask for, block_id: ${block_id}", 
-                                                    ("block_id", block_message_to_process.block_id)));
-        disconnect_from_peer(originating_peer, "You sent me a block that I didn't ask for", true, detailed_error);
+        // we can get into an intersting situation near the end of synchronization.  We can be in
+        // sync with one peer who is sending us the last block on the chain via a regular inventory
+        // message, while at the same time still be synchronizing with a peer who is sending us the
+        // block through the sync mechanism.  Further, we must request both blocks because 
+        // we don't know they're the same (for the peer in normal operation, it has only told us the
+        // message id, for the peer in the sync case we only known the block_id).
+        fc::time_point message_validated_time;
+        bool block_caused_fork_switch = false;
+        if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
+                      block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
+        {
+          block_caused_fork_switch = _delegate->handle_message(block_message_to_process, false);
+          message_validated_time = fc::time_point::now();
+          _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
+        }
+        else
+          ilog("Already received and accepted this block (presumably through sync mechanism), treating it as accepted");
+
+        ilog("client validated the block, advertising it to other peers");
+
+        for (const peer_connection_ptr& peer : _active_connections)
+        {
+          item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
+          auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
+          if (iter != peer->inventory_peer_advertised_to_us.end())
+          {
+            // this peer offered us the item; remove it from the list of items they offered us, and 
+            // add it to the list of items we've offered them.  That will prevent us from offering them
+            // the same item back (no reason to do that; we already know they have it)
+            peer->inventory_peer_advertised_to_us.erase(iter);
+            peer->inventory_advertised_to_peer.insert(block_message_item_id);
+          }
+        }
+        message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
+        broadcast(block_message_to_process, propagation_data);
+        _message_cache.block_accepted();
+      }
+      catch (fc::exception& e)
+      {
+        // client rejected the block.  Disconnect the client and any other clients that offered us this block
+        wlog("client rejected block sent by peer");
+        std::list<peer_connection_ptr> peers_to_disconnect;
+        for (const peer_connection_ptr& peer : _active_connections)
+          if (!peer->ids_of_items_to_get.empty() &&
+              peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
+            peers_to_disconnect.push_back(peer);
+        for (const peer_connection_ptr& peer : peers_to_disconnect)
+        {
+          wlog("disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint()));
+          disconnect_from_peer(peer.get(), "You offered me a block that I have deemed to be invalid", true, e);
+        }
+      }
+    }
+    void node_impl::process_block_message(peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash)
+    {
+      // find out whether we requested this item while we were synchronizing or during normal operation
+      // (it's possible that we request an item during normal operation and then get kicked into sync
+      // mode before we receive and process the item.  In that case, we should process the item as a normal
+      // item to avoid confusing the sync code)
+      bts::client::block_message block_message_to_process(message_to_process.as<bts::client::block_message>());
+      auto item_iter = originating_peer->items_requested_from_peer.find(item_id(bts::client::block_message_type, message_hash));
+      if (item_iter != originating_peer->items_requested_from_peer.end())
+      {
+        originating_peer->items_requested_from_peer.erase(item_iter);
+        process_block_during_normal_operation(originating_peer, block_message_to_process, message_hash);
         return;
       }
       else
       {
-        ilog("received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint()));
-        originating_peer->items_requested_from_peer.erase(iter);
-        trigger_fetch_items_loop();
-
-        try
+        // not during normal operation.  see if we requested it during sync
+        auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find(item_id(bts::client::block_message_type, block_message_to_process.block_id));
+        if (sync_item_iter != originating_peer->sync_items_requested_from_peer.end())
         {
-          // we can get into an intersting situation near the end of synchronization.  We can be in
-          // sync with one peer who is sending us the last block on the chain via a regular inventory
-          // message, while at the same time still be synchronizing with a peer who is sending us the
-          // block through the sync mechanism.  Further, we must request both blocks because 
-          // we don't know they're the same (for the peer in normal operation, it has only told us the
-          // message id, for the peer in the sync case we only known the block_id).
-          fc::time_point message_validated_time;
-          bool block_caused_fork_switch = false;
-          if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
-                        block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
-          {
-            block_caused_fork_switch = _delegate->handle_message(block_message_to_process, false);
-            message_validated_time = fc::time_point::now();
-            _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
-          }
-          else
-            ilog("Already received and accepted this block (presumably through sync mechanism), treating it as accepted");
-
-          ilog("client validated the block, advertising it to other peers");
-
-          for (const peer_connection_ptr& peer : _active_connections)
-          {
-            item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
-            auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
-            if (iter != peer->inventory_peer_advertised_to_us.end())
-            {
-              // this peer offered us the item; remove it from the list of items they offered us, and 
-              // add it to the list of items we've offered them.  That will prevent us from offering them
-              // the same item back (no reason to do that; we already know they have it)
-              peer->inventory_peer_advertised_to_us.erase(iter);
-              peer->inventory_advertised_to_peer.insert(block_message_item_id);
-            }
-          }
-          message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
-          broadcast(message_to_process, propagation_data);
-          _message_cache.block_accepted();
-        }
-        catch (fc::exception& e)
-        {
-          // client rejected the block.  Disconnect the client and any other clients that offered us this block
-          wlog("client rejected block sent by peer");
-          std::list<peer_connection_ptr> peers_to_disconnect;
-          for (const peer_connection_ptr& peer : _active_connections)
-            if (!peer->ids_of_items_to_get.empty() &&
-                peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
-              peers_to_disconnect.push_back(peer);
-          for (const peer_connection_ptr& peer : peers_to_disconnect)
-          {
-            wlog("disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint()));
-            disconnect_from_peer(peer.get(), "You offered me a block that I have deemed to be invalid", true, e);
-          }
+          originating_peer->sync_items_requested_from_peer.erase(sync_item_iter);
+          process_block_during_sync(originating_peer, block_message_to_process, message_hash);
+          return;
         }
       }
+
+      // if we get here, we didn't request the message, we must have a misbehaving peer
+      wlog("received a block ${block_id} I didn't ask for from peer ${endpoint}, disconnecting from peer", 
+            ("endpoint", originating_peer->get_remote_endpoint())
+            ("block_id",block_message_to_process.block_id));
+      fc::exception detailed_error(FC_LOG_MESSAGE(error, "You sent me a block that I didn't ask for, block_id: ${block_id}", 
+                                                  ("block_id", block_message_to_process.block_id)
+                                                  ("bitshares_git_revision_sha", originating_peer->bitshares_git_revision_sha)
+                                                  ("bitshares_git_revision_unix_timestamp", originating_peer->bitshares_git_revision_unix_timestamp)
+                                                  ("fc_git_revision_sha", originating_peer->fc_git_revision_sha)
+                                                  ("fc_git_revision_unix_timestamp", originating_peer->fc_git_revision_unix_timestamp)));
+      disconnect_from_peer(originating_peer, "You sent me a block that I didn't ask for", true, detailed_error);
     }
 
     // this handles any message we get that doesn't require any special processing.
