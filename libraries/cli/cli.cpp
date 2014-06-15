@@ -1420,6 +1420,8 @@ namespace bts { namespace cli {
 #endif
     void cli_impl::display_status_message(const std::string& message)
     {
+       if( !_input_stream || !_out ) 
+          return;
 #ifdef HAVE_READLINE
       char* saved_line = rl_copy_text(0, rl_end);
       char* saved_prompt = strdup(rl_prompt);
@@ -1427,7 +1429,7 @@ namespace bts { namespace cli {
       rl_set_prompt("");
       rl_replace_line("", 0);
       rl_redisplay();
-      std::cout << message << "\n";
+      (*_out) << message << "\n";
       rl_set_prompt(saved_prompt);
       rl_replace_line(saved_line, 0);
       rl_point = saved_point;

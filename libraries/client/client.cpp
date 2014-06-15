@@ -1811,6 +1811,8 @@ namespace bts { namespace client {
     {
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
+      if( !my->_cli )
+         my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
     }
 
     fc::path client::get_data_dir()const
