@@ -1648,13 +1648,13 @@ namespace bts { namespace blockchain {
           }
        out << "}"; 
     }
-    void chain_database::export_new_fork_graph( const fc::path& filename )const
+    void chain_database::export_new_fork_graph( const fc::path& filename, uint32_t start  )const
     {
       std::ofstream out( filename.generic_string().c_str() );
       out << "digraph G { \n"; 
       out << "rankdir=LR;\n";
         
-      const uint32_t starting_block_num = 1300;
+      const uint32_t starting_block_num = start;
       bool first = true;
       fc::time_point_sec start_time;
       std::map<uint32_t, std::vector<block_record> > nodes_by_rank;
@@ -1667,7 +1667,8 @@ namespace bts { namespace blockchain {
           first = false;
           start_time = block_record.timestamp;
         }
-        if (block_record.block_num > starting_block_num)
+        std::cout << block_record.block_num << "  start " << start << "\n";
+        if ( block_record.block_num > starting_block_num)
         {
           uint32_t rank = (block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 

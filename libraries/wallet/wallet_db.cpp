@@ -550,6 +550,7 @@ namespace bts{ namespace wallet {
       auto acct = *opt_old_acct;
       acct.name = new_account_name;
       name_to_account_wallet_record_index[acct.name] = acct.wallet_record_index;
+      name_to_account_wallet_record_index.erase( old_account_name );
       accounts[acct.wallet_record_index] = acct;
       address_to_account_wallet_record_index[address(acct.owner_key)] = acct.wallet_record_index;
       for (auto time_key_pair : acct.active_key_history)

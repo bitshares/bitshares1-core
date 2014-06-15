@@ -25,6 +25,7 @@
 
 namespace bts { namespace rpc {
 
+   using namespace client;
    FC_REGISTER_EXCEPTIONS( (rpc_exception)
                            (missing_parameter)
                            (unknown_method) )
@@ -34,14 +35,15 @@ namespace bts { namespace rpc {
     class rpc_server_impl : public bts::rpc_stubs::common_api_rpc_server
     {
        public:
-         rpc_server::config                _config;
-         bts::client::client*              _client;
-         std::shared_ptr<fc::http::server> _httpd;
-         std::shared_ptr<fc::tcp_server>   _tcp_serv;
-         fc::future<void>                  _accept_loop_complete;
-         rpc_server*                       _self;
-         fc::shared_ptr<fc::promise<void>> _on_quit_promise;
-         fc::thread*                       _thread;
+         rpc_server_config                                 _config;
+         bts::client::client*                              _client;
+         std::shared_ptr<fc::http::server>                 _httpd;
+         std::shared_ptr<fc::tcp_server>                   _tcp_serv;
+         fc::future<void>                                  _accept_loop_complete;
+         rpc_server*                                       _self;
+         fc::shared_ptr<fc::promise<void>>                 _on_quit_promise;
+         fc::thread*                                       _thread;
+         http_callback_type                                _http_file_callback;
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -142,7 +144,15 @@ namespace bts { namespace rpc {
                 if( path == "/" ) path = "/index.html";
 
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
-                if( fc::exists( filename ) )
+                if( r.path == fc::path("/rpc") )
+                {
+                    status = handle_http_rpc( r, s );
+                }
+                else if( _http_file_callback )
+                {
+                   _http_file_callback( path, s );
+                }
+                else if( fc::exists( filename ) )
                 {
                     FC_ASSERT( !fc::is_directory( filename ) );
                     uint64_t file_size_64 = fc::file_size( filename );
@@ -156,10 +166,6 @@ namespace bts { namespace rpc {
                     s.set_status( fc::http::reply::OK );
                     s.set_length( file_size );
                     s.write( (const char*)mr.get_address(), mr.get_size() );
-                }
-                else if( r.path == fc::path("/rpc") )
-                {
-                    status = handle_http_rpc( r, s );
                 }
                 else
                 {
@@ -552,14 +558,6 @@ namespace bts { namespace rpc {
 
   } // detail
 
-  bool rpc_server::config::is_valid() const
-  {
-    if (rpc_user.empty())
-      return false;
-    if (rpc_password.empty())
-      return false;
-    return true;
-  }
 
   rpc_server::rpc_server(bts::client::client* client) :
     my(new detail::rpc_server_impl(client))
@@ -587,7 +585,7 @@ namespace bts { namespace rpc {
     }
   }
 
-  bool rpc_server::configure( const rpc_server::config& cfg )
+  bool rpc_server::configure( const rpc_server_config& cfg )
   {
     if (!cfg.is_valid())
       return false;
@@ -669,6 +667,10 @@ namespace bts { namespace rpc {
     if (iter != my->_alias_map.end())
       return my->_method_map[iter->second];
     FC_THROW_EXCEPTION(unknown_method, "Method \"${name}\" not found", ("name", method_name));
+  }
+  void rpc_server::set_http_file_callback(  const http_callback_type& callback )
+  {
+     my->_http_file_callback = callback;
   }
 
   std::vector<bts::api::method_data> rpc_server::get_all_method_data() const

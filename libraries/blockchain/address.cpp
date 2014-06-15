@@ -36,6 +36,7 @@ namespace bts {
    /**
     *  Validates checksum and length of base58 address
     *
+          // TODO is_valid should not throw, should return false...
     *  @return true if successful, throws an exception with reason if invalid.
     */
    bool address::is_valid( const std::string& base58str )

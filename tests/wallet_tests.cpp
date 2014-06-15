@@ -256,6 +256,20 @@ BOOST_AUTO_TEST_CASE( master_test )
    //std::cerr << clientb->execute_command_line( "wallet_list_receive_accounts" ) << "\n";
    //std::cerr << clientb->execute_command_line( "wallet_account_balance" ) << "\n";
 
+
+   // Test "." in names TODO #289
+   std::cerr << clienta->execute_command_line( "wallet_account_create test.a" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_create a" ) << "\n";
+   std::cerr << clienta->execute_command_line( "wallet_account_register a delegate31" ) << "\n";
+   produce_block(clienta);
+   std::cerr << clienta->execute_command_line( "wallet_account_register test.a delegate31" ) << "\n";
+   produce_block(clienta);
+
+   // you should be able to rename back to a local account you had already
+   std::cerr << clienta->execute_command_line( "wallet_account_create firstname" );
+   std::cerr << clienta->execute_command_line( "wallet_account_rename firstname secondname" );
+   std::cerr << clienta->execute_command_line( "wallet_account_rename secondname firstname" );
+
 } FC_LOG_AND_RETHROW() }
 
 

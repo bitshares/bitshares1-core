@@ -1627,6 +1627,16 @@ namespace bts { namespace wallet {
                             account_public_key, // active
                             as_delegate );
 
+      auto pos = account_to_register.find( '.' );
+      if( pos != string::npos )
+      {
+          auto parent_name = account_to_register.substr( pos+1, string::npos );
+          auto opt_parent_acct = get_account( parent_name );
+          FC_ASSERT(opt_parent_acct.valid(), "You must own the parent name to register a subname!");
+          required_signatures.insert(opt_parent_acct->active_address());
+      }
+
+
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       if( as_delegate )
@@ -2911,7 +2921,7 @@ namespace bts { namespace wallet {
       vector<public_key_type> account_keys;
       for( auto key : my->_wallet_db.keys )
       {
-         if( key.second.account_address == account_address )
+         if( key.second.account_address == account_address || key.first == account_address )
             account_keys.push_back( key.second.public_key );
       }
       return account_keys;
