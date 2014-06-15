@@ -631,7 +631,8 @@ namespace bts { namespace net {
         }
         catch (fc::exception& except)
         {
-          elog("error writing node configuration to file ${filename}: ${error}", ("filename", configuration_file_name)("error", except.to_detail_string()));
+          elog("error writing node configuration to file ${filename}: ${error}", 
+               ("filename", configuration_file_name)("error", except.to_detail_string()));
         }
       }
     }
@@ -1030,6 +1031,7 @@ namespace bts { namespace net {
 
     void node_impl::display_current_connections()
     {
+       return;
       ilog("Currently have ${current} of ${desired} connections", 
             ("current", get_number_of_connections())
             ("desired", _desired_number_of_connections));
@@ -2918,7 +2920,8 @@ namespace bts { namespace net {
     my->clear_peer_database();
   }
 
-  void node::set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second)
+  void node::set_total_bandwidth_limit(uint32_t upload_bytes_per_second, 
+                                       uint32_t download_bytes_per_second)
   {
     my->set_total_bandwidth_limit(upload_bytes_per_second, download_bytes_per_second);
   }

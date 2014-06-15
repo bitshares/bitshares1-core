@@ -5,6 +5,7 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
+#include <fc/log/logger_config.hpp>
 #include <memory>
 
 
@@ -15,6 +16,7 @@ namespace bts { namespace rpc {
 namespace bts { namespace cli {
     class cli;
 }};
+
 namespace bts { namespace client {
 
     using namespace bts::blockchain;
@@ -24,6 +26,44 @@ namespace bts { namespace client {
 
     using namespace bts::rpc;
 
+    struct rpc_server_config
+    {
+      rpc_server_config()
+      : enable(false),
+        rpc_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
+        httpd_endpoint(fc::ip::endpoint::from_string("127.0.0.1:0")),
+        htdocs("./htdocs")
+      {}
+
+      bool             enable;
+      std::string      rpc_user;
+      std::string      rpc_password;
+      fc::ip::endpoint rpc_endpoint;
+      fc::ip::endpoint httpd_endpoint;
+      fc::path         htdocs;
+
+      bool is_valid() const; /* Currently just checks if rpc port is set */
+    };
+
+    struct config
+    {
+       config( ) : 
+          default_peers(vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
+          ignore_console(false),
+          use_upnp(true),
+          maximum_number_of_connections(50)
+          {
+             logging = fc::logging_config::default_config();
+          }
+
+          rpc_server_config   rpc;
+          vector<string>      default_peers;
+          bool                ignore_console;
+          bool                use_upnp;
+          optional<fc::path>  genesis_config;
+          uint16_t            maximum_number_of_connections;
+          fc::logging_config  logging;
+    };
 
 
     /**
@@ -31,15 +71,21 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc_stubs::common_api_client, public std::enable_shared_from_this<client>
+    class client : public bts::rpc_stubs::common_api_client, 
+                   public std::enable_shared_from_this<client>
     {
        public:
-                  client();
-                  client(bts::net::simulated_network_ptr network_to_connect_to);
+         client();
+         client(bts::net::simulated_network_ptr network_to_connect_to);
+
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
-         void open( const path& data_dir, fc::optional<fc::path> genesis_file_path = fc::optional<fc::path>());
+         void open( const path& data_dir, 
+                    optional<fc::path> genesis_file_path = optional<fc::path>());
+
+         void sync_with_ntp();
+         void init_cli();
 
          /**
           *  Produces a block every 30 seconds if there is at least
@@ -53,12 +99,11 @@ namespace bts { namespace client {
          wallet_ptr                 get_wallet()const;
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
          bts::net::node_ptr         get_node()const;
-
          fc::path                   get_data_dir() const;
 
          // returns true if the client is connected to the network
-         bool is_connected() const;
-         fc::uint160_t get_node_id() const;
+         bool            is_connected() const;
+         fc::uint160_t   get_node_id() const;
 
          void configure( const fc::path& configuration_directory );
 
@@ -66,9 +111,12 @@ namespace bts { namespace client {
          void listen_on_port( uint16_t port_to_listen );
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
+
          fc::ip::endpoint get_p2p_listening_endpoint() const;
+
        protected:
          virtual bts::api::common_api* get_impl() const override;
+
        private:
          unique_ptr<detail::client_impl> my;
     };
@@ -79,15 +127,15 @@ namespace bts { namespace client {
       (security vulnerability, new version, that sort of thing) */
     class client_notification
     {
-    public:
-      fc::time_point_sec         timestamp;
-      string                message;
-      fc::ecc::compact_signature signature;
+       public:
+         fc::time_point_sec         timestamp;
+         string                message;
+         fc::ecc::compact_signature signature;
 
-      //client_notification();
-      fc::sha256 digest() const;
-      void sign(const fc::ecc::private_key& key);
-      fc::ecc::public_key signee() const;
+         //client_notification();
+         fc::sha256 digest() const;
+         void sign(const fc::ecc::private_key& key);
+         fc::ecc::public_key signee() const;
     };
     typedef shared_ptr<client_notification> client_notification_ptr;
 
@@ -96,4 +144,6 @@ namespace bts { namespace client {
 extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
+FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
+FC_REFLECT( bts::client::config, (rpc)(default_peers)(ignore_console)(logging) )
 

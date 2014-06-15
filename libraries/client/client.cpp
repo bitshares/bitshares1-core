@@ -56,61 +56,10 @@
 using namespace boost;
    using std::string;
 
+
+namespace bts { namespace client {
+
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
-
-struct config
-{
-   config( ) : 
-      default_peers(std::vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
-      ignore_console(false)
-      {
-      }
-
-   void init_default_logger( const fc::path& data_dir )
-   {
-          fc::logging_config cfg;
-          
-          fc::file_appender::config ac;
-          ac.filename = data_dir / "default.log";
-          ac.truncate = false;
-          ac.flush    = true;
-
-          std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
-          
-          fc::file_appender::config ac_rpc;
-          ac_rpc.filename = data_dir / "rpc.log";
-          ac_rpc.truncate = false;
-          ac_rpc.flush    = true;
-
-          std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
-          
-          cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
-          cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
-          
-          fc::logger_config dlc;
-          dlc.level = fc::log_level::debug;
-          dlc.name = "default";
-          dlc.appenders.push_back("default");
-          
-          fc::logger_config dlc_rpc;
-          dlc_rpc.level = fc::log_level::debug;
-          dlc_rpc.name = "rpc";
-          dlc_rpc.appenders.push_back("rpc");
-          
-          cfg.loggers.push_back(dlc);
-          cfg.loggers.push_back(dlc_rpc);
-          
-          // fc::configure_logging( cfg );
-          logging = cfg;
-   }
-
-   bts::rpc::rpc_server::config rpc;
-   std::vector<string>     default_peers;
-   bool                         ignore_console;
-   fc::logging_config           logging;
-};
-
-FC_REFLECT( config, (rpc)(default_peers)(ignore_console)(logging) )
 
 void print_banner();
 void configure_logging(const fc::path&);
@@ -124,25 +73,30 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    // parse command-line options
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
-                              ("input-log", program_options::value<std::string>(), "log file with CLI commands to execute at startup")
+                              ("input-log", program_options::value<std::string>(), 
+                                 "log file with CLI commands to execute at startup")
                               ("help", "display this help message")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
-                              ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
+                              ("maximum-number-of-connections", program_options::value<uint16_t>(), 
+                                  "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
                               ("disable-default-peers", "disable automatic connection to default peers")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
-                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC")
                               ("rpcpassword", program_options::value<string>(), "password for JSON-RPC")
                               ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", program_options::value<string>(), 
-                               "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
+                                 "generate a genesis state with the given json file instead of using the built-in "
+                                 "genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
-                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
+                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a "
+                                 "fresh copy of the entire blockchain from the network")
                               ("version", "print the version information for bts_xt_client")
-                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), "Limit total bandwidth to this many bytes per second");
+                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), 
+                                  "Limit total bandwidth to this many bytes per second");
 
 
   program_options::variables_map option_variables;
@@ -210,7 +164,20 @@ void configure_logging(const fc::path& data_dir)
     ac_rpc.flush    = true;
 
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
-    
+
+
+    fc::variants  c  {
+                fc::mutable_variant_object( "level","debug")("color", "green"),
+                fc::mutable_variant_object( "level","warn")("color", "brown"),
+                fc::mutable_variant_object( "level","error")("color", "red") };
+
+     cfg.appenders.push_back( 
+            fc::appender_config( "stderr", "console", 
+                fc::mutable_variant_object()
+                    ( "stream","std_error")
+                    ( "level_colors", c ) 
+                ) ); 
+
     cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
     cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
     
@@ -218,6 +185,7 @@ void configure_logging(const fc::path& data_dir)
     dlc.level = fc::log_level::debug;
     dlc.name = "default";
     dlc.appenders.push_back("default");
+    dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
     dlc_rpc.level = fc::log_level::debug;
@@ -241,11 +209,11 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
    else
    {
 #ifdef WIN32
-     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #elif defined( __APPLE__ )
-     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     datadir = fc::app_path() / ".BitShares" BTS_ADDRESS_PREFIX;
+     datadir = fc::app_path() / "." BTS_BLOCKCHAIN_NAME;
 #endif
    }
    return datadir;
@@ -295,7 +263,6 @@ config load_config( const fc::path& datadir )
 
 
 
-namespace bts { namespace client {
 
    using namespace bts::wallet;
    using namespace bts::blockchain;
@@ -881,6 +848,11 @@ namespace bts { namespace client {
         }
         my->_p2p_node->set_node_delegate(my.get());
 
+
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+
+    void client::sync_with_ntp()
+    {
         fc::async( [](){  
             auto start_query =  fc::time_point::now();
             auto query_time = fc::seconds(0);
@@ -903,8 +875,7 @@ namespace bts { namespace client {
                }
             } while( query_time > fc::seconds(1) ); 
         } );
-
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+    }
                              
 
     client::~client()
@@ -1657,8 +1628,8 @@ namespace bts { namespace client {
       // parse command-line options
       auto option_variables = parse_option_variables(argc,argv);
 
-      fc::path datadir = ::get_data_dir(option_variables);
-      ::configure_logging(datadir);
+      fc::path datadir = bts::client::get_data_dir(option_variables);
+      bts::client::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
       std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
@@ -1811,6 +1782,10 @@ namespace bts { namespace client {
     {
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
+    }
+
+    void client::init_cli()
+    {
       if( !my->_cli )
          my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
     }
@@ -2232,5 +2207,14 @@ namespace bts { namespace client {
    {
      return my.get();
    }
+
+  bool rpc_server_config::is_valid() const
+  {
+    if (rpc_user.empty())
+      return false;
+    if (rpc_password.empty())
+      return false;
+    return true;
+  }
    
 } } // bts::client
