@@ -2532,17 +2532,21 @@ namespace bts { namespace net {
        return result;
     }
 
-    void node_impl::disconnect_from_peer(peer_connection* peer_to_disconnect,
-                                         const std::string& reason_for_disconnect,
-                                         bool caused_by_error /* = false */,
-                                         const fc::oexception& error /* = fc::oexception() */)
+    void node_impl::disconnect_from_peer( peer_connection* peer_to_disconnect,
+                                          const std::string& reason_for_disconnect,
+                                          bool caused_by_error /* = false */,
+                                          const fc::oexception& error /* = fc::oexception() */)
     {
       _closing_connections.insert(peer_to_disconnect->shared_from_this());
       _handshaking_connections.erase(peer_to_disconnect->shared_from_this());
       _active_connections.erase(peer_to_disconnect->shared_from_this());
 
-      closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
-      peer_to_disconnect->send_message(closing_message);
+
+      if( peer_to_disconnect->state == peer_connection::connected )
+      {
+         closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
+         peer_to_disconnect->send_message(closing_message);
+      }
 
       potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
       updated_peer_record.last_seen_time = fc::time_point::now();
