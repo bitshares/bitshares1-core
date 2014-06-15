@@ -1358,7 +1358,7 @@ namespace bts { namespace net {
         _potential_peer_db.update_entry(updated_peer_record);
         */
 
-        if( active_peer->is_firewalled != true )
+        if( active_peer->is_firewalled != true || active_peer->direction == peer_connection_direction::outbound )
            reply.addresses.emplace_back( *active_peer->get_remote_endpoint(), fc::time_point::now() ); //record.endpoint, record.last_seen_time);
       }
 
