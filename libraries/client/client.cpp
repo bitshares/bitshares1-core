@@ -1938,7 +1938,7 @@ config load_config( const fc::path& datadir )
 
       info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
       info["blockchain_head_block_time"]                 = _chain_db->now();
-      info["blockchain_head_block_time_rel"]             = fc::get_approximate_relative_time_string(_chain_db->now());
+      info["blockchain_head_block_time_rel"]             = fc::get_approximate_relative_time_string(_chain_db->now(), bts::blockchain::now(), " old");
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
