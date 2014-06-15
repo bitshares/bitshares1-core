@@ -684,7 +684,7 @@ namespace bts { namespace net {
               *
               *
               */
-              auto delay_until_retry = fc::seconds(iter->number_of_failed_connection_attempts * _peer_connection_retry_timeout);
+              auto delay_until_retry = fc::seconds((iter->number_of_failed_connection_attempts + 1) * _peer_connection_retry_timeout);
 
               if (!is_connection_to_endpoint_in_progress(iter->endpoint) &&
                   ((iter->last_connection_disposition != last_connection_failed && 
@@ -2551,20 +2551,19 @@ namespace bts { namespace net {
       _handshaking_connections.erase(peer_to_disconnect->shared_from_this());
       _active_connections.erase(peer_to_disconnect->shared_from_this());
 
-
-      if( peer_to_disconnect->state == peer_connection::connected )
+      if (peer_to_disconnect->state == peer_connection::connected)
       {
-         closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
-         peer_to_disconnect->send_message(closing_message);
-      }
+        closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
+        peer_to_disconnect->send_message(closing_message);
 
-      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
-      updated_peer_record.last_seen_time = fc::time_point::now();
-      if (error)
-        updated_peer_record.last_error = error;
-      else
-        updated_peer_record.last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
-      _potential_peer_db.update_entry(updated_peer_record);
+        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
+        updated_peer_record.last_seen_time = fc::time_point::now();
+        if (error)
+          updated_peer_record.last_error = error;
+        else
+          updated_peer_record.last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
+        _potential_peer_db.update_entry(updated_peer_record);
+      }
 
       // notify the user.  This will be useful in testing, but we might want to remove it later;
       // it makes good sense to notify the user if other nodes think she is behaving badly, but
