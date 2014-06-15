@@ -1348,17 +1348,21 @@ namespace bts { namespace net {
     {
       ilog("Received an address request message");
 
+      address_message reply;
+      reply.addresses.reserve(_active_connections.size() );
       for (const peer_connection_ptr& active_peer : _active_connections)
       {
+         /*
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*active_peer->get_remote_endpoint());
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry(updated_peer_record);
+        */
+
+        if( !active_peer->is_firewalled )
+           reply.addresses.emplace_back( *active_peer->get_remote_endpoint(), fc::time_point::now() ); //record.endpoint, record.last_seen_time);
       }
 
-      address_message reply;
-      reply.addresses.reserve(_potential_peer_db.size());
-      for (const potential_peer_record& record : _potential_peer_db)
-        reply.addresses.emplace_back(record.endpoint, record.last_seen_time);
+      //for (const potential_peer_record& record : _potential_peer_db)
       originating_peer->send_message(reply);
     }
 
