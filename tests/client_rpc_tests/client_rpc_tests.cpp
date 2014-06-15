@@ -156,6 +156,22 @@ BOOST_FIXTURE_TEST_CASE( private_key_test, WFixture )
    BOOST_CHECK(private_key == wallet->get_account_private_key("delegate31"));
 }
 
+BOOST_FIXTURE_TEST_CASE( account_address_test, WFixture )
+{
+   run_cmd(clienta, "unlock 999999999 masterpassword");
+   run_cmd(clienta, "scan 0 100");
+   
+   run_cmd(clienta, "wallet_account_create test-1");
+
+   auto wallet = clienta->get_wallet();
+   
+   auto account_pubkey = wallet->get_account_public_key("test-1");
+   
+   auto public_keys = wallet->get_public_keys_in_account("test-1");
+   
+   BOOST_CHECK( std::find( public_keys.begin(), public_keys.end(), account_pubkey) !=public_keys.end() );
+}
+
 /***
  *  This test case is designed to grow for ever and never shrink.  It is a complete scripted history
  *  of operations that should always work based upon a generated genesis condition.
