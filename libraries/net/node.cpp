@@ -641,7 +641,8 @@ namespace bts { namespace net {
     {
       for (;;)
       {
-         try {
+        try 
+        {
           ilog("Starting an iteration of p2p_network_connect_loop().");
           display_current_connections();
          
@@ -729,11 +730,11 @@ namespace bts { namespace net {
           {
             elog( "${e}", ("e",e.to_detail_string() ) );
           }  // catch
-       } 
-       catch ( const fc::exception& e )
-       {
+        } 
+        catch ( const fc::exception& e )
+        {
           elog( "${e}", ("e",e.to_detail_string() ) );
-       }
+        }
       }// for( ;; )
     } 
 
@@ -2365,19 +2366,44 @@ namespace bts { namespace net {
         // those flags will prevent us from detecting that other applications are 
         // listening on that port.  We'd like to detect that, so we'll set up a temporary
         // tcp server without that flag to see if we can listen on that port.
-        try
+        bool first = true;
+        for (;;)
         {
-          fc::tcp_server temporary_server;
-          if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
-            temporary_server.listen(_node_configuration.listen_endpoint);
-          else
-            temporary_server.listen(_node_configuration.listen_endpoint.port());
-          requested_endpoint_is_available = true;
-        }
-        catch (fc::exception&)
-        {
-          wlog("unable to bind on the requested endpoint ${endpoint}, which probably means that endpoint is already in use",
-               ("endpoint", _node_configuration.listen_endpoint));
+          try
+          {
+            fc::tcp_server temporary_server;
+            if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
+              temporary_server.listen(_node_configuration.listen_endpoint);
+            else
+              temporary_server.listen(_node_configuration.listen_endpoint.port());
+            requested_endpoint_is_available = true;
+            break;
+          }
+          catch (fc::exception&)
+          {
+            std::ostringstream error_message;
+            //error_message << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port()
+            //              << ", retrying in a few seconds";
+            // I think the right thing to do here is to send the delegate an error_encountered message: 
+            //   _delegate->error_encountered(error_message.str(), fc::oexception());
+            // but we don't have the CLI fully initialized at this point, so the message gets discarded.
+            // for now, just cout it
+            if (first)
+            {
+              std::cout << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port() 
+                        << ", retrying in a few seconds\n";
+              std::cout << "You can wait for it to become available, or restart this program using\n";
+              std::cout << "the --p2p-port option to specify another port\n";
+              first = false;
+            }
+            else
+            {
+              std::cout << "\nStill waiting for port " << _node_configuration.listen_endpoint.port() << " to become available\n";
+            }
+            fc::usleep(fc::seconds(5));
+            //wlog("unable to bind on the requested endpoint ${endpoint}, which probably means that endpoint is already in use",
+            //     ("endpoint", _node_configuration.listen_endpoint));
+          }
         }
       }
       else // port is 0
