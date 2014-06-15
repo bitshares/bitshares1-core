@@ -818,6 +818,8 @@ config load_config( const fc::path& datadir )
           _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
         if( _cli )
           _cli->display_status_message(message);
+        else
+          std::cout << message << "\n";
       }
 
     } // end namespace detail
