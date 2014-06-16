@@ -59,11 +59,13 @@ namespace bts { namespace cli {
             bool                        show_raw_output;
             bool                        _daemon_mode;
 
+            boost::iostreams::stream< boost::iostreams::null_sink > 
+                nullstream;
+            
             std::ostream*                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
             std::istream*                  _command_script;
             std::istream*                  _input_stream;
             boost::optional<std::ostream&> _input_stream_log;
-
             cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream);
 
             void process_commands(std::istream* input_stream);
@@ -82,7 +84,7 @@ namespace bts { namespace cli {
                 }
                 catch ( const fc::exception& e)
                 {
-                    if( _out ) (*_out) << "\nshutting down\n";
+                    *_out << "\nshutting down\n";
                     elog( "${e}", ("e",e.to_detail_string() ) );
                     _rpc_server->shutdown_rpc_server();
                 }
@@ -136,19 +138,19 @@ namespace bts { namespace cli {
               catch( const rpc::unknown_method& )
               {
                  if( command.size() )
-                   if( _out ) (*_out) << "Error: invalid command \"" << command << "\"\n";
+                   *_out << "Error: invalid command \"" << command << "\"\n";
               }
               catch( const fc::canceled_exception&)
               {
-                if( _out ) (*_out) << "Command aborted.\n";
+                *_out << "Command aborted.\n";
               }
               catch( const fc::exception& e)
               {
-                if( _out ) (*_out) << e.to_detail_string() <<"\n";
-                if( _out ) (*_out) << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
+                *_out << e.to_detail_string() <<"\n";
+                *_out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
                 auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
-                if( _out ) (*_out) << usage << "\n";
+                *_out << usage << "\n";
               }
 
               //if command is valid, go ahead and execute it
@@ -165,7 +167,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::exception& e )
                 {
-                  if( _out ) (*_out) << e.to_detail_string() << "\n";
+                  *_out << e.to_detail_string() << "\n";
                 }
               }
             } //parse_and_execute_interactive_command
@@ -207,7 +209,7 @@ namespace bts { namespace cli {
                 {
                   if( command == "quit" ) 
                     return false;
-                  if( _out ) (*_out) << "Command aborted\n";
+                  *_out << "Command aborted\n";
                 }
               } //end if command line not empty
               return true;
@@ -223,12 +225,12 @@ namespace bts { namespace cli {
                   string line;
                   if ( no_echo )
                   {
-                      if( _out ) (*_out) << prompt;
+                      *_out << prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
                       _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                       fc::set_console_echo(true);
-                      if( _out ) (*_out) << std::endl;
+                      *_out << std::endl;
                   }
                   else
                   {
@@ -243,12 +245,12 @@ namespace bts { namespace cli {
                      line = line_read;
                      free(line_read);
                   #else
-                     if( _out ) (*_out) <<prompt;
+                     *_out <<prompt;
                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
                   if (_input_stream_log)
                     {
-                    if (_out) _out->flush();
+                    _out->flush();
                     *_input_stream_log << line << std::endl;
                     }
                   }
@@ -301,7 +303,7 @@ namespace bts { namespace cli {
                         string prompt_answer2 = get_line("new_passphrase (verify): ", no_echo );
                         if (prompt_answer != prompt_answer2)
                         {
-                          if( _out ) (*_out) << "Passphrases do not match. ";
+                          *_out << "Passphrases do not match. ";
                           FC_THROW_EXCEPTION(fc::canceled_exception,"Passphrase mismatch");
                         }
                       }
@@ -389,7 +391,7 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::eof_exception& )
                 {
-                   // if( _out ) (*_out) << "ignoring eof  line: "<<__LINE__<<"\n";
+                   // *_out << "ignoring eof  line: "<<__LINE__<<"\n";
                    // expected and ignored
                 }
                 string address_string = address_stream.str();
@@ -428,7 +430,7 @@ namespace bts { namespace cli {
                   auto filename = arguments[0].as<fc::path>();
                   if( !fc::exists( filename ) )
                   {
-                     if( _out ) (*_out) << "File \"" << filename.generic_string() << "\" not found\n";
+                     *_out << "File \"" << filename.generic_string() << "\" not found\n";
                      FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   try /* Try empty password first */
@@ -448,7 +450,7 @@ namespace bts { namespace cli {
                   auto filename = arguments[0].as<fc::path>();
                   if( fc::exists( filename ) )
                   {
-                     if( _out ) (*_out) << "File \"" << filename.generic_string() << "\" already exists\n";
+                     *_out << "File \"" << filename.generic_string() << "\" already exists\n";
                      FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
               }
@@ -458,12 +460,12 @@ namespace bts { namespace cli {
                   auto wallet_name = arguments[1].as_string();
                   if( !fc::exists( filename ) )
                   {
-                     if( _out ) (*_out) << "File \"" << filename.generic_string() << "\" not found\n";
+                     *_out << "File \"" << filename.generic_string() << "\" not found\n";
                      FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   if( fc::exists( _client->get_wallet()->get_data_directory() / wallet_name ) )
                   {
-                    if( _out ) (*_out) << "Wallet \"" << wallet_name << "\" already exists\n";
+                    *_out << "Wallet \"" << wallet_name << "\" already exists\n";
                     FC_THROW_EXCEPTION(fc::invalid_arg_exception, "");
                   }
                   return execute_wallet_command_with_passphrase_query( command, arguments, "imported wallet passphrase" );
@@ -485,7 +487,7 @@ namespace bts { namespace cli {
                     }
                   } 
 
-                  if( _out ) (*_out) << "Rescanning blockchain...\n";
+                  *_out << "Rescanning blockchain...\n";
                   uint32_t start;
                   if (arguments.size() == 0)
                       start = 1;
@@ -494,10 +496,10 @@ namespace bts { namespace cli {
                   while(true)
                   {
                       try {
-                          if( _out ) (*_out) << "|";
+                          *_out << "|";
                           for(int i = 0; i < 100; i++)
-                              if( _out ) (*_out) << "-";
-                          if( _out ) (*_out) << "|\n|=";
+                              *_out << "-";
+                          *_out << "|\n|=";
                           uint32_t next_step = 0;
                           auto cb = [=](uint32_t cur,
                                                        uint32_t last
@@ -507,13 +509,13 @@ namespace bts { namespace cli {
                                   return;
                               if (((100*(1 + cur - start)) / (1 + last - start)) > next_step)
                               {
-                                  if( _out ) (*_out) << "=";
+                                  *_out << "=";
                                   next_step++;
                               }
                           };
                           _client->get_wallet()->scan_chain(start, -1, cb);
-                          if( _out ) (*_out) << "|\n";
-                          if( _out ) (*_out) << "Scan complete.\n";
+                          *_out << "|\n";
+                          *_out << "Scan complete.\n";
                           return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
@@ -586,7 +588,7 @@ namespace bts { namespace cli {
                     {
                         if( passphrase != get_line( query_string + " (verify): ", true ) )
                         {
-                            if( _out ) (*_out) << "Passphrases do not match, try again\n";
+                            *_out << "Passphrases do not match, try again\n";
                             continue;
                         }
                     }
@@ -600,7 +602,7 @@ namespace bts { namespace cli {
                     }
                     catch( const rpc_wallet_passphrase_incorrect_exception& )
                     {
-                        if( _out ) (*_out) << "Incorrect passphrase, try again\n";
+                        *_out << "Incorrect passphrase, try again\n";
                     }
                 }
 
@@ -618,7 +620,7 @@ namespace bts { namespace cli {
                 {
                     fc::variants new_arguments { 60 * 5, passphrase }; // default to five minute timeout
                     _rpc_server->direct_invoke_method( "wallet_unlock", new_arguments );
-                    if( _out ) (*_out) << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
+                    *_out << "Wallet unlocked for 5 minutes, use wallet_unlock for more time\n";
                 }
 
                 return result;
@@ -629,10 +631,10 @@ namespace bts { namespace cli {
               if( _client->get_wallet()->is_open() ) 
                 return;
 
-              if( _out ) (*_out) << "A wallet must be open to execute this command. You can:\n";
-              if( _out ) (*_out) << "(o) Open an existing wallet\n";
-              if( _out ) (*_out) << "(c) Create a new wallet\n";
-              if( _out ) (*_out) << "(q) Abort command\n";
+              *_out << "A wallet must be open to execute this command. You can:\n";
+              *_out << "(o) Open an existing wallet\n";
+              *_out << "(c) Create a new wallet\n";
+              *_out << "(q) Abort command\n";
 
               string choice = get_line("Choose [o/c/q]: ");
 
@@ -664,7 +666,7 @@ namespace bts { namespace cli {
               }
               else
               {
-                  if( _out ) (*_out) << "Wrong answer!\n";
+                  *_out << "Wrong answer!\n";
               }
             }
 
@@ -696,26 +698,26 @@ namespace bts { namespace cli {
 
                   if (result_type == "asset")
                   {
-                    if( _out ) (*_out) << (string)result.as<bts::blockchain::asset>() << "\n";
+                    *_out << (string)result.as<bts::blockchain::asset>() << "\n";
                   }
                   else if (result_type == "address")
                   {
-                    if( _out ) (*_out) << (string)result.as<bts::blockchain::address>() << "\n";
+                    *_out << (string)result.as<bts::blockchain::address>() << "\n";
                   }
                   else if (result_type == "null" || result_type == "void")
                   {
-                    if( _out ) (*_out) << "OK\n";
+                    *_out << "OK\n";
                   }
                   else
                   {
-                    if( _out ) (*_out) << fc::json::to_pretty_string(result) << "\n";
+                    *_out << fc::json::to_pretty_string(result) << "\n";
                   }
               }
              
               if (method_name == "help")
               {
                 string help_string = result.as<string>();
-                if( _out ) (*_out) << help_string << "\n";
+                *_out << help_string << "\n";
               }
               else if( method_name == "wallet_account_vote_summary" )
               {
@@ -759,10 +761,10 @@ namespace bts { namespace cli {
                   auto summary = result.as<unordered_map<string, map<string, share_type>>>();
                   for( auto accts : summary )
                   {
-                      if( _out ) (*_out) << accts.first << ":\n";
+                      *_out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         if( _out ) (*_out) << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";//fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
+                         *_out << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";//fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
                       }
                   }
               }
@@ -770,21 +772,21 @@ namespace bts { namespace cli {
               {
                   auto wallets = result.as<vector<string>>();
                   for (auto wallet : wallets)
-                      if( _out ) (*_out) << wallet << "\n";
+                      *_out << wallet << "\n";
               }
               else if (method_name == "wallet_list_unspent_balances" )
               {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
-                  if( _out ) (*_out) << std::right;
-                  if( _out ) (*_out) << std::setw(18) << "BALANCE";
-                  if( _out ) (*_out) << std::right << std::setw(40) << "OWNER";
-                  if( _out ) (*_out) << std::right << std::setw(25) << "VOTE";
-                  if( _out ) (*_out) << "\n";
-                  if( _out ) (*_out) << "-------------------------------------------------------------";
-                  if( _out ) (*_out) << "-------------------------------------------------------------\n";
+                  *_out << std::right;
+                  *_out << std::setw(18) << "BALANCE";
+                  *_out << std::right << std::setw(40) << "OWNER";
+                  *_out << std::right << std::setw(25) << "VOTE";
+                  *_out << "\n";
+                  *_out << "-------------------------------------------------------------";
+                  *_out << "-------------------------------------------------------------\n";
                   for( auto balance_rec : balance_recs )
                   {
-                      if( _out ) (*_out) << std::setw(18) << balance_rec.balance;
+                      *_out << std::setw(18) << balance_rec.balance;
                       switch (withdraw_condition_types(balance_rec.condition.type))
                       {
                           case (withdraw_signature_type):
@@ -799,11 +801,11 @@ namespace bts { namespace cli {
 
                               if (owner.size() > 36)
                               {
-                                  if( _out ) (*_out) << std::setw(40) << owner.substr(0, 31) << "...";
+                                  *_out << std::setw(40) << owner.substr(0, 31) << "...";
                               }
                               else
                               {
-                                  if( _out ) (*_out) << std::setw(40) << owner;
+                                  *_out << std::setw(40) << owner;
                               }
 
                               auto delegate_id = balance_rec.condition.delegate_id;
@@ -811,11 +813,11 @@ namespace bts { namespace cli {
                               string sign = (delegate_id > 0 ? "+" : "-");
                               if (delegate_rec->name.size() > 21)
                               {
-                                  if( _out ) (*_out) << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                                  *_out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
                               }
                               else
                               {
-                                  if( _out ) (*_out) << std::setw(25) << sign << delegate_rec->name;
+                                  *_out << std::setw(25) << sign << delegate_rec->name;
                               }
                               break;
                           }
@@ -824,7 +826,7 @@ namespace bts { namespace cli {
                               FC_ASSERT(!"unimplemented condition type");
                           }
                       } // switch cond type
-                      if( _out ) (*_out) << "\n";
+                      *_out << "\n";
                   } // for balance in balances
               }
               else if (method_name == "blockchain_list_registered_accounts")
@@ -840,28 +842,28 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_list_registered_assets")
               {
                   auto records = result.as<vector<asset_record>>();
-                  if (_out) (*_out) << std::setw(6) << "ID";
-                  if (_out) (*_out) << std::setw(7) << "SYMBOL";
-                  if (_out) (*_out) << std::setw(15) << "NAME";
-                  if (_out) (*_out) << std::setw(35) << "DESCRIPTION";
-                  if (_out) (*_out) << std::setw(16) << "CURRENT_SUPPLY";
-                  if (_out) (*_out) << std::setw(16) << "MAX_SUPPLY";
-                  if (_out) (*_out) << std::setw(16) << "FEES COLLECTED";
-                  if (_out) (*_out) << std::setw(16) << "REGISTERED";
-                  if (_out) (*_out) << "\n";
+                  *_out << std::setw(6) << "ID";
+                  *_out << std::setw(7) << "SYMBOL";
+                  *_out << std::setw(15) << "NAME";
+                  *_out << std::setw(35) << "DESCRIPTION";
+                  *_out << std::setw(16) << "CURRENT_SUPPLY";
+                  *_out << std::setw(16) << "MAX_SUPPLY";
+                  *_out << std::setw(16) << "FEES COLLECTED";
+                  *_out << std::setw(16) << "REGISTERED";
+                  *_out << "\n";
                   for (auto asset : records)
                   {
-                      if (_out) (*_out) << std::setprecision(15);
-                      if (_out) (*_out) << std::setw(6) << asset.id;
-                      if (_out) (*_out) << std::setw(7) << asset.symbol;
-                      if (_out) (*_out) << std::setw(15) << pretty_shorten(asset.name, 14);
-                      if (_out) (*_out) << std::setw(35) << pretty_shorten(asset.description, 33);
-                      if (_out) (*_out) << std::setw(16) << double(asset.current_share_supply) / asset.precision;
-                      if (_out) (*_out) << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
-                      if (_out) (*_out) << std::setw(16) << double(asset.collected_fees) / asset.precision;
+                      *_out << std::setprecision(15);
+                      *_out << std::setw(6) << asset.id;
+                      *_out << std::setw(7) << asset.symbol;
+                      *_out << std::setw(15) << pretty_shorten(asset.name, 14);
+                      *_out << std::setw(35) << pretty_shorten(asset.description, 33);
+                      *_out << std::setw(16) << double(asset.current_share_supply) / asset.precision;
+                      *_out << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
+                      *_out << std::setw(16) << double(asset.collected_fees) / asset.precision;
                       auto time = boost::posix_time::from_time_t(time_t(asset.registration_date.sec_since_epoch()));
-                      if( _out ) (*_out) << std::setw(16) << boost::posix_time::to_iso_extended_string( time );
-                      if (_out) (*_out) << "\n";
+                      *_out << std::setw(16) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << "\n";
                   }
               }
               else if (method_name == "blockchain_list_delegates")
@@ -876,17 +878,17 @@ namespace bts { namespace cli {
                   auto max = current + count;
                   auto num_active = BTS_BLOCKCHAIN_NUM_DELEGATES - current;
 
-                  if( _out ) (*_out) << std::setw(12) << "ID";
-                  if( _out ) (*_out) << std::setw(25) << "NAME";
-                  if( _out ) (*_out) << std::setw(20) << "VOTES FOR";
-                  if( _out ) (*_out) << std::setw(20) << "VOTES AGAINST";
-                  if( _out ) (*_out) << std::setw(20) << "NET VOTES";
-                  if( _out ) (*_out) << std::setw(16) << "BLOCKS PRODUCED";
-                  if( _out ) (*_out) << std::setw(16) << "BLOCKS MISSED";
-                  if( _out ) (*_out) << "\n---------------------------------------------------------\n";
+                  *_out << std::setw(12) << "ID";
+                  *_out << std::setw(25) << "NAME";
+                  *_out << std::setw(20) << "VOTES FOR";
+                  *_out << std::setw(20) << "VOTES AGAINST";
+                  *_out << std::setw(20) << "NET VOTES";
+                  *_out << std::setw(16) << "BLOCKS PRODUCED";
+                  *_out << std::setw(16) << "BLOCKS MISSED";
+                  *_out << "\n---------------------------------------------------------\n";
 
                   if (current < num_active)
-                      if( _out ) (*_out) << "** Active:\n";
+                      *_out << "** Active:\n";
 
                   auto total_delegates = delegates.size();
                   for( auto delegate_rec : delegates )
@@ -894,13 +896,13 @@ namespace bts { namespace cli {
                       if (current > max || current == total_delegates)
                           return;
                       if (current == num_active)
-                          if( _out ) (*_out) << "** Inactive:\n"; 
+                          *_out << "** Inactive:\n"; 
 
-                      if( _out ) (*_out) << std::setw(12) << delegate_rec.id;
-                      if( _out ) (*_out) << std::setw(25) << delegate_rec.name;
+                      *_out << std::setw(12) << delegate_rec.id;
+                      *_out << std::setw(25) << delegate_rec.name;
                       
-                      if( _out ) (*_out) << std::setw(20) << delegate_rec.votes_for();
-                      if( _out ) (*_out) << std::setw(20) << delegate_rec.votes_against();
+                      *_out << std::setw(20) << delegate_rec.votes_for();
+                      *_out << std::setw(20) << delegate_rec.votes_against();
 
 
                       std::stringstream ss;
@@ -910,104 +912,104 @@ namespace bts { namespace cli {
                       ss << std::setprecision(10);
                       ss << percent;
                       ss << " %";
-                      if( _out ) (*_out) << std::setw(20) << ss.str();
+                      *_out << std::setw(20) << ss.str();
 
-                      if( _out ) (*_out) << std::setw(16) << delegate_rec.delegate_info->blocks_produced;
-                      if( _out ) (*_out) << std::setw(16) << delegate_rec.delegate_info->blocks_missed;
+                      *_out << std::setw(16) << delegate_rec.delegate_info->blocks_produced;
+                      *_out << std::setw(16) << delegate_rec.delegate_info->blocks_missed;
 
-                      if( _out ) (*_out) << "\n";
+                      *_out << "\n";
                       current++;
                   }
-                  if( _out ) (*_out) << "  Use \"blockchain_list_delegates <start_num> <count>\" to see more.\n";
+                  *_out << "  Use \"blockchain_list_delegates <start_num> <count>\" to see more.\n";
               }
               else if (method_name == "blockchain_get_proposal_votes")
               {
                   auto votes = result.as<vector<proposal_vote>>();
-                  if( _out ) (*_out) << std::left;
-                  if( _out ) (*_out) << std::setw(15) << "DELEGATE";
-                  if( _out ) (*_out) << std::setw(22) << "TIME";
-                  if( _out ) (*_out) << std::setw(5)  << "VOTE";
-                  if( _out ) (*_out) << std::setw(35) << "MESSAGE";
-                  if( _out ) (*_out) << "\n----------------------------------------------------------------";
-                  if( _out ) (*_out) << "-----------------------\n";
+                  *_out << std::left;
+                  *_out << std::setw(15) << "DELEGATE";
+                  *_out << std::setw(22) << "TIME";
+                  *_out << std::setw(5)  << "VOTE";
+                  *_out << std::setw(35) << "MESSAGE";
+                  *_out << "\n----------------------------------------------------------------";
+                  *_out << "-----------------------\n";
                   for (auto vote : votes)
                   {
                       auto time = boost::posix_time::from_time_t(time_t(vote.timestamp.sec_since_epoch()));
                       auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
-                      if( _out ) (*_out) << std::setw(15) << pretty_shorten(rec->name, 14);
-                      if( _out ) (*_out) << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << std::setw(15) << pretty_shorten(rec->name, 14);
+                      *_out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
                       if (vote.vote == proposal_vote::no)
                       {
-                          if( _out ) (*_out) << std::setw(5) << "NO";
+                          *_out << std::setw(5) << "NO";
                       }
                       else if (vote.vote == proposal_vote::yes)
                       {
-                          if( _out ) (*_out) << std::setw(5) << "YES";
+                          *_out << std::setw(5) << "YES";
                       }
                       else
                       {
-                          if( _out ) (*_out) << std::setw(5) << "??";
+                          *_out << std::setw(5) << "??";
                       }
-                      if( _out ) (*_out) << std::setw(35) << pretty_shorten(vote.message, 35);
-                      if( _out ) (*_out) << "\n";
+                      *_out << std::setw(35) << pretty_shorten(vote.message, 35);
+                      *_out << "\n";
                   }
-                  if( _out ) (*_out) << "\n";
+                  *_out << "\n";
               }
               else if (method_name == "blockchain_list_proposals")
               {
                   auto proposals = result.as<vector<proposal_record>>();
-                  if( _out ) (*_out) << std::left;
-                  if( _out ) (*_out) << std::setw(10) << "ID";
-                  if( _out ) (*_out) << std::setw(20) << "SUBMITTED BY";
-                  if( _out ) (*_out) << std::setw(22) << "SUBMIT TIME";
-                  if( _out ) (*_out) << std::setw(15) << "TYPE";
-                  if( _out ) (*_out) << std::setw(20) << "SUBJECT";
-                  if( _out ) (*_out) << std::setw(35) << "BODY";
-                  if( _out ) (*_out) << std::setw(20) << "DATA";
-                  if( _out ) (*_out) << std::setw(10)  << "RATIFIED";
-                  if( _out ) (*_out) << "\n------------------------------------------------------------";
-                  if( _out ) (*_out) << "-----------------------------------------------------------------";
-                  if( _out ) (*_out) << "------------------\n";
+                  *_out << std::left;
+                  *_out << std::setw(10) << "ID";
+                  *_out << std::setw(20) << "SUBMITTED BY";
+                  *_out << std::setw(22) << "SUBMIT TIME";
+                  *_out << std::setw(15) << "TYPE";
+                  *_out << std::setw(20) << "SUBJECT";
+                  *_out << std::setw(35) << "BODY";
+                  *_out << std::setw(20) << "DATA";
+                  *_out << std::setw(10)  << "RATIFIED";
+                  *_out << "\n------------------------------------------------------------";
+                  *_out << "-----------------------------------------------------------------";
+                  *_out << "------------------\n";
                   for (auto prop : proposals)
                   {
-                      if( _out ) (*_out) << std::setw(10) << prop.id;
+                      *_out << std::setw(10) << prop.id;
                       auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
-                      if( _out ) (*_out) << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
+                      *_out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
                       auto time = boost::posix_time::from_time_t(time_t(prop.submission_date.sec_since_epoch()));
-                      if( _out ) (*_out) << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
-                      if( _out ) (*_out) << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
-                      if( _out ) (*_out) << std::setw(20) << pretty_shorten(prop.subject, 19);
-                      if( _out ) (*_out) << std::setw(35) << pretty_shorten(prop.body, 34);
-                      if( _out ) (*_out) << std::setw(20) << pretty_shorten(fc::json::to_pretty_string(prop.data), 19);
-                      if( _out ) (*_out) << std::setw(10) << (prop.ratified ? "YES" : "NO");
+                      *_out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
+                      *_out << std::setw(20) << pretty_shorten(prop.subject, 19);
+                      *_out << std::setw(35) << pretty_shorten(prop.body, 34);
+                      *_out << std::setw(20) << pretty_shorten(fc::json::to_pretty_string(prop.data), 19);
+                      *_out << std::setw(10) << (prop.ratified ? "YES" : "NO");
                   }
-                  if( _out ) (*_out) << "\n"; 
+                  *_out << "\n"; 
               }
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();
-                  if (_out) (*_out) << std::setw(25) << "ENDPOINT";
-                  if (_out) (*_out) << std::setw(25) << "LAST SEEN";
-                  if (_out) (*_out) << std::setw(25) << "LAST CONNECT ATTEMPT";
-                  if (_out) (*_out) << std::setw(30) << "SUCCESSFUL CONNECT ATTEMPTS";
-                  if (_out) (*_out) << std::setw(30) << "FAILED CONNECT ATTEMPTS";
-                  if (_out) (*_out) << std::setw(35) << "LAST CONNECTION DISPOSITION";
-                  if (_out) (*_out) << std::setw(30) << "LAST ERROR";
+                  *_out << std::setw(25) << "ENDPOINT";
+                  *_out << std::setw(25) << "LAST SEEN";
+                  *_out << std::setw(25) << "LAST CONNECT ATTEMPT";
+                  *_out << std::setw(30) << "SUCCESSFUL CONNECT ATTEMPTS";
+                  *_out << std::setw(30) << "FAILED CONNECT ATTEMPTS";
+                  *_out << std::setw(35) << "LAST CONNECTION DISPOSITION";
+                  *_out << std::setw(30) << "LAST ERROR";
 
-                  if (_out) (*_out) << "\n";
+                  *_out<< "\n";
                   for (auto peer : peers)
                   {
-                      if (_out) (*_out) << std::setw(25) << string(peer.endpoint);
+                      *_out<< std::setw(25) << string(peer.endpoint);
                       auto seen_time = boost::posix_time::from_time_t(time_t(peer.last_seen_time.sec_since_epoch()));
-                      if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( seen_time );
+                      *_out<< std::setw(25) << boost::posix_time::to_iso_extended_string( seen_time );
                       auto connect_time = boost::posix_time::from_time_t(time_t(peer.last_connection_attempt_time.sec_since_epoch()));
-                      if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( connect_time );
-                      if (_out) (*_out) << std::setw(30) << peer.number_of_successful_connection_attempts;
-                      if (_out) (*_out) << std::setw(30) << peer.number_of_failed_connection_attempts;
-                      if (_out) (*_out) << std::setw(35) << string( peer.last_connection_disposition );
-                      if (_out) (*_out) << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
+                      *_out << std::setw(25) << boost::posix_time::to_iso_extended_string( connect_time );
+                      *_out << std::setw(30) << peer.number_of_successful_connection_attempts;
+                      *_out << std::setw(30) << peer.number_of_failed_connection_attempts;
+                      *_out << std::setw(35) << string( peer.last_connection_disposition );
+                      *_out << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
 
-                      if (_out) (*_out) << "\n";
+                      *_out << "\n";
                   }
               }
               else
@@ -1022,29 +1024,29 @@ namespace bts { namespace cli {
 
                   if (result_type == "asset")
                   {
-                    if( _out ) (*_out) << (string)result.as<bts::blockchain::asset>() << "\n";
+                    *_out << (string)result.as<bts::blockchain::asset>() << "\n";
                   }
                   else if (result_type == "address")
                   {
-                    if( _out ) (*_out) << (string)result.as<bts::blockchain::address>() << "\n";
+                    *_out << (string)result.as<bts::blockchain::address>() << "\n";
                   }
                   else if (result_type == "null" || result_type == "void")
                   {
-                    if( _out ) (*_out) << "OK\n";
+                    *_out << "OK\n";
                   }
                   else
                   {
-                    if( _out ) (*_out) << fc::json::to_pretty_string(result) << "\n";
+                    *_out << fc::json::to_pretty_string(result) << "\n";
                   }
                 }
                 catch( const fc::key_not_found_exception& )
                 {
                    elog( " KEY NOT FOUND " );
-                   if( _out ) (*_out) << "key not found \n";
+                   *_out << "key not found \n";
                 }
                 catch( ... )
                 {
-                   if( _out ) (*_out) << "unexpected exception \n";
+                   *_out << "unexpected exception \n";
                 }
               }
             }
@@ -1058,134 +1060,134 @@ namespace bts { namespace cli {
 
             void print_contact_account_list(const vector<wallet_account_record> account_records)
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
-                if( _out ) (*_out) << std::setw( 64 ) << "KEY";
-                if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
-                if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
-                if( _out ) (*_out) << "\n";
+                *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
+                *_out << std::setw( 64 ) << "KEY";
+                *_out << std::setw( 22 ) << "REGISTERED";
+                *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
-                    if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
+                    *_out << std::setw(64) << string( acct.active_key() );
 
                     if( acct.id == 0 )
                     {
-                       if( _out ) (*_out) << std::setw( 22 ) << "NO";
+                       *_out << std::setw( 22 ) << "NO";
                     } 
                     else 
                     {
-                        if( _out ) (*_out) << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                        *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
                     
-                    if( _out ) (*_out) << std::setw( 10) << acct.trust_level;
-                    if( _out ) (*_out) << "\n";
+                    *_out << std::setw( 10) << acct.trust_level;
+                    *_out << "\n";
                 }
             }
 
 
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
-                if( _out ) (*_out) << std::setw( 64 ) << "KEY";
-                if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
-                if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
-                if( _out ) (*_out) << "\n";
+                *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
+                *_out << std::setw( 64 ) << "KEY";
+                *_out << std::setw( 22 ) << "REGISTERED";
+                *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << "\n";
 
-                //if( _out ) (*_out) << fc::json::to_string( account_records ) << "\n";
+                //*_out << fc::json::to_string( account_records ) << "\n";
 
                 for( auto acct : account_records )
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
                    // auto balance = _client->get_wallet()->get_balances( BTS_ADDRESS_PREFIX, acct.name );
-                   // if( _out ) (*_out) << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
+                   // *_out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
 
-                    if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
+                    *_out << std::setw(64) << string( acct.active_key() );
 
                     if (acct.id == 0 ) 
                     { //acct.registration_date == fc::time_point_sec()) {
-                        if( _out ) (*_out) << std::setw( 22 ) << "NO";
+                        *_out << std::setw( 22 ) << "NO";
                     } 
                     else 
                     {
-                        if( _out ) (*_out) << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                        *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                              boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
                     }
 
-                    if( _out ) (*_out) << std::setw( 15 ) << acct.trust_level;
-                    if( _out ) (*_out) << "\n";
+                    *_out << std::setw( 15 ) << acct.trust_level;
+                    *_out << "\n";
                 }
             }
 
             void print_registered_account_list(const vector<account_record> account_records, int32_t count )
             {
-                if( _out ) (*_out) << std::setw( 35 ) << std::left << "NAME (* delegate)";
-                if( _out ) (*_out) << std::setw( 64 ) << "KEY";
-                if( _out ) (*_out) << std::setw( 22 ) << "REGISTERED";
-                if( _out ) (*_out) << std::setw( 15 ) << "VOTES FOR";
-                if( _out ) (*_out) << std::setw( 15 ) << "VOTES AGAINST";
-                if( _out ) (*_out) << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
+                *_out << std::setw( 64 ) << "KEY";
+                *_out << std::setw( 22 ) << "REGISTERED";
+                *_out << std::setw( 15 ) << "VOTES FOR";
+                *_out << std::setw( 15 ) << "VOTES AGAINST";
+                *_out << std::setw( 15 ) << "TRUST LEVEL";
 
-                if( _out ) (*_out) << "\n";
+                *_out << "\n";
                 auto counter = 0;
                 for( auto acct : account_records )
                 {
                     if (acct.is_delegate())
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(35) << pretty_shorten(acct.name, 34);
+                        *_out << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
                     
-                    if( _out ) (*_out) << std::setw(64) << string( acct.active_key() );
-                    if( _out ) (*_out) << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
+                    *_out << std::setw(64) << string( acct.active_key() );
+                    *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
                                     boost::posix_time::from_time_t( time_t( acct.registration_date.sec_since_epoch() ) ) );
 
                     if ( acct.is_delegate() )
                     {
-                        if( _out ) (*_out) << std::setw(15) << acct.delegate_info->votes_for;
-                        if( _out ) (*_out) << std::setw(15) << acct.delegate_info->votes_against;
+                        *_out << std::setw(15) << acct.delegate_info->votes_for;
+                        *_out << std::setw(15) << acct.delegate_info->votes_against;
                     }
                     else
                     {
-                        if( _out ) (*_out) << std::setw(15) << "N/A";
-                        if( _out ) (*_out) << std::setw(15) << "N/A";
+                        *_out << std::setw(15) << "N/A";
+                        *_out << std::setw(15) << "N/A";
                     }
                     if ( ! _client->get_wallet()->is_open() )
                     {
-                        if( _out ) (*_out) << "?? (wallet closed)";
+                        *_out << "?? (wallet closed)";
                     }
                     else
                     {
                         auto trust = _client->get_wallet()->get_delegate_trust_level( acct.name );
-                        if( _out ) (*_out) << std::setw( 15 ) << trust;
+                        *_out << std::setw( 15 ) << trust;
                     }
 
-                    if( _out ) (*_out) << "\n";
+                    *_out << "\n";
 
                     /* Count is positive b/c CLI overrides default -1 arg */
                     if (counter >= count)
                     {
-                        if( _out ) (*_out) << "... Use \"blockchain_list_registered_accounts <start_name> <count>\" to see more.\n";
+                        *_out << "... Use \"blockchain_list_registered_accounts <start_name> <count>\" to see more.\n";
                         return;
                     }
                     counter++;
@@ -1280,7 +1282,7 @@ namespace bts { namespace cli {
                         (*_out) << std::setw( 20 ) << ss.str();
                     }
 
-                    if( _out ) (*_out) << std::right;
+                    *_out << std::right;
                     /* Print delegate vote */
                     bool has_deposit = false;
                     std::stringstream ss;
@@ -1341,7 +1343,8 @@ namespace bts { namespace cli {
       _client(client),
       _rpc_server(client->get_rpc_server()),
       _command_script(command_script), 
-      _out(output_stream),
+      nullstream(boost::iostreams::null_sink()),
+      _out(output_stream ? output_stream : &nullstream),
       _quit(false),
       show_raw_output(false),
       _daemon_mode(false)
@@ -1508,7 +1511,7 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
+   cli::cli( const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
   :my( new detail::cli_impl(client,command_script,output_stream) )
   {
     my->_self = this;
@@ -1558,13 +1561,13 @@ namespace bts { namespace cli {
     auto old_output = my->_out;
     auto old_input = my->_input_stream;
     bool result = false;
-    if( output )
+    if( output != &my->nullstream )
     {
         my->_out = output;
         my->_input_stream = nullptr;
     }
     result = my->execute_command_line(line);
-    if( output )
+    if( output != &my->nullstream)
     {
         my->_out = old_output;
         my->_input_stream = old_input;
