@@ -32,3 +32,4 @@ tests/chain_database_tests
 tests/client_rpc_tests/client_rpc_tests
 tests/deterministic_signature_test
 tests/dev_tests
+tests/wallet_tests
