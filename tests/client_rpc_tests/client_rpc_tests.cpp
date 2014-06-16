@@ -108,10 +108,12 @@ struct WFixture
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
 
       clienta->configure_from_command_line( 0, nullptr );
+      clienta->start().wait();
 
       clientb = std::make_shared<client>(sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
+      clientb->start().wait();
       //run_cmd(clientb, "help");
       run_cmd(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
       run_cmd(clienta, "wallet_create walleta masterpassword 123456ddddaxxx123456789012345678901234567890");
@@ -154,6 +156,22 @@ BOOST_FIXTURE_TEST_CASE( private_key_test, WFixture )
    auto wallet = clienta->get_wallet();
    auto private_key = wallet->get_private_key(wallet->get_account("delegate31")->active_address());
    BOOST_CHECK(private_key == wallet->get_account_private_key("delegate31"));
+}
+
+BOOST_FIXTURE_TEST_CASE( account_address_test, WFixture )
+{
+   run_cmd(clienta, "unlock 999999999 masterpassword");
+   run_cmd(clienta, "scan 0 100");
+   
+   run_cmd(clienta, "wallet_account_create test-1");
+
+   auto wallet = clienta->get_wallet();
+   
+   auto account_pubkey = wallet->get_account_public_key("test-1");
+   
+   auto public_keys = wallet->get_public_keys_in_account("test-1");
+   
+   BOOST_CHECK( std::find( public_keys.begin(), public_keys.end(), account_pubkey) !=public_keys.end() );
 }
 
 /***

@@ -5,8 +5,10 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/log/logger_config.hpp>
 #include <memory>
+#include <boost/program_options.hpp>
 
 
 namespace bts { namespace rpc {
@@ -21,6 +23,9 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
+
+    boost::program_options::variables_map parse_option_variables(int argc, char** argv);
+    fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 
     namespace detail { class client_impl; }
 
@@ -81,7 +86,9 @@ namespace bts { namespace client {
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
+         fc::future<void> start();
          void open( const path& data_dir, 
+
                     optional<fc::path> genesis_file_path = optional<fc::path>());
 
          void init_cli();
