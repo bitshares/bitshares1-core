@@ -31,11 +31,9 @@
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/raw.hpp>
-#include <fc/network/ntp.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
-
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/algorithm/reverse.hpp>
@@ -853,32 +851,6 @@ config load_config( const fc::path& datadir )
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
-    void client::sync_with_ntp()
-    {
-        fc::async( [](){  
-            auto start_query =  fc::time_point::now();
-            auto query_time = fc::seconds(0);
-          
-            /**
-             *  Query the NTP server, if the query takes to long
-             *  we assume the time is bad and will query again. When
-             *  we get a response in a timely manner we adjust our 
-             *  blockchain time if the delta time is greater than 1 sec.
-             */
-            do {
-               start_query =  fc::time_point::now();
-               auto ntp_time = fc::ntp::get_time();
-               auto delta_time = ntp_time - fc::time_point::now();
-               query_time = fc::time_point::now() - start_query;
-               if( query_time < fc::seconds(2) && delta_time.to_seconds() != 0 )
-               {
-                  wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
-                  bts::blockchain::advance_time( delta_time.to_seconds() );
-               }
-            } while( query_time > fc::seconds(1) ); 
-        } );
-    }
-                             
 
     client::~client()
     {

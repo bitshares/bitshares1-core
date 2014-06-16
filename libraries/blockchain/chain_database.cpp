@@ -141,6 +141,7 @@ namespace bts { namespace blockchain {
             // all blocks from any fork..
             //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
             bts::db::level_map<block_id_type,block_record>                      _block_id_to_block_record_db;
+            bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
             bts::db::level_map<transaction_id_type,transaction_record>          _id_to_transaction_record_db;
 
             // used to revert block state in the event of a fork
@@ -200,6 +201,7 @@ namespace bts { namespace blockchain {
 
           _block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
           _block_id_to_block_record_db.open( data_dir / "block_id_to_block_record_db" );
+          _block_id_to_block_data_db.open( data_dir / "block_id_to_block_data_db" );
           _id_to_transaction_record_db.open( data_dir / "id_to_transaction_record_db" );
 
           _pending_transaction_db.open( data_dir / "pending_transaction_db" );
@@ -327,6 +329,8 @@ namespace bts { namespace blockchain {
            //     ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
 
           // first of all store this block at the given block number
+          _block_id_to_block_data_db.store( block_id, block_data );
+
           _block_id_to_block_record_db.store( block_id, block_record( block_data, 
                                                                       block_data.block_size(), 
                                                                       self->get_current_random_seed()) );
@@ -848,7 +852,7 @@ namespace bts { namespace blockchain {
           my->_block_num_to_id_db.last( last_block_num, last_block_id );
           if( last_block_num != uint32_t(-1) )
           {
-             my->_head_block_header = get_block( last_block_id );
+             my->_head_block_header = get_block_digest( last_block_id );
              my->_head_block_id = last_block_id;
           }
 
@@ -901,8 +905,8 @@ namespace bts { namespace blockchain {
       my->_undo_state_db.close();
 
       my->_block_num_to_id_db.close();
-      // my->_block_id_to_block_db.close();
       my->_block_id_to_block_record_db.close();
+      my->_block_id_to_block_data_db.close();
       my->_id_to_transaction_record_db.close();
 
       my->_pending_transaction_db.close();
@@ -1012,20 +1016,7 @@ namespace bts { namespace blockchain {
 
    full_block           chain_database::get_block( const block_id_type& block_id )const
    { try {
-      full_block result;
-      auto block_record = my->_block_id_to_block_record_db.fetch(block_id);
-
-      signed_block_header& result_header = result;
-      result_header = block_record;
-      result.user_transactions.reserve( block_record.user_transaction_ids.size() );
-
-      for( auto trx_id : block_record.user_transaction_ids )
-      {
-         auto otrx_record = get_transaction( trx_id );
-         if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
-         result.user_transactions.emplace_back( otrx_record->trx );
-      }
-      return result;
+      return my->_block_id_to_block_data_db.fetch(block_id);
    } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
    full_block           chain_database::get_block( uint32_t block_num )const

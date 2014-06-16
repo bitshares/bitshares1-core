@@ -84,7 +84,6 @@ namespace bts { namespace client {
          void open( const path& data_dir, 
                     optional<fc::path> genesis_file_path = optional<fc::path>());
 
-         void sync_with_ntp();
          void init_cli();
 
          /**
