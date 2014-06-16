@@ -1608,46 +1608,14 @@ namespace bts { namespace blockchain {
        return assets;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first_symbol",first_symbol)("count",count) )  }
 
-    void chain_database::export_fork_graph( const fc::path& filename )const
+    std::string chain_database::export_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
     {
-       std::ofstream out( filename.generic_string().c_str() );
-       out << "digraph G { \n"; 
-       out << "rankdir=RL;\n";
-          auto fork_itr = my->_fork_db.begin();
-          while( fork_itr.valid() )
-          {
-             auto fork_data = fork_itr.value();
-             uint32_t block_num = -1;
-             try
-             {
-                block_num = get_block_num(fork_itr.key());
-             }
-             catch (const fc::key_not_found_exception&)
-             {
-              //out << "// key_not_found "
-             }
-             if (block_num > 1300)
-             {
-               ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
-               for( auto next : fork_data.next_blocks )
-               {
-                  out << '"' << std::string ( fork_itr.key() ) <<"\" "
-                      << "[label=<" << std::string ( fork_itr.key() ).substr(0,5) << ">,color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
-                      << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
-                  out << '"' << std::string ( next ) <<"\" -> \"" << std::string( fork_itr.key() ) << "\";\n";
-               }
-            }
-             ++fork_itr;
-          }
-       out << "}"; 
-    }
-    void chain_database::export_new_fork_graph( const fc::path& filename, uint32_t start  )const
-    {
-      std::ofstream out( filename.generic_string().c_str() );
+      FC_ASSERT( start_block > 0 );
+      FC_ASSERT( end_block >= start_block );
+      std::stringstream out;
       out << "digraph G { \n"; 
       out << "rankdir=LR;\n";
         
-      const uint32_t starting_block_num = start;
       bool first = true;
       fc::time_point_sec start_time;
       std::map<uint32_t, std::vector<block_record> > nodes_by_rank;
@@ -1660,8 +1628,8 @@ namespace bts { namespace blockchain {
           first = false;
           start_time = block_record.timestamp;
         }
-        std::cout << block_record.block_num << "  start " << start << "\n";
-        if ( block_record.block_num > starting_block_num)
+        std::cout << block_record.block_num << "  start " << start_block << "  end " << end_block << "\n";
+        if ( block_record.block_num > start_block && block_record.block_num < end_block )
         {
           uint32_t rank = (block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
@@ -1699,7 +1667,27 @@ namespace bts { namespace blockchain {
       }
       out << ";\n";
       out << "}";   
+
+      if( filename == "" )
+          return out.str();
+
+      std::ofstream fileout( filename.generic_string().c_str() );
+      fileout << out.str();
+
+      return std::string();
     }
+
+    std::vector<uint32_t> chain_database::get_forks_list()const
+    {
+        std::vector<uint32_t> fork_blocks;
+        for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
+        {
+            if( iter.value().next_blocks.size() > 1 )
+                fork_blocks.push_back( get_block_num( iter.key() ) );
+        }
+        return fork_blocks;
+    }
+
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
       return my->_property_db.fetch( property_id );
