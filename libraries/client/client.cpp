@@ -31,11 +31,9 @@
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/raw.hpp>
-#include <fc/network/ntp.hpp>
 
 #include <fc/filesystem.hpp>
 #include <fc/git_revision.hpp>
-
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/algorithm/reverse.hpp>
@@ -267,6 +265,9 @@ config load_config( const fc::path& datadir )
    using namespace bts::wallet;
    using namespace bts::blockchain;
 
+  typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
+  typedef boost::iostreams::stream<TeeDevice> TeeStream;
+
     namespace detail
     {
        class client_impl : public bts::net::node_delegate,
@@ -285,6 +286,13 @@ config load_config( const fc::path& datadir )
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl()override { delete _cli; }
+
+            void start()
+            {
+                _cli->start();
+            }
+
+
 
             void delegate_loop();
             void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
@@ -316,6 +324,13 @@ config load_config( const fc::path& datadir )
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
+
+            std::ofstream                                               _console_log;
+            std::unique_ptr<std::ostream>                               _output_stream;
+            std::unique_ptr<TeeDevice>                                  _tee_device;
+            std::unique_ptr<TeeStream>                                  _tee_stream;
+            std::unique_ptr<std::istream>                               _command_script_holder;
+
             fc::time_point                                              _last_block;
             fc::path                                                    _data_dir;
 
@@ -853,32 +868,6 @@ config load_config( const fc::path& datadir )
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
-    void client::sync_with_ntp()
-    {
-        fc::async( [](){  
-            auto start_query =  fc::time_point::now();
-            auto query_time = fc::seconds(0);
-          
-            /**
-             *  Query the NTP server, if the query takes to long
-             *  we assume the time is bad and will query again. When
-             *  we get a response in a timely manner we adjust our 
-             *  blockchain time if the delta time is greater than 1 sec.
-             */
-            do {
-               start_query =  fc::time_point::now();
-               auto ntp_time = fc::ntp::get_time();
-               auto delta_time = ntp_time - fc::time_point::now();
-               query_time = fc::time_point::now() - start_query;
-               if( query_time < fc::seconds(2) && delta_time.to_seconds() != 0 )
-               {
-                  wlog( "Adjusting time by ${seconds} seconds according to NTP", ("seconds",delta_time.to_seconds() ) );
-                  bts::blockchain::advance_time( delta_time.to_seconds() );
-               }
-            } while( query_time > fc::seconds(1) ); 
-        } );
-    }
-                             
 
     client::~client()
     {
@@ -1723,9 +1712,9 @@ config load_config( const fc::path& datadir )
 
       if (option_variables.count("connect-to"))
       {
-          std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
-          for( auto peer : hosts )
-            this->connect_to_peer( peer );
+        std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
+        for( auto peer : hosts )
+          this->connect_to_peer( peer );
       }
       else if (!option_variables.count("disable-default-peers"))
       {
@@ -1735,52 +1724,47 @@ config load_config( const fc::path& datadir )
 
       if( option_variables.count("daemon") || cfg.ignore_console )
       {
-          std::cout << "Running in daemon mode, ignoring console\n";
-          my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
-          get_rpc_server()->wait_till_rpc_server_shutdown();
+        std::cout << "Running in daemon mode, ignoring console\n";
+        my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+        my->_cli->set_daemon_mode(true);
       }
-      else 
+      else //we will accept input from the console
       {
-        //CLI will default to taking input from cin unless a input log file is specified via command-line options
-        std::unique_ptr<std::istream> input_stream_holder;
+        //if user wants us to execute a command script log for the CLI,
+        //  extract the commands and put them in a temporary input stream to pass to the CLI
+        
         if (option_variables.count("input-log"))
         {
           string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
-          input_stream_holder.reset(new std::stringstream(input_commands));
+          my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
-        std::istream* input_stream = input_stream_holder ? input_stream_holder.get() : &std::cin;
 
     #ifdef _DEBUG
         //tee cli output to the console and a log file
         fc::path console_log_file = datadir / "console.log";
-        std::ofstream console_log(console_log_file.string());
-        typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
-        typedef boost::iostreams::stream<TeeDevice> TeeStream;
-        TeeDevice my_tee(std::cout, console_log); 
-        TeeStream cout_with_log(my_tee);
+        my->_console_log.open(console_log_file.string());
+        my->_tee_device = std::make_unique<TeeDevice>(std::cout, my->_console_log); 
+        my->_tee_stream = std::make_unique<TeeStream>(*my->_tee_device.get());
         //force flushing to console and log file whenever cin input is required
-        std::cin.tie( &cout_with_log );
+        std::cin.tie( my->_tee_stream.get() );
+        
 
-        //if input log specified, just output to log file (we're testing), else output to console and log file
-        if (input_stream_holder)
-          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &console_log );
-        else
-          my->_cli = new bts::cli::cli( this->shared_from_this(), input_stream, &cout_with_log );
+        my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), my->_tee_stream.get() );
         //echo command input to the log file
-        my->_cli->set_input_log_stream(console_log);
+        my->_cli->set_input_stream_log(my->_console_log);
     #else
         //don't create a log file, just output to console
-        my->_cli = new bts::cli::cli( this->shared_from_this(), &std::cin, &std::cout );
+        my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), &std::cout );
     #endif
-        //my->_chain_db->export_fork_graph("fork_history.dot");
-        //my->_chain_db->export_new_fork_graph("new_fork_history.dot");
-
-        my->_cli->process_commands();
-        my->_cli->wait_till_cli_shutdown();
-      } 
+      } //end else we will accept input from the console
 
     }
 
+
+    fc::future<void> client::start()
+    {
+      return fc::async( [=](){ my->start(); } );
+    }
 
     void client::run_delegate( )
     {
@@ -1966,6 +1950,9 @@ config load_config( const fc::path& datadir )
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
+      info["ntp_time"]                                   = blockchain::ntp_time();
+      if( blockchain::ntp_time() )
+         info["ntp_error_seconds"]                       = (*blockchain::ntp_time() - fc::time_point::now()).count()/double(1000000);
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )
@@ -2214,6 +2201,17 @@ config load_config( const fc::path& datadir )
       while( itr.valid() )
       {
          result[itr.key()] = itr.value();
+         ++itr;
+      }
+      return result;
+   }
+   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time )const
+   {
+      map<fc::time_point, std::string> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value().what();
          ++itr;
       }
       return result;

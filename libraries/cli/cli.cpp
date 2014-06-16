@@ -53,20 +53,41 @@ namespace bts { namespace cli {
             client_ptr                  _client;
             rpc_server_ptr              _rpc_server;
             bts::cli::cli*              _self;
-//            fc::thread*                 _main_thread;
             fc::thread                  _cin_thread;
-            fc::future<void>            _cin_complete;
 
             bool                        _quit;
             bool                        show_raw_output;
+            bool                        _daemon_mode;
 
             std::ostream*                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
+            std::istream*                  _command_script;
             std::istream*                  _input_stream;
-            boost::optional<std::ostream&> _input_log_stream;
+            boost::optional<std::ostream&> _input_stream_log;
 
-            cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream);
+            cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream);
 
-            void process_commands();
+            void process_commands(std::istream* input_stream);
+
+            void start()
+              {
+                try
+                {
+                  if (_command_script)
+                    process_commands(_command_script);
+                  if (_daemon_mode)
+                    _rpc_server->wait_till_rpc_server_shutdown();
+                  else if (!_quit)
+                    process_commands(&std::cin);
+                  _rpc_server->shutdown_rpc_server();
+                }
+                catch ( const fc::exception& e)
+                {
+                    if( _out ) (*_out) << "\nshutting down\n";
+                    elog( "${e}", ("e",e.to_detail_string() ) );
+                    _rpc_server->shutdown_rpc_server();
+                }
+              }
+
 
 
             string get_prompt()const
@@ -225,10 +246,10 @@ namespace bts { namespace cli {
                      if( _out ) (*_out) <<prompt;
                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
-                  if (_input_log_stream)
+                  if (_input_stream_log)
                     {
                     if (_out) _out->flush();
-                    *_input_log_stream << line << std::endl;
+                    *_input_stream_log << line << std::endl;
                     }
                   }
 
@@ -809,12 +830,39 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_list_registered_accounts")
               {
                   string start = "";
-                  int32_t count = 25; // In CLI this is a more sane result
+                  int32_t count = 25; // In CLI this is a more sane default
                   if (arguments.size() > 0)
                       start = arguments[0].as_string();
                   if (arguments.size() > 1)
                       count = arguments[1].as<int32_t>();
                   print_registered_account_list( result.as<vector<account_record>>(), count );
+              }
+              else if (method_name == "blockchain_list_registered_assets")
+              {
+                  auto records = result.as<vector<asset_record>>();
+                  if (_out) (*_out) << std::setw(6) << "ID";
+                  if (_out) (*_out) << std::setw(7) << "SYMBOL";
+                  if (_out) (*_out) << std::setw(15) << "NAME";
+                  if (_out) (*_out) << std::setw(35) << "DESCRIPTION";
+                  if (_out) (*_out) << std::setw(16) << "CURRENT_SUPPLY";
+                  if (_out) (*_out) << std::setw(16) << "MAX_SUPPLY";
+                  if (_out) (*_out) << std::setw(16) << "FEES COLLECTED";
+                  if (_out) (*_out) << std::setw(16) << "REGISTERED";
+                  if (_out) (*_out) << "\n";
+                  for (auto asset : records)
+                  {
+                      if (_out) (*_out) << std::setprecision(15);
+                      if (_out) (*_out) << std::setw(6) << asset.id;
+                      if (_out) (*_out) << std::setw(7) << asset.symbol;
+                      if (_out) (*_out) << std::setw(15) << pretty_shorten(asset.name, 14);
+                      if (_out) (*_out) << std::setw(35) << pretty_shorten(asset.description, 33);
+                      if (_out) (*_out) << std::setw(16) << double(asset.current_share_supply) / asset.precision;
+                      if (_out) (*_out) << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
+                      if (_out) (*_out) << std::setw(16) << double(asset.collected_fees) / asset.precision;
+                      auto time = boost::posix_time::from_time_t(time_t(asset.registration_date.sec_since_epoch()));
+                      if( _out ) (*_out) << std::setw(16) << boost::posix_time::to_iso_extended_string( time );
+                      if (_out) (*_out) << "\n";
+                  }
               }
               else if (method_name == "blockchain_list_delegates")
               {
@@ -859,6 +907,7 @@ namespace bts { namespace cli {
                       auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
                       FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
                       float percent = 100.0 * delegate_rec.net_votes() / opt_rec->current_share_supply;
+                      ss << std::setprecision(10);
                       ss << percent;
                       ss << " %";
                       if( _out ) (*_out) << std::setw(20) << ss.str();
@@ -1288,13 +1337,14 @@ namespace bts { namespace cli {
     extern "C" int get_character(FILE* stream);
 #endif
 
-    cli_impl::cli_impl(const client_ptr& client, std::istream* input_stream, std::ostream* output_stream) : 
+    cli_impl::cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream) : 
       _client(client),
       _rpc_server(client->get_rpc_server()),
-      _input_stream(input_stream), 
+      _command_script(command_script), 
       _out(output_stream),
       _quit(false),
-      show_raw_output(false)
+      show_raw_output(false),
+      _daemon_mode(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1407,7 +1457,7 @@ namespace bts { namespace cli {
                 return rl_completion_matches(text, &json_command_completion_generator_function);
             }
           }
-          catch( const fc::key_not_found_exception& )
+          catch( const bts::rpc::unknown_method& )
           {
             // do nothing
           }
@@ -1441,54 +1491,46 @@ namespace bts { namespace cli {
 #endif
     }
 
-    void cli_impl::process_commands()
+    void cli_impl::process_commands(std::istream* input_stream)
     { 
-      try {
-          FC_ASSERT( _input_stream != nullptr );
-          string line = get_line(get_prompt());
-          while (_input_stream->good() && !_quit )
-          {
-            if (!execute_command_line(line))
-              break;
-            if( !_quit )
-              line = get_line( get_prompt() );
-          } // while cin.good
-          _rpc_server->shutdown_rpc_server();
-      } 
-      catch ( const fc::exception& e)
+      FC_ASSERT( input_stream != nullptr );
+      _input_stream = input_stream;
+      string line = get_line(get_prompt());
+      while (_input_stream->good() && !_quit )
       {
-          if( _out ) (*_out) << "\nshutting down\n";
-          elog( "${e}", ("e",e.to_detail_string() ) );
-          _rpc_server->shutdown_rpc_server();
-      }
+        if (!execute_command_line(line))
+          break;
+        if( !_quit )
+          line = get_line( get_prompt() );
+      } // while cin.good
       wlog( "process commands exiting" );
-      // user has executed "quit" or sent an EOF to the CLI to make us shut down.  
-      // Tell the RPC server to close, which will allow the process to exit.
-      _cin_complete.cancel();
     } 
 
   } // end namespace detail
 
-  cli::cli( const client_ptr& client, std::istream* input_stream, std::ostream* output_stream)
-  :my( new detail::cli_impl(client,input_stream,output_stream) )
+  cli::cli( const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
+  :my( new detail::cli_impl(client,command_script,output_stream) )
   {
     my->_self = this;
   }
 
-  void cli::set_input_log_stream(boost::optional<std::ostream&> input_log_stream)
+  void cli::set_input_stream_log(boost::optional<std::ostream&> input_stream_log)
   {
-    my->_input_log_stream = input_log_stream;
+    my->_input_stream_log = input_stream_log;
   } 
+
+  //disable reading from std::cin
+  void cli::set_daemon_mode(bool daemon_mode) { my->_daemon_mode = daemon_mode; }
  
   void cli::display_status_message(const std::string& message)
   {
     my->display_status_message(message);
   }
  
-  void cli::process_commands()
+  void cli::process_commands(std::istream* input_stream)
   {
     ilog( "starting to process interactive commands" );
-    my->_cin_complete = fc::async( [=](){ my->process_commands(); } );
+    my->process_commands(input_stream);
   }
 
   cli::~cli()
@@ -1503,22 +1545,12 @@ namespace bts { namespace cli {
     }
   }
 
+  void cli::start() { my->start(); }
+
   void cli::wait_till_cli_shutdown()
   {
-     if( my->_cin_complete.valid() )
-     {
-        ilog( "\n\n cin complete \n\n" );
-        my->_cin_complete.cancel();
-        if( my->_cin_complete.ready() )
-           my->_cin_complete.wait();
-     }
-     ilog( "\n\nwaiting on server to quit\n\n" );
+     ilog( "waiting on server to quit" );
      my->_rpc_server->wait_till_rpc_server_shutdown();
-  }
-
-  void cli::quit()
-  {
-    my->_cin_complete.cancel();
   }
 
   bool cli::execute_command_line( const string& line, std::ostream* output)

@@ -729,7 +729,6 @@ namespace bts { namespace net {
           }
           catch (fc::timeout_exception& e)
           {
-            elog( "${e}", ("e",e.to_detail_string() ) );
           }  // catch
         } 
         catch ( const fc::exception& e )
@@ -2763,6 +2762,13 @@ namespace bts { namespace net {
         _desired_number_of_connections = (uint32_t)params["desired_number_of_connections"].as_uint64();
       if (params.contains("maximum_number_of_connections"))
         _maximum_number_of_connections = (uint32_t)params["maximum_number_of_connections"].as_uint64();
+
+      _desired_number_of_connections = std::min(_desired_number_of_connections, _maximum_number_of_connections);
+
+      while (_active_connections.size() > _maximum_number_of_connections)
+        disconnect_from_peer(_active_connections.begin()->get(),
+                             "I have too many connections open");
+      trigger_p2p_network_connect_loop();
     }
 
     fc::variant_object node_impl::get_advanced_node_parameters()

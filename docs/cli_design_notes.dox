@@ -1,0 +1,62 @@
+/** @defgroup client_startup Overview of client startup
+
+@code
+client::create_cli(input_log)
+  cli = new cli
+  
+cli_impl::process_commands
+  set input stream
+  while (input and !quit)
+    execute line
+  on exception e
+    print shutting down because of e
+	then we shutdown rpc server
+	
+cli::process_commands
+  my->process_commands
+    
+*** No need for async in process_commands with async in start()
+
+void client_impl::start()
+  try {
+  if (_input_log)  
+    cli->process_commands(_input_log)
+  if (daemon_mode)
+    _rpc_server->wait_till_rpc_server_shutdown
+  else if (didn't quit in _input_log)
+    cli->process_commands(cin)
+  }
+  catch
+    report exception
+  shutdown_rpc_server
+  
+future<void> client::start()
+  return async client_impl::start()
+
+void client::configure_from_command_line(argv,arc)
+  config = parse_config_files
+  parse_command_options and override(config&);
+@endcode
+  
+Top level flows:
+  1) read from cin	
+  2) read from log file, then from cin after log file done (if not quit)
+  3) daemon mode: never call process_commands
+  
+Multiple client flow in same process:
+@code  
+  client1->configure_from_command_line(argv1,argc1)
+  //client1 API calls can be made here
+  clien1_done = client1->start();
+  clientt->configure_from_command_line(argv2,argc2)
+  //client2 API calls can be made here
+  client2_done = client2->start();
+
+  client1_done.wait();
+  client2_done.wait();
+@endcode
+  
+Potential problem: some operations could be started in configure_from_cmd_line now  
+
+*/
+  
