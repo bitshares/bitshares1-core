@@ -119,6 +119,20 @@
                } ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+          "method_name" : "list_errors_brief",
+          "description" : "returns a list of short summaries of notable errors",
+          "return_type" : "brief_error_map",
+          "parameters"  : [ 
+               {
+                  "name" : "start_time", 
+                  "description" : "time of the first error",
+                  "type" : "timestamp", 
+                  "default_value" : "20000101T000000"
+               } ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
 
     ]
