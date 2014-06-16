@@ -491,6 +491,11 @@
          "type_name" : "potential_peer_record_array",
          "container_type" : "array",
          "contained_type" : "potential_peer_record"
+      },
+      {
+          "type_name" : "uint32_t_array",
+          "container_type" : "array",
+          "contained_type" : "uint32_t"
       }
     ]
 }

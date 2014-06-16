@@ -349,6 +349,15 @@
          "is_const" : true,
          "aliases" : ["export_forks"],
          "prerequisites" : ["json_authenticated"]
+      },
+      {
+         "method_name" : "blockchain_list_forks",
+         "description" : "returns a list of all blocks for which there is a fork off of the main chain",
+         "return_type" : "uint32_t_array",
+         "parameters"  : []
+         "is_const" : true,
+         "aliases" : ["list_forks"],
+         "prerequisites" : ["json_authenticated"]
       }
     ]
 }

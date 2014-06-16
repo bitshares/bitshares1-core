@@ -1674,6 +1674,18 @@ namespace bts { namespace blockchain {
 
       return std::string();
     }
+
+    std::vector<uint32_t> chain_database::get_forks_list()const
+    {
+        std::vector<uint32_t> fork_blocks;
+        for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
+        {
+            if( iter.value().next_blocks.size() > 1 )
+                fork_blocks.push_back( get_block_num( iter.key() ) );
+        }
+        return fork_blocks;
+    }
+
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
             ilog( "property ${p}", ("p",property_id) );
