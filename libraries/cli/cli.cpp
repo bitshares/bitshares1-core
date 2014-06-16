@@ -851,12 +851,16 @@ namespace bts { namespace cli {
                   if (_out) (*_out) << "\n";
                   for (auto asset : records)
                   {
+                      if (_out) (*_out) << std::setprecision(15);
                       if (_out) (*_out) << std::setw(6) << asset.id;
                       if (_out) (*_out) << std::setw(7) << asset.symbol;
                       if (_out) (*_out) << std::setw(15) << pretty_shorten(asset.name, 14);
                       if (_out) (*_out) << std::setw(35) << pretty_shorten(asset.description, 33);
                       if (_out) (*_out) << std::setw(16) << double(asset.current_share_supply) / asset.precision;
                       if (_out) (*_out) << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
+                      if (_out) (*_out) << std::setw(16) << double(asset.collected_fees) / asset.precision;
+                      auto time = boost::posix_time::from_time_t(time_t(asset.registration_date.sec_since_epoch()));
+                      if( _out ) (*_out) << std::setw(16) << boost::posix_time::to_iso_extended_string( time );
                       if (_out) (*_out) << "\n";
                   }
               }
@@ -903,6 +907,7 @@ namespace bts { namespace cli {
                       auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
                       FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
                       float percent = 100.0 * delegate_rec.net_votes() / opt_rec->current_share_supply;
+                      ss << std::setprecision(10);
                       ss << percent;
                       ss << " %";
                       if( _out ) (*_out) << std::setw(20) << ss.str();
