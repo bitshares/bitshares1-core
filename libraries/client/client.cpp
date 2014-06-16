@@ -2230,6 +2230,17 @@ config load_config( const fc::path& datadir )
       }
       return result;
    }
+   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time )const
+   {
+      map<fc::time_point, std::string> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value().what();
+         ++itr;
+      }
+      return result;
+   }
    void client_impl::blockchain_export_fork_graph( const string& filename, uint32_t starting_block_number )const
    {
       _chain_db->export_new_fork_graph( filename, starting_block_number );

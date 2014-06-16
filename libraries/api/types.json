@@ -451,17 +451,36 @@
          "cpp_return_type" : "bts::wallet::wallet::account_vote_summary_type"
       },
       {
+         "type_name" : "timestamp",
+         "cpp_return_type" : "fc::time_point"
+      },
+      {
+         "type_name" : "method_data",
+         "cpp_return_type" : "bts::api::method_data",
+         "cpp_include_file" : "bts/api/api_metadata.hpp"
+      },
+      {
          "type_name" : "method_map_type",
-         "cpp_return_type" : "std::map<std::string, bts::api::method_data>",
-            "cpp_include_file" : "bts/api/api_metadata.hpp"
+         "container_type" : "dictionary",
+         "key_type" : "std::string",
+         "value_type" : "method_data"
+      },
+      {
+         "type_name" : "exception",
+         "cpp_return_type" : "fc::exception",
+         "cpp_include_file" : "fc/exception/exception.hpp"
       },
       {
          "type_name" : "error_map",
-         "cpp_return_type" : "std::map<fc::time_point, fc::exception>"
+         "container_type" : "dictionary",
+         "key_type" : "timestamp",
+         "value_type" : "exception"
       },
       {
-         "type_name" : "timestamp",
-         "cpp_return_type" : "fc::time_point"
+         "type_name" : "brief_error_map",
+         "container_type" : "dictionary",
+         "key_type" : "timestamp",
+         "value_type" : "std::string"
       },
       {
          "type_name" : "potential_peer_record",
