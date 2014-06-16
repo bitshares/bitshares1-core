@@ -1483,6 +1483,7 @@ namespace bts { namespace cli {
       rl_replace_line("", 0);
       rl_redisplay();
       (*_out) << message << "\n";
+      _out->flush();
       rl_set_prompt(saved_prompt);
       rl_replace_line(saved_line, 0);
       rl_point = saved_point;
