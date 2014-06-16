@@ -1739,12 +1739,12 @@ config load_config( const fc::path& datadir )
           my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
-    #ifdef _DEBUG
-        //tee cli output to the console and a log file
+    #if 1
+        // tee cli output to the console and a log file
         fc::path console_log_file = datadir / "console.log";
         my->_console_log.open(console_log_file.string());
-        my->_tee_device = std::make_unique<TeeDevice>(std::cout, my->_console_log); 
-        my->_tee_stream = std::make_unique<TeeStream>(*my->_tee_device.get());
+        my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));; 
+        my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
         //force flushing to console and log file whenever cin input is required
         std::cin.tie( my->_tee_stream.get() );
         
@@ -1796,6 +1796,11 @@ config load_config( const fc::path& datadir )
     {
       if( !my->_cli )
          my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+    }
+
+    void client::set_daemon_mode(bool daemon_mode) 
+    { 
+      my->_cli->set_daemon_mode(daemon_mode); 
     }
 
     fc::path client::get_data_dir()const

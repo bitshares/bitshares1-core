@@ -92,6 +92,8 @@ namespace bts { namespace client {
                     optional<fc::path> genesis_file_path = optional<fc::path>());
 
          void init_cli();
+         void set_daemon_mode(bool daemon_mode); 
+
 
          /**
           *  Produces a block every 30 seconds if there is at least
