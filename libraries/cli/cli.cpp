@@ -830,12 +830,35 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_list_registered_accounts")
               {
                   string start = "";
-                  int32_t count = 25; // In CLI this is a more sane result
+                  int32_t count = 25; // In CLI this is a more sane default
                   if (arguments.size() > 0)
                       start = arguments[0].as_string();
                   if (arguments.size() > 1)
                       count = arguments[1].as<int32_t>();
                   print_registered_account_list( result.as<vector<account_record>>(), count );
+              }
+              else if (method_name == "blockchain_list_registered_assets")
+              {
+                  auto records = result.as<vector<asset_record>>();
+                  if (_out) (*_out) << std::setw(6) << "ID";
+                  if (_out) (*_out) << std::setw(7) << "SYMBOL";
+                  if (_out) (*_out) << std::setw(15) << "NAME";
+                  if (_out) (*_out) << std::setw(35) << "DESCRIPTION";
+                  if (_out) (*_out) << std::setw(16) << "CURRENT_SUPPLY";
+                  if (_out) (*_out) << std::setw(16) << "MAX_SUPPLY";
+                  if (_out) (*_out) << std::setw(16) << "FEES COLLECTED";
+                  if (_out) (*_out) << std::setw(16) << "REGISTERED";
+                  if (_out) (*_out) << "\n";
+                  for (auto asset : records)
+                  {
+                      if (_out) (*_out) << std::setw(6) << asset.id;
+                      if (_out) (*_out) << std::setw(7) << asset.symbol;
+                      if (_out) (*_out) << std::setw(15) << pretty_shorten(asset.name, 14);
+                      if (_out) (*_out) << std::setw(35) << pretty_shorten(asset.description, 33);
+                      if (_out) (*_out) << std::setw(16) << double(asset.current_share_supply) / asset.precision;
+                      if (_out) (*_out) << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
+                      if (_out) (*_out) << "\n";
+                  }
               }
               else if (method_name == "blockchain_list_delegates")
               {
