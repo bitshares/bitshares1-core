@@ -279,10 +279,12 @@ class test_file
   fc::path _result_file;
   fc::path _expected_result_file;
 public:
-       test_file(fc::path result_file, fc::path expected_result_file)
-         : _result_file(result_file), _expected_result_file(expected_result_file) {}
+       test_file(fc::future<void> done, fc::path result_file, fc::path expected_result_file)
+         : client_done(done),_result_file(result_file), _expected_result_file(expected_result_file) {}
 
   bool compare_files(); //compare two files, return true if the files match
+
+  fc::future<void> client_done;
 };
 
 bool test_file::compare_files()
@@ -456,6 +458,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
     string line;
+    fc::future<void> client_done;
     while (std::getline(test_config_file,line))
     {
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
@@ -503,6 +506,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       {
         bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
         client->configure_from_command_line(argc,argv);
+        client_done = client->start();
       }
 
 
@@ -514,13 +518,14 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
       //add a test that compares input command file to client's log file
       fc::path result_file = ::get_data_dir(option_variables) / "console.log";
-      tests.push_back( test_file(result_file,expected_result_file) );
+      tests.push_back( test_file(client_done, result_file, expected_result_file) );
     } //end while not end of test config file
 
     //check each client's log file against it's golden reference log file
     for (test_file current_test : tests)
     {
       //current_test.compare_files();
+      current_test.client_done.wait();
       FC_ASSERT(current_test.compare_files(), "Results mismatch with golden reference log");
     }
   } 

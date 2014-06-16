@@ -5,6 +5,7 @@
 #include <bts/rpc/rpc_client_api.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/log/logger_config.hpp>
 #include <memory>
 
@@ -81,7 +82,9 @@ namespace bts { namespace client {
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
+         fc::future<void> start();
          void open( const path& data_dir, 
+
                     optional<fc::path> genesis_file_path = optional<fc::path>());
 
          void sync_with_ntp();

@@ -24,17 +24,19 @@ namespace bts { namespace cli {
    class cli
    {
       public:
-          cli( const client_ptr& client, std::istream* input_stream = nullptr, std::ostream* output_stream = nullptr);
+          cli( const client_ptr& client, std::istream* command_script = nullptr, std::ostream* output_stream = nullptr);
           virtual ~cli();
-          void set_input_log_stream(boost::optional<std::ostream&> input_log_stream);
+          void start();
+
+          void set_input_stream_log(boost::optional<std::ostream&> input_stream_log);
+          void set_daemon_mode(bool enable_daemon_mode);
           void display_status_message(const std::string& message);
-          void process_commands();
+          void process_commands(std::istream* input_stream);
 
           //Parse and execute a command line. Returns false if line is a quit command.
           bool execute_command_line(const std::string& line, std::ostream* output = nullptr);
           void confirm_and_broadcast(signed_transaction& tx);
           void wait_till_cli_shutdown();
-          void quit();
 
           // hooks to implement custom behavior for interactive command, if the default json-style behavior is undesirable
           virtual fc::variant parse_argument_of_known_type(fc::buffered_istream& argument_stream,
