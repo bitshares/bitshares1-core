@@ -36,6 +36,8 @@
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
+#define DEFAULT_LOGGER "p2p"
+
 namespace bts { namespace net {
   namespace detail
   {
