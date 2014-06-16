@@ -324,20 +324,26 @@
       },
       {
          "method_name" : "blockchain_export_fork_graph",
-         "description" : "dumps the fork data to a graphvis file",
-         "return_type" : "void",
+         "description" : "dumps the fork data to graphviz format",
+         "return_type" : "std::string",
          "parameters"  : [
+            {
+               "name" : "start_block",
+               "type" : "uint32_t",
+               "description" : "the first block number to consider",
+               "default_value" : 1
+            },
+            {
+               "name" : "end_block",
+               "type" : "uint32_t",
+               "description" : "the last block number to consider",
+               "default_value" : -1
+            },
             {
                "name" : "filename",
                "type" : "string",
-               "description" : "the name of the file to generate",
-               "default" : "forks.dot"
-            },
-            {
-               "name" : "starting_block_number",
-               "type" : "uint32_t",
-               "description" : "the first block number to consider",
-               "default" : "1"
+               "description" : "the filename to save to",
+               "default_value" : ""
             }
          ],
          "is_const" : true,
