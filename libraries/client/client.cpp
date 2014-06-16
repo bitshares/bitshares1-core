@@ -1739,8 +1739,8 @@ config load_config( const fc::path& datadir )
           my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
-    #ifdef _DEBUG
-        //tee cli output to the console and a log file
+    #if 1
+        // tee cli output to the console and a log file
         fc::path console_log_file = datadir / "console.log";
         my->_console_log.open(console_log_file.string());
         my->_tee_device = std::make_unique<TeeDevice>(std::cout, my->_console_log); 
