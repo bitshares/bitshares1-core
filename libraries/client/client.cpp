@@ -1798,6 +1798,11 @@ config load_config( const fc::path& datadir )
          my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
     }
 
+    void client::set_daemon_mode(bool daemon_mode) 
+    { 
+      my->_cli->set_daemon_mode(daemon_mode); 
+    }
+
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
@@ -1950,6 +1955,9 @@ config load_config( const fc::path& datadir )
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
+      info["ntp_time"]                                   = blockchain::ntp_time();
+      if( blockchain::ntp_time() )
+         info["ntp_error_seconds"]                       = (*blockchain::ntp_time() - fc::time_point::now()).count()/double(1000000);
       auto seconds_remaining = (_wallet->unlocked_until() - bts::blockchain::now()).count()/1000000;
       info["wallet_unlocked_seconds_remaining"]    = seconds_remaining > 0 ? seconds_remaining : 0;
       if( _wallet->next_block_production_time() != fc::time_point_sec() )
