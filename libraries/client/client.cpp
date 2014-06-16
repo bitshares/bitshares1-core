@@ -1764,7 +1764,7 @@ config load_config( const fc::path& datadir )
         if (option_variables.count("input-log"))
         {
           string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
-          my->_command_script_holder = std::make_unique<std::stringstream>(input_commands);
+          my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
     #ifdef _DEBUG
