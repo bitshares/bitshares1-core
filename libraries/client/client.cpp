@@ -2219,7 +2219,7 @@ config load_config( const fc::path& datadir )
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {
-      return _chain_db->export_new_fork_graph( start_block, end_block, filename );
+      return _chain_db->export_fork_graph( start_block, end_block, filename );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const

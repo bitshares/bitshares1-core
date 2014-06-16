@@ -1606,41 +1606,7 @@ namespace bts { namespace blockchain {
        return assets;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first_symbol",first_symbol)("count",count) )  }
 
-    void chain_database::export_fork_graph( const fc::path& filename )const
-    {
-       std::ofstream out( filename.generic_string().c_str() );
-       out << "digraph G { \n"; 
-       out << "rankdir=RL;\n";
-          auto fork_itr = my->_fork_db.begin();
-          while( fork_itr.valid() )
-          {
-             auto fork_data = fork_itr.value();
-             uint32_t block_num = -1;
-             try
-             {
-                block_num = get_block_num(fork_itr.key());
-             }
-             catch (const fc::key_not_found_exception&)
-             {
-              //out << "// key_not_found "
-             }
-             if (block_num > 1300)
-             {
-               ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
-               for( auto next : fork_data.next_blocks )
-               {
-                  out << '"' << std::string ( fork_itr.key() ) <<"\" "
-                      << "[label=<" << std::string ( fork_itr.key() ).substr(0,5) << ">,color=" << (fork_data.is_included ? "green" : "lightblue") << ",style=filled,"
-                      << " shape=" << (fork_data.is_linked  ? "ellipse" : "box" ) << "];\n";
-                  out << '"' << std::string ( next ) <<"\" -> \"" << std::string( fork_itr.key() ) << "\";\n";
-               }
-            }
-             ++fork_itr;
-          }
-       out << "}"; 
-    }
-
-    std::string chain_database::export_new_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
+    std::string chain_database::export_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
     {
       FC_ASSERT( start_block > 0 );
       FC_ASSERT( end_block >= start_block );

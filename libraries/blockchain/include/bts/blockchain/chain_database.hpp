@@ -89,8 +89,7 @@ namespace bts { namespace blockchain {
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                     is_known_transaction( const transaction_id_type& trx_id );
 
-         void export_fork_graph( const fc::path& filename )const; // TODO deprecated?
-         std::string export_new_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
+         std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
 
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
