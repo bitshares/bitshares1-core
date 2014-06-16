@@ -1407,7 +1407,7 @@ namespace bts { namespace cli {
                 return rl_completion_matches(text, &json_command_completion_generator_function);
             }
           }
-          catch( const fc::key_not_found_exception& )
+          catch( const bts::rpc::unknown_method& )
           {
             // do nothing
           }
