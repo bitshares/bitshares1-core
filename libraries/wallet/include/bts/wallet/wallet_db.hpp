@@ -1,4 +1,5 @@
 #pragma once
+#include <bts/db/level_map.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/extended_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -122,6 +123,12 @@ namespace bts { namespace wallet {
          unordered_map< balance_id_type,wallet_balance_record >           balances;
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
+
+         /**
+          *  Used to store local configuration data for the GUI
+          */
+         bts::db::level_map<string,variant>                               settings;
+         void load_gui_settings( const fc::path& settings_file );
 
          void remove_item( int32_t index );
       private:
