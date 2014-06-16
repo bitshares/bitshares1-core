@@ -16,7 +16,6 @@
 
 #include <fc/network/http/connection.hpp>
 
-#include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
 #include <iostream>
@@ -390,8 +389,6 @@ char** CommandLineToArgvA(const char* CmdLine, int* _argc)
 #endif
 
 using namespace boost;
-program_options::variables_map parse_option_variables(int argc, char** argv);
-
 
 void create_genesis_block(fc::path genesis_json_file)
 {
@@ -420,8 +417,6 @@ void create_genesis_block(fc::path genesis_json_file)
 
    fc::json::save_to_file( config, genesis_json_file);
 }
-
-fc::path get_data_dir(const program_options::variables_map& option_variables);
 
 void run_regression_test(fc::path test_dir, bool with_network)
 {
@@ -489,7 +484,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       char expanded_line[40000];
       ExpandEnvironmentStrings(line.c_str(),expanded_line,sizeof(expanded_line));
       argv = CommandLineToArgvA(expanded_line,&argc);
-      auto option_variables = parse_option_variables(argc, argv);
+      auto option_variables = bts::client::parse_option_variables(argc, argv);
     #endif
 
       //extract input command file from cmdline options so that we can compare against output log

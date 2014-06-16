@@ -8,6 +8,7 @@
 #include <fc/thread/thread.hpp>
 #include <fc/log/logger_config.hpp>
 #include <memory>
+#include <boost/program_options.hpp>
 
 
 namespace bts { namespace rpc {
@@ -22,6 +23,9 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
+
+    boost::program_options::variables_map parse_option_variables(int argc, char** argv);
+    fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
 
     namespace detail { class client_impl; }
 
