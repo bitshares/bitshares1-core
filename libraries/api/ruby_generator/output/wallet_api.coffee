@@ -438,6 +438,22 @@ class WalletAPI
     @rpc.request('wallet_dump_private_key', [account_address]).then (response) ->
       response.result
 
+  # Returns the allocation of votes by this account
+  # parameters: 
+  #   account_name `account_name` - the account to report votes on
+  # return_type: `account_vote_summary`
+  account_vote_summary: (account_name) ->
+    @rpc.request('wallet_account_vote_summary', [account_name]).then (response) ->
+      response.result
+
+  # returns the private key for this account in WIF format
+  # parameters: 
+  #   account_name `account_name` - the name of the account key to export
+  # return_type: `string`
+  account_export_private_key: (account_name) ->
+    @rpc.request('wallet_account_export_private_key', [account_name]).then (response) ->
+      response.result
+
 
 
 angular.module("app").service("WalletAPI", ["$q", "$log", "RpcService", "$interval", WalletAPI])

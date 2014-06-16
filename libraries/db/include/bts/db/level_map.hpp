@@ -146,8 +146,27 @@ namespace bts { namespace db {
 
         iterator find( const Key& key )
         { try {
-           std::vector<char> kslice = fc::raw::pack( key );
-           ldb::Slice key_slice( kslice.data(), kslice.size() );
+           ldb::Slice key_slice;
+
+           /** avoid dynamic memory allocation at this step if possible, most 
+            * keys should be relatively small in size and not require dynamic
+            * memory allocation to seralize the key.
+            */
+           fc::array<char,256+sizeof(Key)>  stack_buffer;
+
+           size_t pack_size = fc::raw::pack_size(key);
+           if( pack_size <= stack_buffer.size() )
+           {
+              fc::datastream<char*> ds( stack_buffer.data, stack_buffer.size() );
+              fc::raw::pack( ds ,key );
+              key_slice = ldb::Slice( stack_buffer.data, pack_size );
+           }
+           else
+           {
+              auto kslice = fc::raw::pack( key );
+              key_slice = ldb::Slice( kslice.data(), kslice.size() );
+           }
+
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->Seek( key_slice );
            if( itr.valid() && itr.key() == key )
@@ -157,7 +176,7 @@ namespace bts { namespace db {
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
 
-        iterator lower_bound( const Key& key )
+        iterator lower_bound( const Key& key )const
         { try {
            std::vector<char> kslice = fc::raw::pack( key );
            ldb::Slice key_slice( kslice.data(), kslice.size() );

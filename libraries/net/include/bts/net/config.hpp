@@ -14,3 +14,13 @@
  * 512 kb
  */
 #define MAX_MESSAGE_SIZE (524288)  
+#define BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME  (30) // seconds
+
+/**
+ * AFter trying all peers, how long to wait before we check to
+ * see if there are peers we can try again.
+ */
+#define BTS_PEER_DATABASE_RETRY_DELAY  (15) // seconds
+
+#define BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT (5) 
+#define BTS_NET_PEER_INACTIVITY_TIMEOUT (45) 

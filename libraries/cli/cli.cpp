@@ -514,23 +514,6 @@ namespace bts { namespace cli {
  
                   }
               }
-              else if ( command == "wallet_list_receive_accounts" )
-              {
-                  if (! _client->get_wallet()->is_open() )
-                      interactive_open_wallet();
-                  auto accts = _client->get_wallet()->list_receive_accounts();
-               //   if( _out ) (*_out) << fc::json::to_pretty_string( accts ) << "\n";
-                  print_receive_account_list( accts );
-                  return fc::variant("OK");
-              }
-              else if ( command == "wallet_list_contact_accounts" )
-              {
-                  if (! _client->get_wallet()->is_open() )
-                      interactive_open_wallet();
-                  auto accts = _client->get_wallet()->list_contact_accounts();
-                  print_contact_account_list( accts );
-                  return fc::variant("OK");
-              }
               else if(command == "quit" || command == "stop" || command == "exit")
               {
                 _quit = true;
@@ -739,6 +722,16 @@ namespace bts { namespace cli {
                   auto order_list = result.as<vector<market_order_status> >();
                   print_wallet_market_order_list( order_list );
               }
+              else if ( command == "wallet_list_receive_accounts" )
+              {
+                  auto accts = result.as<vector<wallet_account_record>>();
+                  print_receive_account_list( accts );
+              }
+              else if ( command == "wallet_list_contact_accounts" )
+              {
+                  auto accts = result.as<vector<wallet_account_record>>();
+                  print_contact_account_list( accts );
+              }
               else if (method_name == "wallet_account_balance" )
               {
                  auto bc = _client->get_chain();
@@ -940,6 +933,33 @@ namespace bts { namespace cli {
                       if( _out ) (*_out) << std::setw(10) << (prop.ratified ? "YES" : "NO");
                   }
                   if( _out ) (*_out) << "\n"; 
+              }
+              else if (method_name == "network_list_potential_peers")
+              {
+                  auto peers = result.as<std::vector<net::potential_peer_record>>();
+                  if (_out) (*_out) << std::setw(25) << "ENDPOINT";
+                  if (_out) (*_out) << std::setw(25) << "LAST SEEN";
+                  if (_out) (*_out) << std::setw(25) << "LAST CONNECT ATTEMPT";
+                  if (_out) (*_out) << std::setw(30) << "SUCCESSFUL CONNECT ATTEMPTS";
+                  if (_out) (*_out) << std::setw(30) << "FAILED CONNECT ATTEMPTS";
+                  if (_out) (*_out) << std::setw(35) << "LAST CONNECTION DISPOSITION";
+                  if (_out) (*_out) << std::setw(30) << "LAST ERROR";
+
+                  if (_out) (*_out) << "\n";
+                  for (auto peer : peers)
+                  {
+                      if (_out) (*_out) << std::setw(25) << string(peer.endpoint);
+                      auto seen_time = boost::posix_time::from_time_t(time_t(peer.last_seen_time.sec_since_epoch()));
+                      if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( seen_time );
+                      auto connect_time = boost::posix_time::from_time_t(time_t(peer.last_connection_attempt_time.sec_since_epoch()));
+                      if (_out) (*_out) << std::setw(25) << boost::posix_time::to_iso_extended_string( connect_time );
+                      if (_out) (*_out) << std::setw(30) << peer.number_of_successful_connection_attempts;
+                      if (_out) (*_out) << std::setw(30) << peer.number_of_failed_connection_attempts;
+                      if (_out) (*_out) << std::setw(35) << string( peer.last_connection_disposition );
+                      if (_out) (*_out) << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
+
+                      if (_out) (*_out) << "\n";
+                  }
               }
               else
               {
@@ -1400,6 +1420,8 @@ namespace bts { namespace cli {
 #endif
     void cli_impl::display_status_message(const std::string& message)
     {
+      if( !_input_stream || !_out ) 
+        return;
 #ifdef HAVE_READLINE
       char* saved_line = rl_copy_text(0, rl_end);
       char* saved_prompt = strdup(rl_prompt);
@@ -1407,7 +1429,7 @@ namespace bts { namespace cli {
       rl_set_prompt("");
       rl_replace_line("", 0);
       rl_redisplay();
-      std::cout << message << "\n";
+      (*_out) << message << "\n";
       rl_set_prompt(saved_prompt);
       rl_replace_line(saved_line, 0);
       rl_point = saved_point;

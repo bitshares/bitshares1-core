@@ -21,6 +21,8 @@ namespace bts { namespace net {
       fc::future<void> _read_loop_done;
       uint64_t _bytes_received;
       uint64_t _bytes_sent;
+
+      fc::time_point _connected_time;
       fc::time_point _last_message_received_time;
       fc::time_point _last_message_sent_time;
       fc::mutex _send_mutex;
@@ -35,17 +37,23 @@ namespace bts { namespace net {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
       void bind(const fc::ip::endpoint& local_endpoint);
 
-      message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate = nullptr);
+      message_oriented_connection_impl(message_oriented_connection* self, 
+                                       message_oriented_connection_delegate* delegate = nullptr);
+
       void send_message(const message& message_to_send);
       void close_connection();
+
       uint64_t get_total_bytes_sent() const;
       uint64_t get_total_bytes_received() const;
+
       fc::time_point get_last_message_sent_time() const;
       fc::time_point get_last_message_received_time() const;
+      fc::time_point get_connection_time() const { return _connected_time; }
     };
 
-    message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, message_oriented_connection_delegate* delegate) : 
-      _self(self),
+    message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, 
+                                                                       message_oriented_connection_delegate* delegate) 
+    : _self(self),
       _delegate(delegate),
       _bytes_received(0),
       _bytes_sent(0)
@@ -81,6 +89,7 @@ namespace bts { namespace net {
       const int LEFTOVER = BUFFER_SIZE - sizeof(message_header);
       assert(BUFFER_SIZE >= sizeof(message_header));
 
+      _connected_time = fc::time_point::now();
       try 
       {
         message m;
@@ -247,6 +256,10 @@ namespace bts { namespace net {
   fc::time_point message_oriented_connection::get_last_message_received_time() const
   {
     return my->get_last_message_received_time();
+  }
+  fc::time_point message_oriented_connection::get_connection_time() const
+  {
+    return my->get_connection_time();
   }
 
 } } // end namespace bts::net

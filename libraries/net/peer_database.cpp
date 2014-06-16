@@ -5,11 +5,15 @@
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/tag.hpp>
 
+#include <fc/io/raw.hpp>
+#include <fc/io/raw_variant.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 
 #include <bts/net/peer_database.hpp>
 #include <bts/db/level_pod_map.hpp>
+
+
 
 namespace bts { namespace net {
   namespace detail
@@ -39,10 +43,22 @@ namespace bts { namespace net {
     public:
       struct last_seen_time_index {};
       struct endpoint_index {};
-      typedef boost::multi_index_container<potential_peer_database_entry, 
-                                           indexed_by<ordered_non_unique<tag<last_seen_time_index>, const_mem_fun<potential_peer_database_entry, const fc::time_point_sec&, &potential_peer_database_entry::get_last_seen_time> >,
-                                                      hashed_unique<tag<endpoint_index>, const_mem_fun<potential_peer_database_entry, const fc::ip::endpoint&, &potential_peer_database_entry::get_endpoint>, std::hash<fc::ip::endpoint>  > > > potential_peer_set;
-    private:
+      typedef boost::multi_index_container< potential_peer_database_entry, 
+                                              indexed_by< ordered_non_unique< tag<last_seen_time_index>, 
+                                                                              const_mem_fun< potential_peer_database_entry, 
+                                                                                             const fc::time_point_sec&, 
+                                                                                             &potential_peer_database_entry::get_last_seen_time> 
+                                                                            >,
+                                                          hashed_unique< tag<endpoint_index>, 
+                                                                         const_mem_fun< potential_peer_database_entry, 
+                                                                                        const fc::ip::endpoint&, 
+                                                                                        &potential_peer_database_entry::get_endpoint 
+                                                                                      >, 
+                                                                         std::hash<fc::ip::endpoint>  
+                                                                       > 
+                                                        > 
+                                          > potential_peer_set;
+    //private:
       typedef bts::db::level_pod_map<uint32_t, potential_peer_record> potential_peer_leveldb;
       potential_peer_leveldb    _leveldb;
 
@@ -228,5 +244,17 @@ namespace bts { namespace net {
   {
     return my->size();
   }
+    std::vector<potential_peer_record> peer_database::get_all()const
+    {
+        std::vector<potential_peer_record> results;
+        auto itr = my->_leveldb.begin();
+        while( itr.valid() )
+        {
+           results.push_back( itr.value() );
+           ++itr;
+        }
+        return results;
+    }
+
 
 } } // end namespace bts::net

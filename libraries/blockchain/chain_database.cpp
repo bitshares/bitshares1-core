@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            chain_database_impl():self(nullptr),_observer(nullptr){}
+            chain_database_impl():self(nullptr){}
 
             void                       initialize_genesis(fc::optional<fc::path> genesis_file);
 
@@ -124,7 +124,7 @@ namespace bts { namespace blockchain {
             pending_chain_state_ptr                                             _pending_trx_state;
 
             chain_database*                                                     self;
-            chain_observer*                                                     _observer;
+            unordered_set<chain_observer*>                                      _observers;
             digest_type                                                         _chain_id;
 
             bts::db::level_map<uint32_t, std::vector<block_id_type> >           _fork_number_db;
@@ -688,11 +688,17 @@ namespace bts { namespace blockchain {
             mark_invalid( block_id );
             throw;
          }
-         if( _observer ) try { 
-            _observer->block_applied( summary );
-         } catch ( const fc::exception& e )
+
+         // just in case something changes while calling observer
+         auto tmp = _observers;
+         for( auto o : tmp )
          {
-            wlog( "${e}", ("e",e.to_detail_string() ) );
+            try { 
+               o->block_applied( summary );
+            } catch ( const fc::exception& e )
+            {
+               wlog( "${e}", ("e",e.to_detail_string() ) );
+            }
          }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
@@ -753,7 +759,8 @@ namespace bts { namespace blockchain {
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         if( _observer ) _observer->state_changed(undo_state);
+         auto tmp = _observers;
+         for( auto o : tmp ) o->state_changed( undo_state );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
@@ -979,6 +986,30 @@ namespace bts { namespace blockchain {
       return my->_block_num_to_id_db.fetch( block_num );
    } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
+   vector<transaction_record> chain_database::get_transactions_for_block( const block_id_type& block_id )const
+   {
+      auto block_record = my->_block_id_to_block_record_db.fetch(block_id);
+      vector<transaction_record> result;
+      result.reserve( block_record.user_transaction_ids.size() );
+
+      for( auto trx_id : block_record.user_transaction_ids )
+      {
+         auto otrx_record = get_transaction( trx_id );
+         if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
+         result.emplace_back( *otrx_record );
+      }
+      return result;
+   }
+   digest_block  chain_database::get_block_digest( const block_id_type& block_id )const
+   {
+      return my->_block_id_to_block_record_db.fetch(block_id);
+   }
+   digest_block  chain_database::get_block_digest( uint32_t block_num )const
+   {
+      auto block_id = my->_block_num_to_id_db.fetch( block_num );
+      return get_block_digest( block_id );
+   }
+
    full_block           chain_database::get_block( const block_id_type& block_id )const
    { try {
       full_block result;
@@ -1024,12 +1055,18 @@ namespace bts { namespace blockchain {
       {
          // attempt to extend chain
          my->extend_chain( block_data );
+         optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+         FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+         fork = *new_fork_data;
       }
       else if( fork.can_link() && block_data.block_num > my->_head_block_header.block_num )
       {
          try {
             my->switch_to_fork( block_id );
-            return fork; // switched forks
+            optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+            FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+            fork = *new_fork_data;
+            return fork;
          }
          catch ( const fc::exception& e )
          {
@@ -1037,8 +1074,8 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
-      return fork; // didn't switch forks
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
+      return fork;
+   } FC_CAPTURE_AND_RETHROW( (block_data) )  }
 
 
   std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
@@ -1517,9 +1554,9 @@ namespace bts { namespace blockchain {
       self->sanity_check();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::set_observer( chain_observer* observer )
+   void chain_database::add_observer( chain_observer* observer )
    {
-      my->_observer = observer;
+      my->_observers.insert(observer);
    }
 
    bool chain_database::is_known_block( const block_id_type& block_id )const
@@ -1611,13 +1648,13 @@ namespace bts { namespace blockchain {
           }
        out << "}"; 
     }
-    void chain_database::export_new_fork_graph( const fc::path& filename )const
+    void chain_database::export_new_fork_graph( const fc::path& filename, uint32_t start  )const
     {
       std::ofstream out( filename.generic_string().c_str() );
       out << "digraph G { \n"; 
       out << "rankdir=LR;\n";
         
-      const uint32_t starting_block_num = 1300;
+      const uint32_t starting_block_num = start;
       bool first = true;
       fc::time_point_sec start_time;
       std::map<uint32_t, std::vector<block_record> > nodes_by_rank;
@@ -1630,7 +1667,8 @@ namespace bts { namespace blockchain {
           first = false;
           start_time = block_record.timestamp;
         }
-        if (block_record.block_num > starting_block_num)
+        std::cout << block_record.block_num << "  start " << start << "\n";
+        if ( block_record.block_num > starting_block_num)
         {
           uint32_t rank = (block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 

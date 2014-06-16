@@ -3,6 +3,7 @@
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
 #include <bts/net/upnp.hpp>
+#include <bts/net/peer_database.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -14,6 +15,8 @@
 #include <bts/api/common_api.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
+
+#include <bts/db/level_map.hpp>
 
 #include <fc/reflect/variant.hpp>
 #include <fc/io/fstream.hpp>
@@ -53,61 +56,10 @@
 using namespace boost;
    using std::string;
 
+
+namespace bts { namespace client {
+
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
-
-struct config
-{
-   config( ) : 
-      default_peers(std::vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
-      ignore_console(false)
-      {
-      }
-
-   void init_default_logger( const fc::path& data_dir )
-   {
-          fc::logging_config cfg;
-          
-          fc::file_appender::config ac;
-          ac.filename = data_dir / "default.log";
-          ac.truncate = false;
-          ac.flush    = true;
-
-          std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
-          
-          fc::file_appender::config ac_rpc;
-          ac_rpc.filename = data_dir / "rpc.log";
-          ac_rpc.truncate = false;
-          ac_rpc.flush    = true;
-
-          std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
-          
-          cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
-          cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
-          
-          fc::logger_config dlc;
-          dlc.level = fc::log_level::debug;
-          dlc.name = "default";
-          dlc.appenders.push_back("default");
-          
-          fc::logger_config dlc_rpc;
-          dlc_rpc.level = fc::log_level::debug;
-          dlc_rpc.name = "rpc";
-          dlc_rpc.appenders.push_back("rpc");
-          
-          cfg.loggers.push_back(dlc);
-          cfg.loggers.push_back(dlc_rpc);
-          
-          // fc::configure_logging( cfg );
-          logging = cfg;
-   }
-
-   bts::rpc::rpc_server::config rpc;
-   std::vector<string>     default_peers;
-   bool                         ignore_console;
-   fc::logging_config           logging;
-};
-
-FC_REFLECT( config, (rpc)(default_peers)(ignore_console)(logging) )
 
 void print_banner();
 void configure_logging(const fc::path&);
@@ -121,25 +73,30 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    // parse command-line options
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
-                              ("input-log", program_options::value<std::string>(), "log file with CLI commands to execute at startup")
+                              ("input-log", program_options::value<std::string>(), 
+                                 "log file with CLI commands to execute at startup")
                               ("help", "display this help message")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
-                              ("maximum-number-of-connections", program_options::value<uint16_t>(), "set the maximum number of peers this node will accept at any one time")
+                              ("maximum-number-of-connections", program_options::value<uint16_t>(), 
+                                  "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
                               ("disable-default-peers", "disable automatic connection to default peers")
                               ("server", "enable JSON-RPC server")
                               ("daemon", "run in daemon mode with no CLI console, starts JSON-RPC server")
-                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC") // default arguments are in config.json
+                              ("rpcuser", program_options::value<string>(), "username for JSON-RPC")
                               ("rpcpassword", program_options::value<string>(), "password for JSON-RPC")
                               ("rpcport", program_options::value<uint16_t>(), "port to listen for JSON-RPC connections")
                               ("httpport", program_options::value<uint16_t>(), "port to listen for HTTP JSON-RPC connections")
                               ("genesis-config", program_options::value<string>(), 
-                               "generate a genesis state with the given json file instead of using the built-in genesis block (only accepted when the blockchain is empty)")
+                                 "generate a genesis state with the given json file instead of using the built-in "
+                                 "genesis block (only accepted when the blockchain is empty)")
                               ("clear-peer-database", "erase all information in the peer database")
-                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a fresh copy of the entire blockchain from the network")
+                              ("resync-blockchain", "delete our copy of the blockchain at startup, and download a "
+                                 "fresh copy of the entire blockchain from the network")
                               ("version", "print the version information for bts_xt_client")
-                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), "Limit total bandwidth to this many bytes per second");
+                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), 
+                                  "Limit total bandwidth to this many bytes per second");
 
 
   program_options::variables_map option_variables;
@@ -207,7 +164,20 @@ void configure_logging(const fc::path& data_dir)
     ac_rpc.flush    = true;
 
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
-    
+
+
+    fc::variants  c  {
+                fc::mutable_variant_object( "level","debug")("color", "green"),
+                fc::mutable_variant_object( "level","warn")("color", "brown"),
+                fc::mutable_variant_object( "level","error")("color", "red") };
+
+     cfg.appenders.push_back( 
+            fc::appender_config( "stderr", "console", 
+                fc::mutable_variant_object()
+                    ( "stream","std_error")
+                    ( "level_colors", c ) 
+                ) ); 
+
     cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
     cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
     
@@ -215,6 +185,7 @@ void configure_logging(const fc::path& data_dir)
     dlc.level = fc::log_level::debug;
     dlc.name = "default";
     dlc.appenders.push_back("default");
+   // dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
     dlc_rpc.level = fc::log_level::debug;
@@ -238,11 +209,11 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
    else
    {
 #ifdef WIN32
-     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #elif defined( __APPLE__ )
-     datadir =  fc::app_path() / "BitShares" BTS_ADDRESS_PREFIX;
+     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     datadir = fc::app_path() / ".BitShares" BTS_ADDRESS_PREFIX;
+     datadir = fc::app_path() / "." BTS_BLOCKCHAIN_NAME;
 #endif
    }
    return datadir;
@@ -292,7 +263,6 @@ config load_config( const fc::path& datadir )
 
 
 
-namespace bts { namespace client {
 
    using namespace bts::wallet;
    using namespace bts::blockchain;
@@ -319,13 +289,13 @@ namespace bts { namespace client {
             void delegate_loop();
             void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
 
-            block_fork_data on_new_block(const full_block& block, const block_id_type& block_id);
+            block_fork_data on_new_block(const full_block& block, const block_id_type& block_id, bool sync_mode);
             void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
             virtual bool has_item(const bts::net::item_id& id) override;
-            virtual bool handle_message(const bts::net::message&) override;
+            virtual bool handle_message(const bts::net::message&, bool sync_mode) override;
             virtual std::vector<bts::net::item_hash_t> get_item_ids(uint32_t item_type,
                                                                     const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                                     uint32_t& remaining_item_count,
@@ -342,6 +312,7 @@ namespace bts { namespace client {
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
             virtual uint32_t get_block_number(bts::net::item_hash_t block_id) override;
+            virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
@@ -354,6 +325,9 @@ namespace bts { namespace client {
             unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
             fc::future<void>                                            _delegate_loop_complete;
+            fc::time_point                                              _last_sync_status_message_time;
+
+            bts::db::level_map<fc::time_point,fc::exception>            _exception_db;
 
             //-------------------------------------------------- JSON-RPC Method Implementations
             // include all of the method overrides generated by the bts_api_generator
@@ -432,8 +406,8 @@ namespace bts { namespace client {
          {
             auto now = fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
-            ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
-                  ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+           // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+           //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
             if( next_block_time < (now + -1) ||
                 (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             {
@@ -441,26 +415,24 @@ namespace bts { namespace client {
                continue;
             }
             else
-            {
-               if( _wallet->is_unlocked() && network_get_connection_count() >= 5 )
-               {
+            { 
+               try {
+                  FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
+                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT , 
+                             "Client must have ${count} connections before you may produce blocks",
+                             ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
-                  try {
-                     fc::usleep( (next_block_time - now) );
-                     full_block next_block = _chain_db->generate_block( next_block_time );
-                     _wallet->sign_block( next_block );
 
-                     on_new_block(next_block, next_block.id());
-                     _p2p_node->broadcast(block_message( next_block ));
-                  }
-                  catch ( const fc::exception& e )
-                  {
-                     wlog( "${e}", ("e",e.to_detail_string() ) );
-                  }
-               }
-               else
+                  fc::usleep( (next_block_time - now) );
+                  full_block next_block = _chain_db->generate_block( next_block_time );
+                  _wallet->sign_block( next_block );
+
+                  on_new_block(next_block, next_block.id(), false);
+                  _p2p_node->broadcast(block_message( next_block ));
+               } 
+               catch ( const fc::exception& e )
                {
-                  elog( "unable to produce block because wallet is locked" );
+                  _exception_db.store( fc::time_point::now(), e);
                }
             }
             fc::usleep( fc::seconds(1) );
@@ -477,10 +449,10 @@ namespace bts { namespace client {
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
-          int32_t last = std::min<int32_t>( first+count, _chain_db->get_head_block_num() );
+          int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
           result.reserve( last-first );
 
-          for( int32_t block_num = first; block_num < last; ++block_num )
+          for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
 
 
@@ -502,31 +474,69 @@ namespace bts { namespace client {
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       block_fork_data client_impl::on_new_block(const full_block& block, const block_id_type& block_id)
+       block_fork_data client_impl::on_new_block(const full_block& block, const block_id_type& block_id, bool sync_mode)
        {
-         try
+         try 
          {
-           ilog("Received a new block from the p2p network, current head block is ${num}, new block is ${block}, current head block is ${num}",
-                ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
-           auto fork_data = _chain_db->get_block_fork_data( block_id );
-
-           if( fork_data && fork_data->is_known )
-           {
-             ilog("The block we just received is one I've already seen, ignoring it");
-             return *fork_data;
-           }
-           else
-           {
-             auto result = _chain_db->push_block(block);
-             ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
-             return result;
-           }
-         } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block}", ("block", block));
+            try
+            {
+              ilog("Received a new block from the p2p network, current head block is ${num}, "
+                   "new block is ${block}, current head block is ${num}",
+                   ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
+              fc::optional<block_fork_data> fork_data = _chain_db->get_block_fork_data( block_id );
+            
+              if( fork_data && fork_data->is_known )
+              {
+                if (sync_mode && !fork_data->is_linked)
+                   FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, 
+                                      "The blockchain already has this block, but it isn't linked");
+                ilog("The block we just received is one I've already seen, ignoring it");
+                return *fork_data;
+              }
+              else
+              {
+                   block_fork_data result = _chain_db->push_block(block);
+                   if (sync_mode && !result.is_linked)
+                      FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
+                   ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+            
+                   if (_cli && 
+                       result.is_included && 
+                       (fc::time_point::now() - block.timestamp) > fc::minutes(5) &&
+                       _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(30)))
+                   {
+                      std::ostringstream message;
+                      message << "--- syncing with p2p network, our last block was created " 
+                              << fc::get_approximate_relative_time_string(block.timestamp);
+                      _cli->display_status_message(message.str());
+                      _last_sync_status_message_time = fc::time_point::now();
+                   }
+            
+                   return result;
+              }
+            } FC_RETHROW_EXCEPTIONS(warn, "Error pushing block ${block_number} - ${block_id}", 
+                                    ("block_id",block.id())
+                                    ("block_number",block.block_num)
+                                    ("block", block) );
+         } 
+         catch ( const fc::exception& e )
+         {
+            _exception_db.store( fc::time_point::now(), e);
+            throw;
+         }
        }
 
        void client_impl::on_new_transaction(const signed_transaction& trx)
-       {
-         _chain_db->store_pending_transaction(trx); // throws exception if invalid trx.
+       { 
+          try {
+              // throws exception if invalid trx.
+              _chain_db->store_pending_transaction(trx); 
+          } 
+          catch ( const fc::exception& e )
+          {
+             _exception_db.store( fc::time_point::now(), e );
+             throw;
+          }
        }
 
        ///////////////////////////////////////////////////////
@@ -546,7 +556,7 @@ namespace bts { namespace client {
          return false;
        }
 
-       bool client_impl::handle_message(const bts::net::message& message_to_handle)
+       bool client_impl::handle_message(const bts::net::message& message_to_handle, bool sync_mode)
        {
          switch (message_to_handle.msg_type)
          {
@@ -554,9 +564,9 @@ namespace bts { namespace client {
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
                 ilog("CLIENT: just received block ${id}", ("id", block_message_to_handle.block.id()));
-                block_fork_data d = on_new_block(block_message_to_handle.block, block_message_to_handle.block_id);
-                // TODO... what/
-                return false;
+                bts::blockchain::block_id_type old_head_block = _chain_db->get_head_block_id();
+                block_fork_data fork_data = on_new_block(block_message_to_handle.block, block_message_to_handle.block_id, sync_mode);
+                return fork_data.is_included ^ (block_message_to_handle.block.previous == old_head_block);  // TODO is this right?
               }
             case trx_message_type:
               {
@@ -774,10 +784,17 @@ namespace bts { namespace client {
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         std::ostringstream message;
-         message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
-         // this notification is currently broken, so it would spam the terminal if we enabled it
-         // _cli->display_status_message(message.str());
+         if (_cli && _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(10)))
+         {
+           std::ostringstream message;
+           if (item_count > 100)
+              message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+           else if (item_count == 0)
+              message << "--- in sync with p2p network";
+           if (!message.str().empty())
+             _cli->display_status_message(message.str());
+           _last_sync_status_message_time = fc::time_point::now();
+         }
        }
 
        void client_impl::connection_count_changed(uint32_t c)
@@ -792,6 +809,18 @@ namespace bts { namespace client {
        {
          return _chain_db->get_block_num(block_id);
        }
+
+      void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
+      {
+        if (error)
+          _exception_db.store(fc::time_point::now(), *error);
+        else
+          _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
+        if( _cli )
+          _cli->display_status_message(message);
+        else
+          std::cout << message << "\n";
+      }
 
     } // end namespace detail
 
@@ -809,6 +838,7 @@ namespace bts { namespace client {
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
     { try {
+        my->_exception_db.open( data_dir / "exceptions", true );
         my->_chain_db->open( data_dir / "chain", genesis_file_path );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
@@ -820,6 +850,11 @@ namespace bts { namespace client {
         }
         my->_p2p_node->set_node_delegate(my.get());
 
+
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+
+    void client::sync_with_ntp()
+    {
         fc::async( [](){  
             auto start_query =  fc::time_point::now();
             auto query_time = fc::seconds(0);
@@ -842,8 +877,7 @@ namespace bts { namespace client {
                }
             } while( query_time > fc::seconds(1) ); 
         } );
-
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
+    }
                              
 
     client::~client()
@@ -1154,14 +1188,14 @@ namespace bts { namespace client {
       return _chain_db->get_transaction(id, exact);
     }
 
-    full_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
+    digest_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
     {
-      return _chain_db->get_block(block_id);
+      return _chain_db->get_block_digest(block_id);
     }
 
-    full_block detail::client_impl::blockchain_get_block_by_number(uint32_t block_number) const
+    digest_block detail::client_impl::blockchain_get_block_by_number(uint32_t block_number) const
     {
-      return _chain_db->get_block(block_number);
+      return _chain_db->get_block_digest(block_number);
     }
 
     void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
@@ -1208,11 +1242,33 @@ namespace bts { namespace client {
         _wallet->scan_chain(0);
     }
    
-    string detail::client_impl::wallet_dump_private_key(const address& account_address){
+    string detail::client_impl::wallet_dump_private_key(const std::string& address_or_public_key)
+    {
       try {
-         auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
-         return wif_private_key;
-      } FC_CAPTURE_AND_RETHROW( (account_address) ) }
+          // TODO is_valid should not throw, should return false...
+         bool is_address = true;
+         try { 
+            is_address = address::is_valid(address_or_public_key);
+         }
+         catch (...)
+         {
+            is_address = false;
+         }
+         if (is_address)
+         {
+             address addr = address(address_or_public_key);
+             auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
+             return wif_private_key;
+         } 
+         else
+         {
+              public_key_type pubkey = public_key_type(address_or_public_key);
+              address addr = address(pubkey);
+              auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
+              return wif_private_key;
+         }
+    } FC_CAPTURE_AND_RETHROW( (address_or_public_key) ) }
+
 
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
@@ -1337,7 +1393,7 @@ namespace bts { namespace client {
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
-    bts::blockchain::full_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
+    bts::blockchain::digest_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
     {
        return blockchain_get_block(block_id);
     }
@@ -1596,8 +1652,8 @@ namespace bts { namespace client {
       // parse command-line options
       auto option_variables = parse_option_variables(argc,argv);
 
-      fc::path datadir = ::get_data_dir(option_variables);
-      ::configure_logging(datadir);
+      fc::path datadir = bts::client::get_data_dir(option_variables);
+      bts::client::configure_logging(datadir);
 
       auto cfg   = load_config(datadir);
       std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
@@ -1752,6 +1808,12 @@ namespace bts { namespace client {
       my->_p2p_node->load_configuration( my->_data_dir );
     }
 
+    void client::init_cli()
+    {
+      if( !my->_cli )
+         my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+    }
+
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
@@ -1850,6 +1912,11 @@ namespace bts { namespace client {
     {
       return _rpc_server->help(command_name);
     }
+
+    method_map_type client_impl::meta_help() const
+    {
+      return _rpc_server->meta_help();
+    }
     
 
     variant_object client_impl::blockchain_get_config() const
@@ -1895,6 +1962,7 @@ namespace bts { namespace client {
 
       info["blockchain_head_block_num"]                  = _chain_db->get_head_block_num();
       info["blockchain_head_block_time"]                 = _chain_db->now();
+      info["blockchain_head_block_time_rel"]             = fc::get_approximate_relative_time_string(_chain_db->now(), bts::blockchain::now(), " old");
       info["blockchain_confirmation_requirement"]        = _chain_db->get_required_confirmations();
       info["blockchain_average_delegate_participation"]  = _chain_db->get_average_delegate_participation();
       info["network_num_connections"]                    = network_get_connection_count();
@@ -1945,12 +2013,12 @@ namespace bts { namespace client {
         state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > .9)
+            && participation_rate > 90)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
         } 
         else if (required_confirmations > BTS_BLOCKCHAIN_NUM_DELEGATES
-                 || participation_rate < .6)
+                 || participation_rate < 60)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::red;
         }
@@ -2134,11 +2202,48 @@ namespace bts { namespace client {
       return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
+   vector<transaction_record> client_impl::blockchain_get_transactions_for_block( const block_id_type& id )const
+   {
+      return _chain_db->get_transactions_for_block(id);
+   }
+
+   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time )const
+   {
+      map<fc::time_point, fc::exception> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value();
+         ++itr;
+      }
+      return result;
+   }
+   void client_impl::blockchain_export_fork_graph( const string& filename, uint32_t starting_block_number )const
+   {
+      _chain_db->export_new_fork_graph( filename, starting_block_number );
+   }
+
+   vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
+   {
+        return _p2p_node->get_potential_peers();
+   }
+
    } // namespace detail
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
    bts::api::common_api* client::get_impl() const
    {
      return my.get();
    }
+
+  bool rpc_server_config::is_valid() const
+  {
+    if (rpc_user.empty())
+      return false;
+    if (rpc_password.empty())
+      return false;
+    return true;
+  }
    
 } } // bts::client

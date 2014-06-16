@@ -4,8 +4,11 @@
 #include <bts/net/message.hpp>
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/block.hpp>
+#include <bts/net/peer_database.hpp>
 
 namespace bts { namespace net {
+
+  using fc::variant_object;
 
    namespace detail { class node_impl; }
 
@@ -38,12 +41,13 @@ namespace bts { namespace net {
           *  @brief allows the application to validate an item prior to
           *         broadcasting to peers.
           *
+          *  @param sync_mode true if the message was fetched through the sync process, false during normal operation
           *  @returns true if this message caused the blockchain to switch forks, false if it did not
           *
           *  @throws exception if error validating the item, otherwise the item is
           *          safe to broadcast on.
           */
-         virtual bool handle_message( const message& ) = 0;
+         virtual bool handle_message( const message&, bool sync_mode ) = 0;
 
          /**
           *  Assuming all data elements are ordered in some way, this method should
@@ -96,6 +100,8 @@ namespace bts { namespace net {
          virtual void     connection_count_changed( uint32_t c ) = 0;
 
          virtual uint32_t get_block_number(item_hash_t block_id) = 0;
+
+         virtual void error_encountered(const std::string& message, const fc::oexception& error) = 0;
    };
 
    /**
@@ -200,6 +206,9 @@ namespace bts { namespace net {
         void set_total_bandwidth_limit(uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second);
 
         fc::variant_object network_get_info() const;
+        fc::variant_object get_handshaking_connections() const;
+
+        std::vector<potential_peer_record> get_potential_peers()const;
 
       private:
         std::unique_ptr<detail::node_impl> my;

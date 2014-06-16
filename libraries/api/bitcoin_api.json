@@ -130,7 +130,7 @@
       {
           "method_name": "bitcoin_getblock",
           "description": "eturns information about the block with the given hash.",
-          "return_type": "full_block",
+          "return_type": "digest_block",
           "parameters" : [
           {
               "name" : "block_id",

@@ -952,13 +952,13 @@
       },
       {
          "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to <bitsharesaddress>",
+         "description" : "Reveals the private key corresponding to an address or public key",
          "return_type"  : "std::string",
          "parameters" : [
          {
-            "name" : "account_address",
-            "type" : "address",
-            "description" : "bitshares address of the private key, base58 string hash of public key"
+            "name" : "address_or_public_key",
+            "type" : "std::string",
+            "description" : "a public key or address (based on hash of public key) of the private key"
          }
          ],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
@@ -974,13 +974,13 @@
                 "type" : "account_name",
                 "description" : "the account to report votes on"
             }
-          ]
+          ],
           "aliases" : ["votes"],
           "prerequisites" : ["json_authenticated", "wallet_open"]
       },
       {
          "method_name" : "wallet_account_export_private_key",
-         "description" : "returns the private key for this account in WIF format"
+         "description" : "returns the private key for this account in WIF format",
          "return_type" : "string",
          "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"]

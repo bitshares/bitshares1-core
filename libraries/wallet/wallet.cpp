@@ -482,7 +482,7 @@ namespace bts { namespace wallet {
       my->self = this;
       my->_use_deterministic_one_time_keys = false;
       my->_blockchain = blockchain;
-      my->_blockchain->set_observer( my.get() );
+      my->_blockchain->add_observer( my.get() );
    }
 
    wallet::~wallet()
@@ -1106,9 +1106,13 @@ namespace bts { namespace wallet {
 
       uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
+      auto sorted_delegates = my->_blockchain->get_active_delegates();
       while( next_block_time < last_block_time )
       {
-         auto id = my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
+         uint64_t  interval_number = next_block_time / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+         uint32_t  delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
+
+         auto id = sorted_delegates[delegate_pos]; //my->_blockchain->get_signing_delegate_id( fc::time_point_sec( next_block_time ) );
          auto delegate_record = my->_blockchain->get_account_record( id );
          FC_ASSERT( delegate_record.valid(), "", ("delegate_id",id ) );
          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
@@ -1622,6 +1626,16 @@ namespace bts { namespace wallet {
                             account_public_key, // master
                             account_public_key, // active
                             as_delegate );
+
+      auto pos = account_to_register.find( '.' );
+      if( pos != string::npos )
+      {
+          auto parent_name = account_to_register.substr( pos+1, string::npos );
+          auto opt_parent_acct = get_account( parent_name );
+          FC_ASSERT(opt_parent_acct.valid(), "You must own the parent name to register a subname!");
+          required_signatures.insert(opt_parent_acct->active_address());
+      }
+
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
@@ -2484,14 +2498,14 @@ namespace bts { namespace wallet {
     { try {
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
-        FC_ASSERT( is_valid_account_name( keyhoteeid ) );
+        FC_ASSERT( is_valid_account_name( fc::to_lower(keyhoteeid) ) );
         // TODO: what will keyhoteeid's validation be like, they have different rules?
         
         bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
         
         auto private_key = bts::keyhotee::import_keyhotee_id(config, keyhoteeid);
         
-        import_private_key(private_key, keyhoteeid, true);
+        import_private_key(private_key, fc::to_lower(keyhoteeid), true);
         
         scan_chain( 0, 1 );
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
@@ -2769,10 +2783,6 @@ namespace bts { namespace wallet {
          {
             FC_ASSERT( !"Not a Registered Account" );
          }
-         if( !reg_account->is_delegate() )
-         {
-            FC_ASSERT( !"Account not registered as a delegate" );
-         }
          add_contact_account( delegate_name, reg_account->active_key() );
          set_delegate_trust_level( delegate_name, trust_level );
       }
@@ -2911,7 +2921,7 @@ namespace bts { namespace wallet {
       vector<public_key_type> account_keys;
       for( auto key : my->_wallet_db.keys )
       {
-         if( key.second.account_address == account_address )
+         if( key.second.account_address == account_address || key.first == account_address )
             account_keys.push_back( key.second.public_key );
       }
       return account_keys;
