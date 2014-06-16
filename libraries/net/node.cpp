@@ -727,7 +727,7 @@ namespace bts { namespace net {
               _retrigger_connect_loop_promise->wait();
             }
           }
-          catch (fc::timeout_exception& e)
+          catch (fc::timeout_exception&) //intentionally not logged
           {
           }  // catch
         } 

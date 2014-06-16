@@ -1798,6 +1798,11 @@ config load_config( const fc::path& datadir )
          my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
     }
 
+    void client::set_daemon_mode(bool daemon_mode) 
+    { 
+      my->_cli->set_daemon_mode(daemon_mode); 
+    }
+
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
