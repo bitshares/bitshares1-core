@@ -1521,7 +1521,7 @@ namespace bts { namespace cli {
 
   void cli::wait_till_cli_shutdown()
   {
-     ilog( "\n\nwaiting on server to quit\n\n" );
+     ilog( "waiting on server to quit" );
      my->_rpc_server->wait_till_rpc_server_shutdown();
   }
 

@@ -729,7 +729,6 @@ namespace bts { namespace net {
           }
           catch (fc::timeout_exception& e)
           {
-            elog( "${e}", ("e",e.to_detail_string() ) );
           }  // catch
         } 
         catch ( const fc::exception& e )
