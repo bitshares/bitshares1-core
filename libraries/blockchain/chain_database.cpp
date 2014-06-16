@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "blockchain"
+
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
@@ -1700,7 +1702,6 @@ namespace bts { namespace blockchain {
     }
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
-            ilog( "property ${p}", ("p",property_id) );
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
 
