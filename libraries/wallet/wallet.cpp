@@ -2539,6 +2539,9 @@ namespace bts { namespace wallet {
    vector<string> wallet::list() const
    {
        vector<string> wallets;
+       if (!fc::is_directory(get_data_directory()))
+           return wallets;
+
        auto path = get_data_directory();
        fc::directory_iterator end_itr; // constructs terminator
        for( fc::directory_iterator itr( path ); itr != end_itr; ++itr)

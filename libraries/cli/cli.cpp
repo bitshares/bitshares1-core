@@ -781,8 +781,11 @@ namespace bts { namespace cli {
               else if (method_name == "wallet_list")
               {
                   auto wallets = result.as<vector<string>>();
-                  for (auto wallet : wallets)
-                      *_out << wallet << "\n";
+                  if (wallets.empty())
+                      *_out << "No wallets found.\n";
+                  else
+                      for (auto wallet : wallets)
+                          *_out << wallet << "\n";
               }
               else if (method_name == "wallet_list_unspent_balances" )
               {
