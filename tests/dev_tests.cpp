@@ -2,6 +2,13 @@
 #include <boost/test/unit_test.hpp>
 #include "dev_fixture.hpp"
 
+BOOST_AUTO_TEST_CASE( timetest )
+{ 
+  auto block_time =  fc::variant( "20140617T024645" ).as<fc::time_point_sec>();
+  auto now =  fc::variant( "20140617T024332" ).as<fc::time_point_sec>();
+  elog( "delta: ${d}", ("d", (block_time - now).to_seconds() ) );
+}
+
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
 //   disable_logging();

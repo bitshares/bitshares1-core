@@ -1,0 +1,13 @@
+(wallet closed) >>> help help
+Usage:
+help [command_name]                                                                                   display a list of commands, or detailed help on an individual command
+display a list of commands, or detailed help on an individual command
+
+Parameters:
+  command_name (method_name, optional, defaults to ""): the name of the method to get detailed help, or omit this for a list of commands
+
+Returns:
+  std::string
+
+aliases: h
+(wallet closed) >>> quit

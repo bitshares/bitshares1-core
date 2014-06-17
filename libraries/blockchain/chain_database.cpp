@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "blockchain"
+
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
@@ -503,7 +505,8 @@ namespace bts { namespace blockchain {
 
             fc::time_point_sec now = bts::blockchain::now();
             FC_ASSERT( block_data.timestamp <=  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2),
-                       "${t} < ${now}", ("t",block_data.timestamp)("now",now));
+                       "${block_data.timestamp} < ${now}", 
+                        ("block_data.timestamp",block_data.timestamp)("now",now));
 
             size_t block_size = block_data.block_size();
             auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
@@ -1688,7 +1691,6 @@ namespace bts { namespace blockchain {
 
    fc::variant chain_database::get_property( chain_property_enum property_id )const
    { try {
-            ilog( "property ${p}", ("p",property_id) );
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
 

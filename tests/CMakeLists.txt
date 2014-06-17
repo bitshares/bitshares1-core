@@ -3,14 +3,14 @@ if( UNIX AND NOT APPLE )
 endif()
 
 add_library( deterministic_openssl_rand deterministic_openssl_rand.cpp deterministic_openssl_rand.cpp)
-target_link_libraries( deterministic_openssl_rand fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${rt_library} )
+target_link_libraries( deterministic_openssl_rand fc )
 
 add_executable( wallet_tests wallet_tests.cpp )
-target_link_libraries( wallet_tests bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
+target_link_libraries( wallet_tests bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
 
 # dev tests disabled because uncommitted dev_fixture.hpp causing build errors
 add_executable( dev_tests dev_tests.cpp )
-target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library}  ${rt_library} )
+target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
 
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
@@ -44,7 +44,7 @@ if( WIN32 )
 endif (WIN32)
 
 add_executable( deterministic_signature_test deterministic_signature_test.cpp)
-target_link_libraries( deterministic_signature_test deterministic_openssl_rand fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${rt_library} )
+target_link_libraries( deterministic_signature_test deterministic_openssl_rand fc )
 
 
 #if( false )
@@ -52,7 +52,7 @@ target_link_libraries( deterministic_signature_test deterministic_openssl_rand f
 #   if( WIN32 )
 #       target_compile_definitions(simple_net_test_client PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
 #   endif (WIN32)
-#   target_link_libraries( simple_net_test_client bts_client bts_net bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${crypto_library})
+#   target_link_libraries( simple_net_test_client bts_client bts_net bts_blockchain fc )
 #endif (false )
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
@@ -63,7 +63,7 @@ if( WIN32 )
 #   target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
    set( RPCRT4 Rpcrt4 )
 endif (WIN32)
-target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${RPCRT4} ${crypto_library} ${rt_library} )
+target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc )
 add_dependencies(bitshares_client_tests bitshares_client)
 
 add_subdirectory( bitcoin )

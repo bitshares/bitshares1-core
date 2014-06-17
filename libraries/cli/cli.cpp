@@ -735,6 +735,16 @@ namespace bts { namespace cli {
                             << std::setw(15) << vote.second.votes_against <<"\n";
                   }
               }
+              else if (method_name == "list_errors")
+              {
+                  auto error_map = result.as<map<fc::time_point,fc::exception> >();
+                  for( auto item : error_map )
+                  {
+                     (*_out) << string(item.first) << " (" << fc::get_approximate_relative_time_string( item.first ) << " )\n";
+                     (*_out) << item.second.to_detail_string();
+                     (*_out) << "\n";
+                  }
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<vector<pretty_transaction>>();
@@ -810,16 +820,23 @@ namespace bts { namespace cli {
 
                               auto delegate_id = balance_rec.condition.delegate_id;
                               auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
-                              string sign = (delegate_id > 0 ? "+" : "-");
-                              if (delegate_rec->name.size() > 21)
+                              if( delegate_rec )
                               {
-                                  *_out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                                 string sign = (delegate_id > 0 ? "+" : "-");
+                                 if (delegate_rec->name.size() > 21)
+                                 {
+                                     *_out << std::setw(25) << (sign + delegate_rec->name.substr(0, 21) + "...");
+                                 }
+                                 else
+                                 {
+                                     *_out << std::setw(25) << (sign + delegate_rec->name);
+                                 }
+                                 break;
                               }
                               else
                               {
-                                  *_out << std::setw(25) << sign << delegate_rec->name;
+                                     *_out << std::setw(25) << "none";
                               }
-                              break;
                           }
                           default:
                           {

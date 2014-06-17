@@ -5,4 +5,4 @@ endif()
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/bitcoin/include )
 
 add_executable( wallet_import_tests wallet_import_tests.cpp )
-target_link_libraries( wallet_import_tests bitcoin bts_blockchain bts_wallet fc ${BOOST_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS}  ${rt_library} )
+target_link_libraries( wallet_import_tests bitcoin bts_blockchain bts_wallet fc )

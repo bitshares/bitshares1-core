@@ -434,7 +434,7 @@ config load_config( const fc::path& datadir )
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = fc::time_point_sec(fc::time_point::now());
+            auto now = bts::blockchain::now(); //fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
            // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
            //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
@@ -2253,6 +2253,22 @@ config load_config( const fc::path& datadir )
          ++itr;
       }
       return result;
+   }
+
+   void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
+   {
+      map<fc::time_point, fc::exception> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value();
+         ++itr;
+      }
+      if (path != "")
+      {
+         std::ofstream fileout( path.c_str() );
+         fileout << fc::json::to_pretty_string( result );
+      }
    }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const

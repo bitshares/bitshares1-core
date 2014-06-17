@@ -116,8 +116,10 @@
                   "description" : "time of the first error",
                   "type" : "timestamp", 
                   "default_value" : "20000101T000000"
-               } ],
+               }
+        ],
         "is_const"   : true,
+        "aliases"    : ["errors"]
         "prerequisites" : ["no_prerequisites"]
       },
       {
@@ -131,6 +133,27 @@
                   "type" : "timestamp", 
                   "default_value" : "20000101T000000"
                } ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+          "method_name" : "write_errors_to_file",
+          "description" : "writes a list of notable errors to a file",
+          "return_type" : "void",
+          "parameters"  : [ 
+               {
+                  "name" : "path", 
+                  "description" : "Where to dump the log file",
+                  "type" : "string", 
+                  "default_value" : ""
+               },
+               {
+                  "name" : "start_time", 
+                  "description" : "time of the first error",
+                  "type" : "timestamp", 
+                  "default_value" : "20000101T000000"
+               } 
+        ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
       }
