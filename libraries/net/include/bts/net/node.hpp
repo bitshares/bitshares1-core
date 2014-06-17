@@ -134,6 +134,8 @@ namespace bts { namespace net {
 
         void      load_configuration( const fc::path& configuration_directory );
 
+        virtual void      listen_to_p2p_network();
+
         virtual void      connect_to_p2p_network();
 
         /**
@@ -156,8 +158,13 @@ namespace bts { namespace net {
 
         /**
          *  Specifies the port upon which incoming connections should be accepted.
+         *  @param port the port to listen on
+         *  @param wait_if_not_available if true and the port is not available, enter a 
+         *                               sleep and retry loop to wait for it to become 
+         *                               available.  If false and the port is not available,
+         *                               just choose a random available port
          */
-        void      listen_on_port(uint16_t port);
+        void      listen_on_port(uint16_t port, bool wait_if_not_available);
 
         /**
          * Returns the endpoint the node is listening on.  This is usually the same
@@ -215,6 +222,7 @@ namespace bts { namespace net {
     class simulated_network : public node
     {
        public:
+         void      listen_to_p2p_network() override {}
          void      connect_to_p2p_network() override {}
          void connect_to(const fc::ip::endpoint& ep) override {}
          fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }

@@ -36,7 +36,9 @@
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
-#undef  DEFAULT_LOGGER 
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
 #define DEFAULT_LOGGER "p2p"
 
 namespace bts { namespace net {
@@ -161,6 +163,7 @@ namespace bts { namespace net {
     struct node_configuration
     {
       fc::ip::endpoint listen_endpoint;
+      bool wait_if_endpoint_is_busy;
       /**
        * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
        * on the network.  This is now a private key/public key pair, where the public key is used
@@ -172,7 +175,7 @@ namespace bts { namespace net {
 
  } } } // end namespace bts::net::detail
 
-FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)(private_key));
+FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)(wait_if_endpoint_is_busy)(private_key));
 
 // not sent over the wire, just reflected for logging
 FC_REFLECT_ENUM(bts::net::detail::peer_connection_direction, (unknown)(inbound)(outbound))
@@ -448,11 +451,12 @@ namespace bts { namespace net {
       // methods implementing node's public interface
       void set_node_delegate(node_delegate* del);
       void load_configuration(const fc::path& configuration_directory);
+      void listen_to_p2p_network();
       void connect_to_p2p_network();
       void add_node(const fc::ip::endpoint& ep);
       void connect_to(const fc::ip::endpoint& ep);
       void listen_on_endpoint(const fc::ip::endpoint& ep);
-      void listen_on_port(uint16_t port);
+      void listen_on_port(uint16_t port, bool wait_if_not_available);
       fc::ip::endpoint get_actual_listening_endpoint() const;
       std::vector<peer_status> get_connected_peers() const;
       uint32_t get_connection_count() const;
@@ -2344,6 +2348,8 @@ namespace bts { namespace net {
       {
         _node_configuration = detail::node_configuration();
         ilog("generating new private key for this node");
+        _node_configuration.listen_endpoint.set_port(BTS_NETWORK_DEFAULT_P2P_PORT);
+        _node_configuration.wait_if_endpoint_is_busy = false;
         _node_configuration.private_key = fc::ecc::private_key::generate();
       }
 
@@ -2363,12 +2369,12 @@ namespace bts { namespace net {
       }
     }
 
-    void node_impl::connect_to_p2p_network()
+    void node_impl::listen_to_p2p_network()
     {
       assert(_node_id != fc::ecc::public_key_data());
 
-      bool requested_endpoint_is_available = false;
-      if (_node_configuration.listen_endpoint.port() != 0)
+      fc::ip::endpoint listen_endpoint = _node_configuration.listen_endpoint;
+      if (listen_endpoint.port() != 0)
       {
         // if the user specified a port, we only want to bind to it if it's not already
         // being used by another application.  During normal operation, we set the
@@ -2383,37 +2389,43 @@ namespace bts { namespace net {
           try
           {
             fc::tcp_server temporary_server;
-            if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
-              temporary_server.listen(_node_configuration.listen_endpoint);
+            if (listen_endpoint.get_address() != fc::ip::address())
+              temporary_server.listen(listen_endpoint);
             else
-              temporary_server.listen(_node_configuration.listen_endpoint.port());
-            requested_endpoint_is_available = true;
+              temporary_server.listen(listen_endpoint.port());
             break;
           }
           catch (fc::exception&)
           {
-            std::ostringstream error_message;
-            //error_message << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port()
-            //              << ", retrying in a few seconds";
-            // I think the right thing to do here is to send the delegate an error_encountered message: 
-            //   _delegate->error_encountered(error_message.str(), fc::oexception());
-            // but we don't have the CLI fully initialized at this point, so the message gets discarded.
-            // for now, just cout it
-            if (first)
+            if (_node_configuration.wait_if_endpoint_is_busy)
             {
-              std::cout << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port() 
-                        << ", retrying in a few seconds\n";
-              std::cout << "You can wait for it to become available, or restart this program using\n";
-              std::cout << "the --p2p-port option to specify another port\n";
-              first = false;
+              std::ostringstream error_message;
+              //error_message << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port()
+              //              << ", retrying in a few seconds";
+              // I think the right thing to do here is to send the delegate an error_encountered message: 
+              //   _delegate->error_encountered(error_message.str(), fc::oexception());
+              // but we don't have the CLI fully initialized at this point, so the message gets discarded.
+              // for now, just cout it
+              if (first)
+              {
+                std::cout << "Unable to listen for connections on port " << listen_endpoint.port() 
+                          << ", retrying in a few seconds\n";
+                std::cout << "You can wait for it to become available, or restart this program using\n";
+                std::cout << "the --p2p-port option to specify another port\n";
+                first = false;
+              }
+              else
+              {
+                std::cout << "\nStill waiting for port " << listen_endpoint.port() << " to become available\n";
+              }
+              fc::usleep(fc::seconds(5));
             }
-            else
+            else // don't wait, just find a random port
             {
-              std::cout << "\nStill waiting for port " << _node_configuration.listen_endpoint.port() << " to become available\n";
+              wlog("unable to bind on the requested endpoint ${endpoint}, which probably means that endpoint is already in use",
+                   ("endpoint", listen_endpoint));
+              listen_endpoint.set_port(0);
             }
-            fc::usleep(fc::seconds(5));
-            //wlog("unable to bind on the requested endpoint ${endpoint}, which probably means that endpoint is already in use",
-            //     ("endpoint", _node_configuration.listen_endpoint));
           }
         }
       }
@@ -2421,57 +2433,29 @@ namespace bts { namespace net {
       {
         // if they requested a random port, we'll just assume it's available
         // (it may not be due to ip address, but we'll detect that in the next step)
-        requested_endpoint_is_available = true;
       }
 
-      bool server_is_listening = false;
       _tcp_server.set_reuse_address();
-      if (requested_endpoint_is_available)
+      try
       {
-        try
-        {
-          // first, try to listen on the exact ip & port the user specified, if any
-          if (_node_configuration.listen_endpoint.get_address() != fc::ip::address())
-            _tcp_server.listen(_node_configuration.listen_endpoint);
-          else
-            _tcp_server.listen(_node_configuration.listen_endpoint.port());
-          _actual_listening_endpoint = _tcp_server.get_local_endpoint();
-          ilog("listening for connections on endpoint ${endpoint} (our first choice)", 
-               ("endpoint", _actual_listening_endpoint));
-          server_is_listening = true;
-        }
-        catch (fc::exception& e)
-        {
-          if (_node_configuration.listen_endpoint.port() == 0)
-            FC_RETHROW_EXCEPTION(e, error, "unable to listen on ${endpoint}", ("endpoint",_node_configuration.listen_endpoint));
-        }
+        if (listen_endpoint.get_address() != fc::ip::address())
+          _tcp_server.listen(listen_endpoint);
+        else
+          _tcp_server.listen(listen_endpoint.port());
+        _actual_listening_endpoint = _tcp_server.get_local_endpoint();
+        ilog("listening for connections on endpoint ${endpoint} (our first choice)", 
+              ("endpoint", _actual_listening_endpoint));
       }
-      if (!server_is_listening)
+      catch (fc::exception& e)
       {
-        // we weren't allowed to bind to our preferred endpoint.  We'll assume that 
-        // the error was that we were unable to bind to the desired port, and just
-        // ask the OS to choose a random port for us.  If the user gave us an IP address,
-        // they're doing something advanced, just fail.
-        fc::ip::endpoint second_choice_endpoint(_node_configuration.listen_endpoint.get_address(), 0);
-        try
-        {
-          if (second_choice_endpoint.get_address() != fc::ip::address())
-            _tcp_server.listen(second_choice_endpoint);
-          else
-            _tcp_server.listen(second_choice_endpoint.port());
-          _actual_listening_endpoint = _tcp_server.get_local_endpoint();
-          ilog("listening for connections on endpoint ${endpoint} (NOT our first choice, which was ${desired_endpoint})",
-                ("endpoint", _actual_listening_endpoint)
-                ("desired_endpoint",_node_configuration.listen_endpoint));
-          server_is_listening = true;
-        }
-        catch (fc::exception& e)
-        {
-          FC_RETHROW_EXCEPTION(e, error, "unable to listen on ${endpoint}, and also unable to listen on my fallback choice of ${fallback_endpoint}.  giving up.", 
-                                ("endpoint", _node_configuration.listen_endpoint)
-                                ("fallback_endpoint", second_choice_endpoint));
-        }
+        FC_RETHROW_EXCEPTION(e, error, "unable to listen on ${endpoint}", ("endpoint",listen_endpoint));
       }
+    }
+
+    void node_impl::connect_to_p2p_network()
+    {
+      assert(_node_id != fc::ecc::public_key_data());
+
       _accept_loop_complete = fc::async( [=](){ accept_loop(); });
 
       _p2p_network_connect_loop_done = fc::async([=]() { p2p_network_connect_loop(); });
@@ -2622,9 +2606,10 @@ namespace bts { namespace net {
       save_node_configuration();
     }
 
-    void node_impl::listen_on_port(uint16_t port)
+    void node_impl::listen_on_port(uint16_t port, bool wait_if_not_available)
     {
       _node_configuration.listen_endpoint = fc::ip::endpoint(fc::ip::address(), port);
+      _node_configuration.wait_if_endpoint_is_busy = wait_if_not_available;
       save_node_configuration();
     }
 
@@ -2867,6 +2852,11 @@ namespace bts { namespace net {
     my->load_configuration(configuration_directory);
   }
 
+  void node::listen_to_p2p_network()
+  {
+    my->listen_to_p2p_network();
+  }
+
   void node::connect_to_p2p_network()
   {
     my->connect_to_p2p_network();
@@ -2887,9 +2877,9 @@ namespace bts { namespace net {
     my->listen_on_endpoint(ep);
   }
 
-  void node::listen_on_port(uint16_t port)
+  void node::listen_on_port(uint16_t port, bool wait_if_not_available)
   {
-    my->listen_on_port(port);
+    my->listen_on_port(port, wait_if_not_available);
   }
 
   fc::ip::endpoint node::get_actual_listening_endpoint() const

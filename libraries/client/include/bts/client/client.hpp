@@ -116,7 +116,8 @@ namespace bts { namespace client {
          void configure( const fc::path& configuration_directory );
 
          // functions for taking command-line parameters and passing them on to the p2p node
-         void listen_on_port( uint16_t port_to_listen );
+         void listen_on_port( uint16_t port_to_listen, bool wait_if_not_available);
+         void listen_to_p2p_network();
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
 
