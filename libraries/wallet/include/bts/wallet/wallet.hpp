@@ -381,6 +381,9 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
+         void set_gui_setting(const string& name, const variant& value);
+         fc::optional<variant> get_gui_setting(const string& name);
+
       private:
          unique_ptr<detail::wallet_impl> my;
    };

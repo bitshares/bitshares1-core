@@ -102,6 +102,11 @@ namespace bts{ namespace wallet {
    {
    }
 
+   void wallet_db::load_gui_settings( const fc::path& settings_file )
+   {
+      settings.open( settings_file, true );
+   }
+
    void wallet_db::open( const fc::path& wallet_file )
    { try {
       my->_records.open( wallet_file, true );
@@ -144,6 +149,7 @@ namespace bts{ namespace wallet {
 
    void wallet_db::close()
    {
+      settings.close();
       my->_records.close();
       keys.clear();
       wallet_master_key.reset();

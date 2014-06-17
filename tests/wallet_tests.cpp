@@ -566,3 +566,29 @@ BOOST_AUTO_TEST_CASE(regression_tests)
 {
   run_all_regression_tests(true);
 }
+
+#if 0
+#ifdef NDEBUG
+
+// A simple test that feeds a chain database from a normal client installation block-by-block to
+// the client directly, bypassing all networking code.
+BOOST_AUTO_TEST_CASE(replay_chain_database)
+{
+  fc::temp_directory client_dir;
+  //auto sim_network = std::make_shared<bts::net::simulated_network>();
+  bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>();
+  bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
+  client->open( client_dir.path() );
+  client->configure_from_command_line( 0, nullptr );
+  fc::future<void> client_done = client->start();
+
+  bts::blockchain::chain_database_ptr source_blockchain = std::make_shared<bts::blockchain::chain_database>();
+  fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares XTS");
+  source_blockchain->open(test_net_chain_dir / "chain", fc::optional<fc::path>());
+  for (unsigned block_num = 1; block_num <= source_blockchain->get_head_block_num(); ++block_num)
+    client->handle_message(bts::client::block_message(source_blockchain->get_block(block_num)), true);
+  client_done.wait();
+}
+
+#endif // NDEBUG
+#endif // 0
