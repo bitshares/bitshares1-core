@@ -820,16 +820,23 @@ namespace bts { namespace cli {
 
                               auto delegate_id = balance_rec.condition.delegate_id;
                               auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
-                              string sign = (delegate_id > 0 ? "+" : "-");
-                              if (delegate_rec->name.size() > 21)
+                              if( delegate_rec )
                               {
-                                  *_out << std::setw(25) << sign << delegate_rec->name.substr(0, 21) << "...";
+                                 string sign = (delegate_id > 0 ? "+" : "-");
+                                 if (delegate_rec->name.size() > 21)
+                                 {
+                                     *_out << std::setw(25) << (sign + delegate_rec->name.substr(0, 21) + "...");
+                                 }
+                                 else
+                                 {
+                                     *_out << std::setw(25) << (sign + delegate_rec->name);
+                                 }
+                                 break;
                               }
                               else
                               {
-                                  *_out << std::setw(25) << sign << delegate_rec->name;
+                                     *_out << std::setw(25) << "none";
                               }
-                              break;
                           }
                           default:
                           {
