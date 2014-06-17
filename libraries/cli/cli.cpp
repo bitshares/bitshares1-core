@@ -913,7 +913,7 @@ namespace bts { namespace cli {
                       if (current > max || current == total_delegates)
                           return;
                       if (current == num_active)
-                          *_out << "** Inactive:\n"; 
+                          *_out << "** Standby:\n";
 
                       *_out << std::setw(12) << delegate_rec.id;
                       *_out << std::setw(25) << delegate_rec.name;
