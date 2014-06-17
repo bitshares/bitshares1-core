@@ -67,6 +67,7 @@ namespace bts { namespace blockchain {
          virtual int64_t                    get_delegate_pay_rate()const                                    = 0;
          virtual share_type                 get_delegate_registration_fee()const;
          virtual share_type                 get_asset_registration_fee()const;
+         virtual share_type                 calculate_data_fee(size_t bytes) const;
 
          virtual int64_t                    get_required_confirmations()const;
          virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;

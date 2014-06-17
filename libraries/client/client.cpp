@@ -2173,7 +2173,7 @@ config load_config( const fc::path& datadir )
 
    signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name, 
                                                                  const string& to_account_name, 
-                                                                 const share_type& amount_to_withdraw,
+                                                                 double amount_to_withdraw,
                                                                  const string& memo_message )
    {
       auto trx = _wallet->withdraw_delegate_pay( delegate_name, 

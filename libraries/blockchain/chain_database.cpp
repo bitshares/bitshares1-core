@@ -1713,6 +1713,9 @@ namespace bts { namespace blockchain {
             if( iter.value().next_blocks.size() > 1 )
                 fork_blocks.push_back( get_block_num( iter.key() ) );
         }
+       
+        std::sort( fork_blocks.begin(), fork_blocks.end() );
+       
         return fork_blocks;
     }
 

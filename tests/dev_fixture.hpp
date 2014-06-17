@@ -172,12 +172,14 @@ struct chain_fixture
       clienta = std::make_shared<client>(sim_network);
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
-      clienta->start().wait();
+      clienta->set_daemon_mode(true);
+      clienta->start();
 
       clientb = std::make_shared<client>(sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
-      clientb->start().wait();
+      clientb->set_daemon_mode(true);
+      clientb->start();
 
       exec(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
       exec(clienta, "wallet_create walleta masterpassword 123456ddddaxxx123456789012345678901234567890");

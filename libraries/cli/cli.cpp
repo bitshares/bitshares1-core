@@ -916,7 +916,7 @@ namespace bts { namespace cli {
                       if (current > max || current == total_delegates)
                           return;
                       if (current == num_active)
-                          *_out << "** Inactive:\n"; 
+                          *_out << "** Standby:\n";
 
                       *_out << std::setw(12) << delegate_rec.id;
                       *_out << std::setw(25) << delegate_rec.name;
@@ -1364,8 +1364,8 @@ namespace bts { namespace cli {
       _rpc_server(client->get_rpc_server()),
       _command_script(command_script), 
       nullstream(boost::iostreams::null_sink()),
-      _out(output_stream ? output_stream : &nullstream),
       _quit(false),
+      _out(output_stream ? output_stream : &nullstream),
       show_raw_output(false),
       _daemon_mode(false)
     {

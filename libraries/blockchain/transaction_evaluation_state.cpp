@@ -68,7 +68,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::validate_required_fee()
    { try {
-      share_type required_fee = (_current_state->get_fee_rate() * trx.data_size())/1000;
+      share_type required_fee = _current_state->calculate_data_fee( trx.data_size() );
       auto fee_itr = balance.find( 0 );
       if( fee_itr == balance.end() ||
           fee_itr->second < required_fee ) 
@@ -82,7 +82,7 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::post_evaluate()
    { try {
-      required_fees += asset((fc::raw::pack_size(trx) * _current_state->get_fee_rate())/1000,0);
+      required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );

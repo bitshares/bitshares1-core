@@ -1333,7 +1333,7 @@ namespace bts { namespace wallet {
 
 
    signed_transaction   wallet::withdraw_delegate_pay( const string& delegate_name,
-                                                       share_type amount_to_withdraw,
+                                                       double real_amount_to_withdraw,
                                                        const string& withdraw_to_account_name,
                                                        const string& memo_message,
                                                        bool sign )
@@ -1342,6 +1342,9 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( is_receive_account( delegate_name ) );
        FC_ASSERT( is_valid_account( withdraw_to_account_name ) );
+
+       auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
+       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->get_precision()));
 
        auto delegate_account_record = my->_blockchain->get_account_record( delegate_name ); //_wallet_db.lookup_account( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
@@ -1377,10 +1380,20 @@ namespace bts { namespace wallet {
           delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
           // my->_wallet_db.cache_account( *delegate_account_record );
           sign_transaction( trx, required_signatures );
+
+          my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
+                                           required_fees.amount,
+                                           memo_message,
+                                           receiver_public_key,
+                                           bts::blockchain::now(),
+                                           bts::blockchain::now(),
+                                           delegate_private_key.get_public_key(),
+                                           vector<address>()//{to_address}
+                                           );
        }
        return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
-                                      ("amount_to_withdraw",amount_to_withdraw ) ) }
+                                      ("amount_to_withdraw",real_amount_to_withdraw ) ) }
 
    signed_transaction  wallet::transfer_asset_to_address( double real_amount_to_transfer,
                                                           const string& amount_to_transfer_symbol,
@@ -1656,7 +1669,7 @@ namespace bts { namespace wallet {
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
@@ -1712,7 +1725,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       auto size_fee = fc::raw::pack_size( data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
       auto from_account_address = get_account_public_key( issuer_account_name );
@@ -1820,7 +1833,7 @@ namespace bts { namespace wallet {
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -1875,7 +1888,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
-      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
+      required_fees += asset( my->_blockchain->calculate_data_fee( fc::raw::pack_size(trx) ), 0 );
 
       /*
       my->withdraw_to_transaction( required_fees.amount,
@@ -1930,7 +1943,7 @@ namespace bts { namespace wallet {
       trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
-      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(fc::raw::pack_size(trx)), 0 );
       
       /*
       my->withdraw_to_transaction( required_fees.amount,
