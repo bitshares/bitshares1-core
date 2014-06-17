@@ -65,6 +65,7 @@ fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
+fc::variant_object version_info();
 
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
@@ -111,22 +112,17 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
     exit(1);
   }
 
-   if (option_variables.count("help"))
-   {
-     std::cout << option_config << "\n";
-     exit(0);
-   }
-   /* //DLNFIX restore this code
-   if (option_variables.count("version"))
-   {
-     std::cout << "bts_xt_client built on " << __DATE__ << " at " << __TIME__ << "\n";
-     std::cout << "  bitshares_toolkit revision: " << bts::utilities::git_revision_sha << "\n";
-     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
-     std::cout << "                 fc revision: " << fc::git_revision_sha << "\n";
-     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
-     exit(0);
-   }
-   */
+  if (option_variables.count("help"))
+  {
+    std::cout << option_config << "\n";
+    exit(0);
+  }
+  else if (option_variables.count("version"))
+  {
+    std::cout << fc::json::to_pretty_string( bts::client::version_info() ) << "\n";
+    exit(0);
+  }
+
   return option_variables;
 }
 
@@ -908,6 +904,17 @@ config load_config( const fc::path& datadir )
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server() const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
+
+    fc::variant_object version_info()
+    {
+      fc::mutable_variant_object info;
+      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
+      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
+      info["fc_revision"]                    = fc::git_revision_sha;
+      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
+      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
+      return info;
+    }
 
     bts::blockchain::transaction_id_type detail::client_impl::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
@@ -1924,13 +1931,7 @@ config load_config( const fc::path& datadir )
 
     fc::variant_object client_impl::about() const
     {
-      fc::mutable_variant_object info;
-      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
-      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
-      info["fc_revision"]                    = fc::git_revision_sha;
-      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
-      return info;
+      return bts::client::version_info();
     }
 
     string client_impl::help(const string& command_name) const
