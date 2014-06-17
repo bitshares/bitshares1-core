@@ -34,6 +34,11 @@ namespace bts{ namespace blockchain {
    {
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
    }
+   
+   share_type    chain_interface::calculate_data_fee(size_t bytes) const
+   {
+      return (get_fee_rate() * bytes)/1000;
+   }
 
    bool chain_interface::is_valid_account_name( const std::string& str )const
    {
