@@ -1656,7 +1656,7 @@ namespace bts { namespace wallet {
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursivey'
@@ -1712,7 +1712,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       auto size_fee = fc::raw::pack_size( data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
       auto from_account_address = get_account_public_key( issuer_account_name );
@@ -1820,7 +1820,7 @@ namespace bts { namespace wallet {
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset((my->_blockchain->get_fee_rate() * size_fee)/1000 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -1875,7 +1875,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
-      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
+      required_fees += asset( my->_blockchain->calculate_data_fee( fc::raw::pack_size(trx) ), 0 );
 
       /*
       my->withdraw_to_transaction( required_fees.amount,
@@ -1930,7 +1930,7 @@ namespace bts { namespace wallet {
       trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
-      required_fees += asset( (fc::raw::pack_size(trx) * my->_blockchain->get_fee_rate())/1000, 0 );
+      required_fees += asset( my->_blockchain->calculate_data_fee(fc::raw::pack_size(trx)), 0 );
       
       /*
       my->withdraw_to_transaction( required_fees.amount,
