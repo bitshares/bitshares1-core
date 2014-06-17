@@ -225,7 +225,10 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 #elif defined( __APPLE__ )
      datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     datadir = fc::app_path() / "." BTS_BLOCKCHAIN_NAME;
+     std::string blockchain_name(BTS_BLOCKCHAIN_NAME);
+     std::string::iterator end_pos = std::remove(blockchain_name.begin(), blockchain_name.end(), ' ');
+     blockchain_name.erase(end_pos, blockchain_name.end());
+     datadir = fc::app_path() / ("." + blockchain_name);
 #endif
    }
    return datadir;
@@ -2279,6 +2282,11 @@ config load_config( const fc::path& datadir )
    std::vector<uint32_t> client_impl::blockchain_list_forks()const
    {
       return _chain_db->get_forks_list();
+   }
+
+   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
+   {
+      return _chain_db->get_delegate_block_stats( delegate_id );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
