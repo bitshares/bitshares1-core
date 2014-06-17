@@ -24,7 +24,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_first_bid",
@@ -48,7 +48,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_bid",
@@ -72,7 +72,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_bid",
@@ -96,7 +96,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "sell_domain",
@@ -115,7 +115,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "update_domain",
@@ -139,7 +139,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["json_authenticated", "wallet_open"]
+            "prerequisites": ["wallet_open"]
         }
     ]
 }

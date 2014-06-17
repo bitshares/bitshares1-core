@@ -631,12 +631,22 @@ void api_generator::generate_prerequisite_checks_to_stream(const method_descript
   else
     stream << "  // check all of this method's prerequisites\n";
 
-  if (method.prerequisites & bts::api::json_authenticated)
-    stream << "  verify_json_connection_is_authenticated(json_connection);\n";
-  if (method.prerequisites & bts::api::wallet_open)
-    stream << "  verify_wallet_is_open();\n";
   if (method.prerequisites & bts::api::wallet_unlocked)
+  {
+    stream << "  verify_json_connection_is_authenticated(json_connection);\n";
+    stream << "  verify_wallet_is_open();\n";
     stream << "  verify_wallet_is_unlocked();\n";
+  }
+  else if (method.prerequisites & bts::api::wallet_open)
+  {
+    stream << "  verify_json_connection_is_authenticated(json_connection);\n";
+    stream << "  verify_wallet_is_open();\n";
+  }
+  else if (method.prerequisites & bts::api::json_authenticated)
+  {
+    stream << "  verify_json_connection_is_authenticated(json_connection);\n";
+  }
+
   if (method.prerequisites & bts::api::connected_to_network)
     stream << "  verify_connected_to_network();\n";
 
