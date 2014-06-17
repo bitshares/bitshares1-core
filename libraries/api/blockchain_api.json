@@ -233,7 +233,7 @@
       },
       {
         "method_name": "blockchain_list_proposals",
-        "description": "Returns the list of delegates sorted by vote",
+        "description": "Returns the list of proposals",
         "return_type": "proposal_array",
         "parameters" : [
             {

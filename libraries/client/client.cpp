@@ -479,11 +479,18 @@ config load_config( const fc::path& datadir )
 
        vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
        {
+          FC_ASSERT( first >= 0 );
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
           int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
-          result.reserve( last-first );
+          
+          if ( last < first )
+          {
+             return result;
+          }
+          
+          result.reserve( last - first + 1);
 
           for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
