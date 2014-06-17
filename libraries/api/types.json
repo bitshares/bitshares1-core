@@ -105,6 +105,11 @@
         "default_example" : "192.168.1.5:5678"
       },
       {
+        "type_name" : "optional_variant",
+        "cpp_return_type" : "fc::optional<fc::variant>",
+        "default_example" : "TODO"
+      },
+      {
         "type_name" : "transaction_id",
         "cpp_return_type" : "bts::blockchain::transaction_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp",

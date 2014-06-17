@@ -984,6 +984,37 @@
          "return_type" : "string",
          "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_set_gui_setting",
+         "description" : "Set a property in the GUI settings DB",
+         "return_type" : "void",
+         "parameters"  : [
+            {
+                "name" : "name",
+                "type" : "string",
+                "description" : "the name of the setting to set"
+            },
+            {
+                "name" : "value",
+                "type" : "variant",
+                "description" : "the value to set the setting to"
+            }
+          ],
+          "prerequisites" : ["json_authenticated", "wallet_open"]
+      },
+      {
+         "method_name" : "wallet_get_gui_setting",
+         "description" : "Get the value of the given setting",
+         "return_type" : "optional_variant",
+         "parameters"  : [
+            {
+                "name" : "name",
+                "type" : "string",
+                "description" : "The name of the setting to fetch"
+            }
+          ],
+          "prerequisites" : ["json_authenticated", "wallet_open"]
       }
     ]
 }

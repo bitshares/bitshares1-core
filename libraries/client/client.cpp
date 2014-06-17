@@ -60,7 +60,7 @@ namespace bts { namespace client {
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 
 void print_banner();
-void configure_logging(const fc::path&);
+fc::logging_config create_default_logging_config(const fc::path&);
 fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
@@ -145,7 +145,7 @@ void print_banner()
     std::cout<<"================================================================\n";
 }
 
-void configure_logging(const fc::path& data_dir)
+fc::logging_config create_default_logging_config(const fc::path& data_dir)
 {
     fc::logging_config cfg;
     
@@ -163,6 +163,12 @@ void configure_logging(const fc::path& data_dir)
 
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
 
+    fc::file_appender::config ac_p2p;
+    ac_p2p.filename = data_dir / "p2p.log";
+    ac_p2p.truncate = false;
+    ac_p2p.flush    = false;
+
+    std::cout << "Logging P2P to file \"" << ac_p2p.filename.generic_string() << "\"\n";
 
     fc::variants  c  {
                 fc::mutable_variant_object( "level","debug")("color", "green"),
@@ -178,11 +184,13 @@ void configure_logging(const fc::path& data_dir)
 
     cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
     cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+    cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
     
     fc::logger_config dlc;
     dlc.level = fc::log_level::debug;
     dlc.name = "default";
     dlc.appenders.push_back("default");
+    dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
@@ -190,10 +198,16 @@ void configure_logging(const fc::path& data_dir)
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
     
+    fc::logger_config dlc_p2p;
+    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.name = "p2p";
+    dlc_p2p.appenders.push_back("p2p");
+    
     cfg.loggers.push_back(dlc);
     cfg.loggers.push_back(dlc_rpc);
+    cfg.loggers.push_back(dlc_p2p);
     
-    fc::configure_logging( cfg );
+    return cfg;
 }
 
 
@@ -254,6 +268,7 @@ config load_config( const fc::path& datadir )
       else
       {
          std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
+         cfg.logging = create_default_logging_config(datadir);
          fc::json::save_to_file( cfg, config_file );
       }
       return cfg;
@@ -419,7 +434,7 @@ config load_config( const fc::path& datadir )
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = fc::time_point_sec(fc::time_point::now());
+            auto now = bts::blockchain::now(); //fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
            // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
            //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
@@ -920,6 +935,16 @@ config load_config( const fc::path& datadir )
     void detail::client_impl::wallet_open(const string& wallet_name)
     {
       _wallet->open(wallet_name);
+    }
+
+    fc::optional<variant> detail::client_impl::wallet_get_gui_setting(const string& name)
+    {
+        return _wallet->get_gui_setting( name );
+    }
+    
+    void detail::client_impl::wallet_set_gui_setting(const string& name, const variant& value)
+    {
+        _wallet->set_gui_setting( name, value );
     }
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
@@ -1642,10 +1667,11 @@ config load_config( const fc::path& datadir )
       auto option_variables = parse_option_variables(argc,argv);
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
-      bts::client::configure_logging(datadir);
+
 
       auto cfg   = load_config(datadir);
       std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+      fc::configure_logging( cfg.logging );
 
       load_and_configure_chain_database(datadir, option_variables);
 
