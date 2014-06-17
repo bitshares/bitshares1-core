@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "client" 
+
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
@@ -483,11 +485,10 @@ config load_config( const fc::path& datadir )
           vector<block_record> result;
 
           int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
-          result.reserve( last-first );
+          //result.reserve( last-first );
 
           for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
-
 
           return result;
        }

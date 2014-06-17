@@ -1490,7 +1490,7 @@ namespace bts { namespace cli {
 #endif
     void cli_impl::display_status_message(const std::string& message)
     {
-      if( !_input_stream || !_out ) 
+      if( !_input_stream || !_out || _daemon_mode ) 
         return;
 #ifdef HAVE_READLINE
       char* saved_line = rl_copy_text(0, rl_end);
