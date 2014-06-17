@@ -253,7 +253,7 @@ namespace bts { namespace wallet {
                                               bool sign );
 
          signed_transaction  withdraw_delegate_pay( const string& delegate_name,
-                                                    share_type amount_to_withdraw,
+                                                    double amount_to_withdraw,
                                                     const string& withdraw_to_account_name,
                                                     const string& memo_message,
                                                     bool sign );

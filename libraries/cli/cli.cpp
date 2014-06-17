@@ -1361,8 +1361,8 @@ namespace bts { namespace cli {
       _rpc_server(client->get_rpc_server()),
       _command_script(command_script), 
       nullstream(boost::iostreams::null_sink()),
-      _out(output_stream ? output_stream : &nullstream),
       _quit(false),
+      _out(output_stream ? output_stream : &nullstream),
       show_raw_output(false),
       _daemon_mode(false)
     {

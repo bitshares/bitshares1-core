@@ -1333,7 +1333,7 @@ namespace bts { namespace wallet {
 
 
    signed_transaction   wallet::withdraw_delegate_pay( const string& delegate_name,
-                                                       share_type amount_to_withdraw,
+                                                       double real_amount_to_withdraw,
                                                        const string& withdraw_to_account_name,
                                                        const string& memo_message,
                                                        bool sign )
@@ -1342,6 +1342,9 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( is_receive_account( delegate_name ) );
        FC_ASSERT( is_valid_account( withdraw_to_account_name ) );
+
+       auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
+       share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->get_precision()));
 
        auto delegate_account_record = my->_blockchain->get_account_record( delegate_name ); //_wallet_db.lookup_account( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
@@ -1380,7 +1383,7 @@ namespace bts { namespace wallet {
        }
        return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
-                                      ("amount_to_withdraw",amount_to_withdraw ) ) }
+                                      ("amount_to_withdraw",real_amount_to_withdraw ) ) }
 
    signed_transaction  wallet::transfer_asset_to_address( double real_amount_to_transfer,
                                                           const string& amount_to_transfer_symbol,

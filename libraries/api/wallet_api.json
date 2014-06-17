@@ -851,7 +851,7 @@
             },
             {
                "name" : "amount_to_withdraw",
-               "type" : "share_type",
+               "type" : "real_amount",
                "description" : "the amount to withdraw"
             },
             {
