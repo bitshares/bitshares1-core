@@ -871,7 +871,7 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
     std::vector<bts::wallet::wallet_account_record> initial_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
     BOOST_CHECK(initial_receive_accounts.empty());
     std::string account_name("address_test_account");
-    bts::blockchain::public_key_type new_address = client_processes[i].rpc_client->wallet_account_create(account_name);
+    //bts::blockchain::public_key_type new_address = client_processes[i].rpc_client->wallet_account_create(account_name);
     std::vector<bts::wallet::wallet_account_record> final_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
     BOOST_CHECK(final_receive_accounts.size() == initial_receive_accounts.size() + 1);
     /*TODO RESTORE THIS CODE SOON!
@@ -1492,7 +1492,7 @@ BOOST_AUTO_TEST_CASE(fifty_node_test)
 
   import_initial_balances();
 
-  bts::blockchain::public_key_type receive_address = client_processes[0].rpc_client->wallet_account_create("test");
+  //bts::blockchain::public_key_type receive_address = client_processes[0].rpc_client->wallet_account_create("test");
   bts::blockchain::transaction_id_type transaction_id;// = client_processes[0].rpc_client->wallet_transfer(receive_address, 50);
   fc::usleep(fc::seconds(10));  // give the transaction time to propagate across the network
   std::vector<bts::net::message_propagation_data> propagation_data;
@@ -1611,7 +1611,7 @@ BOOST_AUTO_TEST_CASE(test_with_mild_churn)
       unsigned dest = transaction_destination_indices[i];
       std::ostringstream receive_note;
       receive_note << "from" << source << "inblock" << i;
-      bts::blockchain::public_key_type receive_address = client_processes[dest].rpc_client->wallet_account_create(receive_note.str());
+      //bts::blockchain::public_key_type receive_address = client_processes[dest].rpc_client->wallet_account_create(receive_note.str());
       std::ostringstream send_note;
       send_note << "to" << dest << "inblock" << i;
 
@@ -1725,9 +1725,9 @@ BOOST_AUTO_TEST_CASE( public_key_type_test )
     auto k1 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
     auto k2 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
     auto k3 = bts::blockchain::public_key_type( fc::ecc::private_key::generate().get_public_key() );
-    BOOST_CHECK_NO_THROW(k1 == bts::blockchain::public_key_type( std::string( k1 ) ));
-    BOOST_CHECK_NO_THROW(k2 == bts::blockchain::public_key_type( std::string( k2 ) ));
-    BOOST_CHECK_NO_THROW(k3 == bts::blockchain::public_key_type( std::string( k3 ) ));
+    BOOST_VERIFY(k1 == bts::blockchain::public_key_type( std::string( k1 ) ));
+    BOOST_VERIFY(k2 == bts::blockchain::public_key_type( std::string( k2 ) ));
+    BOOST_VERIFY(k3 == bts::blockchain::public_key_type( std::string( k3 ) ));
 }
 
 
