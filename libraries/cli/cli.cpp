@@ -555,6 +555,8 @@ namespace bts { namespace cli {
                 // unlock it and then retry the command
                 try
                 {
+                    if (_client->use_remote_server())
+                        return _client->get_rpc_client()->get_json_connection()->call<fc::variant>(command, arguments);
                     return _rpc_server->direct_invoke_method(command, arguments);
                 }
                 catch( const rpc_wallet_open_needed_exception& )
@@ -628,7 +630,7 @@ namespace bts { namespace cli {
 
             void interactive_open_wallet()
             {
-              if( _client->get_wallet()->is_open() ) 
+              if( _client->use_remote_server() || _client->get_wallet()->is_open() )
                 return;
 
               *_out << "A wallet must be open to execute this command. You can:\n";

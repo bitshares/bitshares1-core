@@ -3,6 +3,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/net/node.hpp>
 #include <bts/rpc/rpc_client_api.hpp>
+#include <bts/rpc/rpc_client.hpp>
 #include <bts/api/common_api.hpp>
 #include <bts/rpc_stubs/common_api_client.hpp>
 #include <fc/thread/thread.hpp>
@@ -14,10 +15,11 @@
 namespace bts { namespace rpc {
   class rpc_server;
   typedef std::shared_ptr<rpc_server> rpc_server_ptr;
+  typedef std::shared_ptr<rpc_client> rpc_client_ptr;
 } }
 namespace bts { namespace cli {
     class cli;
-}};
+}}
 
 namespace bts { namespace client {
 
@@ -106,8 +108,11 @@ namespace bts { namespace client {
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
          bts::rpc::rpc_server_ptr   get_rpc_server() const;
+         bts::rpc::rpc_client_ptr   get_rpc_client() const;
          bts::net::node_ptr         get_node()const;
          fc::path                   get_data_dir() const;
+
+         bool                       use_remote_server() const;
 
          // returns true if the client is connected to the network
          bool            is_connected() const;
