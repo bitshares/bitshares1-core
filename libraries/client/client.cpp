@@ -940,14 +940,14 @@ config load_config( const fc::path& datadir )
       _wallet->open(wallet_name);
     }
 
-    fc::optional<variant> detail::client_impl::wallet_get_gui_setting(const string& name)
+    fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
     {
-        return _wallet->get_gui_setting( name );
+        return _wallet->get_wallet_setting( name );
     }
     
-    void detail::client_impl::wallet_set_gui_setting(const string& name, const variant& value)
+    void detail::client_impl::wallet_set_wallet_setting(const string& name, const variant& value)
     {
-        _wallet->set_gui_setting( name, value );
+        _wallet->set_wallet_setting( name, value );
     }
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)

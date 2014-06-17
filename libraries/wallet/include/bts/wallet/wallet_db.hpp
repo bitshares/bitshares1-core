@@ -89,6 +89,10 @@ namespace bts { namespace wallet {
          owallet_balance_record lookup_balance( const balance_id_type& balance_id );
          owallet_key_record     lookup_key( const address& address )const;
 
+
+         owallet_setting_record   lookup_wallet_setting(const string& name)const;
+         void                     store_wallet_setting(const string& name, const variant& value);
+
          bool has_private_key( const address& a )const;
 
          void add_contact_account( const string& new_account_name, 
@@ -123,12 +127,7 @@ namespace bts { namespace wallet {
          unordered_map< balance_id_type,wallet_balance_record >           balances;
          map<string,wallet_asset_record>                                  assets;
          map<property_enum, wallet_property_record>                       properties;
-
-         /**
-          *  Used to store local configuration data for the GUI
-          */
-         bts::db::level_map<string,variant>                               settings;
-         void load_gui_settings( const fc::path& settings_file );
+         map< string, wallet_setting_record >                             settings;
 
          void remove_item( int32_t index );
       private:

@@ -18,7 +18,8 @@ namespace bts { namespace wallet {
       asset_record_type          = 5,
       balance_record_type        = 6,
       property_record_type       = 7,
-      market_order_type          = 8
+      market_order_type          = 8,
+      wallet_setting_type        = 9
    };
 
    struct generic_wallet_record
@@ -174,6 +175,14 @@ namespace bts { namespace wallet {
       unordered_set<transaction_id_type>   transactions;
    };
 
+   /* Used to store GUI preferences and such */
+   struct wallet_setting
+   {
+      wallet_setting(){};
+      wallet_setting(string name, variant value):name(name),value(value){};
+      string       name;
+      variant      value;
+   };
 
    /** cached blockchain data */
    typedef wallet_record< bts::blockchain::asset_record,   asset_record_type       >  wallet_asset_record;
@@ -186,6 +195,7 @@ namespace bts { namespace wallet {
    typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
    typedef wallet_record< market_order_status,             market_order_type       >  wallet_market_order_status_record;
+   typedef wallet_record< wallet_setting,                  wallet_setting_type     >  wallet_setting_record;
 
    typedef optional< wallet_transaction_record >            owallet_transaction_record;
    typedef optional< wallet_master_key_record >             owallet_master_key_record;
@@ -194,6 +204,7 @@ namespace bts { namespace wallet {
    typedef optional< wallet_property_record >               owallet_property_record;
    typedef optional< wallet_balance_record >                owallet_balance_record;
    typedef optional< wallet_market_order_status_record >    owallet_market_order_record;
+   typedef optional< wallet_setting_record >                owallet_setting_record;
 
 } } // bts::wallet
 
@@ -214,6 +225,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
                    (asset_record_type)
                    (property_record_type)
                    (market_order_type)
+                   (wallet_setting_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
@@ -235,6 +247,7 @@ FC_REFLECT( bts::wallet::transaction_data,
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(private_data) )
 
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
+FC_REFLECT( bts::wallet::wallet_setting, (name)(value) )
 
 
 
