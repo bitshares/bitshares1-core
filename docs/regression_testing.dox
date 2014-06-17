@@ -72,18 +72,32 @@ cd bitshares_toolkit\test
 wallet_tests  -t regression_tests_without_network
 @endcode
 
+Developing and Testing a Single Test
+------------------------------------
+The above command runs all the tests in the regresssion_tests directory. 
+While developing a test, you will often only want to run your test. 
+The easiest way to do this right now is to temporarily rename regression_tests dir to
+something like regression_tests_x, then create a new regresssion_tests dir and put just
+your test subdir inside it.
+
 Creating a Regression Test
 --------------------------
 To create a regression test, you need to do perform the following steps:
 
 1. Create a new test directory under test\regression_tests (e.g. my_test)
-2. record a log session using the bitshares client for each client that will
+2. Record a log session using the bitshares client for each client that will
    be involved in your test, and copy the console.log for that client to your
    test directory, renaming the log files so that they don't conflict with each other.
-3. Create a test.config in your test directory that specifies on each line the
+   You can add delays between the execution of commands in your script
+   using the "wait" command (e.g. "wait 60" to wait 60 seconds before executing the next command).   
+3. Generally, you should type "quit" as the last line in your script to avoid the test
+   stopping at a command prompt and prompting for console input after the script finishes.
+   However, you may want to temporarily remove the quit from a test when you'd like to
+   type commands to a client after it's finished executing the script to check the client's
+   status, just don't forget to add the quit back to the script afterwards.
+4. Create a test.config in your test directory that specifies on each line the
    command-line arguments for a single client. The first parameter on the line
    should be used to name each client. Try to use useful client names when possible.
    For example, if your test is performing a transfer from one client to another,
    you could name the first client "sender" and the second client "receiver".
-
 */

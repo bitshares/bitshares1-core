@@ -26,12 +26,11 @@ if( WIN32 )
 
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 
-    set( PLATFORM_SPECIFIC_LIBS WS2_32.lib iphlpapi.lib )
     set(CRYPTO_LIB)
 
     #looks like this flag can have different default on some machines.
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
 
     # Probably cmake has a bug and vcxproj generated for executable in Debug conf. has disabled debug info
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /DEBUG")
@@ -40,11 +39,11 @@ else( WIN32 )
     find_package( ZLIB REQUIRED )
     set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
 
-    find_library(READLINE_LIBRARIES NAMES readline)
-    find_path(READLINE_INCLUDE_DIR readline/readline.h)
-    if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)
-      MESSAGE(FATAL_ERROR "Could not find lib readline.")
-    endif()
+    #find_library(READLINE_LIBRARIES NAMES readline)
+    #find_path(READLINE_INCLUDE_DIR readline/readline.h)
+    #if(NOT READLINE_INCLUDE_DIR OR NOT READLINE_LIBRARIES)
+    #  MESSAGE(FATAL_ERROR "Could not find lib readline.")
+    #endif()
 
     if( APPLE )
         # Apple Specific Options Here
@@ -57,6 +56,9 @@ else( WIN32 )
         set( rt_library rt )
         set( pthread_library pthread)
         set( crypto_library crypto)
+        if ( FULL_STATIC_BUILD )
+          set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+        endif ( FULL_STATIC_BUILD )
     endif( APPLE )
 	set(Boost_USE_STATIC_LIBS ON)
 endif( WIN32 )

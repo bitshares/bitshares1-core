@@ -735,6 +735,16 @@ namespace bts { namespace cli {
                             << std::setw(15) << vote.second.votes_against <<"\n";
                   }
               }
+              else if (method_name == "list_errors")
+              {
+                  auto error_map = result.as<map<fc::time_point,fc::exception> >();
+                  for( auto item : error_map )
+                  {
+                     (*_out) << string(item.first) << " (" << fc::get_approximate_relative_time_string( item.first ) << " )\n";
+                     (*_out) << item.second.to_detail_string();
+                     (*_out) << "\n";
+                  }
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
                   auto tx_history_summary = result.as<vector<pretty_transaction>>();
