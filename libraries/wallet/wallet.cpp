@@ -1380,6 +1380,16 @@ namespace bts { namespace wallet {
           delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
           // my->_wallet_db.cache_account( *delegate_account_record );
           sign_transaction( trx, required_signatures );
+
+          my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
+                                           required_fees.amount,
+                                           memo_message,
+                                           receiver_public_key,
+                                           bts::blockchain::now(),
+                                           bts::blockchain::now(),
+                                           delegate_private_key.get_public_key(),
+                                           vector<address>()//{to_address}
+                                           );
        }
        return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
