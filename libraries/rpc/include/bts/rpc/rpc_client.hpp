@@ -23,16 +23,16 @@ namespace bts { namespace rpc {
   */
   class rpc_client : public bts::rpc_stubs::common_api_rpc_client
   {
-  public:
-    rpc_client();
-    virtual ~rpc_client();
+     public:
+       rpc_client();
+       virtual ~rpc_client();
 
-    void connect_to(const fc::ip::endpoint& remote_endpoint);
+       void connect_to(const fc::ip::endpoint& remote_endpoint);
 
-    bool login(const std::string& username, const std::string& password);
-    virtual fc::rpc::json_connection_ptr get_json_connection() const override;
-  private:
-    std::unique_ptr<detail::rpc_client_impl> my;
+       bool login(const std::string& username, const std::string& password);
+       virtual fc::rpc::json_connection_ptr get_json_connection() const override;
+     private:
+       std::unique_ptr<detail::rpc_client_impl> my;
   };
   typedef std::shared_ptr<rpc_client> rpc_client_ptr;
 } } // bts::rpc

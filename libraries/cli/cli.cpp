@@ -50,14 +50,14 @@ namespace bts { namespace cli {
       class cli_impl
       {
          public:
-            client_ptr                  _client;
-            rpc_server_ptr              _rpc_server;
-            bts::cli::cli*              _self;
-            fc::thread                  _cin_thread;
-
-            bool                        _quit;
-            bool                        show_raw_output;
-            bool                        _daemon_mode;
+            client_ptr                                      _client;
+            rpc_server_ptr                                  _rpc_server;
+            bts::cli::cli*                                  _self;
+            fc::thread                                      _cin_thread;
+                                                            
+            bool                                            _quit;
+            bool                                            show_raw_output;
+            bool                                            _daemon_mode;
 
             boost::iostreams::stream< boost::iostreams::null_sink > 
                 nullstream;
