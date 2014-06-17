@@ -211,7 +211,10 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 #elif defined( __APPLE__ )
      datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     datadir = fc::app_path() / "." BTS_BLOCKCHAIN_NAME;
+     std::string blockchain_name(BTS_BLOCKCHAIN_NAME);
+     std::string::iterator end_pos = std::remove(blockchain_name.begin(), blockchain_name.end(), ' ');
+     blockchain_name.erase(end_pos, blockchain_name.end());
+     datadir = fc::app_path() / ("." + blockchain_name);
 #endif
    }
    return datadir;
