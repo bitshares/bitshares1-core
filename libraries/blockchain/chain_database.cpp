@@ -552,6 +552,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
                                                                  const pending_chain_state_ptr& pending_state )
       {
+          auto now = bts::blockchain::now();
           /* Validate secret */
           {
              auto delegate_id = self->get_signing_delegate_id( produced_block.timestamp );
@@ -607,8 +608,8 @@ namespace bts { namespace blockchain {
                   delegate_rec->delegate_info->blocks_produced += 1;
 
                   block_stats.missed = false;
-                  /* TODO: Use actual block received time rather than now() */
-                  auto latency = (now() - produced_block.timestamp).to_seconds();
+                  /* TODO: Use actual block received time rather than time this function was called */
+                  auto latency = (now - produced_block.timestamp).to_seconds();
                   if( latency < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
                     block_stats.latency = fc::optional<uint32_t>( latency );
               }
