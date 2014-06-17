@@ -89,7 +89,7 @@ namespace bts { namespace blockchain {
 
       eval_state.sub_vote( pay_to_account_id, this->amount );
 
-      if( pay_to_account->delegate_info->pay_balance > this->amount )
+      if( pay_to_account->delegate_info->pay_balance < this->amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (pay_to_account)(amount) );
 
       pay_to_account->delegate_info->pay_balance -= this->amount;
