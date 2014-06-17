@@ -18,10 +18,8 @@ namespace bts { namespace net {
   {
     fc::time_point received_time;
     fc::time_point validated_time;
-    fc::uint160_t originating_peer;
+    node_id_t originating_peer;
   };
-
-  typedef fc::uint160_t node_id_t;
 
    /**
     *  @class node_delegate

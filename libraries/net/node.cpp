@@ -161,11 +161,18 @@ namespace bts { namespace net {
     struct node_configuration
     {
       fc::ip::endpoint listen_endpoint;
+      /**
+       * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
+       * on the network.  This is now a private key/public key pair, where the public key is used
+       * in place of the old random node-id.  The private part is unused, but might be used in
+       * the future to support some notion of trusted peers.
+       */
+      fc::ecc::private_key private_key;
     };
 
  } } } // end namespace bts::net::detail
 
-FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint));
+FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)(private_key));
 
 // not sent over the wire, just reflected for logging
 FC_REFLECT_ENUM(bts::net::detail::peer_connection_direction, (unknown)(inbound)(outbound))
@@ -602,7 +609,6 @@ namespace bts { namespace net {
       _user_agent_string("bts::net::node"),
       _rate_limiter(0, 0)
     {
-      fc::rand_pseudo_bytes(_node_id.data(), 20);
     }
 
     node_impl::~node_impl()
@@ -2313,26 +2319,36 @@ namespace bts { namespace net {
     {
       _node_configuration_directory = configuration_directory;
       fc::path configuration_file_name(_node_configuration_directory / NODE_CONFIGURATION_FILENAME);
+      bool node_configuration_loaded = false;
       if (fc::exists(configuration_file_name))
       {
         try
         {
           _node_configuration = fc::json::from_file(configuration_file_name).as<detail::node_configuration>();
           ilog("Loaded configuration from file ${filename}", ("filename", configuration_file_name));
+          node_configuration_loaded = true;
         }
         catch (fc::parse_error_exception& parse_error)
         {
           elog("malformed node configuration file ${filename}: ${error}", 
                ("filename", configuration_file_name)("error", parse_error.to_detail_string()));
-          throw;
         }
         catch (fc::exception& except)
         {
           elog("unexpected exception while reading configuration file ${filename}: ${error}", 
                ("filename", configuration_file_name)("error", except.to_detail_string()));
-          throw;
         }
       }
+
+      if (!node_configuration_loaded)      
+      {
+        _node_configuration = detail::node_configuration();
+        ilog("generating new private key for this node");
+        _node_configuration.private_key = fc::ecc::private_key::generate();
+      }
+
+      _node_id = _node_configuration.private_key.get_public_key().serialize();
+
       fc::path potential_peer_database_file_name(_node_configuration_directory / POTENTIAL_PEER_DATABASE_FILENAME);
       try
       {
@@ -2349,6 +2365,8 @@ namespace bts { namespace net {
 
     void node_impl::connect_to_p2p_network()
     {
+      assert(_node_id != fc::ecc::public_key_data());
+
       bool requested_endpoint_is_available = false;
       if (_node_configuration.listen_endpoint.port() != 0)
       {
@@ -2733,7 +2751,7 @@ namespace bts { namespace net {
 
     void node_impl::broadcast(const message& item_to_broadcast)
     {
-      // this version is called directly from the clien
+      // this version is called directly from the client
       message_propagation_data propagation_data{fc::time_point::now(), fc::time_point::now(), _node_id};
       broadcast(item_to_broadcast, propagation_data);
     }
