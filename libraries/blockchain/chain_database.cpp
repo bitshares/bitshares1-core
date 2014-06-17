@@ -503,7 +503,8 @@ namespace bts { namespace blockchain {
 
             fc::time_point_sec now = bts::blockchain::now();
             FC_ASSERT( block_data.timestamp <=  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2),
-                       "${t} < ${now}", ("t",block_data.timestamp)("now",now));
+                       "${block_data.timestamp} < ${now}", 
+                        ("block_data.timestamp",block_data.timestamp)("now",now));
 
             size_t block_size = block_data.block_size();
             auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );

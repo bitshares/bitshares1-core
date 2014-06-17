@@ -434,7 +434,7 @@ config load_config( const fc::path& datadir )
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = fc::time_point_sec(fc::time_point::now());
+            auto now = bts::blockchain::now(); //fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
            // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
            //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
