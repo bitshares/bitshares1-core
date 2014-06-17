@@ -355,8 +355,9 @@ namespace bts { namespace wallet {
             trx_rec.to_account = oissuer->owner_key;
             trx_rec.from_account = oissuer->owner_key;
             trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+            return true;
          }
-         return true;
+         return false;
       }
       bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, 
                                           const issue_asset_operation& op  )
@@ -562,18 +563,17 @@ namespace bts { namespace wallet {
       if ( !fc::exists( get_data_directory() / wallet_name ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("name", wallet_name) );
       open_file( get_data_directory() / wallet_name );
-      my->_wallet_db.load_gui_settings( get_data_directory() / "gui_settings" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
   
-   void wallet::set_gui_setting(const string& name, const variant& value)
+   void wallet::set_wallet_setting(const string& name, const variant& value)
    {
-       my->_wallet_db.settings.store(name, value);
+       my->_wallet_db.store_wallet_setting(name, value);
    }
 
-   fc::optional<variant> wallet::get_gui_setting(const string& name)
+   fc::optional<variant> wallet::get_wallet_setting(const string& name)
    {
-       return my->_wallet_db.settings.fetch_optional(name);
+       return my->_wallet_db.lookup_wallet_setting(name);
    }
 
    void wallet::open_file( const path& wallet_filename )

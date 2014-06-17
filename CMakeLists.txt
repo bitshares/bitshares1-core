@@ -26,7 +26,6 @@ if( WIN32 )
 
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 
-    set( PLATFORM_SPECIFIC_LIBS WS2_32.lib iphlpapi.lib )
     set(CRYPTO_LIB)
 
     #looks like this flag can have different default on some machines.

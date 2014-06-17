@@ -225,7 +225,10 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 #elif defined( __APPLE__ )
      datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     datadir = fc::app_path() / "." BTS_BLOCKCHAIN_NAME;
+     std::string blockchain_name(BTS_BLOCKCHAIN_NAME);
+     std::string::iterator end_pos = std::remove(blockchain_name.begin(), blockchain_name.end(), ' ');
+     blockchain_name.erase(end_pos, blockchain_name.end());
+     datadir = fc::app_path() / ("." + blockchain_name);
 #endif
    }
    return datadir;
@@ -937,14 +940,14 @@ config load_config( const fc::path& datadir )
       _wallet->open(wallet_name);
     }
 
-    fc::optional<variant> detail::client_impl::wallet_get_gui_setting(const string& name)
+    fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
     {
-        return _wallet->get_gui_setting( name );
+        return _wallet->get_wallet_setting( name );
     }
     
-    void detail::client_impl::wallet_set_gui_setting(const string& name, const variant& value)
+    void detail::client_impl::wallet_set_wallet_setting(const string& name, const variant& value)
     {
-        _wallet->set_gui_setting( name, value );
+        _wallet->set_wallet_setting( name, value );
     }
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
@@ -2255,6 +2258,22 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
+   void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
+   {
+      map<fc::time_point, fc::exception> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value();
+         ++itr;
+      }
+      if (path != "")
+      {
+         std::ofstream fileout( path.c_str() );
+         fileout << fc::json::to_pretty_string( result );
+      }
+   }
+
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {
       return _chain_db->export_fork_graph( start_block, end_block, filename );
@@ -2263,6 +2282,11 @@ config load_config( const fc::path& datadir )
    std::vector<uint32_t> client_impl::blockchain_list_forks()const
    {
       return _chain_db->get_forks_list();
+   }
+
+   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
+   {
+      return _chain_db->get_delegate_block_stats( delegate_id );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
