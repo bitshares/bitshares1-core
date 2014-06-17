@@ -4,7 +4,7 @@ endif()
 
 add_executable( client_rpc_tests client_rpc_tests.cpp )
 
-target_link_libraries( client_rpc_tests bitcoin bts_net bts_cli bts_blockchain bts_wallet fc ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS}  ${rt_library})
+target_link_libraries( client_rpc_tests bitcoin bts_net bts_cli bts_blockchain bts_wallet fc )
 
 
 
