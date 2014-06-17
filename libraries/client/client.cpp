@@ -2255,6 +2255,22 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
+   void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
+   {
+      map<fc::time_point, fc::exception> result;
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         result[itr.key()] = itr.value();
+         ++itr;
+      }
+      if (path != "")
+      {
+         std::ofstream fileout( path.c_str() );
+         fileout << fc::json::to_pretty_string( result );
+      }
+   }
+
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {
       return _chain_db->export_fork_graph( start_block, end_block, filename );
