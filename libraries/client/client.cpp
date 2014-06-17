@@ -1673,7 +1673,7 @@ config load_config( const fc::path& datadir )
 
 
       auto cfg   = load_config(datadir);
-      std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
       fc::configure_logging( cfg.logging );
 
       load_and_configure_chain_database(datadir, option_variables);
@@ -2287,6 +2287,11 @@ config load_config( const fc::path& datadir )
    std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
    {
       return _chain_db->get_delegate_block_stats( delegate_id );
+   }
+
+   void client_impl::wallet_toggle_delegate_block_production( const string& delegate_name, bool enable )
+   {
+      _wallet->toggle_delegate_block_production( delegate_name, enable );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const

@@ -630,7 +630,7 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::unlock( const string& password, microseconds timeout )
+   void wallet::unlock( const string& password, const fc::microseconds& timeout )
    { try {
       FC_ASSERT( password.size() >= BTS_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
@@ -1001,7 +1001,7 @@ namespace bts { namespace wallet {
 
 
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
-                             scan_progress_callback progress_callback )
+                             const scan_progress_callback& progress_callback )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1102,31 +1102,43 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   void wallet::toggle_delegate_block_production( const string& delegate_name, bool enable )
+   {
+      auto delegate_record = get_account( delegate_name );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+
+      delegate_record->block_production_enabled = enable;
+      my->_wallet_db.store_record( *delegate_record );
+   }
 
    /**
     *  If this wallet has any delegate keys, this method will return the time
     *  at which this wallet may produce a block.
     */
-   fc::time_point_sec wallet::next_block_production_time()const
+   fc::time_point_sec wallet::next_block_production_time()
    { try {
-      fc::time_point_sec now = bts::blockchain::now();
-      uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint32_t next_block_time = interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      if( next_block_time == my->_blockchain->now().sec_since_epoch() )
-         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-
-      uint32_t last_block_time = next_block_time + BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-
       auto sorted_delegates = my->_blockchain->get_active_delegates();
-      while( next_block_time < last_block_time )
+
+      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+      if( next_block_time == my->_blockchain->now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
+      for( ; next_block_time < last_block_time; next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
       {
-         auto delegate_key = my->_blockchain->get_signing_delegate_key( fc::time_point_sec( next_block_time ), sorted_delegates );
+         auto delegate_id = my->_blockchain->get_signing_delegate_id( next_block_time, sorted_delegates );
+         auto delegate_record = my->_wallet_db.lookup_account( delegate_id );
+         if( !delegate_record.valid() ) continue;
 
-         auto key = my->_wallet_db.lookup_key( delegate_key );
-         if( key.valid() && key->has_private_key() )
-            return fc::time_point_sec( next_block_time ); 
+         delegate_record = get_account( delegate_record->name );
+         FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
-         next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+         if( delegate_record->block_production_enabled )
+         {
+             auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
+             if( key.valid() && key->has_private_key() )
+                return next_block_time;
+         }
       }
       return fc::time_point_sec();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1135,14 +1147,15 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_unlocked() );
       auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
-      auto delegate_rec = my->_blockchain->get_account_record( signing_delegate_id );
+      auto delegate_record = my->_blockchain->get_account_record( signing_delegate_id );
+      FC_ASSERT( delegate_record.valid() && delegate_record->delegate_info.valid() );
 
       auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
       auto delegate_key = get_private_key( address(delegate_pub_key) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
       header.previous_secret = my->get_secret( 
-                                      delegate_rec->delegate_info->last_block_num_produced,
+                                      delegate_record->delegate_info->last_block_num_produced,
                                       delegate_key );
 
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
