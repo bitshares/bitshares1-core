@@ -2239,6 +2239,11 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_forks_list();
    }
 
+   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
+   {
+      return _chain_db->get_delegate_block_stats( delegate_id );
+   }
+
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
    {
         return _p2p_node->get_potential_peers();

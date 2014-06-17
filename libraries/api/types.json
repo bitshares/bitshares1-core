@@ -496,6 +496,11 @@
           "type_name" : "uint32_t_array",
           "container_type" : "array",
           "contained_type" : "uint32_t"
+      },
+      {
+        "type_name" : "delegate_block_stats_map",
+        "cpp_return_type" : "std::map<uint32_t, bts::blockchain::delegate_block_stats>",
+        "cpp_include_file" : "bts/blockchain/account_record.hpp"
       }
     ]
 }
