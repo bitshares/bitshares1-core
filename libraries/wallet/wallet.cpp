@@ -355,8 +355,9 @@ namespace bts { namespace wallet {
             trx_rec.to_account = oissuer->owner_key;
             trx_rec.from_account = oissuer->owner_key;
             trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+            return true;
          }
-         return true;
+         return false;
       }
       bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, 
                                           const issue_asset_operation& op  )
