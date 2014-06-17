@@ -74,7 +74,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
                               ("input-log", program_options::value<std::string>(), 
                                  "log file with CLI commands to execute at startup")
-                              ("help", "display this help message")
+                              ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), 
                                   "set the maximum number of peers this node will accept at any one time")
@@ -93,7 +93,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a "
                                  "fresh copy of the entire blockchain from the network")
-                              ("version", "print the version information for bts_xt_client")
+                              ("version", "print version information and exit")
                               ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), 
                                   "Limit total bandwidth to this many bytes per second");
 
@@ -245,7 +245,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
     catch (const fc::exception& e)
     {
       std::cout << "Error while deleting old copy of the blockchain: " << e.what() << "\n";
-      std::cout << "You may need to manually delete your blockchain and relaunch bitshares_client\n";
+      std::cout << "You may need to manually delete your blockchain and relaunch the client\n";
     }
   }
   else

@@ -144,7 +144,7 @@ run_cmake.bat (or run_cmake_x64.bat for 64bit development)
 * Set Configuration to Win32 - RelWithDebInfo
 * *Build Solution*
 
- This will build bts_xt_server.exe, bts_xt_client.exe, and various unit tests.
+ This will build the client executable and various unit tests.
 
 Or you can build the `INSTALL` target in Visual Studio which will
 copy all of the necessary files into your `D:\BitShares\install`
