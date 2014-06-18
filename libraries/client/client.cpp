@@ -2297,9 +2297,9 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_block_stats( delegate_id );
    }
 
-   void client_impl::wallet_toggle_delegate_block_production( const string& delegate_name, bool enable )
+   void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
    {
-      _wallet->toggle_delegate_block_production( delegate_name, enable );
+      _wallet->enable_delegate_block_production( delegate_name, enable );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const

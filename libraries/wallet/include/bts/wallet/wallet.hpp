@@ -151,7 +151,8 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         void toggle_delegate_block_production( const string& delegate_id, bool enable );
+         void enable_delegate_block_production( const string& delegate_id, 
+                                                bool enable = true );
          /**
           *  If this wallet has any delegate keys, this method will return the time
           *  at which this wallet may produce a block.

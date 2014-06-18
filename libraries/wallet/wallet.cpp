@@ -1102,13 +1102,13 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::toggle_delegate_block_production( const string& delegate_name, bool enable )
+   void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       auto delegate_record = get_account( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
       delegate_record->block_production_enabled = enable;
-      my->_wallet_db.store_record( *delegate_record );
+      my->_wallet_db.cache_account( *delegate_record ); //store_record( *delegate_record );
    }
 
    /**
