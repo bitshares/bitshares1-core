@@ -2866,6 +2866,11 @@ namespace bts { namespace wallet {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
           {
+
+             auto oacct_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
+             if ( !(account_name == "" || (oacct_rec.valid() && oacct_rec->name == account_name)) )
+                 continue;
+
              asset bal = b.second.get_balance();
              if( bal.asset_id == 0 )
              {
