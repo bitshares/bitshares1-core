@@ -2297,6 +2297,15 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_block_stats( delegate_id );
    }
 
+   string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
+   {
+      auto block_header = _chain_db->get_block_header( block_number );
+      auto signee = block_header.signee();
+      auto delegate_record = _chain_db->get_account_record( signee );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return delegate_record->name;
+   }
+
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       _wallet->enable_delegate_block_production( delegate_name, enable );
