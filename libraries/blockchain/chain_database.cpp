@@ -1716,8 +1716,15 @@ namespace bts { namespace blockchain {
         std::vector<uint32_t> fork_blocks;
         for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
         {
-            if( iter.value().next_blocks.size() > 1 )
-                fork_blocks.push_back( get_block_num( iter.key() ) );
+            try
+            {
+                if( iter.value().next_blocks.size() > 1 )
+                    fork_blocks.push_back( get_block_num( iter.key() ) );
+            }
+            catch( ... )
+            {
+                wlog( "error fetching block num of block ${b} while building fork list", ("b",iter.key()));
+            }
         }
         return fork_blocks;
     }
