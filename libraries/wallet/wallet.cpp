@@ -1021,6 +1021,7 @@ namespace bts { namespace wallet {
          my->scan_block( block_num, account_priv_keys );
          if( progress_callback )
             progress_callback( block_num, min_end );
+         my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
       }
 
       for( auto acct : my->_wallet_db.accounts )
