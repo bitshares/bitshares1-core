@@ -977,6 +977,55 @@ namespace bts { namespace cli {
                   }
                   *_out << "\n";
               }
+              else if (method_name.find("blockchain_get_account_record") != std::string::npos)
+              {
+                  // Pretty print of blockchain_get_account_record{,_by_id}
+                  bts::blockchain::account_record record;
+                  try
+                  {
+                      record = result.as<bts::blockchain::account_record>();
+                  }
+                  catch (...)
+                  {
+                      *_out << "No record found.\n";
+                      return;
+                  }
+                  *_out << "Record for '" << record.name << "' (ID " << record.id <<")\n";
+                  *_out << "Registered on " <<
+                           boost::posix_time::to_simple_string(
+                               boost::posix_time::from_time_t(time_t(record.registration_date.sec_since_epoch()))) << "\n";
+                  *_out << "Last update was " << fc::get_approximate_relative_time_string(record.last_update) << "\n";
+                  *_out << "Owner's key: " << std::string(record.owner_key) << "\n";
+                  *_out << "History of active keys:\n";
+
+                  for (auto key : record.active_key_history)
+                      *_out << "  Key " << std::string(key.second) << " last used " << fc::get_approximate_relative_time_string(key.first) << "\n";
+
+                  if (record.is_delegate())
+                  {
+                      *_out << "This account is a delegate.\n";
+                      //TODO: compute votes for/against as a percentage
+                      *_out << "  Votes for:" << std::right << std::fixed << std::setprecision(4) << std::setw(20)
+                            << (double(record.votes_for())*100.0 / _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply) << "%\n"
+                            << "    against:" << std::setw(20)
+                            << (double(record.votes_against())*100.0 / _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply)
+                            << std::left << "%\n"
+                            << "  Blocks produced:" << std::right << std::setw(14) << record.delegate_info->blocks_produced << "\n"
+                            << "           missed:" << std::setw(14) << record.delegate_info->blocks_missed << "\n"
+                            << "   Last block produced was Block #" << record.delegate_info->last_block_num_produced << "\n"
+                            << "  Total pay: " << _client->get_chain()->to_pretty_asset(asset(record.delegate_pay_balance())) << "\n"
+                            << "  Hash of next secret number: " << record.delegate_info->next_secret_hash.str() << "\n";
+                  }
+                  else
+                  {
+                      *_out << "This accout is not a delegate.\n";
+                  }
+
+                  if(record.meta_data)
+                      *_out << "Meta data:\n" << fc::json::to_pretty_string(record.meta_data);
+                  else
+                      *_out << "No meta data.\n";
+              }
               else if (method_name == "blockchain_list_proposals")
               {
                   auto proposals = result.as<vector<proposal_record>>();
