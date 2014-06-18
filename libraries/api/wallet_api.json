@@ -973,7 +973,8 @@
             {
                 "name" :  "account_name",
                 "type" : "account_name",
-                "description" : "the account to report votes on"
+                "description" : "the account to report votes on, or empty for all accounts"
+                "default_value" : ""
             }
           ],
           "aliases" : ["votes"],

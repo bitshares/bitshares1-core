@@ -237,18 +237,26 @@ namespace bts { namespace cli {
                   else
                   {
                   #ifdef HAVE_READLINE 
-                     char* line_read = nullptr;
-                     _out->flush(); //readline doesn't use cin, so we must manually flush _out
-                     line_read = readline(prompt.c_str());
-                     if(line_read && *line_read)
-                         add_history(line_read);
-                     if( line_read == nullptr )
-                        FC_THROW_EXCEPTION( fc::eof_exception, "" );
-                     line = line_read;
-                     free(line_read);
+                    if (_input_stream == &std::cin)
+                    {
+                      char* line_read = nullptr;
+                      _out->flush(); //readline doesn't use cin, so we must manually flush _out
+                      line_read = readline(prompt.c_str());
+                      if(line_read && *line_read)
+                          add_history(line_read);
+                      if( line_read == nullptr )
+                         FC_THROW_EXCEPTION( fc::eof_exception, "" );
+                      line = line_read;
+                      free(line_read);
+                    }
+                  else
+                    {
+                      *_out <<prompt;
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    }
                   #else
-                     *_out <<prompt;
-                     _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    *_out <<prompt;
+                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
                   if (_input_stream_log)
                     {
@@ -1172,6 +1180,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
                 //*_out << fc::json::to_string( account_records ) << "\n";
@@ -1203,6 +1212,10 @@ namespace bts { namespace cli {
                     }
 
                     *_out << std::setw( 15 ) << acct.trust_level;
+                    if (acct.is_delegate())
+                        *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
+                    else
+                        *_out << std::setw( 25 ) << "N/A";
                     *_out << "\n";
                 }
             }
