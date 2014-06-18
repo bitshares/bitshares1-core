@@ -1,11 +1,13 @@
 {
     "category": "DNS Methods",
-    "methods": [
+    "methods":
+    [
         {
             "method_name": "domain_pre_bid",
             "description": "Submit a hash of a bid to stop someone from reverse-sniping it",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -22,16 +24,14 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_first_bid",
             "description": "A first bid, which must be linked to a pre_bid",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -48,16 +48,14 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_bid",
             "description": "Place a bid on a domain that is already in an auction.",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -74,16 +72,14 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "domain_bid",
             "description": "Place a bid on a domain that is already in an auction.",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -100,16 +96,14 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "sell_domain",
             "description": "Start an auction for a domain you own at a particular price.",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -121,16 +115,14 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         },
         {
             "method_name": "update_domain",
             "description": "Update a domain's value and/or owner.",
             "return_type": "transaction_id_type",
-            "parameters": [
+            "parameters": 
+            [
                 {
                     "name": "domain_name",
                     "type": "string",
@@ -147,10 +139,7 @@
                     "description": ""
                 }
             ],
-            "prerequisites": [
-                "json_authenticated",
-                "wallet_open"
-            ]
+            "prerequisites": ["wallet_open"]
         }
     ]
 }
