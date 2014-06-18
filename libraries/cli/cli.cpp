@@ -113,6 +113,8 @@ namespace bts { namespace cli {
             void parse_and_execute_interactive_command(string command, 
                                                        fc::istream_ptr argument_stream )
             { 
+              if( command.size() == 0 )
+                 return;
               if (command == "enable_raw")
               {
                   show_raw_output = true;
