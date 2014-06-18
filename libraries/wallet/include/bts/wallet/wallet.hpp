@@ -103,7 +103,7 @@ namespace bts { namespace wallet {
           */
          ///@{
          void     unlock( const string& password,
-                          microseconds timeout = microseconds::maximum() );
+                          const fc::microseconds& timeout = microseconds::maximum() );
          void     lock();
          void     change_passphrase(const string& new_passphrase);
 
@@ -117,7 +117,7 @@ namespace bts { namespace wallet {
 
          void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
-                              scan_progress_callback cb = scan_progress_callback() );
+                               const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;
 
          ///@{ account management
@@ -151,11 +151,13 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         void enable_delegate_block_production( const string& delegate_id, 
+                                                bool enable = true );
          /**
           *  If this wallet has any delegate keys, this method will return the time
           *  at which this wallet may produce a block.
           */
-         time_point_sec next_block_production_time()const;
+         time_point_sec next_block_production_time();
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void               sign_block( signed_block_header& header )const;
@@ -253,7 +255,7 @@ namespace bts { namespace wallet {
                                               bool sign );
 
          signed_transaction  withdraw_delegate_pay( const string& delegate_name,
-                                                    share_type amount_to_withdraw,
+                                                    double amount_to_withdraw,
                                                     const string& withdraw_to_account_name,
                                                     const string& memo_message,
                                                     bool sign );
@@ -381,8 +383,8 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
-         void set_gui_setting(const string& name, const variant& value);
-         fc::optional<variant> get_gui_setting(const string& name);
+         void set_wallet_setting(const string& name, const variant& value);
+         fc::optional<variant> get_wallet_setting(const string& name);
 
       private:
          unique_ptr<detail::wallet_impl> my;

@@ -104,6 +104,7 @@ namespace bts { namespace rpc {
          {
              fc::time_point begin_time = fc::time_point::now();
              fc_ilog( fc::logger::get("rpc"), "Started ${path} ${method} at ${time}", ("path",r.path)("method",r.method)("time",begin_time));
+             elog( "${r}", ("r",r.path) );
              fc::http::reply::status_code status = fc::http::reply::OK;
 
              s.add_header( "Connection", "close" );
@@ -111,6 +112,7 @@ namespace bts { namespace rpc {
              try {
                 if( _config.rpc_user.size() )
                 {
+                   wlog( "CHECKING AUTH" );
                    auto auth_value = r.get_header( "Authorization" );
                    std::string username, password;
                    if( auth_value.size() )
@@ -121,18 +123,30 @@ namespace bts { namespace rpc {
                       username    = userpass.substr( 0, split );
                       password    = userpass.substr( split + 1 );
                    }
+
+                   ilog( "\n\n\n  username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
                    if( _config.rpc_user     != username ||
                        _config.rpc_password != password )
                    {
-                      fc_ilog( fc::logger::get("rpc"), "Unauthorized ${path}, username: ${user}", ("path",r.path)("user",username));
+                      //fc_ilog( fc::logger::get("rpc"), "Unauthorized ${path}, username: ${user}", ("path",r.path)("user",username));
+                      elog( "\n\n\n Unauthorized ${path}, username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
                       s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
                       std::string message = "Unauthorized";
-                      s.set_length( message.size() );
+
                       s.set_status( fc::http::reply::NotAuthorized );
+                      s.set_length( message.size() );
                       s.write( message.c_str(), message.size() );
+                      //elog( "UNAUTHORIZED ${r} ${cfg}  ${user} : ${provided}", ("r",r.path)("cfg",_config)("provided",password)("user",username)  );
                       return;
                    }
+                   else
+                   {
+                    wlog( "NOT CHECKING AUTH" );
+                   }
                 }
+                ilog( "rpc_user.size: ${config}", ("config",_config.rpc_user.size() ) );
+
+                wlog( "providing data anyway???" );
 
                 fc::string path = r.path;
                 auto pos = path.find( '?' );
@@ -146,6 +160,7 @@ namespace bts { namespace rpc {
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
                 if( r.path == fc::path("/rpc") )
                 {
+                    elog( "RPC ${r}", ("r",r.path) );
                     status = handle_http_rpc( r, s );
                 }
                 else if( _http_file_callback )
@@ -217,6 +232,7 @@ namespace bts { namespace rpc {
          {
                 fc::http::reply::status_code status = fc::http::reply::OK;
                 std::string str(r.body.data(),r.body.size());
+                wlog( "RPC: ${r}", ("r",str) );
                 fc::string method_name;
                 try {
                    auto rpc_call = fc::json::from_string( str ).get_object();
