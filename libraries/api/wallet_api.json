@@ -1,1039 +1,1076 @@
 {
-  "category": "Wallet Methods",
-  "methods" :
-    [
-      {
-        "method_name": "wallet_get_info",
-        "description": "Extra information about the wallet.",
-        "return_type": "json_object",
-        "parameters" : 
-          [
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_open_file",
-        "description": "Opens the wallet at the given path",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "wallet_file", 
-              "type" : "filename", 
-              "description" : "the full path and filename of the wallet to open",
-              "example" : "/path/to/wallet.dat"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_open",
-        "description": "Opens the wallet of the given name",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "wallet_name", 
-              "type" : "wallet_name", 
-              "description" : "the name of the wallet to open"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"],
-        "aliases" : ["open"]
-      },
-      {
-        "method_name": "wallet_create",
-        "description": "Creates a wallet with the given name",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "wallet_name", 
-              "type" : "wallet_name", 
-              "description" : "name of the wallet to create"
-            },
-            { 
-              "name" : "new_passphrase", 
-              "type" : "new_passphrase", 
-              "description" : "a passphrase for encrypting the wallet"
-            },
-            { 
-              "name" : "brain_key", 
-              "type" : "new_passphrase", 
-              "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
-              "default_value" : ""
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_get_name",
-        "description": "Returns the wallet name passed to wallet_open",
-        "return_type": "optional_wallet_name",
-        "parameters" : [],
-        "is_const" : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
-        "method_name": "wallet_import_private_key",
-        "description": "Loads the private key into the specified account",
-        "return_type": "void",
-        "parameters" : [
-           {
-              "name" : "wif_key",
-              "type" : "wif_private_key",
-              "description" : "A private key in bitcoin Wallet Import Format (WIF)"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the name of the account the key should be imported into, if null then the key must belong to an active account",
-              "default_value" : null
-           },
-           {
-              "name" : "create_new_account",
-              "type" : "bool",
-              "description" : "If true, the wallet will attempt to create a new account for the name provided rather than import the key into an existing account",
-              "default_value" : false
-           },
-           {
-              "name" : "rescan",
-              "type" : "bool",
-              "description" : "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
-              "default_value" : true
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["import_key"]
-      },
-      {
-        "method_name": "wallet_import_bitcoin",
-        "description": "Imports a bitcoin wallet",
-        "return_type": "void",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the path to the bitcoin wallet you would like to import."
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the bitcoin wallet's password, not your bitshares wallet password."
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-        "method_name": "wallet_import_armory",
-        "description": "Imports a armory wallet",
-        "return_type": "void",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the armory wallet"
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the wallet's password"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-        "method_name": "wallet_import_electrum",
-        "description": "Imports a electrum wallet",
-        "return_type": "void",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the electrum wallet"
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the wallet's password"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-        "method_name": "wallet_import_multibit",
-        "description": "Imports a multibit wallet",
-        "return_type": "void",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the multibit wallet"
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the wallet's password"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-          "method_name": "wallet_import_keyhotee",
-          "description": "Create the key from keyhotee config and import it to the wallet, creating a new account using this key",
-          "return_type": "void",
-          "parameters" : [
-          {
-              "name" : "firstname",
-              "type" : "name",
-              "description" : "first name in keyhotee profile config, for salting the seed of private key"
-          },
-          {
-              "name" : "middlename",
-              "type" : "name",
-              "description" : "middle name in keyhotee profile config, for salting the seed of private key"
-          },
-          {
-              "name" : "lastname",
-              "type" : "name",
-              "description" : "last name in keyhotee profile config, for salting the seed of private key"
-          },
-          {
-              "name" : "brainkey",
-              "type" : "brainkey",
-              "description" : "brainkey in keyhotee profile config, for salting the seed of private key"
-          },
-          {
-              "name" : "keyhoteeid",
-              "type" : "keyhoteeid",
-              "description" : "using keyhotee id as account name"
-          }
-          ],
-          "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-        "method_name": "wallet_close",
-        "description": "Closes the curent wallet if one is open",
-        "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["close"]
-      },
-      {
-        "method_name": "wallet_export_to_json",
-        "description": "Exports the current wallet to a JSON file",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "json_filename", 
-              "type" : "filename", 
-              "description" : "the full path and filename of JSON file to generate",
-              "example" : "/path/to/exported_wallet.json"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["wallet_open"]
-      },
-      {
-        "method_name": "wallet_create_from_json",
-        "description": "Creates a new wallet from an exported JSON file",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "json_filename", 
-              "type" : "filename", 
-              "description" : "the full path and filename of JSON wallet to import",
-              "example" : "/path/to/exported_wallet.json"
-            },
-            { 
-              "name" : "wallet_name", 
-              "type" : "wallet_name", 
-              "description" : "name of the wallet to create"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_account_transaction_history",
-        "description": "Lists all transactions for the specified account",
-        "return_type": "pretty_transactions",
-        "parameters" : 
-          [
-            { 
-              "name" : "account_name", 
-              "type" : "account_name", 
-              "description" : "the name of the account for which the transaction history will be returned",
-              "example" : "alice",
-              "default_value" : ""
-            }          ],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : ["history"]
-      },
-      {
-        "method_name": "wallet_clear_pending_transactions",
-        "description": "Clear \"stuck\" pending transactions from the wallet.",
-        "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : []
-      },
-      {
-        "method_name": "wallet_lock",
-        "description": "Lock the private keys in wallet, disables spending commands until unlocked",
-        "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : ["lock"]
-      },
-      {
-        "method_name": "wallet_unlock",
-        "description": "Unlock the private keys in the wallet to enable spending operations",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "timeout", 
-              "type" : "time_interval_in_seconds", 
-              "description" : "the number of seconds to keep the wallet unlocked"
-            },
-            { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for encrypting the wallet"
-            }
-          ],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : ["unlock"]
-      },
-      {
-        "method_name": "wallet_change_passphrase",
-        "description": "Change the password of the current wallet",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "passphrase", 
-              "type" : "passphrase", 
-              "description" : "the passphrase for encrypting the wallet"
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
-      },
-      {
-        "method_name": "wallet_list",
-        "description": "Return a list of wallets in the current data directory",
-        "return_type": "wallet_name_array",
-        "parameters" : [],
-        "prerequisites" : ["json_authenticated"],
-        "is_const": true,
-        "aliases" : []
-      },
-      {
-        "method_name": "wallet_account_create",
-        "description": "Add new account for receiving payments",
-        "return_type": "public_key",
-        "parameters" : 
-          [
-            { 
-              "name" : "account_name", 
-              "type" : "account_name", 
-              "description" : "the name you will use to refer to this receive account",
-              "enable_autocomplete" : false
-            },
-            { 
-              "name" : "private_data", 
-              "type" : "json_variant", 
-              "description" : "Extra data to store with this account record",
-              "default_value" : null
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : [ "wallet_create_account", "create_account" ]
-      },
-      {
-        "method_name": "wallet_set_delegate_trust_level",
-        "description": "Updates the trust placed in a given delegate",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "delegate_name", 
-              "type" : "account_name", 
-              "description" : "the name of the delegate to set trust level on"
-            },
-            { 
-              "name" : "trust_level", 
-              "type" : "int32_t", 
-              "description" : "Positive for Trust, Negative for Distrust, 0 for Neutral",
-              "default_value" : 0
-            }
-          ],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : [ "trust", "set_trust" ]
-      },
-      {
-        "method_name": "wallet_add_contact_account",
-        "description": "Add new account for sending payments",
-        "return_type": "void",
-        "parameters" : 
-          [
-            { 
-              "name" : "account_name", 
-              "type" : "account_name", 
-              "description" : "the name you will use to refer to this sending account",
-              "enable_autocomplete" : false
-            },
-            { 
-              "name" : "account_key", 
-              "type" : "public_key", 
-              "description" : "the key associated with this sending account"
-            }
-          ],
-        "prerequisites" : ["wallet_open"]
-      },
-      {
-        "method_name": "wallet_get_pretty_transaction",
-        "description": "Return a pretty JSON representation of a transaction",
-        "return_type": "pretty_transaction",
-        "parameters" : 
-          [
-            { 
-              "name" : "transaction", 
-              "type" : "signed_transaction", 
-              "description" : "the transaction to pretty-print"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "wallet_multipart_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
-        "return_type": "signed_transaction_array",
-        "parameters" : 
-          [
-            {
-              "name" : "amount_to_transfer", 
-              "type" : "real_amount", 
-              "description" : "the amount of shares to transfer, will be multiplied by the precision associated by asset_symbol"
-            },
-            {
-              "name" : "asset_symbol", 
-              "type" : "asset_symbol", 
-              "description" : "the asset to transfer"
-            },
-            {
-              "name" : "from_account_name", 
-              "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
-            },
-            {
-              "name" : "to_account_name", 
-              "type" : "receive_account_name", 
-              "description" : "the account to transfer the shares to"
-            },
-            {
-              "name" : "memo_message", 
-              "type" : "string", 
-              "description" : "a memo to store with the transaction",
-              "default_value" : ""
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["multipart_transfer"]
-      },
-      {
-        "method_name": "wallet_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
-        "parameters" : 
-          [
-            {
-              "name" : "amount_to_transfer", 
-              "type" : "real_amount", 
-              "description" : "the amount of shares to transfer"
-            },
-            {
-              "name" : "asset_symbol", 
-              "type" : "asset_symbol", 
-              "description" : "the asset to transfer"
-            },
-            {
-              "name" : "from_account_name", 
-              "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
-            },
-            {
-              "name" : "to_account_name", 
-              "type" : "receive_account_name", 
-              "description" : "the account to transfer the shares to"
-            },
-            {
-              "name" : "memo_message", 
-              "type" : "string", 
-              "description" : "a memo to store with the transaction",
-              "default_value" : ""
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["transfer"]
-      },
-      {
-        "method_name": "wallet_rescan_blockchain",
-        "description": "Scans the transaction history for operations relevant to this wallet.",
-        "return_type": "void",
-        "parameters" : 
-          [
-            {
-              "name" : "first_block_number", 
-              "type" : "uint32_t", 
-              "description" : "the first block to scan",
-              "default_value" : 0
-            },
-            {
-              "name" : "num_blocks", 
-              "type" : "uint32_t", 
-              "description" : "the number of blocks to scan",
-              "default_value" : -1
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scan"]
-      },
-      {
-         "method_name" : "wallet_account_register",
-         "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
-         "parameters"  : [
-               {
-                  "name" : "account_name",
-                  "type" : "account_name",
-                  "description" : "the account that will be updated"
-               },
-               {
-                  "name" : "pay_from_account",
-                  "type" : "account_name",
-                  "description" : "the account from which fees will be paid"
-               },
-               {
-                  "name" : "public_data",
-                  "type" : "json_variant",
-                  "description" : "public data about the account",
-                  "default_value" : null
-               },
-               {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
-               }
+    "category": "Wallet Methods",
+    "methods": [
+        {
+            "method_name": "wallet_get_info",
+            "description": "Extra information about the wallet.",
+            "return_type": "json_object",
+            "parameters": [],
+            "prerequisites": [
+                "json_authenticated"
+            ]
+        },
+        {
+            "method_name": "wallet_open_file",
+            "description": "Opens the wallet at the given path",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_file",
+                    "type": "filename",
+                    "description": "the full path and filename of the wallet to open",
+                    "example": "/path/to/wallet.dat"
+                }
             ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "register" ]
-      },
-      {
-         "method_name" : "wallet_account_update_registration",
-         "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
-         "parameters"  : [
-               {
-                  "name" : "account_name",
-                  "type" : "account_name",
-                  "description" : "the account that will be updated"
-               },
-               {
-                  "name" : "pay_from_account",
-                  "type" : "account_name",
-                  "description" : "the account from which fees will be paid"
-               },
-               {
-                  "name" : "public_data",
-                  "type" : "json_variant",
-                  "description" : "public data about the account",
-                  "default_value" : null
-               },
-               {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
-               }
+            "prerequisites": [
+                "json_authenticated"
+            ]
+        },
+        {
+            "method_name": "wallet_open",
+            "description": "Opens the wallet of the given name",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_name",
+                    "type": "wallet_name",
+                    "description": "the name of the wallet to open"
+                }
             ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "update_registration" ]
-      },
-      {
-         "method_name" : "wallet_list_contact_accounts",
-         "description" : "Lists all foreign addresses and their labels associated with this wallet",
-         "return_type" : "wallet_account_record_array",
-         "parameters"  : [],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_list_receive_accounts",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
-         "return_type" : "wallet_account_record_array",
-         "parameters"  : [],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_get_account",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
-         "return_type" : "wallet_account_record",
-         "parameters"  : [
-               {
-                  "name" : "account_name",
-                  "type" : "account_name",
-                  "description" : "the name of the account to retrieve"
-               }
+            "prerequisites": [
+                "json_authenticated"
             ],
-         "is_const" : true,
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_remove_contact_account",
-         "description" : "Remove a contact account from your wallet",
-         "return_type" : "void",
-         "parameters"  : [
-               {
-                  "name" : "account_name",
-                  "type" : "account_name",
-                  "description" : "the name of the contact"
-               }
+            "aliases": [
+                "open"
+            ]
+        },
+        {
+            "method_name": "wallet_create",
+            "description": "Creates a wallet with the given name",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_name",
+                    "type": "wallet_name",
+                    "description": "name of the wallet to create"
+                },
+                {
+                    "name": "new_passphrase",
+                    "type": "new_passphrase",
+                    "description": "a passphrase for encrypting the wallet"
+                }
             ],
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_account_rename",
-         "description" : "Rename an account in wallet",
-         "return_type" : "void",
-         "parameters"  : [
-               {
-                  "name" : "current_account_name",
-                  "type" : "account_name",
-                  "description" : "the current name of the account"
-               },
-               {
-                  "name" : "new_account_name",
-                  "type" : "new_account_name",
-                  "description" : "the new name for the account"
-               }
+            "prerequisites": [
+                "json_authenticated"
+            ]
+        },
+        {
+            "method_name": "wallet_get_name",
+            "description": "Returns the wallet name passed to wallet_open",
+            "return_type": "optional_wallet_name",
+            "parameters": [],
+            "is_const": true,
+            "prerequisites": [
+                "no_prerequisites"
+            ]
+        },
+        {
+            "method_name": "wallet_import_private_key",
+            "description": "Loads the private key into the specified account",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wif_key",
+                    "type": "wif_private_key",
+                    "description": "A private key in bitcoin Wallet Import Format (WIF)"
+                },
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name of the account the key should be imported into, if null then the key must belong to an active account",
+                    "default_value": null
+                },
+                {
+                    "name": "create_new_account",
+                    "type": "bool",
+                    "description": "If true, the wallet will attempt to create a new account for the name provided rather than import the key into an existing account",
+                    "default_value": false
+                },
+                {
+                    "name": "rescan",
+                    "type": "bool",
+                    "description": "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
+                    "default_value": true
+                }
             ],
-         "prerequisites" : ["wallet_open"],
-         "aliases" : ["wallet_rename_account"]
-      },
-      {
-         "method_name" : "wallet_asset_create",
-         "description" : "Creates a new user issued asset",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "symbol",
-                  "type" : "asset_symbol",
-                  "description" : "the ticker symbol for the new asset"
-               },
-               {
-                  "name" : "asset_name",
-                  "type" : "string",
-                  "description" : "the name of the asset"
-               },
-               {
-                  "name" : "issuer_name",
-                  "type" : "string",
-                  "description" : "the name of the issuer of the asset"
-               },
-               {
-                  "name" : "description",
-                  "type" : "string",
-                  "description" : "a description of the asset",
-                  "default_value" : ""
-               },
-               {
-                  "name" : "data",
-                  "type" : "json_variant",
-                  "description" : "arbitrary data attached to the asset",
-                  "default_value" : null
-               },
-               {
-                  "name" : "maximum_share_supply",
-                  "type" : "int64_t",
-                  "description" : "the maximum number of shares of the asset",
-                  "default_value" : 1000000000000000
-               },
-               {
-                  "name" : "precision",
-                  "type" : "int64_t",
-                  "description" : "defines where the decimal should be displayed, must be a power of 10",
-                  "default_value" : 1000000
-               }
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
             ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_asset_issue",
-         "description" : "Issues new shares of a given asset type",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "amount",
-                  "type" : "real_amount",
-                  "description" : "the amount of shares to issue"
-               },
-               {
-                  "name" : "symbol",
-                  "type" : "asset_symbol",
-                  "description" : "the ticker symbol for asset"
-               },
-               {
-                  "name" : "to_account_name",
-                  "type" : "account_name",
-                  "description" : "the name of the account to receive the shares"
-               },
-               {
-                  "name" : "memo_message",
-                  "type" : "string",
-                  "description" : "the memo to send to the receiver"
-               }
+            "aliases": [
+                "import_key"
+            ]
+        },
+        {
+            "method_name": "wallet_import_bitcoin",
+            "description": "Imports a bitcoin wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_filename",
+                    "type": "filename",
+                    "description": "the path to the bitcoin wallet you would like to import."
+                },
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the bitcoin wallet's password, not your bitshares wallet password."
+                },
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
+                }
             ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_submit_proposal",
-         "description" : "Submit a proposal to the delegates for voting",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "delegate_account_name",
-                  "type" : "account_name",
-                  "description" : "the delegate account proposing the issue"
-               },
-               {
-                  "name" : "subject",
-                  "type" : "string",
-                  "description" : "the subject of the proposal"
-               },
-               {
-                  "name" : "body",
-                  "type" : "string",
-                  "description" : "the body of the proposal"
-               },
-               {
-                  "name" : "proposal_type",
-                  "type" : "string",
-                  "description" : "the type of the proposal"
-               },
-               {
-                  "name" : "data",
-                  "type" : "json_variant",
-                  "description" : "the name of the account to receive the shares"
-               }
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_import_armory",
+            "description": "Imports a armory wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_filename",
+                    "type": "filename",
+                    "description": "the armory wallet"
+                },
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the wallet's password"
+                },
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account name to receive the contents of the wallet"
+                }
             ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_vote_proposal",
-         "description" : "Vote on a proposal",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "name",
-                  "type" : "account_name",
-                  "description" : "the name of the account to vote with"
-               },
-               {
-                  "name" : "proposal_id",
-                  "type" : "proposal_id",
-                  "description" : "the id of the proposal to vote on"
-               },
-               {
-                  "name" : "vote",
-                  "type" : "vote_type",
-                  "description" : "your vote"
-               },
-               {
-                  "name" : "message",
-                  "type" : "string",
-                  "description" : "comment to go along with vote",
-                  "default_value" : ""
-               }
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_import_electrum",
+            "description": "Imports a electrum wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_filename",
+                    "type": "filename",
+                    "description": "the electrum wallet"
+                },
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the wallet's password"
+                },
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account name to receive the contents of the wallet"
+                }
             ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_list_unspent_balances",
-         "description" : "Lists the unspent balances that are controlled by this wallet",
-         "return_type" : "wallet_balance_record_array",
-         "parameters"  : [
-           {
-                "name" : "account_name",
-                "type" : "account_name",
-                "description" : "the account for which unspent balances should be listed",
-                "default_value" : "*"
-           },
-           {
-               "name" : "symbol",
-               "type" : "asset_symbol",
-               "description" : "The symbol to filter by, '*' for all",
-                "default_value" : "*"
-           }
-         ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name"    : "wallet_account_balance",
-         "description"    : "Lists the total balances of all accounts sorted by account and asset",
-         "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
-         "parameters"     : [
-         {
-            "name" : "account_name",
-            "type" : "account_name",
-            "description" : "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
-            "default_value" : "*"
-         }
-         ],
-         "prerequisites" : ["wallet_open"],
-         "aliases" : ["balance"]
-      },
-      {
-         "method_name" : "wallet_account_list_public_keys",
-         "description" : "Lists all public keys in this account",
-         "return_type" : "public_key_summary_array",
-         "parameters"  : [
-           {
-                "name" : "account_name",
-                "type" : "account_name",
-                "description" : "the account for which public keys should be listed",
-                "default_value" : "*"
-           }
-         ],
-         "prerequisites" : ["wallet_open"],
-         "aliases": ["public_keys"]
-      },
-      {
-         "method_name"  : "wallet_withdraw_delegate_pay",
-         "description"  : "Used to transfer some of the delegates pay from their balance",
-         "return_type"  : "signed_transaction",
-         "parameters"   : [
-            {
-              "name" : "delegate_name",
-              "type" : "account_name",
-              "description" : "the delegate who's pay is being cashed out"
-            },
-            {
-              "name" : "to_account_name",
-              "type" : "account_name",
-              "description" : "the account that should receive the funds"
-            },
-            {
-               "name" : "amount_to_withdraw",
-               "type" : "real_amount",
-               "description" : "the amount to withdraw"
-            },
-            {
-               "name" : "memo",
-               "type" : "string",
-               "description" : "memo to add to transaction",
-               "default_value" : "payday"
-      }
-         ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : ["pay_delegate"]
-      },
-      {
-         "method_name"  : "wallet_set_priority_fee",
-         "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "void",
-         "parameters"   : [
-         {
-            "name" : "fee",
-            "type" : "amount",
-            "description" : "the prioty fee to be setted."
-         }
-         ],
-         "prerequisites" : ["wallet_open"],
-         "aliases" : ["set_priority_fee"]
-      },
-      {
-         "method_name" : "wallet_market_submit_bid",
-         "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-            {
-               "name" : "from_account_name",
-               "type" : "account_name",
-               "description" : "the account that will provide funds for the bid"
-            },
-            {
-               "name" : "quantity",
-               "type" : "real_amount",
-               "description" : "the quantity of items you would like to buy"
-            },
-            {
-               "name" : "quantity_symbol",
-               "type" : "asset_symbol",
-               "description" : "the type of items you would like to buy"
-            },
-            {
-               "name" : "quote_price",
-               "type" : "real_amount",
-               "description" : "the price you would like to pay"
-            },
-            {
-               "name" : "quote_symbol",
-               "type" : "asset_symbol",
-               "description" : "the type of asset you would like to pay with"
-            }
-         ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "bid" ]
-      },
-      {
-         "method_name" : "wallet_market_order_list",
-         "description" : "List an order list of a specific market",
-         "return_type" : "market_order_status_array",
-         "parameters"  : [
-            {
-               "name" : "quote_symbol",
-               "type" : "asset_symbol",
-               "description" : "the quote symbol of the market"
-            },
-            {
-               "name" : "base_symbol",
-               "type" : "asset_symbol",
-               "description" : "the base symbol of the market"
-            },
-            {
-               "name" : "limit",
-               "type" : "int64_t",
-               "description" : "the maximum number of items to return",
-               "default_value" : -1
-            }
-         ],
-         "prerequisites" : ["wallet_open"],
-         "aliases" : [ "list_orders" ]
-      },
-      {
-         "method_name" : "wallet_market_cancel_order",
-         "description" : "Cancel an order",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-            {
-               "name" : "order_id",
-               "type" : "address",
-               "description" : "the address of the order to cancel"
-            }
-          ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "cancel_order" ]
-      },
-      {
-         "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to an address or public key",
-         "return_type"  : "string",
-         "parameters" : [
-         {
-            "name" : "address_or_public_key",
-            "type" : "string",
-            "description" : "a public key or address (based on hash of public key) of the private key"
-         }
-         ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "dump_private_key" ]
-      },
-      {
-         "method_name" : "wallet_account_vote_summary",
-         "description" : "Returns the allocation of votes by this account",
-         "return_type" : "account_vote_summary",
-         "parameters"  : [
-            {
-                "name" :  "account_name",
-                "type" : "account_name",
-                "description" : "the account to report votes on"
-            }
-          ],
-          "aliases" : ["votes"],
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_account_export_private_key",
-         "description" : "returns the private key for this account in WIF format",
-         "return_type" : "string",
-         "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_set_wallet_setting",
-         "description" : "Set a property in the GUI settings DB",
-         "return_type" : "void",
-         "parameters"  : [
-            {
-                "name" : "name",
-                "type" : "string",
-                "description" : "the name of the setting to set"
-            },
-            {
-                "name" : "value",
-                "type" : "variant",
-                "description" : "the value to set the setting to"
-            }
-          ],
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_get_wallet_setting",
-         "description" : "Get the value of the given setting",
-         "return_type" : "optional_variant",
-         "parameters"  : [
-            {
-                "name" : "name",
-                "type" : "string",
-                "description" : "The name of the setting to fetch"
-            }
-          ],
-         "prerequisites" : ["wallet_open"]
-      },
-      {
-         "method_name" : "wallet_toggle_delegate_block_production",
-         "description" : "Enable or disable block production for a particular delegate account",
-         "return_type" : "void",
-         "parameters"  : [
-            {
-                "name" : "delegate_name",
-                "type" : "string",
-                "description" : "The delegate to enable/disable block production for"
-            },
-            {
-                "name" : "enable",
-                "type" : "bool",
-                "description" : "True to enable block production, false otherwise"
-            }
-          ],
-         "prerequisites" : ["wallet_open"]
-      }
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_import_multibit",
+            "description": "Imports a multibit wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "wallet_filename",
+                    "type": "filename",
+                    "description": "the multibit wallet"
+                },
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the wallet's password"
+                },
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account name to receive the contents of the wallet"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_import_keyhotee",
+            "description": "Create the key from keyhotee config and import it to the wallet, creating a new account using this key",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "firstname",
+                    "type": "name",
+                    "description": "first name in keyhotee profile config, for salting the seed of private key"
+                },
+                {
+                    "name": "middlename",
+                    "type": "name",
+                    "description": "middle name in keyhotee profile config, for salting the seed of private key"
+                },
+                {
+                    "name": "lastname",
+                    "type": "name",
+                    "description": "last name in keyhotee profile config, for salting the seed of private key"
+                },
+                {
+                    "name": "brainkey",
+                    "type": "brainkey",
+                    "description": "brainkey in keyhotee profile config, for salting the seed of private key"
+                },
+                {
+                    "name": "keyhoteeid",
+                    "type": "keyhoteeid",
+                    "description": "using keyhotee id as account name"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_close",
+            "description": "Closes the curent wallet if one is open",
+            "return_type": "void",
+            "parameters": [],
+            "prerequisites": [
+                "no_prerequisites"
+            ],
+            "aliases": [
+                "close"
+            ]
+        },
+        {
+            "method_name": "wallet_export_to_json",
+            "description": "Exports the current wallet to a JSON file",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "json_filename",
+                    "type": "filename",
+                    "description": "the full path and filename of JSON file to generate",
+                    "example": "/path/to/exported_wallet.json"
+                }
+            ],
+            "is_const": true,
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_create_from_json",
+            "description": "Creates a new wallet from an exported JSON file",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "json_filename",
+                    "type": "filename",
+                    "description": "the full path and filename of JSON wallet to import",
+                    "example": "/path/to/exported_wallet.json"
+                },
+                {
+                    "name": "wallet_name",
+                    "type": "wallet_name",
+                    "description": "name of the wallet to create"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated"
+            ]
+        },
+        {
+            "method_name": "wallet_account_transaction_history",
+            "description": "Lists all transactions for the specified account",
+            "return_type": "pretty_transactions",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name of the account for which the transaction history will be returned",
+                    "example": "alice",
+                    "default_value": ""
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "history"
+            ]
+        },
+        {
+            "method_name": "wallet_clear_pending_transactions",
+            "description": "Clear \"stuck\" pending transactions from the wallet.",
+            "return_type": "void",
+            "parameters": [],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": []
+        },
+        {
+            "method_name": "wallet_lock",
+            "description": "Lock the private keys in wallet, disables spending commands until unlocked",
+            "return_type": "void",
+            "parameters": [],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "lock"
+            ]
+        },
+        {
+            "method_name": "wallet_unlock",
+            "description": "Unlock the private keys in the wallet to enable spending operations",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "timeout",
+                    "type": "time_interval_in_seconds",
+                    "description": "the number of seconds to keep the wallet unlocked"
+                },
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the passphrase for encrypting the wallet"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "unlock"
+            ]
+        },
+        {
+            "method_name": "wallet_change_passphrase",
+            "description": "Change the password of the current wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "passphrase",
+                    "type": "passphrase",
+                    "description": "the passphrase for encrypting the wallet"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "detailed_description": "This will change the wallet's spending passphrase, please make sure you remember it."
+        },
+        {
+            "method_name": "wallet_list",
+            "description": "Return a list of wallets in the current data directory",
+            "return_type": "wallet_name_array",
+            "parameters": [],
+            "prerequisites": [
+                "json_authenticated"
+            ],
+            "is_const": true,
+            "aliases": []
+        },
+        {
+            "method_name": "wallet_account_create",
+            "description": "Add new account for receiving payments",
+            "return_type": "public_key",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name you will use to refer to this receive account",
+                    "enable_autocomplete": false
+                },
+                {
+                    "name": "private_data",
+                    "type": "json_variant",
+                    "description": "Extra data to store with this account record",
+                    "default_value": null
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "wallet_create_account",
+                "create_account"
+            ]
+        },
+        {
+            "method_name": "wallet_set_delegate_trust_level",
+            "description": "Updates the trust placed in a given delegate",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "delegate_name",
+                    "type": "account_name",
+                    "description": "the name of the delegate to set trust level on"
+                },
+                {
+                    "name": "trust_level",
+                    "type": "int32_t",
+                    "description": "Positive for Trust, Negative for Distrust, 0 for Neutral",
+                    "default_value": 0
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "trust",
+                "set_trust"
+            ]
+        },
+        {
+            "method_name": "wallet_add_contact_account",
+            "description": "Add new account for sending payments",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name you will use to refer to this sending account",
+                    "enable_autocomplete": false
+                },
+                {
+                    "name": "account_key",
+                    "type": "public_key",
+                    "description": "the key associated with this sending account"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_get_pretty_transaction",
+            "description": "Return a pretty JSON representation of a transaction",
+            "return_type": "pretty_transaction",
+            "parameters": [
+                {
+                    "name": "transaction",
+                    "type": "signed_transaction",
+                    "description": "the transaction to pretty-print"
+                }
+            ],
+            "is_const": true,
+            "prerequisites": [
+                "json_authenticated"
+            ]
+        },
+        {
+            "method_name": "wallet_multipart_transfer",
+            "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
+            "return_type": "signed_transaction_array",
+            "parameters": [
+                {
+                    "name": "amount_to_transfer",
+                    "type": "real_amount",
+                    "description": "the amount of shares to transfer, will be multiplied by the precision associated by asset_symbol"
+                },
+                {
+                    "name": "asset_symbol",
+                    "type": "asset_symbol",
+                    "description": "the asset to transfer"
+                },
+                {
+                    "name": "from_account_name",
+                    "type": "sending_account_name",
+                    "description": "the source account(s) to draw the shares from"
+                },
+                {
+                    "name": "to_account_name",
+                    "type": "receive_account_name",
+                    "description": "the account to transfer the shares to"
+                },
+                {
+                    "name": "memo_message",
+                    "type": "std::string",
+                    "description": "a memo to store with the transaction",
+                    "default_value": ""
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "multipart_transfer"
+            ]
+        },
+        {
+            "method_name": "wallet_transfer",
+            "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "amount_to_transfer",
+                    "type": "real_amount",
+                    "description": "the amount of shares to transfer"
+                },
+                {
+                    "name": "asset_symbol",
+                    "type": "asset_symbol",
+                    "description": "the asset to transfer"
+                },
+                {
+                    "name": "from_account_name",
+                    "type": "sending_account_name",
+                    "description": "the source account(s) to draw the shares from"
+                },
+                {
+                    "name": "to_account_name",
+                    "type": "receive_account_name",
+                    "description": "the account to transfer the shares to"
+                },
+                {
+                    "name": "memo_message",
+                    "type": "std::string",
+                    "description": "a memo to store with the transaction",
+                    "default_value": ""
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "transfer"
+            ]
+        },
+        {
+            "method_name": "wallet_rescan_blockchain",
+            "description": "Scans the transaction history for operations relevant to this wallet.",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "first_block_number",
+                    "type": "uint32_t",
+                    "description": "the first block to scan",
+                    "default_value": 0
+                },
+                {
+                    "name": "num_blocks",
+                    "type": "uint32_t",
+                    "description": "the number of blocks to scan",
+                    "default_value": -1
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "scan"
+            ]
+        },
+        {
+            "method_name": "wallet_account_register",
+            "description": "Updates the data published about a given account",
+            "return_type": "transaction_record",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account that will be updated"
+                },
+                {
+                    "name": "pay_from_account",
+                    "type": "account_name",
+                    "description": "the account from which fees will be paid"
+                },
+                {
+                    "name": "public_data",
+                    "type": "json_variant",
+                    "description": "public data about the account",
+                    "default_value": null
+                },
+                {
+                    "name": "as_delegate",
+                    "type": "bool",
+                    "description": "true if account_name should be upgraded to a delegate.",
+                    "default_value": false
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "register"
+            ]
+        },
+        {
+            "method_name": "wallet_account_update_registration",
+            "description": "Updates the data published about a given account",
+            "return_type": "transaction_record",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account that will be updated"
+                },
+                {
+                    "name": "pay_from_account",
+                    "type": "account_name",
+                    "description": "the account from which fees will be paid"
+                },
+                {
+                    "name": "public_data",
+                    "type": "json_variant",
+                    "description": "public data about the account",
+                    "default_value": null
+                },
+                {
+                    "name": "as_delegate",
+                    "type": "bool",
+                    "description": "true if account_name should be upgraded to a delegate.",
+                    "default_value": false
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "update_registration"
+            ]
+        },
+        {
+            "method_name": "wallet_list_contact_accounts",
+            "description": "Lists all foreign addresses and their labels associated with this wallet",
+            "return_type": "wallet_account_record_array",
+            "parameters": [],
+            "is_const": true,
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_list_receive_accounts",
+            "description": "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+            "return_type": "wallet_account_record_array",
+            "parameters": [],
+            "is_const": true,
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_get_account",
+            "description": "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+            "return_type": "wallet_account_record",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name of the account to retrieve"
+                }
+            ],
+            "is_const": true,
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_remove_contact_account",
+            "description": "Remove a contact account from your wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the name of the contact"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ]
+        },
+        {
+            "method_name": "wallet_account_rename",
+            "description": "Rename an account in wallet",
+            "return_type": "void",
+            "parameters": [
+                {
+                    "name": "current_account_name",
+                    "type": "account_name",
+                    "description": "the current name of the account"
+                },
+                {
+                    "name": "new_account_name",
+                    "type": "new_account_name",
+                    "description": "the new name for the account"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "wallet_rename_account"
+            ]
+        },
+        {
+            "method_name": "wallet_asset_create",
+            "description": "Creates a new user issued asset",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "symbol",
+                    "type": "asset_symbol",
+                    "description": "the ticker symbol for the new asset"
+                },
+                {
+                    "name": "asset_name",
+                    "type": "std::string",
+                    "description": "the name of the asset"
+                },
+                {
+                    "name": "issuer_name",
+                    "type": "std::string",
+                    "description": "the name of the issuer of the asset"
+                },
+                {
+                    "name": "description",
+                    "type": "std::string",
+                    "description": "a description of the asset",
+                    "default_value": ""
+                },
+                {
+                    "name": "data",
+                    "type": "json_variant",
+                    "description": "arbitrary data attached to the asset",
+                    "default_value": null
+                },
+                {
+                    "name": "maximum_share_supply",
+                    "type": "int64_t",
+                    "description": "the maximum number of shares of the asset",
+                    "default_value": 1000000000000000
+                },
+                {
+                    "name": "precision",
+                    "type": "int64_t",
+                    "description": "defines where the decimal should be displayed, must be a power of 10",
+                    "default_value": 1000000
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_asset_issue",
+            "description": "Issues new shares of a given asset type",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "amount",
+                    "type": "real_amount",
+                    "description": "the amount of shares to issue"
+                },
+                {
+                    "name": "symbol",
+                    "type": "asset_symbol",
+                    "description": "the ticker symbol for asset"
+                },
+                {
+                    "name": "to_account_name",
+                    "type": "account_name",
+                    "description": "the name of the account to receive the shares"
+                },
+                {
+                    "name": "memo_message",
+                    "type": "std::string",
+                    "description": "the memo to send to the receiver"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_submit_proposal",
+            "description": "Submit a proposal to the delegates for voting",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "delegate_account_name",
+                    "type": "account_name",
+                    "description": "the delegate account proposing the issue"
+                },
+                {
+                    "name": "subject",
+                    "type": "std::string",
+                    "description": "the subject of the proposal"
+                },
+                {
+                    "name": "body",
+                    "type": "std::string",
+                    "description": "the body of the proposal"
+                },
+                {
+                    "name": "proposal_type",
+                    "type": "std::string",
+                    "description": "the type of the proposal"
+                },
+                {
+                    "name": "data",
+                    "type": "json_variant",
+                    "description": "the name of the account to receive the shares"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_vote_proposal",
+            "description": "Vote on a proposal",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "name",
+                    "type": "account_name",
+                    "description": "the name of the account to vote with"
+                },
+                {
+                    "name": "proposal_id",
+                    "type": "proposal_id",
+                    "description": "the id of the proposal to vote on"
+                },
+                {
+                    "name": "vote",
+                    "type": "vote_type",
+                    "description": "your vote"
+                },
+                {
+                    "name": "message",
+                    "type": "std::string",
+                    "description": "comment to go along with vote",
+                    "default_value": ""
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_list_unspent_balances",
+            "description": "Lists the unspent balances that are controlled by this wallet",
+            "return_type": "wallet_balance_record_array",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account for which unspent balances should be listed",
+                    "default_value": "*"
+                },
+                {
+                    "name": "symbol",
+                    "type": "asset_symbol",
+                    "description": "The symbol to filter by, '*' for all",
+                    "default_value": "*"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ]
+        },
+        {
+            "method_name": "wallet_account_balance",
+            "description": "Lists the total balances of all accounts sorted by account and asset",
+            "return_type": "map< account_name, map< asset_symbol, share_type> >",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
+                    "default_value": "*"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "balance"
+            ]
+        },
+        {
+            "method_name": "wallet_account_list_public_keys",
+            "description": "Lists all public keys in this account",
+            "return_type": "public_key_summary_array",
+            "parameters": [
+                {
+                    "name": "account_name",
+                    "type": "account_name",
+                    "description": "the account for which public keys should be listed",
+                    "default_value": "*"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "public_keys"
+            ]
+        },
+        {
+            "method_name": "wallet_withdraw_delegate_pay",
+            "description": "Used to transfer some of the delegates pay from their balance",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "delegate_name",
+                    "type": "account_name",
+                    "description": "the delegate who's pay is being cashed out"
+                },
+                {
+                    "name": "to_account_name",
+                    "type": "account_name",
+                    "description": "the account that should receive the funds"
+                },
+                {
+                    "name": "amount_to_withdraw",
+                    "type": "share_type",
+                    "description": "the amount to withdraw"
+                },
+                {
+                    "name": "memo",
+                    "type": "std::string",
+                    "description": "memo to add to transaction"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "pay_delegate"
+            ]
+        },
+        {
+            "method_name": "wallet_set_priority_fee",
+            "description": "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
+            "return_type": "assettype",
+            "parameters": [
+                {
+                    "name": "fee",
+                    "type": "amount",
+                    "description": "the prioty fee to be setted. Optional, if not provided, will return the current fee.",
+                    "default_value": -1
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open"
+            ],
+            "aliases": [
+                "set_priority_fee"
+            ]
+        },
+        {
+            "method_name": "wallet_market_submit_bid",
+            "description": "Used to place a request to buy a quantity of assets at a price specified in another asset",
+            "return_type": "signed_transaction",
+            "parameters": [
+                {
+                    "name": "from_account_name",
+                    "type": "account_name",
+                    "description": "the account that will provide funds for the bid"
+                },
+                {
+                    "name": "quantity",
+                    "type": "real_amount",
+                    "description": "the quantity of items you would like to buy"
+                },
+                {
+                    "name": "quantity_symbol",
+                    "type": "asset_symbol",
+                    "description": "the type of items you would like to buy"
+                },
+                {
+                    "name": "quote_price",
+                    "type": "real_amount",
+                    "description": "the price you would like to pay"
+                },
+                {
+                    "name": "quote_symbol",
+                    "type": "asset_symbol",
+                    "description": "the type of asset you would like to pay with"
+                }
+            ],
+            "prerequisites": [
+                "json_authenticated",
+                "wallet_open",
+                "wallet_unlocked"
+            ],
+            "aliases": [
+                "bid"
+            ]
+        }
     ]
 }
