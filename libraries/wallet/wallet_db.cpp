@@ -342,12 +342,10 @@ namespace bts{ namespace wallet {
    void wallet_db::export_to_json( const fc::path& file_name ) const
    { try {
       FC_ASSERT( is_open() );
-      std::vector<generic_wallet_record>  records;
-      auto itr = my->_records.begin(); 
-      while( itr.valid() )
+      std::vector<generic_wallet_record> records;
+      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
       {
          records.push_back( itr.value() );
-         ++itr;
       }
       fc::json::save_to_file( records, file_name, true );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("file_name",file_name) ) }
