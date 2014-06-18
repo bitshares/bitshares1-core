@@ -30,11 +30,11 @@ namespace bts { namespace wallet {
          virtual ~wallet();
 
          /**
-          *  To generate predictable test resutls we need an option
-          *  to use deterministiic keys rather than purely random
+          *  To generate predictable test results we need an option
+          *  to use deterministic keys rather than purely random
           *  one-time keys.
           */
-         void use_detininistic_one_time_keys( bool state );
+         void use_deterministic_one_time_keys( bool state );
 
          /**
           *  Wallet File Management
@@ -56,10 +56,8 @@ namespace bts { namespace wallet {
 
          void    close();
 
-         void    export_to_json( const path& export_file_name ) const;
-
-         void    create_from_json( const path& path, 
-                                   const string& name );
+         void    export_to_json( const path& filename )const;
+         void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
 
          bool    is_open()const;
          string  get_wallet_name()const;

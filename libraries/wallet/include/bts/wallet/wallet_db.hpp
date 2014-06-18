@@ -106,10 +106,8 @@ namespace bts { namespace wallet {
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
 
-         void export_to_json( const fc::path& export_file_name ) const;
-
-         void create_from_json( const fc::path& file_to_import, 
-                                const fc::path& wallet_to_create );
+         void export_records(std::map<int32_t, generic_wallet_record>& records) const;
+         void import_records(const std::map<int32_t, generic_wallet_record>& records);
 
          fc::optional<wallet_master_key_record>                           wallet_master_key;
  

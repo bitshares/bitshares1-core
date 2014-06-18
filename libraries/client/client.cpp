@@ -982,14 +982,14 @@ config load_config( const fc::path& datadir )
       _wallet->close();
     }
 
-    void detail::client_impl::wallet_export_to_json(const fc::path& path) const
+    void detail::client_impl::wallet_export_to_json(const fc::path& json_filename)const
     {
-      _wallet->export_to_json(path);
+      _wallet->export_to_json(json_filename);
     }
 
-    void detail::client_impl::wallet_create_from_json(const fc::path& path, const string& name)
+    void detail::client_impl::wallet_create_from_json(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
     {
-      _wallet->create_from_json(path,name);
+      _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
     }
 
     void detail::client_impl::wallet_lock()
@@ -1233,6 +1233,16 @@ config load_config( const fc::path& datadir )
                                                     const string& passphrase,
                                                     const string& account_name )
     {
+      try
+      {
+          _wallet->import_bitcoin_wallet(filename, "", account_name);
+          return;
+      }
+      catch( const fc::exception& e )
+      {
+          ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
+      }
+
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
     void detail::client_impl::wallet_import_multibit(const fc::path& filename,
