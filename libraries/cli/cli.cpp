@@ -1123,6 +1123,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
                 //*_out << fc::json::to_string( account_records ) << "\n";
@@ -1154,6 +1155,10 @@ namespace bts { namespace cli {
                     }
 
                     *_out << std::setw( 15 ) << acct.trust_level;
+                    if (acct.is_delegate())
+                        *_out << std::setw( 25 ) << acct.block_production_enabled ? "YES" : "NO";
+                    else
+                        *_out << std::setw( 25 ) << "N/A";
                     *_out << "\n";
                 }
             }
