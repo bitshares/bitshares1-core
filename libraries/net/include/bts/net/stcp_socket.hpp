@@ -34,7 +34,7 @@ class stcp_socket : public virtual fc::iostream
 
     fc::ecc::private_key _priv_key;
     fc::array<char,8>    _buf;
-    uint32_t             _buf_len;
+    //uint32_t             _buf_len;
     fc::tcp_socket       _sock;
     fc::aes_encoder      _send_aes;
     fc::aes_decoder      _recv_aes;

@@ -128,14 +128,26 @@ namespace bts{ namespace wallet {
                case key_record_type:
                   my->load_key_record( current_record.as<wallet_key_record>() );
                   break;
-               case property_record_type:
-                  my->load_property_record( current_record.as<wallet_property_record>() );
+               case transaction_record_type:
+                  my->load_transaction_record( current_record.as<wallet_transaction_record>() );
+                  break;
+               case asset_record_type:
+                  FC_THROW( "asset_record_type not implemented!" );
                   break;
                case balance_record_type:
                   my->load_balance_record( current_record.as<wallet_balance_record>() );
                   break;
-               case transaction_record_type:
-                  my->load_transaction_record( current_record.as<wallet_transaction_record>() );
+               case property_record_type:
+                  my->load_property_record( current_record.as<wallet_property_record>() );
+                  break;
+               case market_order_type:
+                  FC_THROW( "market_order_type not implemented!" );
+                  break;
+               case wallet_setting_type:
+                  FC_THROW( "wallet_setting_type not implemented!" );
+                  break;
+               default:
+                  FC_THROW( "unknown wallet_db record type!" );
                   break;
             }
          } 

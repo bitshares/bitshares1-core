@@ -281,7 +281,7 @@ class test_file
   fc::path _expected_result_file;
 public:
        test_file(fc::future<void> done, fc::path result_file, fc::path expected_result_file)
-         : client_done(done),_result_file(result_file), _expected_result_file(expected_result_file) {}
+         : _result_file(result_file), _expected_result_file(expected_result_file), client_done(done) {}
 
   bool compare_files(); //compare two files, return true if the files match
 

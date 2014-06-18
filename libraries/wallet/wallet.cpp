@@ -253,29 +253,73 @@ namespace bts { namespace wallet {
             {
                switch( (operation_type_enum)op.type )
                {
+                  case null_op_type:
+                     FC_THROW( "null_op_type not implemented!" );
+                     break;
+
                   case withdraw_op_type:
                      cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
                      break;
                   case deposit_op_type:
                      cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys );
                      break;
+
                   case register_account_op_type:
                      cache_trx |= scan_register_account( op.as<register_account_operation>() );
                      break;
                   case update_account_op_type:
                      cache_trx |= scan_update_account( op.as<update_account_operation>() );
                      break;
-                   case create_asset_op_type:
+                  case withdraw_pay_op_type:
+                     FC_THROW( "withdraw_pay_op_type not implemented!" );
+                     break;
+
+                  case create_asset_op_type:
                      cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
                      break;
-                   case issue_asset_op_type:
+                  case update_asset_op_type:
+                     FC_THROW( "update_asset_op_type not implemented!" );
+                     break;
+                  case issue_asset_op_type:
                      cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
                      break;
-                   case bid_op_type:
+
+                  case fire_delegate_op_type:
+                     FC_THROW( "fire_delegate_op_type not implemented!" );
+                     break;
+
+                  case submit_proposal_op_type:
+                     FC_THROW( "submit_proposal_op_type not implemented!" );
+                     break;
+                  case vote_proposal_op_type:
+                     FC_THROW( "vote_proposal_op_type not implemented!" );
+                     break;
+
+                  case bid_op_type:
                      cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
+                     break;
+                  case ask_op_type:
+                     FC_THROW( "ask_op_type not implemented!" );
+                     break;
+                  case short_op_type:
+                     FC_THROW( "short_op_type not implemented!" );
+                     break;
+                  case cover_op_type:
+                     FC_THROW( "cover_op_type not implemented!" );
+                     break;
+                  case add_collateral_op_type:
+                     FC_THROW( "add_collateral_op_type not implemented!" );
+                     break;
+                  case remove_collateral_op_type:
+                     FC_THROW( "remove_collateral_op_type not implemented!" );
+                     break;
+
+                  default:
+                     FC_THROW( "unknown operation type!" );
                      break;
                }
             }
+
             if( cache_trx )
                _wallet_db.store_transaction( *current_trx_record );
          }
@@ -402,10 +446,12 @@ namespace bts { namespace wallet {
           bool cache_deposit = false; 
           switch( (withdraw_condition_types) op.condition.type )
           {
+             case withdraw_null_type:
+             {
+                FC_THROW( "withdraw_null_type not implemented!" );
+                break;
+             }
              case withdraw_signature_type:
-             //   cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
-             //   break;
-            // case withdraw_with_signature:
              {
                 auto deposit = op.condition.as<withdraw_with_signature>();
                 if( _wallet_db.has_private_key( deposit.owner ) )
@@ -443,7 +489,26 @@ namespace bts { namespace wallet {
                    }
                    break;
                 }
-             // TODO: support other withdraw types here..
+             }
+             case withdraw_multi_sig_type:
+             {
+                FC_THROW( "withdraw_multi_sig_type not implemented!" );
+                break;
+             }
+             case withdraw_password_type:
+             {
+                FC_THROW( "withdraw_password_type not implemented!" );
+                break;
+             }
+             case withdraw_option_type:
+             {
+                FC_THROW( "withdraw_option_type not implemented!" );
+                break;
+             }
+             default:
+             {
+                FC_THROW( "unknown withdraw condition type!" );
+                break;
              }
         }
         if( cache_deposit )
@@ -2110,7 +2175,7 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quantity_symbol) );
 
        auto from_account_key = get_account_public_key( from_account_name );
-       auto& to_account_key = from_account_key;
+       //auto& to_account_key = from_account_key;
 
        if( quote_asset_record->id < base_asset_record->id )
        {

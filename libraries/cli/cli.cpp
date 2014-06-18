@@ -59,8 +59,7 @@ namespace bts { namespace cli {
             bool                                            show_raw_output;
             bool                                            _daemon_mode;
 
-            boost::iostreams::stream< boost::iostreams::null_sink > 
-                nullstream;
+            boost::iostreams::stream< boost::iostreams::null_sink > nullstream;
             
             std::ostream*                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
             std::istream*                  _command_script;
@@ -1361,15 +1360,15 @@ namespace bts { namespace cli {
     extern "C" int get_character(FILE* stream);
 #endif
 
-    cli_impl::cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream) : 
-      _client(client),
-      _rpc_server(client->get_rpc_server()),
-      _command_script(command_script), 
-      nullstream(boost::iostreams::null_sink()),
-      _quit(false),
-      _out(output_stream ? output_stream : &nullstream),
-      show_raw_output(false),
-      _daemon_mode(false)
+    cli_impl::cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
+    :_client(client)
+    ,_rpc_server(client->get_rpc_server())
+    ,_quit(false)
+    ,show_raw_output(false)
+    ,_daemon_mode(false)
+    ,nullstream(boost::iostreams::null_sink())
+    ,_out(output_stream ? output_stream : &nullstream)
+    ,_command_script(command_script)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1436,7 +1435,7 @@ namespace bts { namespace cli {
 
       while (_command_completion_generator_iter != _method_alias_map.end())
       {
-        if (!_command_completion_generator_iter->first.compare(0, strlen(text), text) == 0)
+        if (_command_completion_generator_iter->first.compare(0, strlen(text), text) != 0)
           break; // no more matches starting with this prefix
 
         if (_command_completion_generator_iter->second == _command_completion_generator_iter->first) // suppress completing aliases
