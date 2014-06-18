@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "client" 
+
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
@@ -475,15 +477,20 @@ config load_config( const fc::path& datadir )
 
        vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
        {
+          FC_ASSERT( first >= 0 );
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
           int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
-          result.reserve( last-first );
+          if ( last < first )
+          {
+             return result;
+          }
+          
+          result.reserve( last - first + 1);
 
           for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
-
 
           return result;
        }
@@ -947,14 +954,14 @@ config load_config( const fc::path& datadir )
       _wallet->open(wallet_name);
     }
 
-    fc::optional<variant> detail::client_impl::wallet_get_gui_setting(const string& name)
+    fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
     {
-        return _wallet->get_gui_setting( name );
+        return _wallet->get_wallet_setting( name );
     }
     
-    void detail::client_impl::wallet_set_gui_setting(const string& name, const variant& value)
+    void detail::client_impl::wallet_set_wallet_setting(const string& name, const variant& value)
     {
-        _wallet->set_gui_setting( name, value );
+        _wallet->set_wallet_setting( name, value );
     }
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
@@ -2174,7 +2181,7 @@ config load_config( const fc::path& datadir )
 
    signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name, 
                                                                  const string& to_account_name, 
-                                                                 const share_type& amount_to_withdraw,
+                                                                 double amount_to_withdraw,
                                                                  const string& memo_message )
    {
       auto trx = _wallet->withdraw_delegate_pay( delegate_name, 

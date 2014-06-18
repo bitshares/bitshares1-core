@@ -508,26 +508,28 @@ namespace bts { namespace blockchain {
                FC_CAPTURE_AND_THROW( time_in_past, (block_data.timestamp)(_head_block_header.timestamp) );
 
             fc::time_point_sec now = bts::blockchain::now();
-            FC_ASSERT( block_data.timestamp <=  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2),
-                       "${block_data.timestamp} < ${now}", 
-                        ("block_data.timestamp",block_data.timestamp)("now",now));
+            auto delta_seconds = (block_data.timestamp - now).to_seconds();
+            if( block_data.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
+                FC_CAPTURE_AND_THROW( time_in_future, (block_data.timestamp)(now)(delta_seconds) );
 
             size_t block_size = block_data.block_size();
             auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
 
-            FC_ASSERT( block_data.fee_rate  == expected_next_fee );
+            if( block_data.fee_rate != expected_next_fee )
+              FC_CAPTURE_AND_THROW( invalid_fee_rate, (block_data.fee_rate)(expected_next_fee) );
 
             digest_block digest_data(block_data);
-            FC_ASSERT( digest_data.validate_digest() );
+            if( NOT digest_data.validate_digest() )
+              FC_CAPTURE_AND_THROW( invalid_block_digest );
+
             FC_ASSERT( digest_data.validate_unique() );
 
             // signing delegate id:
-            auto signing_delegate_id = self->get_signing_delegate_id( block_data.timestamp );
-            FC_ASSERT( block_data.validate_signee( self->get_signing_delegate_key(block_data.timestamp) ),
-                       "", ("signing_delegate_key", self->get_signing_delegate_key(block_data.timestamp))
-                           ("signing_delegate_id", signing_delegate_id ) );
+            auto expected_delegate_id = self->get_signing_delegate_id( block_data.timestamp );
 
-      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+            if( NOT block_data.validate_signee( self->get_signing_delegate_key(block_data.timestamp) ) )
+               FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate_id) );
+      } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
       void chain_database_impl::update_head_block( const full_block& block_data )
       {
@@ -1726,6 +1728,9 @@ namespace bts { namespace blockchain {
                 wlog( "error fetching block num of block ${b} while building fork list", ("b",iter.key()));
             }
         }
+       
+        std::sort( fork_blocks.begin(), fork_blocks.end() );
+       
         return fork_blocks;
     }
 

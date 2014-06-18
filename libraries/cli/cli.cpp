@@ -50,14 +50,14 @@ namespace bts { namespace cli {
       class cli_impl
       {
          public:
-            client_ptr                  _client;
-            rpc_server_ptr              _rpc_server;
-            bts::cli::cli*              _self;
-            fc::thread                  _cin_thread;
-
-            bool                        _quit;
-            bool                        show_raw_output;
-            bool                        _daemon_mode;
+            client_ptr                                      _client;
+            rpc_server_ptr                                  _rpc_server;
+            bts::cli::cli*                                  _self;
+            fc::thread                                      _cin_thread;
+                                                            
+            bool                                            _quit;
+            bool                                            show_raw_output;
+            bool                                            _daemon_mode;
 
             boost::iostreams::stream< boost::iostreams::null_sink > 
                 nullstream;
@@ -781,8 +781,11 @@ namespace bts { namespace cli {
               else if (method_name == "wallet_list")
               {
                   auto wallets = result.as<vector<string>>();
-                  for (auto wallet : wallets)
-                      *_out << wallet << "\n";
+                  if (wallets.empty())
+                      *_out << "No wallets found.\n";
+                  else
+                      for (auto wallet : wallets)
+                          *_out << wallet << "\n";
               }
               else if (method_name == "wallet_list_unspent_balances" )
               {
@@ -913,7 +916,7 @@ namespace bts { namespace cli {
                       if (current > max || current == total_delegates)
                           return;
                       if (current == num_active)
-                          *_out << "** Inactive:\n"; 
+                          *_out << "** Standby:\n";
 
                       *_out << std::setw(12) << delegate_rec.id;
                       *_out << std::setw(25) << delegate_rec.name;
@@ -1361,8 +1364,8 @@ namespace bts { namespace cli {
       _rpc_server(client->get_rpc_server()),
       _command_script(command_script), 
       nullstream(boost::iostreams::null_sink()),
-      _out(output_stream ? output_stream : &nullstream),
       _quit(false),
+      _out(output_stream ? output_stream : &nullstream),
       show_raw_output(false),
       _daemon_mode(false)
     {
@@ -1490,7 +1493,7 @@ namespace bts { namespace cli {
 #endif
     void cli_impl::display_status_message(const std::string& message)
     {
-      if( !_input_stream || !_out ) 
+      if( !_input_stream || !_out || _daemon_mode ) 
         return;
 #ifdef HAVE_READLINE
       char* saved_line = rl_copy_text(0, rl_end);

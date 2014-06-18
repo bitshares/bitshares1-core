@@ -254,7 +254,7 @@ namespace bts { namespace wallet {
                                               bool sign );
 
          signed_transaction  withdraw_delegate_pay( const string& delegate_name,
-                                                    share_type amount_to_withdraw,
+                                                    double amount_to_withdraw,
                                                     const string& withdraw_to_account_name,
                                                     const string& memo_message,
                                                     bool sign );
@@ -382,8 +382,8 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
-         void set_gui_setting(const string& name, const variant& value);
-         fc::optional<variant> get_gui_setting(const string& name);
+         void set_wallet_setting(const string& name, const variant& value);
+         fc::optional<variant> get_wallet_setting(const string& name);
 
       private:
          unique_ptr<detail::wallet_impl> my;

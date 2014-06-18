@@ -87,6 +87,11 @@ namespace bts{ namespace wallet {
               // TODO: check for duplicates...
               self->balances[ rec.id() ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
+
+           void load_wallet_setting_record( const wallet_setting_record& rec )
+           { try {
+              self->settings[rec.name] = rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
      };
 
    } // namespace detail
@@ -100,11 +105,6 @@ namespace bts{ namespace wallet {
 
    wallet_db::~wallet_db()
    {
-   }
-
-   void wallet_db::load_gui_settings( const fc::path& settings_file )
-   {
-      settings.open( settings_file, true );
    }
 
    void wallet_db::open( const fc::path& wallet_file )
@@ -149,7 +149,6 @@ namespace bts{ namespace wallet {
 
    void wallet_db::close()
    {
-      settings.close();
       my->_records.close();
       keys.clear();
       wallet_master_key.reset();
@@ -264,6 +263,24 @@ namespace bts{ namespace wallet {
       return owallet_account_record();
    }
 
+
+   void wallet_db::store_wallet_setting(const string& name, const variant& value)
+   {
+       auto orec = lookup_wallet_setting(name);
+       if (orec.valid())
+       {
+           orec->value = value;
+           settings[name] = *orec;
+           store_record( *orec );
+       }
+       else
+       {
+           auto setting = wallet_setting(name, value);
+           auto rec = wallet_setting_record( setting, new_wallet_record_index() );
+           settings[name] = rec;
+           store_record( rec );
+       }
+   }
 
    void wallet_db::store_key( const key_data& key_to_store )
    {
@@ -406,6 +423,16 @@ namespace bts{ namespace wallet {
          if( itr != keys.end() ) return itr->second;
       }
       return owallet_key_record();
+   }
+
+   owallet_setting_record   wallet_db::lookup_wallet_setting( const string& name)const
+   {
+      auto itr = settings.find(name);
+      if (itr != settings.end() )
+      {
+          return itr->second;
+      }
+      return owallet_setting_record();
    }
 
    void wallet_db::add_contact_account( const account_record& blockchain_account,

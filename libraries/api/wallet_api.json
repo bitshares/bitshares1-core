@@ -457,7 +457,7 @@
             },
             {
               "name" : "memo_message", 
-              "type" : "std::string", 
+              "type" : "string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
             }
@@ -493,7 +493,7 @@
             },
             {
               "name" : "memo_message", 
-              "type" : "std::string", 
+              "type" : "string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
             }
@@ -659,17 +659,17 @@
                },
                {
                   "name" : "asset_name",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the name of the asset"
                },
                {
                   "name" : "issuer_name",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the name of the issuer of the asset"
                },
                {
                   "name" : "description",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "a description of the asset",
                   "default_value" : ""
                },
@@ -716,7 +716,7 @@
                },
                {
                   "name" : "memo_message",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the memo to send to the receiver"
                }
             ],
@@ -734,17 +734,17 @@
                },
                {
                   "name" : "subject",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the subject of the proposal"
                },
                {
                   "name" : "body",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the body of the proposal"
                },
                {
                   "name" : "proposal_type",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "the type of the proposal"
                },
                {
@@ -777,7 +777,7 @@
                },
                {
                   "name" : "message",
-                  "type" : "std::string",
+                  "type" : "string",
                   "description" : "comment to go along with vote",
                   "default_value" : ""
                }
@@ -851,13 +851,14 @@
             },
             {
                "name" : "amount_to_withdraw",
-               "type" : "share_type",
+               "type" : "real_amount",
                "description" : "the amount to withdraw"
             },
             {
                "name" : "memo",
-               "type" : "std::string",
-               "description" : "memo to add to transaction"
+               "type" : "string",
+               "description" : "memo to add to transaction",
+               "default_value" : "payday"
       }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -953,11 +954,11 @@
       {
          "method_name" : "wallet_dump_private_key",
          "description" : "Reveals the private key corresponding to an address or public key",
-         "return_type"  : "std::string",
+         "return_type"  : "string",
          "parameters" : [
          {
             "name" : "address_or_public_key",
-            "type" : "std::string",
+            "type" : "string",
             "description" : "a public key or address (based on hash of public key) of the private key"
          }
          ],
@@ -986,7 +987,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_set_gui_setting",
+         "method_name" : "wallet_set_wallet_setting",
          "description" : "Set a property in the GUI settings DB",
          "return_type" : "void",
          "parameters"  : [
@@ -1004,7 +1005,7 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_get_gui_setting",
+         "method_name" : "wallet_get_wallet_setting",
          "description" : "Get the value of the given setting",
          "return_type" : "optional_variant",
          "parameters"  : [

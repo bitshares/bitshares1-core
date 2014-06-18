@@ -135,6 +135,16 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_account_transaction_history" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
+   disable_logging();
+   for( uint32_t i = 0; i < 100; ++i )
+   {
+//      exec( clientb, "wallet_transfer 10 XTS delegate32 delegate32 " );
+      produce_block( clientb );
+   }
+   exec( clientb, "blockchain_get_account_record delegate32" );
+   exec( clientb, "wallet_withdraw_delegate_pay delegate32 c-account .01234" );
+   produce_block( clientb );
+   exec( clientb, "wallet_account_transaction_history delegate32" );
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 
 
