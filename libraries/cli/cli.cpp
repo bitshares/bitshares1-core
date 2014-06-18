@@ -237,18 +237,26 @@ namespace bts { namespace cli {
                   else
                   {
                   #ifdef HAVE_READLINE 
-                     char* line_read = nullptr;
-                     _out->flush(); //readline doesn't use cin, so we must manually flush _out
-                     line_read = readline(prompt.c_str());
-                     if(line_read && *line_read)
-                         add_history(line_read);
-                     if( line_read == nullptr )
-                        FC_THROW_EXCEPTION( fc::eof_exception, "" );
-                     line = line_read;
-                     free(line_read);
+                    if (_input_stream == std::cin)
+                    {
+                      char* line_read = nullptr;
+                      _out->flush(); //readline doesn't use cin, so we must manually flush _out
+                      line_read = readline(prompt.c_str());
+                      if(line_read && *line_read)
+                          add_history(line_read);
+                      if( line_read == nullptr )
+                         FC_THROW_EXCEPTION( fc::eof_exception, "" );
+                      line = line_read;
+                      free(line_read);
+                    }
+                  else
+                    {
+                      *_out <<prompt;
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    }
                   #else
-                     *_out <<prompt;
-                     _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    *_out <<prompt;
+                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
                   #endif
                   if (_input_stream_log)
                     {
