@@ -37,7 +37,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (15ll)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (30ll)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
