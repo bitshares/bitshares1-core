@@ -237,7 +237,7 @@ namespace bts { namespace cli {
                   else
                   {
                   #ifdef HAVE_READLINE 
-                    if (_input_stream == std::cin)
+                    if (_input_stream == &std::cin)
                     {
                       char* line_read = nullptr;
                       _out->flush(); //readline doesn't use cin, so we must manually flush _out
@@ -1164,7 +1164,7 @@ namespace bts { namespace cli {
 
                     *_out << std::setw( 15 ) << acct.trust_level;
                     if (acct.is_delegate())
-                        *_out << std::setw( 25 ) << acct.block_production_enabled ? "YES" : "NO";
+                        *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
                         *_out << std::setw( 25 ) << "N/A";
                     *_out << "\n";
