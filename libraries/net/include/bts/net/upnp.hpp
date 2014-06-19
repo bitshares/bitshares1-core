@@ -14,6 +14,7 @@ namespace bts { namespace net {
       ~upnp_service();
 
       fc::ip::address external_ip()const;
+      uint16_t mapped_port()const;
       void map_port( uint16_t p );
     private:
       std::unique_ptr<detail::upnp_service_impl> my;

@@ -3,6 +3,7 @@
 #include <bts/net/config.hpp>
 
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/reflect/reflect.hpp>
@@ -15,6 +16,7 @@
 
 namespace bts { namespace net {
 
+  typedef fc::ecc::public_key_data node_id_t;
   typedef fc::ripemd160 item_hash_t;
   struct item_id
   {
@@ -133,7 +135,7 @@ namespace bts { namespace net {
     fc::ip::address    inbound_address;
     uint16_t           inbound_port;
     uint16_t           outbound_port;
-    fc::uint160_t      node_id;
+    node_id_t          node_id;
     fc::sha256         chain_id;
     fc::variant_object user_data;
 
@@ -143,7 +145,7 @@ namespace bts { namespace net {
                   const fc::ip::address& inbound_address,
                   uint16_t inbound_port,
                   uint16_t outbound_port,
-                  const fc::uint160_t& node_id_arg, 
+                  const node_id_t& node_id_arg, 
                   const fc::sha256& chain_id_arg,
                   const fc::variant_object& user_data ) :
       user_agent(user_agent),
@@ -164,7 +166,7 @@ namespace bts { namespace net {
     std::string        user_agent;
     uint32_t           core_protocol_version;
     fc::ip::endpoint   remote_endpoint;
-    fc::uint160_t      node_id;
+    node_id_t          node_id;
     fc::sha256         chain_id;
     fc::variant_object user_data;
 
@@ -172,7 +174,7 @@ namespace bts { namespace net {
     hello_reply_message(const std::string& user_agent, 
                         uint32_t core_protocol_version,
                         fc::ip::endpoint remote_endpoint, 
-                        const fc::uint160_t& node_id_arg, 
+                        const node_id_t& node_id_arg, 
                         const fc::sha256& chain_id_arg,
                         const fc::variant_object& user_data ) :
       user_agent(user_agent),

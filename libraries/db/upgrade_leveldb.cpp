@@ -3,6 +3,7 @@
 #include <fc/log/logger.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <boost/regex.hpp>
 
 
 namespace bts { namespace db {
