@@ -208,7 +208,7 @@ struct bts_client_process : managed_process
   uint16_t p2p_port;
   uint16_t http_port;
   bts::rpc::rpc_client_ptr rpc_client;
-  fc::uint160_t node_id;
+  bts::net::node_id_t node_id;
   fc::path config_dir;
   bts::wallet::wallet_ptr wallet; // used during initial creation, closed after that
   bts::blockchain::chain_database_ptr blockchain;
@@ -697,7 +697,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
 void bts_client_launcher_fixture::get_node_ids()
 {
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->network_get_info()["node_id"].as<fc::uint160_t>());
+    BOOST_CHECK_NO_THROW(client_processes[i].node_id = client_processes[i].rpc_client->network_get_info()["node_id"].as<bts::net::node_id_t>());
 }
 
 void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts::net::message_propagation_data>& propagation_data, int initial_node, const fc::path& output_file)
@@ -722,7 +722,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
   }
   fc::microseconds max_duration = max_time - min_time;
 
-  std::map<fc::uint160_t, int> node_id_to_node_map;
+  std::map<bts::net::node_id_t, int> node_id_to_node_map;
   for (unsigned i = 0; i < client_processes.size(); ++i)
     node_id_to_node_map[client_processes[i].node_id] = i;
 
@@ -754,7 +754,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
                       int initial_node, 
                       fc::microseconds max_duration,
                       DirectedGraph& directed_graph,
-                      std::map<fc::uint160_t, int> node_id_to_node_map) :
+                      std::map<bts::net::node_id_t, int> node_id_to_node_map) :
       _propagation_data(propagation_data),
       _initial_node(initial_node),
       _max_duration(max_duration),
@@ -801,7 +801,7 @@ void bts_client_launcher_fixture::create_propagation_graph(const std::vector<bts
     int _initial_node;
     fc::microseconds _max_duration;
     DirectedGraph& _directed_graph;
-    std::map<fc::uint160_t, int> _node_id_to_node_map;
+    std::map<bts::net::node_id_t, int> _node_id_to_node_map;
   };
 
   fc::create_directories(output_file.parent_path());
@@ -1426,7 +1426,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
 
   // looking good so far.  Now let the two halves of the network see each other
   for (unsigned i = 0; i < client_processes.size(); ++i)
-    client_processes[i].rpc_client->network_set_allowed_peers(std::vector<bts::blockchain::transaction_id_type>());
+    client_processes[i].rpc_client->network_set_allowed_peers(std::vector<bts::net::node_id_t>());
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].rpc_client->network_add_node(fc::ip::endpoint(fc::ip::address("127.0.0.1"), bts_xt_client_test_config::base_p2p_port + ((i + 1) % 2)), "add");
   BOOST_TEST_MESSAGE("Reconnection triggered, now we wait");

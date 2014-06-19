@@ -110,13 +110,14 @@ namespace bts { namespace client {
          fc::path                   get_data_dir() const;
 
          // returns true if the client is connected to the network
-         bool            is_connected() const;
-         fc::uint160_t   get_node_id() const;
+         bool                is_connected() const;
+         bts::net::node_id_t get_node_id() const;
 
          void configure( const fc::path& configuration_directory );
 
          // functions for taking command-line parameters and passing them on to the p2p node
-         void listen_on_port( uint16_t port_to_listen );
+         void listen_on_port( uint16_t port_to_listen, bool wait_if_not_available);
+         void listen_to_p2p_network();
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
 

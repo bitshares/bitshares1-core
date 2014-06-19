@@ -143,6 +143,10 @@ struct chain_fixture
                                 "c02084227247bbf6341c7aea7f93d71b75cca8061d9d85d68f17dc8912009dcb",
                                 "e73ed687f42c8bbf306e7fbc806f7526e01011b61deb66b222aa981640c2b67e",
                                 "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352f",
+                                "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352a",
+                                "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352b",
+                                "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352c",
+                                "ca0517f7475722af9f585f7ff068b39bcb3c018860c25360ba9370dca8cc352d",
                                 "a3331c76c729494f18a479f4c9a5b17d936ec89fca24b6287b8a84ce1aea60a8"])").as<vector< fc::ecc::private_key>>();
 
       genesis_block_config config;

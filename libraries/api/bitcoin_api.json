@@ -12,7 +12,7 @@
                     "description" : "the account's name associated with this address"
                  }
               ],
-           "prerequisites" : ["json_authenticated", "wallet_open"],
+           "prerequisites" : ["wallet_open"],
            "aliases" : [ "getaccountaddress" ]
       },
       {
@@ -26,7 +26,7 @@
                     "description" : "the address of this account"
                  }
               ],
-           "prerequisites" : ["json_authenticated", "wallet_open"],
+           "prerequisites" : ["wallet_open"],
            "aliases" : [ "getaccount" ]
       },
       {
@@ -40,7 +40,7 @@
               "description" : "bitshares address of the private key, base58 string hash of public key"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : [ "dumpprivkey" ]
       },
       {
@@ -54,7 +54,7 @@
               "description" : "the passphrase for encrypt"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : [ "encryptwallet" ]
       },
       {
@@ -93,7 +93,7 @@
             }
           ],
           "is_const" : true,
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : [ "backupwallet" ]
       },
       {
@@ -108,7 +108,7 @@
               "description" : "the account's name associated with this address list"
             }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : [ "getaddressesbyaccount" ]
       },
       {
@@ -195,7 +195,7 @@
               "enable_autocomplete" : false
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : [ "getnewaddress" ]
       },
       {
@@ -210,7 +210,7 @@
               "description" : "The received address"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : [ "getreceivedbyaddress" ]
       },
       {
@@ -236,7 +236,7 @@
               "default_value" : true
           }
           ],
-          "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["importprivkey"]
       },
       {
@@ -244,7 +244,7 @@
           "description"    : "Returns Object that has account names as keys, account balances as values. TODO: balance in result type is asset",
           "return_type"    : "map< account_name, share_type >",
           "parameters"     : [],
-          "prerequisites"  : ["json_authenticated","wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["listaccounts"]
       },
       {
@@ -275,7 +275,7 @@
               "default_value" : 0
           }
           ],
-          "prerequisites" : ["json_authenticated","wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["listtransactions"]
       },
       {
@@ -306,7 +306,7 @@
               "default_value" : ""
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["sendfrom"]
       },
       {
@@ -332,7 +332,7 @@
               "default_value" : ""
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["sendmany"]
       },
       {
@@ -358,7 +358,7 @@
               "default_value" : ""
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["sendtoaddress"]
       },
       {
@@ -373,7 +373,7 @@
               "description" : "the amount of the fee"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["settrxfee"]
       },
       {
@@ -393,7 +393,7 @@
               "description" : "the massage to sign"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+          "prerequisites" : ["wallet_unlocked"],
           "aliases" : ["signmessage"]
       },
       {
@@ -408,7 +408,7 @@
               "description" : "the address of the private key"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["validatemessage"]
       },
       {
@@ -433,7 +433,7 @@
               "description" : "the massage signed"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["verifymessage"]
       },
       {
@@ -441,7 +441,7 @@
           "description": "Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked.",
           "return_type": "void",
           "parameters" : [],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["walletlock"]
       },
       {
@@ -461,7 +461,7 @@
               "description" : "the number of seconds to keep the wallet unlocked"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["walletpassphrase"]
       },
       {
@@ -481,7 +481,7 @@
               "description" : "the new passphrase for encrypting the wallet"
           }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"],
+          "prerequisites" : ["wallet_open"],
           "aliases" : ["walletpassphrasechange"]
       }
      ]

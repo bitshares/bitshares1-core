@@ -30,11 +30,11 @@ namespace bts { namespace wallet {
          virtual ~wallet();
 
          /**
-          *  To generate predictable test resutls we need an option
-          *  to use deterministiic keys rather than purely random
+          *  To generate predictable test results we need an option
+          *  to use deterministic keys rather than purely random
           *  one-time keys.
           */
-         void use_detininistic_one_time_keys( bool state );
+         void use_deterministic_one_time_keys( bool state );
 
          /**
           *  Wallet File Management
@@ -56,10 +56,8 @@ namespace bts { namespace wallet {
 
          void    close();
 
-         void    export_to_json( const path& export_file_name ) const;
-
-         void    create_from_json( const path& path, 
-                                   const string& name );
+         void    export_to_json( const path& filename )const;
+         void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
 
          bool    is_open()const;
          string  get_wallet_name()const;
@@ -103,7 +101,7 @@ namespace bts { namespace wallet {
           */
          ///@{
          void     unlock( const string& password,
-                          microseconds timeout = microseconds::maximum() );
+                          const fc::microseconds& timeout = microseconds::maximum() );
          void     lock();
          void     change_passphrase(const string& new_passphrase);
 
@@ -117,7 +115,7 @@ namespace bts { namespace wallet {
 
          void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
-                              scan_progress_callback cb = scan_progress_callback() );
+                               const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;
 
          ///@{ account management
@@ -151,11 +149,13 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         void enable_delegate_block_production( const string& delegate_id, 
+                                                bool enable = true );
          /**
           *  If this wallet has any delegate keys, this method will return the time
           *  at which this wallet may produce a block.
           */
-         time_point_sec next_block_production_time()const;
+         time_point_sec next_block_production_time();
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void               sign_block( signed_block_header& header )const;
@@ -333,6 +333,8 @@ namespace bts { namespace wallet {
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
 
+
+         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
          /**
           *  Bitcoin compatiblity
