@@ -6,7 +6,6 @@
 #include <fc/exception/exception.hpp>
 #include <functional>
 #include <map>
-#include <boost/regex.hpp>
 
 namespace fc { class path; }
 
