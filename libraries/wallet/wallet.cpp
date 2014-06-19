@@ -998,48 +998,62 @@ namespace bts { namespace wallet {
          my->_wallet_db.store_key( *current_key_record );
          return import_public_key;
       }
-      else if( account_name == string() )
+
+      auto registered_account = my->_blockchain->get_account_record( import_public_key );
+      if( registered_account )
       {
-         auto registered_account = my->_blockchain->get_account_record( import_public_key );
-         FC_ASSERT( registered_account, "the key must belong to a registered account or an account name must be specified" );
- 
+          if( account_name.size() )
+             FC_ASSERT( account_name == registered_account->name,
+                        "Attempt to import a private key belonging to another account",
+                        ("account_with_key", registered_account->name)
+                        ("account_name",account_name) );
+
          add_contact_account( registered_account->name, import_public_key );
          return import_private_key( key, registered_account->name );
       }
-      else
+      FC_ASSERT( account_name.size(), "You must specify an account name because the private key "
+                                      "does not belong to any known accounts");
+
+      FC_ASSERT( is_valid_account_name( account_name ) );
+
+      auto account_with_key = my->_wallet_db.lookup_account( key.get_public_key() );
+      if (account_with_key)
       {
-         FC_ASSERT( is_valid_account_name( account_name ) );
-         auto current_account = my->_wallet_db.lookup_account( account_name );
-         if( !current_account && create_account )
-         {
-            add_contact_account( account_name, key.get_public_key() );
-            return import_private_key( key, account_name, false );
-         }
-         
-         FC_ASSERT( current_account.valid(),
-                   "You must create an account before importing a key" );
-
-         auto pub_key = key.get_public_key();
-         address key_address(pub_key);
-         auto current_key_record = my->_wallet_db.lookup_key( key_address );
-         if( current_key_record.valid() )
-         {
-            FC_ASSERT( current_key_record->account_address == current_account->account_address );
-            current_key_record->encrypt_private_key( my->_wallet_password, key );
-            my->_wallet_db.store_key( *current_key_record );
-            return current_key_record->public_key;
-         }
-
-         key_data new_key_data;
-         if( current_account.valid() )
-            new_key_data.account_address = current_account->account_address;
-         new_key_data.encrypt_private_key( my->_wallet_password, key );
-
-         my->_wallet_db.store_key( new_key_data );
-
-         return pub_key;
+          FC_ASSERT( account_name == account_with_key->name,
+                     "Attempt to import a private key belonging to another account",
+                     ("account_with_key", account_with_key->name)
+                     ("account_name",account_name) );
       }
 
+      auto current_account = my->_wallet_db.lookup_account( account_name );
+      if( !current_account && create_account )
+      {
+         add_contact_account( account_name, key.get_public_key() );
+         return import_private_key( key, account_name, false );
+      }
+
+      FC_ASSERT( current_account.valid(),
+                "You must create an account before importing a key" );
+
+      auto pub_key = key.get_public_key();
+      address key_address(pub_key);
+      current_key_record = my->_wallet_db.lookup_key( key_address );
+      if( current_key_record.valid() )
+      {
+         FC_ASSERT( current_key_record->account_address == current_account->account_address );
+         current_key_record->encrypt_private_key( my->_wallet_password, key );
+         my->_wallet_db.store_key( *current_key_record );
+         return current_key_record->public_key;
+      }
+
+      key_data new_key_data;
+      if( current_account.valid() )
+         new_key_data.account_address = current_account->account_address;
+      new_key_data.encrypt_private_key( my->_wallet_password, key );
+
+      my->_wallet_db.store_key( new_key_data );
+
+      return pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    public_key_type wallet::import_wif_private_key( const string& wif_key, 
