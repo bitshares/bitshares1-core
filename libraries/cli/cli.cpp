@@ -790,7 +790,8 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_transfer")
               {
-                  *_out << "TRANSFERRRING!!!\n\n";
+                  auto trx = result.as<signed_transaction>();
+                  print_transfer_summary( trx );
               }
               else if (method_name == "wallet_list")
               {
@@ -1084,7 +1085,15 @@ namespace bts { namespace cli {
                 return str.substr(0, size - 3) + "...";
             }
 
-            void print_unspent_balances(vector<wallet_balance_record> balance_recs)
+            void print_transfer_summary(const signed_transaction& trx)
+            {
+                auto trx_rec = _client->get_wallet()->lookup_transaction(trx.id());
+                auto pretty = _client->get_wallet()->to_pretty_trx( *trx_rec );
+                std::vector<pretty_transaction> list = { pretty };
+                print_transaction_history(list);
+            }
+
+            void print_unspent_balances(const vector<wallet_balance_record>& balance_recs)
             {
                 *_out << std::right;
                 *_out << std::setw(18) << "BALANCE";

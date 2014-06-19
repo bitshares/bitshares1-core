@@ -336,6 +336,8 @@ namespace bts { namespace wallet {
          bool      is_receive_address( const address& addr )const;
 
 
+         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+
          /**
           *  Bitcoin compatiblity
           */
