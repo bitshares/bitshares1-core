@@ -502,7 +502,7 @@ config load_config( const fc::path& datadir )
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT , 
+                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT,
                              "Client must have ${count} connections before you may produce blocks",
                              ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
@@ -1018,20 +1018,20 @@ config load_config( const fc::path& datadir )
       _wallet->open(wallet_name);
     }
 
-    fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
+    fc::optional<variant> detail::client_impl::wallet_get_setting(const string& name)
     {
-        return _wallet->get_wallet_setting( name );
+        return _wallet->get_setting( name );
     }
     
-    void detail::client_impl::wallet_set_wallet_setting(const string& name, const variant& value)
+    void detail::client_impl::wallet_set_setting(const string& name, const variant& value)
     {
-        _wallet->set_wallet_setting( name, value );
+        _wallet->set_setting( name, value );
     }
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-       if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
-       if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( brain_key.size() && brain_key.size() < BTS_WALLET_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
        if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
       _wallet->create(wallet_name,password, brain_key );
     }
