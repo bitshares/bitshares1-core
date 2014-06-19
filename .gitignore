@@ -5,6 +5,7 @@
 *.lib
 *.sw*
 *.dot
+*.DS_Store
 
 docs/html
 docs/latex
