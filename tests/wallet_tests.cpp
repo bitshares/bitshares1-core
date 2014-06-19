@@ -281,7 +281,7 @@ class test_file
   fc::path _expected_result_file;
 public:
        test_file(fc::future<void> done, fc::path result_file, fc::path expected_result_file)
-         : client_done(done),_result_file(result_file), _expected_result_file(expected_result_file) {}
+         : _result_file(result_file), _expected_result_file(expected_result_file), client_done(done) {}
 
   bool compare_files(); //compare two files, return true if the files match
 
@@ -391,6 +391,8 @@ char** CommandLineToArgvA(const char* CmdLine, int* _argc)
 #endif
 
 using namespace boost;
+#include "deterministic_openssl_rand.hpp"
+#include <bts/utilities/key_conversion.hpp>
 
 void create_genesis_block(fc::path genesis_json_file)
 {
@@ -404,17 +406,27 @@ void create_genesis_block(fc::path genesis_json_file)
    config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
    config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
+   // set our fake random number generator to generate deterministic keys
+   set_random_seed_for_testing(fc::sha512());
+
+   std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
       name_config delegate_account;
       delegate_account.name = "delegate" + fc::to_string(i);
-      delegate_private_keys.push_back( fc::ecc::private_key::generate() );
-      auto delegate_public_key = delegate_private_keys.back().get_public_key();
+      fc::ecc::private_key delegate_private_key = fc::ecc::private_key::generate();
+      delegate_private_keys.push_back( delegate_private_key );
+      
+      auto delegate_public_key =delegate_private_key.get_public_key();
       delegate_account.owner = delegate_public_key;
       delegate_account.is_delegate = true;
 
       config.names.push_back(delegate_account);
       config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
+
+      //output public/private key pair for each delegate to stdout
+      string wif_key = bts::utilities::key_to_wif( delegate_private_key );
+      std::cout << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
    }
 
    fc::json::save_to_file( config, genesis_json_file);

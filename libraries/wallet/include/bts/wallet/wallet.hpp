@@ -10,8 +10,6 @@ namespace bts { namespace wallet {
 
    namespace detail { class wallet_impl; }
 
-    
-
    /** args: current_block, last_block */
    typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
 
@@ -30,11 +28,11 @@ namespace bts { namespace wallet {
          virtual ~wallet();
 
          /**
-          *  To generate predictable test resutls we need an option
-          *  to use deterministiic keys rather than purely random
+          *  To generate predictable test results we need an option
+          *  to use deterministic keys rather than purely random
           *  one-time keys.
           */
-         void use_detininistic_one_time_keys( bool state );
+         void use_deterministic_one_time_keys( bool state );
 
          /**
           *  Wallet File Management
@@ -56,16 +54,33 @@ namespace bts { namespace wallet {
 
          void    close();
 
-         void    export_to_json( const path& export_file_name ) const;
-
-         void    create_from_json( const path& path, 
-                                   const string& name );
-
          bool    is_open()const;
          string  get_wallet_name()const;
          path    get_wallet_filename()const;
+
+         void    export_to_json( const path& filename )const;
+         void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
+
          ///@}
          
+         /**
+          *  Lock management & security
+          */
+         ///@{
+         void     unlock( const string& password,
+                          const fc::microseconds& timeout = microseconds::maximum() );
+         void     lock();
+         void     change_passphrase(const string& new_passphrase);
+
+         bool     is_unlocked()const;
+         bool     is_locked()const;
+
+         fc::time_point unlocked_until()const;
+         ///@}
+
+         void set_setting(const string& name, const variant& value);
+         fc::optional<variant> get_setting(const string& name);
+
          /**
           *  @name Utility Methods
           */
@@ -98,21 +113,7 @@ namespace bts { namespace wallet {
          void    set_priority_fee( uint64_t fee );
          ///@}
 
-         /**
-          *  Lock management & security
-          */
-         ///@{
-         void     unlock( const string& password,
-                          const fc::microseconds& timeout = microseconds::maximum() );
-         void     lock();
-         void     change_passphrase(const string& new_passphrase);
-
-         bool     is_unlocked()const;
-         bool     is_locked()const;
-
-         fc::time_point unlocked_until()const;
-         ///@}
-
+         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
          void      clear_pending_transactions();
 
          void      scan_state();
@@ -172,8 +173,8 @@ namespace bts { namespace wallet {
 
          vector<string> list() const; // list wallets
 
-         vector<wallet_account_record> list_receive_accounts()const;
-         vector<wallet_account_record> list_contact_accounts()const;
+         vector<wallet_account_record> list_accounts()const;
+         vector<wallet_account_record> list_my_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
@@ -300,6 +301,10 @@ namespace bts { namespace wallet {
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
+
+         void update_account_private_data( const string& account_to_update,
+                                           const variant& private_data );
+
          wallet_transaction_record update_registered_account( const string& account_name,
                                                        const string& pay_from_account,
                                                        optional<variant> json_data,
@@ -335,9 +340,8 @@ namespace bts { namespace wallet {
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
 
-
          /**
-          *  Bitcoin compatiblity
+          *  Bitcoin compatibility
           */
          ///@{
          //address                                    get_new_address( const string& account_name );
@@ -382,9 +386,6 @@ namespace bts { namespace wallet {
          /** signs transaction with the specified keys for the specified addresses */
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
-
-         void set_wallet_setting(const string& name, const variant& value);
-         fc::optional<variant> get_wallet_setting(const string& name);
 
       private:
          unique_ptr<detail::wallet_impl> my;

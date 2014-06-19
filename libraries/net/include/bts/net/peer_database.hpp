@@ -79,6 +79,8 @@ namespace bts { namespace net {
     void close();
     void clear();
 
+    void erase(const fc::ip::endpoint& endpointToErase);
+
     void update_entry(const potential_peer_record& updatedRecord);
     potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
 

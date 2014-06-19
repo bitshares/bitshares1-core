@@ -21,6 +21,11 @@ namespace bts{ namespace wallet {
               self->wallet_master_key = key;
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+           void load_market_record( const wallet_market_order_status_record& rec )
+           {
+              self->market_orders[rec.order.market_index.owner] = rec;
+           }
+
            void load_account_record( const wallet_account_record& account_to_load )
            { try {
               self->accounts[account_to_load.wallet_record_index] = account_to_load;
@@ -78,9 +83,8 @@ namespace bts{ namespace wallet {
 
            void load_asset_record( const wallet_asset_record& asset_rec )
            { try {
-              FC_ASSERT( !"Not Implemented" );
+              self->assets[ asset_rec.symbol ] = asset_rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_record",asset_rec )) }
-
 
            void load_balance_record( const wallet_balance_record& rec )
            { try {
@@ -88,7 +92,7 @@ namespace bts{ namespace wallet {
               self->balances[ rec.id() ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
-           void load_wallet_setting_record( const wallet_setting_record& rec )
+           void load_setting_record( const wallet_setting_record& rec )
            { try {
               self->settings[rec.name] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
@@ -109,57 +113,81 @@ namespace bts{ namespace wallet {
 
    void wallet_db::open( const fc::path& wallet_file )
    { try {
-      my->_records.open( wallet_file, true );
-      auto current_record_itr = my->_records.begin();
-      while( current_record_itr.valid() )
+      try
       {
-         auto current_record = current_record_itr.value();
-         //ilog( "load: ${r}", ("r",current_record) );
-         try 
-         {
-            switch( (wallet_record_type_enum)current_record.type )
-            {
-               case master_key_record_type:
-                  my->load_master_key_record( current_record.as<wallet_master_key_record>() );
-                  break;
-               case account_record_type:
-                  my->load_account_record( current_record.as<wallet_account_record>() );
-                  break;
-               case key_record_type:
-                  my->load_key_record( current_record.as<wallet_key_record>() );
-                  break;
-               case property_record_type:
-                  my->load_property_record( current_record.as<wallet_property_record>() );
-                  break;
-               case balance_record_type:
-                  my->load_balance_record( current_record.as<wallet_balance_record>() );
-                  break;
-               case transaction_record_type:
-                  my->load_transaction_record( current_record.as<wallet_transaction_record>() );
-                  break;
-            }
-         } 
-         catch ( const fc::exception& e )
-         {
-            wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",current_record) );
-         }
-         ++current_record_itr;
+          my->_records.open( wallet_file, true );
+
+          for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+          {
+             auto record = itr.value();
+             try 
+             {
+                switch( (wallet_record_type_enum)record.type )
+                {
+                   case master_key_record_type:
+                      my->load_master_key_record( record.as<wallet_master_key_record>() );
+                      break;
+                   case account_record_type:
+                      my->load_account_record( record.as<wallet_account_record>() );
+                      break;
+                   case key_record_type:
+                      my->load_key_record( record.as<wallet_key_record>() );
+                      break;
+                   case transaction_record_type:
+                      my->load_transaction_record( record.as<wallet_transaction_record>() );
+                      break;
+                   case asset_record_type:
+                      my->load_asset_record( record.as<wallet_asset_record>() );
+                      break;
+                   case balance_record_type:
+                      my->load_balance_record( record.as<wallet_balance_record>() );
+                      break;
+                   case property_record_type:
+                      my->load_property_record( record.as<wallet_property_record>() );
+                      break;
+                   case market_order_record_type:
+                      my->load_market_record( record.as<wallet_market_order_status_record>() );
+                      break;
+                   case setting_record_type:
+                      my->load_setting_record( record.as<wallet_setting_record>() );
+                      break;
+                   default:
+                      FC_ASSERT( !"unknown wallet_db record type!", "", ("type",record.type) );
+                      break;
+                }
+             } 
+             catch ( const fc::exception& e )
+             {
+                wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );
+             }
+          }
+      }
+      catch( ... )
+      {
+          close();
+          throw;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Error opening wallet file ${file}", ("file",wallet_file) ) }
 
    void wallet_db::close()
    {
       my->_records.close();
-      keys.clear();
+
       wallet_master_key.reset();
+
+      accounts.clear();
+      keys.clear();
+      transactions.clear();
+      assets.clear();
+      balances.clear();
+      properties.clear();
+      market_orders.clear();
+      settings.clear();
+
+      btc_to_bts_address.clear();
       address_to_account_wallet_record_index.clear();
       account_id_to_wallet_record_index.clear();
       name_to_account_wallet_record_index.clear();
-      accounts.clear();
-      transactions.clear();
-      balances.clear();
-      assets.clear();
-      properties.clear();
    }
 
    bool wallet_db::is_open()const { return my->_records.is_open(); }
@@ -264,9 +292,9 @@ namespace bts{ namespace wallet {
    }
 
 
-   void wallet_db::store_wallet_setting(const string& name, const variant& value)
+   void wallet_db::store_setting(const string& name, const variant& value)
    {
-       auto orec = lookup_wallet_setting(name);
+       auto orec = lookup_setting(name);
        if (orec.valid())
        {
            orec->value = value;
@@ -275,8 +303,7 @@ namespace bts{ namespace wallet {
        }
        else
        {
-           auto setting = wallet_setting(name, value);
-           auto rec = wallet_setting_record( setting, new_wallet_record_index() );
+           auto rec = wallet_setting_record( setting(name, value), new_wallet_record_index() );
            settings[name] = rec;
            store_record( rec );
        }
@@ -292,10 +319,15 @@ namespace bts{ namespace wallet {
 
          if( key_to_store.has_private_key())
          {
+            auto oacct = lookup_account( key_to_store.account_address );
+            FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
+            oacct->is_my_account = true;
+            store_record(*oacct);
+            cache_account(*oacct);
             ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
-                  ("account_name",get_account_name(key_to_store.account_address)) );
+                 ("account_name",get_account_name(key_to_store.account_address)) );
          }
          else
          {
@@ -329,39 +361,34 @@ namespace bts{ namespace wallet {
 
    void wallet_db::clear_pending_transactions()
    {
+       vector<transaction_id_type> clear_list;
        for (auto id_trx_pair : transactions)
        {
            if (id_trx_pair.second.block_num == 0)
            {
-               transactions.erase(id_trx_pair.first);
+               clear_list.push_back( id_trx_pair.first );
                my->_records.remove( id_trx_pair.second.wallet_record_index );
            }
        }
+       for( auto id : clear_list ) transactions.erase(id);
    }
 
-   void wallet_db::export_to_json( const fc::path& file_name ) const
-   { try {
+   void wallet_db::export_records(std::vector<generic_wallet_record>& records) const
+   {
       FC_ASSERT( is_open() );
-      std::vector<generic_wallet_record> records;
-      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
-      {
-         records.push_back( itr.value() );
-      }
-      fc::json::save_to_file( records, file_name, true );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("file_name",file_name) ) }
+      records.clear();
 
-   void wallet_db::create_from_json( const fc::path& import_file_name, 
-                                     const fc::path& wallet_to_create )
-   { try {
-      FC_ASSERT( !fc::exists( wallet_to_create ) );
-      open( wallet_to_create );
-      auto input_records = fc::json::from_file<std::vector<generic_wallet_record> >( import_file_name );
-      for( auto r : input_records )
-      {
-         store_generic_record( r.get_wallet_record_index(), r );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("import_file_name",import_file_name)
-                                      ("wallet_to_create",wallet_to_create) ) }
+      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+          records.push_back( itr.value() );
+   }
+
+   void wallet_db::import_records(const std::vector<generic_wallet_record>& records)
+   {
+      FC_ASSERT( is_open() );
+
+      for( const auto& record : records )
+         store_generic_record( record.get_wallet_record_index(), record );
+   }
 
    bool wallet_db::has_private_key( const address& a )const
    { try {
@@ -425,7 +452,7 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
-   owallet_setting_record   wallet_db::lookup_wallet_setting( const string& name)const
+   owallet_setting_record   wallet_db::lookup_setting( const string& name)const
    {
       auto itr = settings.find(name);
       if (itr != settings.end() )
@@ -435,8 +462,8 @@ namespace bts{ namespace wallet {
       return owallet_setting_record();
    }
 
-   void wallet_db::add_contact_account( const account_record& blockchain_account,
-                                        const variant& private_data  )
+   void wallet_db::add_account( const account_record& blockchain_account,
+                                const variant& private_data  )
    { try {
       wallet_account_record war;
       account_record& tmp  = war;
@@ -446,6 +473,11 @@ namespace bts{ namespace wallet {
 
       war.wallet_record_index = new_wallet_record_index();
       store_record( war );
+      if (has_private_key(war.account_address))
+      {
+          war.is_my_account = true;
+          store_record( war );
+      }
       my->load_account_record( war );
 
       auto current_key = lookup_key( blockchain_account.owner_key );
@@ -465,9 +497,9 @@ namespace bts{ namespace wallet {
       }
    } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
 
-   void wallet_db::add_contact_account( const string& new_account_name, 
-                                        const public_key_type& new_account_key,
-                                        const variant& private_data )
+   void wallet_db::add_account( const string& new_account_name, 
+                                const public_key_type& new_account_key,
+                                const variant& private_data )
    {
       auto current_account_itr = name_to_account_wallet_record_index.find( new_account_name );
       FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(), 
@@ -488,6 +520,11 @@ namespace bts{ namespace wallet {
 
       war.wallet_record_index = new_wallet_record_index();
       store_record( war );
+      if (has_private_key(war.account_address))
+      {
+          war.is_my_account = true;
+          store_record(war);
+      }
       my->load_account_record( war );
 
       auto current_key = lookup_key( new_account_key );
@@ -532,6 +569,13 @@ namespace bts{ namespace wallet {
       }
       return owallet_account_record();
    }
+   void wallet_db::cache_balance( const wallet_balance_record& balance_to_cache )
+   {
+       auto balance_id = balance_to_cache.id();
+       balances[balance_id] = balance_to_cache;
+       store_record( balance_to_cache );
+   }
+
    void wallet_db::cache_balance( const bts::blockchain::balance_record& balance_to_cache )
    {
       auto balance_id = balance_to_cache.id();
@@ -653,4 +697,63 @@ namespace bts{ namespace wallet {
    {
       my->_records.remove( index );
    }
+
+   bool                           wallet_db::validate_password( const fc::sha512& password )const
+   {
+      FC_ASSERT( wallet_master_key );
+      return wallet_master_key->validate_password( password );
+   }
+
+   optional<extended_private_key> wallet_db::get_master_key( const fc::sha512& password    )const
+   {
+      FC_ASSERT( wallet_master_key );
+      return wallet_master_key->decrypt_key( password );
+   }
+
+   void  wallet_db::set_master_key( const extended_private_key& extended_key, 
+                                    const fc::sha512& new_password )
+   {
+      master_key key;
+      key.encrypt_key(new_password,extended_key);
+      wallet_master_key = wallet_master_key_record( key, -1 );
+      store_record( *wallet_master_key );
+   }
+
+   void wallet_db::change_password( const fc::sha512& old_password,
+                                    const fc::sha512& new_password )
+   { try {
+      FC_ASSERT( wallet_master_key );
+      auto old_key = get_master_key( old_password );
+      FC_ASSERT( old_key, "unable to change password because old password was invalid" );
+      set_master_key( *old_key, new_password );
+
+      for( auto key : keys )
+      {
+         if( key.second.has_private_key() )
+         {
+            auto priv_key = key.second.decrypt_private_key( old_password );
+            key.second.encrypt_private_key( new_password, priv_key );
+            store_record( key.second );
+         }
+      }
+   } FC_CAPTURE_AND_RETHROW() }
+   void wallet_db::update_market_order( const address& owner, 
+                                         optional<bts::blockchain::market_order>& order,
+                                         const transaction_id_type& trx_id )
+   {
+      if( order.valid() )
+         market_orders[ owner ].order = *order;
+      else
+         market_orders[ owner ].order.state.balance = 0;
+
+      market_orders[ owner ].transactions.insert( trx_id );
+      store_record( market_orders[ owner ] );
+   }
+   void wallet_db::remove_balance( const balance_id_type& balance_id )
+   {
+      remove_item( balances[balance_id].wallet_record_index );
+      balances.erase(balance_id);
+   }
+
+
 } } // bts::wallet

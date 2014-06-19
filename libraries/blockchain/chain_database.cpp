@@ -18,6 +18,7 @@
 #include <fc/io/fstream.hpp>
 #include <fc/log/logger.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -1463,7 +1464,9 @@ namespace bts { namespace blockchain {
 
       std::vector<name_config> delegate_config;
       for( auto item : config.names )
+      {
          if( item.is_delegate ) delegate_config.push_back( item );
+      }
 
       FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
                  "genesis.json does not contain enough initial delegates",
@@ -1517,7 +1520,7 @@ namespace bts { namespace blockchain {
                   self->store_balance_record( initial_balance );
 
                   auto da = _account_db.fetch( delegate_id );
-                  da.delegate_info->votes_for += initial.low_bits();
+                  da.delegate_info->votes_against += initial.low_bits();
                   da.registration_date        = config.timestamp;
                   da.last_update              = config.timestamp;
                   self->store_account_record( da );
@@ -1536,7 +1539,7 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
 
             auto da = _account_db.fetch( delegate_id  );
-            da.delegate_info->votes_for += initial.low_bits();
+            da.delegate_info->votes_against += initial.low_bits();
             da.registration_date        = config.timestamp;
             da.last_update              = config.timestamp;
             self->store_account_record( da );

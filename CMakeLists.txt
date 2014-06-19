@@ -48,11 +48,11 @@ else( WIN32 )
     if( APPLE )
         # Apple Specific Options Here
         message( STATUS "Configuring BitShares on OS X" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++  -Wall -ferror-limit=4" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++ -Wall" )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring BitShares on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
         set( rt_library rt )
         set( pthread_library pthread)
         set( crypto_library crypto)
@@ -116,17 +116,18 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
     set(WEB_WALLET_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
     set(WEB_WALLET_GENERATED "${WEB_WALLET_ROOT}/generated")
     file(GLOB_RECURSE WEB_WALLET_SOURCES "${WEB_WALLET_ROOT}/app" "*.css" "*.coffee" "*.png" "*.jpg" "*.html" "*.ico")
-    # DEPENDS ${WEB_WALLET_SOURCES}
-    ADD_CUSTOM_COMMAND(OUTPUT "${WEB_WALLET_GENERATED}/index.html"
-                       COMMAND "${CMAKE_COMMAND}" -E remove_directory "${WEB_WALLET_GENERATED}"
-                       COMMAND "${NPM_EXECUTABLE}" install
-                       COMMAND "${LINEMAN_EXECUTABLE}" build
-                       COMMAND "${LINEMAN_EXECUTABLE}" build
-                       WORKING_DIRECTORY "${WEB_WALLET_ROOT}"
-                       DEPENDS ${WEB_WALLET_SOURCES})
-    ADD_CUSTOM_TARGET(web_wallet_htdocs ALL DEPENDS "${WEB_WALLET_GENERATED}/index.html")
-    INSTALL(FILES "${WEB_WALLET_GENERATED}/index.html" DESTINATION htdocs)
+
+    #                  COMMAND "echo" "${NPM_EXECUTABLE}" "install"
+    ADD_CUSTOM_TARGET(web_wallet_htdocs ALL
+                      WORKING_DIRECTORY "${WEB_WALLET_ROOT}"
+                      COMMAND "${CMAKE_COMMAND}" "-E" "remove_directory" "${WEB_WALLET_GENERATED}"
+                      COMMAND "${LINEMAN_EXECUTABLE}" "build"
+                      DEPENDS ${WEB_WALLET_SOURCES})
     INSTALL(DIRECTORY "${WEB_WALLET_GENERATED}/" DESTINATION htdocs)
+
+    #add_custom_target(INSTALL_WITH_HTDOCS)
+    #add_dependencies(INSTALL_WITH_HTDOCS web_wallet_htdocs INSTALL)
+
   ELSE(LINEMAN_FOUND)
     MESSAGE(WARNING "Unable to find lineman.js to process web wallet source, web wallet will be omitted")
   ENDIF(LINEMAN_FOUND)
@@ -135,6 +136,8 @@ endif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/web_wallet")
 
 include(InstallRequiredSystemLibraries)
 
+set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_BINARY_DIR}/packages)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 SET(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
 set(CPACK_PACKAGE_NAME "bitshares")

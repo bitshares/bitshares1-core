@@ -68,7 +68,7 @@ namespace bts { namespace net {
       void open(const fc::path& databaseFilename);
       void close();
       void clear();
-
+      void erase(const fc::ip::endpoint& endpointToErase);
       void update_entry(const potential_peer_record& updatedRecord);
       potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
 
@@ -121,6 +121,16 @@ namespace bts { namespace net {
         }
       }
       _potential_peer_set.clear();
+    }
+
+    void peer_database_impl::erase(const fc::ip::endpoint& endpointToErase)
+    {
+      auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToErase);
+      if (iter != _potential_peer_set.get<endpoint_index>().end())
+      {
+        _leveldb.remove(iter->database_key);
+        _potential_peer_set.get<endpoint_index>().erase(iter);
+      }
     }
 
     void peer_database_impl::update_entry(const potential_peer_record& updatedRecord)
@@ -218,6 +228,11 @@ namespace bts { namespace net {
   void peer_database::clear()
   {
     my->clear();
+  }
+
+  void peer_database::erase(const fc::ip::endpoint& endpointToErase)
+  {
+    my->erase(endpointToErase);
   }
 
   void peer_database::update_entry(const potential_peer_record& updatedRecord)

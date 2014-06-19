@@ -29,6 +29,7 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -45,7 +46,7 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <fstream>
+#include <boost/thread/mutex.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -164,7 +165,11 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     fc::file_appender::config ac_p2p;
     ac_p2p.filename = data_dir / "p2p.log";
     ac_p2p.truncate = false;
+#ifdef NDEBUG
     ac_p2p.flush    = false;
+#else // NDEBUG
+    ac_p2p.flush    = true;
+#endif // NDEBUG
 
     std::cout << "Logging P2P to file \"" << ac_p2p.filename.generic_string() << "\"\n";
 
@@ -186,7 +191,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     
     fc::logger_config dlc;
     dlc.level = fc::log_level::debug;
-    dlc.name = "default";
+    dlc.name = "default"; 
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
@@ -290,9 +295,61 @@ config load_config( const fc::path& datadir )
                            public bts::api::common_api
        {
           public:
+            class user_appender : public fc::appender
+            {
+               public:
+                  user_appender( client_impl& c )
+                  :_client_impl(c){}
+
+                  virtual void log( const fc::log_message& m ) override
+                  {
+                     auto format = m.get_format();
+                     // lookup translation on format here
+
+                     // perform variable substitution;
+                     string message = format_string( format, m.get_data() );
+                     
+
+                     { // appenders can be called from any thread
+                        fc::scoped_lock<boost::mutex> lock(_history_lock);
+                        _history.emplace_back( message );
+                        if( _client_impl._cli )
+                           _client_impl._cli->display_status_message( message );
+                     }
+
+                     // call a callback to the client...
+
+                     // we need an RPC call to fetch this log and display the
+                     // current status.
+                  }
+
+                  vector<string> get_history()const
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     return _history;
+                  }
+
+                  void clear_history()
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     _history.clear();
+                  }
+
+               private:
+                  mutable boost::mutex  _history_lock;
+                  // TODO: consider a deque and enforce maximum length?
+                  vector<string>        _history;
+                  client_impl&          _client_impl;
+            };
+
+            fc::shared_ptr<user_appender> _user_appender;
+
             client_impl(bts::client::client* self) :
               _self(self),_cli()
             { try {
+                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+                fc::logger::get( "user" ).add_appender( _user_appender );
+
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
                 } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
@@ -352,6 +409,7 @@ config load_config( const fc::path& datadir )
 
             bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
+            std::unique_ptr<bts::net::upnp_service>                     _upnp_service;
             chain_database_ptr                                          _chain_db;
             unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
@@ -449,7 +507,7 @@ config load_config( const fc::path& datadir )
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT , 
+                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT,
                              "Client must have ${count} connections before you may produce blocks",
                              ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
@@ -544,7 +602,7 @@ config load_config( const fc::path& datadir )
                       std::ostringstream message;
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
-                      _cli->display_status_message(message.str());
+                      ulog( message.str() );
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
@@ -817,6 +875,16 @@ config load_config( const fc::path& datadir )
               return "CLI not set for this client.\n";
            }
        }
+       
+       fc::variants client_impl::batch(const std::string& method_name, const std::vector<fc::variants>& parameters_list) const
+       {
+          fc::variants result;
+          for ( auto parameters : parameters_list )
+          {
+             result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+          }
+          return result;
+       }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
@@ -828,7 +896,7 @@ config load_config( const fc::path& datadir )
            else if (item_count == 0)
               message << "--- in sync with p2p network";
            if (!message.str().empty())
-             _cli->display_status_message(message.str());
+               ulog( message.str() );
            _last_sync_status_message_time = fc::time_point::now();
          }
        }
@@ -837,8 +905,7 @@ config load_config( const fc::path& datadir )
        {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
-         if( _cli )
-            _cli->display_status_message(message.str());
+         ulog( message.str() );
        }
 
        uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
@@ -852,10 +919,7 @@ config load_config( const fc::path& datadir )
           _exception_db.store(fc::time_point::now(), *error);
         else
           _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
-        if( _cli )
-          _cli->display_status_message(message);
-        else
-          std::cout << message << "\n";
+        ulog( message );
       }
 
     } // end namespace detail
@@ -951,25 +1015,27 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_open(const string& wallet_name)
     {
-      _wallet->open(wallet_name);
+      _wallet->open(fc::trim(wallet_name));
     }
 
-    fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
+    fc::optional<variant> detail::client_impl::wallet_get_setting(const string& name)
     {
-        return _wallet->get_wallet_setting( name );
+        return _wallet->get_setting( name );
     }
     
-    void detail::client_impl::wallet_set_wallet_setting(const string& name, const variant& value)
+    void detail::client_impl::wallet_set_setting(const string& name, const variant& value)
     {
-        _wallet->set_wallet_setting( name, value );
+        _wallet->set_setting( name, value );
     }
+
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-       if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
-       if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
-       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
-      _wallet->create(wallet_name,password, brain_key );
+       string trimmed_name = fc::trim(wallet_name);
+       if( brain_key.size() && brain_key.size() < BTS_WALLET_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
+      _wallet->create(trimmed_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
@@ -982,14 +1048,14 @@ config load_config( const fc::path& datadir )
       _wallet->close();
     }
 
-    void detail::client_impl::wallet_export_to_json(const fc::path& path) const
+    void detail::client_impl::wallet_export_to_json(const fc::path& json_filename)const
     {
-      _wallet->export_to_json(path);
+      _wallet->export_to_json(json_filename);
     }
 
-    void detail::client_impl::wallet_create_from_json(const fc::path& path, const string& name)
+    void detail::client_impl::wallet_create_from_json(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
     {
-      _wallet->create_from_json(path,name);
+      _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
     }
 
     void detail::client_impl::wallet_lock()
@@ -1126,13 +1192,13 @@ config load_config( const fc::path& datadir )
       return _wallet->list();  
     }
 
-    vector<wallet_account_record> detail::client_impl::wallet_list_contact_accounts() const
+    vector<wallet_account_record> detail::client_impl::wallet_list_accounts() const
     {
-      return _wallet->list_contact_accounts();
+      return _wallet->list_accounts();
     }
-    vector<wallet_account_record> detail::client_impl::wallet_list_receive_accounts() const
+    vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
     {
-      return _wallet->list_receive_accounts();
+      return _wallet->list_my_accounts();
     }
 
     void detail::client_impl::wallet_remove_contact_account(const string& account_name)
@@ -1233,6 +1299,16 @@ config load_config( const fc::path& datadir )
                                                     const string& passphrase,
                                                     const string& account_name )
     {
+      try
+      {
+          _wallet->import_bitcoin_wallet(filename, "", account_name);
+          return;
+      }
+      catch( const fc::exception& e )
+      {
+          ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
+      }
+
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
     void detail::client_impl::wallet_import_multibit(const fc::path& filename,
@@ -1712,16 +1788,21 @@ config load_config( const fc::path& datadir )
 
       if (option_variables.count("p2p-port"))
       {
-          uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
-          this->listen_on_port(p2pport);
+        uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
+        listen_on_port(p2pport, option_variables.count("p2p-port") != 0);
+      }
+      // else we use the default set in bts::net::node
 
-          if( option_variables["upnp"].as<bool>() )
-          {
-            std::cout << "Attempting to map P2P port " << p2pport << " with UPNP...\n";
-            auto upnp_service = new bts::net::upnp_service();
-            upnp_service->map_port( p2pport );
-            fc::usleep( fc::seconds(3) );
-          }
+      // start listening.  this just finds a port and binds it, it doesn't start
+      // accepting connections until connect_to_p2p_network()
+      listen_to_p2p_network();
+
+      if( option_variables["upnp"].as<bool>() )
+      {
+        std::cout << "Attempting to map P2P port " << get_p2p_listening_endpoint().port() << " with UPNP...\n";
+        my->_upnp_service = std::unique_ptr<bts::net::upnp_service>(new bts::net::upnp_service);
+        my->_upnp_service->map_port( get_p2p_listening_endpoint().port() );
+        fc::usleep( fc::seconds(3) );
       }
 
       if (option_variables.count("total-bandwidth-limit"))
@@ -1737,7 +1818,7 @@ config load_config( const fc::path& datadir )
       }
 
       // fire up the p2p , 
-      this->connect_to_p2p_network();
+      connect_to_p2p_network();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::cout << "Listening for P2P connections on ";
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
@@ -1819,16 +1900,16 @@ config load_config( const fc::path& datadir )
       return my->_p2p_node->is_connected();
     }
 
-    fc::uint160_t client::get_node_id() const
+    bts::net::node_id_t client::get_node_id() const
     {
       return my->_p2p_node->get_node_id();
     }
 
-    void client::listen_on_port(uint16_t port_to_listen)
+    void client::listen_on_port(uint16_t port_to_listen, bool wait_if_not_available)
     {
-        my->_p2p_node->listen_on_port(port_to_listen);
+        my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
     }
-
+    
     void client::configure(const fc::path& configuration_directory)
     {
       my->_data_dir = configuration_directory;
@@ -1873,6 +1954,12 @@ config load_config( const fc::path& datadir )
         }
         my->_p2p_node->connect_to(ep);
     }
+
+    void client::listen_to_p2p_network()
+    {
+      my->_p2p_node->listen_to_p2p_network();
+    }
+
     void client::connect_to_p2p_network()
     {
       bts::net::item_id head_item_id;
@@ -2089,6 +2176,12 @@ config load_config( const fc::path& datadir )
        return _wallet->get_info().get_object();
     }
 
+    void client_impl::wallet_account_update_private_data( const string& account_to_update,
+                                                          const variant& private_data )
+    {
+       _wallet->update_account_private_data(account_to_update, private_data); 
+    }
+
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
@@ -2297,6 +2390,15 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_block_stats( delegate_id );
    }
 
+   string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
+   {
+      auto block_header = _chain_db->get_block_header( block_number );
+      auto signee = block_header.signee();
+      auto delegate_record = _chain_db->get_account_record( signee );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return delegate_record->name;
+   }
+
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       _wallet->enable_delegate_block_production( delegate_name, enable );
@@ -2305,6 +2407,21 @@ config load_config( const fc::path& datadir )
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
    {
         return _p2p_node->get_potential_peers();
+   }
+
+   fc::variant_object client_impl::network_get_upnp_info()const
+   {
+       fc::mutable_variant_object upnp_info;
+
+       upnp_info["upnp_enabled"] = bool(_upnp_service);
+
+       if (_upnp_service)
+       {
+           upnp_info["external_ip"] = fc::string(_upnp_service->external_ip());
+           upnp_info["mapped_port"] = fc::variant(_upnp_service->mapped_port()).as_string();
+       }
+
+       return upnp_info;
    }
 
    } // namespace detail

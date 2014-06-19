@@ -271,6 +271,11 @@
               "name" : "wallet_name", 
               "type" : "wallet_name", 
               "description" : "name of the wallet to create"
+            },
+            {
+              "name" : "imported_wallet_passphrase",
+              "type" : "passphrase",
+              "description" : "passphrase of the imported wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -555,6 +560,26 @@
          "aliases" : [ "register" ]
       },
       {
+         "method_name" : "wallet_account_update_private_data",
+         "description" : "Updates the local private data for an account",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "private_data",
+                  "type" : "json_variant",
+                  "description" : "private data about the account",
+                  "default_value" : null
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "update_private_data" ]
+      },
+      {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
          "return_type" : "transaction_record",
@@ -586,16 +611,16 @@
          "aliases" : [ "update_registration" ]
       },
       {
-         "method_name" : "wallet_list_contact_accounts",
-         "description" : "Lists all foreign addresses and their labels associated with this wallet",
+         "method_name" : "wallet_list_accounts",
+         "description" : "Lists all accounts associated with this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_list_receive_accounts",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "method_name" : "wallet_list_my_accounts",
+         "description" : "Lists all accounts for which we have a private key in this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
@@ -603,7 +628,7 @@
       },
       {
          "method_name" : "wallet_get_account",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "description" : "Get the account record for a given name",
          "return_type" : "wallet_account_record",
          "parameters"  : [
                {
@@ -872,7 +897,7 @@
          {
             "name" : "fee",
             "type" : "amount",
-            "description" : "the prioty fee to be setted."
+            "description" : "the priority fee to be set."
          }
          ],
          "prerequisites" : ["wallet_open"],
@@ -973,7 +998,7 @@
             {
                 "name" :  "account_name",
                 "type" : "account_name",
-                "description" : "the account to report votes on, or empty for all accounts"
+                "description" : "the account to report votes on, or empty for all accounts",
                 "default_value" : ""
             }
           ],
@@ -988,7 +1013,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_set_wallet_setting",
+         "method_name" : "wallet_set_setting",
          "description" : "Set a property in the GUI settings DB",
          "return_type" : "void",
          "parameters"  : [
@@ -1006,7 +1031,7 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_get_wallet_setting",
+         "method_name" : "wallet_get_setting",
          "description" : "Get the value of the given setting",
          "return_type" : "optional_variant",
          "parameters"  : [
