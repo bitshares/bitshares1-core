@@ -1786,16 +1786,21 @@ config load_config( const fc::path& datadir )
 
       if (option_variables.count("p2p-port"))
       {
-          uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
-          this->listen_on_port(p2pport);
+        uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
+        listen_on_port(p2pport, option_variables.count("p2p-port") != 0);
+      }
+      // else we use the default set in bts::net::node
 
-          if( option_variables["upnp"].as<bool>() )
-          {
-            std::cout << "Attempting to map P2P port " << p2pport << " with UPNP...\n";
-            auto upnp_service = new bts::net::upnp_service();
-            upnp_service->map_port( p2pport );
-            fc::usleep( fc::seconds(3) );
-          }
+      // start listening.  this just finds a port and binds it, it doesn't start
+      // accepting connections until connect_to_p2p_network()
+      listen_to_p2p_network();
+
+      if( option_variables["upnp"].as<bool>() )
+      {
+        std::cout << "Attempting to map P2P port " << get_p2p_listening_endpoint().port() << " with UPNP...\n";
+        auto upnp_service = new bts::net::upnp_service();
+        upnp_service->map_port( get_p2p_listening_endpoint().port() );
+        fc::usleep( fc::seconds(3) );
       }
 
       if (option_variables.count("total-bandwidth-limit"))
@@ -1811,7 +1816,7 @@ config load_config( const fc::path& datadir )
       }
 
       // fire up the p2p , 
-      this->connect_to_p2p_network();
+      connect_to_p2p_network();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::cout << "Listening for P2P connections on ";
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
@@ -1893,16 +1898,16 @@ config load_config( const fc::path& datadir )
       return my->_p2p_node->is_connected();
     }
 
-    fc::uint160_t client::get_node_id() const
+    bts::net::node_id_t client::get_node_id() const
     {
       return my->_p2p_node->get_node_id();
     }
 
-    void client::listen_on_port(uint16_t port_to_listen)
+    void client::listen_on_port(uint16_t port_to_listen, bool wait_if_not_available)
     {
-        my->_p2p_node->listen_on_port(port_to_listen);
+        my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
     }
-
+    
     void client::configure(const fc::path& configuration_directory)
     {
       my->_data_dir = configuration_directory;
@@ -1947,6 +1952,12 @@ config load_config( const fc::path& datadir )
         }
         my->_p2p_node->connect_to(ep);
     }
+
+    void client::listen_to_p2p_network()
+    {
+      my->_p2p_node->listen_to_p2p_network();
+    }
+
     void client::connect_to_p2p_network()
     {
       bts::net::item_id head_item_id;
