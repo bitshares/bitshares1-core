@@ -897,7 +897,7 @@
          {
             "name" : "fee",
             "type" : "amount",
-            "description" : "the prioty fee to be setted."
+            "description" : "the priority fee to be set."
          }
          ],
          "prerequisites" : ["wallet_open"],
