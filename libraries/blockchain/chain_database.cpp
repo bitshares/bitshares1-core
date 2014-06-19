@@ -1517,7 +1517,7 @@ namespace bts { namespace blockchain {
                   self->store_balance_record( initial_balance );
 
                   auto da = _account_db.fetch( delegate_id );
-                  da.delegate_info->votes_for += initial.low_bits();
+                  da.delegate_info->votes_against += initial.low_bits();
                   da.registration_date        = config.timestamp;
                   da.last_update              = config.timestamp;
                   self->store_account_record( da );
@@ -1536,7 +1536,7 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
 
             auto da = _account_db.fetch( delegate_id  );
-            da.delegate_info->votes_for += initial.low_bits();
+            da.delegate_info->votes_against += initial.low_bits();
             da.registration_date        = config.timestamp;
             da.last_update              = config.timestamp;
             self->store_account_record( da );
