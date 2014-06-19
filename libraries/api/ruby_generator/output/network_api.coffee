@@ -83,6 +83,13 @@ class NetworkAPI
     @rpc.request('network_get_info').then (response) ->
       response.result
 
+  # Returns list of potential peers
+  # parameters: 
+  # return_type: `potential_peer_record_array`
+  list_potential_peers:  ->
+    @rpc.request('network_list_potential_peers').then (response) ->
+      response.result
+
 
 
 angular.module("app").service("NetworkAPI", ["$q", "$log", "RpcService", NetworkAPI])

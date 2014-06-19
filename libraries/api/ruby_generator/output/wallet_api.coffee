@@ -128,9 +128,10 @@ class WalletAPI
   # parameters: 
   #   filename `json_filename` - the full path and filename of JSON wallet to import, example: /path/to/exported_wallet.json
   #   wallet_name `wallet_name` - name of the wallet to create
+  #   passphrase `imported_wallet_passphrase` - passphrase of the imported wallet
   # return_type: `void`
-  create_from_json: (json_filename, wallet_name) ->
-    @rpc.request('wallet_create_from_json', [json_filename, wallet_name]).then (response) ->
+  create_from_json: (json_filename, wallet_name, imported_wallet_passphrase) ->
+    @rpc.request('wallet_create_from_json', [json_filename, wallet_name, imported_wallet_passphrase]).then (response) ->
       response.result
 
   # Lists all transactions for the specified account
@@ -220,7 +221,7 @@ class WalletAPI
   #   asset_symbol `asset_symbol` - the asset to transfer
   #   sending_account_name `from_account_name` - the source account(s) to draw the shares from
   #   receive_account_name `to_account_name` - the account to transfer the shares to
-  #   std::string `memo_message` - a memo to store with the transaction
+  #   string `memo_message` - a memo to store with the transaction
   # return_type: `signed_transaction_array`
   multipart_transfer: (amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message) ->
     @rpc.request('wallet_multipart_transfer', [amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message]).then (response) ->
@@ -232,7 +233,7 @@ class WalletAPI
   #   asset_symbol `asset_symbol` - the asset to transfer
   #   sending_account_name `from_account_name` - the source account(s) to draw the shares from
   #   receive_account_name `to_account_name` - the account to transfer the shares to
-  #   std::string `memo_message` - a memo to store with the transaction
+  #   string `memo_message` - a memo to store with the transaction
   # return_type: `signed_transaction`
   transfer: (amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message) ->
     @rpc.request('wallet_transfer', [amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message]).then (response) ->
@@ -311,9 +312,9 @@ class WalletAPI
   # Creates a new user issued asset
   # parameters: 
   #   asset_symbol `symbol` - the ticker symbol for the new asset
-  #   std::string `asset_name` - the name of the asset
-  #   std::string `issuer_name` - the name of the issuer of the asset
-  #   std::string `description` - a description of the asset
+  #   string `asset_name` - the name of the asset
+  #   string `issuer_name` - the name of the issuer of the asset
+  #   string `description` - a description of the asset
   #   json_variant `data` - arbitrary data attached to the asset
   #   int64_t `maximum_share_supply` - the maximum number of shares of the asset
   #   int64_t `precision` - defines where the decimal should be displayed, must be a power of 10
@@ -327,7 +328,7 @@ class WalletAPI
   #   real_amount `amount` - the amount of shares to issue
   #   asset_symbol `symbol` - the ticker symbol for asset
   #   account_name `to_account_name` - the name of the account to receive the shares
-  #   std::string `memo_message` - the memo to send to the receiver
+  #   string `memo_message` - the memo to send to the receiver
   # return_type: `signed_transaction`
   asset_issue: (amount, symbol, to_account_name, memo_message) ->
     @rpc.request('wallet_asset_issue', [amount, symbol, to_account_name, memo_message]).then (response) ->
@@ -336,9 +337,9 @@ class WalletAPI
   # Submit a proposal to the delegates for voting
   # parameters: 
   #   account_name `delegate_account_name` - the delegate account proposing the issue
-  #   std::string `subject` - the subject of the proposal
-  #   std::string `body` - the body of the proposal
-  #   std::string `proposal_type` - the type of the proposal
+  #   string `subject` - the subject of the proposal
+  #   string `body` - the body of the proposal
+  #   string `proposal_type` - the type of the proposal
   #   json_variant `data` - the name of the account to receive the shares
   # return_type: `signed_transaction`
   submit_proposal: (delegate_account_name, subject, body, proposal_type, data) ->
@@ -350,7 +351,7 @@ class WalletAPI
   #   account_name `name` - the name of the account to vote with
   #   proposal_id `proposal_id` - the id of the proposal to vote on
   #   vote_type `vote` - your vote
-  #   std::string `message` - comment to go along with vote
+  #   string `message` - comment to go along with vote
   # return_type: `signed_transaction`
   vote_proposal: (name, proposal_id, vote, message) ->
     @rpc.request('wallet_vote_proposal', [name, proposal_id, vote, message]).then (response) ->
@@ -385,8 +386,8 @@ class WalletAPI
   # parameters: 
   #   account_name `delegate_name` - the delegate who's pay is being cashed out
   #   account_name `to_account_name` - the account that should receive the funds
-  #   share_type `amount_to_withdraw` - the amount to withdraw
-  #   std::string `memo` - memo to add to transaction
+  #   real_amount `amount_to_withdraw` - the amount to withdraw
+  #   string `memo` - memo to add to transaction
   # return_type: `signed_transaction`
   withdraw_delegate_pay: (delegate_name, to_account_name, amount_to_withdraw, memo) ->
     @rpc.request('wallet_withdraw_delegate_pay', [delegate_name, to_account_name, amount_to_withdraw, memo]).then (response) ->
@@ -430,17 +431,17 @@ class WalletAPI
     @rpc.request('wallet_market_cancel_order', [order_id]).then (response) ->
       response.result
 
-  # Reveals the private key corresponding to <bitsharesaddress>
+  # Reveals the private key corresponding to an address or public key
   # parameters: 
-  #   address `account_address` - bitshares address of the private key, base58 string hash of public key
-  # return_type: `std::string`
-  dump_private_key: (account_address) ->
-    @rpc.request('wallet_dump_private_key', [account_address]).then (response) ->
+  #   string `address_or_public_key` - a public key or address (based on hash of public key) of the private key
+  # return_type: `string`
+  dump_private_key: (address_or_public_key) ->
+    @rpc.request('wallet_dump_private_key', [address_or_public_key]).then (response) ->
       response.result
 
   # Returns the allocation of votes by this account
   # parameters: 
-  #   account_name `account_name` - the account to report votes on
+  #   account_name `account_name` - the account to report votes on, or empty for all accounts
   # return_type: `account_vote_summary`
   account_vote_summary: (account_name) ->
     @rpc.request('wallet_account_vote_summary', [account_name]).then (response) ->
@@ -452,6 +453,32 @@ class WalletAPI
   # return_type: `string`
   account_export_private_key: (account_name) ->
     @rpc.request('wallet_account_export_private_key', [account_name]).then (response) ->
+      response.result
+
+  # Set a property in the GUI settings DB
+  # parameters: 
+  #   string `name` - the name of the setting to set
+  #   variant `value` - the value to set the setting to
+  # return_type: `void`
+  set_setting: (name, value) ->
+    @rpc.request('wallet_set_wallet_setting', [name, value]).then (response) ->
+      response.result
+
+  # Get the value of the given setting
+  # parameters: 
+  #   string `name` - The name of the setting to fetch
+  # return_type: `optional_variant`
+  get_setting: (name) ->
+    @rpc.request('wallet_get_wallet_setting', [name]).then (response) ->
+      response.result
+
+  # Enable or disable block production for a particular delegate account
+  # parameters: 
+  #   string `delegate_name` - The delegate to enable/disable block production for
+  #   bool `enable` - True to enable block production, false otherwise
+  # return_type: `void`
+  enable_delegate_block_production: (delegate_name, enable) ->
+    @rpc.request('wallet_enable_delegate_block_production', [delegate_name, enable]).then (response) ->
       response.result
 
 

@@ -271,6 +271,11 @@
               "name" : "wallet_name", 
               "type" : "wallet_name", 
               "description" : "name of the wallet to create"
+            },
+            {
+              "name" : "imported_wallet_passphrase",
+              "type" : "passphrase",
+              "description" : "passphrase of the imported wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -993,7 +998,7 @@
             {
                 "name" :  "account_name",
                 "type" : "account_name",
-                "description" : "the account to report votes on, or empty for all accounts"
+                "description" : "the account to report votes on, or empty for all accounts",
                 "default_value" : ""
             }
           ],
@@ -1008,7 +1013,7 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_set_wallet_setting",
+         "method_name" : "wallet_set_setting",
          "description" : "Set a property in the GUI settings DB",
          "return_type" : "void",
          "parameters"  : [
@@ -1026,7 +1031,7 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_get_wallet_setting",
+         "method_name" : "wallet_get_setting",
          "description" : "Get the value of the given setting",
          "return_type" : "optional_variant",
          "parameters"  : [
