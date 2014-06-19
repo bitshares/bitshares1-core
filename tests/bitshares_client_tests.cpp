@@ -583,9 +583,9 @@ void bts_client_launcher_fixture::register_delegates()
     delegate_name << "delegate-" << i;
 
     int client_for_this_delegate = i % client_processes.size();
-    if (i < client_processes.size())
-      client_processes[client_for_this_delegate].rpc_client->wallet_account_create("delegatekey");
-    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]), "delegatekey");
+    //if (i < client_processes.size())
+    //  client_processes[client_for_this_delegate].rpc_client->wallet_account_create("delegatekey");
+    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]));
     client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
 
     client_processes[client_for_this_delegate].rpc_client->wallet_enable_delegate_block_production(delegate_name.str(), true);
