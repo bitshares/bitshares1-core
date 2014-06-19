@@ -1422,6 +1422,9 @@ namespace bts { namespace net {
         if (connection_rejected_message_received.reason_code == rejection_reason_code::connected_to_self)
         {
           _potential_peer_db.erase(originating_peer->get_socket().remote_endpoint());
+          _closing_connections.insert(originating_peer->shared_from_this());
+          _active_connections.erase(originating_peer->shared_from_this());
+          originating_peer->close_connection();
         }
         else
         {
