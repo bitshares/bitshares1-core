@@ -83,9 +83,8 @@ namespace bts{ namespace wallet {
 
            void load_asset_record( const wallet_asset_record& asset_rec )
            { try {
-              FC_ASSERT( !"Not Implemented" );
+              self->assets[ asset_rec.symbol ] = asset_rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_record",asset_rec )) }
-
 
            void load_balance_record( const wallet_balance_record& rec )
            { try {
@@ -138,7 +137,7 @@ namespace bts{ namespace wallet {
                       my->load_transaction_record( record.as<wallet_transaction_record>() );
                       break;
                    case asset_record_type:
-                      FC_THROW( "TODO: asset_record_type not implemented!" );
+                      my->load_asset_record( record.as<wallet_asset_record>() );
                       break;
                    case balance_record_type:
                       my->load_balance_record( record.as<wallet_balance_record>() );
