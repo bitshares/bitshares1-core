@@ -678,12 +678,12 @@ namespace bts { namespace cli {
                   auto order_list = result.as<vector<market_order_status> >();
                   print_wallet_market_order_list( order_list );
               }
-              else if ( command == "wallet_list_receive_accounts" )
+              else if ( command == "wallet_list_my_accounts" )
               {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_receive_account_list( accts );
               }
-              else if ( command == "wallet_list_contact_accounts" )
+              else if ( command == "wallet_list_accounts" )
               {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_contact_account_list( accts );
