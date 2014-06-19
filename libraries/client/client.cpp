@@ -1024,12 +1024,14 @@ config load_config( const fc::path& datadir )
         _wallet->set_wallet_setting( name, value );
     }
 
+
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
+       string trimmed_name = fc::trim(wallet_name);
        if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
        if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
-       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
-      _wallet->create(wallet_name,password, brain_key );
+       if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
+      _wallet->create(trimmed_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
