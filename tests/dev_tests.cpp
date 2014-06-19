@@ -23,12 +23,16 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "unlock 99999999 masterpassword" );
    exec( clienta, "wallet_account_balance" );
    exec( clienta, "wallet_account_balance delegate31" );
+   exec( clienta, "wallet_enable_delegate_block_production delegate31 true" );
+   exec( clienta, "wallet_enable_delegate_block_production delegate33 true" );
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "wallet_list_receive_accounts" );
    exec( clientb, "wallet_account_balance" );
    exec( clientb, "wallet_account_balance delegate30" );
    exec( clientb, "unlock 999999999 masterpassword" );
+   exec( clientb, "wallet_enable_delegate_block_production delegate30 true" );
+   exec( clientb, "wallet_enable_delegate_block_production delegate32 true" );
 
    exec( clientb, "wallet_account_create b-account" );
    exec( clientb, "wallet_account_balance b-account" );

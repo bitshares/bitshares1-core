@@ -788,6 +788,11 @@ namespace bts { namespace cli {
                       }
                   }
               }
+              else if (method_name == "wallet_transfer")
+              {
+                  auto trx = result.as<signed_transaction>();
+                  print_transfer_summary( trx );
+              }
               else if (method_name == "wallet_list")
               {
                   auto wallets = result.as<vector<string>>();
@@ -800,64 +805,7 @@ namespace bts { namespace cli {
               else if (method_name == "wallet_list_unspent_balances" )
               {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
-                  *_out << std::right;
-                  *_out << std::setw(18) << "BALANCE";
-                  *_out << std::right << std::setw(40) << "OWNER";
-                  *_out << std::right << std::setw(25) << "VOTE";
-                  *_out << "\n";
-                  *_out << "-------------------------------------------------------------";
-                  *_out << "-------------------------------------------------------------\n";
-                  for( auto balance_rec : balance_recs )
-                  {
-                      *_out << std::setw(18) << balance_rec.balance;
-                      switch (withdraw_condition_types(balance_rec.condition.type))
-                      {
-                          case (withdraw_signature_type):
-                          {
-                              auto cond = balance_rec.condition.as<withdraw_with_signature>();
-                              auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
-                              string owner;
-                              if ( acct_rec.valid() )
-                                  owner = acct_rec->name;
-                              else
-                                  owner = string( balance_rec.owner() );
-
-                              if (owner.size() > 36)
-                              {
-                                  *_out << std::setw(40) << owner.substr(0, 31) << "...";
-                              }
-                              else
-                              {
-                                  *_out << std::setw(40) << owner;
-                              }
-
-                              auto delegate_id = balance_rec.condition.delegate_id;
-                              auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
-                              if( delegate_rec )
-                              {
-                                 string sign = (delegate_id > 0 ? "+" : "-");
-                                 if (delegate_rec->name.size() > 21)
-                                 {
-                                     *_out << std::setw(25) << (sign + delegate_rec->name.substr(0, 21) + "...");
-                                 }
-                                 else
-                                 {
-                                     *_out << std::setw(25) << (sign + delegate_rec->name);
-                                 }
-                                 break;
-                              }
-                              else
-                              {
-                                     *_out << std::setw(25) << "none";
-                              }
-                          }
-                          default:
-                          {
-                              FC_ASSERT(!"unimplemented condition type");
-                          }
-                      } // switch cond type
-                      *_out << "\n";
-                  } // for balance in balances
+                  print_unspent_balances(balance_recs);
               }
               else if (method_name == "blockchain_list_registered_accounts")
               {
@@ -1148,6 +1096,76 @@ namespace bts { namespace cli {
                 if (str.size() < size)
                     return str;
                 return str.substr(0, size - 3) + "...";
+            }
+
+            void print_transfer_summary(const signed_transaction& trx)
+            {
+                auto trx_rec = _client->get_wallet()->lookup_transaction(trx.id());
+                auto pretty = _client->get_wallet()->to_pretty_trx( *trx_rec );
+                std::vector<pretty_transaction> list = { pretty };
+                print_transaction_history(list);
+            }
+
+            void print_unspent_balances(const vector<wallet_balance_record>& balance_recs)
+            {
+                *_out << std::right;
+                *_out << std::setw(18) << "BALANCE";
+                *_out << std::right << std::setw(40) << "OWNER";
+                *_out << std::right << std::setw(25) << "VOTE";
+                *_out << "\n";
+                *_out << "-------------------------------------------------------------";
+                *_out << "-------------------------------------------------------------\n";
+                for( auto balance_rec : balance_recs )
+                {
+                    *_out << std::setw(18) << balance_rec.balance;
+                    switch (withdraw_condition_types(balance_rec.condition.type))
+                    {
+                        case (withdraw_signature_type):
+                        {
+                            auto cond = balance_rec.condition.as<withdraw_with_signature>();
+                            auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
+                            string owner;
+                            if ( acct_rec.valid() )
+                                owner = acct_rec->name;
+                            else
+                                owner = string( balance_rec.owner() );
+
+                            if (owner.size() > 36)
+                            {
+                                *_out << std::setw(40) << owner.substr(0, 31) << "...";
+                            }
+                            else
+                            {
+                                *_out << std::setw(40) << owner;
+                            }
+
+                            auto delegate_id = balance_rec.condition.delegate_id;
+                            auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
+                            if( delegate_rec )
+                            {
+                               string sign = (delegate_id > 0 ? "+" : "-");
+                               if (delegate_rec->name.size() > 21)
+                               {
+                                   *_out << std::setw(25) << (sign + delegate_rec->name.substr(0, 21) + "...");
+                               }
+                               else
+                               {
+                                   *_out << std::setw(25) << (sign + delegate_rec->name);
+                               }
+                               break;
+                            }
+                            else
+                            {
+                                   *_out << std::setw(25) << "none";
+                            }
+                        }
+                        default:
+                        {
+                            FC_ASSERT(!"unimplemented condition type");
+                        }
+                    } // switch cond type
+                    *_out << "\n";
+                } // for balance in balances
             }
 
             void print_contact_account_list(const vector<wallet_account_record> account_records)
@@ -1511,7 +1529,7 @@ namespace bts { namespace cli {
 
       while (_command_completion_generator_iter != _method_alias_map.end())
       {
-        if (!_command_completion_generator_iter->first.compare(0, strlen(text), text) == 0)
+        if (!(_command_completion_generator_iter->first.compare(0, strlen(text), text) == 0))
           break; // no more matches starting with this prefix
 
         if (_command_completion_generator_iter->second == _command_completion_generator_iter->first) // suppress completing aliases
