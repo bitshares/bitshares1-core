@@ -119,10 +119,10 @@ namespace bts { namespace net {
         _message_connection(this),
         direction(unknown),
         state(disconnected),
+        is_firewalled(boost::indeterminate),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
-        is_firewalled(boost::indeterminate),
         last_block_number_delegate_has_seen(0)
       {}
       ~peer_connection() {}
@@ -593,13 +593,13 @@ namespace bts { namespace net {
 
     node_impl::node_impl() : 
       _delegate(nullptr),
+      _user_agent_string("bts::net::node"),
       _desired_number_of_connections(8),
       _maximum_number_of_connections(12),
       _peer_connection_retry_timeout(BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME),
       _peer_inactivity_timeout( BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0),
-      _user_agent_string("bts::net::node"),
       _rate_limiter(0, 0)
     {
       fc::rand_pseudo_bytes(_node_id.data(), 20);
@@ -2166,10 +2166,11 @@ namespace bts { namespace net {
         fc::time_point message_validated_time;
         try
         {
-          bool message_caused_fork_switch = _delegate->handle_message(message_to_process, false);
+          //bool message_caused_fork_switch = _delegate->handle_message(message_to_process, false);
           // for now, we assume an "ordinary" message won't cause us to switch forks (which
-          // is curently the case.  if this changes, add some logic to handle it here)
-          assert(!message_caused_fork_switch);
+          // is currently the case.  if this changes, add some logic to handle it here)
+          //assert(!message_caused_fork_switch);
+          assert(!_delegate->handle_message(message_to_process, false));
           message_validated_time = fc::time_point::now();
         }
         catch (fc::exception& e)
