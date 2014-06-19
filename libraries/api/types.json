@@ -158,6 +158,14 @@
         "cpp_return_type" : "fc::variant"
       },
       {
+         "type_name" : "variants",
+         "cpp_return_type" : "fc::variants"
+      },
+      {
+         "type_name" : "parameters_list",
+         "cpp_return_type" : "std::vector<fc::variants>"
+      },
+      {
         "type_name" : "wallet_name_array",
         "container_type" : "array",
         "contained_type" : "wallet_name"

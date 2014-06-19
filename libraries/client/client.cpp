@@ -817,6 +817,16 @@ config load_config( const fc::path& datadir )
               return "CLI not set for this client.\n";
            }
        }
+       
+       fc::variants client_impl::batch(const std::string& method_name, const std::vector<fc::variants>& parameters_list) const
+       {
+          fc::variants result;
+          for ( auto parameters : parameters_list )
+          {
+             result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+          }
+          return result;
+       }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
