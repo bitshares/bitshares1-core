@@ -127,8 +127,10 @@ namespace bts { namespace net {
     {
       auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToErase);
       if (iter != _potential_peer_set.get<endpoint_index>().end())
+      {
         _leveldb.remove(iter->database_key);
-      _potential_peer_set.get<endpoint_index>().erase(iter);
+        _potential_peer_set.get<endpoint_index>().erase(iter);
+      }
     }
 
     void peer_database_impl::update_entry(const potential_peer_record& updatedRecord)
