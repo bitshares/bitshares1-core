@@ -1002,7 +1002,8 @@ namespace bts { namespace net {
             peers_to_disconnect_forcibly.push_back(handshaking_peer);
           }
 
-        uint32_t active_timeout = _peer_inactivity_timeout * 20;
+        // timeout for any active peers is a full two rounds (101 minutes at present)
+        uint32_t active_timeout = 2 * BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
         fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
         for (const peer_connection_ptr& active_peer : _active_connections)
           if (active_peer->connection_initiation_time < active_disconnect_threshold &&
@@ -2410,6 +2411,9 @@ namespace bts { namespace net {
       try
       {
         new_peer->connect_to(remote_endpoint, _actual_listening_endpoint);  // blocks until the connection is established and secure connection is negotiated
+
+        // we connected to the peer.  guess they're not firewalled....
+        new_peer->is_firewalled = firewalled_state::not_firewalled;
 
         // connection succeeded, we've started handshaking.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_handshaking_failed;
