@@ -70,6 +70,7 @@ namespace bts { namespace wallet {
             void state_changed( const pending_chain_state_ptr& state )
             {
             }
+
             /**
              *  This method is called anytime a block is applied to the chain.
              */
@@ -122,6 +123,7 @@ namespace bts { namespace wallet {
       {
           _wallet_db.clear_pending_transactions();
       }
+
       void wallet_impl::scan_balances()
       {
          _blockchain->scan_balances( [=]( const balance_record& bal_rec )
@@ -134,6 +136,7 @@ namespace bts { namespace wallet {
               }
          } );
       }
+
       void wallet_impl::scan_registered_accounts()
       {
          _blockchain->scan_accounts( [=]( const blockchain::account_record& scanned_account_record )
@@ -209,7 +212,6 @@ namespace bts { namespace wallet {
          FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
       } FC_CAPTURE_AND_RETHROW( (amount)(asset_id)(from_account_address)(trx)(required_signatures) ) }
 
-
       secret_hash_type wallet_impl::get_secret( uint32_t block_num, 
                                                 const private_key_type& delegate_key )const
       {
@@ -256,33 +258,78 @@ namespace bts { namespace wallet {
             {
                switch( (operation_type_enum)op.type )
                {
+                  case null_op_type:
+                     FC_THROW( "null_op_type not implemented!" );
+                     break;
+
                   case withdraw_op_type:
                      cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
                      break;
                   case deposit_op_type:
                      cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys );
                      break;
+
                   case register_account_op_type:
                      cache_trx |= scan_register_account( op.as<register_account_operation>() );
                      break;
                   case update_account_op_type:
                      cache_trx |= scan_update_account( op.as<update_account_operation>() );
                      break;
-                   case create_asset_op_type:
+                  case withdraw_pay_op_type:
+                     FC_THROW( "withdraw_pay_op_type not implemented!" );
+                     break;
+
+                  case create_asset_op_type:
                      cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
                      break;
-                   case issue_asset_op_type:
+                  case update_asset_op_type:
+                     FC_THROW( "update_asset_op_type not implemented!" );
+                     break;
+                  case issue_asset_op_type:
                      cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
                      break;
-                   case bid_op_type:
+
+                  case fire_delegate_op_type:
+                     FC_THROW( "fire_delegate_op_type not implemented!" );
+                     break;
+
+                  case submit_proposal_op_type:
+                     FC_THROW( "submit_proposal_op_type not implemented!" );
+                     break;
+                  case vote_proposal_op_type:
+                     FC_THROW( "vote_proposal_op_type not implemented!" );
+                     break;
+
+                  case bid_op_type:
                      cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
+                     break;
+                  case ask_op_type:
+                     FC_THROW( "ask_op_type not implemented!" );
+                     break;
+                  case short_op_type:
+                     FC_THROW( "short_op_type not implemented!" );
+                     break;
+                  case cover_op_type:
+                     FC_THROW( "cover_op_type not implemented!" );
+                     break;
+                  case add_collateral_op_type:
+                     FC_THROW( "add_collateral_op_type not implemented!" );
+                     break;
+                  case remove_collateral_op_type:
+                     FC_THROW( "remove_collateral_op_type not implemented!" );
+                     break;
+
+                  default:
+                     FC_THROW( "unknown operation type!" );
                      break;
                }
             }
+
             if( cache_trx )
                _wallet_db.store_transaction( *current_trx_record );
          }
       }
+
       bool wallet_impl::scan_withdraw( const withdraw_operation& op )
       {
          auto current_balance = _wallet_db.lookup_balance( op.balance_id );
@@ -317,9 +364,6 @@ namespace bts { namespace wallet {
 
           return false;
       }
-
-
-
 
       bool wallet_impl::scan_update_account( const update_account_operation& op )
       { try {
@@ -362,6 +406,7 @@ namespace bts { namespace wallet {
          }
          return false;
       }
+
       bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, 
                                           const issue_asset_operation& op  )
       {
@@ -405,10 +450,12 @@ namespace bts { namespace wallet {
           bool cache_deposit = false; 
           switch( (withdraw_condition_types) op.condition.type )
           {
+             case withdraw_null_type:
+             {
+                FC_THROW( "withdraw_null_type not implemented!" );
+                break;
+             }
              case withdraw_signature_type:
-             //   cache_deposit |= _wallet_db.has_private_key( op.condition.as<withdraw_with_signature>().owner );
-             //   break;
-            // case withdraw_with_signature:
              {
                 auto deposit = op.condition.as<withdraw_with_signature>();
                 if( _wallet_db.has_private_key( deposit.owner ) )
@@ -446,7 +493,26 @@ namespace bts { namespace wallet {
                    }
                    break;
                 }
-             // TODO: support other withdraw types here..
+             }
+             case withdraw_multi_sig_type:
+             {
+                FC_THROW( "withdraw_multi_sig_type not implemented!" );
+                break;
+             }
+             case withdraw_password_type:
+             {
+                FC_THROW( "withdraw_password_type not implemented!" );
+                break;
+             }
+             case withdraw_option_type:
+             {
+                FC_THROW( "withdraw_option_type not implemented!" );
+                break;
+             }
+             default:
+             {
+                FC_THROW( "unknown withdraw condition type!" );
+                break;
              }
         }
         if( cache_deposit )
@@ -525,7 +591,6 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}' in ${data_dir}", 
                             ("wallet_name",wallet_name)("data_dir",fc::absolute(my->_data_directory)) ) }
 
-
    void wallet::create_file( const path& wallet_file_path,
                         const string& password,
                         const string& brainkey  )
@@ -564,7 +629,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_file_path}'", 
                             ("wallet_file_path",wallet_file_path) ) }
-
 
    void wallet::open( const string& wallet_name )
    { try {
@@ -612,6 +676,29 @@ namespace bts { namespace wallet {
       my->_scheduled_lock_time = fc::time_point_sec();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   void wallet::export_to_json( const path& filename )const
+   { try {
+      FC_ASSERT( is_open() );
+      std::map<int32_t, generic_wallet_record> records;
+      my->_wallet_db.export_records( records );
+      fc::json::save_to_file( records, filename, true );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
+
+   void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
+   { try {
+      FC_ASSERT( fc::exists( filename ) );
+      auto records = fc::json::from_file< std::map< int32_t, generic_wallet_record> >( filename );
+
+      auto master_key_record = records[-1].as<wallet_master_key_record>();
+      auto passphrase_hash = fc::sha512::hash( passphrase.c_str(), passphrase.size() );
+
+      if( !master_key_record.validate_password( passphrase_hash ) )
+          FC_THROW_EXCEPTION( invalid_password, "Invalid password for imported wallet" );
+
+      create( wallet_name, passphrase );
+      my->_wallet_db.import_records( records );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
+
    string wallet::get_wallet_name()const
    {
       return my->_current_wallet_path.filename().generic_string();
@@ -626,17 +713,6 @@ namespace bts { namespace wallet {
    {
       return my->_wallet_db.is_open();
    }
-
-   void wallet::export_to_json( const path& export_file_name ) const
-   { try {
-      my->_wallet_db.export_to_json( export_file_name );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("export_file_name",export_file_name) ) }
-
-   void  wallet::create_from_json(const path& path, const string& name )
-   { try {
-      FC_ASSERT( !"Not Implemented" );
-
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::unlock( const string& password, const fc::microseconds& timeout )
    { try {
@@ -709,6 +785,7 @@ namespace bts { namespace wallet {
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::time_point();
    }
+
    void wallet::change_passphrase( const string& new_passphrase )
    { try {
       if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -771,7 +848,6 @@ namespace bts { namespace wallet {
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-
    /**
     *  Creates a new private key under the specified account. This key
     *  will not be valid for sending TITAN transactions to, but will
@@ -811,7 +887,6 @@ namespace bts { namespace wallet {
                                                           current_account->account_address );
       return new_priv_key.get_public_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
 
    /**
     *  A contact is an account for which this wallet does not have the private
@@ -863,7 +938,6 @@ namespace bts { namespace wallet {
       }
 
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) } 
-
 
    owallet_account_record    wallet::get_account( const string& account_name )
    {
@@ -918,7 +992,6 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", 
                 ("old_account_name",old_account_name)
                 ("new_account_name",new_account_name) ) }
-
 
    /**
     *  If we already have a key record for key, then set the private key.
@@ -988,7 +1061,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-
    public_key_type wallet::import_wif_private_key( const string& wif_key, 
                                                    const string& account_name,
                                                    bool create_account )
@@ -1006,7 +1078,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( false, "Error parsing WIF private key" );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
-
 
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
                              const scan_progress_callback& progress_callback )
@@ -1045,7 +1116,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
-
    void  wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
       for( auto addr : req_sigs )
@@ -1064,7 +1134,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( key->has_private_key() );
       return key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
-
 
    vector<pretty_transaction>         wallet::get_pretty_transaction_history( const string& account_name ) const
    {
@@ -1198,7 +1267,6 @@ namespace bts { namespace wallet {
                   "please rename your local account before attempting a transfer",
                   ("to_account_name",to_account_name) );
 
-
        auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
        FC_ASSERT( asset_rec.valid() );
        auto asset_id = asset_rec->id;
@@ -1302,7 +1370,6 @@ namespace bts { namespace wallet {
              balance_item.second.balance = 0;
              balances_to_store.push_back( balance_item.second );
 
-
              if( sign )
              {
                 auto owner_private_key = get_private_key( balance_item.second.owner() );
@@ -1347,7 +1414,6 @@ namespace bts { namespace wallet {
          ("from_account_name",from_account_name)
          ("to_account_name",to_account_name)
          ("memo_message",memo_message) ) }
-
 
    signed_transaction   wallet::withdraw_delegate_pay( const string& delegate_name,
                                                        double real_amount_to_withdraw,
@@ -1535,7 +1601,6 @@ namespace bts { namespace wallet {
                                      sender_account_address,
                                      trx, required_signatures );
          
-         
          if( sign )
          {
             sign_transaction( trx, required_signatures );
@@ -1715,9 +1780,6 @@ namespace bts { namespace wallet {
                                       ("pay_with_account_name", pay_with_account_name) 
                                       ("as_delegate",as_delegate) ) }
 
-
-
-
    signed_transaction  wallet::create_asset( const string& symbol,
                                              const string& asset_name,
                                              const string& description,
@@ -1822,7 +1884,6 @@ namespace bts { namespace wallet {
       return trx;
    }
 
-
    wallet_transaction_record wallet::update_registered_account( const string& account_to_update,
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
@@ -1882,7 +1943,6 @@ namespace bts { namespace wallet {
                                       ("new_active_key",new_active_key)
                                       ("as_delegate",as_delegate)
                                       ("sign",sign) ) }
-
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,
@@ -2092,6 +2152,7 @@ namespace bts { namespace wallet {
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
+
    signed_transaction  wallet::submit_bid( const string& from_account_name,
                                            double real_quantity, 
                                            const string& quantity_symbol,
@@ -2119,7 +2180,7 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quantity_symbol) );
 
        auto from_account_key = get_account_public_key( from_account_name );
-       auto& to_account_key = from_account_key;
+       //auto& to_account_key = from_account_key;
 
        if( quote_asset_record->id < base_asset_record->id )
        {
@@ -2552,7 +2613,6 @@ namespace bts { namespace wallet {
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
-
    vector<string> wallet::list() const
    {
        vector<string> wallets;
@@ -2662,7 +2722,6 @@ namespace bts { namespace wallet {
    {
       return my->_blockchain->is_valid_account_name( account_name );
    }
-
 
    private_key_type wallet::get_account_private_key( const string& account_name )const
    { try {
@@ -2862,11 +2921,11 @@ namespace bts { namespace wallet {
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
 
-
    optional<wallet_account_record>         wallet::get_account_record( const address& addr)const
    {
       return my->_wallet_db.lookup_account( addr );
    }
+
    wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
       unordered_map<account_id_type, vote_status> raw_votes;
@@ -2947,7 +3006,6 @@ namespace bts { namespace wallet {
        return obj;
    }
 
-
    public_key_summary wallet::get_public_key_summary( const public_key_type& pubkey ) const
    {
        public_key_summary summary;
@@ -2960,7 +3018,6 @@ namespace bts { namespace wallet {
        summary.btc_compressed_address = string( pts_address( pubkey, true, 0 ) );
        return summary;
    }
-   
    
    vector<public_key_type> wallet::get_public_keys_in_account( const string& account_name )const
    {
@@ -2993,10 +3050,9 @@ namespace bts { namespace wallet {
       return results;
    } FC_CAPTURE_AND_RETHROW( (quote)(base) ) }
 
-   void wallet::use_detininistic_one_time_keys( bool state )
+   void wallet::use_deterministic_one_time_keys( bool state )
    {
       my->_use_deterministic_one_time_keys = state;
    }
 
 } } // bts::wallet
-

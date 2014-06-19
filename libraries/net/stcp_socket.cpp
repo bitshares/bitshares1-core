@@ -14,7 +14,7 @@
 namespace bts { namespace net {
 
 stcp_socket::stcp_socket()
-:_buf_len(0)
+//:_buf_len(0)
 {
 }
 stcp_socket::~stcp_socket()
