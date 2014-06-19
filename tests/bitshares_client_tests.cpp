@@ -303,7 +303,7 @@ struct bts_client_launcher_fixture
 
   bts_client_launcher_fixture() :
     _peer_connection_retry_timeout(15 /* sec */),
-    _desired_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT),
+    _desired_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT + 2),
     _maximum_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT * 3 / 2)
   {}
 
