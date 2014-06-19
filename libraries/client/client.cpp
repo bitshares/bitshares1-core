@@ -1011,7 +1011,7 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_open(const string& wallet_name)
     {
-      _wallet->open(wallet_name);
+      _wallet->open(fc::trim(wallet_name));
     }
 
     fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
