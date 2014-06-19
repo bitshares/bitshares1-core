@@ -977,10 +977,10 @@ namespace bts { namespace cli {
                       _out->put('\n');
 
                       auto supply = _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply;
-                      *_out << std::fixed << std::setprecision(8)
-                            << std::setw(20) << (double(record.votes_for())*100.0 / supply) << '%'
-                            << std::setw(20) << (double(record.votes_against())*100.0 / supply) << '%'
-                            << std::setw(20) << (double(record.net_votes())*100.0 / supply) << '%'
+                                                //Horribly painful way to print a % after a double with precision of 8. Better solutions welcome.
+                      *_out << std::setw(20) << (fc::variant(double(record.votes_for())*100.0 / supply).as_string().substr(0,10) + '%')
+                            << std::setw(20) << (fc::variant(double(record.votes_against())*100.0 / supply).as_string().substr(0,10) + '%')
+                            << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(16) << record.delegate_info->blocks_produced
                             << std::setw(16) << record.delegate_info->blocks_missed
                             << std::setw(16) << record.delegate_info->last_block_num_produced
