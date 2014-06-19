@@ -274,47 +274,47 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_update_account( op.as<update_account_operation>() );
                      break;
                   case withdraw_pay_op_type:
-                     FC_THROW( "withdraw_pay_op_type not implemented!" );
+                     // TODO: FC_THROW( "withdraw_pay_op_type not implemented!" );
                      break;
 
                   case create_asset_op_type:
                      cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
                      break;
                   case update_asset_op_type:
-                     FC_THROW( "update_asset_op_type not implemented!" );
+                     // TODO: FC_THROW( "update_asset_op_type not implemented!" );
                      break;
                   case issue_asset_op_type:
                      cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
                      break;
 
                   case fire_delegate_op_type:
-                     FC_THROW( "fire_delegate_op_type not implemented!" );
+                     // TODO: FC_THROW( "fire_delegate_op_type not implemented!" );
                      break;
 
                   case submit_proposal_op_type:
-                     FC_THROW( "submit_proposal_op_type not implemented!" );
+                     // TODO: FC_THROW( "submit_proposal_op_type not implemented!" );
                      break;
                   case vote_proposal_op_type:
-                     FC_THROW( "vote_proposal_op_type not implemented!" );
+                     // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
                      break;
 
                   case bid_op_type:
                      cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
                      break;
                   case ask_op_type:
-                     FC_THROW( "ask_op_type not implemented!" );
+                     // TODO: FC_THROW( "ask_op_type not implemented!" );
                      break;
                   case short_op_type:
-                     FC_THROW( "short_op_type not implemented!" );
+                     // TODO: FC_THROW( "short_op_type not implemented!" );
                      break;
                   case cover_op_type:
-                     FC_THROW( "cover_op_type not implemented!" );
+                     // TODO: FC_THROW( "cover_op_type not implemented!" );
                      break;
                   case add_collateral_op_type:
-                     FC_THROW( "add_collateral_op_type not implemented!" );
+                     // TODO: FC_THROW( "add_collateral_op_type not implemented!" );
                      break;
                   case remove_collateral_op_type:
-                     FC_THROW( "remove_collateral_op_type not implemented!" );
+                     // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                      break;
 
                   default:
@@ -490,17 +490,17 @@ namespace bts { namespace wallet {
              }
              case withdraw_multi_sig_type:
              {
-                FC_THROW( "withdraw_multi_sig_type not implemented!" );
+                // TODO: FC_THROW( "withdraw_multi_sig_type not implemented!" );
                 break;
              }
              case withdraw_password_type:
              {
-                FC_THROW( "withdraw_password_type not implemented!" );
+                // TODO: FC_THROW( "withdraw_password_type not implemented!" );
                 break;
              }
              case withdraw_option_type:
              {
-                FC_THROW( "withdraw_option_type not implemented!" );
+                // TODO: FC_THROW( "withdraw_option_type not implemented!" );
                 break;
              }
              default:
@@ -768,7 +768,7 @@ namespace bts { namespace wallet {
       if( !my->_wallet_db.validate_password( my->_wallet_password ) )
       {
          lock();
-         FC_THROW_EXCEPTION( invalid_password, "Invalid Password." );
+         FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
       }
 
       if( timeout == microseconds::maximum() )
