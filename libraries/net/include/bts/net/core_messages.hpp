@@ -52,7 +52,9 @@ namespace bts { namespace net {
     address_message_type                       = 5010,
     closing_connection_message_type            = 5011,
     current_time_request_message_type          = 5012,
-    current_time_reply_message_type            = 5013
+    current_time_reply_message_type            = 5013,
+    check_firewall_message_type                = 5014,
+    check_firewall_reply_message_type          = 5015
   };
 
   const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
@@ -286,6 +288,28 @@ namespace bts { namespace net {
     {}
   };  
 
+  struct check_firewall_message
+  {
+    static const core_message_type_enum type;
+    node_id_t node_id;
+    fc::ip::endpoint endpoint_to_check;
+  };
+
+  enum class firewall_check_result
+  {
+    unable_to_check,
+    unable_to_connect,
+    connection_successful
+  };
+
+  struct check_firewall_reply_message
+  {
+    static const core_message_type_enum type;
+    node_id_t node_id;
+    fc::ip::endpoint endpoint_checked;
+    fc::enum_type<uint8_t, firewall_check_result> result;
+  };
+
 } } // bts::client
 
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
@@ -304,7 +328,8 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum,
                  (closing_connection_message_type)
                  (current_time_request_message_type)
                  (current_time_reply_message_type)
-                 )
+                 (check_firewall_message_type)
+                 (check_firewall_reply_message_type) )
 FC_REFLECT( bts::net::item_id, (item_type)
                                (item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)
@@ -360,6 +385,11 @@ FC_REFLECT(bts::net::current_time_request_message, (request_sent_time))
 FC_REFLECT(bts::net::current_time_reply_message, (request_sent_time)
                                                  (request_received_time)
                                                  (reply_transmitted_time))
+FC_REFLECT_ENUM(bts::net::firewall_check_result, (unable_to_check)
+                                                 (unable_to_connect)
+                                                 (connection_successful))
+FC_REFLECT(bts::net::check_firewall_message, (node_id)(endpoint_to_check))
+FC_REFLECT(bts::net::check_firewall_reply_message, (node_id)(endpoint_checked)(result))
 
 #include <unordered_map>
 #include <fc/crypto/city.hpp>

@@ -452,6 +452,10 @@ namespace bts { namespace net {
       void on_item_not_available_message(peer_connection* originating_peer, const item_not_available_message& item_not_available_message_received);
       void on_item_ids_inventory_message(peer_connection* originating_peer, const item_ids_inventory_message& item_ids_inventory_message_received);
       void on_closing_connection_message(peer_connection* originating_peer, const closing_connection_message& closing_connection_message_received);
+      void on_current_time_request_message(peer_connection* originating_peer, const current_time_request_message& current_time_request_message_received);
+      void on_current_time_reply_message(peer_connection* originating_peer, const current_time_reply_message& current_time_reply_message_received);
+      void on_check_firewall_message(peer_connection* originating_peer, const check_firewall_message& check_firewall_message_received);
+      void on_check_firewall_reply_message(peer_connection* originating_peer, const check_firewall_reply_message& check_firewall_reply_message_received);
       void on_connection_closed(peer_connection* originating_peer);
 
       void process_backlog_of_sync_blocks();
@@ -1150,6 +1154,19 @@ namespace bts { namespace net {
       case bts::client::message_type_enum::block_message_type:
         process_block_message(originating_peer, received_message, message_hash);
         break;
+      case core_message_type_enum::current_time_request_message_type:
+        on_current_time_request_message(originating_peer, received_message.as<current_time_request_message>());
+        break;
+      case core_message_type_enum::current_time_reply_message_type:
+        on_current_time_reply_message(originating_peer, received_message.as<current_time_reply_message>());
+        break;
+      case core_message_type_enum::check_firewall_message_type:
+        on_check_firewall_message(originating_peer, received_message.as<check_firewall_message>());
+        break;
+      case core_message_type_enum::check_firewall_reply_message_type:
+        on_check_firewall_reply_message(originating_peer, received_message.as<check_firewall_reply_message>());
+        break;
+
       default:
         process_ordinary_message(originating_peer, received_message, message_hash);
         break;
@@ -2226,6 +2243,34 @@ namespace bts { namespace net {
                                                   ("fc_git_revision_sha", originating_peer->fc_git_revision_sha)
                                                   ("fc_git_revision_unix_timestamp", originating_peer->fc_git_revision_unix_timestamp)));
       disconnect_from_peer(originating_peer, "You sent me a block that I didn't ask for", true, detailed_error);
+    }
+
+    void node_impl::on_current_time_request_message(peer_connection* originating_peer, const current_time_request_message& current_time_request_message_received)
+    {
+      fc::time_point request_received_time(fc::time_point::now());
+      current_time_reply_message reply(current_time_request_message_received.request_sent_time,
+                                       request_received_time,
+                                       fc::time_point::now());
+      originating_peer->send_message(reply);
+    }
+
+    void node_impl::on_current_time_reply_message(peer_connection* originating_peer, const current_time_reply_message& current_time_reply_message_received)
+    {
+      // TODO
+    }
+
+    void node_impl::on_check_firewall_message(peer_connection* originating_peer, const check_firewall_message& check_firewall_message_received)
+    {
+      // TODO
+      check_firewall_reply_message reply;
+      reply.node_id = check_firewall_message_received.node_id;
+      reply.endpoint_checked = check_firewall_message_received.endpoint_to_check;
+      reply.result = firewall_check_result::unable_to_check;
+    }
+
+    void node_impl::on_check_firewall_reply_message(peer_connection* originating_peer, const check_firewall_reply_message& check_firewall_reply_message_received)
+    {
+      // TODO
     }
 
     // this handles any message we get that doesn't require any special processing.

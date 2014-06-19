@@ -15,5 +15,7 @@ namespace bts { namespace net {
   const core_message_type_enum closing_connection_message::type            = core_message_type_enum::closing_connection_message_type;
   const core_message_type_enum current_time_request_message::type          = core_message_type_enum::current_time_request_message_type;
   const core_message_type_enum current_time_reply_message::type            = core_message_type_enum::current_time_reply_message_type;
+  const core_message_type_enum check_firewall_message::type                = core_message_type_enum::check_firewall_message_type;
+  const core_message_type_enum check_firewall_reply_message::type          = core_message_type_enum::check_firewall_reply_message_type;
 
 } } // bts::client
