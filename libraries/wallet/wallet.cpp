@@ -638,14 +638,14 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
   
-   void wallet::set_wallet_setting(const string& name, const variant& value)
+   void wallet::set_setting(const string& name, const variant& value)
    {
-       my->_wallet_db.store_wallet_setting(name, value);
+       my->_wallet_db.store_setting(name, value);
    }
 
-   fc::optional<variant> wallet::get_wallet_setting(const string& name)
+   fc::optional<variant> wallet::get_setting(const string& name)
    {
-       return my->_wallet_db.lookup_wallet_setting(name);
+       return my->_wallet_db.lookup_setting(name);
    }
 
    void wallet::open_file( const path& wallet_filename )

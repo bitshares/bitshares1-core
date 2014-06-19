@@ -90,8 +90,8 @@ namespace bts { namespace wallet {
          owallet_key_record     lookup_key( const address& address )const;
 
 
-         owallet_setting_record   lookup_wallet_setting(const string& name)const;
-         void                     store_wallet_setting(const string& name, const variant& value);
+         owallet_setting_record   lookup_setting(const string& name)const;
+         void                     store_setting(const string& name, const variant& value);
 
          bool has_private_key( const address& a )const;
 

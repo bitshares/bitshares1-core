@@ -88,7 +88,7 @@ namespace bts{ namespace wallet {
               self->balances[ rec.id() ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
-           void load_wallet_setting_record( const wallet_setting_record& rec )
+           void load_setting_record( const wallet_setting_record& rec )
            { try {
               self->settings[rec.name] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
@@ -138,11 +138,11 @@ namespace bts{ namespace wallet {
                case property_record_type:
                   my->load_property_record( record.as<wallet_property_record>() );
                   break;
-               case market_order_type:
-                  FC_THROW( "market_order_type not implemented!" );
+               case market_order_record_type:
+                  FC_THROW( "market_order_record_type not implemented!" );
                   break;
-               case wallet_setting_type:
-                  FC_THROW( "wallet_setting_type not implemented!" );
+               case setting_record_type:
+                  my->load_setting_record( record.as<wallet_setting_record>() );
                   break;
                default:
                   FC_THROW( "unknown wallet_db record type!" );
@@ -273,9 +273,9 @@ namespace bts{ namespace wallet {
    }
 
 
-   void wallet_db::store_wallet_setting(const string& name, const variant& value)
+   void wallet_db::store_setting(const string& name, const variant& value)
    {
-       auto orec = lookup_wallet_setting(name);
+       auto orec = lookup_setting(name);
        if (orec.valid())
        {
            orec->value = value;
@@ -284,8 +284,7 @@ namespace bts{ namespace wallet {
        }
        else
        {
-           auto setting = wallet_setting(name, value);
-           auto rec = wallet_setting_record( setting, new_wallet_record_index() );
+           auto rec = wallet_setting_record( setting(name, value), new_wallet_record_index() );
            settings[name] = rec;
            store_record( rec );
        }
@@ -429,7 +428,7 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
-   owallet_setting_record   wallet_db::lookup_wallet_setting( const string& name)const
+   owallet_setting_record   wallet_db::lookup_setting( const string& name)const
    {
       auto itr = settings.find(name);
       if (itr != settings.end() )
