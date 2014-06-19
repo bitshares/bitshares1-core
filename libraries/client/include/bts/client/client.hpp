@@ -53,7 +53,7 @@ namespace bts { namespace client {
     struct config
     {
        config( ) : 
-          default_peers(vector<string>{"107.170.30.182:8764","114.215.104.153:8764","84.238.140.192:8764"}), 
+          default_peers(vector<string>{"107.170.30.182:8763"}), 
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(50)
