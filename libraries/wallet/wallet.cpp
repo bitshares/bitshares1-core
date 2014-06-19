@@ -99,7 +99,7 @@ namespace bts { namespace wallet {
              bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
              bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
 
-             bool cache_balance( const balance_id_type& balance_id );
+             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
              void clear_pending_transactions();
 
@@ -148,7 +148,7 @@ namespace bts { namespace wallet {
                  {
                     account_record& blockchain_account_record = *existing_account_record;
                     blockchain_account_record = scanned_account_record;
-                    _wallet_db.store_record( *existing_account_record );
+                    _wallet_db.cache_account( *existing_account_record );
                  }
               }
          } );
@@ -173,7 +173,7 @@ namespace bts { namespace wallet {
                                                  unordered_set<address>& required_signatures )
       { try {
          share_type remaining = amount;
-         for( auto& balance_item : _wallet_db.balances )
+         for( auto balance_item : _wallet_db.get_balances() )
          {
             auto owner = balance_item.second.owner();
             //auto oaccount = _wallet_db.lookup_account( owner );
@@ -191,14 +191,14 @@ namespace bts { namespace wallet {
                      remaining -= balance_item.second.balance;
                      balance_item.second.balance = 0;
                      required_signatures.insert( balance_item.second.owner() );
-                     _wallet_db.store_record( balance_item.second );
+                     _wallet_db.cache_balance( balance_item.second );
                   }
                   else
                   {
                      trx.withdraw( balance_item.first, remaining );
                      balance_item.second.balance -= remaining;
                      remaining = 0;
-                     _wallet_db.store_record( balance_item.second );
+                     _wallet_db.cache_balance( balance_item.second );
                      required_signatures.insert( balance_item.second.owner() );
                      return;
                   }
@@ -333,7 +333,7 @@ namespace bts { namespace wallet {
          auto current_balance = _wallet_db.lookup_balance( op.balance_id );
          if( current_balance.valid() )
          {
-            cache_balance( op.balance_id );
+            sync_balance_with_blockchain( op.balance_id );
          }
          return current_balance.valid();
       }
@@ -430,12 +430,7 @@ namespace bts { namespace wallet {
           {
              auto order = _blockchain->get_market_bid( bid_op.bid_index );
              //FC_ASSERT( order.valid() );
-             if( order.valid() )
-                _wallet_db.market_orders[ bid_op.bid_index.owner ].order = *order;
-             else
-                _wallet_db.market_orders[ bid_op.bid_index.owner ].order.state.balance = 0;
-
-             _wallet_db.market_orders[ bid_op.bid_index.owner ].transactions.insert( trx_rec.trx.id() );
+             _wallet_db.update_market_order( bid_op.bid_index.owner, order, trx_rec.trx.id() );
              return true;
           }
           return false;
@@ -515,7 +510,7 @@ namespace bts { namespace wallet {
         }
         if( cache_deposit )
         {
-           if( !cache_balance( op.balance_id() ) )
+           if( !sync_balance_with_blockchain( op.balance_id() ) )
            {
               elog( "unable to cache balance ${b}", ("b",op) );
            }
@@ -524,14 +519,14 @@ namespace bts { namespace wallet {
 
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
-      bool wallet_impl::cache_balance( const balance_id_type& balance_id )
+      bool wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
          auto bal_rec = _blockchain->get_balance_record( balance_id );
          if( !bal_rec.valid() )
          {
             // wlog( "blockchain doesn't know about balance id: ${balance_id}",
             //      ("balance_id",balance_id) );
-            _wallet_db.balances.erase( balance_id );
+            _wallet_db.remove_balance( balance_id );
             return false;
          }
          else
@@ -630,16 +625,15 @@ namespace bts { namespace wallet {
              epk = extended_private_key( private_key_type::generate() );
           }
 
-          new_master_key.encrypt_key( my->_wallet_password, epk );
+          my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
-          my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_DEFAULT_PRIORITY_FEE) );
-          my->_wallet_db.store_record( wallet_master_key_record( new_master_key, -1 ) );
+          my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_WALLET_DEFAULT_PRIORITY_FEE) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
 
-          FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
+          FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
       catch( ... )
       {
@@ -677,9 +671,9 @@ namespace bts { namespace wallet {
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
 
-          auto& tmp_balances = my->_wallet_db.balances;
+          auto tmp_balances = my->_wallet_db.get_balances();
           for( const auto& item : tmp_balances )
-              my->cache_balance( item.first );
+              my->sync_balance_with_blockchain( item.first );
       }
       catch( ... )
       {
@@ -725,6 +719,7 @@ namespace bts { namespace wallet {
    void wallet::export_to_json( const path& filename )const
    { try {
       FC_ASSERT( is_open() );
+      // TODO: move this to wallet_db...
       std::vector<generic_wallet_record> records;
       my->_wallet_db.export_records( records );
       fc::json::save_to_file( records, filename, true );
@@ -733,6 +728,7 @@ namespace bts { namespace wallet {
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
       FC_ASSERT( fc::exists( filename ) );
+      // TODO: move this to wallet_db
       try
       {
           auto records = fc::json::from_file< std::vector<generic_wallet_record> >( filename );
@@ -764,12 +760,11 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, const fc::microseconds& timeout )
    { try {
-      FC_ASSERT( password.size() >= BTS_MIN_PASSWORD_LENGTH ) 
+      FC_ASSERT( password.size() >= BTS_WALLET_MIN_PASSWORD_LENGTH ) 
       FC_ASSERT( timeout >= fc::seconds(1) );
-      FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      if( !my->_wallet_db.wallet_master_key->validate_password( my->_wallet_password ) )
+      if( !my->_wallet_db.validate_password( my->_wallet_password ) )
       {
          lock();
          FC_THROW_EXCEPTION( invalid_password, "Invalid Password." );
@@ -838,25 +833,11 @@ namespace bts { namespace wallet {
    { try {
       if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
-      if( new_passphrase.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
-      FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
+      if( new_passphrase.size() < BTS_WALLET_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
 
       auto new_password = fc::sha512::hash( new_passphrase.c_str(), new_passphrase.size() );
 
-      for( auto key : my->_wallet_db.keys )
-      {
-         if( key.second.has_private_key() )
-         {
-            auto priv_key = key.second.decrypt_private_key( my->_wallet_password );
-            key.second.encrypt_private_key( new_password, priv_key );
-            my->_wallet_db.store_record( key.second );
-         }
-      }
-
-      auto master_key = my->_wallet_db.wallet_master_key->decrypt_key( my->_wallet_password );
-      my->_wallet_db.wallet_master_key->encrypt_key( new_password, master_key );
-      my->_wallet_db.store_record( *my->_wallet_db.wallet_master_key );
-
+      my->_wallet_db.change_password( my->_wallet_password, new_password );
       my->_wallet_password = new_password;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -976,7 +957,7 @@ namespace bts { namespace wallet {
                     "Account with ${name} already exists", ("name",account_name) );
          current_account->private_data = private_data;
          idump( (*current_account) );
-         my->_wallet_db.store_record( *current_account );
+         my->_wallet_db.cache_account( *current_account );
          return;
       }
       else
@@ -1011,7 +992,7 @@ namespace bts { namespace wallet {
            {
                blockchain::account_record& bca = *local_account;
                bca = *chain_account;
-               my->_wallet_db.store_record( *local_account );
+               my->_wallet_db.cache_account( *local_account );
            }
            else
            {
@@ -1161,14 +1142,14 @@ namespace bts { namespace wallet {
          my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
       }
 
-      for( auto acct : my->_wallet_db.accounts )
+      for( auto acct : my->_wallet_db.get_accounts() )
       {
          auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
          if (blockchain_acct_rec.valid())
          {
              blockchain::account_record& brec = acct.second;
              brec = *blockchain_acct_rec;
-             my->_wallet_db.store_record( acct.second );
+             my->_wallet_db.cache_account( acct.second );
          }
       }
 
@@ -1211,7 +1192,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
 
       std::vector<wallet_transaction_record> recs;
-      auto my_trxs = my->_wallet_db.transactions;
+      auto my_trxs = my->_wallet_db.get_transactions();
       recs.reserve( my_trxs.size() );
 
       public_key_type account_pub;
@@ -1355,7 +1336,7 @@ namespace bts { namespace wallet {
        asset total_fee = get_priority_fee( amount_to_transfer_symbol );
 
        asset amount_collected( 0, asset_id );
-       for( auto balance_item : my->_wallet_db.balances )
+       for( auto balance_item : my->_wallet_db.get_balances() )
        {
           auto owner = balance_item.second.owner();
           if( balance_item.second.asset_id() == asset_id &&
@@ -1818,6 +1799,7 @@ namespace bts { namespace wallet {
                                    required_fees.asset_id,
                                    from_account_address,
                                    trx, required_signatures );
+
       if( sign )
       {
          sign_transaction( trx, required_signatures );
@@ -2132,8 +2114,8 @@ namespace bts { namespace wallet {
         if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-        auto order_itr = my->_wallet_db.market_orders.find( owner_address );
-        if( order_itr == my->_wallet_db.market_orders.end() )
+        auto order_itr = my->_wallet_db.get_market_orders().find( owner_address );
+        if( order_itr == my->_wallet_db.get_market_orders().end() )
            FC_CAPTURE_AND_THROW( unknown_market_order, (owner_address) );
 
         auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
@@ -2147,7 +2129,7 @@ namespace bts { namespace wallet {
         auto from_account_key = account_key_record->public_key;
         auto& to_account_key = from_account_key;
 
-        market_order_status& order = order_itr->second;
+        const market_order_status& order = order_itr->second;
         asset balance = order.get_balance();
 
         auto required_fees = get_priority_fee(BTS_BLOCKCHAIN_SYMBOL);
@@ -2336,7 +2318,7 @@ namespace bts { namespace wallet {
       auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if ( priority_fee.is_null() )
       {
-         return asset( BTS_DEFAULT_PRIORITY_FEE, 0 );
+         return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE, 0 );
       }
       else
       {
@@ -2706,9 +2688,9 @@ namespace bts { namespace wallet {
    vector<wallet_account_record> wallet::list_contact_accounts() const
    { try {
       vector<wallet_account_record> contact_accounts;
-      unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
-      contact_accounts.reserve( my->_wallet_db.accounts.size() );
-      for( auto item : my->_wallet_db.accounts )
+      const auto& accs = my->_wallet_db.get_accounts();
+      contact_accounts.reserve( accs.size() );
+      for( auto item : accs )
       {
          if ( ! my->_wallet_db.has_private_key( item.second.account_address ) )
          {
@@ -2721,9 +2703,9 @@ namespace bts { namespace wallet {
    vector<wallet_account_record> wallet::list_receive_accounts() const
    { try {
       vector<wallet_account_record> receive_accounts;
-      unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
-      receive_accounts.reserve( my->_wallet_db.accounts.size() );
-      for( auto item : my->_wallet_db.accounts )
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
       {
          if ( my->_wallet_db.has_private_key( item.second.account_address ) )
          {
@@ -2845,7 +2827,7 @@ namespace bts { namespace wallet {
       vector<account_id_type> active_delegates =
           my->_blockchain->get_delegates_by_vote(0, BTS_BLOCKCHAIN_NUM_DELEGATES);
 
-      for (auto acct_rec : my->_wallet_db.accounts)
+      for (auto acct_rec : my->_wallet_db.get_accounts())
       {
          if (acct_rec.second.trust_level > 0)
              for_candidates.push_back(acct_rec.second);
@@ -2968,7 +2950,7 @@ namespace bts { namespace wallet {
                                                                const string& symbol ) const
    { try {
       vector<wallet_balance_record> balances;
-      for( auto& balance_item : my->_wallet_db.balances )
+      for( const auto& balance_item : my->_wallet_db.get_balances() )
       {
     /*     auto owner = balance_item.second.owner();
          if( balance_item.second.asset_id() == asset_id && 
@@ -2992,7 +2974,7 @@ namespace bts { namespace wallet {
    wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
       unordered_map<account_id_type, vote_status> raw_votes;
-      for( auto b : my->_wallet_db.balances )
+      for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
@@ -3025,7 +3007,7 @@ namespace bts { namespace wallet {
    { try {
       account_balance_summary_type result;
       unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
-      for( auto b : my->_wallet_db.balances )
+      for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
@@ -3088,7 +3070,7 @@ namespace bts { namespace wallet {
       address          account_address( account_public_key );
 
       vector<public_key_type> account_keys;
-      for( auto key : my->_wallet_db.keys )
+      for( const auto& key : my->_wallet_db.get_keys() )
       {
          if( key.second.account_address == account_address || key.first == account_address )
             account_keys.push_back( key.second.public_key );
@@ -3102,7 +3084,7 @@ namespace bts { namespace wallet {
       auto base_asset_id  = my->_blockchain->get_asset_id( base );
 
       vector<market_order_status> results;
-      for( auto item : my->_wallet_db.market_orders )
+      for( const auto& item : my->_wallet_db.get_market_orders() )
       {
          if( item.second.order.market_index.order_price.quote_asset_id == quote_asset_id &&
              item.second.order.market_index.order_price.base_asset_id  == base_asset_id  )

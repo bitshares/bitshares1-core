@@ -21,6 +21,11 @@ namespace bts{ namespace wallet {
               self->wallet_master_key = key;
            } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+           void load_market_record( const wallet_market_order_status_record& rec )
+           {
+              self->market_orders[rec.order.market_index.owner] = rec;
+           }
+
            void load_account_record( const wallet_account_record& account_to_load )
            { try {
               self->accounts[account_to_load.wallet_record_index] = account_to_load;
@@ -133,7 +138,7 @@ namespace bts{ namespace wallet {
                       my->load_transaction_record( record.as<wallet_transaction_record>() );
                       break;
                    case asset_record_type:
-                      FC_THROW( "asset_record_type not implemented!" );
+                      FC_THROW( "TODO: asset_record_type not implemented!" );
                       break;
                    case balance_record_type:
                       my->load_balance_record( record.as<wallet_balance_record>() );
@@ -142,13 +147,13 @@ namespace bts{ namespace wallet {
                       my->load_property_record( record.as<wallet_property_record>() );
                       break;
                    case market_order_record_type:
-                      FC_THROW( "market_order_record_type not implemented!" );
+                      my->load_market_record( record.as<wallet_market_order_status_record>() );
                       break;
                    case setting_record_type:
                       my->load_setting_record( record.as<wallet_setting_record>() );
                       break;
                    default:
-                      FC_THROW( "unknown wallet_db record type!" );
+                      FC_ASSERT( !"unknown wallet_db record type!", "", ("type",record.type) );
                       break;
                 }
              } 
@@ -550,6 +555,13 @@ namespace bts{ namespace wallet {
       }
       return owallet_account_record();
    }
+   void wallet_db::cache_balance( const wallet_balance_record& balance_to_cache )
+   {
+       auto balance_id = balance_to_cache.id();
+       balances[balance_id] = balance_to_cache;
+       store_record( balance_to_cache );
+   }
+
    void wallet_db::cache_balance( const bts::blockchain::balance_record& balance_to_cache )
    {
       auto balance_id = balance_to_cache.id();
@@ -671,4 +683,63 @@ namespace bts{ namespace wallet {
    {
       my->_records.remove( index );
    }
+
+   bool                           wallet_db::validate_password( const fc::sha512& password )const
+   {
+      FC_ASSERT( wallet_master_key );
+      return wallet_master_key->validate_password( password );
+   }
+
+   optional<extended_private_key> wallet_db::get_master_key( const fc::sha512& password    )const
+   {
+      FC_ASSERT( wallet_master_key );
+      return wallet_master_key->decrypt_key( password );
+   }
+
+   void  wallet_db::set_master_key( const extended_private_key& extended_key, 
+                                    const fc::sha512& new_password )
+   {
+      master_key key;
+      key.encrypt_key(new_password,extended_key);
+      wallet_master_key = wallet_master_key_record( key, -1 );
+      store_record( *wallet_master_key );
+   }
+
+   void wallet_db::change_password( const fc::sha512& old_password,
+                                    const fc::sha512& new_password )
+   { try {
+      FC_ASSERT( wallet_master_key );
+      auto old_key = get_master_key( old_password );
+      FC_ASSERT( old_key, "unable to change password because old password was invalid" );
+      set_master_key( *old_key, new_password );
+
+      for( auto key : keys )
+      {
+         if( key.second.has_private_key() )
+         {
+            auto priv_key = key.second.decrypt_private_key( old_password );
+            key.second.encrypt_private_key( new_password, priv_key );
+            store_record( key.second );
+         }
+      }
+   } FC_CAPTURE_AND_RETHROW() }
+   void wallet_db::update_market_order( const address& owner, 
+                                         optional<bts::blockchain::market_order>& order,
+                                         const transaction_id_type& trx_id )
+   {
+      if( order.valid() )
+         market_orders[ owner ].order = *order;
+      else
+         market_orders[ owner ].order.state.balance = 0;
+
+      market_orders[ owner ].transactions.insert( trx_id );
+      store_record( market_orders[ owner ] );
+   }
+   void wallet_db::remove_balance( const balance_id_type& balance_id )
+   {
+      remove_item( balances[balance_id].wallet_record_index );
+      balances.erase(balance_id);
+   }
+
+
 } } // bts::wallet

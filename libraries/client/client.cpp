@@ -29,6 +29,7 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -45,7 +46,7 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <fstream>
+#include <boost/thread/mutex.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -290,9 +291,61 @@ config load_config( const fc::path& datadir )
                            public bts::api::common_api
        {
           public:
+            class user_appender : public fc::appender
+            {
+               public:
+                  user_appender( client_impl& c )
+                  :_client_impl(c){}
+
+                  virtual void log( const fc::log_message& m ) override
+                  {
+                     auto format = m.get_format();
+                     // lookup translation on format here
+
+                     // perform variable substitution;
+                     string message = format_string( format, m.get_data() );
+                     
+
+                     { // appenders can be called from any thread
+                        fc::scoped_lock<boost::mutex> lock(_history_lock);
+                        _history.emplace_back( message );
+                        if( _client_impl._cli )
+                           _client_impl._cli->display_status_message( message );
+                     }
+
+                     // call a callback to the client...
+
+                     // we need an RPC call to fetch this log and display the
+                     // current status.
+                  }
+
+                  vector<string> get_history()const
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     return _history;
+                  }
+
+                  void clear_history()
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     _history.clear();
+                  }
+
+               private:
+                  mutable boost::mutex  _history_lock;
+                  // TODO: consider a deque and enforce maximum length?
+                  vector<string>        _history;
+                  client_impl&          _client_impl;
+            };
+
+            fc::shared_ptr<user_appender> _user_appender;
+
             client_impl(bts::client::client* self) :
               _self(self),_cli()
             { try {
+                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+                fc::logger::get( "user" ).add_appender( _user_appender );
+
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
                 } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
@@ -449,7 +502,7 @@ config load_config( const fc::path& datadir )
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT , 
+                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT,
                              "Client must have ${count} connections before you may produce blocks",
                              ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
@@ -544,7 +597,8 @@ config load_config( const fc::path& datadir )
                       std::ostringstream message;
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
-                      _cli->display_status_message(message.str());
+                      ulog( message.str() );
+                      //_cli->display_status_message(message.str());
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
@@ -817,6 +871,16 @@ config load_config( const fc::path& datadir )
               return "CLI not set for this client.\n";
            }
        }
+       
+       fc::variants client_impl::batch(const std::string& method_name, const std::vector<fc::variants>& parameters_list) const
+       {
+          fc::variants result;
+          for ( auto parameters : parameters_list )
+          {
+             result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+          }
+          return result;
+       }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
@@ -966,8 +1030,8 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
-       if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
-       if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
+       if( brain_key.size() && brain_key.size() < BTS_WALLET_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
+       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
        if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
       _wallet->create(wallet_name,password, brain_key );
     }

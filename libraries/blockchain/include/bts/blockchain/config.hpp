@@ -112,5 +112,3 @@
  *  of mining fees then it really isn't worth the networks time.
  */
 #define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
-
-#define BTS_WALLET_MIN_PASSWORD_LENGTH                  (9)
