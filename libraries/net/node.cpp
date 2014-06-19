@@ -69,16 +69,14 @@ namespace bts { namespace net {
         disconnected, 
         just_connected, // if in this state, we have sent a hello_message
         connection_accepted, // remote side has sent us a connection_accepted, we're operating normally with them
-        connection_rejected, // remote side has sent us a connection_rejected, we may be exchanging address with them or may just be waiting for them to close
-        connection_closed // they have sent us a connection_closed
+        connection_rejected // remote side has sent us a connection_rejected, we may be exchanging address with them or may just be waiting for them to close
       };
       enum class their_connection_state
       {
         disconnected,
         just_connected, // we have not yet received a hello_message
         connection_accepted, // we have sent them a connection_accepted
-        connection_rejected, // we have sent them a connection_rejected
-        connection_closed // we have sent them a connection_closed
+        connection_rejected // we have sent them a connection_rejected
       };
     private:
       node_impl&                     _node;
@@ -93,7 +91,9 @@ namespace bts { namespace net {
       fc::microseconds latency;
 
       our_connection_state our_state;
+      bool they_have_requested_close;
       their_connection_state their_state;
+      bool we_have_requested_close;
 
       fc::time_point get_connection_time()const { return _message_connection.get_connection_time(); }
 
@@ -144,7 +144,9 @@ namespace bts { namespace net {
         _message_connection(this),
         direction(peer_connection_direction::unknown),
         our_state(our_connection_state::disconnected),
+        they_have_requested_close(false),
         their_state(their_connection_state::disconnected),
+        we_have_requested_close(false),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
@@ -206,13 +208,11 @@ FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
 FC_REFLECT_ENUM(bts::net::detail::peer_connection::our_connection_state, (disconnected)
                                                                          (just_connected)
                                                                          (connection_accepted)
-                                                                         (connection_rejected)
-                                                                         (connection_closed))
+                                                                         (connection_rejected))
 FC_REFLECT_ENUM(bts::net::detail::peer_connection::their_connection_state, (disconnected)
                                                                            (just_connected)
                                                                            (connection_accepted)
-                                                                           (connection_rejected)
-                                                                           (connection_closed))
+                                                                           (connection_rejected))
 
 namespace bts { namespace net { 
   namespace detail 
@@ -1424,7 +1424,6 @@ namespace bts { namespace net {
 
     void node_impl::on_address_request_message(peer_connection* originating_peer, const address_request_message& address_request_message_received)
     {
-      assert(originating_peer->our_state != peer_connection::our_connection_state::connection_closed);
       dlog("Received an address request message");
 
       address_message reply;
@@ -1461,6 +1460,8 @@ namespace bts { namespace net {
 
       if (originating_peer->our_state == peer_connection::our_connection_state::connection_rejected)      
         disconnect_from_peer(originating_peer, "You rejected my connection request (hello message) so I'm disconnecting");
+      else if (originating_peer->their_state == peer_connection::their_connection_state::connection_rejected)
+        disconnect_from_peer(originating_peer, "I rejected your connection request (hello message) so I'm disconnecting");
       else
       {
         if (originating_peer->is_firewalled == firewalled_state::not_firewalled)
@@ -1910,6 +1911,8 @@ namespace bts { namespace net {
 
     void node_impl::on_closing_connection_message(peer_connection* originating_peer, const closing_connection_message& closing_connection_message_received)
     {
+      originating_peer->they_have_requested_close = true;
+
       if (closing_connection_message_received.closing_due_to_error)
       {
         elog("Peer ${peer} is disconnecting us because of an error: ${msg}, exception: ${error}", 
@@ -1929,6 +1932,8 @@ namespace bts { namespace net {
              ("peer", originating_peer->get_remote_endpoint())
              ("msg", closing_connection_message_received.reason_for_closing));
       }
+      if (originating_peer->we_have_requested_close)
+        originating_peer->close_connection();
     }
 
     void node_impl::on_connection_closed(peer_connection* originating_peer)
@@ -2645,7 +2650,7 @@ namespace bts { namespace net {
       _handshaking_connections.erase(peer_to_disconnect->shared_from_this());
       _active_connections.erase(peer_to_disconnect->shared_from_this());
 
-      if (peer_to_disconnect->our_state == peer_connection::our_connection_state::connection_closed)
+      if (peer_to_disconnect->they_have_requested_close)
       {
         // the peer has already told us that it's ready to close the connection, so just close the connection
         peer_to_disconnect->close_connection();
@@ -2661,7 +2666,7 @@ namespace bts { namespace net {
           updated_peer_record.last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
         _potential_peer_db.update_entry(updated_peer_record);
 
-        peer_to_disconnect->their_state = peer_connection::their_connection_state::connection_closed;
+        peer_to_disconnect->we_have_requested_close = true;
         peer_to_disconnect->connection_closed_time = fc::time_point::now();
 
         closing_connection_message closing_message(reason_for_disconnect, caused_by_error, error);
