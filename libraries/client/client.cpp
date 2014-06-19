@@ -168,7 +168,11 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     fc::file_appender::config ac_p2p;
     ac_p2p.filename = data_dir / "p2p.log";
     ac_p2p.truncate = false;
+#ifdef NDEBUG
     ac_p2p.flush    = false;
+#else // NDEBUG
+    ac_p2p.flush    = true;
+#endif // NDEBUG
 
     std::cout << "Logging P2P to file \"" << ac_p2p.filename.generic_string() << "\"\n";
 
@@ -190,7 +194,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     
     fc::logger_config dlc;
     dlc.level = fc::log_level::debug;
-    dlc.name = "default";
+    dlc.name = "default"; 
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
