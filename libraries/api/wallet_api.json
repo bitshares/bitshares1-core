@@ -560,6 +560,26 @@
          "aliases" : [ "register" ]
       },
       {
+         "method_name" : "wallet_account_update_private_data",
+         "description" : "Updates the local private data for an account",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "private_data",
+                  "type" : "json_variant",
+                  "description" : "private data about the account",
+                  "default_value" : null
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "update_private_data" ]
+      },
+      {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
          "return_type" : "transaction_record",
@@ -591,16 +611,16 @@
          "aliases" : [ "update_registration" ]
       },
       {
-         "method_name" : "wallet_list_contact_accounts",
-         "description" : "Lists all foreign addresses and their labels associated with this wallet",
+         "method_name" : "wallet_list_accounts",
+         "description" : "Lists all accounts associated with this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_list_receive_accounts",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "method_name" : "wallet_list_my_accounts",
+         "description" : "Lists all accounts for which we have a private key in this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
@@ -608,7 +628,7 @@
       },
       {
          "method_name" : "wallet_get_account",
-         "description" : "TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet",
+         "description" : "Get the account record for a given name",
          "return_type" : "wallet_account_record",
          "parameters"  : [
                {

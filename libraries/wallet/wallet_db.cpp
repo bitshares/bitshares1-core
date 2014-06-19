@@ -319,10 +319,15 @@ namespace bts{ namespace wallet {
 
          if( key_to_store.has_private_key())
          {
+            auto oacct = lookup_account( key_to_store.account_address );
+            FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
+            oacct->is_my_account = true;
+            store_record(*oacct);
+            cache_account(*oacct);
             ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
-                  ("account_name",get_account_name(key_to_store.account_address)) );
+                 ("account_name",get_account_name(key_to_store.account_address)) );
          }
          else
          {
@@ -457,8 +462,8 @@ namespace bts{ namespace wallet {
       return owallet_setting_record();
    }
 
-   void wallet_db::add_contact_account( const account_record& blockchain_account,
-                                        const variant& private_data  )
+   void wallet_db::add_account( const account_record& blockchain_account,
+                                const variant& private_data  )
    { try {
       wallet_account_record war;
       account_record& tmp  = war;
@@ -468,6 +473,11 @@ namespace bts{ namespace wallet {
 
       war.wallet_record_index = new_wallet_record_index();
       store_record( war );
+      if (has_private_key(war.account_address))
+      {
+          war.is_my_account = true;
+          store_record( war );
+      }
       my->load_account_record( war );
 
       auto current_key = lookup_key( blockchain_account.owner_key );
@@ -487,9 +497,9 @@ namespace bts{ namespace wallet {
       }
    } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
 
-   void wallet_db::add_contact_account( const string& new_account_name, 
-                                        const public_key_type& new_account_key,
-                                        const variant& private_data )
+   void wallet_db::add_account( const string& new_account_name, 
+                                const public_key_type& new_account_key,
+                                const variant& private_data )
    {
       auto current_account_itr = name_to_account_wallet_record_index.find( new_account_name );
       FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(), 
@@ -510,6 +520,11 @@ namespace bts{ namespace wallet {
 
       war.wallet_record_index = new_wallet_record_index();
       store_record( war );
+      if (has_private_key(war.account_address))
+      {
+          war.is_my_account = true;
+          store_record(war);
+      }
       my->load_account_record( war );
 
       auto current_key = lookup_key( new_account_key );

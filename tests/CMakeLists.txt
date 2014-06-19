@@ -6,7 +6,7 @@ add_library( deterministic_openssl_rand deterministic_openssl_rand.cpp determini
 target_link_libraries( deterministic_openssl_rand fc )
 
 add_executable( wallet_tests wallet_tests.cpp )
-target_link_libraries( wallet_tests bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
+target_link_libraries( wallet_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
 
 add_executable( dev_tests dev_tests.cpp )
 target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )

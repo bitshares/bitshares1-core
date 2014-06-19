@@ -173,8 +173,8 @@ namespace bts { namespace wallet {
 
          vector<string> list() const; // list wallets
 
-         vector<wallet_account_record> list_receive_accounts()const;
-         vector<wallet_account_record> list_contact_accounts()const;
+         vector<wallet_account_record> list_accounts()const;
+         vector<wallet_account_record> list_my_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
@@ -300,6 +300,10 @@ namespace bts { namespace wallet {
                                               bool  as_delegate, 
                                               const string& pay_with_account_name,
                                               bool sign = true );
+
+
+         void update_account_private_data( const string& account_to_update,
+                                           const variant& private_data );
 
          wallet_transaction_record update_registered_account( const string& account_name,
                                                        const string& pay_from_account,

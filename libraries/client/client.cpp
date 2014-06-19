@@ -1190,13 +1190,13 @@ config load_config( const fc::path& datadir )
       return _wallet->list();  
     }
 
-    vector<wallet_account_record> detail::client_impl::wallet_list_contact_accounts() const
+    vector<wallet_account_record> detail::client_impl::wallet_list_accounts() const
     {
-      return _wallet->list_contact_accounts();
+      return _wallet->list_accounts();
     }
-    vector<wallet_account_record> detail::client_impl::wallet_list_receive_accounts() const
+    vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
     {
-      return _wallet->list_receive_accounts();
+      return _wallet->list_my_accounts();
     }
 
     void detail::client_impl::wallet_remove_contact_account(const string& account_name)
@@ -2161,6 +2161,12 @@ config load_config( const fc::path& datadir )
     variant_object client_impl::wallet_get_info()
     {
        return _wallet->get_info().get_object();
+    }
+
+    void client_impl::wallet_account_update_private_data( const string& account_to_update,
+                                                          const variant& private_data )
+    {
+       _wallet->update_account_private_data(account_to_update, private_data); 
     }
 
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,

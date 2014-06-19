@@ -868,11 +868,11 @@ BOOST_AUTO_TEST_CASE(standalone_wallet_test)
   BOOST_TEST_MESSAGE("Testing receive address generation");
   for (unsigned i = 0; i < client_processes.size(); ++i)
   {
-    std::vector<bts::wallet::wallet_account_record> initial_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
+    std::vector<bts::wallet::wallet_account_record> initial_receive_accounts = client_processes[i].rpc_client->wallet_list_my_accounts();
     BOOST_CHECK(initial_receive_accounts.empty());
     std::string account_name("address_test_account");
     //bts::blockchain::public_key_type new_address = client_processes[i].rpc_client->wallet_account_create(account_name);
-    std::vector<bts::wallet::wallet_account_record> final_receive_accounts = client_processes[i].rpc_client->wallet_list_receive_accounts();
+    std::vector<bts::wallet::wallet_account_record> final_receive_accounts = client_processes[i].rpc_client->wallet_list_my_accounts();
     BOOST_CHECK(final_receive_accounts.size() == initial_receive_accounts.size() + 1);
     /*TODO RESTORE THIS CODE SOON!
     for (auto initial_account_name : initial_receive_accounts)
