@@ -195,8 +195,8 @@ namespace bts { namespace net {
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
       remote_endpoint(remote_endpoint),
-      reason_code(reason_code),
-      reason_string(reason_string)
+      reason_string(reason_string),
+      reason_code(reason_code)
     {}
   };
 
