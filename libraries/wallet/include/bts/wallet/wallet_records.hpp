@@ -83,6 +83,7 @@ namespace bts { namespace wallet {
        account()
        :trust_level(0)
        ,block_production_enabled(false)
+       ,is_my_account(false)
        {}
 
        address           account_address;
@@ -102,6 +103,7 @@ namespace bts { namespace wallet {
        int32_t           trust_level;
 
        bool              block_production_enabled;
+       bool              is_my_account;
    };
 
 

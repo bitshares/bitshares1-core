@@ -292,10 +292,14 @@ namespace bts{ namespace wallet {
 
          if( key_to_store.has_private_key())
          {
+            auto oacct = lookup_account( key_to_store.account_address );
+            FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
+            oacct->is_my_account = true;
+            cache_account(*oacct);
             ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
-                  ("account_name",get_account_name(key_to_store.account_address)) );
+                 ("account_name",get_account_name(key_to_store.account_address)) );
          }
          else
          {
