@@ -103,7 +103,7 @@
               "default_value" : true
            }
         ],
-        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"],
+        "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["import_key"]
       },
       {
@@ -127,7 +127,7 @@
               "description" : "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
            }
         ],
-        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_armory",
@@ -150,7 +150,7 @@
               "description" : "the account name to receive the contents of the wallet"
            }
         ],
-        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_electrum",
@@ -173,7 +173,7 @@
               "description" : "the account name to receive the contents of the wallet"
            }
         ],
-        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_multibit",
@@ -196,7 +196,7 @@
               "description" : "the account name to receive the contents of the wallet"
            }
         ],
-        "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
           "method_name": "wallet_import_keyhotee",
@@ -229,7 +229,7 @@
               "description" : "using keyhotee id as account name"
           }
           ],
-          "prerequisites" : ["json_authenticated","wallet_open","wallet_unlocked"]
+          "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_close",
@@ -253,7 +253,7 @@
             }
           ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated", "wallet_open"]
+        "prerequisites" : ["wallet_open"]
       },
       {
         "method_name": "wallet_create_from_json",
@@ -271,6 +271,11 @@
               "name" : "wallet_name", 
               "type" : "wallet_name", 
               "description" : "name of the wallet to create"
+            },
+            {
+              "name" : "imported_wallet_passphrase",
+              "type" : "passphrase",
+              "description" : "passphrase of the imported wallet"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -288,7 +293,7 @@
               "example" : "alice",
               "default_value" : ""
             }          ],
-        "prerequisites" : ["json_authenticated","wallet_open"],
+        "prerequisites" : ["wallet_open"],
         "aliases" : ["history"]
       },
       {
@@ -296,7 +301,7 @@
         "description": "Clear \"stuck\" pending transactions from the wallet.",
         "return_type": "void",
         "parameters" : [],
-        "prerequisites" : ["json_authenticated","wallet_open"],
+        "prerequisites" : ["wallet_open"],
         "aliases" : []
       },
       {
@@ -304,7 +309,7 @@
         "description": "Lock the private keys in wallet, disables spending commands until unlocked",
         "return_type": "void",
         "parameters" : [],
-        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "prerequisites" : ["wallet_open"],
         "aliases" : ["lock"]
       },
       {
@@ -324,7 +329,7 @@
               "description" : "the passphrase for encrypting the wallet"
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "prerequisites" : ["wallet_open"],
         "aliases" : ["unlock"]
       },
       {
@@ -339,7 +344,7 @@
               "description" : "the passphrase for encrypting the wallet"
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+        "prerequisites" : ["wallet_unlocked"],
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
@@ -370,7 +375,7 @@
               "default_value" : null
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+        "prerequisites" : ["wallet_unlocked"],
         "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {
@@ -391,7 +396,7 @@
               "default_value" : 0
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"],
+        "prerequisites" : ["wallet_open"],
         "aliases" : [ "trust", "set_trust" ]
       },
       {
@@ -412,7 +417,7 @@
               "description" : "the key associated with this sending account"
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open"]
+        "prerequisites" : ["wallet_open"]
       },
       {
         "method_name": "wallet_get_pretty_transaction",
@@ -462,7 +467,7 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+        "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["multipart_transfer"]
       },
       {
@@ -498,7 +503,7 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+        "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer"]
       },
       {
@@ -520,7 +525,7 @@
               "default_value" : -1
             }
           ],
-        "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+        "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan"]
       },
       {
@@ -551,7 +556,7 @@
                   "default_value" : false
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "register" ]
       },
       {
@@ -582,7 +587,7 @@
                   "default_value" : false
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "update_registration" ]
       },
       {
@@ -591,7 +596,7 @@
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_list_receive_accounts",
@@ -599,7 +604,7 @@
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_get_account",
@@ -613,7 +618,7 @@
                }
             ],
          "is_const" : true,
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_remove_contact_account",
@@ -626,7 +631,7 @@
                   "description" : "the name of the contact"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open" ]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_account_rename",
@@ -644,7 +649,7 @@
                   "description" : "the new name for the account"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "prerequisites" : ["wallet_open"],
          "aliases" : ["wallet_rename_account"]
       },
       {
@@ -692,7 +697,7 @@
                   "default_value" : 1000000
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_asset_issue",
@@ -720,7 +725,7 @@
                   "description" : "the memo to send to the receiver"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_submit_proposal",
@@ -753,7 +758,7 @@
                   "description" : "the name of the account to receive the shares"
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_vote_proposal",
@@ -782,7 +787,7 @@
                   "default_value" : ""
                }
             ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_list_unspent_balances",
@@ -802,7 +807,7 @@
                 "default_value" : "*"
            }
          ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked" ]
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name"    : "wallet_account_balance",
@@ -816,7 +821,7 @@
             "default_value" : "*"
          }
          ],
-         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "prerequisites" : ["wallet_open"],
          "aliases" : ["balance"]
       },
       {
@@ -831,7 +836,7 @@
                 "default_value" : "*"
            }
          ],
-         "prerequisites" : ["json_authenticated", "wallet_open" ],
+         "prerequisites" : ["wallet_open"],
          "aliases": ["public_keys"]
       },
       {
@@ -861,7 +866,7 @@
                "default_value" : "payday"
       }
          ],
-         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : ["pay_delegate"]
       },
       {
@@ -875,7 +880,7 @@
             "description" : "the prioty fee to be setted."
          }
          ],
-         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "prerequisites" : ["wallet_open"],
          "aliases" : ["set_priority_fee"]
       },
       {
@@ -909,7 +914,7 @@
                "description" : "the type of asset you would like to pay with"
             }
          ],
-         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "bid" ]
       },
       {
@@ -934,7 +939,7 @@
                "default_value" : -1
             }
          ],
-         "prerequisites"  : ["json_authenticated","wallet_open"],
+         "prerequisites" : ["wallet_open"],
          "aliases" : [ "list_orders" ]
       },
       {
@@ -948,7 +953,7 @@
                "description" : "the address of the order to cancel"
             }
           ],
-         "prerequisites"  : ["json_authenticated","wallet_open","wallet_unlocked"],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "cancel_order" ]
       },
       {
@@ -962,7 +967,7 @@
             "description" : "a public key or address (based on hash of public key) of the private key"
          }
          ],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"],
+         "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "dump_private_key" ]
       },
       {
@@ -973,18 +978,19 @@
             {
                 "name" :  "account_name",
                 "type" : "account_name",
-                "description" : "the account to report votes on"
+                "description" : "the account to report votes on, or empty for all accounts",
+                "default_value" : ""
             }
           ],
           "aliases" : ["votes"],
-          "prerequisites" : ["json_authenticated", "wallet_open"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_account_export_private_key",
          "description" : "returns the private key for this account in WIF format",
          "return_type" : "string",
          "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
-         "prerequisites" : ["json_authenticated", "wallet_open", "wallet_unlocked"]
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_set_wallet_setting",
@@ -1002,7 +1008,7 @@
                 "description" : "the value to set the setting to"
             }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"]
+         "prerequisites" : ["wallet_open"]
       },
       {
          "method_name" : "wallet_get_wallet_setting",
@@ -1015,7 +1021,25 @@
                 "description" : "The name of the setting to fetch"
             }
           ],
-          "prerequisites" : ["json_authenticated", "wallet_open"]
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_enable_delegate_block_production",
+         "description" : "Enable or disable block production for a particular delegate account",
+         "return_type" : "void",
+         "parameters"  : [
+            {
+                "name" : "delegate_name",
+                "type" : "string",
+                "description" : "The delegate to enable/disable block production for"
+            },
+            {
+                "name" : "enable",
+                "type" : "bool",
+                "description" : "True to enable block production, false otherwise"
+            }
+          ],
+         "prerequisites" : ["wallet_open"]
       }
     ]
 }

@@ -66,7 +66,8 @@ namespace bts { namespace blockchain {
     public_key_type account_record::active_key()const
     {
         if( active_key_history.size() )
-        return active_key_history.rbegin()->second;
+            return active_key_history.rbegin()->second;
+
         return public_key_type();
     }
 

@@ -84,7 +84,7 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 
 FC_REFLECT( bts::blockchain::account_record,
-            (id)(name)(public_data)(owner_key)(active_key_history)(delegate_info)(registration_date)(last_update)(meta_data)
+            (id)(name)(public_data)(owner_key)(active_key_history)(registration_date)(last_update)(delegate_info)(meta_data)
           )
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(votes_against)(blocks_produced)

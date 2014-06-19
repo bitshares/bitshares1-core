@@ -48,11 +48,11 @@ else( WIN32 )
     if( APPLE )
         # Apple Specific Options Here
         message( STATUS "Configuring BitShares on OS X" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++  -Wall -ferror-limit=4" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++ -Wall" )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring BitShares on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall " )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
         set( rt_library rt )
         set( pthread_library pthread)
         set( crypto_library crypto)

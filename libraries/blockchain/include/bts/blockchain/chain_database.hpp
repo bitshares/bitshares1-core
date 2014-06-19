@@ -106,8 +106,15 @@ namespace bts { namespace blockchain {
          //optional<block_fork_data>                      is_included_block( const block_id_type& block_id )const;
 
          fc::ripemd160               get_current_random_seed()const override;
-         public_key_type             get_signing_delegate_key( time_point_sec )const;
-         account_id_type             get_signing_delegate_id( time_point_sec )const;
+
+         account_id_type             get_signing_delegate_id( const fc::time_point_sec& block_timestamp,
+                                                              const std::vector<account_id_type>& sorted_delegates )const;
+         public_key_type             get_signing_delegate_key( const fc::time_point_sec& block_timestamp,
+                                                               const std::vector<account_id_type>& sorted_delegates )const;
+
+         account_id_type             get_signing_delegate_id( const fc::time_point_sec& block_timestamp )const;
+         public_key_type             get_signing_delegate_key( const fc::time_point_sec& block_timestamp )const;
+
          uint32_t                    get_block_num( const block_id_type& )const;
          signed_block_header         get_block_header( const block_id_type& )const;
          signed_block_header         get_block_header( uint32_t block_num )const;

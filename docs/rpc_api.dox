@@ -87,8 +87,8 @@ void client::network_set_allowed_peers(const std::vector<bts::net::node_id_t>& a
    - `prerequisites` can be a list containing one or more of:
      - `"no_prerequisites"`
      - `"json_authenticated"`
-     - `"wallet_open"`
-     - `"wallet_unlocked"`
+     - `"wallet_open"` (implies `"json_authenticated"`)
+     - `"wallet_unlocked"` (implies `"wallet_open"`)
      - `"connected_to_network"`
    - Since this is the first method to need the type `node_id_list`, we need to define it.  In C++, it's
      a vector of `bts::net::node_id_t`, and we don't know anything about those either.  So first, let's
