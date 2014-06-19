@@ -135,6 +135,15 @@
         "parameters" : [],
         "is_const"   : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_upnp_info",
+        "description": "Get information on UPNP status including whether it's enabled and what the client believes its IP to be",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
+
     ]
 }

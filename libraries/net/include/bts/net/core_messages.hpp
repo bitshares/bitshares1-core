@@ -3,18 +3,21 @@
 #include <bts/net/config.hpp>
 
 #include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/network/ip.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/time.hpp>
 #include <fc/variant_object.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/io/enum_type.hpp>
 
 
 #include <vector>
 
 namespace bts { namespace net {
 
+  typedef fc::ecc::public_key_data node_id_t;
   typedef fc::ripemd160 item_hash_t;
   struct item_id
   {
@@ -43,11 +46,15 @@ namespace bts { namespace net {
     fetch_items_message_type                   = 5004,
     item_not_available_message_type            = 5005,
     hello_message_type                         = 5006,
-    hello_reply_message_type                   = 5007,
+    connection_accepted_message_type           = 5007,
     connection_rejected_message_type           = 5008,
     address_request_message_type               = 5009,
     address_message_type                       = 5010,
-    closing_connection_message_type            = 5011
+    closing_connection_message_type            = 5011,
+    current_time_request_message_type          = 5012,
+    current_time_reply_message_type            = 5013,
+    check_firewall_message_type                = 5014,
+    check_firewall_reply_message_type          = 5015
   };
 
   const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
@@ -133,7 +140,7 @@ namespace bts { namespace net {
     fc::ip::address    inbound_address;
     uint16_t           inbound_port;
     uint16_t           outbound_port;
-    fc::uint160_t      node_id;
+    node_id_t          node_id;
     fc::sha256         chain_id;
     fc::variant_object user_data;
 
@@ -143,7 +150,7 @@ namespace bts { namespace net {
                   const fc::ip::address& inbound_address,
                   uint16_t inbound_port,
                   uint16_t outbound_port,
-                  const fc::uint160_t& node_id_arg, 
+                  const node_id_t& node_id_arg, 
                   const fc::sha256& chain_id_arg,
                   const fc::variant_object& user_data ) :
       user_agent(user_agent),
@@ -157,49 +164,39 @@ namespace bts { namespace net {
     {}
   };
 
-  struct hello_reply_message
+  struct connection_accepted_message
   {
     static const core_message_type_enum type;
 
-    std::string        user_agent;
-    uint32_t           core_protocol_version;
-    fc::ip::endpoint   remote_endpoint;
-    fc::uint160_t      node_id;
-    fc::sha256         chain_id;
-    fc::variant_object user_data;
-
-    hello_reply_message() {}
-    hello_reply_message(const std::string& user_agent, 
-                        uint32_t core_protocol_version,
-                        fc::ip::endpoint remote_endpoint, 
-                        const fc::uint160_t& node_id_arg, 
-                        const fc::sha256& chain_id_arg,
-                        const fc::variant_object& user_data ) :
-      user_agent(user_agent),
-      core_protocol_version(core_protocol_version),
-      remote_endpoint(remote_endpoint),
-      node_id(node_id_arg),
-      chain_id(chain_id_arg),
-      user_data(user_data)
-    {}
+    connection_accepted_message() {}
   };
+
+  enum class rejection_reason_code { unspecified,
+                                     different_chain,
+                                     already_connected,
+                                     connected_to_self,
+                                     not_accepting_connections,
+                                     blocked };
 
   struct connection_rejected_message
   {
     static const core_message_type_enum type;
 
-    std::string      user_agent;
-    uint32_t         core_protocol_version;
-    fc::ip::endpoint remote_endpoint;
-    std::string      rejection_reason;
+    std::string                                   user_agent;
+    uint32_t                                      core_protocol_version;
+    fc::ip::endpoint                              remote_endpoint;
+    std::string                                   reason_string;
+    fc::enum_type<uint8_t, rejection_reason_code> reason_code;
 
     connection_rejected_message() {}
     connection_rejected_message(const std::string& user_agent, uint32_t core_protocol_version,
-                                const fc::ip::endpoint& remote_endpoint, const std::string& rejection_reason) :
+                                const fc::ip::endpoint& remote_endpoint, rejection_reason_code reason_code,
+                                const std::string& reason_string) :
       user_agent(user_agent),
       core_protocol_version(core_protocol_version),
       remote_endpoint(remote_endpoint),
-      rejection_reason(rejection_reason)
+      reason_string(reason_string),
+      reason_code(reason_code)
     {}
   };
 
@@ -210,15 +207,31 @@ namespace bts { namespace net {
     address_request_message() {}
   };
 
+  enum class peer_connection_direction { unknown, inbound, outbound };
+  enum class firewalled_state { unknown, firewalled, not_firewalled };
+
   struct address_info
   {
-    fc::ip::endpoint   remote_endpoint;
-    fc::time_point_sec last_seen_time;
+    fc::ip::endpoint          remote_endpoint;
+    fc::time_point_sec        last_seen_time;
+    fc::microseconds          latency;
+    node_id_t                 node_id;
+    fc::enum_type<uint8_t, peer_connection_direction> direction;
+    fc::enum_type<uint8_t, firewalled_state> firewalled;
 
     address_info() {}
-    address_info(const fc::ip::endpoint& remote_endpoint, fc::time_point_sec last_seen_time) :
+    address_info(const fc::ip::endpoint& remote_endpoint,
+                 const fc::time_point_sec& last_seen_time,
+                 const fc::microseconds& latency,
+                 const node_id_t& node_id,
+                 peer_connection_direction direction,
+                 firewalled_state firewalled) :
       remote_endpoint(remote_endpoint),
-      last_seen_time(last_seen_time)
+      last_seen_time(last_seen_time),
+      latency(latency),
+      node_id(node_id),
+      direction(direction),
+      firewalled(firewalled)
     {}
   };
 
@@ -247,6 +260,56 @@ namespace bts { namespace net {
     {}
   };
 
+  struct current_time_request_message
+  {
+    static const core_message_type_enum type;
+    fc::time_point request_sent_time;
+
+    current_time_request_message(){}
+    current_time_request_message(const fc::time_point& request_sent_time) :
+      request_sent_time(request_sent_time)
+    {}
+  };
+
+  struct current_time_reply_message
+  {
+    static const core_message_type_enum type;
+    fc::time_point request_sent_time;
+    fc::time_point request_received_time;
+    fc::time_point reply_transmitted_time;
+
+    current_time_reply_message(){}
+    current_time_reply_message(const fc::time_point& request_sent_time,
+                               const fc::time_point& request_received_time,
+                               const fc::time_point& reply_transmitted_time) :
+      request_sent_time(request_sent_time),
+      request_received_time(request_received_time),
+      reply_transmitted_time(reply_transmitted_time)
+    {}
+  };  
+
+  struct check_firewall_message
+  {
+    static const core_message_type_enum type;
+    node_id_t node_id;
+    fc::ip::endpoint endpoint_to_check;
+  };
+
+  enum class firewall_check_result
+  {
+    unable_to_check,
+    unable_to_connect,
+    connection_successful
+  };
+
+  struct check_firewall_reply_message
+  {
+    static const core_message_type_enum type;
+    node_id_t node_id;
+    fc::ip::endpoint endpoint_checked;
+    fc::enum_type<uint8_t, firewall_check_result> result;
+  };
+
 } } // bts::client
 
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
@@ -258,25 +321,75 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum,
                  (fetch_items_message_type)
                  (item_not_available_message_type)
                  (hello_message_type)
-                 (hello_reply_message_type)
+                 (connection_accepted_message_type)
                  (connection_rejected_message_type)
                  (address_request_message_type)
                  (address_message_type)
                  (closing_connection_message_type)
-                 )
-FC_REFLECT( bts::net::item_id, (item_type)(item_hash) )
-FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)(item_hashes_available) )
-FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)(item_type)(item_hashes_available) )
-FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (item_type)(blockchain_synopsis) )
-FC_REFLECT( bts::net::fetch_items_message, (item_type)(items_to_fetch) )
+                 (current_time_request_message_type)
+                 (current_time_reply_message_type)
+                 (check_firewall_message_type)
+                 (check_firewall_reply_message_type) )
+FC_REFLECT( bts::net::item_id, (item_type)
+                               (item_hash) )
+FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)
+                                                  (item_hashes_available) )
+FC_REFLECT( bts::net::blockchain_item_ids_inventory_message, (total_remaining_item_count)
+                                                             (item_type)
+                                                             (item_hashes_available) )
+FC_REFLECT( bts::net::fetch_blockchain_item_ids_message, (item_type)
+                                                         (blockchain_synopsis) )
+FC_REFLECT( bts::net::fetch_items_message, (item_type)
+                                           (items_to_fetch) )
 FC_REFLECT( bts::net::item_not_available_message, (requested_item) )
-FC_REFLECT( bts::net::hello_message, (user_agent)(core_protocol_version)(inbound_address)(inbound_port)(outbound_port)(node_id)(chain_id)(user_data) )
-FC_REFLECT( bts::net::hello_reply_message, (user_agent)(core_protocol_version)(remote_endpoint)(node_id)(chain_id)(user_data) )
-FC_REFLECT( bts::net::connection_rejected_message, (user_agent)(core_protocol_version)(remote_endpoint)(rejection_reason) )
+FC_REFLECT( bts::net::hello_message, (user_agent)
+                                     (core_protocol_version)
+                                     (inbound_address)
+                                     (inbound_port)
+                                     (outbound_port)
+                                     (node_id)
+                                     (chain_id)
+                                     (user_data) )
+
+FC_REFLECT_EMPTY( bts::net::connection_accepted_message )
+FC_REFLECT_ENUM(bts::net::rejection_reason_code, (unspecified)
+                                                 (different_chain)
+                                                 (already_connected)
+                                                 (connected_to_self)
+                                                 (not_accepting_connections)
+                                                 (blocked))
+FC_REFLECT( bts::net::connection_rejected_message, (user_agent)
+                                                   (core_protocol_version)
+                                                   (remote_endpoint)
+                                                   (reason_code)
+                                                   (reason_string))
 FC_REFLECT_EMPTY( bts::net::address_request_message )
-FC_REFLECT( bts::net::address_info, (remote_endpoint)(last_seen_time) )
+FC_REFLECT( bts::net::address_info, (remote_endpoint)
+                                    (last_seen_time)
+                                    (latency)
+                                    (node_id)
+                                    (direction)
+                                    (firewalled) )
 FC_REFLECT( bts::net::address_message, (addresses) )
-FC_REFLECT( bts::net::closing_connection_message, (reason_for_closing)(closing_due_to_error)(error) )
+FC_REFLECT( bts::net::closing_connection_message, (reason_for_closing)
+                                                  (closing_due_to_error)
+                                                  (error) )
+FC_REFLECT_ENUM(bts::net::peer_connection_direction, (unknown)
+                                                     (inbound)
+                                                     (outbound))
+FC_REFLECT_ENUM(bts::net::firewalled_state, (unknown)
+                                            (firewalled)
+                                            (not_firewalled))
+
+FC_REFLECT(bts::net::current_time_request_message, (request_sent_time))
+FC_REFLECT(bts::net::current_time_reply_message, (request_sent_time)
+                                                 (request_received_time)
+                                                 (reply_transmitted_time))
+FC_REFLECT_ENUM(bts::net::firewall_check_result, (unable_to_check)
+                                                 (unable_to_connect)
+                                                 (connection_successful))
+FC_REFLECT(bts::net::check_firewall_message, (node_id)(endpoint_to_check))
+FC_REFLECT(bts::net::check_firewall_reply_message, (node_id)(endpoint_checked)(result))
 
 #include <unordered_map>
 #include <fc/crypto/city.hpp>

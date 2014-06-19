@@ -5,11 +5,11 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                          (101)
-#define BTS_WALLET_VERSION                              (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (104)
+#define BTS_BLOCKCHAIN_VERSION                      (102)
+#define BTS_WALLET_VERSION                          (100)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION             (104)
 
-#define BTS_NETWORK_DEFAULT_P2P_PORT                    (8764)
+#define BTS_NETWORK_DEFAULT_P2P_PORT                8763
 
 /**
  *  The address prepended to string representation of
@@ -26,7 +26,7 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (97)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                (101)
 
 /**
  * To prevent a delegate from producing blocks on split network,
@@ -38,7 +38,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               (15ll)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           (30ll)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is

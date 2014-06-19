@@ -1,6 +1,6 @@
 #pragma once
 
-#define BTS_NET_PROTOCOL_VERSION 101
+#define BTS_NET_PROTOCOL_VERSION 103 // protocol version to be used in testnet3
 
 /** 
  * Define this to enable debugging code in the p2p network interface.
@@ -24,3 +24,4 @@
 
 #define BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT (5) 
 #define BTS_NET_PEER_INACTIVITY_TIMEOUT (45) 
+#define BTS_NET_PEER_DISCONNECT_TIMEOUT (20) 

@@ -148,7 +148,8 @@ namespace bts { namespace cli {
                 *_out << e.to_detail_string() <<"\n";
                 *_out << "Error parsing command \"" << command << "\": " << e.to_string() << "\n";
                 arguments = fc::variants { command };
-                auto usage = _rpc_server->direct_invoke_method("help", arguments).as_string();
+                edump( (e.to_detail_string()) );
+                auto usage = _client->help( command ); //_rpc_server->direct_invoke_method("help", arguments).as_string();
                 *_out << usage << "\n";
               }
 
@@ -173,6 +174,8 @@ namespace bts { namespace cli {
 
             bool execute_command_line(const string& line)
             { try {
+                     wdump( (line));
+            
               string trimmed_line_to_parse(boost::algorithm::trim_copy(line));
               /** 
                *  On some OS X systems, std::stringstream gets corrupted and does not throw eof
@@ -218,7 +221,8 @@ namespace bts { namespace cli {
             string get_line( const string& prompt = CLI_PROMPT_SUFFIX, bool no_echo = false)
             {
                   if( _quit ) return std::string();
-                  FC_ASSERT( _input_stream != nullptr );
+                  if( _input_stream == nullptr )
+                     FC_CAPTURE_AND_THROW( fc::canceled_exception ); //_input_stream != nullptr );
 
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
@@ -281,7 +285,7 @@ namespace bts { namespace cli {
 
             fc::variants parse_recognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                const bts::api::method_data& method_data)
-            {
+            { try {
               fc::variants arguments;
               for (unsigned i = 0; i < method_data.parameters.size(); ++i)
               {
@@ -340,7 +344,7 @@ namespace bts { namespace cli {
                   break;
               }
               return arguments;
-            }
+            } FC_CAPTURE_AND_RETHROW() }
 
             fc::variants parse_unrecognized_interactive_command( fc::buffered_istream& argument_stream,
                                                                  const string& command)
@@ -525,7 +529,7 @@ namespace bts { namespace cli {
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
 
             string prompt_for_input( const string& prompt, bool no_echo = false, bool verify = false )
-            {
+            { try {
                 string input;
                 while( true )
                 {
@@ -543,7 +547,7 @@ namespace bts { namespace cli {
                     break;
                 }
                 return input;
-            }
+            } FC_CAPTURE_AND_RETHROW( (prompt)(no_echo) ) }
 
             void interactive_open_wallet()
             {
@@ -1520,7 +1524,7 @@ namespace bts { namespace cli {
     }
 
     void cli_impl::process_commands(std::istream* input_stream)
-    { 
+    {  try {
       FC_ASSERT( input_stream != nullptr );
       _input_stream = input_stream;
       string line = get_line(get_prompt());
@@ -1532,7 +1536,7 @@ namespace bts { namespace cli {
           line = get_line( get_prompt() );
       } // while cin.good
       wlog( "process commands exiting" );
-    } 
+    }  FC_CAPTURE_AND_RETHROW() }
 
   } // end namespace detail
 
