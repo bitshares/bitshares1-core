@@ -143,6 +143,7 @@ namespace bts { namespace net {
         _node(n),
         _message_connection(this),
         direction(peer_connection_direction::unknown),
+        is_firewalled(firewalled_state::unknown),
         our_state(our_connection_state::disconnected),
         they_have_requested_close(false),
         their_state(their_connection_state::disconnected),
@@ -150,7 +151,6 @@ namespace bts { namespace net {
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
-        is_firewalled(firewalled_state::unknown),
         last_block_number_delegate_has_seen(0)
       {}
       ~peer_connection() {}
