@@ -106,26 +106,25 @@ namespace bts { namespace wallet {
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
 
-         void export_records(std::map<int32_t, generic_wallet_record>& records) const;
-         void import_records(const std::map<int32_t, generic_wallet_record>& records);
+         void export_records(std::vector<generic_wallet_record>& records) const;
+         void import_records(const std::vector<generic_wallet_record>& records);
 
          fc::optional<wallet_master_key_record>                           wallet_master_key;
- 
+
+         /** maps wallet_record_index to accounts */
+         unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< address, wallet_key_record >                      keys;
+         unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
+         map<string,wallet_asset_record>                                  assets;
+         unordered_map< balance_id_type,wallet_balance_record >           balances;
+         map<property_enum, wallet_property_record>                       properties;
+         unordered_map<address,wallet_market_order_status_record>         market_orders;
+         map< string, wallet_setting_record >                             settings;
+
          unordered_map< address, address >                                btc_to_bts_address;
          unordered_map< address, int32_t >                                address_to_account_wallet_record_index;
          unordered_map< account_id_type, int32_t >                        account_id_to_wallet_record_index;
          map< string, int32_t >                                           name_to_account_wallet_record_index;
-
-         unordered_map<address,wallet_market_order_status_record>         market_orders;
-
-         /** maps wallet_record_index to accounts */
-         unordered_map< int32_t,wallet_account_record >                   accounts;
-         unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
-         unordered_map< balance_id_type,wallet_balance_record >           balances;
-         map<string,wallet_asset_record>                                  assets;
-         map<property_enum, wallet_property_record>                       properties;
-         map< string, wallet_setting_record >                             settings;
 
          void remove_item( int32_t index );
       private:

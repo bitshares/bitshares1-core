@@ -37,22 +37,21 @@ namespace bts { namespace wallet {
                            (no_such_wallet)
                            (wallet_already_exists) )
 
-
    namespace detail {
 
       class wallet_impl : public chain_observer
       {
          public:
-             wallet*            self;
-             wallet_db          _wallet_db;
-             chain_database_ptr _blockchain;
-             path               _data_directory;
-             path               _current_wallet_path;
-             fc::time_point_sec _scheduled_lock_time;
+             wallet*                self;
+             wallet_db              _wallet_db;
+             chain_database_ptr     _blockchain;
+             path                   _data_directory;
+             path                   _current_wallet_path;
+             fc::time_point_sec     _scheduled_lock_time;
              fc::promise<void>::ptr _wallet_shutting_down_promise;
-             fc::future<void>   _wallet_relocker_done;
-             fc::sha512         _wallet_password;
-             bool               _use_deterministic_one_time_keys;
+             fc::future<void>       _wallet_relocker_done;
+             fc::sha512             _wallet_password;
+             bool                   _use_deterministic_one_time_keys;
 
              fc::ecc::private_key create_one_time_key()
              {
@@ -117,7 +116,6 @@ namespace bts { namespace wallet {
 
              owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
       };
-
      
       void wallet_impl::clear_pending_transactions()
       {
@@ -560,144 +558,159 @@ namespace bts { namespace wallet {
       close();
    }
  
-   owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
+   void wallet::use_deterministic_one_time_keys( bool state )
    {
-       return my->_wallet_db.lookup_transaction(trx_id);
+      my->_use_deterministic_one_time_keys = state;
    }
 
-   void           wallet::set_data_directory( const path& data_dir )
+   void wallet::set_data_directory( const path& data_dir )
    {
       my->_data_directory = data_dir;
    }
 
-   path       wallet::get_data_directory()const
+   path wallet::get_data_directory()const
    {
       return my->_data_directory;
    }
 
    void wallet::create( const string& wallet_name, 
                         const string& password,
-                        const string& brainkey  )
+                        const string& brainkey )
    { try {
-      if( fc::exists( get_data_directory() / wallet_name ) )
+      auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
+      if( fc::exists( wallet_file_path ) )
+          FC_THROW_EXCEPTION( wallet_already_exists, "Wallet name already exists!", ("wallet_name",wallet_name) );
+
+      if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
+          FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
+
+      try
       {
-          std::cerr << "Wallet \"" << wallet_name << "\" already exists!\n";
-          FC_THROW_EXCEPTION(wallet_already_exists, "wallet name already exists", ("wal",wallet_name));
+          close();
+          create_file( wallet_file_path, password, brainkey );
+          open( wallet_name );
       }
-      if (is_open())
-        close();
-      create_file( fc::absolute(my->_data_directory) / wallet_name, password, brainkey ); 
-      open( wallet_name );
-   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}' in ${data_dir}", 
-                            ("wallet_name",wallet_name)("data_dir",fc::absolute(my->_data_directory)) ) }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}'", ("wallet_name",wallet_name) ) }
 
    void wallet::create_file( const path& wallet_file_path,
-                        const string& password,
-                        const string& brainkey  )
+                             const string& password,
+                             const string& brainkey )
    { try {
-      FC_ASSERT( !fc::exists( wallet_file_path ) );
-      FC_ASSERT( password.size() > 8, "password size: ${size}", ("size",password.size()) );
-      my->_wallet_db.open( wallet_file_path );
-      
-      my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
+      if( fc::exists( wallet_file_path ) )
+          FC_THROW_EXCEPTION( wallet_already_exists, "Wallet file already exists!", ("wallet_file_path",wallet_file_path) );
 
-      master_key new_master_key;
-      if( brainkey.size() )
+      if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
+          FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
+
+      try
       {
-         auto base = fc::sha512::hash( brainkey.c_str(), brainkey.size() );
+          my->_wallet_db.open( wallet_file_path );
+          my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
-         /* strengthen the key a bit */
-         for( uint32_t i = 0; i < 100ll*1000ll; ++i )
-            base = fc::sha512::hash( base );
+          master_key new_master_key;
+          extended_private_key epk;
+          if( !brainkey.empty() )
+          {
+             auto base = fc::sha512::hash( brainkey.c_str(), brainkey.size() );
 
-         new_master_key.encrypt_key( my->_wallet_password, extended_private_key( base ) );
+             /* strengthen the key a bit */
+             for( uint32_t i = 0; i < 100ll*1000ll; ++i )
+                base = fc::sha512::hash( base );
+
+             epk = extended_private_key( base );
+          }
+          else
+          {
+             wlog( "generating random" );
+             epk = extended_private_key( private_key_type::generate() );
+          }
+
+          new_master_key.encrypt_key( my->_wallet_password, epk );
+
+          my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
+          my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_DEFAULT_PRIORITY_FEE) );
+          my->_wallet_db.store_record( wallet_master_key_record( new_master_key, -1 ) );
+
+          my->_wallet_db.close();
+          my->_wallet_db.open( wallet_file_path );
+
+          FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
       }
-      else
+      catch( ... )
       {
-         elog( "generating random" );
-         extended_private_key epk( private_key_type::generate() );
-         new_master_key.encrypt_key( my->_wallet_password, epk );
+          close();
+          fc::remove_all( wallet_file_path );
+          throw;
       }
-      my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
-      my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_DEFAULT_PRIORITY_FEE) );
-      my->_wallet_db.store_record( wallet_master_key_record( new_master_key,  -1 ) );
-
-      my->_wallet_db.close();
-      my->_wallet_db.open( wallet_file_path );
-
-      FC_ASSERT( my->_wallet_db.wallet_master_key.valid() );
-
-   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_file_path}'", 
-                            ("wallet_file_path",wallet_file_path) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_file_path}'", ("wallet_file_path",wallet_file_path) ) }
 
    void wallet::open( const string& wallet_name )
    { try {
-      if ( !fc::exists( get_data_directory() / wallet_name ) )
-         FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("name", wallet_name) );
-      open_file( get_data_directory() / wallet_name );
+      auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
+      if ( !fc::exists( wallet_file_path ) )
+         FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
+      try
+      {
+          open_file( wallet_file_path );
+      }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
-  
-   void wallet::set_setting(const string& name, const variant& value)
-   {
-       my->_wallet_db.store_setting(name, value);
-   }
 
-   fc::optional<variant> wallet::get_setting(const string& name)
-   {
-       return my->_wallet_db.lookup_setting(name);
-   }
-
-   void wallet::open_file( const path& wallet_filename )
+   void wallet::open_file( const path& wallet_file_path )
    { try {
-      close();
-      FC_ASSERT( fc::exists( wallet_filename ) );
-      my->_wallet_db.open( wallet_filename );
-      my->_current_wallet_path = wallet_filename;
+      if ( !fc::exists( wallet_file_path ) )
+         FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      auto tmp_balances = my->_wallet_db.balances;
-      for( auto item : tmp_balances )
-         my->cache_balance( item.first );
+      try
+      {
+          close();
+          my->_wallet_db.open( wallet_file_path );
+          my->_current_wallet_path = wallet_file_path;
 
-   } FC_RETHROW_EXCEPTIONS( warn, "Unable to open wallet ${filename}", 
-                                   ("filename",wallet_filename) ) }
+          auto& tmp_balances = my->_wallet_db.balances;
+          for( const auto& item : tmp_balances )
+              my->cache_balance( item.first );
+      }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "Unable to open wallet ${wallet_file_path}", ("wallet_file_path",wallet_file_path) ) }
 
    void wallet::close()
    { try {
       my->_wallet_db.close();
-      if( my->_wallet_relocker_done.valid() && 
-          !my->_wallet_relocker_done.ready() &&
-          my->_wallet_shutting_down_promise )
+      my->_current_wallet_path = fc::path();
+
+      if( my->_wallet_relocker_done.valid()
+          && !my->_wallet_relocker_done.ready()
+          && my->_wallet_shutting_down_promise )
       {
         ilog("setting relocker promise");
         my->_wallet_shutting_down_promise->set_value();
         my->_wallet_relocker_done.wait();
       }
+
       my->_scheduled_lock_time = fc::time_point_sec();
+      my->_wallet_password = fc::sha512();
+      my->_use_deterministic_one_time_keys = false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::export_to_json( const path& filename )const
-   { try {
-      FC_ASSERT( is_open() );
-      std::map<int32_t, generic_wallet_record> records;
-      my->_wallet_db.export_records( records );
-      fc::json::save_to_file( records, filename, true );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
-
-   void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
-   { try {
-      FC_ASSERT( fc::exists( filename ) );
-      auto records = fc::json::from_file< std::map< int32_t, generic_wallet_record> >( filename );
-
-      auto master_key_record = records[-1].as<wallet_master_key_record>();
-      auto passphrase_hash = fc::sha512::hash( passphrase.c_str(), passphrase.size() );
-
-      if( !master_key_record.validate_password( passphrase_hash ) )
-          FC_THROW_EXCEPTION( invalid_password, "Invalid password for imported wallet" );
-
-      create( wallet_name, passphrase );
-      my->_wallet_db.import_records( records );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
+   bool wallet::is_open()const
+   {
+      return my->_wallet_db.is_open();
+   }
 
    string wallet::get_wallet_name()const
    {
@@ -709,10 +722,45 @@ namespace bts { namespace wallet {
       return my->_current_wallet_path;
    }
 
-   bool wallet::is_open()const
-   {
-      return my->_wallet_db.is_open();
-   }
+   void wallet::export_to_json( const path& filename )const
+   { try {
+      FC_ASSERT( is_open() );
+      std::vector<generic_wallet_record> records;
+      my->_wallet_db.export_records( records );
+      fc::json::save_to_file( records, filename, true );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
+
+   void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
+   { try {
+      FC_ASSERT( fc::exists( filename ) );
+      try
+      {
+          auto records = fc::json::from_file< std::vector<generic_wallet_record> >( filename );
+
+          fc::optional< wallet_master_key_record > master_key_record;
+          for( const auto& record : records )
+          {
+              if( wallet_record_type_enum(record.type) == master_key_record_type )
+                  master_key_record = fc::optional< wallet_master_key_record >( record.as<wallet_master_key_record>() );
+          }
+
+          if( !master_key_record.valid() )
+              FC_THROW_EXCEPTION( invalid_format, "Imported wallet does not contain master key record" );
+
+          auto passphrase_hash = fc::sha512::hash( passphrase.c_str(), passphrase.size() );
+
+          if( !master_key_record->validate_password( passphrase_hash ) )
+              FC_THROW_EXCEPTION( invalid_password, "Invalid password for imported wallet" );
+
+          create( wallet_name, passphrase );
+          my->_wallet_db.import_records( records );
+      }
+      catch( ... )
+      {
+          close();
+          throw;
+      }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
 
    void wallet::unlock( const string& password, const fc::microseconds& timeout )
    { try {
@@ -825,6 +873,16 @@ namespace bts { namespace wallet {
    fc::time_point wallet::unlocked_until()const
    {
       return my->_scheduled_lock_time;
+   }
+
+   void wallet::set_setting(const string& name, const variant& value)
+   {
+       my->_wallet_db.store_setting(name, value);
+   }
+
+   fc::optional<variant> wallet::get_setting(const string& name)
+   {
+       return my->_wallet_db.lookup_setting(name);
    }
 
    public_key_type  wallet::create_account( const string& account_name, 
@@ -2676,6 +2734,11 @@ namespace bts { namespace wallet {
 
    } FC_CAPTURE_AND_RETHROW() }
 
+   owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
+   {
+       return my->_wallet_db.lookup_transaction(trx_id);
+   }
+
    void wallet::clear_pending_transactions()
    {
       my->clear_pending_transactions();
@@ -3049,10 +3112,5 @@ namespace bts { namespace wallet {
       }
       return results;
    } FC_CAPTURE_AND_RETHROW( (quote)(base) ) }
-
-   void wallet::use_deterministic_one_time_keys( bool state )
-   {
-      my->_use_deterministic_one_time_keys = state;
-   }
 
 } } // bts::wallet

@@ -109,66 +109,81 @@ namespace bts{ namespace wallet {
 
    void wallet_db::open( const fc::path& wallet_file )
    { try {
-      my->_records.open( wallet_file, true );
-      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+      try
       {
-         auto record = itr.value();
-         try 
-         {
-            switch( (wallet_record_type_enum)record.type )
-            {
-               case master_key_record_type:
-                  my->load_master_key_record( record.as<wallet_master_key_record>() );
-                  break;
-               case account_record_type:
-                  my->load_account_record( record.as<wallet_account_record>() );
-                  break;
-               case key_record_type:
-                  my->load_key_record( record.as<wallet_key_record>() );
-                  break;
-               case transaction_record_type:
-                  my->load_transaction_record( record.as<wallet_transaction_record>() );
-                  break;
-               case asset_record_type:
-                  FC_THROW( "asset_record_type not implemented!" );
-                  break;
-               case balance_record_type:
-                  my->load_balance_record( record.as<wallet_balance_record>() );
-                  break;
-               case property_record_type:
-                  my->load_property_record( record.as<wallet_property_record>() );
-                  break;
-               case market_order_record_type:
-                  FC_THROW( "market_order_record_type not implemented!" );
-                  break;
-               case setting_record_type:
-                  my->load_setting_record( record.as<wallet_setting_record>() );
-                  break;
-               default:
-                  FC_THROW( "unknown wallet_db record type!" );
-                  break;
-            }
-         } 
-         catch ( const fc::exception& e )
-         {
-            wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );
-         }
+          my->_records.open( wallet_file, true );
+
+          for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+          {
+             auto record = itr.value();
+             try 
+             {
+                switch( (wallet_record_type_enum)record.type )
+                {
+                   case master_key_record_type:
+                      my->load_master_key_record( record.as<wallet_master_key_record>() );
+                      break;
+                   case account_record_type:
+                      my->load_account_record( record.as<wallet_account_record>() );
+                      break;
+                   case key_record_type:
+                      my->load_key_record( record.as<wallet_key_record>() );
+                      break;
+                   case transaction_record_type:
+                      my->load_transaction_record( record.as<wallet_transaction_record>() );
+                      break;
+                   case asset_record_type:
+                      FC_THROW( "asset_record_type not implemented!" );
+                      break;
+                   case balance_record_type:
+                      my->load_balance_record( record.as<wallet_balance_record>() );
+                      break;
+                   case property_record_type:
+                      my->load_property_record( record.as<wallet_property_record>() );
+                      break;
+                   case market_order_record_type:
+                      FC_THROW( "market_order_record_type not implemented!" );
+                      break;
+                   case setting_record_type:
+                      my->load_setting_record( record.as<wallet_setting_record>() );
+                      break;
+                   default:
+                      FC_THROW( "unknown wallet_db record type!" );
+                      break;
+                }
+             } 
+             catch ( const fc::exception& e )
+             {
+                wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );
+             }
+          }
+      }
+      catch( ... )
+      {
+          close();
+          throw;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Error opening wallet file ${file}", ("file",wallet_file) ) }
 
    void wallet_db::close()
    {
       my->_records.close();
-      keys.clear();
+
       wallet_master_key.reset();
+
+      accounts.clear();
+      keys.clear();
+      transactions.clear();
+      assets.clear();
+      balances.clear();
+      properties.clear();
+      market_orders.clear();
+      settings.clear();
+
+      btc_to_bts_address.clear();
       address_to_account_wallet_record_index.clear();
       account_id_to_wallet_record_index.clear();
       name_to_account_wallet_record_index.clear();
-      accounts.clear();
-      transactions.clear();
-      balances.clear();
-      assets.clear();
-      properties.clear();
    }
 
    bool wallet_db::is_open()const { return my->_records.is_open(); }
@@ -349,21 +364,21 @@ namespace bts{ namespace wallet {
        for( auto id : clear_list ) transactions.erase(id);
    }
 
-   void wallet_db::export_records(std::map<int32_t, generic_wallet_record>& records) const
+   void wallet_db::export_records(std::vector<generic_wallet_record>& records) const
    {
       FC_ASSERT( is_open() );
       records.clear();
 
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
-          records[ itr.key() ] = itr.value();
+          records.push_back( itr.value() );
    }
 
-   void wallet_db::import_records(const std::map<int32_t, generic_wallet_record>& records)
+   void wallet_db::import_records(const std::vector<generic_wallet_record>& records)
    {
       FC_ASSERT( is_open() );
 
       for( const auto& record : records )
-         store_generic_record( record.first, record.second );
+         store_generic_record( record.get_wallet_record_index(), record );
    }
 
    bool wallet_db::has_private_key( const address& a )const
