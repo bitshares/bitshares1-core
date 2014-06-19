@@ -409,6 +409,7 @@ config load_config( const fc::path& datadir )
 
             bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
+            std::unique_ptr<bts::net::upnp_service>                     _upnp_service;
             chain_database_ptr                                          _chain_db;
             unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
@@ -602,7 +603,6 @@ config load_config( const fc::path& datadir )
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
                       ulog( message.str() );
-                      //_cli->display_status_message(message.str());
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
@@ -896,7 +896,7 @@ config load_config( const fc::path& datadir )
            else if (item_count == 0)
               message << "--- in sync with p2p network";
            if (!message.str().empty())
-             _cli->display_status_message(message.str());
+               ulog( message.str() );
            _last_sync_status_message_time = fc::time_point::now();
          }
        }
@@ -905,8 +905,7 @@ config load_config( const fc::path& datadir )
        {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
-         if( _cli )
-            _cli->display_status_message(message.str());
+         ulog( message.str() );
        }
 
        uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
@@ -920,10 +919,7 @@ config load_config( const fc::path& datadir )
           _exception_db.store(fc::time_point::now(), *error);
         else
           _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
-        if( _cli )
-          _cli->display_status_message(message);
-        else
-          std::cout << message << "\n";
+        ulog( message );
       }
 
     } // end namespace detail
@@ -1019,7 +1015,7 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_open(const string& wallet_name)
     {
-      _wallet->open(wallet_name);
+      _wallet->open(fc::trim(wallet_name));
     }
 
     fc::optional<variant> detail::client_impl::wallet_get_wallet_setting(const string& name)
@@ -1032,12 +1028,14 @@ config load_config( const fc::path& datadir )
         _wallet->set_wallet_setting( name, value );
     }
 
+
     void detail::client_impl::wallet_create(const string& wallet_name, const string& password, const string& brain_key)
     {
+       string trimmed_name = fc::trim(wallet_name);
        if( brain_key.size() && brain_key.size() < BTS_MIN_BRAINKEY_LENGTH ) FC_CAPTURE_AND_THROW( brain_key_too_short );
        if( password.size() < BTS_MIN_PASSWORD_LENGTH ) FC_CAPTURE_AND_THROW( password_too_short );
-       if( wallet_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (wallet_name) );
-      _wallet->create(wallet_name,password, brain_key );
+       if( trimmed_name.size() == 0 ) FC_CAPTURE_AND_THROW( fc::invalid_arg_exception, (trimmed_name) );
+      _wallet->create(trimmed_name,password, brain_key );
     }
 
     fc::optional<string> detail::client_impl::wallet_get_name() const
@@ -1802,8 +1800,8 @@ config load_config( const fc::path& datadir )
       if( option_variables["upnp"].as<bool>() )
       {
         std::cout << "Attempting to map P2P port " << get_p2p_listening_endpoint().port() << " with UPNP...\n";
-        auto upnp_service = new bts::net::upnp_service();
-        upnp_service->map_port( get_p2p_listening_endpoint().port() );
+        my->_upnp_service = std::unique_ptr<bts::net::upnp_service>(new bts::net::upnp_service);
+        my->_upnp_service->map_port( get_p2p_listening_endpoint().port() );
         fc::usleep( fc::seconds(3) );
       }
 
@@ -2403,6 +2401,21 @@ config load_config( const fc::path& datadir )
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
    {
         return _p2p_node->get_potential_peers();
+   }
+
+   fc::variant_object client_impl::network_get_upnp_info()const
+   {
+       fc::mutable_variant_object upnp_info;
+
+       upnp_info["upnp_enabled"] = bool(_upnp_service);
+
+       if (_upnp_service)
+       {
+           upnp_info["external_ip"] = fc::string(_upnp_service->external_ip());
+           upnp_info["mapped_port"] = fc::variant(_upnp_service->mapped_port()).as_string();
+       }
+
+       return upnp_info;
    }
 
    } // namespace detail
