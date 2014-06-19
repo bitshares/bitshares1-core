@@ -251,7 +251,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (received_time)
             (block_num)
             (transmit_count) )
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(block_production_enabled)(private_data) )
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trust_level)(block_production_enabled)(private_data)(is_my_account) )
 
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::wallet_setting, (name)(value) )

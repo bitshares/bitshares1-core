@@ -766,7 +766,7 @@ namespace bts { namespace wallet {
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
       auto new_pub_key  = new_priv_key.get_public_key();
 
-      my->_wallet_db.add_contact_account( account_name, new_pub_key, private_data );
+      my->_wallet_db.add_account( account_name, new_pub_key, private_data );
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
@@ -852,11 +852,11 @@ namespace bts { namespace wallet {
          FC_ASSERT( !account_key.valid() );
          if( current_registered_account.valid() )
          {
-            my->_wallet_db.add_contact_account( *current_registered_account, private_data );
+            my->_wallet_db.add_account( *current_registered_account, private_data );
          }
          else
          {
-            my->_wallet_db.add_contact_account( account_name, key, private_data );
+            my->_wallet_db.add_account( account_name, key, private_data );
          }
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
@@ -1822,6 +1822,17 @@ namespace bts { namespace wallet {
       return trx;
    }
 
+
+   void wallet::update_account_private_data( const string& account_to_update,
+                                             const variant& private_data )
+   {
+      auto oacct = my->_wallet_db.lookup_account( account_to_update );
+      FC_ASSERT(oacct.valid(),
+         "Expecting account to existing if you call update_account_private_data on it! TODO errcode instead of assert");
+
+      oacct->private_data = private_data;
+      my->_wallet_db.cache_account( *oacct );
+   }
 
    wallet_transaction_record wallet::update_registered_account( const string& account_to_update,
                                                                 const string& pay_from_account,

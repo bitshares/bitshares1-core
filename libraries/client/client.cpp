@@ -2089,6 +2089,12 @@ config load_config( const fc::path& datadir )
        return _wallet->get_info().get_object();
     }
 
+    void client_impl::wallet_account_update_private_data( const string& account_to_update,
+                                                          const variant& private_data )
+    {
+       _wallet->update_account_private_data(account_to_update, private_data); 
+    }
+
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,

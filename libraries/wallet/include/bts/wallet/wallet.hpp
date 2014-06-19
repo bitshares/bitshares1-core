@@ -300,6 +300,10 @@ namespace bts { namespace wallet {
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
+
+         void update_account_private_data( const string& account_to_update,
+                                           const variant& private_data );
+
          wallet_transaction_record update_registered_account( const string& account_name,
                                                        const string& pay_from_account,
                                                        optional<variant> json_data,

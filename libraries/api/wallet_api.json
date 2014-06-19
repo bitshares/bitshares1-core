@@ -555,6 +555,26 @@
          "aliases" : [ "register" ]
       },
       {
+         "method_name" : "wallet_account_update_private_data",
+         "description" : "Updates the local private data for an account",
+         "return_type" : "void",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the account that will be updated"
+               },
+               {
+                  "name" : "private_data",
+                  "type" : "json_variant",
+                  "description" : "private data about the account",
+                  "default_value" : null
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "update_private_data" ]
+      },
+      {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
          "return_type" : "transaction_record",
