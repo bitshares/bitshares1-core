@@ -29,6 +29,7 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -45,7 +46,7 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <fstream>
+#include <boost/thread/mutex.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -67,6 +68,7 @@ fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
+fc::variant_object version_info();
 
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
@@ -75,7 +77,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
                               ("input-log", program_options::value<std::string>(), 
                                  "log file with CLI commands to execute at startup")
-                              ("help", "display this help message")
+                              ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
                               ("maximum-number-of-connections", program_options::value<uint16_t>(), 
                                   "set the maximum number of peers this node will accept at any one time")
@@ -94,7 +96,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("clear-peer-database", "erase all information in the peer database")
                               ("resync-blockchain", "delete our copy of the blockchain at startup, and download a "
                                  "fresh copy of the entire blockchain from the network")
-                              ("version", "print the version information for bts_xt_client")
+                              ("version", "print version information and exit")
                               ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), 
                                   "Limit total bandwidth to this many bytes per second");
 
@@ -113,22 +115,17 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
     exit(1);
   }
 
-   if (option_variables.count("help"))
-   {
-     std::cout << option_config << "\n";
-     exit(0);
-   }
-   /* //DLNFIX restore this code
-   if (option_variables.count("version"))
-   {
-     std::cout << "bts_xt_client built on " << __DATE__ << " at " << __TIME__ << "\n";
-     std::cout << "  bitshares_toolkit revision: " << bts::utilities::git_revision_sha << "\n";
-     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
-     std::cout << "                 fc revision: " << fc::git_revision_sha << "\n";
-     std::cout << "                              committed " << fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp)) << "\n";
-     exit(0);
-   }
-   */
+  if (option_variables.count("help"))
+  {
+    std::cout << option_config << "\n";
+    exit(0);
+  }
+  else if (option_variables.count("version"))
+  {
+    std::cout << fc::json::to_pretty_string( bts::client::version_info() ) << "\n";
+    exit(0);
+  }
+
   return option_variables;
 }
 
@@ -251,7 +248,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
     catch (const fc::exception& e)
     {
       std::cout << "Error while deleting old copy of the blockchain: " << e.what() << "\n";
-      std::cout << "You may need to manually delete your blockchain and relaunch bitshares_client\n";
+      std::cout << "You may need to manually delete your blockchain and relaunch the client\n";
     }
   }
   else
@@ -294,9 +291,61 @@ config load_config( const fc::path& datadir )
                            public bts::api::common_api
        {
           public:
+            class user_appender : public fc::appender
+            {
+               public:
+                  user_appender( client_impl& c )
+                  :_client_impl(c){}
+
+                  virtual void log( const fc::log_message& m ) override
+                  {
+                     auto format = m.get_format();
+                     // lookup translation on format here
+
+                     // perform variable substitution;
+                     string message = format_string( format, m.get_data() );
+                     
+
+                     { // appenders can be called from any thread
+                        fc::scoped_lock<boost::mutex> lock(_history_lock);
+                        _history.emplace_back( message );
+                        if( _client_impl._cli )
+                           _client_impl._cli->display_status_message( message );
+                     }
+
+                     // call a callback to the client...
+
+                     // we need an RPC call to fetch this log and display the
+                     // current status.
+                  }
+
+                  vector<string> get_history()const
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     return _history;
+                  }
+
+                  void clear_history()
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     _history.clear();
+                  }
+
+               private:
+                  mutable boost::mutex  _history_lock;
+                  // TODO: consider a deque and enforce maximum length?
+                  vector<string>        _history;
+                  client_impl&          _client_impl;
+            };
+
+            fc::shared_ptr<user_appender> _user_appender;
+
             client_impl(bts::client::client* self) :
               _self(self),_cli()
             { try {
+                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+                fc::logger::get( "user" ).add_appender( _user_appender );
+
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
                 } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
@@ -548,7 +597,8 @@ config load_config( const fc::path& datadir )
                       std::ostringstream message;
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
-                      _cli->display_status_message(message.str());
+                      ulog( message.str() );
+                      //_cli->display_status_message(message.str());
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
@@ -821,6 +871,16 @@ config load_config( const fc::path& datadir )
               return "CLI not set for this client.\n";
            }
        }
+       
+       fc::variants client_impl::batch(const std::string& method_name, const std::vector<fc::variants>& parameters_list) const
+       {
+          fc::variants result;
+          for ( auto parameters : parameters_list )
+          {
+             result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+          }
+          return result;
+       }
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
@@ -916,6 +976,17 @@ config load_config( const fc::path& datadir )
     bts::rpc::rpc_server_ptr client::get_rpc_server() const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
 
+    fc::variant_object version_info()
+    {
+      fc::mutable_variant_object info;
+      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
+      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
+      info["fc_revision"]                    = fc::git_revision_sha;
+      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
+      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
+      return info;
+    }
+
     bts::blockchain::transaction_id_type detail::client_impl::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
       ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
@@ -975,14 +1046,14 @@ config load_config( const fc::path& datadir )
       _wallet->close();
     }
 
-    void detail::client_impl::wallet_export_to_json(const fc::path& path) const
+    void detail::client_impl::wallet_export_to_json(const fc::path& json_filename)const
     {
-      _wallet->export_to_json(path);
+      _wallet->export_to_json(json_filename);
     }
 
-    void detail::client_impl::wallet_create_from_json(const fc::path& path, const string& name)
+    void detail::client_impl::wallet_create_from_json(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
     {
-      _wallet->create_from_json(path,name);
+      _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
     }
 
     void detail::client_impl::wallet_lock()
@@ -1226,6 +1297,16 @@ config load_config( const fc::path& datadir )
                                                     const string& passphrase,
                                                     const string& account_name )
     {
+      try
+      {
+          _wallet->import_bitcoin_wallet(filename, "", account_name);
+          return;
+      }
+      catch( const fc::exception& e )
+      {
+          ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
+      }
+
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
     }
     void detail::client_impl::wallet_import_multibit(const fc::path& filename,
@@ -1680,7 +1761,7 @@ config load_config( const fc::path& datadir )
 
 
       auto cfg   = load_config(datadir);
-      std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
       fc::configure_logging( cfg.logging );
 
       load_and_configure_chain_database(datadir, option_variables);
@@ -1931,13 +2012,7 @@ config load_config( const fc::path& datadir )
 
     fc::variant_object client_impl::about() const
     {
-      fc::mutable_variant_object info;
-      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
-      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
-      info["fc_revision"]                    = fc::git_revision_sha;
-      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
-      return info;
+      return bts::client::version_info();
     }
 
     string client_impl::help(const string& command_name) const
@@ -2294,6 +2369,20 @@ config load_config( const fc::path& datadir )
    std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
    {
       return _chain_db->get_delegate_block_stats( delegate_id );
+   }
+
+   string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
+   {
+      auto block_header = _chain_db->get_block_header( block_number );
+      auto signee = block_header.signee();
+      auto delegate_record = _chain_db->get_account_record( signee );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return delegate_record->name;
+   }
+
+   void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
+   {
+      _wallet->enable_delegate_block_production( delegate_name, enable );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const

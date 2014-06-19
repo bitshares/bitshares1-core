@@ -65,9 +65,9 @@ true
 16000000000000
 @endcode
 
-     After rescanning the initial state your wallet should display the initial balance and
-     then start producing blocks about once every 50 seconds.  If you wait a minute and
-     then call get_info you should see the number of blocks reported growing.
+  After rescanning the initial state your wallet should display the initial balance and
+  then start producing blocks about once every 50 seconds.  If you wait a minute and
+  then call get_info you should see the number of blocks reported growing.
 
 @code
 >>> get_info
