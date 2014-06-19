@@ -29,6 +29,7 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -45,7 +46,7 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <fstream>
+#include <boost/thread/mutex.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -290,9 +291,61 @@ config load_config( const fc::path& datadir )
                            public bts::api::common_api
        {
           public:
+            class user_appender : public fc::appender
+            {
+               public:
+                  user_appender( client_impl& c )
+                  :_client_impl(c){}
+
+                  virtual void log( const fc::log_message& m ) override
+                  {
+                     auto format = m.get_format();
+                     // lookup translation on format here
+
+                     // perform variable substitution;
+                     string message = format_string( format, m.get_data() );
+                     
+
+                     { // appenders can be called from any thread
+                        fc::scoped_lock<boost::mutex> lock(_history_lock);
+                        _history.emplace_back( message );
+                        if( _client_impl._cli )
+                           _client_impl._cli->display_status_message( message );
+                     }
+
+                     // call a callback to the client...
+
+                     // we need an RPC call to fetch this log and display the
+                     // current status.
+                  }
+
+                  vector<string> get_history()const
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     return _history;
+                  }
+
+                  void clear_history()
+                  {
+                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                     _history.clear();
+                  }
+
+               private:
+                  mutable boost::mutex  _history_lock;
+                  // TODO: consider a deque and enforce maximum length?
+                  vector<string>        _history;
+                  client_impl&          _client_impl;
+            };
+
+            fc::shared_ptr<user_appender> _user_appender;
+
             client_impl(bts::client::client* self) :
               _self(self),_cli()
             { try {
+                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+                fc::logger::get( "user" ).add_appender( _user_appender );
+
                 try {
                   _rpc_server = std::make_shared<rpc_server>(self);
                 } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
@@ -544,7 +597,8 @@ config load_config( const fc::path& datadir )
                       std::ostringstream message;
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
-                      _cli->display_status_message(message.str());
+                      ulog( message.str() );
+                      //_cli->display_status_message(message.str());
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
