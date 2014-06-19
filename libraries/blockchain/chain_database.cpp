@@ -1463,7 +1463,9 @@ namespace bts { namespace blockchain {
 
       std::vector<name_config> delegate_config;
       for( auto item : config.names )
+      {
          if( item.is_delegate ) delegate_config.push_back( item );
+      }
 
       FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
                  "genesis.json does not contain enough initial delegates",
