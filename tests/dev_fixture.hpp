@@ -159,7 +159,6 @@ struct chain_fixture
 
       for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
       {
-         wdump( (i)(delegate_private_keys.size()) );
          name_config delegate_account;
          delegate_account.name = "delegate" + fc::to_string(i);
          auto delegate_public_key = delegate_private_keys[i].get_public_key();
