@@ -18,6 +18,7 @@
 #include <fc/io/fstream.hpp>
 #include <fc/log/logger.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
