@@ -303,8 +303,8 @@ struct bts_client_launcher_fixture
 
   bts_client_launcher_fixture() :
     _peer_connection_retry_timeout(15 /* sec */),
-    _desired_number_of_connections(3),
-    _maximum_number_of_connections(8)
+    _desired_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT),
+    _maximum_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT * 3 / 2)
   {}
 
   //const uint32_t test_process_count = 10;
@@ -579,11 +579,16 @@ void bts_client_launcher_fixture::register_delegates()
 {
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
   {
+    std::ostringstream delegate_name;
+    delegate_name << "delegate-" << i;
+
     int client_for_this_delegate = i % client_processes.size();
-    if (i < client_processes.size())
-      client_processes[client_for_this_delegate].rpc_client->wallet_account_create("delegatekey");
-    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]), "delegatekey");
+    //if (i < client_processes.size())
+    //  client_processes[client_for_this_delegate].rpc_client->wallet_account_create("delegatekey");
+    client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]));
     client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
+
+    client_processes[client_for_this_delegate].rpc_client->wallet_enable_delegate_block_production(delegate_name.str(), true);
   }
 }
 
@@ -937,6 +942,10 @@ BOOST_AUTO_TEST_CASE(transfer_test)
   establish_rpc_connections();
 
   trigger_network_connections();
+
+  fc::usleep(fc::seconds(30));
+
+  verify_network_connectivity(bts_xt_client_test_config::config_directory / "transfer_test");
 
   BOOST_TEST_MESSAGE("Opening and unlocking wallets");
   for (unsigned i = 0; i < client_processes.size(); ++i)
