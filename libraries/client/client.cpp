@@ -599,7 +599,6 @@ config load_config( const fc::path& datadir )
                       message << "--- syncing with p2p network, our last block was created " 
                               << fc::get_approximate_relative_time_string(block.timestamp);
                       ulog( message.str() );
-                      //_cli->display_status_message(message.str());
                       _last_sync_status_message_time = fc::time_point::now();
                    }
             
@@ -893,7 +892,7 @@ config load_config( const fc::path& datadir )
            else if (item_count == 0)
               message << "--- in sync with p2p network";
            if (!message.str().empty())
-             _cli->display_status_message(message.str());
+               ulog( message.str() );
            _last_sync_status_message_time = fc::time_point::now();
          }
        }
@@ -902,8 +901,7 @@ config load_config( const fc::path& datadir )
        {
          std::ostringstream message;
          message << "--- there are now " << c << " active connections to the p2p network";
-         if( _cli )
-            _cli->display_status_message(message.str());
+         ulog( message.str() );
        }
 
        uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
@@ -917,10 +915,7 @@ config load_config( const fc::path& datadir )
           _exception_db.store(fc::time_point::now(), *error);
         else
           _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
-        if( _cli )
-          _cli->display_status_message(message);
-        else
-          std::cout << message << "\n";
+        ulog( message );
       }
 
     } // end namespace detail
