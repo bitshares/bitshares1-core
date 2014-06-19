@@ -488,6 +488,7 @@ namespace bts { namespace wallet {
                    }
                    break;
                 }
+                break;
              }
              case withdraw_multi_sig_type:
              {
