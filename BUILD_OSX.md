@@ -39,15 +39,17 @@ Building BitShares Toolkit on OS X 10.9
 
 6) OS X comes with a very old version of readline (4.x) 
 
-   wget ftp://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz
-   tar -xzvf readline-6.3.tar.gz
-   cd readline-6.3
-   ./configure
-   make
-   sudo make install
+    wget ftp://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz
+    tar -xzvf readline-6.3.tar.gz
+    cd readline-6.3
+    ./configure
+    make
+    sudo make install
 
 7) Build BitShares Toolkit with CMake
 
+    git clone https://github.com/BitShares/bitshares_toolkit.git
+    cd bitshares_toolkit
     git submodule init
     git submodule update
     cmake -DCMAKE_PREFIX_PATH=/usr/local/ssl .

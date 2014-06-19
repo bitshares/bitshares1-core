@@ -114,8 +114,11 @@ namespace bts { namespace wallet {
              bool address_in_account( const address& address_to_check,
                                       const address& account_address )const;
 
+
+             owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
       };
 
+     
       void wallet_impl::clear_pending_transactions()
       {
           _wallet_db.clear_pending_transactions();
@@ -555,6 +558,11 @@ namespace bts { namespace wallet {
    wallet::~wallet()
    {
       close();
+   }
+ 
+   owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
+   {
+       return my->_wallet_db.lookup_transaction(trx_id);
    }
 
    void           wallet::set_data_directory( const path& data_dir )
@@ -1092,6 +1100,7 @@ namespace bts { namespace wallet {
          my->scan_block( block_num, account_priv_keys );
          if( progress_callback )
             progress_callback( block_num, min_end );
+         my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
       }
 
       for( auto acct : my->_wallet_db.accounts )
@@ -2925,6 +2934,11 @@ namespace bts { namespace wallet {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
           {
+
+             auto oacct_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
+             if ( !(account_name == "" || (oacct_rec.valid() && oacct_rec->name == account_name)) )
+                 continue;
+
              asset bal = b.second.get_balance();
              if( bal.asset_id == 0 )
              {
