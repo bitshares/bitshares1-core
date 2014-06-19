@@ -356,6 +356,7 @@ config load_config( const fc::path& datadir )
 
             bts::rpc::rpc_server_ptr                                    _rpc_server;
             bts::net::node_ptr                                          _p2p_node;
+            std::unique_ptr<bts::net::upnp_service>                     _upnp_service;
             chain_database_ptr                                          _chain_db;
             unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
             wallet_ptr                                                  _wallet;
@@ -1711,8 +1712,8 @@ config load_config( const fc::path& datadir )
           if( option_variables["upnp"].as<bool>() )
           {
             std::cout << "Attempting to map P2P port " << p2pport << " with UPNP...\n";
-            auto upnp_service = new bts::net::upnp_service();
-            upnp_service->map_port( p2pport );
+            my->_upnp_service = std::unique_ptr<bts::net::upnp_service>(new bts::net::upnp_service);
+            my->_upnp_service->map_port( p2pport );
             fc::usleep( fc::seconds(3) );
           }
       }
@@ -2299,6 +2300,21 @@ config load_config( const fc::path& datadir )
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
    {
         return _p2p_node->get_potential_peers();
+   }
+
+   fc::variant_object client_impl::network_get_upnp_info()const
+   {
+       fc::mutable_variant_object upnp_info;
+
+       upnp_info["upnp_enabled"] = bool(_upnp_service);
+
+       if (_upnp_service)
+       {
+           upnp_info["external_ip"] = fc::string(_upnp_service->external_ip());
+           upnp_info["mapped_port"] = fc::variant(_upnp_service->mapped_port()).as_string();
+       }
+
+       return upnp_info;
    }
 
    } // namespace detail
