@@ -2585,22 +2585,21 @@ namespace bts { namespace wallet {
       return false;
    } FC_CAPTURE_AND_RETHROW() }
 
-   vector<wallet_account_record> wallet::list_contact_accounts() const
+   vector<wallet_account_record> wallet::list_accounts() const
    { try {
-      vector<wallet_account_record> contact_accounts;
-      unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
-      contact_accounts.reserve( my->_wallet_db.accounts.size() );
+      vector<wallet_account_record> accounts;
+      //unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;
+      accounts.reserve( my->_wallet_db.accounts.size() );
       for( auto item : my->_wallet_db.accounts )
       {
-         if ( ! my->_wallet_db.has_private_key( item.second.account_address ) )
-         {
-            contact_accounts.push_back( item.second );
-         }
+         FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.account_address )
+                 , "\'is_my_account\' field fell out of sync" );
+         accounts.push_back( item.second );
       }
-      return contact_accounts;
+      return accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   vector<wallet_account_record> wallet::list_receive_accounts() const
+   vector<wallet_account_record> wallet::list_my_accounts() const
    { try {
       vector<wallet_account_record> receive_accounts;
       unordered_map<int32_t, wallet_account_record> accs = my->_wallet_db.accounts;

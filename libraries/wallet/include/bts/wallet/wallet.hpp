@@ -172,8 +172,8 @@ namespace bts { namespace wallet {
 
          vector<string> list() const; // list wallets
 
-         vector<wallet_account_record> list_receive_accounts()const;
-         vector<wallet_account_record> list_contact_accounts()const;
+         vector<wallet_account_record> list_accounts()const;
+         vector<wallet_account_record> list_my_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
