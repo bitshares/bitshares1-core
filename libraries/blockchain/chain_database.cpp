@@ -612,9 +612,9 @@ namespace bts { namespace blockchain {
 
                   block_stats.missed = false;
                   /* TODO: Use actual block received time rather than time this function was called */
-                  auto latency = (now - produced_block.timestamp).to_seconds();
+                  int64_t latency = (now - produced_block.timestamp).to_seconds();
                   if( latency < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
-                    block_stats.latency = fc::optional<uint32_t>( latency );
+                    block_stats.latency = (uint32_t)latency;
               }
 
               _delegate_block_stats_db.store( std::make_pair( delegate_id, current_block_num ), block_stats );
@@ -1528,10 +1528,19 @@ namespace bts { namespace blockchain {
          }
          else
          {
-            auto delegate_id = n % delegate_ids.size() + 1;
+            name_id_type delegate_id = (name_id_type)(n % delegate_ids.size() + 1);
             balance_record initial_balance( item.first,
                                             asset( share_type( initial.low_bits() ), 0 ),
+                                #if BTS_BLOCKCHAIN_VERSION > 103 
+                                            -delegate_id );
+                                #else
+#                                 ifdef _MSC_VER
+#                                  pragma message("delegate id must be negative on next chain launch, do not forget to change this.")
+#                                 else
+                                   #warning delegate id must be negative on next chain launch, do not forget to change this.
+#                                 endif
                                             delegate_id );
+                                #endif
             // in case of redundant balances
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
@@ -1670,7 +1679,7 @@ namespace bts { namespace blockchain {
         std::cout << block_record.block_num << "  start " << start_block << "  end " << end_block << "\n";
         if ( block_record.block_num > start_block && block_record.block_num < end_block )
         {
-          uint32_t rank = (block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+          unsigned rank = (unsigned)((block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
           //ilog( "${id} => ${r}", ("id",fork_itr.key())("r",fork_data) );
           nodes_by_rank[rank].push_back(block_record);
