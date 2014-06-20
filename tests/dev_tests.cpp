@@ -149,6 +149,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_withdraw_delegate_pay delegate32 c-account .01234" );
    produce_block( clientb );
    exec( clientb, "wallet_account_transaction_history delegate32" );
+   exec( clientb, "blockchain_list_delegates" );
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 
 

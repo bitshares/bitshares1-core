@@ -29,20 +29,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
-#if BTS_BLOCKCHAIN_VERSION > 102 
       if( current_account ) FC_CAPTURE_AND_THROW( account_already_registered, (name) );  
-#else
-#ifndef WIN32
-#warning "blockchain patch for duplicate account names needs to be removed on next dry run"
-#else // WIN32
-#pragma message( "blockchain patch needs to be removed on next dry run" )
-#endif
-      if( current_account && eval_state._current_state->get_head_block_num() > 500)  //TODO remove block req on next dry run
-      {
-         //if( fc::time_point(current_account->last_update) + one_year < fc::time_point(now) )
-         FC_CAPTURE_AND_THROW( account_already_registered, (name) );  
-      }
-#endif
 
       string parent_name = get_parent_account_name( this->name );
       if( parent_name.size() )

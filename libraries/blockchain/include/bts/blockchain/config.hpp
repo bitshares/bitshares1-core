@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                      (102)
+#define BTS_BLOCKCHAIN_VERSION                      (103)
 #define BTS_WALLET_VERSION                          (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION             (104)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION             (105)
 
 #define BTS_NETWORK_DEFAULT_P2P_PORT                8763
 

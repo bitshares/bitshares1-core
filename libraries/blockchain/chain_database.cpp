@@ -1512,7 +1512,7 @@ namespace bts { namespace blockchain {
             {
                   balance_record initial_balance( item.first,
                                                   asset( share_type( initial.low_bits() ), 0 ),
-                                                  delegate_id );
+                                                  -delegate_id );
                   // in case of redundant balances
                   auto cur = self->get_balance_record( initial_balance.id() );
                   if( cur.valid() ) initial_balance.balance += cur->balance;
