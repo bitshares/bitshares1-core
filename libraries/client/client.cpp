@@ -568,9 +568,19 @@ config load_config( const fc::path& datadir )
          }
        } // delegate_loop
 
-       vector<account_id_type> client_impl::blockchain_list_current_round_active_delegates()
+       map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
        {
-          return _chain_db->current_round_active_delegates();
+          map<account_id_type, string> delegates;
+
+          auto delegate_ids = _chain_db->current_round_active_delegates();
+          for( const auto& delegate_id : delegate_ids )
+          {
+              auto delegate_record = _chain_db->get_account_record( delegate_id );
+              FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+              delegates[ delegate_id ] = delegate_record->name ;
+          }
+
+          return delegates;
        }
 
        vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)

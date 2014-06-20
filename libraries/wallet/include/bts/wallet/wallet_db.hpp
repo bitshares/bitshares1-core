@@ -38,7 +38,6 @@ namespace bts { namespace wallet {
          void store_key( const key_data& k );
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
-         void cache_balance( const wallet_balance_record& b );
          void cache_account( const wallet_account_record& );
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
@@ -48,11 +47,6 @@ namespace bts { namespace wallet {
 
          void clear_pending_transactions();
 
-         void store_balance( const wallet_balance_record& r )
-         {
-            store_record( r );
-            balances[r.id()] = r;
-         }
          void update_market_order( const address& owner, 
                                    optional<bts::blockchain::market_order>& order,
                                    const transaction_id_type& trx_id );
@@ -104,8 +98,8 @@ namespace bts { namespace wallet {
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
 
-         void export_records( std::vector<generic_wallet_record>& records ) const;
-         void import_records( const std::vector<generic_wallet_record>& records );
+         void export_to_json( const path& filename )const;
+         void import_from_json( const path& filename );
 
          bool                           validate_password( const fc::sha512& password )const;
          optional<extended_private_key> get_master_key( const fc::sha512& password    )const;
@@ -138,7 +132,6 @@ namespace bts { namespace wallet {
 
       private:
          optional<wallet_master_key_record>                               wallet_master_key;
- 
          /** maps wallet_record_index to accounts */
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< address, wallet_key_record >                      keys;
@@ -163,10 +156,10 @@ namespace bts { namespace wallet {
          {
             if( record_to_store.wallet_record_index == 0 ) 
                record_to_store.wallet_record_index = new_wallet_record_index();
-            store_generic_record( record_to_store.wallet_record_index, generic_wallet_record( record_to_store ) );
+            store_generic_record( generic_wallet_record( record_to_store ) );
          }
 
-        void store_generic_record( int32_t index, const generic_wallet_record& r );
+        void store_generic_record( const generic_wallet_record& record );
 
         friend class detail::wallet_db_impl;
         unique_ptr<detail::wallet_db_impl> my;

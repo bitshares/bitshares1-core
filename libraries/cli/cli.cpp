@@ -890,14 +890,20 @@ namespace bts { namespace cli {
                       _out->put('\n');
 
                       auto supply = _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply;
+                      auto last_block_produced = record.delegate_info->last_block_num_produced;
                                                 //Horribly painful way to print a % after a double with precision of 8. Better solutions welcome.
                       *_out << std::setw(20) << (fc::variant(double(record.votes_for())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(20) << (fc::variant(double(record.votes_against())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(16) << record.delegate_info->blocks_produced
-                            << std::setw(16) << record.delegate_info->blocks_missed
-                            << std::setw(16) << record.delegate_info->last_block_num_produced
-                            << _client->get_chain()->to_pretty_asset(asset(record.delegate_pay_balance()))
+                            << std::setw(16) << record.delegate_info->blocks_missed;
+
+                            if( last_block_produced != uint32_t( -1 ) )
+                                *_out << std::setw(16) << last_block_produced;
+                            else
+                                *_out << std::setw(16) << "N/A";
+
+                      *_out << _client->get_chain()->to_pretty_asset(asset(record.delegate_pay_balance()))
                             << "\n";
                   }
                   else

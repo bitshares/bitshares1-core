@@ -819,6 +819,7 @@ namespace bts { namespace blockchain {
          wlog( "unexpected exception closing database\n" );
       }
    }
+
    std::vector<account_id_type> chain_database::next_round_active_delegates()const
    {
       return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );

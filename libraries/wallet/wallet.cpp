@@ -721,42 +721,25 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const path& filename )const
    { try {
+      FC_ASSERT( !fc::exists( filename ) );
       FC_ASSERT( is_open() );
-      // TODO: move this to wallet_db...
-      std::vector<generic_wallet_record> records;
-      my->_wallet_db.export_records( records );
-      fc::json::save_to_file( records, filename, true );
+      my->_wallet_db.export_to_json( filename );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
 
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
       FC_ASSERT( fc::exists( filename ) );
-      // TODO: move this to wallet_db
       try
       {
-          auto records = fc::json::from_file< std::vector<generic_wallet_record> >( filename );
-
-          fc::optional< wallet_master_key_record > master_key_record;
-          for( const auto& record : records )
-          {
-              if( wallet_record_type_enum(record.type) == master_key_record_type )
-                  master_key_record = fc::optional< wallet_master_key_record >( record.as<wallet_master_key_record>() );
-          }
-
-          if( !master_key_record.valid() )
-              FC_THROW_EXCEPTION( invalid_format, "Imported wallet does not contain master key record" );
-
-          auto passphrase_hash = fc::sha512::hash( passphrase.c_str(), passphrase.size() );
-
-          if( !master_key_record->validate_password( passphrase_hash ) )
-              FC_THROW_EXCEPTION( invalid_password, "Invalid password for imported wallet" );
-
           create( wallet_name, passphrase );
-          my->_wallet_db.import_records( records );
+          my->_wallet_db.import_from_json( filename );
+          unlock( passphrase, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
       }
       catch( ... )
       {
           close();
+          auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
+          fc::remove_all( wallet_file_path );
           throw;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
@@ -1449,7 +1432,7 @@ namespace bts { namespace wallet {
        {
           for( auto rec : balances_to_store )
           {
-              my->_wallet_db.store_balance( rec );
+              my->_wallet_db.cache_balance( rec );
           }
           for( uint32_t i =0 ; i < trxs.size(); ++i )
              my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 

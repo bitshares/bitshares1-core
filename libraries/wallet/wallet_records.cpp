@@ -35,7 +35,7 @@ namespace bts { namespace wallet {
       encrypted_private_key = fc::aes_encrypt( password, fc::raw::pack( key_to_encrypt ) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   fc::ecc::private_key     key_data::decrypt_private_key( const fc::sha512& password )const
+   fc::ecc::private_key key_data::decrypt_private_key( const fc::sha512& password )const
    { try {
       auto plain_text = fc::aes_decrypt( password, encrypted_private_key );
       return fc::raw::unpack<fc::ecc::private_key>( plain_text );
