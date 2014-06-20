@@ -585,6 +585,7 @@ namespace bts { namespace wallet {
           close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
+          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
       }
       catch( ... )
       {
@@ -633,6 +634,7 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
+          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
