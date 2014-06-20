@@ -205,10 +205,16 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
-    
+
+    fc::logger_config dlc_user;
+    dlc_user.level = fc::log_level::debug;
+    dlc_user.name = "user";
+    dlc_user.appenders.push_back("user");
+        
     cfg.loggers.push_back(dlc);
     cfg.loggers.push_back(dlc_rpc);
     cfg.loggers.push_back(dlc_p2p);
+    cfg.loggers.push_back(dlc_user);
     
     return cfg;
 }
@@ -1765,6 +1771,8 @@ config load_config( const fc::path& datadir )
       auto cfg   = load_config(datadir);
       //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
       fc::configure_logging( cfg.logging );
+      // re-register the _user_appender which was overwritten by configure_logging()
+      fc::logger::get( "user" ).add_appender( my->_user_appender );
 
       load_and_configure_chain_database(datadir, option_variables);
 
