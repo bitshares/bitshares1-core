@@ -733,8 +733,7 @@ namespace bts { namespace wallet {
       {
           create( wallet_name, passphrase );
           my->_wallet_db.import_from_json( filename );
-          unlock( passphrase, fc::seconds( 1 ) );
-          lock();
+          unlock( passphrase, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
       }
       catch( ... )
       {
