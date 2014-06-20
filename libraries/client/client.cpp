@@ -75,7 +75,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    // parse command-line options
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
-                              ("input-log", program_options::value<std::string>(), 
+                              ("input-log", program_options::value< vector<string> >(), 
                                  "log file with CLI commands to execute at startup")
                               ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
@@ -1893,7 +1893,10 @@ config load_config( const fc::path& datadir )
         
         if (option_variables.count("input-log"))
         {
-          string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
+          std::vector<string> input_logs = option_variables["input-log"].as< std::vector<string> >();
+          string input_commands;
+          for (auto input_log : input_logs)            
+            input_commands += extract_commands_from_log_file(input_log);
           my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
@@ -1903,10 +1906,7 @@ config load_config( const fc::path& datadir )
         my->_console_log.open(console_log_file.string());
         my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));; 
         my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
-        //force flushing to console and log file whenever cin input is required
-        std::cin.tie( my->_tee_stream.get() );
         
-
         my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), my->_tee_stream.get() );
         //echo command input to the log file
         my->_cli->set_input_stream_log(my->_console_log);
