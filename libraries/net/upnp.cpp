@@ -92,7 +92,7 @@ void upnp_service::map_port( uint16_t local_port )
       r = UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
 
       bool port_mapping_added = false;
-
+      bool port_mapping_added_successfully = false;
 
        if (r == 1)
        {
@@ -101,17 +101,17 @@ void upnp_service::map_port( uint16_t local_port )
                char externalIPAddress[40];
                r = UPNP_GetExternalIPAddress(urls.controlURL, data.first.servicetype, externalIPAddress);
                if(r != UPNPCOMMAND_SUCCESS)
-                   printf("UPnP: GetExternalIPAddress() returned %d\n", r);
+                   wlog("UPnP: GetExternalIPAddress() returned ${code}", ("code", r));
                else
                {
                    if(externalIPAddress[0])
                    {
-                       printf("UPnP: ExternalIPAddress = %s\n", externalIPAddress);
+                       ulog("UPnP: ExternalIPAddress = ${address}", ("address", externalIPAddress));
                        my->external_ip = fc::ip::address( std::string(externalIPAddress) );
                        // AddLocal(CNetAddr(externalIPAddress), LOCAL_UPNP);
                    }
                    else
-                       printf("UPnP: GetExternalIPAddress failed.\n");
+                       wlog("UPnP: GetExternalIPAddress failed.");
                }
            }
        
@@ -127,11 +127,14 @@ void upnp_service::map_port( uint16_t local_port )
        
                    port_mapping_added = true;
                    if(r!=UPNPCOMMAND_SUCCESS)
-                       printf("AddPortMapping(%s, %s, %s) failed with code %d (%s)\n",
-                           port.c_str(), port.c_str(), lanaddr, r, strupnperror(r));
+                       wlog("AddPortMapping(${port}, ${port}, ${addr}) failed with code ${code} (${string})",
+                            ("port", port)("addr", lanaddr)("code", r)("string", strupnperror(r)));
                    else
                    {
-                       printf("UPnP Port Mapping successful.\n");;
+                       if (!port_mapping_added_successfully)
+                         ulog("UPnP Port Mapping successful");
+                       port_mapping_added_successfully = true;
+
                        my->mapped_port = local_port;
                    }
        

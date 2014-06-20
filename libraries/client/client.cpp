@@ -320,7 +320,9 @@ config load_config( const fc::path& datadir )
                         fc::scoped_lock<boost::mutex> lock(_history_lock);
                         _history.emplace_back( message );
                         if( _client_impl._cli )
-                           _client_impl._cli->display_status_message( message );
+                          _client_impl._cli->display_status_message( message );
+                        else
+                          std::cout << message << "\n";
                      }
 
                      // call a callback to the client...
