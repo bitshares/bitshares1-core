@@ -2695,6 +2695,8 @@ namespace bts { namespace wallet {
               wallets.push_back( (*itr).stem().string() );
           }
        }
+
+       std::sort( wallets.begin(), wallets.end() );
        return wallets;
    }
 
@@ -2723,6 +2725,11 @@ namespace bts { namespace wallet {
                  , "\'is_my_account\' field fell out of sync" );
          accounts.push_back( item.second );
       }
+
+      std::sort( accounts.begin(), accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
       return accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -2738,8 +2745,12 @@ namespace bts { namespace wallet {
             receive_accounts.push_back( item.second );
          }
       }
-      return receive_accounts;
 
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
@@ -2754,7 +2765,7 @@ namespace bts { namespace wallet {
 
    void  wallet::scan_state()
    { try {
-      ilog( "WALLET: scaning blockchain state" );
+      ilog( "WALLET: Scanning blockchain state" );
       my->scan_balances();
       my->scan_registered_accounts();
    } FC_RETHROW_EXCEPTIONS( warn, "" )  }

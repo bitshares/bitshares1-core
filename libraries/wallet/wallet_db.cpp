@@ -373,7 +373,7 @@ namespace bts{ namespace wallet {
        for( auto id : clear_list ) transactions.erase(id);
    }
 
-   void wallet_db::export_records(std::vector<generic_wallet_record>& records) const
+   void wallet_db::export_records( std::vector<generic_wallet_record>& records ) const
    {
       FC_ASSERT( is_open() );
       records.clear();
@@ -382,7 +382,7 @@ namespace bts{ namespace wallet {
           records.push_back( itr.value() );
    }
 
-   void wallet_db::import_records(const std::vector<generic_wallet_record>& records)
+   void wallet_db::import_records( const std::vector<generic_wallet_record>& records )
    {
       FC_ASSERT( is_open() );
 
