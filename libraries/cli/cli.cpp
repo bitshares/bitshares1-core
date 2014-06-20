@@ -678,12 +678,12 @@ namespace bts { namespace cli {
                   auto order_list = result.as<vector<market_order_status> >();
                   print_wallet_market_order_list( order_list );
               }
-              else if ( command == "wallet_list_receive_accounts" )
+              else if ( command == "wallet_list_my_accounts" )
               {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_receive_account_list( accts );
               }
-              else if ( command == "wallet_list_contact_accounts" )
+              else if ( command == "wallet_list_accounts" )
               {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_contact_account_list( accts );
@@ -790,7 +790,7 @@ namespace bts { namespace cli {
                           *_out << "** Standby:\n";
 
                       *_out << std::setw(12) << delegate_rec.id;
-                      *_out << std::setw(25) << delegate_rec.name;
+                      *_out << std::setw(25) << pretty_shorten( delegate_rec.name, 24 );
                       
                       *_out << std::setw(20) << delegate_rec.votes_for();
                       *_out << std::setw(20) << delegate_rec.votes_against();
@@ -1030,7 +1030,7 @@ namespace bts { namespace cli {
                 *_out << "-------------------------------------------------------------\n";
                 for( auto balance_rec : balance_recs )
                 {
-                    *_out << std::setw(18) << balance_rec.balance;
+                    *_out << std::setw(18) << _client->get_chain()->to_pretty_asset( asset(balance_rec.balance, 0) );
                     switch (withdraw_condition_types(balance_rec.condition.type))
                     {
                         case (withdraw_signature_type):
