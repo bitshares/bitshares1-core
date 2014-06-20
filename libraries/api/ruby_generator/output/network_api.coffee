@@ -90,6 +90,13 @@ class NetworkAPI
     @rpc.request('network_list_potential_peers').then (response) ->
       response.result
 
+  # Get information on UPNP status including whether it's enabled and what the client believes its IP to be
+  # parameters: 
+  # return_type: `json_object`
+  get_upnp_info:  ->
+    @rpc.request('network_get_upnp_info').then (response) ->
+      response.result
+
 
 
 angular.module("app").service("NetworkAPI", ["$q", "$log", "RpcService", NetworkAPI])

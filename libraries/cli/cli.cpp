@@ -779,7 +779,7 @@ namespace bts { namespace cli {
                   *_out << "\n---------------------------------------------------------\n";
 
                   if (current < num_active)
-                      *_out << "** Active:\n";
+                      *_out << "** Top:\n";
 
                   auto total_delegates = delegates.size();
                   for( auto delegate_rec : delegates )
