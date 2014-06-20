@@ -401,6 +401,8 @@ namespace bts { namespace net {
 
       fc::rate_limiting_group _rate_limiter;
 
+      uint32_t _last_reported_number_of_connections; // number of connections last reported to the client (to avoid sending duplicate messages)
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -658,7 +660,8 @@ namespace bts { namespace net {
       _peer_inactivity_timeout( BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0),
-      _rate_limiter(0, 0)
+      _rate_limiter(0, 0),
+      _last_reported_number_of_connections(0)
     {
     }
 
@@ -1984,7 +1987,12 @@ namespace bts { namespace net {
       ilog("Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint()));
       display_current_connections();
       trigger_p2p_network_connect_loop();
-      _delegate->connection_count_changed(_active_connections.size());
+
+      if (_active_connections.size() != _last_reported_number_of_connections)
+      {
+        _delegate->connection_count_changed(_active_connections.size());
+        _last_reported_number_of_connections = _active_connections.size();
+      }
     }
 
     void node_impl::process_backlog_of_sync_blocks()
@@ -2350,7 +2358,11 @@ namespace bts { namespace net {
     void node_impl::new_peer_just_added(const peer_connection_ptr& peer)
     {
       start_synchronizing_with_peer(peer);
-      _delegate->connection_count_changed(_active_connections.size());
+      if (_active_connections.size() != _last_reported_number_of_connections)
+      {
+        _delegate->connection_count_changed(_active_connections.size());
+        _last_reported_number_of_connections = _active_connections.size();
+      }
     }
 
     void node_impl::close()
