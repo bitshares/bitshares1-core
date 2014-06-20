@@ -259,6 +259,15 @@ class WalletAPI
     @rpc.request('wallet_account_register', [account_name, pay_from_account, public_data, as_delegate]).then (response) ->
       response.result
 
+  # Updates the local private data for an account
+  # parameters: 
+  #   account_name `account_name` - the account that will be updated
+  #   json_variant `private_data` - private data about the account
+  # return_type: `void`
+  account_update_private_data: (account_name, private_data) ->
+    @rpc.request('wallet_account_update_private_data', [account_name, private_data]).then (response) ->
+      response.result
+
   # Updates the data published about a given account
   # parameters: 
   #   account_name `account_name` - the account that will be updated
@@ -270,21 +279,21 @@ class WalletAPI
     @rpc.request('wallet_account_update_registration', [account_name, pay_from_account, public_data, as_delegate]).then (response) ->
       response.result
 
-  # Lists all foreign addresses and their labels associated with this wallet
+  # Lists all accounts associated with this wallet
   # parameters: 
   # return_type: `wallet_account_record_array`
-  list_contact_accounts:  ->
-    @rpc.request('wallet_list_contact_accounts').then (response) ->
+  list_accounts:  ->
+    @rpc.request('wallet_list_accounts').then (response) ->
       response.result
 
-  # TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet
+  # Lists all accounts for which we have a private key in this wallet
   # parameters: 
   # return_type: `wallet_account_record_array`
-  list_receive_accounts:  ->
-    @rpc.request('wallet_list_receive_accounts').then (response) ->
+  list_my_accounts:  ->
+    @rpc.request('wallet_list_my_accounts').then (response) ->
       response.result
 
-  # TODO: wrong description? Lists all foreign addresses and their labels associated with this wallet
+  # Get the account record for a given name
   # parameters: 
   #   account_name `account_name` - the name of the account to retrieve
   # return_type: `wallet_account_record`
@@ -395,7 +404,7 @@ class WalletAPI
 
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.
   # parameters: 
-  #   amount `fee` - the prioty fee to be setted.
+  #   amount `fee` - the priority fee to be set.
   # return_type: `void`
   set_priority_fee: (fee) ->
     @rpc.request('wallet_set_priority_fee', [fee]).then (response) ->
@@ -461,7 +470,7 @@ class WalletAPI
   #   variant `value` - the value to set the setting to
   # return_type: `void`
   set_setting: (name, value) ->
-    @rpc.request('wallet_set_wallet_setting', [name, value]).then (response) ->
+    @rpc.request('wallet_set_setting', [name, value]).then (response) ->
       response.result
 
   # Get the value of the given setting
@@ -469,7 +478,7 @@ class WalletAPI
   #   string `name` - The name of the setting to fetch
   # return_type: `optional_variant`
   get_setting: (name) ->
-    @rpc.request('wallet_get_wallet_setting', [name]).then (response) ->
+    @rpc.request('wallet_get_setting', [name]).then (response) ->
       response.result
 
   # Enable or disable block production for a particular delegate account
