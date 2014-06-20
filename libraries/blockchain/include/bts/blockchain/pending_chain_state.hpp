@@ -8,52 +8,53 @@ namespace bts { namespace blockchain {
       public:
          pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
 
+
          void set_prev_state( chain_interface_ptr prev_state );
 
          virtual ~pending_chain_state()override;
 
-         fc::ripemd160                      get_current_random_seed()const override;
+         fc::ripemd160                get_current_random_seed()const override;
 
-         virtual fc::time_point_sec         now()const override;
-         virtual int64_t                    get_fee_rate()const override;
-         virtual int64_t                    get_delegate_pay_rate()const override;
+         virtual fc::time_point_sec   now()const override;
+         virtual int64_t              get_fee_rate()const override;
+         virtual int64_t              get_delegate_pay_rate()const override;
 
-         virtual oasset_record              get_asset_record( asset_id_type id )const override;
-         virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record            get_account_record( account_id_type id )const override;
-         virtual oaccount_record            get_account_record( const address& owner )const override;
+         virtual oasset_record        get_asset_record( asset_id_type id )const override;
+         virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
+         virtual oaccount_record      get_account_record( account_id_type id )const override;
+         virtual oaccount_record      get_account_record( const address& owner )const override;
 
-         virtual otransaction_record        get_transaction( const transaction_id_type& trx_id, 
-                                                             bool exact = true )const override;
+         virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
+                                                       bool exact = true )const override;
 
-         virtual void                       store_transaction( const transaction_id_type&, 
-                                                                const transaction_record&  ) override;
+         virtual void                 store_transaction( const transaction_id_type&, 
+                                                          const transaction_record&  ) override;
 
-         virtual oasset_record              get_asset_record( const string& symbol )const override;
-         virtual oaccount_record            get_account_record( const string& name )const override;
+         virtual oasset_record        get_asset_record( const string& symbol )const override;
+         virtual oaccount_record      get_account_record( const string& name )const override;
 
-         virtual oorder_record              get_bid_record( const market_index_key& )const override;
-         virtual oorder_record              get_ask_record( const market_index_key& )const override;
-         virtual oorder_record              get_short_record( const market_index_key& )const override;
-         virtual ocollateral_record         get_collateral_record( const market_index_key& )const override;
-                                                                                                            
-         virtual void                       store_bid_record( const market_index_key& key, const order_record& ) override;
-         virtual void                       store_ask_record( const market_index_key& key, const order_record& ) override;
-         virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
-         virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
+         virtual oorder_record        get_bid_record( const market_index_key& )const override;
+         virtual oorder_record        get_ask_record( const market_index_key& )const override;
+         virtual oorder_record        get_short_record( const market_index_key& )const override;
+         virtual ocollateral_record   get_collateral_record( const market_index_key& )const override;
+                                                                                                      
+         virtual void                 store_bid_record( const market_index_key& key, const order_record& ) override;
+         virtual void                 store_ask_record( const market_index_key& key, const order_record& ) override;
+         virtual void                 store_short_record( const market_index_key& key, const order_record& ) override;
+         virtual void                 store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                       store_proposal_record( const proposal_record& r )override;
-         virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;
-                                                                                                          
-         virtual void                       store_proposal_vote( const proposal_vote& r )override;
-         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const override;
+         virtual void                 store_proposal_record( const proposal_record& r )override;
+         virtual oproposal_record     get_proposal_record( proposal_id_type id )const override;
+                                                                                                    
+         virtual void                 store_proposal_vote( const proposal_vote& r )override;
+         virtual oproposal_vote       get_proposal_vote( proposal_vote_id_type id )const override;
 
-         virtual void                       store_asset_record( const asset_record& r )override;
-         virtual void                       store_balance_record( const balance_record& r )override;
-         virtual void                       store_account_record( const account_record& r )override;
+         virtual void                 store_asset_record( const asset_record& r )override;
+         virtual void                 store_balance_record( const balance_record& r )override;
+         virtual void                 store_account_record( const account_record& r )override;
 
-         virtual variant                get_property( chain_property_enum property_id )const override;
-         virtual void                       set_property( chain_property_enum property_id, 
+         virtual variant              get_property( chain_property_enum property_id )const override;
+         virtual void                 set_property( chain_property_enum property_id, 
                                                           const variant& property_value )override;
          /**
           *  Based upon the current state of the database, calculate any updates that
