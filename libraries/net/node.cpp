@@ -527,6 +527,14 @@ namespace bts { namespace net {
         direction = peer_connection_direction::inbound;
         _message_connection.accept();           // perform key exchange
         _remote_endpoint = _message_connection.get_socket().remote_endpoint();
+
+        // firewall-detecting info is pretty useless for inbound connections, but initialize 
+        // it the best we can
+        fc::ip::endpoint local_endpoint = _message_connection.get_socket().local_endpoint();
+        inbound_address = local_endpoint.get_address();
+        inbound_port = local_endpoint.port();
+        outbound_port = inbound_port;
+
         their_state = their_connection_state::just_connected;
         our_state = our_connection_state::just_connected;
         ilog("established inbound connection from ${remote_endpoint}, sending hello", ("remote_endpoint", _message_connection.get_socket().remote_endpoint()));
@@ -1310,7 +1318,7 @@ namespace bts { namespace net {
           }
           else
           {
-            dlog("peer is firewalled: they think their outbound endpoing is ${reported_endpoint}, but I see it as ${actual_endpoint}",
+            dlog("peer is firewalled: they think their outbound endpoint is ${reported_endpoint}, but I see it as ${actual_endpoint}",
                  ("reported_endpoint", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
                  ("actual_endpoint", peers_actual_outbound_endpoint));
             originating_peer->is_firewalled = firewalled_state::firewalled;
