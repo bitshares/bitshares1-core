@@ -68,6 +68,11 @@ namespace bts { namespace wallet {
              */
             void state_changed( const pending_chain_state_ptr& state )
             {
+               uint32_t last_unlocked_scanned_number = _wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
+               if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
+               {
+                  _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( _blockchain->get_head_block_num() ) );
+               }
             }
 
             /**
