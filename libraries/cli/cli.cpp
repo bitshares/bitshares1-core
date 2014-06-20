@@ -790,7 +790,7 @@ namespace bts { namespace cli {
                           *_out << "** Standby:\n";
 
                       *_out << std::setw(12) << delegate_rec.id;
-                      *_out << std::setw(25) << delegate_rec.name;
+                      *_out << std::setw(25) << pretty_shorten( delegate_rec.name, 24 );
                       
                       *_out << std::setw(20) << delegate_rec.votes_for();
                       *_out << std::setw(20) << delegate_rec.votes_against();
