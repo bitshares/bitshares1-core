@@ -29,11 +29,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
-      if( current_account ) 
-      {
-         if( fc::time_point(current_account->last_update) + one_year < fc::time_point(now) )
-            FC_CAPTURE_AND_THROW( account_already_registered, (name) );  
-      }
+      if( current_account ) FC_CAPTURE_AND_THROW( account_already_registered, (name) );  
 
       string parent_name = get_parent_account_name( this->name );
       if( parent_name.size() )

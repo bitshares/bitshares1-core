@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "p2p"
+
 #include <sstream>
 #include <iomanip>
 #include <deque>
@@ -36,10 +38,6 @@
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
-#ifdef DEFAULT_LOGGER
-# undef DEFAULT_LOGGER
-#endif
-#define DEFAULT_LOGGER "p2p"
 
 namespace bts { namespace net {
   namespace detail
@@ -401,6 +399,8 @@ namespace bts { namespace net {
 
       fc::rate_limiting_group _rate_limiter;
 
+      uint32_t _last_reported_number_of_connections; // number of connections last reported to the client (to avoid sending duplicate messages)
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -527,6 +527,14 @@ namespace bts { namespace net {
         direction = peer_connection_direction::inbound;
         _message_connection.accept();           // perform key exchange
         _remote_endpoint = _message_connection.get_socket().remote_endpoint();
+
+        // firewall-detecting info is pretty useless for inbound connections, but initialize 
+        // it the best we can
+        fc::ip::endpoint local_endpoint = _message_connection.get_socket().local_endpoint();
+        inbound_address = local_endpoint.get_address();
+        inbound_port = local_endpoint.port();
+        outbound_port = inbound_port;
+
         their_state = their_connection_state::just_connected;
         our_state = our_connection_state::just_connected;
         ilog("established inbound connection from ${remote_endpoint}, sending hello", ("remote_endpoint", _message_connection.get_socket().remote_endpoint()));
@@ -650,7 +658,8 @@ namespace bts { namespace net {
       _peer_inactivity_timeout( BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT),
       _most_recent_blocks_accepted(_maximum_number_of_connections),
       _total_number_of_unfetched_items(0),
-      _rate_limiter(0, 0)
+      _rate_limiter(0, 0),
+      _last_reported_number_of_connections(0)
     {
     }
 
@@ -692,7 +701,7 @@ namespace bts { namespace net {
 
     void node_impl::p2p_network_connect_loop()
     {
-      for (;;)
+      while( !_p2p_network_connect_loop_done.canceled() )
       {
         try 
         {
@@ -781,7 +790,7 @@ namespace bts { namespace net {
         {
           elog( "${e}", ("e",e.to_detail_string() ) );
         }
-      }// for( ;; )
+      }// while( ! canceled )
     } 
 
     void node_impl::trigger_p2p_network_connect_loop()
@@ -810,7 +819,7 @@ namespace bts { namespace net {
 
     void node_impl::fetch_sync_items_loop()
     {
-      for (;;)
+      while( !_fetch_sync_items_loop_done.canceled() )
       {
         _sync_items_to_fetch_updated = false;
         dlog("beginning another iteration of the sync items loop");
@@ -854,7 +863,7 @@ namespace bts { namespace net {
           _retrigger_fetch_sync_items_loop_promise->wait();
           _retrigger_fetch_sync_items_loop_promise.reset();
         }
-      }
+      } // while( !canceled )
     }
 
     void node_impl::trigger_fetch_sync_items_loop()
@@ -867,7 +876,7 @@ namespace bts { namespace net {
 
     void node_impl::fetch_items_loop()
     {
-      for (;;)
+      while( !_fetch_item_loop_done.canceled() )
       {
         _items_to_fetch_updated = false;
         dlog("beginning an iteration of fetch items (${count} items to fetch)", ("count", _items_to_fetch.size()));
@@ -906,7 +915,7 @@ namespace bts { namespace net {
           _retrigger_fetch_item_loop_promise->wait();
           _retrigger_fetch_item_loop_promise.reset();
         }
-      }
+      } // while ( !canceled )
     }
 
     void node_impl::trigger_fetch_items_loop()
@@ -918,7 +927,7 @@ namespace bts { namespace net {
 
     void node_impl::advertise_inventory_loop()
     {
-      for (;;)
+      while( !_advertise_inventory_loop_done.canceled() )
       {
         dlog("beginning an iteration of advertise inventory");
         // swap inventory into local variable, clearing the node's copy
@@ -965,7 +974,7 @@ namespace bts { namespace net {
           _retrigger_advertise_inventory_loop_promise->wait();
           _retrigger_advertise_inventory_loop_promise.reset();
         }
-      }
+      } // while( !canceled )
     }
 
     void node_impl::trigger_advertise_inventory_loop()
@@ -976,7 +985,7 @@ namespace bts { namespace net {
 
     void node_impl::terminate_inactive_connections_loop()
     {
-      for (;;)
+      while( !_terminate_inactive_connections_loop_done.canceled() )
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
         std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
@@ -1039,17 +1048,17 @@ namespace bts { namespace net {
           peer->close_connection();
 
         fc::usleep(fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2));
-      }
+      } // while( !canceled )
     }
 
     bool node_impl::is_accepting_new_connections()
     {
-      return get_number_of_connections() <= _maximum_number_of_connections;
+      return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() <= _maximum_number_of_connections;
     }
 
     bool node_impl::is_wanting_new_connections()
     {
-      return get_number_of_connections() < _desired_number_of_connections;
+      return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() < _desired_number_of_connections;
     }
 
     uint32_t node_impl::get_number_of_connections()
@@ -1310,7 +1319,7 @@ namespace bts { namespace net {
           }
           else
           {
-            dlog("peer is firewalled: they think their outbound endpoing is ${reported_endpoint}, but I see it as ${actual_endpoint}",
+            dlog("peer is firewalled: they think their outbound endpoint is ${reported_endpoint}, but I see it as ${actual_endpoint}",
                  ("reported_endpoint", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port))
                  ("actual_endpoint", peers_actual_outbound_endpoint));
             originating_peer->is_firewalled = firewalled_state::firewalled;
@@ -1976,7 +1985,12 @@ namespace bts { namespace net {
       ilog("Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint()));
       display_current_connections();
       trigger_p2p_network_connect_loop();
-      _delegate->connection_count_changed(_active_connections.size());
+
+      if (_active_connections.size() != _last_reported_number_of_connections)
+      {
+        _delegate->connection_count_changed(_active_connections.size());
+        _last_reported_number_of_connections = _active_connections.size();
+      }
     }
 
     void node_impl::process_backlog_of_sync_blocks()
@@ -2342,18 +2356,33 @@ namespace bts { namespace net {
     void node_impl::new_peer_just_added(const peer_connection_ptr& peer)
     {
       start_synchronizing_with_peer(peer);
-      _delegate->connection_count_changed(_active_connections.size());
+      if (_active_connections.size() != _last_reported_number_of_connections)
+      {
+        _delegate->connection_count_changed(_active_connections.size());
+        _last_reported_number_of_connections = _active_connections.size();
+      }
     }
 
     void node_impl::close()
     {
-
       _tcp_server.close();
       if (_accept_loop_complete.valid())
       {
         _accept_loop_complete.cancel();
         _accept_loop_complete.wait();
       }
+      
+      _p2p_network_connect_loop_done.cancel();
+      _fetch_sync_items_loop_done.cancel();
+      _fetch_item_loop_done.cancel();
+      _advertise_inventory_loop_done.cancel();
+      _terminate_inactive_connections_loop_done.cancel();
+      
+      try { _p2p_network_connect_loop_done.wait(); } catch ( ... ){}
+      try { _fetch_sync_items_loop_done.wait(); } catch ( ... ) {}
+      try { _fetch_item_loop_done.wait(); } catch(...){}
+      try { _advertise_inventory_loop_done.wait(); } catch ( ... ){}
+      try { _terminate_inactive_connections_loop_done.wait(); } catch (...){}
     }
 
     void node_impl::accept_connection_task(peer_connection_ptr new_peer)
@@ -2375,16 +2404,17 @@ namespace bts { namespace net {
           _handshaking_connections.insert(new_peer);
           _rate_limiter.add_tcp_socket(&new_peer->get_socket());
 
+          /**
+              TODO:
+              Handshaking connections needs to be converted to a map from new_peer to future<void>
+              and capture this future.  Then when we exit all handshaking peers must be disconnected
+              and waited on.
+           */
           fc::async([=]() { accept_connection_task(new_peer); });
 
           // limit the rate at which we accept connections to mitigate DOS attacks
           fc::usleep(fc::microseconds(1000 * 10));
-        }
-        catch (const fc::exception& e)
-        {
-          elog("fatal: error opening socket for rpc connection: ${e}", ("e", e.to_detail_string()));
-          throw;
-        }
+        } FC_CAPTURE_AND_RETHROW( ) 
       }
     } // accept_loop()
 
@@ -3109,4 +3139,6 @@ namespace bts { namespace net {
   { 
      network_nodes.push_back(node_delegate_to_add);
   }      
+  
+  void node::close() { my->close(); }
 } } // end namespace bts::net

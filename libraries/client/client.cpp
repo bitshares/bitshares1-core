@@ -75,7 +75,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
    // parse command-line options
    program_options::options_description option_config("Allowed options");
    option_config.add_options()("data-dir", program_options::value<string>(), "configuration data directory")
-                              ("input-log", program_options::value<std::string>(), 
+                              ("input-log", program_options::value< vector<string> >(), 
                                  "log file with CLI commands to execute at startup")
                               ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
@@ -98,7 +98,10 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                  "fresh copy of the entire blockchain from the network")
                               ("version", "print version information and exit")
                               ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000), 
-                                  "Limit total bandwidth to this many bytes per second");
+                                  "Limit total bandwidth to this many bytes per second")
+                              ("min-delegate-connection-count", program_options::value<uint32_t>(), 
+                                  "Override the default minimum delegate connection count, used to set up "
+                                  "a test network with less than five delegates");
 
 
   program_options::variables_map option_variables;
@@ -205,10 +208,16 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
-    
+
+    fc::logger_config dlc_user;
+    dlc_user.level = fc::log_level::debug;
+    dlc_user.name = "user";
+    dlc_user.appenders.push_back("user");
+        
     cfg.loggers.push_back(dlc);
     cfg.loggers.push_back(dlc_rpc);
     cfg.loggers.push_back(dlc_p2p);
+    cfg.loggers.push_back(dlc_user);
     
     return cfg;
 }
@@ -283,8 +292,33 @@ config load_config( const fc::path& datadir )
 
 
 
-   using namespace bts::wallet;
-   using namespace bts::blockchain;
+  using namespace bts::wallet;
+  using namespace bts::blockchain;
+
+  // wrap the exception database in a class that logs the exception to the normal logging stream 
+  // in addition to just storing it
+  class logging_exception_db
+  {
+  public:
+    typedef bts::db::level_map<fc::time_point,fc::exception> exception_leveldb_type;
+  private:
+    exception_leveldb_type _db;
+  public:
+    void open(const fc::path& filename, bool create = true)
+    {
+      _db.open(filename, create);
+    }
+    void store(const fc::exception& e)
+    {
+      elog("storing error in database: ${e}", ("e", e));
+      _db.store(fc::time_point::now(), e);
+    }
+    exception_leveldb_type::iterator lower_bound(const fc::time_point& time) const
+    {
+      return _db.lower_bound(time);
+    }
+  };
+
 
   typedef boost::iostreams::tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef boost::iostreams::stream<TeeDevice> TeeStream;
@@ -314,7 +348,9 @@ config load_config( const fc::path& datadir )
                         fc::scoped_lock<boost::mutex> lock(_history_lock);
                         _history.emplace_back( message );
                         if( _client_impl._cli )
-                           _client_impl._cli->display_status_message( message );
+                          _client_impl._cli->display_status_message( message );
+                        else
+                          std::cout << message << "\n";
                      }
 
                      // call a callback to the client...
@@ -345,7 +381,9 @@ config load_config( const fc::path& datadir )
             fc::shared_ptr<user_appender> _user_appender;
 
             client_impl(bts::client::client* self) :
-              _self(self),_cli()
+              _self(self),
+              _cli(nullptr),
+              _min_delegate_connection_count(BTS_MIN_DELEGATE_CONNECTION_COUNT)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
                 fc::logger::get( "user" ).add_appender( _user_appender );
@@ -416,8 +454,10 @@ config load_config( const fc::path& datadir )
             fc::future<void>                                            _delegate_loop_complete;
             fc::time_point                                              _last_sync_status_message_time;
 
-            bts::db::level_map<fc::time_point,fc::exception>            _exception_db;
+            config                                                      _config;
 
+            logging_exception_db                                        _exception_db;
+            uint32_t                                                    _min_delegate_connection_count;
             //-------------------------------------------------- JSON-RPC Method Implementations
             // include all of the method overrides generated by the bts_api_generator
             // this file just contains a bunch of lines that look like:
@@ -507,9 +547,9 @@ config load_config( const fc::path& datadir )
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                  FC_ASSERT( network_get_connection_count() >= BTS_MIN_DELEGATE_CONNECTION_COUNT,
+                  FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
                              "Client must have ${count} connections before you may produce blocks",
-                             ("count",BTS_MIN_DELEGATE_CONNECTION_COUNT) );
+                             ("count",_min_delegate_connection_count) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
 
                   fc::usleep( (next_block_time - now) );
@@ -521,7 +561,7 @@ config load_config( const fc::path& datadir )
                } 
                catch ( const fc::exception& e )
                {
-                  _exception_db.store( fc::time_point::now(), e);
+                  _exception_db.store(e);
                }
             }
             fc::usleep( fc::seconds(1) );
@@ -625,7 +665,7 @@ config load_config( const fc::path& datadir )
          } 
          catch ( const fc::exception& e )
          {
-            _exception_db.store( fc::time_point::now(), e);
+            _exception_db.store(e);
             throw;
          }
        }
@@ -638,7 +678,7 @@ config load_config( const fc::path& datadir )
           } 
           catch ( const fc::exception& e )
           {
-             _exception_db.store( fc::time_point::now(), e );
+             _exception_db.store(e);
              throw;
           }
        }
@@ -926,9 +966,9 @@ config load_config( const fc::path& datadir )
       void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
       {
         if (error)
-          _exception_db.store(fc::time_point::now(), *error);
+          _exception_db.store(*error);
         else
-          _exception_db.store(fc::time_point::now(), fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
+          _exception_db.store(fc::exception(FC_LOG_MESSAGE(error, message.c_str())));
         ulog( message );
       }
 
@@ -1698,6 +1738,8 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::stop()
     {
+      elog( "stop...");
+      _p2p_node->close();
       _rpc_server->shutdown_rpc_server();
     }
 
@@ -1772,9 +1814,6 @@ config load_config( const fc::path& datadir )
       fc::path datadir = bts::client::get_data_dir(option_variables);
 
 
-      auto cfg   = load_config(datadir);
-      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
-      fc::configure_logging( cfg.logging );
 
       load_and_configure_chain_database(datadir, option_variables);
 
@@ -1783,11 +1822,14 @@ config load_config( const fc::path& datadir )
         genesis_file_path = option_variables["genesis-config"].as<string>();
 
       this->open( datadir, genesis_file_path );
+      if (option_variables.count("min-delegate-connection-count"))
+        my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
       this->run_delegate();
 
-      my->configure_rpc_server(cfg,option_variables);
-
       this->configure( datadir );
+      
+      my->configure_rpc_server(my->_config,option_variables);
+
 
       if (option_variables.count("maximum-number-of-connections"))
       {
@@ -1852,11 +1894,11 @@ config load_config( const fc::path& datadir )
       }
       else if (!option_variables.count("disable-default-peers"))
       {
-        for (string default_peer : cfg.default_peers)
+        for (string default_peer : my->_config.default_peers)
           this->connect_to_peer(default_peer);
       }
 
-      if( option_variables.count("daemon") || cfg.ignore_console )
+      if( option_variables.count("daemon") || my->_config.ignore_console )
       {
         std::cout << "Running in daemon mode, ignoring console\n";
         my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
@@ -1869,7 +1911,10 @@ config load_config( const fc::path& datadir )
         
         if (option_variables.count("input-log"))
         {
-          string input_commands = extract_commands_from_log_file(option_variables["input-log"].as<string>());
+          std::vector<string> input_logs = option_variables["input-log"].as< std::vector<string> >();
+          string input_commands;
+          for (auto input_log : input_logs)            
+            input_commands += extract_commands_from_log_file(input_log);
           my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
@@ -1879,10 +1924,7 @@ config load_config( const fc::path& datadir )
         my->_console_log.open(console_log_file.string());
         my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));; 
         my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
-        //force flushing to console and log file whenever cin input is required
-        std::cin.tie( my->_tee_stream.get() );
         
-
         my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), my->_tee_stream.get() );
         //echo command input to the log file
         my->_cli->set_input_stream_log(my->_console_log);
@@ -1920,8 +1962,14 @@ config load_config( const fc::path& datadir )
         my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
     }
     
-    void client::configure(const fc::path& configuration_directory)
+    void client::configure( const fc::path& configuration_directory )
     {
+      my->_config   = load_config(configuration_directory);
+      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+      fc::configure_logging( my->_config.logging );
+      // re-register the _user_appender which was overwritten by configure_logging()
+      fc::logger::get( "user" ).add_appender( my->_user_appender );
+      
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
     }
@@ -2141,9 +2189,9 @@ config load_config( const fc::path& datadir )
     bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
     {
         auto state = blockchain_security_state();
-        auto required_confirmations = _chain_db->get_required_confirmations();
+        int64_t required_confirmations = _chain_db->get_required_confirmations();
         auto participation_rate = _chain_db->get_average_delegate_participation();
-        state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
             && participation_rate > 90)
@@ -2313,7 +2361,7 @@ config load_config( const fc::path& datadir )
 
    vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
                                                                        const string& base_symbol,
-                                                                       int64_t limit  )
+                                                                       uint32_t limit  )
    {
       return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
    }

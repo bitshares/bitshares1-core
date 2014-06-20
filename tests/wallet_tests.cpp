@@ -1,4 +1,3 @@
-#define BOOST_TEST_MODULE BlockchainTests2cc
 #include <boost/test/unit_test.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/genesis_config.hpp>
@@ -17,6 +16,7 @@
 #include <fc/network/http/connection.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/bind.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -408,7 +408,7 @@ void create_genesis_block(fc::path genesis_json_file)
 
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());
-
+   std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -426,10 +426,16 @@ void create_genesis_block(fc::path genesis_json_file)
 
       //output public/private key pair for each delegate to stdout
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );
-      std::cout << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
+      key_stream << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
    }
 
    fc::json::save_to_file( config, genesis_json_file);
+}
+
+BOOST_AUTO_TEST_CASE(make_genesis_block)
+{
+  fc::path genesis_json_file =  "test_genesis.json";
+  create_genesis_block(genesis_json_file);
 }
 
 void run_regression_test(fc::path test_dir, bool with_network)
@@ -509,7 +515,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //run client with cmdline options
       if (with_network)
       {
-        FC_ASSERT("Not implemented yet!")
+        FC_ASSERT(false, "Not implemented yet!")
       }
       else
       {
@@ -547,38 +553,6 @@ void run_regression_test(fc::path test_dir, bool with_network)
   boost::filesystem::current_path(original_working_directory);
 }
 
-void run_all_regression_tests(bool with_network)
-{
-  //save off current working directory and change current working directory to regression_tests directory
-  fc::path original_working_directory = boost::filesystem::current_path();
-  fc::path regression_tests_dir = "regression_tests";
-  boost::filesystem::current_path(regression_tests_dir.string());
-
-  //for each test directory in regression_tests directory
-    fc::path test_dir;
-    fc::directory_iterator end_itr; // constructs terminating position for iterator
-    for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
-    {
-      if (fc::is_directory( *directory_itr ))
-      {
-        run_regression_test( *directory_itr, with_network );
-      }
-    }
-
-  //restore original directory
-  boost::filesystem::current_path(original_working_directory.string());
-}
-
-BOOST_AUTO_TEST_CASE( regression_tests_without_network )
-{
-  run_all_regression_tests(false);
-}
-
-BOOST_AUTO_TEST_CASE(regression_tests)
-{
-  run_all_regression_tests(true);
-}
-
 #if 0
 #ifdef NDEBUG
 
@@ -604,3 +578,44 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
 
 #endif // NDEBUG
 #endif // 0
+
+boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] ) 
+{
+  boost::unit_test::framework::master_test_suite().p_name.value = "BlockchainTests2cc";
+
+  boost::unit_test::test_suite* regression_tests_without_network = BOOST_TEST_SUITE("regression_tests_without_network");
+  boost::unit_test::test_suite* regression_tests_with_network = BOOST_TEST_SUITE("regression_tests_with_network");
+
+  //save off current working directory and change current working directory to regression_tests directory
+  fc::path original_working_directory = boost::filesystem::current_path();
+  fc::path regression_tests_dir = "regression_tests";
+  boost::filesystem::current_path(regression_tests_dir.string());
+
+  //for each test directory in regression_tests directory
+  fc::directory_iterator end_itr; // constructs terminating position for iterator
+  for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
+    if ( fc::is_directory( *directory_itr ) && (directory_itr->filename().string()[0] != '_') )
+    {
+      fc::path test_dir(regression_tests_dir / *directory_itr);
+      boost::unit_test::test_unit* test_without_network = 
+        boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
+                                                                                   regression_tests_dir / *directory_itr, 
+                                                                                   false)), 
+                                                                       directory_itr->filename().string());
+      boost::unit_test::test_unit* test_with_network = 
+        boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
+                                                                                   regression_tests_dir / *directory_itr, 
+                                                                                   true)), 
+                                                                       directory_itr->filename().string());
+      regression_tests_without_network->add(test_without_network);
+      regression_tests_with_network->add(test_with_network);
+    }
+
+  //restore original directory
+  boost::filesystem::current_path(original_working_directory.string());
+
+  boost::unit_test::framework::master_test_suite().add(regression_tests_without_network);
+  boost::unit_test::framework::master_test_suite().add(regression_tests_with_network);
+
+  return 0;
+}

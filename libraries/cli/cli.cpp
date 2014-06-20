@@ -1030,7 +1030,7 @@ namespace bts { namespace cli {
                 *_out << "-------------------------------------------------------------\n";
                 for( auto balance_rec : balance_recs )
                 {
-                    *_out << std::setw(18) << balance_rec.balance;
+                    *_out << std::setw(18) << _client->get_chain()->to_pretty_asset( asset(balance_rec.balance, 0) );
                     switch (withdraw_condition_types(balance_rec.condition.type))
                     {
                         case (withdraw_signature_type):
@@ -1527,6 +1527,8 @@ namespace bts { namespace cli {
     {  try {
       FC_ASSERT( input_stream != nullptr );
       _input_stream = input_stream;
+      //force flushing to console and log file whenever input is read
+      _input_stream->tie( _out );
       string line = get_line(get_prompt());
       while (_input_stream->good() && !_quit )
       {

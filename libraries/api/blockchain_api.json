@@ -285,7 +285,7 @@
            },
            {
               "name" : "limit",
-              "type" : "int64_t",
+              "type" : "uint32_t",
               "description" : "the maximum number of items to return, -1 for all",
               "default_value" : "-1"
            }
