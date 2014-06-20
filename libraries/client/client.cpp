@@ -382,6 +382,7 @@ config load_config( const fc::path& datadir )
 
             client_impl(bts::client::client* self) :
               _self(self),
+              _cli(nullptr),
               _min_delegate_connection_count(BTS_MIN_DELEGATE_CONNECTION_COUNT)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
