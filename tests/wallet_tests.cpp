@@ -594,7 +594,7 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
   //for each test directory in regression_tests directory
   fc::directory_iterator end_itr; // constructs terminating position for iterator
   for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
-    if (fc::is_directory( *directory_itr ))
+    if ( fc::is_directory( *directory_itr ) && (directory_itr->filename().string()[0] != '_') )
     {
       fc::path test_dir(regression_tests_dir / *directory_itr);
       boost::unit_test::test_unit* test_without_network = 
