@@ -509,7 +509,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //run client with cmdline options
       if (with_network)
       {
-        FC_ASSERT("Not implemented yet!")
+        FC_ASSERT(false, "Not implemented yet!")
       }
       else
       {
@@ -578,7 +578,7 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
   boost::unit_test::framework::master_test_suite().p_name.value = "BlockchainTests2cc";
 
   boost::unit_test::test_suite* regression_tests_without_network = BOOST_TEST_SUITE("regression_tests_without_network");
-  boost::unit_test::test_suite* regression_tests_with_network = BOOST_TEST_SUITE("regression_tests_without_network");
+  boost::unit_test::test_suite* regression_tests_with_network = BOOST_TEST_SUITE("regression_tests_with_network");
 
   //save off current working directory and change current working directory to regression_tests directory
   fc::path original_working_directory = boost::filesystem::current_path();
