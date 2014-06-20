@@ -1531,7 +1531,12 @@ namespace bts { namespace blockchain {
             auto delegate_id = n % delegate_ids.size() + 1;
             balance_record initial_balance( item.first,
                                             asset( share_type( initial.low_bits() ), 0 ),
+                                #if BTS_BLOCKCHAIN_VERSION > 103 
+                                            -delegate_id );
+                                #else
+                                #warning delegate id must be negative on next chain launch, do not forget to change this.
                                             delegate_id );
+                                #endif
             // in case of redundant balances
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
