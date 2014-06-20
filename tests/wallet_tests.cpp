@@ -595,12 +595,12 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
         boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
                                                                                    regression_tests_dir / *directory_itr, 
                                                                                    false)), 
-                                                                       directory_itr->string());
+                                                                       directory_itr->filename().string());
       boost::unit_test::test_unit* test_with_network = 
         boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
                                                                                    regression_tests_dir / *directory_itr, 
                                                                                    true)), 
-                                                                       directory_itr->string());
+                                                                       directory_itr->filename().string());
       regression_tests_without_network->add(test_without_network);
       regression_tests_with_network->add(test_with_network);
     }
