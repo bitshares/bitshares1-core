@@ -8,6 +8,11 @@ namespace bts { namespace blockchain {
    {
    }
 
+   uint32_t pending_chain_state::get_head_block_num() const{
+        auto state = _prev_state.lock();
+        return state->get_head_block_num() + 1;
+}
+
    fc::ripemd160  pending_chain_state::get_current_random_seed()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();

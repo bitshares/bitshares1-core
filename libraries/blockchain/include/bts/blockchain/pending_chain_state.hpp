@@ -76,6 +76,7 @@ namespace bts { namespace blockchain {
          /** convert the state to a variant */
          virtual variant                to_variant()const;
 
+         virtual uint32_t                   get_head_block_num()const override;
 
          unordered_map< asset_id_type,         asset_record>            assets;
          unordered_map< account_id_type,       account_record>          accounts;

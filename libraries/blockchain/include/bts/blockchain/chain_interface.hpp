@@ -119,6 +119,8 @@ namespace bts { namespace blockchain {
 
          virtual proposal_id_type           last_proposal_id()const;
          virtual proposal_id_type           new_proposal_id();
+
+         virtual uint32_t                   get_head_block_num()const = 0;
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;

@@ -124,7 +124,7 @@ namespace bts { namespace blockchain {
          full_block                  get_block( uint32_t block_num )const;
          vector<transaction_record>  get_transactions_for_block( const block_id_type& )const;
          signed_block_header      get_head_block()const;
-         uint32_t                 get_head_block_num()const;
+         virtual uint32_t                 get_head_block_num()const override;
          block_id_type            get_head_block_id()const;
          block_id_type            get_block_id( uint32_t block_num )const;
          oblock_record            get_block_record( const block_id_type& block_id )const;
