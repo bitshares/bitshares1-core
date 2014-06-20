@@ -1534,7 +1534,11 @@ namespace bts { namespace blockchain {
                                 #if BTS_BLOCKCHAIN_VERSION > 103 
                                             -delegate_id );
                                 #else
-                                #warning delegate id must be negative on next chain launch, do not forget to change this.
+#                                 ifdef _MSC_VER
+#                                  pragma message("delegate id must be negative on next chain launch, do not forget to change this.")
+#                                 else
+                                   #warning delegate id must be negative on next chain launch, do not forget to change this.
+#                                 endif
                                             delegate_id );
                                 #endif
             // in case of redundant balances
