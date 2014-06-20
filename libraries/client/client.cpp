@@ -1906,10 +1906,7 @@ config load_config( const fc::path& datadir )
         my->_console_log.open(console_log_file.string());
         my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));; 
         my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
-        //force flushing to console and log file whenever cin input is required
-        std::cin.tie( my->_tee_stream.get() );
         
-
         my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), my->_tee_stream.get() );
         //echo command input to the log file
         my->_cli->set_input_stream_log(my->_console_log);

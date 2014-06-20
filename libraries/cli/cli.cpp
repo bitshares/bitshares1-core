@@ -1527,6 +1527,9 @@ namespace bts { namespace cli {
     {  try {
       FC_ASSERT( input_stream != nullptr );
       _input_stream = input_stream;
+      //force flushing to console and log file whenever input is read
+      if (_input_stream_log)
+        _input_stream->tie( &(*_input_stream_log) );
       string line = get_line(get_prompt());
       while (_input_stream->good() && !_quit )
       {
