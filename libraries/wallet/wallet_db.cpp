@@ -373,19 +373,24 @@ namespace bts{ namespace wallet {
        for( auto id : clear_list ) transactions.erase(id);
    }
 
-   void wallet_db::export_records( std::vector<generic_wallet_record>& records ) const
+   void wallet_db::export_to_json( const path& filename )const
    {
+      FC_ASSERT( !fc::exists( filename ) );
       FC_ASSERT( is_open() );
-      records.clear();
 
+      std::vector<generic_wallet_record> records;
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
           records.push_back( itr.value() );
+
+      fc::json::save_to_file( records, filename, true );
    }
 
-   void wallet_db::import_records( const std::vector<generic_wallet_record>& records )
+   void wallet_db::import_from_json( const path& filename )
    {
+      FC_ASSERT( fc::exists( filename ) );
       FC_ASSERT( is_open() );
 
+      auto records = fc::json::from_file< std::vector<generic_wallet_record> >( filename );
       for( const auto& record : records )
          store_generic_record( record.get_wallet_record_index(), record );
    }
@@ -698,7 +703,7 @@ namespace bts{ namespace wallet {
       my->_records.remove( index );
    }
 
-   bool                           wallet_db::validate_password( const fc::sha512& password )const
+   bool wallet_db::validate_password( const fc::sha512& password )const
    {
       FC_ASSERT( wallet_master_key );
       return wallet_master_key->validate_password( password );
@@ -710,7 +715,7 @@ namespace bts{ namespace wallet {
       return wallet_master_key->decrypt_key( password );
    }
 
-   void  wallet_db::set_master_key( const extended_private_key& extended_key, 
+   void wallet_db::set_master_key( const extended_private_key& extended_key, 
                                     const fc::sha512& new_password )
    {
       master_key key;

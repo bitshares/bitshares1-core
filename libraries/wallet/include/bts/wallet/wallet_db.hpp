@@ -104,8 +104,8 @@ namespace bts { namespace wallet {
          void rename_account( const string& old_account_name,
                               const string& new_account_name );
 
-         void export_records( std::vector<generic_wallet_record>& records ) const;
-         void import_records( const std::vector<generic_wallet_record>& records );
+         void export_to_json( const path& filename )const;
+         void import_from_json( const path& filename );
 
          bool                           validate_password( const fc::sha512& password )const;
          optional<extended_private_key> get_master_key( const fc::sha512& password    )const;
