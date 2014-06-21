@@ -558,6 +558,7 @@ config load_config( const fc::path& datadir )
 
                   on_new_block(next_block, next_block.id(), false);
                   _p2p_node->broadcast(block_message( next_block ));
+
                } 
                catch ( const fc::exception& e )
                {
@@ -643,6 +644,14 @@ config load_config( const fc::path& datadir )
                    if (sync_mode && !result.is_linked)
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+
+                   if( !sync_mode )
+                   {
+                     // rebroadcast for good measure
+                     auto pending = blockchain_get_pending_transactions();
+                     for( auto trx : pending )
+                        network_broadcast_transaction( trx );
+                   }
             
                    if (_cli && 
                        result.is_included && 
