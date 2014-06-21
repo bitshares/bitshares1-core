@@ -409,6 +409,7 @@ void create_genesis_block(fc::path genesis_json_file)
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());
    std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
+   std::ofstream delegate_key_import_stream(genesis_json_file.string() + ".log");
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -424,9 +425,12 @@ void create_genesis_block(fc::path genesis_json_file)
       config.names.push_back(delegate_account);
       config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
 
-      //output public/private key pair for each delegate to stdout
+      //output public/private key pair for each delegate to a file
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );
       key_stream << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
+      //create a script that imports all the delegate keys into a client
+      delegate_key_import_stream << CLI_PROMPT_SUFFIX " disable_logging" << std::endl;
+      delegate_key_import_stream << CLI_PROMPT_SUFFIX " wallet_import_private_key " << wif_key << " " << delegate_account.name << std::endl;
    }
 
    fc::json::save_to_file( config, genesis_json_file);
@@ -472,7 +476,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     //create one client per line and run each client's input commands
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
-    string line;
+    string line = " --min-delegate-connection-count=0 ";
     fc::future<void> client_done;
     while (std::getline(test_config_file,line))
     {
