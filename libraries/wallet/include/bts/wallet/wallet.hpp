@@ -28,6 +28,7 @@ namespace bts { namespace wallet {
          wallet( chain_database_ptr chain );
          virtual ~wallet();
 
+         //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
          fc::signal<void( bool )>  wallet_lock_state_changed;
 
          /**
