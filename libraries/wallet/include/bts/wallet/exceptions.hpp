@@ -20,6 +20,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( unknown_address,         bts::wallet::wallet_exception, 20013, "unknown address" );
   FC_DECLARE_DERIVED_EXCEPTION( brain_key_too_short,     bts::wallet::wallet_exception, 20014, "brain key is too short" );
   FC_DECLARE_DERIVED_EXCEPTION( password_too_short,      bts::wallet::wallet_exception, 20015, "password too short" );
+  FC_DECLARE_DERIVED_EXCEPTION( invalid_timestamp,       bts::wallet::wallet_exception, 20016, "invalid timestamp" );
   // registered in wallet.cpp
 
 } } // bts::wallet
