@@ -1268,6 +1268,9 @@ namespace bts { namespace wallet {
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
+      if( header.timestamp == fc::time_point_sec() )
+          FC_THROW_EXCEPTION( invalid_timestamp, "Invalid block timestamp! Block production may be disabled" );
+
       auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
       auto delegate_record = my->_blockchain->get_account_record( signing_delegate_id );
       FC_ASSERT( delegate_record.valid() && delegate_record->delegate_info.valid() );
