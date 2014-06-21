@@ -227,6 +227,8 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "short_db" );
           _collateral_db.open( data_dir / "collateral_db" );
 
+           wlog( "....." );
+
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
@@ -868,6 +870,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
    { try {
+      wlog( "....." );
       bool is_new_data_dir = !fc::exists( data_dir );
       try
       {
@@ -887,12 +890,26 @@ namespace bts { namespace blockchain {
              my->_head_block_id = last_block_id;
           }
 
+
+          if( last_block_num == uint32_t(-1) )
+          {
+             close();
+             fc::remove_all( data_dir );
+             fc::create_directories( data_dir );
+             my->open_database( data_dir );
+             my->initialize_genesis(genesis_file);
+          }
+          my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
+
+
           //  process the pending transactions to cache by fees
           auto pending_itr = my->_pending_transaction_db.begin();
+          wlog( "loading pending trx..." );
           while( pending_itr.valid() )
           {
              try {
                 auto trx = pending_itr.value();
+                wlog( " laoding pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
                 auto eval_state = evaluate_transaction( trx );
                 share_type fees = eval_state->get_fees();
@@ -905,19 +922,10 @@ namespace bts { namespace blockchain {
              }
              ++pending_itr;
           }
-
-          if( last_block_num == uint32_t(-1) )
-          {
-             close();
-             fc::remove_all( data_dir );
-             fc::create_directories( data_dir );
-             my->open_database( data_dir );
-             my->initialize_genesis(genesis_file);
-          }
-          my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
       }
       catch( ... )
       {
+          elog( "error opening database" );
           close();
           if( is_new_data_dir ) fc::remove_all( data_dir );
           throw;
