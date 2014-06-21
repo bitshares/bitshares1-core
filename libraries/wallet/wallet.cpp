@@ -760,7 +760,7 @@ namespace bts { namespace wallet {
          lock();
          FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
       }
-      wallet_lock_state_changed( true );
+      wallet_lock_state_changed( false );
 
       if( timeout == microseconds::maximum() )
       {
@@ -819,7 +819,7 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::time_point();
-      wallet_lock_state_changed( false );
+      wallet_lock_state_changed( true );
    }
 
    void wallet::change_passphrase( const string& new_passphrase )
