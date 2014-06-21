@@ -12,8 +12,8 @@ void advance_time( int32_t delta_seconds )
 
 fc::optional<fc::time_point> ntp_time()
 {
-   static fc::ntp ntp_service;
-   return ntp_service.get_time();
+   static fc::ntp* ntp_service = new fc::ntp();
+   return ntp_service->get_time();
 }
 
 fc::time_point_sec now()

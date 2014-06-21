@@ -130,12 +130,13 @@ namespace bts { namespace net {
         node();
         ~node();
 
+        void close();
+        
         void      set_node_delegate( node_delegate* del );
 
         void      load_configuration( const fc::path& configuration_directory );
 
         virtual void      listen_to_p2p_network();
-
         virtual void      connect_to_p2p_network();
 
         /**

@@ -408,7 +408,7 @@ void create_genesis_block(fc::path genesis_json_file)
 
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());
-
+   std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -426,10 +426,16 @@ void create_genesis_block(fc::path genesis_json_file)
 
       //output public/private key pair for each delegate to stdout
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );
-      std::cout << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
+      key_stream << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
    }
 
    fc::json::save_to_file( config, genesis_json_file);
+}
+
+BOOST_AUTO_TEST_CASE(make_genesis_block)
+{
+  fc::path genesis_json_file =  "test_genesis.json";
+  create_genesis_block(genesis_json_file);
 }
 
 void run_regression_test(fc::path test_dir, bool with_network)
@@ -588,7 +594,7 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
   //for each test directory in regression_tests directory
   fc::directory_iterator end_itr; // constructs terminating position for iterator
   for (fc::directory_iterator directory_itr("."); directory_itr != end_itr; ++directory_itr)
-    if (fc::is_directory( *directory_itr ))
+    if ( fc::is_directory( *directory_itr ) && (directory_itr->filename().string()[0] != '_') )
     {
       fc::path test_dir(regression_tests_dir / *directory_itr);
       boost::unit_test::test_unit* test_without_network = 
