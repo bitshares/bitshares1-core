@@ -1,4 +1,4 @@
-//#define DEFAULT_LOGGER "blockchain"
+#define DEFAULT_LOGGER "blockchain"
 
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
