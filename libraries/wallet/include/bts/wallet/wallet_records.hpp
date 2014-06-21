@@ -164,7 +164,6 @@ namespace bts { namespace wallet {
        vector<address>           extra_addresses;
    };
 
-
    struct market_order_status
    {
       market_order_status():proceeds(0){}

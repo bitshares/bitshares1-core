@@ -568,9 +568,19 @@ config load_config( const fc::path& datadir )
          }
        } // delegate_loop
 
-       vector<account_id_type> client_impl::blockchain_list_current_round_active_delegates()
+       map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
        {
-          return _chain_db->current_round_active_delegates();
+          map<account_id_type, string> delegates;
+
+          auto delegate_ids = _chain_db->current_round_active_delegates();
+          for( const auto& delegate_id : delegate_ids )
+          {
+              auto delegate_record = _chain_db->get_account_record( delegate_id );
+              FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+              delegates[ delegate_id ] = delegate_record->name ;
+          }
+
+          return delegates;
        }
 
        vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
@@ -2179,9 +2189,9 @@ config load_config( const fc::path& datadir )
     bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
     {
         auto state = blockchain_security_state();
-        auto required_confirmations = _chain_db->get_required_confirmations();
+        int64_t required_confirmations = _chain_db->get_required_confirmations();
         auto participation_rate = _chain_db->get_average_delegate_participation();
-        state.estimated_confirmation_seconds = required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
             && participation_rate > 90)
@@ -2351,7 +2361,7 @@ config load_config( const fc::path& datadir )
 
    vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
                                                                        const string& base_symbol,
-                                                                       int64_t limit  )
+                                                                       uint32_t limit  )
    {
       return _chain_db->get_market_bids( quote_symbol, base_symbol, limit );
    }

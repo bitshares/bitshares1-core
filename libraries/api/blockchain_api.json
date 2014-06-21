@@ -285,7 +285,7 @@
            },
            {
               "name" : "limit",
-              "type" : "int64_t",
+              "type" : "uint32_t",
               "description" : "the maximum number of items to return, -1 for all",
               "default_value" : "-1"
            }
@@ -296,7 +296,7 @@
       {
          "method_name" : "blockchain_list_current_round_active_delegates",
          "description" : "returns the order of delegates that is fixed for the current round",
-         "return_type" : "account_id_array",
+         "return_type" : "map<account_id_type, string>",
          "parameters"  : [],
          "aliases"     : ["current_delegates"],
          "prerequisites" : ["json_authenticated"]
