@@ -52,6 +52,15 @@ Building BitShares Toolkit on OS X 10.9
     cd bitshares_toolkit
     git submodule init
     git submodule update
+    cd programs
     cmake -DCMAKE_PREFIX_PATH=/usr/local/ssl .
     make
 
+8) To build the Desktop Client
+
+    TODO: describe Install Node
+
+    git clone git@github.com:BitShares/web_wallet.git
+    git clone git@github.com:BitShares/qt_wallet.git
+    export CMAKE_PREFIX_PATH=~/Qt/5.3/
+    cmake -DINCLUDE_QT_WALLET .
