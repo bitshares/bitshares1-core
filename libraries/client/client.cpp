@@ -1011,6 +1011,12 @@ config load_config( const fc::path& datadir )
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
     { try {
+        my->_config   = load_config(data_dir);
+        //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+        fc::configure_logging( my->_config.logging );
+        // re-register the _user_appender which was overwritten by configure_logging()
+        fc::logger::get( "user" ).add_appender( my->_user_appender );
+
         my->_exception_db.open( data_dir / "exceptions", true );
         my->_chain_db->open( data_dir / "chain", genesis_file_path );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
@@ -1836,8 +1842,8 @@ config load_config( const fc::path& datadir )
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
 
-
-
+      // this just clears the database if the command line says
+      // TODO: rename it to smething better
       load_and_configure_chain_database(datadir, option_variables);
 
       fc::optional<fc::path> genesis_file_path;
@@ -1987,12 +1993,6 @@ config load_config( const fc::path& datadir )
     
     void client::configure( const fc::path& configuration_directory )
     {
-      my->_config   = load_config(configuration_directory);
-      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
-      fc::configure_logging( my->_config.logging );
-      // re-register the _user_appender which was overwritten by configure_logging()
-      fc::logger::get( "user" ).add_appender( my->_user_appender );
-      
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
     }
