@@ -227,7 +227,7 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "short_db" );
           _collateral_db.open( data_dir / "collateral_db" );
 
-           wlog( "....." );
+          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
@@ -2002,6 +2002,11 @@ namespace bts { namespace blockchain {
        ilog( "end of db" );
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+   pending_chain_state_ptr chain_database::get_pending_state()const
+   {
+      return my->_pending_trx_state;
+   }
 
 
 } } // namespace bts::blockchain
