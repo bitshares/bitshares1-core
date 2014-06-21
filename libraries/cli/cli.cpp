@@ -882,10 +882,11 @@ namespace bts { namespace cli {
                       *_out << std::setw(20) << "NET VOTES";
                       *_out << std::setw(16) << "BLOCKS PRODUCED";
                       *_out << std::setw(16) << "BLOCKS MISSED";
+                      *_out << std::setw(20) << "PRODUCTION RATIO";
                       *_out << std::setw(16) << "LAST BLOCK #";
                       *_out << std::setw(20) << "TOTAL PAY";
                       _out->put('\n');
-                      for (int i=0; i < 128; ++i)
+                      for (int i=0; i < 148; ++i)
                           _out->put('-');
                       _out->put('\n');
 
@@ -896,7 +897,8 @@ namespace bts { namespace cli {
                             << std::setw(20) << (fc::variant(double(record.votes_against())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(16) << record.delegate_info->blocks_produced
-                            << std::setw(16) << record.delegate_info->blocks_missed;
+                            << std::setw(16) << record.delegate_info->blocks_missed
+                            << std::setw(20) << std::setprecision(4) << (double(record.delegate_info->blocks_produced) / (record.delegate_info->blocks_produced + record.delegate_info->blocks_missed));
 
                             if( last_block_produced != uint32_t( -1 ) )
                                 *_out << std::setw(16) << last_block_produced;
