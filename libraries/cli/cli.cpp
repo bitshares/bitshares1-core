@@ -911,8 +911,8 @@ namespace bts { namespace cli {
                       *_out << "This account is not a delegate.\n";
                   }
 
-                  if(record.meta_data)
-                      *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data);
+                  if(!record.public_data.is_null())
+                      *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data) << "\n";
               }
               else if (method_name == "blockchain_list_proposals")
               {
