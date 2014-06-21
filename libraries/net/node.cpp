@@ -2157,7 +2157,7 @@ namespace bts { namespace net {
           // for now, we assume an "ordinary" message won't cause us to switch forks ( which
           // is currently the case.  if this changes, add some logic to handle it here )
           //assert( !message_caused_fork_switch );
-           _delegate->handle_message(message_to_process, false );
+          _delegate->handle_message(message_to_process, false );
           message_validated_time = fc::time_point::now();
         }
         catch ( fc::exception& e )
