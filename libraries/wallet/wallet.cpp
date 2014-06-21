@@ -583,6 +583,8 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey )
    { try {
+      if( !is_valid_account_name(wallet_name))
+          FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
       if( fc::exists( wallet_file_path ) )
           FC_THROW_EXCEPTION( wallet_already_exists, "Wallet name already exists!", ("wallet_name",wallet_name) );
@@ -659,7 +661,7 @@ namespace bts { namespace wallet {
    void wallet::open( const string& wallet_name )
    { try {
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
-      if ( !fc::exists( wallet_file_path ) )
+      if ( !is_valid_account_name(wallet_name) || !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
       try
