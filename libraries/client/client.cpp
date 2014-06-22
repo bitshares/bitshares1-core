@@ -79,7 +79,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                  "log file with CLI commands to execute at startup")
                               ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
-                              ("maximum-number-of-connections", program_options::value<uint16_t>(), 
+                              ("max-connections", program_options::value<uint16_t>(),
                                   "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
@@ -1856,16 +1856,16 @@ config load_config( const fc::path& datadir )
       this->run_delegate();
 
       this->configure( datadir );
-      
-      my->configure_rpc_server(my->_config,option_variables);
 
-
-      if (option_variables.count("maximum-number-of-connections"))
+      if (option_variables.count("max-connections"))
       {
+        my->_config.maximum_number_of_connections = option_variables["max-connections"].as<uint16_t>();
         fc::mutable_variant_object params;
-        params["maximum_number_of_connections"] = option_variables["maximum-number-of-connections"].as<uint16_t>();
+        params["maximum_number_of_connections"] = my->_config.maximum_number_of_connections;
         this->network_set_advanced_node_parameters(params);
       }
+
+      my->configure_rpc_server(my->_config,option_variables);
 
       if (option_variables.count("p2p-port"))
       {
