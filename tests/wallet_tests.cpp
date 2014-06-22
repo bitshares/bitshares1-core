@@ -409,7 +409,9 @@ void create_genesis_block(fc::path genesis_json_file)
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());
    std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
+   //create a script for importing the delegate keys
    std::ofstream delegate_key_import_stream(genesis_json_file.string() + ".log");
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output false" << std::endl;
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -428,10 +430,10 @@ void create_genesis_block(fc::path genesis_json_file)
       //output public/private key pair for each delegate to a file
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );
       key_stream << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
-      //create a script that imports all the delegate keys into a client
-      delegate_key_import_stream << CLI_PROMPT_SUFFIX " disable_logging" << std::endl;
-      delegate_key_import_stream << CLI_PROMPT_SUFFIX " wallet_import_private_key " << wif_key << " " << delegate_account.name << std::endl;
+      //add command to import the delegate keys into a client
+      delegate_key_import_stream << CLI_PROMPT_SUFFIX " wallet_import_private_key " << wif_key << " " << delegate_account.name << " false" << std::endl;
    }
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output true" << std::endl;
 
    fc::json::save_to_file( config, genesis_json_file);
 }

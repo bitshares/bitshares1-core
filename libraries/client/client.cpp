@@ -2104,6 +2104,12 @@ config load_config( const fc::path& datadir )
        return _wallet->create_account( account_name, private_data );
     }
 
+    void client_impl::enable_output(bool enable_flag)
+    {
+      _cli->enable_output(enable_flag);
+    }
+
+
     fc::variant_object client_impl::about() const
     {
       return bts::client::version_info();

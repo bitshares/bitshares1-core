@@ -61,6 +61,7 @@ namespace bts { namespace cli {
 
             boost::iostreams::stream< boost::iostreams::null_sink > nullstream;
             
+            std::ostream*                  _saved_out;
             std::ostream*                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
             std::istream*                  _command_script;
             std::istream*                  _input_stream;
@@ -1385,6 +1386,7 @@ namespace bts { namespace cli {
     ,show_raw_output(false)
     ,_daemon_mode(false)
     ,nullstream(boost::iostreams::null_sink())
+    , _saved_out(nullptr)
     ,_out(output_stream ? output_stream : &nullstream)
     ,_command_script(command_script)
     {
@@ -1596,6 +1598,24 @@ namespace bts { namespace cli {
   {
      ilog( "waiting on server to quit" );
      my->_rpc_server->wait_till_rpc_server_shutdown();
+  }
+
+  void cli::enable_output(bool enable_output)
+  {
+    if (!enable_output)
+    { //save off original output and set output to nullstream
+      my->_saved_out = my->_out;
+      my->_out = &my->nullstream;
+    }
+    else
+    { //can only enable output if it was previously disabled
+      if (my->_saved_out)
+      {
+        my->_out = my->_saved_out;
+        my->_saved_out = nullptr;
+      }
+    }
+    
   }
 
   bool cli::execute_command_line( const string& line, std::ostream* output)
