@@ -68,7 +68,7 @@ Currently, regression tests are inappropriately located in "wallet_test".
 To run the tests, run:
 
 @code
-cd bitshares_toolkit\test
+cd bitshares_toolkit\tests
 wallet_tests  -t regression_tests_without_network
 @endcode
 
@@ -89,7 +89,17 @@ To create a regression test, you need to do perform the following steps:
    be involved in your test, and copy the console.log for that client to your
    test directory, renaming the log files so that they don't conflict with each other.
    You can add delays between the execution of commands in your script
-   using the "wait" command (e.g. "wait 60" to wait 60 seconds before executing the next command).   
+   using the "wait" command (e.g. "wait 60" to wait 60 seconds before executing the next command).
+   To record a session, you should be running a client that is configured to use the "test genesis
+   block" and that will just connect up to your other "test clients". The test genesis block is
+   located in bitshares_toolkit\tests\test_genesis.json. The public/private key pairs for
+   the delegates in this test genesis block are stored in 
+   bitshares_toolkit\tests\test_genesis.json.keyparis. These two files were originally created
+   by running "wallet_tests.exe --t make_test_genesis_block". To record a test log session with
+   one or more clients, you can run these batch scripts: client0.bat, client1.bat, client2.bat.
+   These scripts will spawn clients that just run locally and connect to each other. They store
+   their datadirs in bitshares_toolkit\regression_tests\new_test, so be sure you delete this directory
+   before you commit.
 3. Generally, you should type "quit" as the last line in your script to avoid the test
    stopping at a command prompt and prompting for console input after the script finishes.
    However, you may want to temporarily remove the quit from a test when you'd like to
