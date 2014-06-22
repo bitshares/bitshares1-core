@@ -177,8 +177,9 @@ namespace bts { namespace wallet {
                                                  signed_transaction& trx, 
                                                  unordered_set<address>& required_signatures )
       { try {
+         auto pending_state = _blockchain->get_pending_state();
          share_type remaining = amount;
-         for( auto balance_item : _wallet_db.get_balances() )
+         for( const auto& balance_item : _wallet_db.get_balances() )
          {
             auto owner = balance_item.second.owner();
             //auto oaccount = _wallet_db.lookup_account( owner );
@@ -188,26 +189,30 @@ namespace bts { namespace wallet {
             if( balance_item.second.asset_id() == asset_id && 
                 address_in_account( owner, from_account_address ) )
             {
-               if( balance_item.second.balance > 0 )
+               auto current_balance = pending_state->get_balance_record( balance_item.first );
+               if( current_balance )
                {
-                  if( remaining > balance_item.second.balance )
+                  if( current_balance->balance > 0 )
                   {
-                     trx.withdraw( balance_item.first, balance_item.second.balance );
-                     remaining -= balance_item.second.balance;
-                     balance_item.second.balance = 0;
-                     required_signatures.insert( balance_item.second.owner() );
-                     _wallet_db.cache_balance( balance_item.second );
-                  }
-                  else
-                  {
-                     trx.withdraw( balance_item.first, remaining );
-                     balance_item.second.balance -= remaining;
-                     remaining = 0;
-                     _wallet_db.cache_balance( balance_item.second );
-                     required_signatures.insert( balance_item.second.owner() );
-                     return;
-                  }
-              }
+                     if( remaining > current_balance->balance )
+                     {
+                        trx.withdraw( balance_item.first, balance_item.second.balance );
+                        remaining -= current_balance->balance;
+                     //   balance_item.second.balance = 0;
+                        required_signatures.insert( balance_item.second.owner() );
+                     //   _wallet_db.cache_balance( balance_item.second );
+                     }
+                     else
+                     {
+                        trx.withdraw( balance_item.first, remaining );
+                      //  balance_item.second.balance -= remaining;
+                        remaining = 0;
+                     //   _wallet_db.cache_balance( balance_item.second );
+                        required_signatures.insert( current_balance->owner() );
+                        return;
+                     }
+                 }
+               }
             }
          }
          auto required = _blockchain->to_pretty_asset( asset(amount,asset_id) );
@@ -578,6 +583,8 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey )
    { try {
+      if( !is_valid_account_name(wallet_name))
+          FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
       if( fc::exists( wallet_file_path ) )
           FC_THROW_EXCEPTION( wallet_already_exists, "Wallet name already exists!", ("wallet_name",wallet_name) );
@@ -654,7 +661,7 @@ namespace bts { namespace wallet {
    void wallet::open( const string& wallet_name )
    { try {
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
-      if ( !fc::exists( wallet_file_path ) )
+      if ( !is_valid_account_name(wallet_name) || !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
       try
@@ -760,6 +767,7 @@ namespace bts { namespace wallet {
          lock();
          FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
       }
+      wallet_lock_state_changed( false );
 
       if( timeout == microseconds::maximum() )
       {
@@ -818,6 +826,7 @@ namespace bts { namespace wallet {
    {
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::time_point();
+      wallet_lock_state_changed( true );
    }
 
    void wallet::change_passphrase( const string& new_passphrase )
@@ -1334,7 +1343,7 @@ namespace bts { namespace wallet {
 
        vector<signed_transaction >       trxs;
        vector<share_type>                amount_sent;
-       vector<wallet_balance_record>    balances_to_store; // records to cache if transfer succeeds
+       vector<wallet_balance_record>     balances_to_store; // records to cache if transfer succeeds
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
        private_key_type sender_private_key  = get_account_private_key( from_account_name );
@@ -3035,6 +3044,8 @@ namespace bts { namespace wallet {
 
    wallet::account_balance_summary_type    wallet::get_account_balances()const
    { try {
+
+      auto pending_state = my->_blockchain->get_pending_state();
       account_balance_summary_type result;
       unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
       for( const auto& b : my->_wallet_db.get_balances() )
@@ -3042,8 +3053,12 @@ namespace bts { namespace wallet {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
           {
-             asset bal = b.second.get_balance();
-             raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
+             auto pending_balance = pending_state->get_balance_record( b.first );
+             if( pending_balance )
+             {
+                asset bal = pending_balance->get_balance();
+                raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
+             }
           }
       }
       for( auto account : raw_results )

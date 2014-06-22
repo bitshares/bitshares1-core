@@ -4,6 +4,7 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet_db.hpp>
+#include <fc/signals.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
@@ -26,6 +27,9 @@ namespace bts { namespace wallet {
       public:
          wallet( chain_database_ptr chain );
          virtual ~wallet();
+
+         //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
+         fc::signal<void( bool )>  wallet_lock_state_changed;
 
          /**
           *  To generate predictable test results we need an option

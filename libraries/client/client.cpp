@@ -165,6 +165,13 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
 
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
 
+    fc::file_appender::config ac_blockchain;
+    ac_blockchain.filename = data_dir / "blockchain.log";
+    ac_blockchain.truncate = false;
+    ac_blockchain.flush    = true;
+
+    std::cout << "Logging blockchain to file \"" << ac_blockchain.filename.generic_string() << "\"\n";
+
     fc::file_appender::config ac_p2p;
     ac_p2p.filename = data_dir / "p2p.log";
     ac_p2p.truncate = false;
@@ -190,6 +197,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
 
     cfg.appenders.push_back(fc::appender_config( "default", "file", fc::variant(ac)));
     cfg.appenders.push_back(fc::appender_config( "rpc", "file", fc::variant(ac_rpc)));
+    cfg.appenders.push_back(fc::appender_config( "blockchain", "file", fc::variant(ac_blockchain)));
     cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
     
     fc::logger_config dlc;
@@ -203,6 +211,11 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_rpc.level = fc::log_level::debug;
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
+
+    fc::logger_config dlc_blockchain;
+    dlc_blockchain.level = fc::log_level::debug;
+    dlc_blockchain.name = "blockchain";
+    dlc_blockchain.appenders.push_back("blockchain");
     
     fc::logger_config dlc_p2p;
     dlc_p2p.level = fc::log_level::debug;
@@ -218,6 +231,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     cfg.loggers.push_back(dlc_rpc);
     cfg.loggers.push_back(dlc_p2p);
     cfg.loggers.push_back(dlc_user);
+    cfg.loggers.push_back(dlc_blockchain);
     
     return cfg;
 }
@@ -558,6 +572,7 @@ config load_config( const fc::path& datadir )
 
                   on_new_block(next_block, next_block.id(), false);
                   _p2p_node->broadcast(block_message( next_block ));
+
                } 
                catch ( const fc::exception& e )
                {
@@ -643,6 +658,14 @@ config load_config( const fc::path& datadir )
                    if (sync_mode && !result.is_linked)
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
+
+                   if( !sync_mode )
+                   {
+                     // rebroadcast for good measure
+                     auto pending = blockchain_get_pending_transactions();
+                     for( auto trx : pending )
+                        network_broadcast_transaction( trx );
+                   }
             
                    if (_cli && 
                        result.is_included && 
@@ -988,6 +1011,12 @@ config load_config( const fc::path& datadir )
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
     { try {
+        my->_config   = load_config(data_dir);
+        //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
+        fc::configure_logging( my->_config.logging );
+        // re-register the _user_appender which was overwritten by configure_logging()
+        fc::logger::get( "user" ).add_appender( my->_user_appender );
+
         my->_exception_db.open( data_dir / "exceptions", true );
         my->_chain_db->open( data_dir / "chain", genesis_file_path );
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
@@ -1813,8 +1842,8 @@ config load_config( const fc::path& datadir )
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
 
-
-
+      // this just clears the database if the command line says
+      // TODO: rename it to smething better
       load_and_configure_chain_database(datadir, option_variables);
 
       fc::optional<fc::path> genesis_file_path;
@@ -1964,12 +1993,6 @@ config load_config( const fc::path& datadir )
     
     void client::configure( const fc::path& configuration_directory )
     {
-      my->_config   = load_config(configuration_directory);
-      //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
-      fc::configure_logging( my->_config.logging );
-      // re-register the _user_appender which was overwritten by configure_logging()
-      fc::logger::get( "user" ).add_appender( my->_user_appender );
-      
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
     }

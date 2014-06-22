@@ -85,6 +85,11 @@ namespace bts { namespace blockchain {
 
          double get_average_delegate_participation()const;
 
+         /**
+          * The state of the blockchain after applying all pending transactions.
+          */
+         pending_chain_state_ptr                  get_pending_state()const;
+
          transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx );
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                     is_known_transaction( const transaction_id_type& trx_id );

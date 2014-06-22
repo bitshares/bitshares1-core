@@ -661,12 +661,15 @@ namespace bts { namespace cli {
               else if (method_name == "list_errors")
               {
                   auto error_map = result.as<map<fc::time_point,fc::exception> >();
-                  for( auto item : error_map )
-                  {
-                     (*_out) << string(item.first) << " (" << fc::get_approximate_relative_time_string( item.first ) << " )\n";
-                     (*_out) << item.second.to_detail_string();
-                     (*_out) << "\n";
-                  }
+                  if (error_map.empty())
+                      *_out << "No errors.\n";
+                  else
+                    for( auto item : error_map )
+                    {
+                       (*_out) << string(item.first) << " (" << fc::get_approximate_relative_time_string( item.first ) << " )\n";
+                       (*_out) << item.second.to_detail_string();
+                       (*_out) << "\n";
+                    }
               }
               else if (method_name == "wallet_account_transaction_history")
               {
@@ -882,10 +885,11 @@ namespace bts { namespace cli {
                       *_out << std::setw(20) << "NET VOTES";
                       *_out << std::setw(16) << "BLOCKS PRODUCED";
                       *_out << std::setw(16) << "BLOCKS MISSED";
+                      *_out << std::setw(20) << "PRODUCTION RATIO";
                       *_out << std::setw(16) << "LAST BLOCK #";
                       *_out << std::setw(20) << "TOTAL PAY";
                       _out->put('\n');
-                      for (int i=0; i < 128; ++i)
+                      for (int i=0; i < 148; ++i)
                           _out->put('-');
                       _out->put('\n');
 
@@ -896,7 +900,8 @@ namespace bts { namespace cli {
                             << std::setw(20) << (fc::variant(double(record.votes_against())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(16) << record.delegate_info->blocks_produced
-                            << std::setw(16) << record.delegate_info->blocks_missed;
+                            << std::setw(16) << record.delegate_info->blocks_missed
+                            << std::setw(20) << std::setprecision(4) << (double(record.delegate_info->blocks_produced) / (record.delegate_info->blocks_produced + record.delegate_info->blocks_missed));
 
                             if( last_block_produced != uint32_t( -1 ) )
                                 *_out << std::setw(16) << last_block_produced;
@@ -911,8 +916,8 @@ namespace bts { namespace cli {
                       *_out << "This account is not a delegate.\n";
                   }
 
-                  if(record.meta_data)
-                      *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data);
+                  if(!record.public_data.is_null())
+                      *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data) << "\n";
               }
               else if (method_name == "blockchain_list_proposals")
               {
