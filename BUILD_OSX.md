@@ -30,7 +30,7 @@ Building BitShares Toolkit on OS X 10.9
 
 5) If you would like support for importing Bitcoin Core wallets then you will require Berkeley DB
 
-    wget http://download.oracle.com/berkeley-db/db-6.0.30.tar.gz
+    curl http://download.oracle.com/berkeley-db/db-6.0.30.tar.gz > db-6.0.30.tar.gz
     tar -xzvf db-6.0.30.tar.gz
     cd db-6.0.30/build_unix
     ../dist/configure --enable-cxx --prefix=/usr/local CPPFLAGS=-stdlib=libc++ 
@@ -39,7 +39,7 @@ Building BitShares Toolkit on OS X 10.9
 
 6) OS X comes with a very old version of readline (4.x) 
 
-    wget ftp://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz
+    curl ftp://ftp.gnu.org/gnu/readline/readline-6.3.tar.gz > readline-6.3.tar.gz
     tar -xzvf readline-6.3.tar.gz
     cd readline-6.3
     ./configure
