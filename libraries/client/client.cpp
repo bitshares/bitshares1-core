@@ -2109,6 +2109,10 @@ config load_config( const fc::path& datadir )
       _cli->enable_output(enable_flag);
     }
 
+    void client_impl::filter_output_for_tests(bool enable_flag)
+    {
+      _cli->filter_output_for_tests(enable_flag);
+    }
 
     fc::variant_object client_impl::about() const
     {

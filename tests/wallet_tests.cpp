@@ -446,6 +446,8 @@ BOOST_AUTO_TEST_CASE(make_genesis_block)
 
 void run_regression_test(fc::path test_dir, bool with_network)
 {
+  set_random_seed_for_testing(fc::sha512());
+
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file
@@ -498,6 +500,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       {
         fc::path default_data_dir = regression_test_output_directory / test_dir / client_name;
         line += " --data-dir=" + default_data_dir.string();
+        fc::remove_all(default_data_dir);
       }
 
 
@@ -558,12 +561,13 @@ void run_regression_test(fc::path test_dir, bool with_network)
     {
       //current_test.compare_files();
       current_test.client_done.wait();
-      FC_ASSERT(current_test.compare_files(), "Results mismatch with golden reference log");
+      BOOST_CHECK_MESSAGE(current_test.compare_files(), "Results mismatch with golden reference log");
     }
   } 
   catch ( const fc::exception& e )
   {
     elog( "${e}", ("e",e.to_detail_string() ) );
+    BOOST_FAIL("Caught unexpected exception:" << e.to_detail_string() );
   }
 
   //restore original working directory
