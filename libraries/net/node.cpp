@@ -1327,7 +1327,9 @@ namespace bts { namespace net {
         disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
       else
       {
-        if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+        // not filtering firewalled nodes just incase they have working UPNP or port mapping
+        // TODO: add enhanced firewall detection code
+        // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
         {
           // mark the connection as successful in the database
           potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
