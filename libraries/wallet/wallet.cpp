@@ -1270,7 +1270,7 @@ namespace bts { namespace wallet {
    {
        std::vector<wallet_account_record> delegate_records;
 
-      if( delegate_name != "*" )
+      if( delegate_name != "ALL" )
       {
           auto delegate_record = get_account( delegate_name );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
