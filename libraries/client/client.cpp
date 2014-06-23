@@ -339,6 +339,10 @@ config load_config( const fc::path& datadir )
     {
       return _db.lower_bound(time);
     }
+    void remove(const fc::time_point& key)
+    {
+        _db.remove(key);
+    }
   };
 
 
@@ -2477,6 +2481,20 @@ config load_config( const fc::path& datadir )
              break;
       }
       return result;
+   }
+
+   void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
+   {
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         if (--first_error_number)
+             continue;
+         _exception_db.remove(itr.key());
+         ++itr;
+         if (--limit == 0)
+             break;
+      }
    }
 
    void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
