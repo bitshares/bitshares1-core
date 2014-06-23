@@ -385,15 +385,16 @@ namespace bts{ namespace wallet {
    void wallet_db::clear_pending_transactions()
    {
        vector<transaction_id_type> clear_list;
-       for (auto id_trx_pair : transactions)
+       for( const auto& id_trx_pair : transactions )
        {
-           if (id_trx_pair.second.block_num == 0)
+           if( id_trx_pair.second.block_num == 0 )
            {
                clear_list.push_back( id_trx_pair.first );
                my->_records.remove( id_trx_pair.second.wallet_record_index );
            }
        }
-       for( auto id : clear_list ) transactions.erase(id);
+       for( const auto& id : clear_list )
+           transactions.erase( id );
    }
 
    void wallet_db::export_to_json( const path& filename )const
