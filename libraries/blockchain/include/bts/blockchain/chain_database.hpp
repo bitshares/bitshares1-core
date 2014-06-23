@@ -120,6 +120,8 @@ namespace bts { namespace blockchain {
          account_id_type             get_signing_delegate_id( const fc::time_point_sec& block_timestamp )const;
          public_key_type             get_signing_delegate_key( const fc::time_point_sec& block_timestamp )const;
 
+         time_point_sec              get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
+
          uint32_t                    get_block_num( const block_id_type& )const;
          signed_block_header         get_block_header( const block_id_type& )const;
          signed_block_header         get_block_header( uint32_t block_num )const;

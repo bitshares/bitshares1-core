@@ -150,7 +150,6 @@ namespace bts { namespace wallet {
           **/
          variant get_info()const;
 
-
          /**
           *  Block Generation API
           */
@@ -158,14 +157,11 @@ namespace bts { namespace wallet {
 
          void enable_delegate_block_production( const string& delegate_id, 
                                                 bool enable = true );
-         /**
-          *  If this wallet has any delegate keys, this method will return the time
-          *  at which this wallet may produce a block.
-          */
-         time_point_sec next_block_production_time();
+
+         vector<wallet_account_record> get_enabled_active_delegates()const;
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
-         void               sign_block( signed_block_header& header )const;
+         void sign_block( signed_block_header& header )const;
 
          ///@} Block Generation API
 
@@ -292,7 +288,7 @@ namespace bts { namespace wallet {
 
          signed_transaction  cancel_market_order( const address& owner_address );
 
-         owallet_account_record get_account( const string& account_name );
+         owallet_account_record get_account( const string& account_name )const;
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.

@@ -97,19 +97,18 @@ namespace bts{ namespace blockchain {
       return get_property( active_delegate_list_id ).as<std::vector<account_id_type> >();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void                      chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
+   void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
       set_property( active_delegate_list_id, fc::variant(delegate_ids) );
    }
 
-   bool                      chain_interface::is_active_delegate( account_id_type delegate_id ) const
+   bool chain_interface::is_active_delegate( account_id_type delegate_id ) const
    { try {
       auto active = get_active_delegates();
       return active.end() != std::find( active.begin(), active.end(), delegate_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_id",delegate_id) ) }
 
-
-   string  chain_interface::to_pretty_price( const price& price_to_pretty_print )const
+   string chain_interface::to_pretty_price( const price& price_to_pretty_print )const
    { try {
       auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );
       if( !obase_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.base_asset_id) );
@@ -125,7 +124,6 @@ namespace bts{ namespace blockchain {
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
-
 
    string  chain_interface::to_pretty_asset( const asset& a )const
    {
