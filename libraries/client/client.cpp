@@ -206,6 +206,13 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
+
+    fc::logger_config dlc_client;
+    dlc_client.level = fc::log_level::debug;
+    dlc_client.name = "client"; 
+    dlc_client.appenders.push_back("default");
+    dlc_client.appenders.push_back("p2p");
+   // dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
     dlc_rpc.level = fc::log_level::debug;
@@ -228,6 +235,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_user.appenders.push_back("user");
         
     cfg.loggers.push_back(dlc);
+    cfg.loggers.push_back(dlc_client);
     cfg.loggers.push_back(dlc_rpc);
     cfg.loggers.push_back(dlc_p2p);
     cfg.loggers.push_back(dlc_user);
