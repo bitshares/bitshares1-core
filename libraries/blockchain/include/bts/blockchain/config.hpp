@@ -9,8 +9,6 @@
 #define BTS_WALLET_VERSION                          (100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION             (105)
 
-#define BTS_NETWORK_DEFAULT_P2P_PORT                8763
-
 /**
  *  The address prepended to string representation of
  *  addresses.
