@@ -1254,11 +1254,33 @@ namespace bts { namespace wallet {
 
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
-      auto delegate_record = get_account( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+       std::vector<wallet_account_record> delegate_records;
 
-      delegate_record->block_production_enabled = enable;
-      my->_wallet_db.cache_account( *delegate_record ); //store_record( *delegate_record );
+      if( delegate_name != "*" )
+      {
+          auto delegate_record = get_account( delegate_name );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
+          FC_ASSERT( key.valid() && key->has_private_key() );
+          delegate_records.push_back( *delegate_record );
+      }
+      else
+      {
+          for( auto itr = my->_wallet_db.get_accounts().begin(); itr != my->_wallet_db.get_accounts().end(); ++itr)
+          {
+              auto account_record = itr->second;
+              if( !account_record.is_delegate() ) continue;
+              auto key = my->_wallet_db.lookup_key( account_record.active_key() );
+              if( !key.valid() || !key->has_private_key() ) continue;
+              delegate_records.push_back( account_record );
+          }
+      }
+
+      for( auto& delegate_record : delegate_records )
+      {
+          delegate_record.block_production_enabled = enable;
+          my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
+      }
    }
 
    /**

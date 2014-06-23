@@ -1088,7 +1088,7 @@
             {
                 "name" : "delegate_name",
                 "type" : "string",
-                "description" : "The delegate to enable/disable block production for"
+                "description" : "The delegate to enable/disable block production for; '*' enables all delegate accounts"
             },
             {
                 "name" : "enable",

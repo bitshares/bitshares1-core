@@ -771,5 +771,4 @@ namespace bts{ namespace wallet {
       balances.erase(balance_id);
    }
 
-
 } } // bts::wallet
