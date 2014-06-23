@@ -36,6 +36,7 @@ namespace bts { namespace blockchain {
    typedef uint32_t                           tapos_type; 
    typedef int64_t                            share_type;
    typedef int64_t                            bip_type;
+   typedef uint64_t                           slate_id_type;
    typedef fc::optional<fc::ecc::private_key> oprivate_key;
 
    using std::string;
@@ -55,6 +56,8 @@ namespace bts { namespace blockchain {
    using fc::time_point_sec;
    using fc::time_point;
    using fc::microseconds;
+   using fc::unsigned_int;
+   using fc::signed_int;
 
    struct public_key_type 
    {

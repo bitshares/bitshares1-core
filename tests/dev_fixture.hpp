@@ -39,6 +39,7 @@ struct chain_fixture
    { try {
       ilog( "." );
 
+      try {
       sim_network = std::make_shared<bts::net::simulated_network>();
 
       bts::blockchain::start_simulated_time(fc::time_point::from_iso_string( "20200101T000000" ));
@@ -178,12 +179,14 @@ struct chain_fixture
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
       clienta->start();
+      ilog( "... " );
 
       clientb = std::make_shared<client>(sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);
       clientb->start();
+      ilog( "... " );
 
       exec(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
       exec(clienta, "wallet_create walleta masterpassword 123456ddddaxxx123456789012345678901234567890");
@@ -208,6 +211,12 @@ struct chain_fixture
          else ++even;
       }
       
+      } catch ( const fc::exception& e )
+      {
+         std::cerr << "exception: " << e.to_detail_string() <<"\n";
+         edump( (e.to_detail_string() ) );
+         throw;
+      }
    } FC_LOG_AND_RETHROW() }
 
    template<typename T>

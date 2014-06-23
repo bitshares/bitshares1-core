@@ -1,4 +1,4 @@
-#define DEFAULT_LOGGER "blockchain"
+//#define DEFAULT_LOGGER "blockchain"
 
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
@@ -130,6 +130,7 @@ namespace bts { namespace blockchain {
             unordered_set<chain_observer*>                                      _observers;
             digest_type                                                         _chain_id;
 
+            bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
             bts::db::level_map<uint32_t, std::vector<block_id_type> >           _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                   _fork_db;
             bts::db::level_map<uint32_t, fc::variant >                          _property_db;
@@ -199,6 +200,7 @@ namespace bts { namespace blockchain {
           }
           _fork_number_db.open( data_dir / "fork_number_db" );
           _fork_db.open( data_dir / "fork_db" );
+          _slate_db.open( data_dir / "slate_db" );
           _proposal_db.open( data_dir / "proposal_db" );
           _proposal_vote_db.open( data_dir / "proposal_vote_db" );
 
@@ -478,13 +480,17 @@ namespace bts { namespace blockchain {
             auto delegate_record = pending_state->get_account_record( self->get_signing_delegate_id( time_slot ) );
             FC_ASSERT( delegate_record.valid() );
             FC_ASSERT( delegate_record->is_delegate() );
-            delegate_record->delegate_info->pay_balance += amount;
-            delegate_record->delegate_info->votes_for += amount;
+            auto pay_rate = delegate_record->delegate_info->delegate_production_fee;
+            FC_ASSERT( pay_rate <= 100 );
+            auto pay = (amount*pay_rate)/100;
+
+            delegate_record->delegate_info->pay_balance += pay;
+            delegate_record->delegate_info->votes_for += pay;
             pending_state->store_account_record( *delegate_record );
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += amount;
+            base_asset_record->current_share_supply += pay;
             pending_state->store_asset_record( *base_asset_record );
 
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }
@@ -619,6 +625,8 @@ namespace bts { namespace blockchain {
                     block_stats.latency = (uint32_t)latency;
               }
 
+              // TODO: all updates should be to pending_state and not the database directly...
+              //  This can result in inconsistencies when dealing with forks.
               _delegate_block_stats_db.store( std::make_pair( delegate_id, current_block_num ), block_stats );
 
               pending_state->store_account_record( *delegate_rec );
@@ -937,6 +945,7 @@ namespace bts { namespace blockchain {
    { try {
       my->_fork_number_db.close();
       my->_fork_db.close();
+      my->_slate_db.close();
       my->_property_db.close();
       my->_proposal_db.close();
       my->_proposal_vote_db.close();
@@ -1432,7 +1441,7 @@ namespace bts { namespace blockchain {
        *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
        *  should be less than eventual fees.
        */
-      total_fees = BTS_BLOCKCHAIN_BLOCK_REWARD;
+      // total_fees = BTS_BLOCKCHAIN_BLOCK_REWARD;
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
 
@@ -1532,54 +1541,17 @@ namespace bts { namespace blockchain {
          fc::uint128 initial( int64_t(item.second/1000) );
          initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
          initial /= total_unscaled;
-         if( initial > fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES/1000)) )
-         {
-            initial /= int64_t(delegate_ids.size());
-            for( auto delegate_id : delegate_ids )
-            {
-                  balance_record initial_balance( item.first,
-                                                  asset( share_type( initial.low_bits() ), 0 ),
-                                                  -delegate_id );
-                  // in case of redundant balances
-                  auto cur = self->get_balance_record( initial_balance.id() );
-                  if( cur.valid() ) initial_balance.balance += cur->balance;
-                  initial_balance.last_update                = config.timestamp;
-                  self->store_balance_record( initial_balance );
 
-                  auto da = _account_db.fetch( delegate_id );
-                  da.delegate_info->votes_against += initial.low_bits();
-                  da.registration_date        = config.timestamp;
-                  da.last_update              = config.timestamp;
-                  self->store_account_record( da );
-            }
-         }
-         else
-         {
-            name_id_type delegate_id = (name_id_type)(n % delegate_ids.size() + 1);
-            balance_record initial_balance( item.first,
-                                            asset( share_type( initial.low_bits() ), 0 ),
-                                #if BTS_BLOCKCHAIN_VERSION > 103 
-                                            -delegate_id );
-                                #else
-#                                 ifdef _MSC_VER
-#                                  pragma message("delegate id must be negative on next chain launch, do not forget to change this.")
-#                                 else
-                                   #warning delegate id must be negative on next chain launch, do not forget to change this.
-#                                 endif
-                                            delegate_id );
-                                #endif
-            // in case of redundant balances
-            auto cur = self->get_balance_record( initial_balance.id() );
-            if( cur.valid() ) initial_balance.balance += cur->balance;
-            initial_balance.last_update                = config.timestamp;
-            self->store_balance_record( initial_balance );
+         balance_record initial_balance( item.first,
+                                         asset( share_type( initial.low_bits() ), 0 ),
+                                         0 /** not voting for anyone */
+                                       );
 
-            auto da = _account_db.fetch( delegate_id  );
-            da.delegate_info->votes_against += initial.low_bits();
-            da.registration_date        = config.timestamp;
-            da.last_update              = config.timestamp;
-            self->store_account_record( da );
-         }
+         // in case of redundant balances
+         auto cur = self->get_balance_record( initial_balance.id() );
+         if( cur.valid() ) initial_balance.balance += cur->balance;
+         initial_balance.last_update                = config.timestamp;
+         self->store_balance_record( initial_balance );
       }
 
       asset total;
@@ -1943,14 +1915,14 @@ namespace bts { namespace blockchain {
          if( v.is_delegate() )
          {
             total += asset(v.delegate_info->pay_balance);
-            total_votes += v.delegate_info->votes_for + v.delegate_info->votes_against;
+            total_votes += v.delegate_info->votes_for;
          }
          ++aitr;
       }
 
-      FC_ASSERT( total_votes == total.amount, "", 
-                 ("total_votes",total_votes)
-                 ("total_shares",total) );
+//      FC_ASSERT( total_votes == total.amount, "", 
+ //                ("total_votes",total_votes)
+  //               ("total_shares",total) );
      
       auto ar = get_asset_record( asset_id_type(0) );
       FC_ASSERT( ar.valid() );
@@ -2024,6 +1996,21 @@ namespace bts { namespace blockchain {
    pending_chain_state_ptr chain_database::get_pending_state()const
    {
       return my->_pending_trx_state;
+   }
+
+   odelegate_slate chain_database::get_delegate_slate( slate_id_type id )const
+   {
+      return my->_slate_db.fetch_optional( id );
+   }
+
+   void chain_database::store_delegate_slate( slate_id_type id, const delegate_slate& slate ) 
+   {
+      if( slate.supported_delegates.size() == 0 )
+      {
+         my->_slate_db.remove( id );
+      }
+      else
+         my->_slate_db.store( id, slate );
    }
 
 

@@ -60,6 +60,7 @@ namespace bts { namespace blockchain {
       for( auto record : shorts )         prev_state->store_short_record( record.first, record.second );
       for( auto record : collateral )     prev_state->store_collateral_record( record.first, record.second );
       for( auto record : transactions )   prev_state->store_transaction( record.first, record.second );
+      for( auto record : slates )         prev_state->store_delegate_slate( record.first, record.second );
    }
 
    otransaction_record  pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -93,6 +94,13 @@ namespace bts { namespace blockchain {
          auto prev_asset = prev_state->get_asset_record( record.first );
          if( !!prev_asset ) undo_state->store_asset_record( *prev_asset );
          else undo_state->store_asset_record( record.second.make_null() );
+      }
+
+      for( auto record : slates )
+      {
+         auto prev_asset = prev_state->get_delegate_slate( record.first );
+         if( prev_asset ) undo_state->store_delegate_slate( record.first, *prev_asset );
+         else undo_state->store_delegate_slate( record.first, delegate_slate() );
       }
 
       for( auto record : accounts )
@@ -223,6 +231,20 @@ namespace bts { namespace blockchain {
       else if( prev_state ) 
         return prev_state->get_balance_record( balance_id );
       return obalance_record();
+   }
+   odelegate_slate      pending_chain_state::get_delegate_slate( slate_id_type id )const
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      auto itr = slates.find(id);
+      if( itr != slates.end() ) return itr->second;
+      if( prev_state ) return prev_state->get_delegate_slate( id );
+      return odelegate_slate();
+   }
+
+   void                 pending_chain_state::store_delegate_slate( slate_id_type id, 
+                                                                   const delegate_slate& slate )
+   {
+      slates[id] = slate;
    }
 
    oaccount_record         pending_chain_state::get_account_record( const address& owner )const

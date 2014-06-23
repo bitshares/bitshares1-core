@@ -326,6 +326,9 @@ namespace bts { namespace wallet {
                   case remove_collateral_op_type:
                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                      break;
+                  case define_delegate_slate_op_type:
+                     // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                     break;
 
                   default:
                      FC_THROW( "unknown operation type!" );
@@ -877,9 +880,11 @@ namespace bts { namespace wallet {
    public_key_type  wallet::create_account( const string& account_name, 
                                             const variant& private_data )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( !current_account.valid(), "This name is already in your wallet." );
@@ -894,6 +899,17 @@ namespace bts { namespace wallet {
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+   void wallet::account_set_favorite( const string& account_name,
+                                      const bool is_favorite )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_valid_account( account_name ) );
+
+       auto judged_account = my->_wallet_db.lookup_account( account_name );
+       judged_account->is_favorite = is_favorite;
+       my->_wallet_db.cache_account( *judged_account );
+   }
 
    /**
     *  Creates a new private key under the specified account. This key
@@ -948,8 +964,10 @@ namespace bts { namespace wallet {
                                       const public_key_type& key,
                                       const variant& private_data )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
       idump( (account_name) );
 
       auto current_registered_account = my->_blockchain->get_account_record( account_name );
@@ -988,8 +1006,11 @@ namespace bts { namespace wallet {
 
    owallet_account_record wallet::get_account( const string& account_name )const
    {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
+
       auto local_account = my->_wallet_db.lookup_account( account_name );
       if( local_account )
       {
@@ -1025,9 +1046,12 @@ namespace bts { namespace wallet {
    void  wallet::rename_account( const string& old_account_name, 
                                  const string& new_account_name )
    { try {
+      if( !is_valid_account_name( old_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid old account name!", ("old_account_name",old_account_name) );
+      if( !is_valid_account_name( new_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid new account name!", ("new_account_name",new_account_name) );
+
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( old_account_name ) );
-      FC_ASSERT( is_valid_account_name( new_account_name ) );
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );
@@ -1052,6 +1076,9 @@ namespace bts { namespace wallet {
                                                 const string& account_name,
                                                 bool create_account )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
@@ -1079,8 +1106,6 @@ namespace bts { namespace wallet {
       }
       FC_ASSERT( account_name.size(), "You must specify an account name because the private key "
                                       "does not belong to any known accounts");
-
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto account_with_key = my->_wallet_db.lookup_account( key.get_public_key() );
       if (account_with_key)
@@ -1386,13 +1411,25 @@ namespace bts { namespace wallet {
                 amount_to_deposit = from_balance;
              }
 
+             slate_id_type slate_id = 0;
+             if( amount_to_deposit.asset_id == 0 )
+             {
+                auto new_slate = select_delegate_vote();
+                slate_id = new_slate.id();
+
+                if( !my->_blockchain->get_delegate_slate( slate_id ) )
+                {
+                   trx.define_delegate_slate( new_slate );
+                }
+             }
+
              if( amount_to_deposit.amount > 0 )
              {
                 trx.deposit_to_account( receiver_public_key,
                                         amount_to_deposit,
                                         sender_private_key,
                                         memo_message,
-                                        select_delegate_vote(),
+                                        slate_id,
                                         sender_private_key.get_public_key(),
                                         my->create_one_time_key(),
                                         from_memo
@@ -1404,7 +1441,7 @@ namespace bts { namespace wallet {
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
-                                        select_delegate_vote(),
+                                        slate_id,
                                         receiver_public_key,
                                         my->create_one_time_key(),
                                         to_memo
@@ -1499,13 +1536,22 @@ namespace bts { namespace wallet {
        required_signatures.insert( delegate_private_key.get_public_key() );
 
        public_key_type  receiver_public_key = get_account_public_key( withdraw_to_account_name );
+
+       auto new_slate = select_delegate_vote();
+       auto slate_id = new_slate.id();
+       
+       if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+       {
+          trx.define_delegate_slate( new_slate );
+       }
+
        
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
        trx.deposit_to_account( receiver_public_key,
                                asset(amount_to_withdraw,0),
                                delegate_private_key,
                                memo_message,
-                               delegate_account_record->id, // vote for yourself
+                               slate_id,
                                delegate_private_key.get_public_key(),
                                my->create_one_time_key(),
                                from_memo
@@ -1579,7 +1625,19 @@ namespace bts { namespace wallet {
                                       trx, required_signatures );
       }
 
-      trx.deposit( to_address, asset_to_transfer, select_delegate_vote() );
+      slate_id_type slate_id = 0;
+      if( asset_id == 0 )
+      {
+         auto new_slate = select_delegate_vote();
+         slate_id = new_slate.id();
+
+         if( !my->_blockchain->get_delegate_slate( slate_id ) )
+         {
+            trx.define_delegate_slate( std::move(new_slate) );
+         }
+      }
+
+      trx.deposit( to_address, asset_to_transfer, slate_id);
 
       if( sign )
       {
@@ -1644,7 +1702,7 @@ namespace bts { namespace wallet {
             
             total_asset_to_transfer += asset_to_transfer;
              
-            trx.deposit( address_amount.first, asset_to_transfer, select_delegate_vote() );
+            trx.deposit( address_amount.first, asset_to_transfer, 0 );
              
             to_addresses.push_back( address_amount.first );
          }
@@ -1726,12 +1784,24 @@ namespace bts { namespace wallet {
                                        sender_account_address,
                                        trx, required_signatures );
       }
+
+      slate_id_type slate_id = 0;
+      if( asset_id == 0 )
+      {
+         auto new_slate = select_delegate_vote();
+         slate_id = new_slate.id();
+         
+         if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+         {
+            trx.define_delegate_slate( new_slate );
+         }
+      }
         
       trx.deposit_to_account( receiver_public_key,
                               asset_to_transfer,
                               sender_private_key,
                               memo_message,
-                              select_delegate_vote(),
+                              slate_id,
                               sender_private_key.get_public_key(),
                               my->create_one_time_key(),
                               from_memo
@@ -1759,13 +1829,15 @@ namespace bts { namespace wallet {
 
    wallet_transaction_record wallet::register_account( const string& account_to_register,
                                                 const variant& public_data,
-                                                bool as_delegate,
+                                                uint8_t delegate_production_fee,
                                                 const string& pay_with_account_name,
                                                 bool sign )
    { try {
+      if( !is_valid_account_name( account_to_register ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_register",account_to_register) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_to_register ) );
 
       auto registered_account = my->_blockchain->get_account_record( account_to_register );
       FC_ASSERT( !registered_account.valid(), "the account has already been registered",
@@ -1784,7 +1856,7 @@ namespace bts { namespace wallet {
       trx.register_account( account_to_register, public_data,
                             account_public_key, // master
                             account_public_key, // active
-                            as_delegate );
+                            delegate_production_fee <= 100 ? delegate_production_fee : 255 );
 
       auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
@@ -1798,9 +1870,11 @@ namespace bts { namespace wallet {
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
-      if( as_delegate )
+      bool as_delegate = false;
+      if( delegate_production_fee <= 100  )
       {
         required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
+        as_delegate = true;
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
@@ -1832,7 +1906,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("public_data", public_data)
                                       ("pay_with_account_name", pay_with_account_name) 
-                                      ("as_delegate",as_delegate) ) }
+                                      ("delegate_production_fee",int(delegate_production_fee)) ) }
 
    signed_transaction  wallet::create_asset( const string& symbol,
                                              const string& asset_name,
@@ -1843,9 +1917,11 @@ namespace bts { namespace wallet {
                                              int64_t precision,
                                              bool sign  )
    { try {
+      if( !is_valid_account_name( issuer_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( issuer_account_name ) );
       FC_ASSERT( my->_blockchain->is_valid_symbol_name( symbol ) ); // valid length and characters
       FC_ASSERT( ! my->_blockchain->is_valid_symbol( symbol ) ); // not yet registered
 
@@ -1891,9 +1967,11 @@ namespace bts { namespace wallet {
                                             const string& memo_message,
                                             bool sign )
    {
+      if( !is_valid_account_name( to_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("to_account_name",to_account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( to_account_name ) );
       FC_ASSERT( my->_blockchain->is_valid_symbol( symbol ) );
 
       signed_transaction         trx;
@@ -1954,13 +2032,15 @@ namespace bts { namespace wallet {
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
                                                                 optional<public_key_type> new_active_key,
-                                                                bool as_delegate,
                                                                 bool sign )
    { try {
+      if( !is_valid_account_name( account_to_update ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
+      if( !is_valid_account_name( pay_from_account ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("pay_from_account",pay_from_account) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_to_update ) );
-      FC_ASSERT( is_valid_account_name( pay_from_account ) );
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
@@ -1971,10 +2051,6 @@ namespace bts { namespace wallet {
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
-      if( as_delegate && !account->is_delegate() )
-      {
-        required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
-      }
 
       auto size_fee = fc::raw::pack_size( public_data );
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
@@ -1986,7 +2062,7 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, public_data, new_active_key, as_delegate );
+      trx.update_account( account->id, public_data, new_active_key );
        
       if (sign)
       {
@@ -1994,7 +2070,7 @@ namespace bts { namespace wallet {
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "update " + account_to_update + (as_delegate? " as a delegate" : ""), 
+                                                  "update " + account_to_update, 
                                                   payer_public_key, 
                                                   bts::blockchain::now(),
                                                   bts::blockchain::now(),
@@ -2007,7 +2083,6 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
                                       ("new_active_key",new_active_key)
-                                      ("as_delegate",as_delegate)
                                       ("sign",sign) ) }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -2017,9 +2092,11 @@ namespace bts { namespace wallet {
                                        const variant& data,
                                        bool sign  )
    {
+      if( !is_valid_account_name( delegate_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("delegate_account_name",delegate_account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( delegate_account_name ) );
       // TODO validate subject, body, and data
 
       signed_transaction trx;
@@ -2056,9 +2133,11 @@ namespace bts { namespace wallet {
                                              const string& message,
                                              bool sign )
    {
+      if( !is_valid_account_name( delegate_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("delegate_name",delegate_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( delegate_name ) );
       // TODO validate subject, body, and data
 
       signed_transaction trx;
@@ -2166,7 +2245,7 @@ namespace bts { namespace wallet {
         unordered_set<address>     required_signatures;
         required_signatures.insert( owner_address );
 
-        trx.bid( -balance, order.order.market_index.order_price, owner_address, 0 );
+        trx.bid( -balance, order.order.market_index.order_price, owner_address );
 
         if( balance.asset_id == 0 )
         {
@@ -2175,8 +2254,7 @@ namespace bts { namespace wallet {
            if( required_fees.amount < balance.amount )
            {
               deposit_amount -= required_fees;
-              trx.deposit( owner_address, balance,
-                           select_delegate_vote() );
+              trx.deposit( owner_address, balance, 0 );
            }
            else
            {
@@ -2185,8 +2263,7 @@ namespace bts { namespace wallet {
         }
         else
         {
-           trx.deposit( owner_address, balance,
-                        select_delegate_vote() );
+           trx.deposit( owner_address, balance, 0 );
 
            my->withdraw_to_transaction( required_fees.amount,
                                         0,
@@ -2304,9 +2381,9 @@ namespace bts { namespace wallet {
 
        // withdraw to transaction cost_share_quantity + fee
        if( cost_shares.asset_id == 0 )
-          trx.bid( cost_shares, quote_price_shares, order_address, select_delegate_vote() );
+          trx.bid( cost_shares, quote_price_shares, order_address );
        else
-          trx.bid( cost_shares, quote_price_shares, order_address, 0 );
+          trx.bid( cost_shares, quote_price_shares, order_address );
 
        if( sign )
        {
@@ -2373,7 +2450,7 @@ namespace bts { namespace wallet {
            else
            {
               auto key_rec  = my->_wallet_db.lookup_key( key );
-              wdump( (key_rec) );
+              //wdump( (key_rec) );
               if(  key_rec )
               {
                  if( key_rec->memo )
@@ -2556,8 +2633,8 @@ namespace bts { namespace wallet {
               }
               default:
               {
-                  FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
-                  break;
+                 pretty_trx.add_operation( op );
+                 break;
               }
           } // switch op_type
       } // for op in trx
@@ -2569,9 +2646,11 @@ namespace bts { namespace wallet {
                                      const string& wallet_dat_passphrase,
                                      const string& account_name )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
 
@@ -2592,9 +2671,11 @@ namespace bts { namespace wallet {
                                      const string& wallet_dat_passphrase,
                                      const string& account_name )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
 
@@ -2616,9 +2697,11 @@ namespace bts { namespace wallet {
                                      const string& wallet_dat_passphrase,
                                      const string& account_name )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
 
@@ -2639,9 +2722,11 @@ namespace bts { namespace wallet {
                                      const string& wallet_dat_passphrase,
                                      const string& account_name )
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
 
@@ -2664,9 +2749,11 @@ namespace bts { namespace wallet {
                                  const std::string& brainkey,
                                  const std::string& keyhoteeid )
     { try {
+      if( !is_valid_account_name( fc::to_lower( keyhoteeid ) ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid Keyhotee name!", ("keyhoteeid",keyhoteeid) );
+
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
-        FC_ASSERT( is_valid_account_name( fc::to_lower(keyhoteeid) ) );
         // TODO: what will keyhoteeid's validation be like, they have different rules?
         
         bts::keyhotee::profile_config config{firstname, middlename, lastname, brainkey};
@@ -2752,6 +2839,49 @@ namespace bts { namespace wallet {
       return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
+
+   vector<wallet_account_record> wallet::list_favorite_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.is_favorite )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   vector<wallet_account_record> wallet::list_unregistered_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.id == 0 )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+
+
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
    {
        return my->_wallet_db.lookup_transaction(trx_id);
@@ -2775,8 +2905,9 @@ namespace bts { namespace wallet {
     */
    bool wallet::is_valid_account( const string& account_name )const
    {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
       if( my->_wallet_db.lookup_account( account_name ).valid() )
           return true;
       return my->_blockchain->get_account_record( account_name ).valid();
@@ -2787,8 +2918,9 @@ namespace bts { namespace wallet {
     */
    bool wallet::is_receive_account( const string& account_name )const
    {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       if( !opt_account.valid() ) return false;
       auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
@@ -2806,9 +2938,10 @@ namespace bts { namespace wallet {
 
    private_key_type wallet::get_account_private_key( const string& account_name )const
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'", 
                 ("name",account_name) );
@@ -2836,8 +2969,9 @@ namespace bts { namespace wallet {
     */
    public_key_type  wallet::get_account_public_key( const string& account_name )const
    { try {
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( is_open() );
-      FC_ASSERT( is_valid_account_name( account_name ) );
 
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       if( !opt_account.valid() )
@@ -2856,98 +2990,36 @@ namespace bts { namespace wallet {
       return opt_key->public_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   account_id_type wallet::select_delegate_vote()const
+   /**
+    *  Randomly select a slate of delegates from those supported by this wallet.  The
+    *  slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
+    */
+   delegate_slate wallet::select_delegate_vote()const
    {
-      vector<account> for_candidates;
-      vector<account> against_candidates;
-      vector<account_id_type> active_delegates =
-          my->_blockchain->get_delegates_by_vote(0, BTS_BLOCKCHAIN_NUM_DELEGATES);
+      vector<account_id_type> for_candidates;
 
       for (auto acct_rec : my->_wallet_db.get_accounts())
       {
          if (acct_rec.second.trust_level > 0)
-             for_candidates.push_back(acct_rec.second);
-         if (acct_rec.second.trust_level < 0)
-             against_candidates.push_back(acct_rec.second);
+             for_candidates.push_back(acct_rec.second.id);
       }
-      if ( against_candidates.size() > 0 )
+      std::sort( for_candidates.begin(), for_candidates.end() );
+
+      delegate_slate result;
+      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE);
+
+      for( uint32_t i = 0; i < delegates_to_select; ++i )
       {
-         for (auto delegate_id : active_delegates)
-            for (auto against_acct : against_candidates)
-                if( against_acct.id == delegate_id )
-                {
-                    if( delegate_id == 0 )
-                    {
-                        FC_ASSERT(!"WARNING - delegate id 0 bug @ 1");
-                        return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-                    }
-                    return -delegate_id;
-                }
-      }
-      if( for_candidates.size() > 0 )
-      {
-         // find first delegate who is not active
-         bool active = false;
-         for( auto for_acct : for_candidates )
+         auto d = rand() % for_candidates.size();
+         if( for_candidates[d] != 0 )
          {
-            for( auto delegate_id : active_delegates )
-            {
-                if( for_acct.id == delegate_id )
-                {
-                    active = true;
-                    break;
-                }
-            }
-            if (active)
-            {
-                active = false;
-                continue;
-            }
-            else
-            {
-                if( for_acct.id == 0 )
-                {
-                    FC_ASSERT(!"WARNING - delegate id 0 bug @ 2");
-                    return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-                }
-                else
-                    return for_acct.id;
-            }
+            result.supported_delegates.push_back( for_candidates[d] ); 
+            for_candidates[d] = 0;
          }
-         // all of our delegates are active - pick the one with the lowest vote
-         int64_t min = std::numeric_limits<int64_t>::max();
-         account_id_type winner;
-         for( auto candidate : for_candidates )
-         {
-            auto acct_rec = my->_blockchain->get_account_record( candidate.id );
-            FC_ASSERT(acct_rec);
-            if (acct_rec->net_votes() < min)
-            {
-                min = acct_rec->net_votes();
-                winner = acct_rec->id;
-            }
-         }
-         if (winner == 0)
-         {
-            FC_ASSERT(!"WARNING - delegate id 0 bug @ 3");
-            return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-         }
-         else
-            return winner;
       }
-      else
-      {
-            auto num = rand();
-            if (active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
-            {
-                FC_ASSERT(!"WARNING - delegate id 0 bug @ 4");
-                return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-            }
-            else
-            {
-                return active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)];
-            }
-      }
+      std::sort( result.supported_delegates.begin(),
+                 result.supported_delegates.end() );
+      return result;
    }
 
    void      wallet::set_delegate_trust_level( const string& delegate_name, 
@@ -3023,10 +3095,11 @@ namespace bts { namespace wallet {
              asset bal = b.second.get_balance();
              if( bal.asset_id == 0 )
              {
-                if( b.second.delegate_id() < 0 )
-                   raw_votes[ -b.second.delegate_id() ].votes_against += bal.amount;
-                else
-                   raw_votes[ b.second.delegate_id()  ].votes_for += bal.amount;
+                if( b.second.delegate_slate_id() != 0 )
+                {
+                   // TODO: fetch slate, for each delegate in slate...
+             //      raw_votes[ -b.second.delegate_id() ].votes_for += bal.amount;
+                }
              }
           }
       }

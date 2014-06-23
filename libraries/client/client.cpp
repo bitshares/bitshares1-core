@@ -206,6 +206,13 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
+
+    fc::logger_config dlc_client;
+    dlc_client.level = fc::log_level::debug;
+    dlc_client.name = "client"; 
+    dlc_client.appenders.push_back("default");
+    dlc_client.appenders.push_back("p2p");
+   // dlc.appenders.push_back("stderr");
     
     fc::logger_config dlc_rpc;
     dlc_rpc.level = fc::log_level::debug;
@@ -228,6 +235,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_user.appenders.push_back("user");
         
     cfg.loggers.push_back(dlc);
+    cfg.loggers.push_back(dlc_client);
     cfg.loggers.push_back(dlc_rpc);
     cfg.loggers.push_back(dlc_p2p);
     cfg.loggers.push_back(dlc_user);
@@ -1302,6 +1310,14 @@ config load_config( const fc::path& datadir )
     {
       return _wallet->list_my_accounts();
     }
+    vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
+    {
+      return _wallet->list_favorite_accounts();
+    }
+    vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
+    {
+      return _wallet->list_unregistered_accounts();
+    }
 
     void detail::client_impl::wallet_remove_contact_account(const string& account_name)
     {
@@ -2022,7 +2038,8 @@ config load_config( const fc::path& datadir )
 
     void client::set_daemon_mode(bool daemon_mode) 
     { 
-      my->_cli->set_daemon_mode(daemon_mode); 
+       init_cli();
+       my->_cli->set_daemon_mode(daemon_mode); 
     }
 
     fc::path client::get_data_dir()const
@@ -2119,6 +2136,11 @@ config load_config( const fc::path& datadir )
     {
        ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return _wallet->create_account( account_name, private_data );
+    }
+
+    void client_impl::wallet_account_set_favorite(const string& account_name, bool is_favorite)
+    {
+        _wallet->account_set_favorite( account_name, is_favorite );
     }
 
     void client_impl::enable_output(bool enable_flag)
@@ -2268,11 +2290,12 @@ config load_config( const fc::path& datadir )
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
                                                         const fc::variant& data,
-                                                        bool as_delegate ) 
+                                                        uint32_t delegate_production_fee ) 
     {
       try {
         // bool sign = (flag != do_not_sign);
-        auto trx = _wallet->register_account(account_name, data, as_delegate, pay_with_account, true);//sign);
+        FC_ASSERT( delegate_production_fee <= 255 );
+        auto trx = _wallet->register_account(account_name, data, delegate_production_fee, pay_with_account);//sign);
         network_broadcast_transaction( trx.trx );
         /*
         if( flag == sign_and_broadcast )
@@ -2297,14 +2320,12 @@ config load_config( const fc::path& datadir )
 
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
-                                                                        const variant& public_data,
-                                                                        bool as_delegate )
+                                                                        const variant& public_data )
     {
        auto trx = _wallet->update_registered_account( account_to_update, 
                                                            pay_from_account, 
                                                            public_data, 
-                                                           optional<public_key_type>(),
-                                                           as_delegate, true );
+                                                           optional<public_key_type>(), true );
 
        network_broadcast_transaction( trx.trx );
        return trx;
@@ -2498,9 +2519,11 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_forks_list();
    }
 
-   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
+   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const string& delegate_name )const
    {
-      return _chain_db->get_delegate_block_stats( delegate_id );
+      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return _chain_db->get_delegate_block_stats( delegate_record->id );
    }
 
    string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const

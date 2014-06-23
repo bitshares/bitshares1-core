@@ -24,6 +24,10 @@ namespace bts { namespace blockchain {
          virtual oaccount_record      get_account_record( account_id_type id )const override;
          virtual oaccount_record      get_account_record( const address& owner )const override;
 
+         virtual odelegate_slate      get_delegate_slate( slate_id_type id )const override;
+         virtual void                 store_delegate_slate( slate_id_type id, 
+                                                            const delegate_slate& slate ) override;
+
          virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
                                                        bool exact = true )const override;
 
@@ -80,6 +84,7 @@ namespace bts { namespace blockchain {
          virtual uint32_t                   get_head_block_num()const override;
 
          unordered_map< asset_id_type,         asset_record>            assets;
+         unordered_map< slate_id_type,         delegate_slate>          slates;
          unordered_map< account_id_type,       account_record>          accounts;
          unordered_map< balance_id_type,       balance_record>          balances;
          unordered_map< string,           account_id_type>              account_id_index;
@@ -102,5 +107,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
-            (assets)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
+            (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
             (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral) )

@@ -1,5 +1,5 @@
 #include <bts/blockchain/operations.hpp>
-#include <bts/blockchain/fire_operation.hpp>
+//#include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
@@ -10,6 +10,7 @@
 #include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace blockchain {
+   const operation_type_enum define_delegate_slate_operation::type = define_delegate_slate_op_type;
    const operation_type_enum withdraw_operation::type          = withdraw_op_type;
    const operation_type_enum deposit_operation::type           = deposit_op_type;
    const operation_type_enum create_asset_operation::type      = create_asset_op_type;
@@ -36,11 +37,12 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+      //bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<ask_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<define_delegate_slate_operation>();
       return true;
    }();
 

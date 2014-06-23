@@ -28,13 +28,20 @@ namespace bts { namespace blockchain {
       return  signed_keys.find( a ) != signed_keys.end();
    }
 
+   void transaction_evaluation_state::verify_delegate_id( account_id_type id )const
+   {
+      auto current_account = _current_state->get_account_record( id );
+      if( !current_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (id) );
+      if( !current_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (id) );
+   }
+
 
    void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
    {
-      FC_ASSERT( !!trx.delegate_id );
+      FC_ASSERT( trx.delegate_slate_id );
       balance_id_type balance_id = withdraw_condition( 
                                        withdraw_with_signature( owner_key ), 
-                                       amount.asset_id, *trx.delegate_id ).get_address();
+                                       amount.asset_id, *trx.delegate_slate_id ).get_address();
 
       auto itr = required_deposits.find( balance_id );
       if( itr == required_deposits.end() )
@@ -50,17 +57,12 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::update_delegate_votes()
    {
       auto asset_rec = _current_state->get_asset_record( BASE_ASSET_ID );
-      auto max_votes = 2 * (asset_rec->current_share_supply / BTS_BLOCKCHAIN_NUM_DELEGATES);
 
       for( auto del_vote : net_delegate_votes )
       {
          auto del_rec = _current_state->get_account_record( del_vote.first );
          FC_ASSERT( !!del_rec );
          del_rec->adjust_votes_for( del_vote.second.votes_for );
-         del_rec->adjust_votes_against( del_vote.second.votes_against );
-
-         if( del_rec->votes_for() > max_votes || del_rec->votes_against() > max_votes )
-            FC_CAPTURE_AND_THROW( delegate_vote_limit, (del_rec)(max_votes) );
 
          _current_state->store_account_record( *del_rec );
       }
@@ -153,21 +155,17 @@ namespace bts { namespace blockchain {
    {
       operation_factory::instance().evaluate( *this, op );
    }
-   void transaction_evaluation_state::add_vote( account_id_type delegate_id, share_type amount )
+   void transaction_evaluation_state::adjust_vote( slate_id_type slate_id, share_type amount )
    {
-      auto account_id = abs(delegate_id);
-      if( delegate_id > 0 )
-         net_delegate_votes[account_id].votes_for += amount;
-      else if( delegate_id < 0 )
-         net_delegate_votes[account_id].votes_against += amount;
-   }
-   void transaction_evaluation_state::sub_vote( account_id_type delegate_id, share_type amount )
-   {
-      auto account_id = abs(delegate_id);
-      if( delegate_id > 0 )
-         net_delegate_votes[account_id].votes_for -= amount;
-      else if( delegate_id < 0 )
-         net_delegate_votes[account_id].votes_against -= amount;
+      if( slate_id )
+      {
+         auto slate = _current_state->get_delegate_slate( slate_id );
+         if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
+         for( auto delegate_id : slate->supported_delegates )
+         {
+            net_delegate_votes[delegate_id].votes_for += amount;
+         }
+      }
    }
 
    share_type transaction_evaluation_state::get_fees( asset_id_type id )const
