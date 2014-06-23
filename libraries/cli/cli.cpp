@@ -692,7 +692,7 @@ namespace bts { namespace cli {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_receive_account_list( accts );
               }
-              else if ( command == "wallet_list_accounts" )
+              else if ( command == "wallet_list_accounts" || command == "wallet_list_unregistered_accounts" || command == "wallet_list_favorite_accounts" )
               {
                   auto accts = result.as<vector<wallet_account_record>>();
                   print_contact_account_list( accts );
@@ -706,7 +706,7 @@ namespace bts { namespace cli {
                       *_out << accts.first << ":\n";
                       for( auto balance : accts.second )
                       {
-                         *_out << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";//fc::to_pretty_string(balance.second) << " " << balance.first <<"\n"; 
+                         *_out << "    " << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) ) <<"\n";
                       }
                   }
               }
@@ -1098,6 +1098,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
+                *_out << std::setw( 15 ) << "FAVORITE";
                 *_out << std::setw( 15 ) << "TRUST LEVEL";
                 *_out << "\n";
 
@@ -1114,7 +1115,12 @@ namespace bts { namespace cli {
                       *_out << std::setw( 22 ) << "NO";
                     else 
                       *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
-                    
+
+                    if( acct.is_favorite )
+                      *_out << std::setw( 15 ) << "YES";
+                    else
+                      *_out << std::setw( 15 ) << "NO";
+
                     *_out << std::setw( 10) << acct.trust_level;
                     *_out << "\n";
                 }
@@ -1126,11 +1132,10 @@ namespace bts { namespace cli {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
+                *_out << std::setw( 15 ) << "FAVORITE";
                 *_out << std::setw( 15 ) << "TRUST LEVEL";
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
-
-                //*_out << fc::json::to_string( account_records ) << "\n";
 
                 for( auto acct : account_records )
                 {
@@ -1143,19 +1148,21 @@ namespace bts { namespace cli {
                         *_out << std::setw(35) << pretty_shorten(acct.name, 34);
                     }
 
-                   // auto balance = _client->get_wallet()->get_balances( BTS_ADDRESS_PREFIX, acct.name );
-                   // *_out << std::setw(25) << _client->get_chain()->to_pretty_asset(balance[0]);
-
                     *_out << std::setw(64) << string( acct.active_key() );
 
                     if (acct.id == 0 ) 
-                    { //acct.registration_date == fc::time_point_sec()) {
+                    {
                         *_out << std::setw( 22 ) << "NO";
                     } 
                     else 
                     {
                         *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
                     }
+
+                    if( acct.is_favorite )
+                      *_out << std::setw( 15 ) << "YES";
+                    else
+                      *_out << std::setw( 15 ) << "NO";
 
                     *_out << std::setw( 15 ) << acct.trust_level;
                     if (acct.is_delegate())
@@ -1513,20 +1520,28 @@ namespace bts { namespace cli {
       if( !_input_stream || !_out || _daemon_mode ) 
         return;
 #ifdef HAVE_READLINE
-      char* saved_line = rl_copy_text(0, rl_end);
-      char* saved_prompt = strdup(rl_prompt);
-      int saved_point = rl_point;
-      rl_set_prompt("");
-      rl_replace_line("", 0);
-      rl_redisplay();
-      (*_out) << message << "\n";
-      _out->flush();
-      rl_set_prompt(saved_prompt);
-      rl_replace_line(saved_line, 0);
-      rl_point = saved_point;
-      rl_redisplay();
-      free(saved_line);
-      free(saved_prompt);
+      if (rl_prompt)
+      {
+        char* saved_line = rl_copy_text(0, rl_end);
+        char* saved_prompt = strdup(rl_prompt);
+        int saved_point = rl_point;
+        rl_set_prompt("");
+        rl_replace_line("", 0);
+        rl_redisplay();
+        (*_out) << message << "\n";
+        _out->flush();
+        rl_set_prompt(saved_prompt);
+        rl_replace_line(saved_line, 0);
+        rl_point = saved_point;
+        rl_redisplay();
+        free(saved_line);
+        free(saved_prompt);
+      }
+      else
+      {
+        // it's not clear what state we're in if rl_prompt is null, but we've had reports
+        // of crashes.  Just swallow the message and avoid crashing.
+      }
 #else
       // not supported; no way for us to restore the prompt, so just swallow the message
 #endif

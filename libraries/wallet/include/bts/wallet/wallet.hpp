@@ -129,6 +129,9 @@ namespace bts { namespace wallet {
          public_key_type  create_account( const string& account_name, 
                                           const variant& private_data = variant() );
 
+         void account_set_favorite ( const string& account_name,
+                                     const bool is_favorite );
+
          address          get_new_address( const string& account_name );
          public_key_type  get_new_public_key( const string& account_name );
 
@@ -178,6 +181,8 @@ namespace bts { namespace wallet {
          vector<string> list() const; // list wallets
 
          vector<wallet_account_record> list_accounts()const;
+         vector<wallet_account_record> list_favorite_accounts()const;
+         vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,

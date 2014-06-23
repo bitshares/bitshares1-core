@@ -583,8 +583,9 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey )
    { try {
-      if( !is_valid_account_name(wallet_name))
+      if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
+
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
       if( fc::exists( wallet_file_path ) )
           FC_THROW_EXCEPTION( wallet_already_exists, "Wallet name already exists!", ("wallet_name",wallet_name) );
@@ -660,8 +661,11 @@ namespace bts { namespace wallet {
 
    void wallet::open( const string& wallet_name )
    { try {
+      if( !is_valid_account_name( wallet_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
+
       auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
-      if ( !is_valid_account_name(wallet_name) || !fc::exists( wallet_file_path ) )
+      if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
       try
@@ -741,6 +745,10 @@ namespace bts { namespace wallet {
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
       FC_ASSERT( fc::exists( filename ) );
+
+      if( !is_valid_account_name( wallet_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
+
       try
       {
           create( wallet_name, passphrase );
@@ -886,6 +894,17 @@ namespace bts { namespace wallet {
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+   void wallet::account_set_favorite( const string& account_name,
+                                      const bool is_favorite )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_valid_account( account_name ) );
+
+       auto judged_account = my->_wallet_db.lookup_account( account_name );
+       judged_account->is_favorite = is_favorite;
+       my->_wallet_db.cache_account( *judged_account );
+   }
 
    /**
     *  Creates a new private key under the specified account. This key
@@ -1250,7 +1269,8 @@ namespace bts { namespace wallet {
    { try {
       auto sorted_delegates = my->_blockchain->get_active_delegates();
 
-      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      auto current_time = bts::blockchain::now();
+      uint32_t interval_number = current_time.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
       if( next_block_time == my->_blockchain->now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
@@ -1268,7 +1288,12 @@ namespace bts { namespace wallet {
          {
              auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
              if( key.valid() && key->has_private_key() )
-                return next_block_time;
+             {
+                if( next_block_time >= current_time )
+                    return next_block_time;
+                else
+                    last_block_time += BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+             }
          }
       }
       return fc::time_point_sec();
@@ -2754,6 +2779,49 @@ namespace bts { namespace wallet {
 
       return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
+
+
+   vector<wallet_account_record> wallet::list_favorite_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.is_favorite )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   vector<wallet_account_record> wallet::list_unregistered_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.id == 0 )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+
 
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
    {

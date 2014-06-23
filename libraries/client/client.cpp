@@ -79,7 +79,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                  "log file with CLI commands to execute at startup")
                               ("help", "display this help message and exit")
                               ("p2p-port", program_options::value<uint16_t>(), "set port to listen on")
-                              ("maximum-number-of-connections", program_options::value<uint16_t>(), 
+                              ("max-connections", program_options::value<uint16_t>(),
                                   "set the maximum number of peers this node will accept at any one time")
                               ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
                               ("connect-to", program_options::value<std::vector<string> >(), "set remote host to connect to")
@@ -547,17 +547,12 @@ config load_config( const fc::path& datadir )
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = bts::blockchain::now(); //fc::time_point_sec(fc::time_point::now());
+            auto now = bts::blockchain::now();
             auto next_block_time = _wallet->next_block_production_time();
-           // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
-           //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
-            if( next_block_time < (now + -1) ||
-                (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
-            {
-               fc::usleep( fc::seconds(2) );
-               continue;
-            }
-            else
+            // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+            //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+            if( next_block_time >= now
+                && (next_block_time - now) < fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
@@ -566,7 +561,7 @@ config load_config( const fc::path& datadir )
                              ("count",_min_delegate_connection_count) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
 
-                  fc::usleep( (next_block_time - now) );
+                  fc::usleep( next_block_time - now );
                   full_block next_block = _chain_db->generate_block( next_block_time );
                   _wallet->sign_block( next_block );
 
@@ -1279,6 +1274,14 @@ config load_config( const fc::path& datadir )
     {
       return _wallet->list_my_accounts();
     }
+    vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
+    {
+      return _wallet->list_favorite_accounts();
+    }
+    vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
+    {
+      return _wallet->list_unregistered_accounts();
+    }
 
     void detail::client_impl::wallet_remove_contact_account(const string& account_name)
     {
@@ -1856,16 +1859,16 @@ config load_config( const fc::path& datadir )
       this->run_delegate();
 
       this->configure( datadir );
-      
-      my->configure_rpc_server(my->_config,option_variables);
 
-
-      if (option_variables.count("maximum-number-of-connections"))
+      if (option_variables.count("max-connections"))
       {
+        my->_config.maximum_number_of_connections = option_variables["max-connections"].as<uint16_t>();
         fc::mutable_variant_object params;
-        params["maximum_number_of_connections"] = option_variables["maximum-number-of-connections"].as<uint16_t>();
+        params["maximum_number_of_connections"] = my->_config.maximum_number_of_connections;
         this->network_set_advanced_node_parameters(params);
       }
+
+      my->configure_rpc_server(my->_config,option_variables);
 
       if (option_variables.count("p2p-port"))
       {
@@ -2102,6 +2105,11 @@ config load_config( const fc::path& datadir )
     {
        ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return _wallet->create_account( account_name, private_data );
+    }
+
+    void client_impl::wallet_account_set_favorite(const string& account_name, bool is_favorite)
+    {
+        _wallet->account_set_favorite( account_name, is_favorite );
     }
 
     void client_impl::enable_output(bool enable_flag)
