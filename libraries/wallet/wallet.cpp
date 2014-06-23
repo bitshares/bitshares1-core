@@ -1257,11 +1257,33 @@ namespace bts { namespace wallet {
 
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
-      auto delegate_record = get_account( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+       std::vector<wallet_account_record> delegate_records;
 
-      delegate_record->block_production_enabled = enable;
-      my->_wallet_db.cache_account( *delegate_record ); //store_record( *delegate_record );
+      if( delegate_name != "*" )
+      {
+          auto delegate_record = get_account( delegate_name );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
+          FC_ASSERT( key.valid() && key->has_private_key() );
+          delegate_records.push_back( *delegate_record );
+      }
+      else
+      {
+          for( auto itr = my->_wallet_db.get_accounts().begin(); itr != my->_wallet_db.get_accounts().end(); ++itr)
+          {
+              auto account_record = itr->second;
+              if( !account_record.is_delegate() ) continue;
+              auto key = my->_wallet_db.lookup_key( account_record.active_key() );
+              if( !key.valid() || !key->has_private_key() ) continue;
+              delegate_records.push_back( account_record );
+          }
+      }
+
+      for( auto& delegate_record : delegate_records )
+      {
+          delegate_record.block_production_enabled = enable;
+          my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
+      }
    }
 
    /**
@@ -1272,8 +1294,7 @@ namespace bts { namespace wallet {
    { try {
       auto sorted_delegates = my->_blockchain->get_active_delegates();
 
-      auto current_time = bts::blockchain::now();
-      uint32_t interval_number = current_time.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
       if( next_block_time == my->_blockchain->now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
@@ -1291,12 +1312,7 @@ namespace bts { namespace wallet {
          {
              auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
              if( key.valid() && key->has_private_key() )
-             {
-                if( next_block_time >= current_time )
-                    return next_block_time;
-                else
-                    last_block_time += BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-             }
+                return next_block_time;
          }
       }
       return fc::time_point_sec();
