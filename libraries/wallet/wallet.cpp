@@ -898,6 +898,17 @@ namespace bts { namespace wallet {
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+   void wallet::account_set_favorite( const string& account_name,
+                                      const bool is_favorite )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_valid_account( account_name ) );
+
+       auto judged_account = my->_wallet_db.lookup_account( account_name );
+       judged_account->is_favorite = is_favorite;
+       my->_wallet_db.cache_account( *judged_account );
+   }
+
    /**
     *  Creates a new private key under the specified account. This key
     *  will not be valid for sending TITAN transactions to, but will
@@ -2814,6 +2825,49 @@ namespace bts { namespace wallet {
 
       return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
+
+
+   vector<wallet_account_record> wallet::list_favorite_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.is_favorite )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   vector<wallet_account_record> wallet::list_unregistered_accounts() const
+   { try {
+      vector<wallet_account_record> receive_accounts;
+      const auto& accs = my->_wallet_db.get_accounts();
+      receive_accounts.reserve( accs.size() );
+      for( auto item : accs )
+      {
+         if( item.second.id == 0 )
+         {
+            receive_accounts.push_back( item.second );
+         }
+      }
+
+      std::sort( receive_accounts.begin(), receive_accounts.end(),
+                 [](const wallet_account_record& a, const wallet_account_record& b) -> bool
+                 { return a.name.compare( b.name ) < 0; } );
+
+      return receive_accounts;
+   } FC_CAPTURE_AND_RETHROW() }
+
+
 
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
    {

@@ -1274,6 +1274,14 @@ config load_config( const fc::path& datadir )
     {
       return _wallet->list_my_accounts();
     }
+    vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
+    {
+      return _wallet->list_favorite_accounts();
+    }
+    vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
+    {
+      return _wallet->list_unregistered_accounts();
+    }
 
     void detail::client_impl::wallet_remove_contact_account(const string& account_name)
     {
@@ -2098,6 +2106,11 @@ config load_config( const fc::path& datadir )
     {
        ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        return _wallet->create_account( account_name, private_data );
+    }
+
+    void client_impl::wallet_account_set_favorite(const string& account_name, bool is_favorite)
+    {
+        _wallet->account_set_favorite( account_name, is_favorite );
     }
 
     void client_impl::enable_output(bool enable_flag)
