@@ -1419,7 +1419,7 @@ namespace bts { namespace blockchain {
        *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
        *  should be less than eventual fees.
        */
-      total_fees = BTS_BLOCKCHAIN_BLOCK_REWARD;
+      // total_fees = BTS_BLOCKCHAIN_BLOCK_REWARD;
       next_block.delegate_pay_rate  = next_block.next_delegate_pay( my->_head_block_header.delegate_pay_rate, total_fees );
 
 
