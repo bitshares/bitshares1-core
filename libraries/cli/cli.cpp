@@ -653,15 +653,13 @@ namespace bts { namespace cli {
                   if( !_out ) return;
 
                      (*_out) << std::setw(25) << std::left << "Delegate"
-                            << std::setw(15) << "For"
-                            << std::setw(15) << "Against\n";
+                            << std::setw(15) << "Votes\n";
                      (*_out) <<"--------------------------------------------------------------\n";
                   auto votes = result.as<bts::wallet::wallet::account_vote_summary_type>();
                   for( auto vote : votes )
                   {
                      (*_out) << std::setw(25) << vote.first 
-                            << std::setw(15) << vote.second.votes_for 
-                            << std::setw(15) << vote.second.votes_against <<"\n";
+                            << std::setw(15) << vote.second.votes_for <<"\n";
                   }
               }
               else if (method_name == "list_errors")
@@ -777,10 +775,8 @@ namespace bts { namespace cli {
                   auto max = current + count;
                   auto num_active = BTS_BLOCKCHAIN_NUM_DELEGATES - current;
 
-                  *_out << std::setw(12) << "ID";
-                  *_out << std::setw(25) << "NAME";
-                  *_out << std::setw(20) << "VOTES FOR";
-                  *_out << std::setw(20) << "VOTES AGAINST";
+                  *_out << std::setw(5) << "ID";
+                  *_out << std::setw(30) << "NAME";
                   *_out << std::setw(20) << "NET VOTES";
                   *_out << std::setw(16) << "BLOCKS PRODUCED";
                   *_out << std::setw(16) << "BLOCKS MISSED";
@@ -797,20 +793,18 @@ namespace bts { namespace cli {
                       if (current == num_active)
                           *_out << "** Standby:\n";
 
-                      *_out << std::setw(12) << delegate_rec.id;
-                      *_out << std::setw(25) << pretty_shorten( delegate_rec.name, 24 );
+                      *_out << std::setw(5)  << std::left << delegate_rec.id;
+                      *_out << std::setw(30) << pretty_shorten( delegate_rec.name, 24 );
                       
-                      *_out << std::setw(20) << delegate_rec.votes_for();
-                      *_out << std::setw(20) << delegate_rec.votes_against();
-
-
                       std::stringstream ss;
                       auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
                       FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
                       float percent = 100.0 * delegate_rec.net_votes() / opt_rec->current_share_supply;
                       ss << std::setprecision(10);
+                      ss << std::fixed;
                       ss << percent;
                       ss << " %";
+                      //*_out << std::setw(20) << _client->get_chain()->to_pretty_asset( asset(delegate_rec.net_votes(),0) );
                       *_out << std::setw(20) << ss.str();
 
                       *_out << std::setw(16) << delegate_rec.delegate_info->blocks_produced;
@@ -884,8 +878,6 @@ namespace bts { namespace cli {
                   if (record.is_delegate())
                   {
                       *_out << std::left;
-                      *_out << std::setw(20) << "VOTES FOR";
-                      *_out << std::setw(20) << "VOTES AGAINST";
                       *_out << std::setw(20) << "NET VOTES";
                       *_out << std::setw(16) << "BLOCKS PRODUCED";
                       *_out << std::setw(16) << "BLOCKS MISSED";
@@ -900,9 +892,7 @@ namespace bts { namespace cli {
                       auto supply = _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply;
                       auto last_block_produced = record.delegate_info->last_block_num_produced;
                                                 //Horribly painful way to print a % after a double with precision of 8. Better solutions welcome.
-                      *_out << std::setw(20) << (fc::variant(double(record.votes_for())*100.0 / supply).as_string().substr(0,10) + '%')
-                            << std::setw(20) << (fc::variant(double(record.votes_against())*100.0 / supply).as_string().substr(0,10) + '%')
-                            << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
+                      *_out << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
                             << std::setw(16) << record.delegate_info->blocks_produced
                             << std::setw(16) << record.delegate_info->blocks_missed
                             << std::setw(20) << std::setprecision(4) << (double(record.delegate_info->blocks_produced) / (record.delegate_info->blocks_produced + record.delegate_info->blocks_missed));
@@ -1064,6 +1054,8 @@ namespace bts { namespace cli {
                                 *_out << std::setw(40) << owner;
                             }
 
+                            /*
+                             * TODO... what about the slate??
                             auto delegate_id = balance_rec.condition.delegate_id;
                             auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
                             if( delegate_rec )
@@ -1083,6 +1075,7 @@ namespace bts { namespace cli {
                             {
                                    *_out << std::setw(25) << "none";
                             }
+                            */
                         }
                         default:
                         {
@@ -1179,7 +1172,6 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "VOTES FOR";
-                *_out << std::setw( 15 ) << "VOTES AGAINST";
                 *_out << std::setw( 15 ) << "TRUST LEVEL";
 
                 *_out << "\n";
@@ -1201,7 +1193,6 @@ namespace bts { namespace cli {
                     if ( acct.is_delegate() )
                     {
                         *_out << std::setw(15) << acct.delegate_info->votes_for;
-                        *_out << std::setw(15) << acct.delegate_info->votes_against;
                     }
                     else
                     {
@@ -1320,6 +1311,7 @@ namespace bts { namespace cli {
 
                     *_out << std::right;
                     /* Print delegate vote */
+                    /*
                     bool has_deposit = false;
                     std::stringstream ss;
                     for (auto op : tx.operations)
@@ -1345,6 +1337,7 @@ namespace bts { namespace cli {
                     else
                     {
                     }
+                    */
 
                     (*_out) << std::right;
                     /* Print transaction ID */

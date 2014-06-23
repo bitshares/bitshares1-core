@@ -51,6 +51,8 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( account_key_in_use, bts::blockchain::evaluation_error, 32008, "account key already in use" );
    FC_DECLARE_DERIVED_EXCEPTION( account_retracted, bts::blockchain::evaluation_error, 32009, "account retracted" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_parent_account_name, bts::blockchain::evaluation_error, 32009, "account retracted" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_delegate_slate,  bts::blockchain::evaluation_error, 32010, "unknown delegate slate" );
+   FC_DECLARE_DERIVED_EXCEPTION( too_may_delegates_in_slate,  bts::blockchain::evaluation_error, 32011, "too many delegates in slate" );
 
    // TODO: account.data size
    // TODO: asset.data size

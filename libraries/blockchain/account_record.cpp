@@ -27,28 +27,14 @@ namespace bts { namespace blockchain {
     int64_t account_record::net_votes()const 
     {
         FC_ASSERT( is_delegate() );
-        return delegate_info->votes_for - delegate_info->votes_against; 
+        return delegate_info->votes_for;
     }
     void account_record::adjust_votes_for( share_type delta )
     {
         FC_ASSERT( is_delegate() );
         delegate_info->votes_for += delta;
     }
-    void account_record::adjust_votes_against( share_type delta )
-    {
-        FC_ASSERT( is_delegate() );
-        delegate_info->votes_against += delta;
-    }
-    share_type account_record::votes_for()const 
-    {
-        FC_ASSERT( is_delegate() );
-        return delegate_info->votes_for;
-    }
-    share_type account_record::votes_against()const 
-    {
-        FC_ASSERT( is_delegate() );
-        return delegate_info->votes_against;
-    }
+
     bool account_record::is_retracted()const
     { 
         return active_key() == public_key_type();

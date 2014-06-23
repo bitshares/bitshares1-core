@@ -352,8 +352,8 @@ namespace bts { namespace net {
     node_impl::node_impl() : 
       _delegate( nullptr ),
       _user_agent_string( "bts::net::node" ),
-      _desired_number_of_connections( 32 ),
-      _maximum_number_of_connections( 100 ),
+      _desired_number_of_connections( BTS_NET_DEFAULT_DESIRED_CONNECTIONS ),
+      _maximum_number_of_connections( BTS_NET_DEFAULT_MAX_CONNECTIONS ),
       _peer_connection_retry_timeout( BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME ),
       _peer_inactivity_timeout(  BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT ),
       _most_recent_blocks_accepted( _maximum_number_of_connections ),
@@ -1210,7 +1210,9 @@ namespace bts { namespace net {
         disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
       else
       {
-        if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+        // not filtering firewalled nodes just incase they have working UPNP or port mapping
+        // TODO: add enhanced firewall detection code
+        // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
         {
           // mark the connection as successful in the database
           potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );

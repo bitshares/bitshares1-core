@@ -46,18 +46,8 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the bid
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      
-      if( delta_amount.asset_id == 0 )
-      {
-         // TODO: validate delegate ID
-         eval_state.sub_vote( current_bid->delegate_id, this->amount );
-      }
 
       current_bid->balance     += this->amount;
-      current_bid->delegate_id = this->delegate_id;
-
-      if( delta_amount.asset_id == 0 )
-        eval_state.add_vote( current_bid->delegate_id, this->amount );
 
       eval_state._current_state->store_bid_record( this->bid_index, *current_bid );
 
@@ -111,17 +101,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
       
-      if( delta_amount.asset_id == 0 )
-      {
-         // TODO: validate delegate ID
-         eval_state.sub_vote( current_ask->delegate_id, this->amount );
-      }
-
       current_ask->balance     += this->amount;
-      current_ask->delegate_id = this->delegate_id;
-
-      if( delta_amount.asset_id == 0 )
-        eval_state.add_vote( current_ask->delegate_id, this->amount );
 
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
 

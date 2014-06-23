@@ -46,6 +46,8 @@ namespace bts { namespace blockchain {
           * apply collected vote changes 
           */
          virtual void update_delegate_votes();
+         virtual void verify_delegate_id( account_id_type id )const;
+        // virtual void verify_slate_id( slate_id_type id )const;
          
          bool check_signature( const address& a )const;
         
@@ -64,8 +66,7 @@ namespace bts { namespace blockchain {
          /** any time a balance is deposited increment the vote for the delegate,
           * if delegate_id is negative then it is a vote against abs(delegate_id)
           */
-         void add_vote( name_id_type delegate_id, share_type amount );
-         void sub_vote( name_id_type delegate_id, share_type amount );
+         void adjust_vote( slate_id_type slate, share_type amount );
 
          void validate_asset( const asset& a )const;
          
@@ -104,16 +105,15 @@ namespace bts { namespace blockchain {
 
          struct vote_state
          {
-            vote_state():votes_for(0),votes_against(0){}
+            vote_state():votes_for(0){}
          
             int64_t votes_for;
-            int64_t votes_against;
          };
          /**
           *  Tracks the votes for or against each delegate based upon 
           *  the deposits and withdraws to addresses.
           */
-         unordered_map<name_id_type, vote_state>     net_delegate_votes;
+         unordered_map<account_id_type, vote_state>     net_delegate_votes;
 
 
       // not serialized
@@ -125,7 +125,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for)(votes_against) )
+FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state, 
            (trx)(signed_keys)
            (validation_error)

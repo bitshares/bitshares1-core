@@ -89,7 +89,7 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{ 
-         account_id_type select_delegate_vote()const;
+         delegate_slate select_delegate_vote()const;
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
@@ -306,7 +306,7 @@ namespace bts { namespace wallet {
           */
          wallet_transaction_record register_account( const string& account_name,
                                               const variant& json_data,
-                                              bool  as_delegate, 
+                                              uint8_t  production_fee_percent, 
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
@@ -318,7 +318,6 @@ namespace bts { namespace wallet {
                                                        const string& pay_from_account,
                                                        optional<variant> json_data,
                                                        optional<public_key_type> active = optional<public_key_type>(),
-                                                       bool as_delegate = false,
                                                        bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,

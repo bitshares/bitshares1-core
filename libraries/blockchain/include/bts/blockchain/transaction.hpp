@@ -2,6 +2,7 @@
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/error_codes.hpp>
+#include <bts/blockchain/delegate_slate.hpp>
 #include <fc/optional.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw.hpp>
@@ -36,10 +37,12 @@ namespace bts { namespace blockchain {
        *  must pay the bidder the proper amount.  When making this payout
        *  the system needs to know which delegate_id to use. 
        */
-      optional<account_id_type>       delegate_id; // delegate being voted for in required payouts
+      optional<slate_id_type>     delegate_slate_id; // delegate being voted for in required payouts
       vector<operation>           operations; 
 
       void issue( const asset& amount_to_issue );
+
+      void define_delegate_slate( delegate_slate s );
 
       void withdraw( const balance_id_type& account, 
                      share_type amount );
@@ -49,13 +52,13 @@ namespace bts { namespace blockchain {
 
       void deposit( const address& addr, 
                     const asset& amount, 
-                    account_id_type delegate_id );
+                    slate_id_type delegate_id );
 
       void deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,
                                 const string& memo_message,
-                                account_id_type delegate_id,
+                                slate_id_type delegate_id,
                                 const fc::ecc::public_key& memo_public_key,
                                 fc::ecc::private_key one_time_private_key,
                                 memo_flags_enum memo_type = from_memo );
@@ -65,12 +68,11 @@ namespace bts { namespace blockchain {
                          const variant& public_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
-                         bool as_delegate = false );
+                         uint8_t pro_fee = 255 );
 
       void update_account( account_id_type name_id, 
                         const optional<variant>& public_data, 
-                        const optional<public_key_type>& active, 
-                        bool as_delegate = false );
+                        const optional<public_key_type>& active );
 
       void submit_proposal( account_id_type delegate_id,
                             const string& subject,
@@ -94,8 +96,7 @@ namespace bts { namespace blockchain {
 
       void bid( const asset& quantity, 
                 const price& price_per_unit, 
-                const address& owner,
-                account_id_type delegate_id = 0 );
+                const address& owner );
 
    }; // transaction
 
@@ -165,7 +166,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
-FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_id)(operations) )
+FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_slate_id)(operations) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (signatures) )
 
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
