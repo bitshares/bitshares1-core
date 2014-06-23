@@ -1513,20 +1513,28 @@ namespace bts { namespace cli {
       if( !_input_stream || !_out || _daemon_mode ) 
         return;
 #ifdef HAVE_READLINE
-      char* saved_line = rl_copy_text(0, rl_end);
-      char* saved_prompt = strdup(rl_prompt);
-      int saved_point = rl_point;
-      rl_set_prompt("");
-      rl_replace_line("", 0);
-      rl_redisplay();
-      (*_out) << message << "\n";
-      _out->flush();
-      rl_set_prompt(saved_prompt);
-      rl_replace_line(saved_line, 0);
-      rl_point = saved_point;
-      rl_redisplay();
-      free(saved_line);
-      free(saved_prompt);
+      if (rl_prompt)
+      {
+        char* saved_line = rl_copy_text(0, rl_end);
+        char* saved_prompt = strdup(rl_prompt);
+        int saved_point = rl_point;
+        rl_set_prompt("");
+        rl_replace_line("", 0);
+        rl_redisplay();
+        (*_out) << message << "\n";
+        _out->flush();
+        rl_set_prompt(saved_prompt);
+        rl_replace_line(saved_line, 0);
+        rl_point = saved_point;
+        rl_redisplay();
+        free(saved_line);
+        free(saved_prompt);
+      }
+      else
+      {
+        // it's not clear what state we're in if rl_prompt is null, but we've had reports
+        // of crashes.  Just swallow the message and avoid crashing.
+      }
 #else
       // not supported; no way for us to restore the prompt, so just swallow the message
 #endif
