@@ -113,19 +113,18 @@ namespace bts { namespace blockchain {
    void transaction::register_account( const std::string& name, 
                                    const fc::variant& public_data, 
                                    const public_key_type& master, 
-                                   const public_key_type& active, bool as_delegate  )
+                                   const public_key_type& active, uint8_t pro_fee  )
    {
-      operations.push_back( register_account_operation( name, public_data, master, active, as_delegate ) );
+      operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
    }
    void transaction::update_account( account_id_type account_id, 
                                   const fc::optional<fc::variant>& public_data, 
-                                  const fc::optional<public_key_type>& active, bool as_delegate   )
+                                  const fc::optional<public_key_type>& active   )
    {
       update_account_operation op;
       op.account_id = account_id;
       op.public_data = public_data;
       op.active_key = active;
-      op.is_delegate = as_delegate;
       operations.push_back( op );
    }
 

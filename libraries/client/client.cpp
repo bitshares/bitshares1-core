@@ -2255,11 +2255,12 @@ config load_config( const fc::path& datadir )
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
                                                         const fc::variant& data,
-                                                        bool as_delegate ) 
+                                                        uint32_t delegate_production_fee ) 
     {
       try {
         // bool sign = (flag != do_not_sign);
-        auto trx = _wallet->register_account(account_name, data, as_delegate, pay_with_account, true);//sign);
+        FC_ASSERT( delegate_production_fee <= 255 );
+        auto trx = _wallet->register_account(account_name, data, delegate_production_fee, pay_with_account);//sign);
         network_broadcast_transaction( trx.trx );
         /*
         if( flag == sign_and_broadcast )
@@ -2284,14 +2285,12 @@ config load_config( const fc::path& datadir )
 
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
-                                                                        const variant& public_data,
-                                                                        bool as_delegate )
+                                                                        const variant& public_data )
     {
        auto trx = _wallet->update_registered_account( account_to_update, 
                                                            pay_from_account, 
                                                            public_data, 
-                                                           optional<public_key_type>(),
-                                                           as_delegate, true );
+                                                           optional<public_key_type>(), true );
 
        network_broadcast_transaction( trx.trx );
        return trx;

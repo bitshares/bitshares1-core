@@ -68,12 +68,11 @@ namespace bts { namespace blockchain {
                          const variant& public_data, 
                          const public_key_type& master, 
                          const public_key_type& active, 
-                         bool as_delegate = false );
+                         uint8_t pro_fee = 255 );
 
       void update_account( account_id_type name_id, 
                         const optional<variant>& public_data, 
-                        const optional<public_key_type>& active, 
-                        bool as_delegate = false );
+                        const optional<public_key_type>& active );
 
       void submit_proposal( account_id_type delegate_id,
                             const string& subject,

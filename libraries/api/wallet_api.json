@@ -571,10 +571,10 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
+                  "name" : "delegate_production_fee",
+                  "type" : "uint32_t",
+                  "description" : "A value between 0 and 100% delegates, 255 for non delegates",
+                  "default_value" : 255
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -620,12 +620,6 @@
                   "type" : "json_variant",
                   "description" : "public data about the account",
                   "default_value" : null
-               },
-               {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
                }
             ],
          "prerequisites" : ["wallet_unlocked"],

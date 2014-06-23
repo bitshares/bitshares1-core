@@ -1835,7 +1835,7 @@ namespace bts { namespace wallet {
 
    wallet_transaction_record wallet::register_account( const string& account_to_register,
                                                 const variant& public_data,
-                                                bool as_delegate,
+                                                uint8_t delegate_production_fee,
                                                 const string& pay_with_account_name,
                                                 bool sign )
    { try {
@@ -1860,7 +1860,7 @@ namespace bts { namespace wallet {
       trx.register_account( account_to_register, public_data,
                             account_public_key, // master
                             account_public_key, // active
-                            as_delegate );
+                            delegate_production_fee <= 100 ? delegate_production_fee : 255 );
 
       auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
@@ -1874,9 +1874,11 @@ namespace bts { namespace wallet {
 
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
-      if( as_delegate )
+      bool as_delegate = false;
+      if( delegate_production_fee <= 100  )
       {
         required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
+        as_delegate = true;
       }
 
       auto size_fee = fc::raw::pack_size( public_data );
@@ -1908,7 +1910,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("public_data", public_data)
                                       ("pay_with_account_name", pay_with_account_name) 
-                                      ("as_delegate",as_delegate) ) }
+                                      ("delegate_production_fee",int(delegate_production_fee)) ) }
 
    signed_transaction  wallet::create_asset( const string& symbol,
                                              const string& asset_name,
@@ -2030,7 +2032,6 @@ namespace bts { namespace wallet {
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
                                                                 optional<public_key_type> new_active_key,
-                                                                bool as_delegate,
                                                                 bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -2047,10 +2048,6 @@ namespace bts { namespace wallet {
       
       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
 
-      if( as_delegate && !account->is_delegate() )
-      {
-        required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
-      }
 
       auto size_fee = fc::raw::pack_size( public_data );
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
@@ -2062,7 +2059,7 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, public_data, new_active_key, as_delegate );
+      trx.update_account( account->id, public_data, new_active_key );
        
       if (sign)
       {
@@ -2070,7 +2067,7 @@ namespace bts { namespace wallet {
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
-                                                  "update " + account_to_update + (as_delegate? " as a delegate" : ""), 
+                                                  "update " + account_to_update, 
                                                   payer_public_key, 
                                                   bts::blockchain::now(),
                                                   bts::blockchain::now(),
@@ -2083,7 +2080,6 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
                                       ("new_active_key",new_active_key)
-                                      ("as_delegate",as_delegate)
                                       ("sign",sign) ) }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,

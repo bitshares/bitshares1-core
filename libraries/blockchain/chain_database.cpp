@@ -480,13 +480,17 @@ namespace bts { namespace blockchain {
             auto delegate_record = pending_state->get_account_record( self->get_signing_delegate_id( time_slot ) );
             FC_ASSERT( delegate_record.valid() );
             FC_ASSERT( delegate_record->is_delegate() );
-            delegate_record->delegate_info->pay_balance += amount;
-            delegate_record->delegate_info->votes_for += amount;
+            auto pay_rate = delegate_record->delegate_info->delegate_production_fee;
+            FC_ASSERT( pay_rate <= 100 );
+            auto pay = (amount*pay_rate)/100;
+
+            delegate_record->delegate_info->pay_balance += pay;
+            delegate_record->delegate_info->votes_for += pay;
             pending_state->store_account_record( *delegate_record );
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += amount;
+            base_asset_record->current_share_supply += pay;
             pending_state->store_asset_record( *base_asset_record );
 
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }

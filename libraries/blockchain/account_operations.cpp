@@ -10,8 +10,13 @@ namespace bts { namespace blockchain {
    register_account_operation::register_account_operation( const std::string& n, 
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
-                                                   const public_key_type& active, bool as_delegate )
-   :name(n),public_data(d),owner_key(owner),active_key(active),is_delegate(as_delegate){}
+                                                   const public_key_type& active, 
+                                                   uint8_t delegate_pro_fee )
+   :name(n),
+    public_data(d),
+    owner_key(owner),
+    active_key(active),
+    delegate_production_fee(delegate_pro_fee){}
 
 
    string get_parent_account_name( const string& child )
@@ -59,9 +64,10 @@ namespace bts { namespace blockchain {
       new_record.registration_date = now;
 
       new_record.set_active_key( now, this->active_key );
-      if (this->is_delegate)
+      if (this->is_delegate())
       {
           new_record.delegate_info = delegate_stats();
+          new_record.delegate_info->delegate_production_fee = this->delegate_production_fee;
           eval_state.required_fees += asset(eval_state._current_state->get_delegate_registration_fee(),0);
       }
       new_record.meta_data = this->meta_data;
@@ -185,13 +191,6 @@ namespace bts { namespace blockchain {
          auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
          if( account_with_same_key )
             FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
-      }
-
-      if ( !current_record->is_delegate() && this->is_delegate )
-      {
-         // pay fee
-         eval_state.required_fees += asset(eval_state._current_state->get_delegate_registration_fee(),0);
-         current_record->delegate_info = delegate_stats();
       }
 
       eval_state._current_state->store_account_record( *current_record );

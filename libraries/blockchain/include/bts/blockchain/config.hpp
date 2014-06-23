@@ -19,7 +19,7 @@
 #define BTS_BLOCKCHAIN_SYMBOL                           "XTS"
 #define BTS_BLOCKCHAIN_NAME                             "BitShares XTS"
 #define BTS_BLOCKCHAIN_DESCRIPTION                      "Stake in future BitShares X chains"
-#define BTS_BLOCKCHAIN_PRECISION                        (10000)
+#define BTS_BLOCKCHAIN_PRECISION                        (100000)
 
 /**
  * The number of delegates that the blockchain is designed to support
@@ -110,4 +110,4 @@
  *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
  *  of mining fees then it really isn't worth the networks time.
  */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*1000)
