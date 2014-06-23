@@ -1269,8 +1269,7 @@ namespace bts { namespace wallet {
    { try {
       auto sorted_delegates = my->_blockchain->get_active_delegates();
 
-      auto current_time = bts::blockchain::now();
-      uint32_t interval_number = current_time.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
       if( next_block_time == my->_blockchain->now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
@@ -1288,12 +1287,7 @@ namespace bts { namespace wallet {
          {
              auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
              if( key.valid() && key->has_private_key() )
-             {
-                if( next_block_time >= current_time )
-                    return next_block_time;
-                else
-                    last_block_time += BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-             }
+                return next_block_time;
          }
       }
       return fc::time_point_sec();
