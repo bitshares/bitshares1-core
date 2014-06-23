@@ -166,6 +166,18 @@
                   "description" : "time of the first error",
                   "type" : "timestamp", 
                   "default_value" : "20000101T000000"
+               },
+               {
+                  "name" : "first_error_number",
+                  "description" : "the first error to list",
+                  "type" : "int32_t",
+                  "default_value" : "1"
+               },
+               {
+                  "name" : "limit",
+                  "description" : "the maximum number of errors to return",
+                  "type" : "uint32_t",
+                  "default_value" : "20"
                }
         ],
         "is_const"   : true,
@@ -182,6 +194,18 @@
                   "description" : "time of the first error",
                   "type" : "timestamp", 
                   "default_value" : "20000101T000000"
+               },
+               {
+                  "name" : "first_error_number",
+                  "description" : "the first error to list",
+                  "type" : "int32_t",
+                  "default_value" : "1"
+               },
+               {
+                  "name" : "limit",
+                  "description" : "the maximum number of errors to return",
+                  "type" : "uint32_t",
+                  "default_value" : "20"
                } ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]

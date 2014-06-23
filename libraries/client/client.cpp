@@ -2435,25 +2435,33 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time )const
+   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
    {
       map<fc::time_point, fc::exception> result;
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
       {
+         if (--first_error_number)
+             continue;
          result[itr.key()] = itr.value();
          ++itr;
+         if (--limit == 0)
+             break;
       }
       return result;
    }
-   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time )const
+   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
    {
       map<fc::time_point, std::string> result;
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
       {
+         if (--first_error_number)
+             continue;
          result[itr.key()] = itr.value().what();
          ++itr;
+         if (--limit == 0)
+             break;
       }
       return result;
    }
