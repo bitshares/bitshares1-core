@@ -304,7 +304,7 @@ struct bts_client_launcher_fixture
   bts_client_launcher_fixture() :
     _peer_connection_retry_timeout(15 /* sec */),
     _desired_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT + 2),
-    _maximum_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT * 3 / 2)
+    _maximum_number_of_connections(BTS_MIN_DELEGATE_CONNECTION_COUNT * 2)
   {}
 
   //const uint32_t test_process_count = 10;
@@ -966,8 +966,31 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     //bts::blockchain::asset source_initial_balance = client_processes[i].rpc_client->wallet_get_balance();
     bts::blockchain::share_type amount_to_transfer = 10;
     client_processes[i].rpc_client->wallet_add_contact_account("nextclient", destination_address);
-    client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", INITIAL_BALANCE_ACCOUNT, "nextclient");
+    bts::blockchain::signed_transaction transaction = client_processes[i].rpc_client->wallet_transfer(amount_to_transfer, "XTS", INITIAL_BALANCE_ACCOUNT, "nextclient");
     fc::time_point transfer_time = fc::time_point::now();
+
+    fc::usleep(fc::seconds(2));
+
+    std::vector<bts::net::message_propagation_data> propagation_data;
+    propagation_data.resize(client_processes.size());
+    for (unsigned client_index = 0; client_index < client_processes.size(); ++client_index)
+    {
+      try
+      {
+        propagation_data[client_index] = client_processes[client_index].rpc_client->network_get_transaction_propagation_data(transaction.id());
+      }
+      catch (fc::exception&)
+      {
+      }
+    }
+
+    std::ostringstream propagation_graph_filename;
+    propagation_graph_filename << "transaction_propagation_" << i <<  ".dot";
+    std::ostringstream graph_filename;
+    graph_filename << "connectivity_" << i <<  ".dot";
+    verify_network_connectivity(bts_xt_client_test_config::config_directory / "transfer_test" / graph_filename.str());
+    create_propagation_graph(propagation_data, i, bts_xt_client_test_config::config_directory / "transfer_test" / propagation_graph_filename.str());
+
     for (;;)
     {
       fc::usleep(fc::milliseconds(500));

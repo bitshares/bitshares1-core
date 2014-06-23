@@ -1,0 +1,7 @@
+(wallet closed) >>>  enable_output false
+>>>  filter_output_for_tests true
+>>>  wallet_create default "password"
+>>>  wallet_open default
+>>>  wallet_unlock 99999 "password"
+>>>  enable_output true
+OK
