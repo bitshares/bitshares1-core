@@ -53,7 +53,7 @@ namespace bts { namespace client {
     struct config
     {
        config( ) : 
-          default_peers(vector<string>{"107.170.30.182:" BOOST_PP_STRINGIZE(BTS_NETWORK_DEFAULT_P2P_PORT)}), 
+          default_peers(vector<string>{"107.170.30.182:" BOOST_PP_STRINGIZE(BTS_NETWORK_DEFAULT_P2P_PORT), "107.170.30.182:7890"}), 
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) 
