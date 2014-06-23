@@ -555,12 +555,17 @@ config load_config( const fc::path& datadir )
          _last_block = _chain_db->get_head_block().timestamp;
          while( !_delegate_loop_complete.canceled() )
          {
-            auto now = bts::blockchain::now();
+            auto now = bts::blockchain::now(); //fc::time_point_sec(fc::time_point::now());
             auto next_block_time = _wallet->next_block_production_time();
-            // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
-            //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
-            if( next_block_time >= now
-                && (next_block_time - now) < fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
+           // ilog( "next block time: ${b}  interval: ${i} seconds  now: ${n}",
+           //       ("b",next_block_time)("i",BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)("n",now) );
+            if( next_block_time < (now + -1) ||
+                (next_block_time - now) > fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) )
+            {
+               fc::usleep( fc::seconds(2) );
+               continue;
+            }
+            else
             { 
                try {
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
@@ -569,7 +574,7 @@ config load_config( const fc::path& datadir )
                              ("count",_min_delegate_connection_count) );
                   ilog( "producing block in: ${b}", ("b",(next_block_time-now).count()/1000000.0) );
 
-                  fc::usleep( next_block_time - now );
+                  fc::usleep( (next_block_time - now) );
                   full_block next_block = _chain_db->generate_block( next_block_time );
                   _wallet->sign_block( next_block );
 
