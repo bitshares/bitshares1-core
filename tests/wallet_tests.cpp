@@ -409,6 +409,9 @@ void create_genesis_block(fc::path genesis_json_file)
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());
    std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
+   //create a script for importing the delegate keys
+   std::ofstream delegate_key_import_stream(genesis_json_file.string() + ".log");
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output false" << std::endl;
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -424,10 +427,13 @@ void create_genesis_block(fc::path genesis_json_file)
       config.names.push_back(delegate_account);
       config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
 
-      //output public/private key pair for each delegate to stdout
+      //output public/private key pair for each delegate to a file
       string wif_key = bts::utilities::key_to_wif( delegate_private_key );
       key_stream << std::string(delegate_account.owner) << "   " << wif_key << std::endl;
+      //add command to import the delegate keys into a client
+      delegate_key_import_stream << CLI_PROMPT_SUFFIX " wallet_import_private_key " << wif_key << " " << delegate_account.name << " false" << std::endl;
    }
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output true" << std::endl;
 
    fc::json::save_to_file( config, genesis_json_file);
 }
@@ -440,6 +446,8 @@ BOOST_AUTO_TEST_CASE(make_genesis_block)
 
 void run_regression_test(fc::path test_dir, bool with_network)
 {
+  set_random_seed_for_testing(fc::sha512());
+
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file
@@ -448,12 +456,18 @@ void run_regression_test(fc::path test_dir, bool with_network)
   //  for each verify_file object,
   //    compare generated log files in datadirs to golden reference file (i.e. input command files)
 
-  // caller of this routine should have made sure we are already in bitshares_toolkit/test/regression_tests dir,
+  // caller of this routine should have made sure we are already in bitshares_toolkit/test dir.
   // so we pop dirs to create regression_tests_results as sibling to bitshares_toolkit source directory
   // (because we don't want the test results to be inadvertantly added to git repo).
   fc::path original_working_directory = boost::filesystem::current_path();
-  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path().parent_path();
+  fc::path regression_test_output_directory = original_working_directory.parent_path().parent_path();
   regression_test_output_directory /= "regression_tests_output";
+
+  // Create an expected output file in the test subdir for the test output.
+  fc::path test_output_dir = regression_test_output_directory / test_dir;
+  boost::filesystem::create_directories(test_output_dir);
+  fc::path expected_output_file = test_output_dir / "expected_output.log";
+  std::ofstream expected_output_stream(expected_output_file.string());
 
   try 
   {
@@ -472,7 +486,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     //create one client per line and run each client's input commands
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
-    string line;
+    string line = " --min-delegate-connection-count=0 ";
     fc::future<void> client_done;
     while (std::getline(test_config_file,line))
     {
@@ -486,6 +500,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       {
         fc::path default_data_dir = regression_test_output_directory / test_dir / client_name;
         line += " --data-dir=" + default_data_dir.string();
+        fc::remove_all(default_data_dir);
       }
 
 
@@ -507,10 +522,15 @@ void run_regression_test(fc::path test_dir, bool with_network)
       auto option_variables = bts::client::parse_option_variables(argc, argv);
     #endif
 
-      //extract input command file from cmdline options so that we can compare against output log
-      fc::path input_file( option_variables["input-log"].as<std::string>() ); 
-      std::ifstream input_stream(input_file.string());
-      fc::path expected_result_file = input_file;
+      //extract input command files from cmdline options and concatenate into
+      //one expected output file so that we can compare against output log
+      std::vector<string> input_logs = option_variables["input-log"].as<std::vector<string>>();
+      for (string input_log : input_logs)
+        {
+        std::ifstream input_stream(input_log);
+        expected_output_stream << input_stream.rdbuf();
+        }
+      expected_output_stream.close();
 
       //run client with cmdline options
       if (with_network)
@@ -533,7 +553,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
       //add a test that compares input command file to client's log file
       fc::path result_file = ::get_data_dir(option_variables) / "console.log";
-      tests.push_back( test_file(client_done, result_file, expected_result_file) );
+      tests.push_back( test_file(client_done, result_file, expected_output_file) );
     } //end while not end of test config file
 
     //check each client's log file against it's golden reference log file
@@ -541,12 +561,13 @@ void run_regression_test(fc::path test_dir, bool with_network)
     {
       //current_test.compare_files();
       current_test.client_done.wait();
-      FC_ASSERT(current_test.compare_files(), "Results mismatch with golden reference log");
+      BOOST_CHECK_MESSAGE(current_test.compare_files(), "Results mismatch with golden reference log");
     }
   } 
   catch ( const fc::exception& e )
   {
     elog( "${e}", ("e",e.to_detail_string() ) );
+    BOOST_FAIL("Caught unexpected exception:" << e.to_detail_string() );
   }
 
   //restore original working directory

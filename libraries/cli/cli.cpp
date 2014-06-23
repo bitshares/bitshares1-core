@@ -61,10 +61,14 @@ namespace bts { namespace cli {
 
             boost::iostreams::stream< boost::iostreams::null_sink > nullstream;
             
+            std::ostream*                  _saved_out;
             std::ostream*                  _out;   //cout | log_stream | tee(cout,log_stream) | null_stream
             std::istream*                  _command_script;
             std::istream*                  _input_stream;
             boost::optional<std::ostream&> _input_stream_log;
+            bool _filter_output_for_tests;
+
+
             cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream);
 
             void process_commands(std::istream* input_stream);
@@ -262,6 +266,8 @@ namespace bts { namespace cli {
                   if (_input_stream_log)
                     {
                     _out->flush();
+                    if (_saved_out)
+                      *_input_stream_log << CLI_PROMPT_SUFFIX;
                     *_input_stream_log << line << std::endl;
                     }
                   }
@@ -755,8 +761,7 @@ namespace bts { namespace cli {
                       *_out << std::setw(16) << double(asset.current_share_supply) / asset.precision;
                       *_out << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
                       *_out << std::setw(16) << double(asset.collected_fees) / asset.precision;
-                      auto time = boost::posix_time::from_time_t(time_t(asset.registration_date.sec_since_epoch()));
-                      *_out << std::setw(16) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << std::setw(16) << time_to_string(asset.registration_date);
                       *_out << "\n";
                   }
               }
@@ -828,10 +833,9 @@ namespace bts { namespace cli {
                   *_out << "-----------------------\n";
                   for (auto vote : votes)
                   {
-                      auto time = boost::posix_time::from_time_t(time_t(vote.timestamp.sec_since_epoch()));
                       auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
                       *_out << std::setw(15) << pretty_shorten(rec->name, 14);
-                      *_out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << std::setw(20) << time_to_string(vote.timestamp);
                       if (vote.vote == proposal_vote::no)
                       {
                           *_out << std::setw(5) << "NO";
@@ -939,8 +943,7 @@ namespace bts { namespace cli {
                       *_out << std::setw(10) << prop.id;
                       auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
                       *_out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
-                      auto time = boost::posix_time::from_time_t(time_t(prop.submission_date.sec_since_epoch()));
-                      *_out << std::setw(20) << boost::posix_time::to_iso_extended_string( time );
+                      *_out << std::setw(20) << time_to_string(prop.submission_date);
                       *_out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
                       *_out << std::setw(20) << pretty_shorten(prop.subject, 19);
                       *_out << std::setw(35) << pretty_shorten(prop.body, 34);
@@ -964,10 +967,8 @@ namespace bts { namespace cli {
                   for (auto peer : peers)
                   {
                       *_out<< std::setw(25) << string(peer.endpoint);
-                      auto seen_time = boost::posix_time::from_time_t(time_t(peer.last_seen_time.sec_since_epoch()));
-                      *_out<< std::setw(25) << boost::posix_time::to_iso_extended_string( seen_time );
-                      auto connect_time = boost::posix_time::from_time_t(time_t(peer.last_connection_attempt_time.sec_since_epoch()));
-                      *_out << std::setw(25) << boost::posix_time::to_iso_extended_string( connect_time );
+                      *_out<< std::setw(25) << time_to_string(peer.last_seen_time);
+                      *_out << std::setw(25) << time_to_string(peer.last_connection_attempt_time);
                       *_out << std::setw(30) << peer.number_of_successful_connection_attempts;
                       *_out << std::setw(30) << peer.number_of_failed_connection_attempts;
                       *_out << std::setw(35) << string( peer.last_connection_disposition );
@@ -1103,25 +1104,16 @@ namespace bts { namespace cli {
                 for( auto acct : account_records )
                 {
                     if (acct.is_delegate())
-                    {
-                        *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
-                    }
+                      *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
                     else
-                    {
-                        *_out << std::setw(35) << pretty_shorten(acct.name, 34);
-                    }
+                      *_out << std::setw(35) << pretty_shorten(acct.name, 34);
 
                     *_out << std::setw(64) << string( acct.active_key() );
 
                     if( acct.id == 0 )
-                    {
-                       *_out << std::setw( 22 ) << "NO";
-                    } 
+                      *_out << std::setw( 22 ) << "NO";
                     else 
-                    {
-                        *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
-                             boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
-                    }
+                      *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
                     
                     *_out << std::setw( 10) << acct.trust_level;
                     *_out << "\n";
@@ -1162,8 +1154,7 @@ namespace bts { namespace cli {
                     } 
                     else 
                     {
-                        *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
-                             boost::posix_time::from_time_t(time_t(acct.registration_date.sec_since_epoch())));
+                        *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
                     }
 
                     *_out << std::setw( 15 ) << acct.trust_level;
@@ -1198,8 +1189,7 @@ namespace bts { namespace cli {
                     }
                     
                     *_out << std::setw(64) << string( acct.active_key() );
-                    *_out << std::setw( 22 ) << boost::posix_time::to_iso_extended_string( 
-                                    boost::posix_time::from_time_t( time_t( acct.registration_date.sec_since_epoch() ) ) );
+                    *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
 
                     if ( acct.is_delegate() )
                     {
@@ -1294,7 +1284,7 @@ namespace bts { namespace cli {
                     }
 
                     /* Print timestamp */
-                     (*_out) << std::setw( 20 ) << boost::posix_time::to_iso_extended_string( boost::posix_time::from_time_t( tx.received_time ) );
+                     (*_out) << std::setw( 20 ) << time_to_string(fc::time_point_sec(tx.received_time));
 
                     // Print "from" account
                      (*_out) << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
@@ -1351,11 +1341,17 @@ namespace bts { namespace cli {
 
                     (*_out) << std::right;
                     /* Print transaction ID */
-                    (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
+                    if (_filter_output_for_tests)
+                      (*_out) << std::setw( 16 ) << "[trx_id redacted]";
+                    else
+                      (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
 
                     (*_out) << std::right << "\n";
                 }
             }
+
+            std::string time_to_string(const fc::time_point_sec& time);
+
             void display_status_message(const std::string& message);
 #ifdef HAVE_READLINE
             typedef std::map<string, bts::api::method_data> method_data_map_type;
@@ -1385,8 +1381,10 @@ namespace bts { namespace cli {
     ,show_raw_output(false)
     ,_daemon_mode(false)
     ,nullstream(boost::iostreams::null_sink())
+    , _saved_out(nullptr)
     ,_out(output_stream ? output_stream : &nullstream)
     ,_command_script(command_script)
+    ,_filter_output_for_tests(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1551,6 +1549,14 @@ namespace bts { namespace cli {
       wlog( "process commands exiting" );
     }  FC_CAPTURE_AND_RETHROW() }
 
+    std::string cli_impl::time_to_string(const fc::time_point_sec& time)
+    {
+      if (_filter_output_for_tests)
+        return "[time redacted]";
+      boost::posix_time::ptime posix_time = boost::posix_time::from_time_t(time_t(time.sec_since_epoch()));
+      return boost::posix_time::to_iso_extended_string(posix_time);
+    }
+
   } // end namespace detail
 
    cli::cli( const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
@@ -1596,6 +1602,29 @@ namespace bts { namespace cli {
   {
      ilog( "waiting on server to quit" );
      my->_rpc_server->wait_till_rpc_server_shutdown();
+  }
+
+  void cli::enable_output(bool enable_output)
+  {
+    if (!enable_output)
+    { //save off original output and set output to nullstream
+      my->_saved_out = my->_out;
+      my->_out = &my->nullstream;
+    }
+    else
+    { //can only enable output if it was previously disabled
+      if (my->_saved_out)
+      {
+        my->_out = my->_saved_out;
+        my->_saved_out = nullptr;
+      }
+    }
+    
+  }
+
+  void cli::filter_output_for_tests(bool enable_flag)
+  {
+    my->_filter_output_for_tests = enable_flag;
   }
 
   bool cli::execute_command_line( const string& line, std::ostream* output)

@@ -1,0 +1,23 @@
+default (unlocked) >>> filter_output_for_tests true
+OK
+default (unlocked) >>> wallet_account_create test
+"XTS6Pe9NCcxAjfxH4dJijQZzHHAntUsuJhgt6JBJf6b6Bmp539oVm"
+default (unlocked) >>> wallet_account_balance delegate0
+delegate0:
+    99,009.900949 XTS
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
+    BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   pending   [time redacted]     delegate0           test                                                         100.000000 XTS        0.010000 XTS              [trx_id redacted]
+default (unlocked) >>> wallet_account_balance delegate0
+delegate0:
+    98,909.890949 XTS
+default (unlocked) >>> wait 35
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+delegate0:
+    98,909.890949 XTS
+default (unlocked) >>> wallet_account_balance test
+test:
+    100.000000 XTS
+default (unlocked) >>> quit

@@ -2157,7 +2157,7 @@ namespace bts { namespace net {
           // for now, we assume an "ordinary" message won't cause us to switch forks ( which
           // is currently the case.  if this changes, add some logic to handle it here )
           //assert( !message_caused_fork_switch );
-           _delegate->handle_message(message_to_process, false );
+          _delegate->handle_message(message_to_process, false );
           message_validated_time = fc::time_point::now();
         }
         catch ( fc::exception& e )
@@ -2211,11 +2211,11 @@ namespace bts { namespace net {
       _advertise_inventory_loop_done.cancel();
       _terminate_inactive_connections_loop_done.cancel();
       
-      try { _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
-      try { _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
-      try { _fetch_item_loop_done.wait(); } catch(... ){}
-      try { _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
-      try { _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
+      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
+      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
+      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
+      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
+      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )

@@ -11,6 +11,36 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "enable_output",
+        "description": "enables or disables output from the CLI",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "enable_flag", 
+              "type" : "bool", 
+              "description" : "true to enable output, false to disable it"
+            }
+          ],
+        "is_const"   : false,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "filter_output_for_tests",
+        "description": "prevents printing any times or other unpredictable data",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "enable_flag", 
+              "type" : "bool", 
+              "description" : "true to enable filtering, false to disable it"
+            }
+          ],
+        "is_const"   : false,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "get_info",
         "description": "Returns version number and associated information for this client",
         "return_type": "json_object",

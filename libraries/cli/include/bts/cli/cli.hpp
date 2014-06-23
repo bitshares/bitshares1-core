@@ -37,6 +37,8 @@ namespace bts { namespace cli {
           void set_daemon_mode(bool enable_daemon_mode);
           void display_status_message(const std::string& message);
           void process_commands(std::istream* input_stream);
+          void enable_output(bool enable_output);
+          void filter_output_for_tests(bool enable_flag);
 
           //Parse and execute a command line. Returns false if line is a quit command.
           bool execute_command_line(const std::string& line, std::ostream* output = nullptr);
