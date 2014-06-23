@@ -105,11 +105,11 @@
 /**
  *  Defined so that a delegate must produce 100 blocks to break even.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD)
 
 /**
  *  Defines the fee required to register a asset, this fee is set to discourage anyone from 
  *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
  *  of mining fees then it really isn't worth the networks time.
  */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD)
