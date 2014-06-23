@@ -1,7 +1,24 @@
 #pragma once
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/delegate_slate.hpp>
 
 namespace bts { namespace blockchain { 
+
+   /**
+    *  Declares a set of delegates to vote for or against
+    */
+   struct define_delegate_slate_operation 
+   {
+      static const operation_type_enum type; 
+
+      define_delegate_slate_operation(){}
+      define_delegate_slate_operation( delegate_slate s )
+      :slate( std::move(s) ){}
+
+      delegate_slate slate;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
 
    /** withdraws funds and moves them into the transaction
     * balance making them available for deposit
@@ -40,7 +57,7 @@ namespace bts { namespace blockchain {
        balance_id_type                balance_id()const;
 
        deposit_operation():amount(0){}
-       deposit_operation( const address& owner, const asset& amnt, name_id_type delegate_id );
+       deposit_operation( const address& owner, const asset& amnt, slate_id_type slate_id = 0 );
 
        /** the condition that the funds may be withdrawn,
         *  this is only necessary if the address is new.
@@ -53,5 +70,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain 
 
+FC_REFLECT( bts::blockchain::define_delegate_slate_operation, (slate) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
+ 

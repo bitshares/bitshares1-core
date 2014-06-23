@@ -44,16 +44,20 @@ namespace bts { namespace blockchain {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
    }
 
+   void transaction::define_delegate_slate( delegate_slate s )
+   {
+      FC_ASSERT( s.supported_delegates.size() > 0 )
+      operations.emplace_back( define_delegate_slate_operation( std::move(s) ) );
+   }
+
    void transaction::bid( const asset& quantity, 
                           const price& price_per_unit, 
-                          const address& owner,
-                          account_id_type delegate_id  )
+                          const address& owner )
    {
       bid_operation op;
       op.amount = quantity.amount;
       op.bid_index.order_price = price_per_unit;
       op.bid_index.owner = owner;
-      op.delegate_id = delegate_id;
 
       operations.emplace_back(op);
    }
@@ -74,17 +78,17 @@ namespace bts { namespace blockchain {
 
    void transaction::deposit( const address&  owner, 
                               const asset&    amount, 
-                              account_id_type delegate_id )
+                              slate_id_type   slate_id )
    {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
-      operations.push_back( deposit_operation( owner, amount, delegate_id ) );
+      operations.push_back( deposit_operation( owner, amount, slate_id ) );
    }
 
    void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
                                          asset amount,
                                          fc::ecc::private_key from_key,
                                          const std::string& memo_message,
-                                         account_id_type delegate_id,
+                                         slate_id_type slate_id,
                                          const fc::ecc::public_key& memo_pub_key,
                                          fc::ecc::private_key one_time_private_key,
                                          memo_flags_enum memo_type
@@ -100,7 +104,7 @@ namespace bts { namespace blockchain {
 
       deposit_operation op;
       op.amount = amount.amount;
-      op.condition = withdraw_condition( by_account, amount.asset_id, delegate_id );
+      op.condition = withdraw_condition( by_account, amount.asset_id, slate_id );
 
       operations.push_back( op );
    }
@@ -109,19 +113,18 @@ namespace bts { namespace blockchain {
    void transaction::register_account( const std::string& name, 
                                    const fc::variant& public_data, 
                                    const public_key_type& master, 
-                                   const public_key_type& active, bool as_delegate  )
+                                   const public_key_type& active, uint8_t pro_fee  )
    {
-      operations.push_back( register_account_operation( name, public_data, master, active, as_delegate ) );
+      operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
    }
    void transaction::update_account( account_id_type account_id, 
                                   const fc::optional<fc::variant>& public_data, 
-                                  const fc::optional<public_key_type>& active, bool as_delegate   )
+                                  const fc::optional<public_key_type>& active   )
    {
       update_account_operation op;
       op.account_id = account_id;
       op.public_data = public_data;
       op.active_key = active;
-      op.is_delegate = as_delegate;
       operations.push_back( op );
    }
 

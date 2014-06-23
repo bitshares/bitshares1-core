@@ -46,11 +46,13 @@ int main( int argc, char** argv )
    for( unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
       keys.push_back( fc::ecc::private_key::generate() );
-      config.names[i].name = "delegate"+fc::to_string(i);
+      config.names[i].name = "init"+fc::to_string(i);
       config.names[i].is_delegate = true;
       config.names[i].owner = keys[i].get_public_key().serialize();
+      /*
       config.balances[i].first = pts_address( keys[i].get_public_key() );
       config.balances[i].second = 1000;
+      */
    }
 
    /*
@@ -81,11 +83,11 @@ int main( int argc, char** argv )
    }
    */
 
-   fc::json::save_to_file( config, fc::path("genesis.json"), true );
+   fc::json::save_to_file( config, fc::path("init_genesis.json"), true );
    std::vector<std::string> wif_keys;
    for( auto k : keys )
       wif_keys.push_back( bts::utilities::key_to_wif( k ) );
-   fc::json::save_to_file( wif_keys, fc::path("genesis_private.json"), true );
+   fc::json::save_to_file( wif_keys, fc::path("initgenesis_private.json"), true );
 
    std::cout << "saving genesis.json\n";
    std::cout << "saving genesis_private.json\n";

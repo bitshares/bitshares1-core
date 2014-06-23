@@ -124,7 +124,7 @@ namespace fc {
       using namespace bts::blockchain;
       fc::mutable_variant_object obj;
       obj["asset_id"] = var.asset_id;
-      obj["delegate_id"] = var.delegate_id;
+      obj["delegate_slate_id"] = var.delegate_slate_id;
       obj["type"] =  var.type;
 
       switch( (withdraw_condition_types) var.type )
@@ -153,7 +153,7 @@ namespace fc {
       using namespace bts::blockchain;
       auto obj = var.get_object();
       from_variant( obj["asset_id"], vo.asset_id );
-      from_variant( obj["delegate_id"], vo.delegate_id );
+      from_variant( obj["delegate_slate_id"], vo.delegate_slate_id );
       from_variant( obj["type"], vo.type );
 
       switch( (withdraw_condition_types) vo.type )

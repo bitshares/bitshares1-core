@@ -9,18 +9,22 @@ namespace bts { namespace blockchain {
    struct register_account_operation
    {
       static const operation_type_enum type; 
-      register_account_operation():is_delegate(false){}
+      register_account_operation():delegate_production_fee(255){}
 
       register_account_operation( const std::string& n, 
                                   const fc::variant& d, 
                                   const public_key_type& owner, 
-                                  const public_key_type& active, bool as_delegate );
+                                  const public_key_type& active, 
+                                  uint8_t pro_fee = 255 );
       
       std::string                 name;
       fc::variant                 public_data;
       public_key_type             owner_key;
       public_key_type             active_key;
-      bool                        is_delegate;
+      bool                        is_delegate()const { return delegate_production_fee <= 100; }
+
+      // 0-100% of the transaction fees to be paid to delegate
+      uint8_t                     delegate_production_fee; 
 
       /**
        *  Meta information is used by clients to evaluate
@@ -39,13 +43,12 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type; 
 
-      update_account_operation():account_id(0),is_delegate(false){}
+      update_account_operation():account_id(0){}
 
       /** this should be 0 for creating a new name */
       account_id_type                   account_id;
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
-      bool                              is_delegate;
 
       void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -67,6 +70,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(is_delegate)(meta_data) )
-FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(is_delegate) )
+FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_production_fee)(meta_data) )
+FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )

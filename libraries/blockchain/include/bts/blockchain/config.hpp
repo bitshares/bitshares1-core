@@ -9,8 +9,6 @@
 #define BTS_WALLET_VERSION                          (100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION             (105)
 
-#define BTS_NETWORK_DEFAULT_P2P_PORT                8763
-
 /**
  *  The address prepended to string representation of
  *  addresses.
@@ -21,12 +19,13 @@
 #define BTS_BLOCKCHAIN_SYMBOL                           "XTS"
 #define BTS_BLOCKCHAIN_NAME                             "BitShares XTS"
 #define BTS_BLOCKCHAIN_DESCRIPTION                      "Stake in future BitShares X chains"
-#define BTS_BLOCKCHAIN_PRECISION                        (1000000)
+#define BTS_BLOCKCHAIN_PRECISION                        (100000)
 
 /**
  * The number of delegates that the blockchain is designed to support
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                (101)
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE               (BTS_BLOCKCHAIN_NUM_DELEGATES/3)
 
 /**
  * To prevent a delegate from producing blocks on split network,
@@ -70,7 +69,7 @@
  * Initial shares read from the genesis block are scaled to this number. It is divided
  * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES                   (BTS_BLOCKCHAIN_MAX_SHARES / 100)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES                   (BTS_BLOCKCHAIN_MAX_SHARES / 5)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
@@ -104,11 +103,11 @@
 /**
  *  Defined so that a delegate must produce 100 blocks to break even.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD)
 
 /**
  *  Defines the fee required to register a asset, this fee is set to discourage anyone from 
  *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
  *  of mining fees then it really isn't worth the networks time.
  */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*100)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*1000)

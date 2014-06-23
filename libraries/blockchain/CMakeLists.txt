@@ -33,6 +33,7 @@ add_library( bts_blockchain
              asset_operations.cpp
              market_operations.cpp
              transaction_evaluation_state.cpp
+             delegate_slate.cpp
              time.cpp
              extended_address.cpp
              address.cpp
@@ -46,7 +47,7 @@ add_library( bts_blockchain
              chain_interface.cpp
              block.cpp
              chain_database.cpp
-             fire_operation.cpp
+#fire_operation.cpp
              account_record.cpp
              ${generated_genesis_file}
              ${genesis_json}

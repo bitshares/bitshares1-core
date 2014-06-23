@@ -41,26 +41,19 @@
 namespace bts { namespace net {
   namespace detail
   {
+    class peer_connection;
+    class peer_connection_delegate
+    {
+    public:
+      virtual void on_message(peer_connection* originating_peer, 
+                              const message& received_message) = 0;
+      virtual void on_connection_closed(peer_connection* originating_peer) = 0;
+    };
+
     class peer_connection : public message_oriented_connection_delegate,
                             public std::enable_shared_from_this<peer_connection>
     {
     public:
-#if 0
-      enum connection_state
-      {
-        disconnected, 
-        just_connected, // if inbound
-        secure_connection_established, // ecdh complete
-        hello_sent,
-        connection_accepted_sent,
-        connection_rejected_sent, 
-        connected,
-        connection_accepted,
-        connection_rejected,
-        connection_closing_message_sent,
-        connection_closed
-      };
-#endif
       enum class our_connection_state
       {
         disconnected, 
@@ -75,8 +68,22 @@ namespace bts { namespace net {
         connection_accepted, // we have sent them a connection_accepted
         connection_rejected // we have sent them a connection_rejected
       };
+      enum class connection_negotiation_status
+      {
+        disconnected,
+        connecting,
+        connected,
+        accepting,
+        accepted,
+        hello_sent,
+        peer_connection_accepted,
+        peer_connection_rejected,
+        negotiation_complete,
+        closing,
+        closed
+      };
     private:
-      node_impl&                     _node;
+      peer_connection_delegate*      _node;
       fc::optional<fc::ip::endpoint> _remote_endpoint;
       message_oriented_connection    _message_connection;
     public:
@@ -91,6 +98,9 @@ namespace bts { namespace net {
       bool they_have_requested_close;
       their_connection_state their_state;
       bool we_have_requested_close;
+
+      connection_negotiation_status negotiation_status;
+      fc::oexception connection_closed_error;
 
       fc::time_point get_connection_time()const { return _message_connection.get_connection_time(); }
 
@@ -136,8 +146,8 @@ namespace bts { namespace net {
       item_to_time_map_type items_requested_from_peer;  /// items we've requested from this peer during normal operation.  fetch from another peer if this peer disconnects
       /// @}
     public:
-      peer_connection(node_impl& n) : 
-        _node(n),
+      peer_connection(peer_connection_delegate* delegate) : 
+        _node(delegate),
         _message_connection(this),
         direction(peer_connection_direction::unknown),
         is_firewalled(firewalled_state::unknown),
@@ -145,6 +155,7 @@ namespace bts { namespace net {
         they_have_requested_close(false),
         their_state(their_connection_state::disconnected),
         we_have_requested_close(false),
+        negotiation_status(connection_negotiation_status::disconnected),
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
@@ -210,5 +221,14 @@ FC_REFLECT_ENUM(bts::net::detail::peer_connection::their_connection_state, (disc
                                                                            (just_connected)
                                                                            (connection_accepted)
                                                                            (connection_rejected))
-
-
+FC_REFLECT_ENUM(bts::net::detail::peer_connection::connection_negotiation_status, (disconnected)
+                                                                                  (connecting)
+                                                                                  (connected)
+                                                                                  (accepting)
+                                                                                  (accepted)
+                                                                                  (hello_sent)
+                                                                                  (peer_connection_accepted)
+                                                                                  (peer_connection_rejected)
+                                                                                  (negotiation_complete)
+                                                                                  (closing)
+                                                                                  (closed) )

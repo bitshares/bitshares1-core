@@ -30,8 +30,8 @@ namespace bts { namespace net {
     uint32_t                          number_of_failed_connection_attempts;
     fc::optional<fc::exception>       last_error;
 
-    potential_peer_record()
-    :number_of_successful_connection_attempts(0),
+    potential_peer_record() :
+      number_of_successful_connection_attempts(0),
     number_of_failed_connection_attempts(0){}
 
     potential_peer_record(fc::ip::endpoint endpoint,
