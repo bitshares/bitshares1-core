@@ -27,6 +27,7 @@
  * The number of delegates that the blockchain is designed to support
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                (101)
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE               (BTS_BLOCKCHAIN_NUM_DELEGATES/3)
 
 /**
  * To prevent a delegate from producing blocks on split network,

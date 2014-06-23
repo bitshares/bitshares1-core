@@ -2935,7 +2935,7 @@ namespace bts { namespace wallet {
       std::sort( for_candidates.begin(), for_candidates.end() );
 
       delegate_slate result;
-      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_NUM_DELEGATES );
+      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE);
 
       for( uint32_t i = 0; i < delegates_to_select; ++i )
       {

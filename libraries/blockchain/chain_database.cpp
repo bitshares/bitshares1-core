@@ -621,6 +621,8 @@ namespace bts { namespace blockchain {
                     block_stats.latency = (uint32_t)latency;
               }
 
+              // TODO: all updates should be to pending_state and not the database directly...
+              //  This can result in inconsistencies when dealing with forks.
               _delegate_block_stats_db.store( std::make_pair( delegate_id, current_block_num ), block_stats );
 
               pending_state->store_account_record( *delegate_rec );

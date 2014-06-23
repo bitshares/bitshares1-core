@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    { try {
       auto slate_id = this->slate.id();
 
-      if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_NUM_DELEGATES )
+      if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
       auto current_slate = eval_state._current_state->get_delegate_slate( slate_id );
