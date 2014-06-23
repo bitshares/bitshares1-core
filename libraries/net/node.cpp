@@ -485,8 +485,8 @@ namespace bts { namespace net {
     node_impl::node_impl() : 
       _delegate( nullptr ),
       _user_agent_string( "bts::net::node" ),
-      _desired_number_of_connections( 8 ),
-      _maximum_number_of_connections( 50 ),
+      _desired_number_of_connections( 32 ),
+      _maximum_number_of_connections( 100 ),
       _peer_connection_retry_timeout( BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME ),
       _peer_inactivity_timeout(  BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT ),
       _most_recent_blocks_accepted( _maximum_number_of_connections ),
