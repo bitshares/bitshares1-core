@@ -21,7 +21,8 @@ namespace bts { namespace blockchain {
       bool                       is_null()const    { return balance == 0; }
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
       asset_id_type              asset_id()const { return condition.asset_id; }
-      account_id_type            delegate_id()const { return condition.delegate_id; }
+      //account_id_type          delegate_id()const { return condition.delegate_id; }
+      slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
 
       /** if conndition is signature or by name, return the owner */
       address                    owner()const;

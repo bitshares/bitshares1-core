@@ -12,14 +12,31 @@ namespace bts { namespace blockchain {
 
    deposit_operation::deposit_operation( const address& owner, 
                                          const asset& amnt, 
-                                         name_id_type delegate_id )
+                                         slate_id_type slate_id )
    {
       FC_ASSERT( amnt.amount > 0 );
       amount = amnt.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), 
-                                      amnt.asset_id, delegate_id );
+                                      amnt.asset_id, slate_id );
    }
 
+   void define_delegate_slate_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      auto slate_id = this->slate.id();
+
+      if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_NUM_DELEGATES )
+         FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
+
+      auto current_slate = eval_state._current_state->get_delegate_slate( slate_id );
+      if( NOT current_slate ) 
+      {
+         for( auto delegate_id : this->slate.supported_delegates )
+         {
+            eval_state.verify_delegate_id( delegate_id );
+         }
+         eval_state._current_state->store_delegate_slate( slate_id, slate );
+      }
+   } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
 
    /**
     *  TODO: Document Rules for Deposits
@@ -31,17 +48,6 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
        auto deposit_balance_id = this->balance_id();
-       if( condition.asset_id == 0 )
-       {
-          auto delegate_id     = abs(this->condition.delegate_id);
-          auto delegate_record = eval_state._current_state->get_account_record( delegate_id );
-
-          if( !delegate_record ) 
-             FC_CAPTURE_AND_THROW( unknown_account_id ); 
-
-          if( !delegate_record->is_delegate() ) 
-             FC_CAPTURE_AND_THROW( not_a_delegate, (delegate_id) );
-       }
 
        auto cur_record = eval_state._current_state->get_balance_record( deposit_balance_id );
        if( !cur_record )
@@ -53,8 +59,8 @@ namespace bts { namespace blockchain {
 
        eval_state.sub_balance( deposit_balance_id, asset(this->amount, cur_record->condition.asset_id) );
        
-       if( cur_record->condition.asset_id == 0 ) 
-          eval_state.add_vote( cur_record->condition.delegate_id, this->amount );
+       if( cur_record->condition.asset_id == 0 && cur_record->condition.delegate_slate_id ) 
+          eval_state.adjust_vote( cur_record->condition.delegate_slate_id, this->amount );
 
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -157,10 +163,10 @@ namespace bts { namespace blockchain {
       current_balance_record->last_update = eval_state._current_state->now();
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
 
-      if( current_balance_record->condition.asset_id == 0 ) 
-         eval_state.sub_vote( current_balance_record->condition.delegate_id, this->amount );
+      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id ) 
+         eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
       eval_state._current_state->store_balance_record( *current_balance_record );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("op",*this) ) }
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

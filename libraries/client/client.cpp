@@ -2005,7 +2005,8 @@ config load_config( const fc::path& datadir )
 
     void client::set_daemon_mode(bool daemon_mode) 
     { 
-      my->_cli->set_daemon_mode(daemon_mode); 
+       init_cli();
+       my->_cli->set_daemon_mode(daemon_mode); 
     }
 
     fc::path client::get_data_dir()const

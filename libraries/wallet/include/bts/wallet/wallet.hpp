@@ -89,7 +89,7 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{ 
-         account_id_type select_delegate_vote()const;
+         delegate_slate select_delegate_vote()const;
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;

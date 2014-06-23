@@ -21,7 +21,7 @@
 #define BTS_BLOCKCHAIN_SYMBOL                           "XTS"
 #define BTS_BLOCKCHAIN_NAME                             "BitShares XTS"
 #define BTS_BLOCKCHAIN_DESCRIPTION                      "Stake in future BitShares X chains"
-#define BTS_BLOCKCHAIN_PRECISION                        (1000000)
+#define BTS_BLOCKCHAIN_PRECISION                        (10000)
 
 /**
  * The number of delegates that the blockchain is designed to support
@@ -70,7 +70,7 @@
  * Initial shares read from the genesis block are scaled to this number. It is divided
  * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES                   (BTS_BLOCKCHAIN_MAX_SHARES / 100)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES                   (BTS_BLOCKCHAIN_MAX_SHARES / 5)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC

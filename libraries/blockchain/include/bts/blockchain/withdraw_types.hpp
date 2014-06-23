@@ -23,14 +23,14 @@ namespace bts { namespace blockchain {
     */
    struct withdraw_condition
    {
-      withdraw_condition():asset_id(0),delegate_id(0),type(withdraw_null_type){}
+      withdraw_condition():asset_id(0),delegate_slate_id(0),type(withdraw_null_type){}
 
       template<typename WithdrawType>
-      withdraw_condition( const WithdrawType& t, asset_id_type asset_id_arg = 0, name_id_type delegate_id_arg = 0 )
+      withdraw_condition( const WithdrawType& t, asset_id_type asset_id_arg = 0, slate_id_type delegate_id_arg = 0 )
       {
          type = WithdrawType::type;
          asset_id = asset_id_arg;
-         delegate_id = delegate_id_arg;
+         delegate_slate_id = delegate_id_arg;
          data = fc::raw::pack( t );
       }
 
@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
       balance_id_type get_address()const;
 
       asset_id_type                                     asset_id;
-      name_id_type                                      delegate_id;
+      slate_id_type                                     delegate_slate_id;
       fc::enum_type<uint8_t,withdraw_condition_types>   type;
       std::vector<char>                                 data;
    };
@@ -182,7 +182,7 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
         )
 
 FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
-FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_id)(type)(data) )
+FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_slate_id)(type)(data) )
 FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )

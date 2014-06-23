@@ -21,6 +21,7 @@ namespace bts { namespace blockchain {
       return child.substr( pos+1, string::npos );
    }
 
+
    void register_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       auto now = eval_state._current_state->now();
@@ -83,7 +84,7 @@ namespace bts { namespace blockchain {
       if( !eval_state.check_signature( active_key ) )
          FC_CAPTURE_AND_THROW( missing_signature, (active_key) );
 
-      eval_state.sub_vote( pay_to_account_id, this->amount );
+      eval_state.net_delegate_votes[ pay_to_account_id ].votes_for -= this->amount;
 
       if( pay_to_account->delegate_info->pay_balance < this->amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (pay_to_account)(amount) );

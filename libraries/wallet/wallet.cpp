@@ -326,6 +326,9 @@ namespace bts { namespace wallet {
                   case remove_collateral_op_type:
                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                      break;
+                  case define_delegate_slate_op_type:
+                     // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                     break;
 
                   default:
                      FC_THROW( "unknown operation type!" );
@@ -1389,13 +1392,25 @@ namespace bts { namespace wallet {
                 amount_to_deposit = from_balance;
              }
 
+             slate_id_type slate_id = 0;
+             if( amount_to_deposit.asset_id == 0 )
+             {
+                auto new_slate = select_delegate_vote();
+                slate_id = new_slate.id();
+
+                if( !my->_blockchain->get_delegate_slate( slate_id ) )
+                {
+                   trx.define_delegate_slate( new_slate );
+                }
+             }
+
              if( amount_to_deposit.amount > 0 )
              {
                 trx.deposit_to_account( receiver_public_key,
                                         amount_to_deposit,
                                         sender_private_key,
                                         memo_message,
-                                        select_delegate_vote(),
+                                        slate_id,
                                         sender_private_key.get_public_key(),
                                         my->create_one_time_key(),
                                         from_memo
@@ -1407,7 +1422,7 @@ namespace bts { namespace wallet {
                                         amount_of_change,
                                         sender_private_key,
                                         memo_message,
-                                        select_delegate_vote(),
+                                        slate_id,
                                         receiver_public_key,
                                         my->create_one_time_key(),
                                         to_memo
@@ -1502,13 +1517,22 @@ namespace bts { namespace wallet {
        required_signatures.insert( delegate_private_key.get_public_key() );
 
        public_key_type  receiver_public_key = get_account_public_key( withdraw_to_account_name );
+
+       auto new_slate = select_delegate_vote();
+       auto slate_id = new_slate.id();
+       
+       if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+       {
+          trx.define_delegate_slate( new_slate );
+       }
+
        
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
        trx.deposit_to_account( receiver_public_key,
                                asset(amount_to_withdraw,0),
                                delegate_private_key,
                                memo_message,
-                               delegate_account_record->id, // vote for yourself
+                               slate_id,
                                delegate_private_key.get_public_key(),
                                my->create_one_time_key(),
                                from_memo
@@ -1582,7 +1606,19 @@ namespace bts { namespace wallet {
                                       trx, required_signatures );
       }
 
-      trx.deposit( to_address, asset_to_transfer, select_delegate_vote() );
+      slate_id_type slate_id = 0;
+      if( asset_id == 0 )
+      {
+         auto new_slate = select_delegate_vote();
+         slate_id = new_slate.id();
+
+         if( !my->_blockchain->get_delegate_slate( slate_id ) )
+         {
+            trx.define_delegate_slate( std::move(new_slate) );
+         }
+      }
+
+      trx.deposit( to_address, asset_to_transfer, slate_id);
 
       if( sign )
       {
@@ -1647,7 +1683,7 @@ namespace bts { namespace wallet {
             
             total_asset_to_transfer += asset_to_transfer;
              
-            trx.deposit( address_amount.first, asset_to_transfer, select_delegate_vote() );
+            trx.deposit( address_amount.first, asset_to_transfer, 0 );
              
             to_addresses.push_back( address_amount.first );
          }
@@ -1729,12 +1765,24 @@ namespace bts { namespace wallet {
                                        sender_account_address,
                                        trx, required_signatures );
       }
+
+      slate_id_type slate_id = 0;
+      if( asset_id == 0 )
+      {
+         auto new_slate = select_delegate_vote();
+         slate_id = new_slate.id();
+         
+         if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+         {
+            trx.define_delegate_slate( new_slate );
+         }
+      }
         
       trx.deposit_to_account( receiver_public_key,
                               asset_to_transfer,
                               sender_private_key,
                               memo_message,
-                              select_delegate_vote(),
+                              slate_id,
                               sender_private_key.get_public_key(),
                               my->create_one_time_key(),
                               from_memo
@@ -2169,7 +2217,7 @@ namespace bts { namespace wallet {
         unordered_set<address>     required_signatures;
         required_signatures.insert( owner_address );
 
-        trx.bid( -balance, order.order.market_index.order_price, owner_address, 0 );
+        trx.bid( -balance, order.order.market_index.order_price, owner_address );
 
         if( balance.asset_id == 0 )
         {
@@ -2178,8 +2226,7 @@ namespace bts { namespace wallet {
            if( required_fees.amount < balance.amount )
            {
               deposit_amount -= required_fees;
-              trx.deposit( owner_address, balance,
-                           select_delegate_vote() );
+              trx.deposit( owner_address, balance, 0 );
            }
            else
            {
@@ -2188,8 +2235,7 @@ namespace bts { namespace wallet {
         }
         else
         {
-           trx.deposit( owner_address, balance,
-                        select_delegate_vote() );
+           trx.deposit( owner_address, balance, 0 );
 
            my->withdraw_to_transaction( required_fees.amount,
                                         0,
@@ -2307,9 +2353,9 @@ namespace bts { namespace wallet {
 
        // withdraw to transaction cost_share_quantity + fee
        if( cost_shares.asset_id == 0 )
-          trx.bid( cost_shares, quote_price_shares, order_address, select_delegate_vote() );
+          trx.bid( cost_shares, quote_price_shares, order_address );
        else
-          trx.bid( cost_shares, quote_price_shares, order_address, 0 );
+          trx.bid( cost_shares, quote_price_shares, order_address );
 
        if( sign )
        {
@@ -2376,7 +2422,7 @@ namespace bts { namespace wallet {
            else
            {
               auto key_rec  = my->_wallet_db.lookup_key( key );
-              wdump( (key_rec) );
+              //wdump( (key_rec) );
               if(  key_rec )
               {
                  if( key_rec->memo )
@@ -2559,8 +2605,8 @@ namespace bts { namespace wallet {
               }
               default:
               {
-                  FC_ASSERT(false, "Unimplemented display op type: ${type}", ("type", op.type));
-                  break;
+                 pretty_trx.add_operation( op );
+                 break;
               }
           } // switch op_type
       } // for op in trx
@@ -2859,98 +2905,36 @@ namespace bts { namespace wallet {
       return opt_key->public_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   account_id_type wallet::select_delegate_vote()const
+   /**
+    *  Randomly select a slate of delegates from those supported by this wallet.  The
+    *  slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
+    */
+   delegate_slate wallet::select_delegate_vote()const
    {
-      vector<account> for_candidates;
-      vector<account> against_candidates;
-      vector<account_id_type> active_delegates =
-          my->_blockchain->get_delegates_by_vote(0, BTS_BLOCKCHAIN_NUM_DELEGATES);
+      vector<account_id_type> for_candidates;
 
       for (auto acct_rec : my->_wallet_db.get_accounts())
       {
          if (acct_rec.second.trust_level > 0)
-             for_candidates.push_back(acct_rec.second);
-         if (acct_rec.second.trust_level < 0)
-             against_candidates.push_back(acct_rec.second);
+             for_candidates.push_back(acct_rec.second.id);
       }
-      if ( against_candidates.size() > 0 )
+      std::sort( for_candidates.begin(), for_candidates.end() );
+
+      delegate_slate result;
+      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_NUM_DELEGATES );
+
+      for( uint32_t i = 0; i < delegates_to_select; ++i )
       {
-         for (auto delegate_id : active_delegates)
-            for (auto against_acct : against_candidates)
-                if( against_acct.id == delegate_id )
-                {
-                    if( delegate_id == 0 )
-                    {
-                        FC_ASSERT(!"WARNING - delegate id 0 bug @ 1");
-                        return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-                    }
-                    return -delegate_id;
-                }
-      }
-      if( for_candidates.size() > 0 )
-      {
-         // find first delegate who is not active
-         bool active = false;
-         for( auto for_acct : for_candidates )
+         auto d = rand() % for_candidates.size();
+         if( for_candidates[d] != 0 )
          {
-            for( auto delegate_id : active_delegates )
-            {
-                if( for_acct.id == delegate_id )
-                {
-                    active = true;
-                    break;
-                }
-            }
-            if (active)
-            {
-                active = false;
-                continue;
-            }
-            else
-            {
-                if( for_acct.id == 0 )
-                {
-                    FC_ASSERT(!"WARNING - delegate id 0 bug @ 2");
-                    return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-                }
-                else
-                    return for_acct.id;
-            }
+            result.supported_delegates.push_back( for_candidates[d] ); 
+            for_candidates[d] = 0;
          }
-         // all of our delegates are active - pick the one with the lowest vote
-         int64_t min = std::numeric_limits<int64_t>::max();
-         account_id_type winner;
-         for( auto candidate : for_candidates )
-         {
-            auto acct_rec = my->_blockchain->get_account_record( candidate.id );
-            FC_ASSERT(acct_rec);
-            if (acct_rec->net_votes() < min)
-            {
-                min = acct_rec->net_votes();
-                winner = acct_rec->id;
-            }
-         }
-         if (winner == 0)
-         {
-            FC_ASSERT(!"WARNING - delegate id 0 bug @ 3");
-            return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-         }
-         else
-            return winner;
       }
-      else
-      {
-            auto num = rand();
-            if (active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)] == 0)
-            {
-                FC_ASSERT(!"WARNING - delegate id 0 bug @ 4");
-                return (rand() % BTS_BLOCKCHAIN_NUM_DELEGATES) + 1;
-            }
-            else
-            {
-                return active_delegates[(num % BTS_BLOCKCHAIN_NUM_DELEGATES)];
-            }
-      }
+      std::sort( result.supported_delegates.begin(),
+                 result.supported_delegates.end() );
+      return result;
    }
 
    void      wallet::set_delegate_trust_level( const string& delegate_name, 
@@ -3026,10 +3010,11 @@ namespace bts { namespace wallet {
              asset bal = b.second.get_balance();
              if( bal.asset_id == 0 )
              {
-                if( b.second.delegate_id() < 0 )
-                   raw_votes[ -b.second.delegate_id() ].votes_against += bal.amount;
-                else
-                   raw_votes[ b.second.delegate_id()  ].votes_for += bal.amount;
+                if( b.second.delegate_slate_id() != 0 )
+                {
+                   // TODO: fetch slate, for each delegate in slate...
+             //      raw_votes[ -b.second.delegate_id() ].votes_for += bal.amount;
+                }
              }
           }
       }
