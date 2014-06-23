@@ -2497,9 +2497,11 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_forks_list();
    }
 
-   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const account_id_type& delegate_id )const
+   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const string& delegate_name )const
    {
-      return _chain_db->get_delegate_block_stats( delegate_id );
+      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return _chain_db->get_delegate_block_stats( delegate_record->id );
    }
 
    string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const

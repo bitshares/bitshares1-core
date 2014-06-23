@@ -365,8 +365,8 @@
         "return_type": "delegate_block_stats_map",
         "parameters" : [
             {
-              "name" : "delegate_id",
-              "type" : "account_id_type",
+              "name" : "delegate_name",
+              "type" : "string",
               "description" : "Delegate whose block stats to query"
             }
         ],
