@@ -1266,6 +1266,30 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   vector<wallet_account_record> wallet::get_my_delegates()const
+   {
+      vector<wallet_account_record> delegate_records;
+      const auto& account_records = list_my_accounts();
+      for( const auto& account_record : account_records )
+      {
+          if( account_record.is_delegate() )
+              delegate_records.push_back( account_record );
+      }
+      return delegate_records;
+   }
+
+   vector<wallet_account_record> wallet::get_my_enabled_delegates()const
+   {
+      vector<wallet_account_record> enabled_delegate_records;
+      const auto& delegate_records = get_my_delegates();
+      for( const auto& delegate_record : delegate_records )
+      {
+          if( delegate_record.block_production_enabled )
+              enabled_delegate_records.push_back( delegate_record );
+      }
+      return delegate_records;
+   }
+
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       std::vector<wallet_account_record> delegate_records;
@@ -1283,14 +1307,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-          for( auto itr = my->_wallet_db.get_accounts().begin(); itr != my->_wallet_db.get_accounts().end(); ++itr )
-          {
-              auto account_record = itr->second;
-              if( !account_record.is_delegate() ) continue;
-              auto key = my->_wallet_db.lookup_key( account_record.active_key() );
-              if( !key.valid() || !key->has_private_key() ) continue;
-              delegate_records.push_back( account_record );
-          }
+          delegate_records = get_my_delegates();
       }
 
       for( auto& delegate_record : delegate_records )
@@ -1298,21 +1315,6 @@ namespace bts { namespace wallet {
           delegate_record.block_production_enabled = enable;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
-   }
-
-   vector<wallet_account_record> wallet::get_enabled_active_delegates()const
-   {
-      vector<wallet_account_record> enabled_active_delegates;
-      auto active_delegates = my->_blockchain->get_active_delegates();
-      for( const auto& delegate_id : active_delegates )
-      {
-         auto delegate_record = my->_wallet_db.lookup_account( delegate_id );
-         if( !delegate_record.valid() ) continue;
-         delegate_record = get_account( delegate_record->name ); /* Ensures latest blockchain record data */
-         FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-         if( delegate_record->block_production_enabled ) enabled_active_delegates.push_back( *delegate_record );
-      }
-      return enabled_active_delegates;
    }
 
    void wallet::sign_block( signed_block_header& header )const
@@ -2821,10 +2823,11 @@ namespace bts { namespace wallet {
 
    vector<wallet_account_record> wallet::list_accounts() const
    { try {
-      vector<wallet_account_record> accounts;
       const auto& accs = my->_wallet_db.get_accounts();
+
+      vector<wallet_account_record> accounts;
       accounts.reserve( accs.size() );
-      for( auto item : accs )
+      for( const auto& item : accs )
       {
          FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.account_address )
                  , "\'is_my_account\' field fell out of sync" );
@@ -2840,10 +2843,11 @@ namespace bts { namespace wallet {
 
    vector<wallet_account_record> wallet::list_my_accounts() const
    { try {
-      vector<wallet_account_record> receive_accounts;
       const auto& accs = my->_wallet_db.get_accounts();
+
+      vector<wallet_account_record> receive_accounts;
       receive_accounts.reserve( accs.size() );
-      for( auto item : accs )
+      for( const auto& item : accs )
       {
          if ( my->_wallet_db.has_private_key( item.second.account_address ) )
          {
@@ -2861,10 +2865,11 @@ namespace bts { namespace wallet {
 
    vector<wallet_account_record> wallet::list_favorite_accounts() const
    { try {
-      vector<wallet_account_record> receive_accounts;
       const auto& accs = my->_wallet_db.get_accounts();
+
+      vector<wallet_account_record> receive_accounts;
       receive_accounts.reserve( accs.size() );
-      for( auto item : accs )
+      for( const auto& item : accs )
       {
          if( item.second.is_favorite )
          {
@@ -2881,10 +2886,11 @@ namespace bts { namespace wallet {
 
    vector<wallet_account_record> wallet::list_unregistered_accounts() const
    { try {
-      vector<wallet_account_record> receive_accounts;
       const auto& accs = my->_wallet_db.get_accounts();
+
+      vector<wallet_account_record> receive_accounts;
       receive_accounts.reserve( accs.size() );
-      for( auto item : accs )
+      for( const auto& item : accs )
       {
          if( item.second.id == 0 )
          {

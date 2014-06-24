@@ -158,10 +158,10 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         vector<wallet_account_record> get_my_delegates()const;
+         vector<wallet_account_record> get_my_enabled_delegates()const;
          void enable_delegate_block_production( const string& delegate_id, 
                                                 bool enable = true );
-
-         vector<wallet_account_record> get_enabled_active_delegates()const;
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;
