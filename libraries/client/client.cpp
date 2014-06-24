@@ -102,8 +102,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("min-delegate-connection-count", program_options::value<uint32_t>(),
                                   "Override the default minimum delegate connection count (used to set up "
                                   "a test network with less than five delegates)")
-                              ("disable-peer-advertising", "Disable advertising peers")
-;
+                              ("disable-peer-advertising", "Don't let any peers know which other nodes we're connected to");
 
   program_options::variables_map option_variables;
   try

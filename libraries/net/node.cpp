@@ -261,6 +261,8 @@ namespace bts { namespace net { namespace detail {
 
       bool _peer_advertising_disabled;
 
+      fc::future<void> _fetch_updated_peer_lists_loop_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -285,6 +287,8 @@ namespace bts { namespace net { namespace detail {
       void trigger_advertise_inventory_loop();
 
       void terminate_inactive_connections_loop();
+
+      void fetch_updated_peer_lists_loop();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -826,6 +830,17 @@ namespace bts { namespace net { namespace detail {
       } // while(  !canceled  )
     }
 
+    void node_impl::fetch_updated_peer_lists_loop()
+    {
+      while (!_fetch_updated_peer_lists_loop_done.canceled())
+      {
+        fc::usleep(fc::minutes(15));
+
+        for( const peer_connection_ptr& active_peer : _active_connections )
+          active_peer->send_message(address_request_message());
+      }
+    }
+
     bool node_impl::is_accepting_new_connections()
     {
       return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() <= _maximum_number_of_connections;
@@ -1273,27 +1288,34 @@ namespace bts { namespace net { namespace detail {
       if( new_information_received )
         trigger_p2p_network_connect_loop();
 
-      if( originating_peer->our_state == peer_connection::our_connection_state::connection_rejected )      
-        disconnect_from_peer( originating_peer, "You rejected my connection request (hello message ) so I'm disconnecting" );
-      else if( originating_peer->their_state == peer_connection::their_connection_state::connection_rejected )
-        disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
-      else
+      if (_handshaking_connections.find(originating_peer->shared_from_this()) != _handshaking_connections.end())
       {
-        // not filtering firewalled nodes just incase they have working UPNP or port mapping
-        // TODO: add enhanced firewall detection code
-        // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+        // if we were handshaking, we need to continue with the next step in handshaking (which is either
+        // ending handshaking and starting synchronization or disconnecting)
+        if( originating_peer->our_state == peer_connection::our_connection_state::connection_rejected )      
+          disconnect_from_peer( originating_peer, "You rejected my connection request (hello message ) so I'm disconnecting" );
+        else if( originating_peer->their_state == peer_connection::their_connection_state::connection_rejected )
+          disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
+        else
         {
-          // mark the connection as successful in the database
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
-          updated_peer_record.last_connection_disposition = last_connection_succeeded;
-          _potential_peer_db.update_entry( updated_peer_record );
-        }
+          // not filtering firewalled nodes just incase they have working UPNP or port mapping
+          // TODO: add enhanced firewall detection code
+          // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+          {
+            // mark the connection as successful in the database
+            potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
+            updated_peer_record.last_connection_disposition = last_connection_succeeded;
+            _potential_peer_db.update_entry( updated_peer_record );
+          }
 
-        originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
-        _active_connections.insert( originating_peer->shared_from_this() );
-        _handshaking_connections.erase( originating_peer->shared_from_this() );
-        new_peer_just_added( originating_peer->shared_from_this() );
+          originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
+          _active_connections.insert( originating_peer->shared_from_this() );
+          _handshaking_connections.erase( originating_peer->shared_from_this() );
+          new_peer_just_added( originating_peer->shared_from_this() );
+        }
       }
+      // else if this was an active connection, then this was just a reply to our periodic address requests.
+      // we've processed it, there's nothing else to do
     }
 
     void node_impl::on_fetch_blockchain_item_ids_message( peer_connection* originating_peer, 
@@ -2178,12 +2200,14 @@ namespace bts { namespace net { namespace detail {
       _fetch_item_loop_done.cancel();
       _advertise_inventory_loop_done.cancel();
       _terminate_inactive_connections_loop_done.cancel();
+      _fetch_updated_peer_lists_loop_done.cancel();
       
       try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
       try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
       try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
       try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
       try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
+      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (... ){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -2437,6 +2461,7 @@ namespace bts { namespace net { namespace detail {
       _fetch_item_loop_done = fc::async( [=]() { fetch_items_loop(); } );
       _advertise_inventory_loop_done = fc::async( [=]() { advertise_inventory_loop(); } );
       _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
+      _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
