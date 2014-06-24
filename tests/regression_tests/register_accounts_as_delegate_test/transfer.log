@@ -1,7 +1,7 @@
 default (unlocked) >>> filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
-"XTS6Pe9NCcxAjfxH4dJijQZzHHAntUsuJhgt6JBJf6b6Bmp539oVm"
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
     BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -19,5 +19,5 @@ default (unlocked) >>>  enable_output false
 OK
 default (unlocked) >>> blockchain_list_registered_accounts "test" 10
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      TRUST LEVEL    
-test                               XTS6Pe9NCcxAjfxH4dJijQZzHHAntUsuJhgt6JBJf6b6Bmp539oVm           [time redacted]       N/A            N/A            0              
+test                               XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [time redacted]       N/A            N/A            0              
 default (unlocked) >>> quit
