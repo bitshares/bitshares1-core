@@ -1639,7 +1639,7 @@ namespace bts { namespace blockchain {
 
     std::string chain_database::export_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
     {
-      FC_ASSERT( start_block > 0 );
+      FC_ASSERT( start_block >= 0 );
       FC_ASSERT( end_block >= start_block );
       std::stringstream out;
       out << "digraph G { \n"; 
@@ -1658,7 +1658,7 @@ namespace bts { namespace blockchain {
           start_time = block_record.timestamp;
         }
         std::cout << block_record.block_num << "  start " << start_block << "  end " << end_block << "\n";
-        if ( block_record.block_num > start_block && block_record.block_num < end_block )
+        if ( block_record.block_num >= start_block && block_record.block_num <= end_block )
         {
           unsigned rank = (unsigned)((block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
