@@ -892,13 +892,13 @@
       },
       {
          "method_name"  : "wallet_withdraw_delegate_pay",
-         "description"  : "Used to transfer some of the delegates pay from their balance",
+         "description"  : "Used to transfer some of the delegate's pay from their balance",
          "return_type"  : "signed_transaction",
          "parameters"   : [
             {
               "name" : "delegate_name",
               "type" : "account_name",
-              "description" : "the delegate who's pay is being cashed out"
+              "description" : "the delegate whose pay is being cashed out"
             },
             {
               "name" : "to_account_name",
