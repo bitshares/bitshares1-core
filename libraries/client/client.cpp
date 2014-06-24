@@ -2343,12 +2343,12 @@ config load_config( const fc::path& datadir )
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                         const string& pay_with_account,
                                                         const fc::variant& data,
-                                                        uint32_t delegate_production_fee )
+                                                        uint32_t delegate_pay_rate )
     {
       try {
         // bool sign = (flag != do_not_sign);
-        FC_ASSERT( delegate_production_fee <= 255 );
-        auto trx = _wallet->register_account(account_name, data, delegate_production_fee, pay_with_account);//sign);
+        FC_ASSERT( delegate_pay_rate <= 255 );
+        auto trx = _wallet->register_account(account_name, data, delegate_pay_rate, pay_with_account);//sign);
         network_broadcast_transaction( trx.trx );
         /*
         if( flag == sign_and_broadcast )

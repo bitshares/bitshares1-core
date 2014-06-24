@@ -11,12 +11,12 @@ namespace bts { namespace blockchain {
                                                    const fc::variant& d, 
                                                    const public_key_type& owner, 
                                                    const public_key_type& active, 
-                                                   uint8_t delegate_pro_fee )
+                                                   uint8_t pay_rate )
    :name(n),
     public_data(d),
     owner_key(owner),
     active_key(active),
-    delegate_production_fee(delegate_pro_fee){}
+    delegate_pay_rate(pay_rate){}
 
 
    string get_parent_account_name( const string& child )
@@ -67,7 +67,7 @@ namespace bts { namespace blockchain {
       if (this->is_delegate())
       {
           new_record.delegate_info = delegate_stats();
-          new_record.delegate_info->delegate_production_fee = this->delegate_production_fee;
+          new_record.delegate_info->delegate_pay_rate = this->delegate_pay_rate;
           eval_state.required_fees += asset(eval_state._current_state->get_delegate_registration_fee(),0);
       }
       new_record.meta_data = this->meta_data;

@@ -302,7 +302,7 @@ namespace bts { namespace wallet {
           */
          wallet_transaction_record register_account( const string& account_name,
                                               const variant& json_data,
-                                              uint8_t  production_fee_percent, 
+                                              uint8_t delegate_pay_rate,
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
