@@ -1,7 +1,7 @@
 #define DEFAULT_LOGGER "p2p"
-#include "peer_connection.hpp"
+#include <bts/net/peer_connection.hpp>
 
-namespace bts { namespace net { namespace detail 
+namespace bts { namespace net
   {
     fc::tcp_socket& peer_connection::get_socket()
     {
@@ -141,5 +141,4 @@ namespace bts { namespace net { namespace detail
       return !busy();
     }
 
-  } // end namespace bts::net::detail
 } } // end namespace bts::net
