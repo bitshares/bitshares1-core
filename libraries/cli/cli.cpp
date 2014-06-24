@@ -777,7 +777,7 @@ namespace bts { namespace cli {
 
                   *_out << std::setw(5) << "ID";
                   *_out << std::setw(30) << "NAME";
-                  *_out << std::setw(20) << "NET VOTES";
+                  *_out << std::setw(20) << "APPROVAL";
                   *_out << std::setw(16) << "BLOCKS PRODUCED";
                   *_out << std::setw(16) << "BLOCKS MISSED";
                   *_out << "\n---------------------------------------------------------\n";
