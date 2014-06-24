@@ -1902,7 +1902,6 @@ config load_config( const fc::path& datadir )
       return extract_commands_from_log_stream(test_input);
     }
 
-
     //RPC server and CLI configuration rules:
     //if daemon mode requested
     //  start RPC server only (no CLI input)
@@ -1938,7 +1937,8 @@ config load_config( const fc::path& datadir )
       this->open( datadir, genesis_file_path );
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
-      this->my->start_delegate_loop();
+
+      start_delegate_loop();
 
       this->configure( datadir );
 
@@ -2088,10 +2088,16 @@ config load_config( const fc::path& datadir )
        my->_cli->set_daemon_mode(daemon_mode);
     }
 
+    void client::start_delegate_loop()
+    {
+       my->start_delegate_loop();
+    }
+
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
     }
+
     void client::connect_to_peer(const string& remote_endpoint)
 
     {
