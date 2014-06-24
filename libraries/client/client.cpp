@@ -633,12 +633,11 @@ config load_config( const fc::path& datadir )
                }
           }
 
-          auto ntp_now = *bts::blockchain::ntp_time();
-          now = fc::time_point_sec( ntp_now );
+          now = bts::blockchain::now();
           uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           next_block_time = fc::time_point_sec( (interval_number + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
 
-          auto offset = ( ntp_now - fc::time_point::now() ).count() / double( 1000000 );
+          auto offset = bts::blockchain::ntp_error();
           ilog( "NTP time - system time = ${t} seconds", ("t",offset) );
           if( offset < 0 )
           {
@@ -2277,7 +2276,7 @@ config load_config( const fc::path& datadir )
       info["network_num_connections"]                           = network_get_connection_count();
 
       info["ntp_time"]                                          = now;
-      info["ntp_error_seconds"]                                 = (now - fc::time_point::now()).count()/double(1000000);
+      info["ntp_error_seconds"]                                 = bts::blockchain::ntp_error();
 
       info["wallet_unlocked_seconds_remaining"]                 = seconds_remaining > 0 ? seconds_remaining : 0;
 
