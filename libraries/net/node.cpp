@@ -259,6 +259,8 @@ namespace bts { namespace net { namespace detail {
 
       uint32_t _last_reported_number_of_connections; // number of connections last reported to the client ( to avoid sending duplicate messages )
 
+      bool _peer_advertising_disabled;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -405,6 +407,8 @@ namespace bts { namespace net { namespace detail {
       void                       set_allowed_peers( const std::vector<node_id_t>& allowed_peers );
       void                       clear_peer_database();
       void                       set_total_bandwidth_limit( uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second );
+      void                       disable_peer_advertising();
+
       fc::variant_object         network_get_info() const;
     }; // end class node_impl
 
@@ -421,7 +425,8 @@ namespace bts { namespace net { namespace detail {
       _most_recent_blocks_accepted( _maximum_number_of_connections ),
       _total_number_of_unfetched_items( 0 ),
       _rate_limiter( 0, 0 ),
-      _last_reported_number_of_connections( 0 )
+      _last_reported_number_of_connections( 0 ),
+      _peer_advertising_disabled(false)
     {
     }
 
@@ -1232,22 +1237,24 @@ namespace bts { namespace net { namespace detail {
       dlog( "Received an address request message" );
 
       address_message reply;
-      reply.addresses.reserve( _active_connections.size()  );
-      for( const peer_connection_ptr& active_peer : _active_connections )
+      if (!_peer_advertising_disabled)
       {
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
-        updated_peer_record.last_seen_time = fc::time_point::now();
-        _potential_peer_db.update_entry( updated_peer_record );
+        reply.addresses.reserve( _active_connections.size()  );
+        for( const peer_connection_ptr& active_peer : _active_connections )
+        {
+          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
+          updated_peer_record.last_seen_time = fc::time_point::now();
+          _potential_peer_db.update_entry( updated_peer_record );
 
-        address_info info_for_peer( *active_peer->get_remote_endpoint(), 
-                                   fc::time_point::now(),
-                                   active_peer->latency,
-                                   active_peer->node_id,
-                                   active_peer->direction,
-                                   active_peer->is_firewalled );
-        reply.addresses.push_back( std::move(info_for_peer ) );
+          address_info info_for_peer( *active_peer->get_remote_endpoint(), 
+                                     fc::time_point::now(),
+                                     active_peer->latency,
+                                     active_peer->node_id,
+                                     active_peer->direction,
+                                     active_peer->is_firewalled );
+          reply.addresses.push_back( std::move(info_for_peer ) );
+        }
       }
-
       //for( const potential_peer_record& record : _potential_peer_db )
       originating_peer->send_message( reply );
     }
@@ -2782,6 +2789,11 @@ namespace bts { namespace net { namespace detail {
       _rate_limiter.set_download_limit( download_bytes_per_second );
     }
 
+    void node_impl::disable_peer_advertising()
+    {
+      _peer_advertising_disabled = true;
+    }
+
     fc::variant_object node_impl::network_get_info() const
     {
       fc::mutable_variant_object info;
@@ -2919,6 +2931,11 @@ namespace bts { namespace net { namespace detail {
                                        uint32_t download_bytes_per_second )
   {
     my->set_total_bandwidth_limit( upload_bytes_per_second, download_bytes_per_second );
+  }
+
+  void node::disable_peer_advertising()
+  {
+    my->disable_peer_advertising();
   }
 
   fc::variant_object node::network_get_info() const
