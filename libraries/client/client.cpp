@@ -401,8 +401,10 @@ config load_config( const fc::path& datadir )
             };
 
             fc::shared_ptr<user_appender> _user_appender;
+            bool _simulate_disconnect;
 
             client_impl(bts::client::client* self) :
+              _simulate_disconnect(false),
               _self(self),
               _cli(nullptr),
               _min_delegate_connection_count(BTS_MIN_DELEGATE_CONNECTION_COUNT)
@@ -647,6 +649,7 @@ config load_config( const fc::path& datadir )
          {
             try
             {
+              FC_ASSERT( !_simulate_disconnect );
               ilog("Received a new block from the p2p network, current head block is ${num}, "
                    "new block is ${block}, current head block is ${num}",
                    ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
@@ -1015,6 +1018,10 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
+    }
+    void client::simulate_disconnect( bool state )
+    {
+       my->_simulate_disconnect = state;
     }
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )

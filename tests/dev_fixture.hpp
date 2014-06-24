@@ -236,6 +236,7 @@ struct chain_fixture
    {
       fc::configure_logging( fc::logging_config::default_config() );
    }
+
    void disable_logging()
    {
       fc::logging_config cfg;
@@ -258,6 +259,7 @@ struct chain_fixture
    }
 
    std::shared_ptr<bts::net::simulated_network> sim_network;
+   std::shared_ptr<bts::net::simulated_network> sim_network_fork;
    std::shared_ptr<client>        clienta;
    std::shared_ptr<client>        clientb;
    fc::temp_directory             clienta_dir;
