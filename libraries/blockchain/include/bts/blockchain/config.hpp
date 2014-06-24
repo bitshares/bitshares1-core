@@ -7,7 +7,7 @@
  */
 #define BTS_BLOCKCHAIN_VERSION                      (103)
 #define BTS_WALLET_VERSION                          (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION             (105)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION             (106)
 
 /**
  *  The address prepended to string representation of

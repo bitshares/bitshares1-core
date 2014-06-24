@@ -2867,7 +2867,14 @@ namespace bts { namespace net {
   void simulated_network::broadcast( const message& item_to_broadcast  )
   {
       for( node_delegate* network_node : network_nodes )
-        network_node->handle_message( item_to_broadcast, false );
+      {
+         try {
+            network_node->handle_message( item_to_broadcast, false );
+         } catch ( const fc::exception& e )
+         {
+            elog( "${r}", ("r",e.to_detail_string() ) );
+         }
+      }
   }
 
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )

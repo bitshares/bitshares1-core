@@ -83,6 +83,8 @@ namespace bts { namespace client {
          client();
          client(bts::net::simulated_network_ptr network_to_connect_to);
 
+         void simulate_disconnect( bool state );
+
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
