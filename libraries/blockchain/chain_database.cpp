@@ -1679,7 +1679,7 @@ namespace bts { namespace blockchain {
         for (auto block : blocks_at_time.second)
         {
           out << '"' << std::string ( block.id() ) <<"\" "
-              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
+              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << "<br/>" << block.block_num << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
           out << '"' << std::string ( block.id() ) <<"\" -> \"" << std::string( block.previous ) << "\";\n";
         }
       }
