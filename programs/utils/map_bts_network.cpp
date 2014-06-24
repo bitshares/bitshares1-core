@@ -1,6 +1,9 @@
 #include <fc/crypto/elliptic.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <fc/io/json.hpp>
+#include <fc/exception/exception.hpp>
+#include <fc/io/raw_variant.hpp>
+#include <fc/network/ip.hpp>
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -16,6 +19,7 @@ public:
   bts::net::peer_connection_ptr _connection;
   std::vector<bts::net::address_info> _peers;
   fc::ecc::public_key _node_id;
+  bool _connection_was_rejected;
   bool _done;
   fc::promise<void>::ptr _probe_complete_promise;
 
@@ -24,6 +28,7 @@ public:
     _peer_closed_connection(false),
     _we_closed_connection(false),
     _connection(std::make_shared<bts::net::peer_connection>(this)),
+    _connection_was_rejected(false),
     _done(false),
     _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>()))
   {}
@@ -88,12 +93,14 @@ public:
   void on_connection_accepted_message(bts::net::peer_connection* originating_peer, 
                                       const bts::net::connection_accepted_message& connection_accepted_message_received)
   {
+    _connection_was_rejected = false;
     originating_peer->send_message(bts::net::address_request_message());
   }
 
   void on_connection_rejected_message( bts::net::peer_connection* originating_peer, 
                                        const bts::net::connection_rejected_message& connection_rejected_message_received )
   {
+    _connection_was_rejected = true;
     originating_peer->send_message(bts::net::address_request_message());
   }
 
@@ -152,7 +159,8 @@ int main(int argc, char** argv)
   fc::path data_dir = fc::temp_directory_path() / "map_bts_network";
   fc::create_directories(data_dir);
 
-  nodes_to_visit.push(fc::ip::endpoint::from_string("107.170.30.182:" BOOST_PP_STRINGIZE(BTS_NETWORK_DEFAULT_P2P_PORT)));
+  fc::ip::endpoint seed_node1 = fc::ip::endpoint::from_string("107.170.30.182:" BOOST_PP_STRINGIZE(BTS_NETWORK_DEFAULT_P2P_PORT));
+  nodes_to_visit.push(seed_node1);
   nodes_to_visit.push(fc::ip::endpoint::from_string("107.170.30.182:7890"));
 
   fc::ecc::private_key my_node_id = fc::ecc::private_key::generate();
@@ -207,10 +215,20 @@ int main(int argc, char** argv)
     std::cout << "Traversed " << nodes_already_visited.size() << " of " << (nodes_already_visited.size() + nodes_to_visit.size()) << " known nodes\n";
   }
 
+  bts::net::node_id_t seed_node_id;
+  //std::set<bts::net::node
+  for (const auto& address_info_for_node : address_info_by_node_id)
+  {
+    if (address_info_for_node.second.remote_endpoint == seed_node1)
+      seed_node_id = address_info_for_node.first;
+  }
+
   std::ofstream dot_stream((data_dir / "network_graph.dot").string().c_str());
   std::map<bts::net::node_id_t, fc::ip::endpoint> all_known_nodes;
 
   dot_stream << "graph G {\n";
+  dot_stream << "  // Seed node is " << (std::string)address_info_by_node_id[seed_node_id].remote_endpoint << " id: " << fc::variant(seed_node_id).as_string() << "\n";
+  dot_stream << "  layout=\"circo\";\n";
   //for (const auto& node_and_connections : connections_by_node_id)
   //  all_known_nodes[node_and_connections.first] = address_info_by_node_id[node_and_connections.first].remote_endpoint;
 
