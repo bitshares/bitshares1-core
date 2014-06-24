@@ -576,7 +576,7 @@ config load_config( const fc::path& datadir )
 
        void client_impl::reschedule_delegate_loop()
        {
-          if( _delegate_loop_complete.ready() || !_delegate_loop_complete.valid() )
+          if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
               start_delegate_loop();
        }
 
@@ -587,7 +587,7 @@ config load_config( const fc::path& datadir )
 
        void client_impl::cancel_delegate_loop()
        {
-          if( !_delegate_loop_complete.ready() && _delegate_loop_complete.valid() )
+          if( _delegate_loop_complete.valid() && !_delegate_loop_complete.ready() )
           {
               ilog( "Canceling delegate loop..." );
               _delegate_loop_complete.cancel();
