@@ -57,13 +57,13 @@ target_link_libraries( deterministic_signature_test deterministic_openssl_rand f
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
 
  
-add_executable( bitshares_client_tests bitshares_client_tests.cpp )
-if( WIN32 )
-#   target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
-   set( RPCRT4 Rpcrt4 )
-endif (WIN32)
-target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc )
-add_dependencies(bitshares_client_tests bitshares_client)
+#add_executable( bitshares_client_tests bitshares_client_tests.cpp )
+#if( WIN32 )
+##   target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
+#set( RPCRT4 Rpcrt4 )
+#endif (WIN32)
+#target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc )
+#add_dependencies(bitshares_client_tests bitshares_client)
 
 add_subdirectory( bitcoin )
 add_subdirectory( client_rpc_tests )

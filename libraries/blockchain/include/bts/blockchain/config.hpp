@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                      (103)
-#define BTS_WALLET_VERSION                          (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION             (106)
+#define BTS_BLOCKCHAIN_VERSION                          (103)
+#define BTS_WALLET_VERSION                              (100)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (106)
 
 /**
  *  The address prepended to string representation of
@@ -24,8 +24,8 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                (101)
-#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE               (BTS_BLOCKCHAIN_NUM_DELEGATES/3)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES/3)
 
 /**
  * To prevent a delegate from producing blocks on split network,
@@ -37,7 +37,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC           int64_t(30)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(30)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -61,7 +61,7 @@
 /**
  *  The maximum amount that can be issued for user assets.
  *
- *  10^18 / 2^63 < 1 
+ *  10^18 / 2^63 < 1
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                       (1000*1000*1000ll*1000*1000ll)
 
@@ -106,7 +106,7 @@
 #define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD)
 
 /**
- *  Defines the fee required to register a asset, this fee is set to discourage anyone from 
+ *  Defines the fee required to register a asset, this fee is set to discourage anyone from
  *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
  *  of mining fees then it really isn't worth the networks time.
  */

@@ -57,14 +57,13 @@ void produce_block( T my_client )
 {
    infolog( "--------------- produce block ------------------" );
    auto head_num = my_client->get_chain()->get_head_block_num();
-   auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-   bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
-   auto b = my_client->get_chain()->generate_block(next_block_production_time);
+   auto next_block_time = my_client->get_next_producible_block_timestamp();
+   bts::blockchain::advance_time( (int32_t)((next_block_time - bts::blockchain::now()).count()/1000000) );
+   auto b = my_client->get_chain()->generate_block(next_block_time);
    my_client->get_wallet()->sign_block( b );
    my_client->get_node()->broadcast( bts::client::block_message( b ) );
    FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
 }
-
 
 struct WFixture
 {

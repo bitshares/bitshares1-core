@@ -1010,6 +1010,24 @@ namespace bts { namespace blockchain {
       return get_signing_delegate_key( block_timestamp, get_active_delegates() );
    }
 
+   time_point_sec chain_database::get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const
+   { try {
+      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+      if( next_block_time == now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
+      auto active_delegates = get_active_delegates();
+      for( ; next_block_time < last_block_time; next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
+      {
+          auto delegate_id = get_signing_delegate_id( next_block_time, active_delegates );
+          if( std::find( delegate_ids.begin(), delegate_ids.end(), delegate_id ) != delegate_ids.end() )
+              return next_block_time;
+      }
+
+      return fc::time_point_sec();
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
    { try {
       if( !my->_pending_trx_state )
