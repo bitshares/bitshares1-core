@@ -120,6 +120,7 @@ namespace bts { namespace blockchain {
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now()) );
        
         auto trx_id = trx_arg.id();
+        ilog( "id: ${id}", ("id",trx_id) );
         otransaction_record known_transaction= _current_state->get_transaction( trx_id );
         if( known_transaction )
            FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction) );

@@ -339,6 +339,10 @@ config load_config( const fc::path& datadir )
     {
       return _db.lower_bound(time);
     }
+    void remove(const fc::time_point& key)
+    {
+        _db.remove(key);
+    }
   };
 
 
@@ -401,8 +405,10 @@ config load_config( const fc::path& datadir )
             };
 
             fc::shared_ptr<user_appender> _user_appender;
+            bool _simulate_disconnect;
 
             client_impl(bts::client::client* self) :
+              _simulate_disconnect(false),
               _self(self),
               _cli(nullptr),
               _min_delegate_connection_count(BTS_MIN_DELEGATE_CONNECTION_COUNT)
@@ -702,6 +708,7 @@ config load_config( const fc::path& datadir )
          {
             try
             {
+              FC_ASSERT( !_simulate_disconnect );
               ilog("Received a new block from the p2p network, current head block is ${num}, "
                    "new block is ${block}, current head block is ${num}",
                    ("num", _chain_db->get_head_block_num())("block", block)("num", _chain_db->get_head_block_num()));
@@ -1070,6 +1077,10 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
+    }
+    void client::simulate_disconnect( bool state )
+    {
+       my->_simulate_disconnect = state;
     }
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
@@ -2512,27 +2523,49 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time )const
+   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
    {
       map<fc::time_point, fc::exception> result;
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
       {
+         if (--first_error_number)
+             continue;
          result[itr.key()] = itr.value();
          ++itr;
+         if (--limit == 0)
+             break;
       }
       return result;
    }
-   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time )const
+   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
    {
       map<fc::time_point, std::string> result;
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
       {
+         if (--first_error_number)
+             continue;
          result[itr.key()] = itr.value().what();
          ++itr;
+         if (--limit == 0)
+             break;
       }
       return result;
+   }
+
+   void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
+   {
+      auto itr = _exception_db.lower_bound( start_time );
+      while( itr.valid() )
+      {
+         if (--first_error_number)
+             continue;
+         _exception_db.remove(itr.key());
+         ++itr;
+         if (--limit == 0)
+             break;
+      }
    }
 
    void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const

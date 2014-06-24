@@ -1076,8 +1076,6 @@ namespace bts { namespace wallet {
                                                 const string& account_name,
                                                 bool create_account )
    { try {
-      if( !is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1106,6 +1104,9 @@ namespace bts { namespace wallet {
       }
       FC_ASSERT( account_name.size(), "You must specify an account name because the private key "
                                       "does not belong to any known accounts");
+
+      if( !is_valid_account_name( account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
       auto account_with_key = my->_wallet_db.lookup_account( key.get_public_key() );
       if (account_with_key)

@@ -453,12 +453,13 @@ namespace bts { namespace blockchain {
                                                     const std::vector<signed_transaction>& user_transactions,
                                                     const pending_chain_state_ptr& pending_state )
       {
-         //ilog( "apply transactions ${block_num}", ("block_num",block_num) );
+         ilog( "apply transactions from block: ${block_num}  ${trxs}", ("block_num",block_num)("trxs",user_transactions) );
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
             for( auto trx : user_transactions )
             {
+               ilog( "applying   ${trx}", ("trx",trx) );
                transaction_evaluation_state_ptr trx_eval_state =
                       std::make_shared<transaction_evaluation_state>(pending_state,_chain_id);
                trx_eval_state->evaluate( trx );
@@ -700,7 +701,9 @@ namespace bts { namespace blockchain {
             //apply_deterministic_updates(pending_state);
 
             //ilog( "block data: ${block_data}", ("block_data",block_data) );
+            ilog( "apply transactions " );
             apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
+            ilog( "pay delegate" );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );
 
@@ -714,6 +717,7 @@ namespace bts { namespace blockchain {
             // times without changing the database other than the first
             // attempt.
             // ilog( "apply changes\n${s}", ("s",fc::json::to_pretty_string( *pending_state) ) );
+            ilog( "apply changes" );
             pending_state->apply_changes();
 
             mark_included( block_id, true );
@@ -1313,8 +1317,15 @@ namespace bts { namespace blockchain {
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {
       auto trx_rec = my->_id_to_transaction_record_db.fetch_optional( trx_id );
-      if( trx_rec || exact ) return trx_rec;
+      if( trx_rec || exact )
+      {
+         ilog( "trx_rec: ${id} => ${t}", ("id",trx_id)("t",trx_rec) );
+         if( trx_rec )
+            FC_ASSERT( trx_rec->trx.id() == trx_id,"", ("trx_rec->id",trx_rec->trx.id()) );
+         return trx_rec;
+      }
       
+      ilog( "... lower bound...?" );
       auto itr = my->_id_to_transaction_record_db.lower_bound( trx_id );
       if( itr.valid() )
       {
@@ -1331,7 +1342,13 @@ namespace bts { namespace blockchain {
    void chain_database::store_transaction( const transaction_id_type& record_id, 
                                            const transaction_record& record_to_store ) 
    { try {
-      my->_id_to_transaction_record_db.store( record_id, record_to_store );
+      if( record_to_store.trx.operations.size() == 0 )
+        my->_id_to_transaction_record_db.remove( record_id );
+      else
+      {
+        FC_ASSERT( record_id == record_to_store.trx.id() );
+        my->_id_to_transaction_record_db.store( record_id, record_to_store );
+      }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
    void chain_database::scan_assets( function<void( const asset_record& )> callback )
@@ -1657,7 +1674,7 @@ namespace bts { namespace blockchain {
 
     std::string chain_database::export_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
     {
-      FC_ASSERT( start_block > 0 );
+      FC_ASSERT( start_block >= 0 );
       FC_ASSERT( end_block >= start_block );
       std::stringstream out;
       out << "digraph G { \n"; 
@@ -1676,7 +1693,7 @@ namespace bts { namespace blockchain {
           start_time = block_record.timestamp;
         }
         std::cout << block_record.block_num << "  start " << start_block << "  end " << end_block << "\n";
-        if ( block_record.block_num > start_block && block_record.block_num < end_block )
+        if ( block_record.block_num >= start_block && block_record.block_num <= end_block )
         {
           unsigned rank = (unsigned)((block_record.timestamp - start_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
@@ -1697,7 +1714,7 @@ namespace bts { namespace blockchain {
         for (auto block : blocks_at_time.second)
         {
           out << '"' << std::string ( block.id() ) <<"\" "
-              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
+              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << "<br/>" << block.block_num << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
           out << '"' << std::string ( block.id() ) <<"\" -> \"" << std::string( block.previous ) << "\";\n";
         }
       }
