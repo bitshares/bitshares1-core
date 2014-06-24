@@ -727,6 +727,31 @@ namespace bts { namespace cli {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
                   print_unspent_balances(balance_recs);
               }
+              else if (method_name == "blockchain_list_blocks")
+              {
+                  auto blocks = result.as<vector<blockchain::block_record>>();
+
+                  *_out << std::setw(10) << "HEIGHT";
+                  *_out << std::setw(30) << "TIME";
+                  *_out << std::setw(15) << "TXN COUNT";
+                  *_out << std::setw(65) << "SIGNING DELEGATE";
+                  *_out << std::setw(8)  << "SIZE";
+
+                  *_out << '\n';
+                  for (int i = 0; i < 128; ++i)
+                      *_out << '-';
+                  *_out << '\n';
+
+                  for (blockchain::block_record block : blocks)
+                  {
+                      *_out << std::setw(10) << block.block_num
+                            << std::setw(30) << time_to_string(block.timestamp)
+                            << std::setw(15) << block.user_transaction_ids.size()
+                            << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
+                            << std::setw(8) << block.block_size
+                            << '\n';
+                  }
+              }
               else if (method_name == "blockchain_list_registered_accounts")
               {
                   string start = "";
