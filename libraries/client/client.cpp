@@ -101,7 +101,9 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                                   "Limit total bandwidth to this many bytes per second")
                               ("min-delegate-connection-count", program_options::value<uint32_t>(),
                                   "Override the default minimum delegate connection count, used to set up "
-                                  "a test network with less than five delegates");
+                                  "a test network with less than five delegates")
+                              ("disable-peer-advertising", "Disable advertising peers")
+;
 
 
   program_options::variables_map option_variables;
@@ -1974,15 +1976,16 @@ config load_config( const fc::path& datadir )
       }
 
       if (option_variables.count("total-bandwidth-limit"))
-      {
-        this->get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(),
-                                                    option_variables["total-bandwidth-limit"].as<uint32_t>());
-      }
+        get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(),
+                                              option_variables["total-bandwidth-limit"].as<uint32_t>());
+
+      if (option_variables.count("disable-peer-advertising"))
+        get_node()->disable_peer_advertising();
 
       if (option_variables.count("clear-peer-database"))
       {
         std::cout << "Erasing old peer database\n";
-        this->get_node()->clear_peer_database();
+        get_node()->clear_peer_database();
       }
 
       // fire up the p2p ,
