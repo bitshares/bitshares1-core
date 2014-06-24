@@ -472,12 +472,17 @@ void run_regression_test(fc::path test_dir, bool with_network)
   try 
   {
     std::cout << "*** Executing " << test_dir.string() << std::endl;
+
     boost::filesystem::current_path(test_dir.string());
 
     //create a small genesis block to reduce test startup time
-    fc::temp_directory temp_dir;
-    fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
-    create_genesis_block(genesis_json_file);
+    //fc::temp_directory temp_dir;
+    //fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
+    //create_genesis_block(genesis_json_file);
+    //DLN: now we just used the genesis file already committed to repo, update it
+    //     using "-t make_genesis_block" if desired.
+    fc::path genesis_json_file = "../../test_genesis.json";
+
 
     //open test configuration file (contains one line per client to create)
     fc::path test_config_file_name = "test.config";
