@@ -1,5 +1,44 @@
 #define DEFAULT_LOGGER "p2p"
-#include "peer_connection.hpp"
+
+#include <sstream>
+#include <iomanip>
+#include <deque>
+#include <unordered_set>
+#include <list>
+#include <iostream>
+#include <boost/tuple/tuple.hpp>
+#include <boost/circular_buffer.hpp>
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/logic/tribool.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
+
+#include <fc/thread/thread.hpp>
+#include <fc/thread/future.hpp>
+#include <fc/log/logger.hpp>
+#include <fc/io/json.hpp>
+#include <fc/io/enum_type.hpp>
+#include <fc/crypto/rand.hpp>
+#include <fc/network/rate_limiting.hpp>
+
+#include <bts/net/node.hpp>
+#include <bts/net/peer_database.hpp>
+#include <bts/net/message_oriented_connection.hpp>
+#include <bts/net/stcp_socket.hpp>
+#include <bts/net/config.hpp>
+#include <bts/client/messages.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <fc/git_revision.hpp>
+
+#include <bts/net/peer_connection.hpp>
 
 namespace bts { namespace net { 
   namespace detail 
@@ -7,58 +46,58 @@ namespace bts { namespace net {
     namespace bmi = boost::multi_index;
     class blockchain_tied_message_cache 
     {
-       private:
-         static const uint32_t cache_duration_in_blocks = 2;
+    private:
+      static const uint32_t cache_duration_in_blocks = 2;
 
-         struct message_hash_index{};
-         struct message_contents_hash_index{};
-         struct block_clock_index{};
-         struct message_info
-         {
-           message_hash_type message_hash;
-           message           message_body;
-           uint32_t          block_clock_when_received;
+      struct message_hash_index{};
+      struct message_contents_hash_index{};
+      struct block_clock_index{};
+      struct message_info
+      {
+        message_hash_type message_hash;
+        message           message_body;
+        uint32_t          block_clock_when_received;
 
-           // for network performance stats
-           message_propagation_data propagation_data;
-           fc::uint160_t     message_contents_hash; // hash of whatever the message contains ( if it's a transaction, this is the transaction id, if it's a block, it's the block_id )
+        // for network performance stats
+        message_propagation_data propagation_data;
+        fc::uint160_t     message_contents_hash; // hash of whatever the message contains ( if it's a transaction, this is the transaction id, if it's a block, it's the block_id )
 
-           message_info( const message_hash_type& message_hash,
-                       const message&           message_body,
-                        uint32_t                 block_clock_when_received,
-                       const message_propagation_data& propagation_data,
-                        fc::uint160_t            message_contents_hash ) :
-             message_hash( message_hash ),
-             message_body( message_body ),
-             block_clock_when_received( block_clock_when_received ),
-             propagation_data( propagation_data ),
-             message_contents_hash( message_contents_hash )
-           {}
-         };
-         typedef boost::multi_index_container
-            < message_info, 
-               bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>, 
-                                                     bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
-                                bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
-                                                         bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
-                                bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
-                                                         bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > > 
-            > message_cache_container;
+        message_info( const message_hash_type& message_hash,
+                      const message&           message_body,
+                      uint32_t                 block_clock_when_received,
+                      const message_propagation_data& propagation_data,
+                      fc::uint160_t            message_contents_hash ) :
+          message_hash( message_hash ),
+          message_body( message_body ),
+          block_clock_when_received( block_clock_when_received ),
+          propagation_data( propagation_data ),
+          message_contents_hash( message_contents_hash )
+        {}
+      };
+      typedef boost::multi_index_container
+        < message_info, 
+            bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>, 
+                                                  bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
+                            bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
+                                                      bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
+                            bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
+                                                      bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > > 
+        > message_cache_container;
 
-         message_cache_container _message_cache;
+      message_cache_container _message_cache;
 
-         uint32_t block_clock;
+      uint32_t block_clock;
 
-      public:
-         blockchain_tied_message_cache() :
-           block_clock( 0 )
-         {}
-         void block_accepted();
-         void cache_message( const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
-                           const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash );
-         message get_message( const message_hash_type& hash_of_message_to_lookup );
-         message_propagation_data get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const;
-         size_t size() const { return _message_cache.size(); }
+    public:
+      blockchain_tied_message_cache() :
+        block_clock( 0 )
+      {}
+      void block_accepted();
+      void cache_message( const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
+                        const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash );
+      message get_message( const message_hash_type& hash_of_message_to_lookup );
+      message_propagation_data get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const;
+      size_t size() const { return _message_cache.size(); }
     };
 
     void blockchain_tied_message_cache::block_accepted()
@@ -102,6 +141,29 @@ namespace bts { namespace net {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // This specifies configuration info for the local node.  It's stored as JSON 
+    // in the configuration directory (application data directory)
+    struct node_configuration
+    {
+      fc::ip::endpoint listen_endpoint;
+      bool wait_if_endpoint_is_busy;
+      /**
+       * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
+       * on the network.  This is now a private key/public key pair, where the public key is used
+       * in place of the old random node-id.  The private part is unused, but might be used in
+       * the future to support some notion of trusted peers.
+       */
+      fc::ecc::private_key private_key;
+    };
+
+
+} } } // end namespace bts::net::detail
+FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
+                                                 (wait_if_endpoint_is_busy)
+                                                 (private_key));
+
+namespace bts { namespace net { namespace detail {
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
     {
@@ -839,58 +901,58 @@ namespace bts { namespace net {
            ( "type", bts::net::core_message_type_enum(received_message.msg_type ) )("hash", message_hash )("size", received_message.size )("endpoint", originating_peer->get_remote_endpoint() ) );
       switch ( received_message.msg_type )
       {
-         case core_message_type_enum::hello_message_type:
-           on_hello_message( originating_peer, received_message.as<hello_message>() );
-           break;
-         case core_message_type_enum::connection_accepted_message_type:
-           on_connection_accepted_message( originating_peer, received_message.as<connection_accepted_message>() );
-           break;
-         case core_message_type_enum::connection_rejected_message_type:
-           on_connection_rejected_message( originating_peer, received_message.as<connection_rejected_message>() );
-           break;
-         case core_message_type_enum::address_request_message_type:
-           on_address_request_message( originating_peer, received_message.as<address_request_message>() );
-           break;
-         case core_message_type_enum::address_message_type:
-           on_address_message( originating_peer, received_message.as<address_message>() );
-           break;
-         case core_message_type_enum::fetch_blockchain_item_ids_message_type:
-           on_fetch_blockchain_item_ids_message( originating_peer, received_message.as<fetch_blockchain_item_ids_message>() );
-           break;
-         case core_message_type_enum::blockchain_item_ids_inventory_message_type:
-           on_blockchain_item_ids_inventory_message( originating_peer, received_message.as<blockchain_item_ids_inventory_message>() );
-           break;
-         case core_message_type_enum::fetch_items_message_type:
-           on_fetch_items_message( originating_peer, received_message.as<fetch_items_message>() );
-           break;
-         case core_message_type_enum::item_not_available_message_type:
-           on_item_not_available_message( originating_peer, received_message.as<item_not_available_message>() );
-           break;
-         case core_message_type_enum::item_ids_inventory_message_type:
-           on_item_ids_inventory_message( originating_peer, received_message.as<item_ids_inventory_message>() );
-           break;
-         case core_message_type_enum::closing_connection_message_type:
-           on_closing_connection_message( originating_peer, received_message.as<closing_connection_message>() );
-           break;
-         case bts::client::message_type_enum::block_message_type:
-           process_block_message( originating_peer, received_message, message_hash );
-           break;
-         case core_message_type_enum::current_time_request_message_type:
-           on_current_time_request_message( originating_peer, received_message.as<current_time_request_message>() );
-           break;
-         case core_message_type_enum::current_time_reply_message_type:
-           on_current_time_reply_message( originating_peer, received_message.as<current_time_reply_message>() );
-           break;
-         case core_message_type_enum::check_firewall_message_type:
-           on_check_firewall_message( originating_peer, received_message.as<check_firewall_message>() );
-           break;
-         case core_message_type_enum::check_firewall_reply_message_type:
-           on_check_firewall_reply_message( originating_peer, received_message.as<check_firewall_reply_message>() );
-           break;
+      case core_message_type_enum::hello_message_type:
+        on_hello_message( originating_peer, received_message.as<hello_message>() );
+        break;
+      case core_message_type_enum::connection_accepted_message_type:
+        on_connection_accepted_message( originating_peer, received_message.as<connection_accepted_message>() );
+        break;
+      case core_message_type_enum::connection_rejected_message_type:
+        on_connection_rejected_message( originating_peer, received_message.as<connection_rejected_message>() );
+        break;
+      case core_message_type_enum::address_request_message_type:
+        on_address_request_message( originating_peer, received_message.as<address_request_message>() );
+        break;
+      case core_message_type_enum::address_message_type:
+        on_address_message( originating_peer, received_message.as<address_message>() );
+        break;
+      case core_message_type_enum::fetch_blockchain_item_ids_message_type:
+        on_fetch_blockchain_item_ids_message( originating_peer, received_message.as<fetch_blockchain_item_ids_message>() );
+        break;
+      case core_message_type_enum::blockchain_item_ids_inventory_message_type:
+        on_blockchain_item_ids_inventory_message( originating_peer, received_message.as<blockchain_item_ids_inventory_message>() );
+        break;
+      case core_message_type_enum::fetch_items_message_type:
+        on_fetch_items_message( originating_peer, received_message.as<fetch_items_message>() );
+        break;
+      case core_message_type_enum::item_not_available_message_type:
+        on_item_not_available_message( originating_peer, received_message.as<item_not_available_message>() );
+        break;
+      case core_message_type_enum::item_ids_inventory_message_type:
+        on_item_ids_inventory_message( originating_peer, received_message.as<item_ids_inventory_message>() );
+        break;
+      case core_message_type_enum::closing_connection_message_type:
+        on_closing_connection_message( originating_peer, received_message.as<closing_connection_message>() );
+        break;
+      case bts::client::message_type_enum::block_message_type:
+        process_block_message( originating_peer, received_message, message_hash );
+        break;
+      case core_message_type_enum::current_time_request_message_type:
+        on_current_time_request_message( originating_peer, received_message.as<current_time_request_message>() );
+        break;
+      case core_message_type_enum::current_time_reply_message_type:
+        on_current_time_reply_message( originating_peer, received_message.as<current_time_reply_message>() );
+        break;
+      case core_message_type_enum::check_firewall_message_type:
+        on_check_firewall_message( originating_peer, received_message.as<check_firewall_message>() );
+        break;
+      case core_message_type_enum::check_firewall_reply_message_type:
+        on_check_firewall_reply_message( originating_peer, received_message.as<check_firewall_reply_message>() );
+        break;
 
-         default:
-           process_ordinary_message( originating_peer, received_message, message_hash );
-           break;
+      default:
+        process_ordinary_message( originating_peer, received_message, message_hash );
+        break;
       }
     }
 

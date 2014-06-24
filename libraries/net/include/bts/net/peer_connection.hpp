@@ -1,45 +1,16 @@
 #pragma once
 
-#include <sstream>
-#include <iomanip>
-#include <deque>
-#include <unordered_set>
-#include <list>
-#include <iostream>
-#include <boost/tuple/tuple.hpp>
-#include <boost/circular_buffer.hpp>
-
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/random_access_index.hpp>
-#include <boost/multi_index/tag.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/logic/tribool.hpp>
-#include <boost/range/algorithm_ext/push_back.hpp>
-
-#include <fc/thread/thread.hpp>
-#include <fc/thread/future.hpp>
-#include <fc/log/logger.hpp>
-#include <fc/io/json.hpp>
-#include <fc/io/enum_type.hpp>
-#include <fc/crypto/rand.hpp>
-#include <fc/network/rate_limiting.hpp>
-
 #include <bts/net/node.hpp>
 #include <bts/net/peer_database.hpp>
 #include <bts/net/message_oriented_connection.hpp>
 #include <bts/net/stcp_socket.hpp>
 #include <bts/net/config.hpp>
 #include <bts/client/messages.hpp>
+#include <boost/tuple/tuple.hpp>
 
-#include <bts/utilities/git_revision.hpp>
-#include <fc/git_revision.hpp>
+#include <deque>
 
-namespace bts { namespace net {
-  namespace detail
+namespace bts { namespace net 
   {
     class peer_connection;
     class peer_connection_delegate
@@ -191,44 +162,25 @@ namespace bts { namespace net {
     };
     typedef std::shared_ptr<peer_connection> peer_connection_ptr;
 
+ } } // end namespace bts::net
 
-    // This specifies configuration info for the local node.  It's stored as JSON 
-    // in the configuration directory (application data directory)
-    struct node_configuration
-    {
-      fc::ip::endpoint listen_endpoint;
-      bool wait_if_endpoint_is_busy;
-      /**
-       * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
-       * on the network.  This is now a private key/public key pair, where the public key is used
-       * in place of the old random node-id.  The private part is unused, but might be used in
-       * the future to support some notion of trusted peers.
-       */
-      fc::ecc::private_key private_key;
-    };
-
- } } } // end namespace bts::net::detail
-
-FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
-                                                 (wait_if_endpoint_is_busy)
-                                                 (private_key));
 // not sent over the wire, just reflected for logging
-FC_REFLECT_ENUM(bts::net::detail::peer_connection::our_connection_state, (disconnected)
-                                                                         (just_connected)
-                                                                         (connection_accepted)
-                                                                         (connection_rejected))
-FC_REFLECT_ENUM(bts::net::detail::peer_connection::their_connection_state, (disconnected)
-                                                                           (just_connected)
-                                                                           (connection_accepted)
-                                                                           (connection_rejected))
-FC_REFLECT_ENUM(bts::net::detail::peer_connection::connection_negotiation_status, (disconnected)
-                                                                                  (connecting)
-                                                                                  (connected)
-                                                                                  (accepting)
-                                                                                  (accepted)
-                                                                                  (hello_sent)
-                                                                                  (peer_connection_accepted)
-                                                                                  (peer_connection_rejected)
-                                                                                  (negotiation_complete)
-                                                                                  (closing)
-                                                                                  (closed) )
+FC_REFLECT_ENUM(bts::net::peer_connection::our_connection_state, (disconnected)
+                                                                 (just_connected)
+                                                                 (connection_accepted)
+                                                                 (connection_rejected))
+FC_REFLECT_ENUM(bts::net::peer_connection::their_connection_state, (disconnected)
+                                                                   (just_connected)
+                                                                   (connection_accepted)
+                                                                   (connection_rejected))
+FC_REFLECT_ENUM(bts::net::peer_connection::connection_negotiation_status, (disconnected)
+                                                                          (connecting)
+                                                                          (connected)
+                                                                          (accepting)
+                                                                          (accepted)
+                                                                          (hello_sent)
+                                                                          (peer_connection_accepted)
+                                                                          (peer_connection_rejected)
+                                                                          (negotiation_complete)
+                                                                          (closing)
+                                                                          (closed) )

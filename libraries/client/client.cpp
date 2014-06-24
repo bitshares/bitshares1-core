@@ -55,7 +55,7 @@
 
 #include <boost/lexical_cast.hpp>
 using namespace boost;
-   using std::string;
+using std::string;
 
 
 namespace bts { namespace client {
