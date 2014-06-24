@@ -215,13 +215,11 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_list_delegates" );
 
    exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );
-   /*
    exec( clienta, "wallet_transfer 10801980.09801  XTS delegate33 delegate33 change_votes " );
    exec( clientb, "wallet_transfer 9792.18499 XTS b-account b-account change_votes " );
    exec( clientb, "wallet_transfer 20000.40123 XTS c-account c-account change_votes " );
    exec( clientb, "wallet_transfer 10791970.09801 XTS delegate32 delegate32 change_votes " );
    exec( clientb, "wallet_transfer 10791760.18284 XTS delegate30 delegate30 change_votes " );
-   */
 
    exec( clientb, "info" );
    exec( clienta, "info" );
@@ -250,7 +248,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "info" );
 
    wlog( "JOINING NETWORKS" );
-   for( uint32_t i = 2; i < clienta->get_chain()->get_head_block_num(); ++i )
+   for( uint32_t i = 2; i <= clienta->get_chain()->get_head_block_num(); ++i )
    {
       auto b = clienta->get_chain()->get_block( i );
       clientb->get_chain()->push_block(b);
