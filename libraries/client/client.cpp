@@ -2523,7 +2523,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
+   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
       auto itr = _exception_db.lower_bound( start_time );
@@ -2536,8 +2536,17 @@ config load_config( const fc::path& datadir )
          if (--limit == 0)
              break;
       }
+
+      if( filename != "" )
+      {
+          auto file_path = fc::path( filename );
+          FC_ASSERT( !fc::exists( file_path ) );
+          fc::json::save_to_file( result, file_path, true );
+      }
+
       return result;
    }
+
    map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
    {
       map<fc::time_point, std::string> result;

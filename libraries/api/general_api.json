@@ -178,6 +178,12 @@
                   "description" : "the maximum number of errors to return",
                   "type" : "uint32_t",
                   "default_value" : "20"
+               },
+               {
+                  "name" : "filename",
+                  "type" : "string",
+                  "description" : "the filename to save json error list to",
+                  "default_value" : ""
                }
         ],
         "is_const"   : true,

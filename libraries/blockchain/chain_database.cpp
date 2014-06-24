@@ -1735,6 +1735,7 @@ namespace bts { namespace blockchain {
       if( filename == "" )
           return out.str();
 
+      FC_ASSERT( !fc::exists( fc::path( filename ) ) );
       std::ofstream fileout( filename.generic_string().c_str() );
       fileout << out.str();
 
