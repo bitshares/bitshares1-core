@@ -1085,6 +1085,8 @@ namespace bts { namespace cli {
                    *_out << "unexpected exception \n";
                 }
               }
+
+              *_out << std::right; /* Ensure default alignment is restored */
             }
 
             string pretty_shorten(const string& str, uint32_t size)
