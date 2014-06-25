@@ -2276,8 +2276,16 @@ config load_config( const fc::path& datadir )
 
       info["network_num_connections"]                           = network_get_connection_count();
 
-      info["ntp_time"]                                          = now;
-      info["ntp_error_seconds"]                                 = bts::blockchain::ntp_error();
+      if (ntp_time())
+      {
+        info["ntp_time"]                                          = *ntp_time();
+        info["ntp_error_seconds"]                                 = bts::blockchain::ntp_error();
+      }
+      else
+      {
+        info["ntp_time"]                                          = "NTP time not available";
+        info["ntp_error_seconds"]                                 = "NTP time not available";
+      }
 
       info["wallet_unlocked_seconds_remaining"]                 = seconds_remaining > 0 ? seconds_remaining : 0;
 
