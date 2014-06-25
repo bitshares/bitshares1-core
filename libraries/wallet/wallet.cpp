@@ -3022,22 +3022,22 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    /**
-    *  Randomly select a slate of delegates from those supported by this wallet.  The
-    *  slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
+    *  Randomly select a slate of delegates from those supported by this wallet.
+    *  The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
     */
    delegate_slate wallet::select_delegate_vote()const
    {
       vector<account_id_type> for_candidates;
 
-      for (auto acct_rec : my->_wallet_db.get_accounts())
+      for( const auto& acct_rec : my->_wallet_db.get_accounts() )
       {
-         if (acct_rec.second.trust_level > 0)
-             for_candidates.push_back(acct_rec.second.id);
+         if( acct_rec.second.trusted )
+             for_candidates.push_back( acct_rec.second.id );
       }
       std::sort( for_candidates.begin(), for_candidates.end() );
 
       delegate_slate result;
-      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE);
+      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
 
       for( uint32_t i = 0; i < delegates_to_select; ++i )
       {
@@ -3048,19 +3048,18 @@ namespace bts { namespace wallet {
             for_candidates[d] = 0;
          }
       }
-      std::sort( result.supported_delegates.begin(),
-                 result.supported_delegates.end() );
+
+      std::sort( result.supported_delegates.begin(), result.supported_delegates.end() );
       return result;
    }
 
-   void      wallet::set_delegate_trust_level( const string& delegate_name, 
-                                               int32_t trust_level)
+   void wallet::set_delegate_trust( const string& delegate_name, bool trusted )
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
       if( war.valid() )
       {
-         war->trust_level = trust_level;
+         war->trusted = trusted;
          my->_wallet_db.cache_account( *war );
       }
       else
@@ -3071,18 +3070,16 @@ namespace bts { namespace wallet {
             FC_ASSERT( !"Not a Registered Account" );
          }
          add_contact_account( delegate_name, reg_account->active_key() );
-         set_delegate_trust_level( delegate_name, trust_level );
+         set_delegate_trust( delegate_name, trusted );
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
-                                      ("trust_level",  trust_level) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("trusted", trusted) ) }
 
-   int32_t   wallet::get_delegate_trust_level( const string& delegate_name) const
+   bool wallet::get_delegate_trust( const string& delegate_name )const
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
-      if( war.valid() )
-         return war->trust_level;
-      return 0;
+      FC_ASSERT( war.valid() );
+      return war->trusted;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 
    vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,
