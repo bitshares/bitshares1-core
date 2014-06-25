@@ -679,6 +679,8 @@ config load_config( const fc::path& datadir )
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
+          first = _chain_db->get_head_block_num() - first - count;
+
           int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
           if ( last < first )
           {
@@ -689,6 +691,8 @@ config load_config( const fc::path& datadir )
 
           for( int32_t block_num = first; block_num <= last; ++block_num )
              result.push_back( *_chain_db->get_block_record( block_num ) );
+
+          result = vector<block_record>( result.rbegin(), result.rend() );
 
           return result;
        }
