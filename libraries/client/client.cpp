@@ -1443,25 +1443,6 @@ config load_config( const fc::path& datadir )
       _wallet->set_delegate_trust( delegate_name, trusted );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("trusted",trusted) ) }
 
-    /*
-    bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const string& delegate_name) const
-    {
-      try {
-        auto account_record = _chain_db->get_account_record(delegate_name);
-        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
-
-        return _wallet->get_delegate_trust_status(delegate_name);
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name))
-    }
-
-    map<string, bts::wallet::delegate_trust_status> client::wallet_list_delegate_trust_status() const
-    {
-      return _wallet->list_delegate_trust_status();
-    }
-    */
-
-
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
       auto id = variant( transaction_id ).as<transaction_id_type>();
