@@ -673,26 +673,40 @@ config load_config( const fc::path& datadir )
           return delegates;
        }
 
-       vector<block_record> client_impl::blockchain_list_blocks( int32_t first, uint32_t count)
+       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
        {
-          FC_ASSERT( first >= 0 );
           FC_ASSERT( count <= 1000 );
+          FC_ASSERT( count >= -1000 );
           vector<block_record> result;
+          if (count == 0)
+              return result;
 
-          first = _chain_db->get_head_block_num() - first - count;
+          auto total_blocks = _chain_db->get_head_block_num();
+          FC_ASSERT( first <= total_blocks );
 
-          int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
-          if ( last < first )
+          int32_t increment = 1;
+
+          //Normalize first and count if count < 0 and adjust count if necessary to not try to list nonexistent blocks
+          if( count < 0 )
           {
-             return result;
+            first = total_blocks - first;
+            count *= -1;
+            if( signed(first) - count < 0 )
+              count = first;
+            increment = -1;
+          }
+          else
+          {
+            if ( first == 0 )
+              first = 1;
+            if( first + count - 1 > total_blocks )
+              count = total_blocks - first + 1;
           }
 
-          result.reserve( last - first + 1);
+          result.reserve( count );
 
-          for( int32_t block_num = first; block_num <= last; ++block_num )
+          for( int32_t block_num = first; count; --count, block_num += increment )
              result.push_back( *_chain_db->get_block_record( block_num ) );
-
-          result = vector<block_record>( result.rbegin(), result.rend() );
 
           return result;
        }
