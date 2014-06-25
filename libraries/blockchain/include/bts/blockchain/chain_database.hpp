@@ -237,6 +237,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
+         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
+                                                                        uint32_t block_num,
+                                                                        const delegate_block_stats& block_stats )override;
+         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
+                                                                      uint32_t block_num )const override;
+
       private:
          unique_ptr<detail::chain_database_impl> my;
    };

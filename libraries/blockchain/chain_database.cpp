@@ -166,7 +166,6 @@ namespace bts { namespace blockchain {
             bts::db::level_map< string, asset_id_type >                         _symbol_index_db;
             bts::db::level_pod_map< vote_del, int >                             _delegate_vote_index_db;
 
-            /* Negative block number means block was missed */
             bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
                                                                                 _delegate_block_stats_db;
 
@@ -626,11 +625,8 @@ namespace bts { namespace blockchain {
                     block_stats.latency = (uint32_t)latency;
               }
 
-              // TODO: all updates should be to pending_state and not the database directly...
-              //  This can result in inconsistencies when dealing with forks.
-              _delegate_block_stats_db.store( std::make_pair( delegate_id, current_block_num ), block_stats );
-
               pending_state->store_account_record( *delegate_rec );
+              pending_state->store_delegate_block_stats( delegate_id, current_block_num, block_stats );
           }
           while( current_block_timestamp < produced_block.timestamp );
 
@@ -697,7 +693,7 @@ namespace bts { namespace blockchain {
              **/
             update_delegate_production_info( block_data, pending_state );
 
-            // apply any deterministic operations such as market operations before we preterb indexes
+            // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
 
             //ilog( "block data: ${block_data}", ("block_data",block_data) );
@@ -2047,5 +2043,16 @@ namespace bts { namespace blockchain {
          my->_slate_db.store( id, slate );
    }
 
+   void chain_database::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
+                                                    const delegate_block_stats& block_stats )
+   {
+       my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
+   }
+
+   odelegate_block_stats chain_database::get_delegate_block_stats( const account_id_type& delegate_id,
+                                                                   uint32_t block_num )const
+   {
+      return my->_delegate_block_stats_db.fetch_optional( std::make_pair( delegate_id, block_num ) );
+   }
 
 } } // namespace bts::blockchain

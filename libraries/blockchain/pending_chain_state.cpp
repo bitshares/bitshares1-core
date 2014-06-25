@@ -44,23 +44,25 @@ namespace bts { namespace blockchain {
    {
       return std::make_shared<pending_chain_state>(prev_state);
    }
+
    /** apply changes from this pending state to the previous state */
    void  pending_chain_state::apply_changes()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( !prev_state ) return;
-      for( auto item   : properties )     prev_state->set_property( (chain_property_enum)item.first, item.second );
-      for( auto record : assets )         prev_state->store_asset_record( record.second );
-      for( auto record : accounts )       prev_state->store_account_record( record.second );
-      for( auto record : balances )       prev_state->store_balance_record( record.second );
-      for( auto record : proposals )      prev_state->store_proposal_record( record.second );
-      for( auto record : proposal_votes ) prev_state->store_proposal_vote( record.second );
-      for( auto record : bids )           prev_state->store_bid_record( record.first, record.second );
-      for( auto record : asks )           prev_state->store_ask_record( record.first, record.second );
-      for( auto record : shorts )         prev_state->store_short_record( record.first, record.second );
-      for( auto record : collateral )     prev_state->store_collateral_record( record.first, record.second );
-      for( auto record : transactions )   prev_state->store_transaction( record.first, record.second );
-      for( auto record : slates )         prev_state->store_delegate_slate( record.first, record.second );
+      for( const auto& item : properties )      prev_state->set_property( (chain_property_enum)item.first, item.second );
+      for( const auto& item : assets )          prev_state->store_asset_record( item.second );
+      for( const auto& item : accounts )        prev_state->store_account_record( item.second );
+      for( const auto& item : balances )        prev_state->store_balance_record( item.second );
+      for( const auto& item : proposals )       prev_state->store_proposal_record( item.second );
+      for( const auto& item : proposal_votes )  prev_state->store_proposal_vote( item.second );
+      for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
+      for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
+      for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
+      for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
+      for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
+      for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
+      for( const auto& item : _block_stats )    prev_state->store_delegate_block_stats( item.first.first, item.first.second, item.second );
    }
 
    otransaction_record  pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -78,88 +80,87 @@ namespace bts { namespace blockchain {
       transactions[id] = rec;
    }
 
-   void  pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
+   void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
    {
       auto undo_state = std::dynamic_pointer_cast<pending_chain_state>(undo_state_arg);
       chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
-      for( auto item : properties )
+      for( const auto& item : properties )
       {
-         auto previous_value = prev_state->get_property( (chain_property_enum)item.first );
-         undo_state->set_property( (chain_property_enum)item.first, previous_value );
+         auto prev_value = prev_state->get_property( (chain_property_enum)item.first );
+         undo_state->set_property( (chain_property_enum)item.first, prev_value );
       }
-
-      for( auto record : assets )
+      for( const auto& item : assets )
       {
-         auto prev_asset = prev_state->get_asset_record( record.first );
-         if( !!prev_asset ) undo_state->store_asset_record( *prev_asset );
-         else undo_state->store_asset_record( record.second.make_null() );
+         auto prev_value = prev_state->get_asset_record( item.first );
+         if( !!prev_value ) undo_state->store_asset_record( *prev_value );
+         else undo_state->store_asset_record( item.second.make_null() );
       }
-
-      for( auto record : slates )
+      for( const auto& item : slates )
       {
-         auto prev_asset = prev_state->get_delegate_slate( record.first );
-         if( prev_asset ) undo_state->store_delegate_slate( record.first, *prev_asset );
-         else undo_state->store_delegate_slate( record.first, delegate_slate() );
+         auto prev_value = prev_state->get_delegate_slate( item.first );
+         if( prev_value ) undo_state->store_delegate_slate( item.first, *prev_value );
+         else undo_state->store_delegate_slate( item.first, delegate_slate() );
       }
-
-      for( auto record : accounts )
+      for( const auto& item : accounts )
       {
-         auto prev_name = prev_state->get_account_record( record.first );
-         if( !!prev_name ) undo_state->store_account_record( *prev_name );
-         else undo_state->store_account_record( record.second.make_null() );
+         auto prev_value = prev_state->get_account_record( item.first );
+         if( !!prev_value ) undo_state->store_account_record( *prev_value );
+         else undo_state->store_account_record( item.second.make_null() );
       }
-
-      for( auto record : proposals )
+      for( const auto& item : proposals )
       {
-         auto prev_proposal = prev_state->get_proposal_record( record.first );
-         if( !!prev_proposal ) undo_state->store_proposal_record( *prev_proposal );
-         else undo_state->store_proposal_record( record.second.make_null() );
+         auto prev_value = prev_state->get_proposal_record( item.first );
+         if( !!prev_value ) undo_state->store_proposal_record( *prev_value );
+         else undo_state->store_proposal_record( item.second.make_null() );
       }
-      for( auto record : proposal_votes )
+      for( const auto& item : proposal_votes )
       {
-         auto prev_proposal_vote = prev_state->get_proposal_vote( record.first );
-         if( !!prev_proposal_vote ) undo_state->store_proposal_vote( *prev_proposal_vote );
-         else { undo_state->store_proposal_vote( record.second.make_null() ); }
+         auto prev_value = prev_state->get_proposal_vote( item.first );
+         if( !!prev_value ) undo_state->store_proposal_vote( *prev_value );
+         else { undo_state->store_proposal_vote( item.second.make_null() ); }
       }
-
-      for( auto record : balances ) 
+      for( const auto& item : balances ) 
       {
-         auto prev_address = prev_state->get_balance_record( record.first );
-         if( !!prev_address ) undo_state->store_balance_record( *prev_address );
-         else undo_state->store_balance_record( record.second.make_null() );
+         auto prev_value = prev_state->get_balance_record( item.first );
+         if( !!prev_value ) undo_state->store_balance_record( *prev_value );
+         else undo_state->store_balance_record( item.second.make_null() );
       }
-
-      for( auto record : transactions ) 
+      for( const auto& item : transactions ) 
       {
-         auto prev_trx = prev_state->get_transaction( record.first );
-         if( !!prev_trx ) undo_state->store_transaction( record.first, *prev_trx );
-         else undo_state->store_transaction( record.first, transaction_record() );
+         auto prev_value = prev_state->get_transaction( item.first );
+         if( !!prev_value ) undo_state->store_transaction( item.first, *prev_value );
+         else undo_state->store_transaction( item.first, transaction_record() );
       }
-
-      for( auto record : bids )
+      for( const auto& item : bids )
       {
-         auto prev_value = prev_state->get_bid_record( record.first );
-         if( prev_value.valid() ) undo_state->store_bid_record( record.first, *prev_value );
-         else  undo_state->store_bid_record( record.first, order_record() );
+         auto prev_value = prev_state->get_bid_record( item.first );
+         if( prev_value.valid() ) undo_state->store_bid_record( item.first, *prev_value );
+         else  undo_state->store_bid_record( item.first, order_record() );
       }
-      for( auto record : asks )
+      for( const auto& item : asks )
       {
-         auto prev_value = prev_state->get_ask_record( record.first );
-         if( prev_value.valid() ) undo_state->store_ask_record( record.first, *prev_value );
-         else  undo_state->store_ask_record( record.first, order_record() );
+         auto prev_value = prev_state->get_ask_record( item.first );
+         if( prev_value.valid() ) undo_state->store_ask_record( item.first, *prev_value );
+         else  undo_state->store_ask_record( item.first, order_record() );
       }
-      for( auto record : shorts )
+      for( const auto& item : shorts )
       {
-         auto prev_value = prev_state->get_short_record( record.first );
-         if( prev_value.valid() ) undo_state->store_short_record( record.first, *prev_value );
-         else  undo_state->store_short_record( record.first, order_record() );
+         auto prev_value = prev_state->get_short_record( item.first );
+         if( prev_value.valid() ) undo_state->store_short_record( item.first, *prev_value );
+         else  undo_state->store_short_record( item.first, order_record() );
       }
-      for( auto record : collateral )
+      for( const auto& item : collateral )
       {
-         auto prev_value = prev_state->get_collateral_record( record.first );
-         if( prev_value.valid() ) undo_state->store_collateral_record( record.first, *prev_value );
-         else  undo_state->store_collateral_record( record.first, collateral_record() );
+         auto prev_value = prev_state->get_collateral_record( item.first );
+         if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
+         else  undo_state->store_collateral_record( item.first, collateral_record() );
+      }
+      for( const auto& item : _block_stats )
+      {
+         auto prev_value = prev_state->get_delegate_block_stats( item.first.first, item.first.second );
+         if( prev_value ) undo_state->store_delegate_block_stats( item.first.first, item.first.second, *prev_value );
+         else undo_state->store_delegate_block_stats( item.first.first, item.first.second, delegate_block_stats() );
       }
    }
 
@@ -293,7 +294,7 @@ namespace bts { namespace blockchain {
    {
       accounts[r.id] = r;
       account_id_index[r.name] = r.id;
-      for( auto item : r.active_key_history )
+      for( const auto& item : r.active_key_history )
          key_to_account[address(item.second)] = r.id;
       key_to_account[address(r.owner_key)] = r.id;
    }
@@ -389,5 +390,21 @@ namespace bts { namespace blockchain {
       collateral[key] = rec;
    }
 
+   void pending_chain_state::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
+                                                         const delegate_block_stats& block_stats )
+   {
+       _block_stats[ std::make_pair( delegate_id, block_num ) ] = block_stats;
+   }
+
+   odelegate_block_stats pending_chain_state::get_delegate_block_stats( const account_id_type& delegate_id,
+                                                                        uint32_t block_num )const
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      auto key = std::make_pair( delegate_id, block_num );
+      auto itr = _block_stats.find(key);
+      if( itr != _block_stats.end() ) return itr->second;
+      if( prev_state ) return prev_state->get_delegate_block_stats( key.first, key.second );
+      return odelegate_block_stats();
+   }
 
 } } // bts::blockchain
