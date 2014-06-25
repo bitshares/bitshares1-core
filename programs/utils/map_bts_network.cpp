@@ -216,18 +216,35 @@ int main(int argc, char** argv)
   }
 
   bts::net::node_id_t seed_node_id;
-  //std::set<bts::net::node
+  std::set<bts::net::node_id_t> non_firewalled_nodes_set;
   for (const auto& address_info_for_node : address_info_by_node_id)
   {
     if (address_info_for_node.second.remote_endpoint == seed_node1)
       seed_node_id = address_info_for_node.first;
+    if (address_info_for_node.second.firewalled == bts::net::firewalled_state::not_firewalled)
+      non_firewalled_nodes_set.insert(address_info_for_node.first);
   }
+  std::set<bts::net::node_id_t> seed_node_connections;
+  for (const bts::net::address_info& info : connections_by_node_id[seed_node_id])
+    seed_node_connections.insert(info.node_id);
+  std::set<bts::net::node_id_t> seed_node_missing_connections;
+  std::set_difference(non_firewalled_nodes_set.begin(), non_firewalled_nodes_set.end(),
+                      seed_node_connections.begin(), seed_node_connections.end(),
+                      std::inserter(seed_node_missing_connections, seed_node_missing_connections.end()));
+  seed_node_missing_connections.erase(seed_node_id);
 
   std::ofstream dot_stream((data_dir / "network_graph.dot").string().c_str());
   std::map<bts::net::node_id_t, fc::ip::endpoint> all_known_nodes;
 
   dot_stream << "graph G {\n";
+  dot_stream << "  // Total " << address_info_by_node_id.size() << " nodes, firewalled: " << (address_info_by_node_id.size() - non_firewalled_nodes_set.size())
+                              << ", non-firewalled: " << non_firewalled_nodes_set.size() << "\n";
   dot_stream << "  // Seed node is " << (std::string)address_info_by_node_id[seed_node_id].remote_endpoint << " id: " << fc::variant(seed_node_id).as_string() << "\n";
+  dot_stream << "  // Seed node is connected to " << connections_by_node_id[seed_node_id].size() << " nodes\n";
+  dot_stream << "  // Seed node is missing connections to " << seed_node_missing_connections.size() << " non-firewalled nodes:\n";
+  for (const bts::net::node_id_t& id : seed_node_missing_connections)
+    dot_stream << "  //           " << (std::string)address_info_by_node_id[id].remote_endpoint << "\n";
+  
   dot_stream << "  layout=\"circo\";\n";
   //for (const auto& node_and_connections : connections_by_node_id)
   //  all_known_nodes[node_and_connections.first] = address_info_by_node_id[node_and_connections.first].remote_endpoint;
