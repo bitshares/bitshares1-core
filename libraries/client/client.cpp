@@ -97,7 +97,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
                                  "fresh copy of the entire blockchain from the network")
                               ("version", "Print version information and exit")
-                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(100000),
+                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(1000000),
                                   "Limit total bandwidth to this many bytes per second")
                               ("min-delegate-connection-count", program_options::value<uint32_t>(),
                                   "Override the default minimum delegate connection count (used to set up "
@@ -338,6 +338,10 @@ config load_config( const fc::path& datadir )
     exception_leveldb_type::iterator lower_bound(const fc::time_point& time) const
     {
       return _db.lower_bound(time);
+    }
+    exception_leveldb_type::iterator begin() const
+    {
+      return _db.begin();
     }
     void remove(const fc::time_point& key)
     {
@@ -2542,27 +2546,33 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit, const string& filename )const
+   map<fc::time_point, fc::exception> client_impl::list_errors(  int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
-      auto itr = _exception_db.lower_bound( start_time );
+      int count = 0;
+      auto itr = _exception_db.begin();
       while( itr.valid() )
       {
-         if (--first_error_number)
-             continue;
-         result[itr.key()] = itr.value();
+         ++count;
+         if( count > first_error_number )
+         {
+            result[itr.key()] = itr.value();
+            if (--limit == 0)
+                break;
+         }
          ++itr;
-         if (--limit == 0)
-             break;
       }
 
       if( filename != "" )
       {
           auto file_path = fc::path( filename );
           FC_ASSERT( !fc::exists( file_path ) );
-          fc::json::save_to_file( result, file_path, true );
+          std::ofstream out( filename.c_str() );
+          for( auto item : result )
+          {
+             out << std::string(item.first) << "  " << item.second.to_detail_string() <<"\n-----------------------------\n";
+          }
       }
-
       return result;
    }
 

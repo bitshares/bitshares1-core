@@ -162,16 +162,10 @@
           "return_type" : "error_map",
           "parameters"  : [ 
                {
-                  "name" : "start_time", 
-                  "description" : "time of the first error",
-                  "type" : "timestamp", 
-                  "default_value" : "20000101T000000"
-               },
-               {
                   "name" : "first_error_number",
                   "description" : "the first error to list",
                   "type" : "int32_t",
-                  "default_value" : "1"
+                  "default_value" : "0"
                },
                {
                   "name" : "limit",
