@@ -2413,6 +2413,11 @@ config load_config( const fc::path& datadir )
       return _p2p_node->network_get_info();
     }
 
+    fc::variant_object client_impl::network_get_usage_stats() const
+    {
+      return _p2p_node->network_get_usage_stats();
+    }
+
     fc::variant_object client_impl::validate_address(const string& address) const
     {
       fc::mutable_variant_object result;

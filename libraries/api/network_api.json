@@ -143,7 +143,14 @@
         "parameters" : [],
         "is_const"   : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "network_get_usage_stats",
+        "description": "Get bandwidth usage stats",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
-
     ]
 }
