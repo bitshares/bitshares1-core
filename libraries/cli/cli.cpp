@@ -938,6 +938,53 @@ namespace bts { namespace cli {
                   if(!record.public_data.is_null())
                       *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data) << "\n";
               }
+              else if (method_name == "blockchain_get_pending_transactions")
+              {
+                  auto transactions = result.as<vector<signed_transaction>>();
+
+                  if(transactions.empty())
+                  {
+                      *_out << "No pending transactions.\n";
+                  }
+                  else
+                  {
+                      *_out << std::setw(10) << "TXN ID"
+                            << std::setw(10) << "SIZE"
+                            << std::setw(25) << "OPERATION COUNT"
+                            << std::setw(25) << "SIGNATURE COUNT"
+                            << "\n" << std::string(70, '-') << "\n";
+
+                      for (signed_transaction transaction : transactions)
+                      {
+                          *_out << std::setw(10) << transaction.id().str().substr(0, 8)
+                                << std::setw(10) << transaction.data_size()
+                                << std::setw(25) << transaction.operations.size()
+                                << std::setw(25) << transaction.signatures.size()
+                                << "\n";
+                      }
+                  }
+              }
+              else if (method_name == "blockchain_list_current_round_active_delegates")
+              {
+                  map<account_id_type, string> delegates = result.as<map<account_id_type, string>>();
+                  int longest_delegate_name = 0;
+
+                  //Yeah, it's slower, I know, but it's so ugly if I don't. And seriously, it's still O(n) so stop complaining.
+                  for (auto delegate : delegates)
+                    if (delegate.second.size() > longest_delegate_name)
+                        longest_delegate_name = delegate.second.size();
+
+                  *_out << std::setw(longest_delegate_name + 3) << "DELEGATE NAME"
+                        << std::setw(5) << "ID"
+                        << "\n" << std::string(longest_delegate_name + 3 + 5, '-') << "\n";
+
+                  for (auto delegate : delegates)
+                  {
+                      *_out << std::setw(longest_delegate_name + 3) << delegate.second
+                            << std::setw(5) << delegate.first
+                            << "\n";
+                  }
+              }
               else if (method_name == "blockchain_list_proposals")
               {
                   auto proposals = result.as<vector<proposal_record>>();
