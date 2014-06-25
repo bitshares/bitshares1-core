@@ -2247,11 +2247,13 @@ config load_config( const fc::path& datadir )
 
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
        info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+       info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
 
        return info;
 
