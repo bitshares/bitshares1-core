@@ -1162,7 +1162,7 @@ namespace bts { namespace blockchain {
       return bts::blockchain::now();
    }
 
-         /** return the current fee rate in millishares */
+   /** return the current fee rate in millishares */
    int64_t              chain_database::get_fee_rate()const
    {
       return my->_head_block_header.fee_rate;
@@ -1173,7 +1173,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_header.delegate_pay_rate;
    }
 
-
    oasset_record        chain_database::get_asset_record( asset_id_type id )const
    {
       auto itr = my->_asset_db.find( id );
@@ -1183,6 +1182,7 @@ namespace bts { namespace blockchain {
       }
       return oasset_record();
    }
+
    oaccount_record      chain_database::get_account_record( const address& account_owner )const
    { try {
       auto itr = my->_address_to_account_db.find( account_owner );
@@ -1418,6 +1418,8 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(shared_from_this());
       auto pending_trx = get_pending_transactions();
 
+      auto start_time = fc::time_point::now();
+
       size_t block_size = 0;
       share_type total_fees = 0;
       for( auto item : pending_trx )
@@ -1444,6 +1446,9 @@ namespace bts { namespace blockchain {
             wlog( "pending transaction was found to be invalid in context of block\n ${trx} \n${e}",
                   ("trx",fc::json::to_pretty_string(item->trx) )("e",e.to_detail_string()) );
          }
+
+         if( fc::time_point::now() - start_time > fc::seconds(2) )
+            break;
       }
 
       next_block.block_num          = my->_head_block_header.block_num + 1;
@@ -1713,8 +1718,15 @@ namespace bts { namespace blockchain {
       {
         for (auto block : blocks_at_time.second)
         {
+          auto delegate_record = get_account_record( address( block.signee() ) );
+
           out << '"' << std::string ( block.id() ) <<"\" "
-              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << "<br/>" << block.block_num << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
+              << "[label=<"
+              << std::string ( block.id() ).substr(0,5)
+              << "<br/>" << blocks_at_time.first
+              << "<br/>" << block.block_num
+              << "<br/>" << (delegate_record.valid() ? delegate_record->name : "?")
+              << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
           out << '"' << std::string ( block.id() ) <<"\" -> \"" << std::string( block.previous ) << "\";\n";
         }
       }

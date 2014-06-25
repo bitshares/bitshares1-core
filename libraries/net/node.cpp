@@ -666,10 +666,10 @@ namespace bts { namespace net { namespace detail {
               break;
             }
 #ifndef NDEBUG
-            else if( peer->inventory_peer_advertised_to_us.find(*iter ) != peer->inventory_peer_advertised_to_us.end() )
-            {
-              dlog( "would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
-            }
+//            else if( peer->inventory_peer_advertised_to_us.find(*iter ) != peer->inventory_peer_advertised_to_us.end() )
+//            {
+//              dlog( "would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
+//            }
 #endif
           }
           if( !item_fetched )
