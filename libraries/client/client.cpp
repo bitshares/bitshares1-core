@@ -609,13 +609,13 @@ config load_config( const fc::path& datadir )
           if( _wallet->is_locked() ) return;
           const auto& enabled_delegates = _wallet->get_my_enabled_delegates();
           if( enabled_delegates.empty() ) return;
-          ilog( "Starting delegate loop at time: ${t}", ("t", bts::blockchain::now()) );
+          ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
           auto next_block_time = get_next_producible_block_timestamp( enabled_delegates );
           ilog( "Next block time: ${t}", ("t",next_block_time) );
 
           if( next_block_time != fc::time_point_sec()
-              && next_block_time >= now
+              && next_block_time >= now // TODO BUG
               && (next_block_time - now) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
           {
               try
@@ -637,24 +637,23 @@ config load_config( const fc::path& datadir )
                }
           }
 
-          now = bts::blockchain::now();
           uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           next_block_time = fc::time_point_sec( (interval_number + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+          ilog( "Rescheduling delegate loop for: ${t}", ("t",next_block_time) );
 
           auto offset = bts::blockchain::ntp_error();
-          ilog( "NTP time - system time = ${t} seconds", ("t",offset) );
+          //ilog( "NTP time - system time = ${t} seconds", ("t",offset) );
           if( offset < 0 )
           {
-              if( offset > -1 ) offset = -1;
+              offset = floor( offset );
               next_block_time += uint32_t( -offset );
           }
           else
           {
-              if( offset < 1 ) offset = 1;
+              offset = ceil( offset );
               next_block_time -= uint32_t( offset );
           }
 
-          ilog( "Rescheduling delegate loop for: ${t}", ("t",next_block_time) );
           _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_block_time );
        }
 
