@@ -1177,6 +1177,11 @@ namespace bts { namespace wallet {
          scan_state();
          ++start;
       }
+      if( get_my_enabled_delegates().size() )
+      {
+         ulog( "scanning chain disabled because there are active delegates" );
+         return;
+      }
 
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
