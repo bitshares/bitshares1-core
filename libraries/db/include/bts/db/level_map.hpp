@@ -123,7 +123,7 @@ namespace bts { namespace db {
              std::shared_ptr<ldb::Iterator> _it;
         };
 
-        iterator begin()
+        iterator begin() const
         { try {
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToFirst();

@@ -80,7 +80,7 @@ namespace bts { namespace wallet {
              */
             void block_applied( const block_summary& summary ) override
             {
-               if( self->is_unlocked() )
+               if( self->is_unlocked() && self->get_my_enabled_delegates().size() == 0 )
                {
                   auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   scan_block( summary.block_data.block_num, account_priv_keys );
@@ -1176,6 +1176,11 @@ namespace bts { namespace wallet {
       {
          scan_state();
          ++start;
+      }
+      if( get_my_enabled_delegates().size() )
+      {
+         ulog( "scanning chain disabled because there are active delegates" );
+         return;
       }
 
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );

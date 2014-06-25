@@ -97,18 +97,18 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block               generate_block( time_point_sec timestamp );
+         full_block                  generate_block( time_point_sec timestamp );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the
           *  database was first created.
           */
-         digest_type              chain_id()const;
+         digest_type                 chain_id()const;
 
-         optional<block_fork_data> get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
-         bool                      is_known_block( const block_id_type& id )const;
-         bool                      is_included_block( const block_id_type& id )const;
-         //optional<block_fork_data>                      is_included_block( const block_id_type& block_id )const;
+         optional<block_fork_data>   get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
+         bool                        is_known_block( const block_id_type& id )const;
+         bool                        is_included_block( const block_id_type& id )const;
+         //optional<block_fork_data> is_included_block( const block_id_type& block_id )const;
 
          fc::ripemd160               get_current_random_seed()const override;
 
