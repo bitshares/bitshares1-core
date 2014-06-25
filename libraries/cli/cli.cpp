@@ -1164,7 +1164,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 15 ) << "TRUSTED";
                 *_out << "\n";
 
                 for( auto acct : account_records )
@@ -1186,11 +1186,10 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 10) << acct.trust_level;
+                    *_out << std::setw( 10) << acct.trusted;
                     *_out << "\n";
                 }
             }
-
 
             void print_receive_account_list(const vector<wallet_account_record>& account_records)
             {
@@ -1198,7 +1197,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 15 ) << "TRUSTED";
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
@@ -1229,7 +1228,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 15 ) << acct.trust_level;
+                    *_out << std::setw( 15 ) << acct.trusted;
                     if (acct.is_delegate())
                         *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
@@ -1244,7 +1243,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "VOTES FOR";
-                *_out << std::setw( 15 ) << "TRUST LEVEL";
+                *_out << std::setw( 15 ) << "TRUSTED";
 
                 *_out << "\n";
                 auto counter = 0;
@@ -1277,7 +1276,7 @@ namespace bts { namespace cli {
                     }
                     else
                     {
-                        auto trust = _client->get_wallet()->get_delegate_trust_level( acct.name );
+                        auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
                         *_out << std::setw( 15 ) << trust;
                     }
 

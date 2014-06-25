@@ -189,13 +189,22 @@ class WalletAPI
     @rpc.request('wallet_account_create', [account_name, private_data]).then (response) ->
       response.result
 
+  # Updates the favorited status of the specified account
+  # parameters: 
+  #   account_name `account_name` - the name of the account to set favorited status on
+  #   bool `is_favorite` - true if account should be marked as a favorite; false otherwise
+  # return_type: `void`
+  account_set_favorite: (account_name, is_favorite) ->
+    @rpc.request('wallet_account_set_favorite', [account_name, is_favorite]).then (response) ->
+      response.result
+
   # Updates the trust placed in a given delegate
   # parameters: 
-  #   account_name `delegate_name` - the name of the delegate to set trust level on
-  #   int32_t `trust_level` - Positive for Trust, Negative for Distrust, 0 for Neutral
+  #   account_name `delegate_name` - the name of the delegate to set trust on
+  #   bool `trusted` - true for trusted and false for neutral
   # return_type: `void`
-  set_delegate_trust_level: (delegate_name, trust_level) ->
-    @rpc.request('wallet_set_delegate_trust_level', [delegate_name, trust_level]).then (response) ->
+  set_delegate_trust: (delegate_name, trusted) ->
+    @rpc.request('wallet_set_delegate_trust', [delegate_name, trusted]).then (response) ->
       response.result
 
   # Add new account for sending payments
@@ -253,10 +262,10 @@ class WalletAPI
   #   account_name `account_name` - the account that will be updated
   #   account_name `pay_from_account` - the account from which fees will be paid
   #   json_variant `public_data` - public data about the account
-  #   bool `as_delegate` - true if account_name should be upgraded to a delegate.
+  #   uint32_t `delegate_pay_rate` - A value between 0 and 100% delegates, 255 for non delegates
   # return_type: `transaction_record`
-  account_register: (account_name, pay_from_account, public_data, as_delegate) ->
-    @rpc.request('wallet_account_register', [account_name, pay_from_account, public_data, as_delegate]).then (response) ->
+  account_register: (account_name, pay_from_account, public_data, delegate_pay_rate) ->
+    @rpc.request('wallet_account_register', [account_name, pay_from_account, public_data, delegate_pay_rate]).then (response) ->
       response.result
 
   # Updates the local private data for an account
@@ -273,10 +282,9 @@ class WalletAPI
   #   account_name `account_name` - the account that will be updated
   #   account_name `pay_from_account` - the account from which fees will be paid
   #   json_variant `public_data` - public data about the account
-  #   bool `as_delegate` - true if account_name should be upgraded to a delegate.
   # return_type: `transaction_record`
-  account_update_registration: (account_name, pay_from_account, public_data, as_delegate) ->
-    @rpc.request('wallet_account_update_registration', [account_name, pay_from_account, public_data, as_delegate]).then (response) ->
+  account_update_registration: (account_name, pay_from_account, public_data) ->
+    @rpc.request('wallet_account_update_registration', [account_name, pay_from_account, public_data]).then (response) ->
       response.result
 
   # Lists all accounts associated with this wallet
@@ -284,6 +292,20 @@ class WalletAPI
   # return_type: `wallet_account_record_array`
   list_accounts:  ->
     @rpc.request('wallet_list_accounts').then (response) ->
+      response.result
+
+  # Lists all accounts which have been marked as favorites.
+  # parameters: 
+  # return_type: `wallet_account_record_array`
+  list_favorite_accounts:  ->
+    @rpc.request('wallet_list_favorite_accounts').then (response) ->
+      response.result
+
+  # Lists all unregistered accounts belonging to this wallet
+  # parameters: 
+  # return_type: `wallet_account_record_array`
+  list_unregistered_accounts:  ->
+    @rpc.request('wallet_list_unregistered_accounts').then (response) ->
       response.result
 
   # Lists all accounts for which we have a private key in this wallet
@@ -391,9 +413,9 @@ class WalletAPI
     @rpc.request('wallet_account_list_public_keys', [account_name]).then (response) ->
       response.result
 
-  # Used to transfer some of the delegates pay from their balance
+  # Used to transfer some of the delegate's pay from their balance
   # parameters: 
-  #   account_name `delegate_name` - the delegate who's pay is being cashed out
+  #   account_name `delegate_name` - the delegate whose pay is being cashed out
   #   account_name `to_account_name` - the account that should receive the funds
   #   real_amount `amount_to_withdraw` - the amount to withdraw
   #   string `memo` - memo to add to transaction
@@ -483,8 +505,8 @@ class WalletAPI
 
   # Enable or disable block production for a particular delegate account
   # parameters: 
-  #   string `delegate_name` - The delegate to enable/disable block production for
-  #   bool `enable` - True to enable block production, false otherwise
+  #   string `delegate_name` - The delegate to enable/disable block production for; ALL for all delegate accounts
+  #   bool `enable` - true to enable block production, false otherwise
   # return_type: `void`
   enable_delegate_block_production: (delegate_name, enable) ->
     @rpc.request('wallet_enable_delegate_block_production', [delegate_name, enable]).then (response) ->

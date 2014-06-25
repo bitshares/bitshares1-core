@@ -1422,17 +1422,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_asset_record(asset_id);
     }
 
-    void detail::client_impl::wallet_set_delegate_trust_level( const string& delegate_name,
-                                                  int32_t user_trust_level)
-    {
-      try {
-        auto account_record = _chain_db->get_account_record(delegate_name);
-        FC_ASSERT(account_record.valid(), "delegate ${d} does not exist", ("d", delegate_name));
-        FC_ASSERT(account_record->is_delegate(), "${d} is not a delegate", ("d", delegate_name));
-
-        _wallet->set_delegate_trust_level(delegate_name, user_trust_level);
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_name", delegate_name)("user_trust_level", user_trust_level))
-    }
+    void detail::client_impl::wallet_set_delegate_trust( const string& delegate_name, bool trusted )
+    { try {
+      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      _wallet->set_delegate_trust( delegate_name, trusted );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("trusted",trusted) ) }
 
     /*
     bts::wallet::delegate_trust_status client::wallet_get_delegate_trust_status(const string& delegate_name) const
@@ -1451,7 +1446,6 @@ config load_config( const fc::path& datadir )
       return _wallet->list_delegate_trust_status();
     }
     */
-
 
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
