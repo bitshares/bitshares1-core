@@ -78,9 +78,9 @@ namespace bts { namespace net {
         < message_info, 
             bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>, 
                                                   bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
-                            bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
+                             bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
                                                       bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
-                            bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
+                             bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
                                                       bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > > 
         > message_cache_container;
 
@@ -165,6 +165,26 @@ FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
                                                  (private_key));
 
 namespace bts { namespace net { namespace detail {
+
+    // when requesting items from peers, we want to prioritize any blocks before 
+    // transactions, but otherwise request items in the order we heard about them
+    struct prioritized_item_id
+    {
+      item_id  item;
+      unsigned sequence_number;
+      prioritized_item_id(const item_id& item, unsigned sequence_number) :
+        item(item),
+        sequence_number(sequence_number)
+      {}
+      bool operator<(const prioritized_item_id& rhs) const
+      {
+        static_assert(block_message_type < trx_message_type, 
+                      "block_message_type must be less than trx_message_type for prioritized_item_ids to sort correctly");
+        if (item.item_type != rhs.item.item_type)
+          return item.item_type < rhs.item.item_type;
+        return (signed)(rhs.sequence_number - sequence_number) > 0;
+      }
+    };
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
@@ -211,10 +231,12 @@ namespace bts { namespace net { namespace detail {
       bool                   _items_to_fetch_updated;
       fc::future<void>       _fetch_item_loop_done;
 
-      typedef boost::multi_index_container<item_id, 
-                                           boost::multi_index::indexed_by<boost::multi_index::sequenced<>,
-                                                                          boost::multi_index::hashed_unique<boost::multi_index::identity<item_id>, std::hash<item_id> > >
+      typedef boost::multi_index_container<prioritized_item_id, 
+                                           boost::multi_index::indexed_by<boost::multi_index::ordered_unique<boost::multi_index::identity<prioritized_item_id> >,
+                                                                          boost::multi_index::hashed_unique<boost::multi_index::member<prioritized_item_id, item_id, &prioritized_item_id::item>, 
+                                                                                                            std::hash<item_id> > >
                                            > items_to_fetch_set_type;
+      unsigned _items_to_fetch_sequence_counter;
       items_to_fetch_set_type _items_to_fetch; /// list of items we know another peer has and we want
       // @}
 
@@ -424,6 +446,10 @@ namespace bts { namespace net { namespace detail {
     node_impl::node_impl() : 
       _delegate( nullptr ),
       _user_agent_string( "bts::net::node" ),
+      _potential_peer_database_updated(false),
+      _sync_items_to_fetch_updated(false),
+      _items_to_fetch_updated(false),
+      _items_to_fetch_sequence_counter(0),
       _desired_number_of_connections( BTS_NET_DEFAULT_DESIRED_CONNECTIONS ),
       _maximum_number_of_connections( BTS_NET_DEFAULT_MAX_CONNECTIONS ),
       _peer_connection_retry_timeout( BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME ),
@@ -474,7 +500,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::p2p_network_connect_loop()
     {
-      while(  !_p2p_network_connect_loop_done.canceled()  )
+      while( !_p2p_network_connect_loop_done.canceled() )
       {
         try 
         {
@@ -559,7 +585,7 @@ namespace bts { namespace net { namespace detail {
         {
           elog(  "${e}", ("e",e.to_detail_string()  )  );
         }
-      }// while(  ! canceled  )
+      }// while( !canceled )
     } 
 
     void node_impl::trigger_p2p_network_connect_loop()
@@ -588,7 +614,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::fetch_sync_items_loop()
     {
-      while(  !_fetch_sync_items_loop_done.canceled()  )
+      while( !_fetch_sync_items_loop_done.canceled() )
       {
         _sync_items_to_fetch_updated = false;
         dlog( "beginning another iteration of the sync items loop" );
@@ -632,7 +658,7 @@ namespace bts { namespace net { namespace detail {
           _retrigger_fetch_sync_items_loop_promise->wait();
           _retrigger_fetch_sync_items_loop_promise.reset();
         }
-      } // while(  !canceled  )
+      } // while( !canceled )
     }
 
     void node_impl::trigger_fetch_sync_items_loop()
@@ -645,7 +671,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::fetch_items_loop()
     {
-      while(  !_fetch_item_loop_done.canceled()  )
+      while( !_fetch_item_loop_done.canceled() )
       {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
@@ -657,11 +683,11 @@ namespace bts { namespace net { namespace detail {
           for( const peer_connection_ptr& peer : _active_connections )
           {
             if( peer->idle() &&
-                peer->inventory_peer_advertised_to_us.find( *iter ) != peer->inventory_peer_advertised_to_us.end() )
+                peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() )
             {
-              dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
-              peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(*iter, fc::time_point::now() ) );
-              item_id item_id_to_fetch = *iter;
+              dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
+              peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
+              item_id item_id_to_fetch = iter->item;
               iter = _items_to_fetch.erase( iter );
               item_fetched = true;
               write_ops.push_back( 
@@ -671,12 +697,6 @@ namespace bts { namespace net { namespace detail {
               }) );
               break;
             }
-#ifndef NDEBUG
-//            else if( peer->inventory_peer_advertised_to_us.find(*iter ) != peer->inventory_peer_advertised_to_us.end() )
-//            {
-//              dlog( "would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
-//            }
-#endif
           }
           if( !item_fetched )
             ++iter;
@@ -691,7 +711,7 @@ namespace bts { namespace net { namespace detail {
           _retrigger_fetch_item_loop_promise->wait();
           _retrigger_fetch_item_loop_promise.reset();
         }
-      } // while (  !canceled  )
+      } // while ( !canceled )
     }
 
     void node_impl::trigger_fetch_items_loop()
@@ -703,7 +723,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::advertise_inventory_loop()
     {
-      while(  !_advertise_inventory_loop_done.canceled()  )
+      while( !_advertise_inventory_loop_done.canceled() )
       {
         dlog( "beginning an iteration of advertise inventory" );
         // swap inventory into local variable, clearing the node's copy
@@ -750,7 +770,7 @@ namespace bts { namespace net { namespace detail {
           _retrigger_advertise_inventory_loop_promise->wait();
           _retrigger_advertise_inventory_loop_promise.reset();
         }
-      } // while(  !canceled  )
+      } // while( !canceled )
     }
 
     void node_impl::trigger_advertise_inventory_loop()
@@ -761,7 +781,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::terminate_inactive_connections_loop()
     {
-      while(  !_terminate_inactive_connections_loop_done.canceled()  )
+      while( !_terminate_inactive_connections_loop_done.canceled() )
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
         std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
@@ -836,7 +856,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
-      } // while(  !canceled  )
+      } // while( !canceled  )
     }
 
     void node_impl::fetch_updated_peer_lists_loop()
@@ -1039,9 +1059,9 @@ namespace bts { namespace net { namespace detail {
       parse_hello_user_data_for_peer( originating_peer, hello_message_received.user_data );
 
       // now decide what to do with it
-      if(  originating_peer->their_state == peer_connection::their_connection_state::just_connected  )
+      if( originating_peer->their_state == peer_connection::their_connection_state::just_connected )
       {
-        if(  hello_message_received.chain_id != _chain_id  )
+        if( hello_message_received.chain_id != _chain_id )
         {
           wlog(  "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
           std::ostringstream rejection_message;
@@ -1060,7 +1080,7 @@ namespace bts { namespace net { namespace detail {
           disconnect_from_peer( originating_peer, "You are on a different chain from me" );
           return;
         }
-        if(  already_connected_to_this_peer  )
+        if( already_connected_to_this_peer )
         {
           
           connection_rejected_message connection_rejected;
@@ -1081,8 +1101,8 @@ namespace bts { namespace net { namespace detail {
                ( "id", hello_message_received.node_id ) );
         }
 #ifdef ENABLE_P2P_DEBUGGING_API
-        else if(  !_allowed_peers.empty() && 
-                 _allowed_peers.find( originating_peer->node_id ) == _allowed_peers.end()  )
+        else if( !_allowed_peers.empty() && 
+                 _allowed_peers.find( originating_peer->node_id ) == _allowed_peers.end() )
         {
           connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version, 
                                                           originating_peer->get_socket().remote_endpoint(),
@@ -1127,7 +1147,7 @@ namespace bts { namespace net { namespace detail {
             originating_peer->is_firewalled = firewalled_state::firewalled;
           }
 
-          if(  !is_accepting_new_connections()  )
+          if( !is_accepting_new_connections() )
           {
             connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version, 
                                                             originating_peer->get_socket().remote_endpoint(),
@@ -1730,12 +1750,12 @@ namespace bts { namespace net { namespace detail {
         bool we_requested_this_item_from_a_peer = false;
         for( const peer_connection_ptr peer : _active_connections )
         {
-          if( peer->inventory_advertised_to_peer.find(advertised_item_id ) != peer->inventory_advertised_to_peer.end() )
+          if( peer->inventory_advertised_to_peer.find(advertised_item_id) != peer->inventory_advertised_to_peer.end() )
           {
             we_advertised_this_item_to_a_peer = true;
             break;
           }
-          if( peer->items_requested_from_peer.find(advertised_item_id ) != peer->items_requested_from_peer.end() )
+          if( peer->items_requested_from_peer.find(advertised_item_id) != peer->items_requested_from_peer.end() )
             we_requested_this_item_from_a_peer = true;
         }
 
@@ -1745,8 +1765,8 @@ namespace bts { namespace net { namespace detail {
           originating_peer->inventory_peer_advertised_to_us.insert( advertised_item_id );
           if( !we_requested_this_item_from_a_peer )
           {
-            auto insert_result = _items_to_fetch.push_back( advertised_item_id );
-            if( insert_result.second )
+            auto insert_result = _items_to_fetch.insert(prioritized_item_id(advertised_item_id, _items_to_fetch_sequence_counter++));
+            if (insert_result.second)
             {
               dlog( "addinged item ${item_hash} from inventory message to our list of items to fetch",
                    ( "item_hash", item_hash ) );
