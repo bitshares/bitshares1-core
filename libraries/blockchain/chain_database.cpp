@@ -1159,7 +1159,7 @@ namespace bts { namespace blockchain {
    {
       if( my->_head_block_header.block_num )
          return my->_head_block_header.timestamp;
-      return bts::blockchain::now();
+      return bts::blockchain::now() - fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
    }
 
    /** return the current fee rate in millishares */

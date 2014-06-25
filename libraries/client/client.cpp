@@ -572,6 +572,7 @@ config load_config( const fc::path& datadir )
           for( const auto& delegate_record : delegate_records )
               delegate_ids.push_back( delegate_record.id );
 
+          ulog( "active delegates: ${u}", ("u",delegate_ids.size()) );
           return _chain_db->get_next_producible_block_timestamp( delegate_ids );
        }
 
