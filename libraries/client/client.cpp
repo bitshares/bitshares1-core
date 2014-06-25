@@ -614,12 +614,12 @@ config load_config( const fc::path& datadir )
           auto next_block_time = get_next_producible_block_timestamp( enabled_delegates );
           ilog( "Next block time: ${t}", ("t",next_block_time) );
 
-          if( next_block_time != fc::time_point_sec()
-              && next_block_time >= now // TODO BUG
-              && (next_block_time - now) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
+          if( next_block_time != fc::time_point_sec() // TODO: Use optional
+              && next_block_time <= now )
           {
               try
               {
+                  FC_ASSERT( (now - next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) );
                   FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
                   FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
                              "Client must have ${count} connections before you may produce blocks",
@@ -642,7 +642,6 @@ config load_config( const fc::path& datadir )
           ilog( "Rescheduling delegate loop for: ${t}", ("t",next_block_time) );
 
           auto offset = bts::blockchain::ntp_error();
-          //ilog( "NTP time - system time = ${t} seconds", ("t",offset) );
           if( offset < 0 )
           {
               offset = floor( offset );
