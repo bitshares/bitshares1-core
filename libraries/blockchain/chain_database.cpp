@@ -1162,7 +1162,7 @@ namespace bts { namespace blockchain {
       return bts::blockchain::now();
    }
 
-         /** return the current fee rate in millishares */
+   /** return the current fee rate in millishares */
    int64_t              chain_database::get_fee_rate()const
    {
       return my->_head_block_header.fee_rate;
@@ -1173,7 +1173,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_header.delegate_pay_rate;
    }
 
-
    oasset_record        chain_database::get_asset_record( asset_id_type id )const
    {
       auto itr = my->_asset_db.find( id );
@@ -1183,6 +1182,7 @@ namespace bts { namespace blockchain {
       }
       return oasset_record();
    }
+
    oaccount_record      chain_database::get_account_record( const address& account_owner )const
    { try {
       auto itr = my->_address_to_account_db.find( account_owner );
@@ -1713,8 +1713,15 @@ namespace bts { namespace blockchain {
       {
         for (auto block : blocks_at_time.second)
         {
+          auto delegate_record = get_account_record( address( block.signee() ) );
+
           out << '"' << std::string ( block.id() ) <<"\" "
-              << "[label=<" << std::string ( block.id() ).substr(0,5) << "<br/>" << blocks_at_time.first << "<br/>" << block.block_num << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
+              << "[label=<"
+              << std::string ( block.id() ).substr(0,5)
+              << "<br/>" << blocks_at_time.first
+              << "<br/>" << block.block_num
+              << "<br/>" << (delegate_record.valid() ? delegate_record->name : "?")
+              << ">,style=filled,rank=" << blocks_at_time.first << "];\n";
           out << '"' << std::string ( block.id() ) <<"\" -> \"" << std::string( block.previous ) << "\";\n";
         }
       }
