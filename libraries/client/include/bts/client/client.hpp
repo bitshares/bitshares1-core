@@ -107,7 +107,7 @@ namespace bts { namespace client {
          bts::net::node_ptr         get_node()const;
          fc::path                   get_data_dir()const;
 
-         time_point_sec             get_next_producible_block_timestamp()const;
+         optional<time_point_sec>   get_next_producible_block_timestamp()const;
 
          // returns true if the client is connected to the network
          bool                is_connected() const;
