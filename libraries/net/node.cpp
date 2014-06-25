@@ -445,11 +445,11 @@ namespace bts { namespace net { namespace detail {
 
     node_impl::node_impl() : 
       _delegate( nullptr ),
-      _user_agent_string( "bts::net::node" ),
       _potential_peer_database_updated(false),
       _sync_items_to_fetch_updated(false),
       _items_to_fetch_updated(false),
       _items_to_fetch_sequence_counter(0),
+      _user_agent_string( "bts::net::node" ),
       _desired_number_of_connections( BTS_NET_DEFAULT_DESIRED_CONNECTIONS ),
       _maximum_number_of_connections( BTS_NET_DEFAULT_MAX_CONNECTIONS ),
       _peer_connection_retry_timeout( BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME ),
