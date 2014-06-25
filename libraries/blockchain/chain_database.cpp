@@ -1418,6 +1418,8 @@ namespace bts { namespace blockchain {
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(shared_from_this());
       auto pending_trx = get_pending_transactions();
 
+      auto start_time = fc::time_point::now();
+
       size_t block_size = 0;
       share_type total_fees = 0;
       for( auto item : pending_trx )
@@ -1444,6 +1446,9 @@ namespace bts { namespace blockchain {
             wlog( "pending transaction was found to be invalid in context of block\n ${trx} \n${e}",
                   ("trx",fc::json::to_pretty_string(item->trx) )("e",e.to_detail_string()) );
          }
+
+         if( fc::time_point::now() - start_time > fc::seconds(2) )
+            break;
       }
 
       next_block.block_num          = my->_head_block_header.block_num + 1;
