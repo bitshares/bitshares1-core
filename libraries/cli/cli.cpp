@@ -974,13 +974,17 @@ namespace bts { namespace cli {
                     if (delegate.second.size() > longest_delegate_name)
                         longest_delegate_name = delegate.second.size();
 
-                  *_out << std::setw(longest_delegate_name + 3) << "DELEGATE NAME"
+                  auto name_column_width = 20;
+                  if (longest_delegate_name + 3 > name_column_width)
+                      name_column_width = longest_delegate_name + 3;
+
+                  *_out << std::setw(name_column_width) << "DELEGATE NAME"
                         << std::setw(5) << "ID"
-                        << "\n" << std::string(longest_delegate_name + 3 + 5, '-') << "\n";
+                        << "\n" << std::string(name_column_width + 5, '-') << "\n";
 
                   for (auto delegate : delegates)
                   {
-                      *_out << std::setw(longest_delegate_name + 3) << delegate.second
+                      *_out << std::setw(name_column_width) << delegate.second
                             << std::setw(5) << delegate.first
                             << "\n";
                   }
