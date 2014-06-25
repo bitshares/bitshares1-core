@@ -1,6 +1,6 @@
 #pragma once
 
-#define BTS_NET_PROTOCOL_VERSION 103 // protocol version to be used in testnet3
+#define BTS_NET_PROTOCOL_VERSION 104 // protocol version to be used in testnet3
 
 /** 
  * Define this to enable debugging code in the p2p network interface.
@@ -13,7 +13,7 @@
 /**
  * 512 kb
  */
-#define MAX_MESSAGE_SIZE (1024*1024)  
+#define MAX_MESSAGE_SIZE (512*1024)  
 #define BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME  (30) // seconds
 
 /**
@@ -26,6 +26,6 @@
 
 #define BTS_NET_PEER_DISCONNECT_TIMEOUT (20) 
 
-#define BTS_NETWORK_DEFAULT_P2P_PORT          8762
-#define BTS_NET_DEFAULT_DESIRED_CONNECTIONS   32
+#define BTS_NETWORK_DEFAULT_P2P_PORT          8601
+#define BTS_NET_DEFAULT_DESIRED_CONNECTIONS   12 
 #define BTS_NET_DEFAULT_MAX_CONNECTIONS       200

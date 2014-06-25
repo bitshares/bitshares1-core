@@ -5,7 +5,7 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                          (103)
+#define BTS_BLOCKCHAIN_VERSION                          (104)
 #define BTS_WALLET_VERSION                              (100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION                 (106)
 
@@ -25,7 +25,7 @@
  * The number of delegates that the blockchain is designed to support
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
-#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES/3)
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 /**
  * To prevent a delegate from producing blocks on split network,
@@ -37,7 +37,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(30)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(120)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -87,7 +87,8 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                  (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
 /** defines the maximum block size allowed, 24 MB per hour */
-#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (24 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+//#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (24 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (30*64*1024)  // 2 min blocks, this is 64K max block size
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
@@ -110,4 +111,4 @@
  *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
  *  of mining fees then it really isn't worth the networks time.
  */
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD*1000)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD)
