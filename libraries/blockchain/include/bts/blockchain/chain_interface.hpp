@@ -54,6 +54,7 @@ namespace bts { namespace blockchain {
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( account_id_type ) const;
+
          virtual bool                       is_valid_symbol_name( const string& name ) const;
          virtual bool                       is_valid_account_name( const string& name ) const;
 

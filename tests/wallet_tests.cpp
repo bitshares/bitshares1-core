@@ -59,9 +59,9 @@ template<typename T>
 void produce_block( T my_client )
 {
       auto head_num = my_client->get_chain()->get_head_block_num();
-      auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-      bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
-      auto b = my_client->get_chain()->generate_block(next_block_production_time);
+      auto next_block_time = my_client->get_next_producible_block_timestamp();
+      bts::blockchain::advance_time( (int32_t)((next_block_time - bts::blockchain::now()).count()/1000000) );
+      auto b = my_client->get_chain()->generate_block(next_block_time);
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
@@ -472,12 +472,17 @@ void run_regression_test(fc::path test_dir, bool with_network)
   try 
   {
     std::cout << "*** Executing " << test_dir.string() << std::endl;
+
     boost::filesystem::current_path(test_dir.string());
 
     //create a small genesis block to reduce test startup time
-    fc::temp_directory temp_dir;
-    fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
-    create_genesis_block(genesis_json_file);
+    //fc::temp_directory temp_dir;
+    //fc::path genesis_json_file =  temp_dir.path() / "genesis.json";
+    //create_genesis_block(genesis_json_file);
+    //DLN: now we just used the genesis file already committed to repo, update it
+    //     using "-t make_genesis_block" if desired.
+    fc::path genesis_json_file = "../../test_genesis.json";
+
 
     //open test configuration file (contains one line per client to create)
     fc::path test_config_file_name = "test.config";

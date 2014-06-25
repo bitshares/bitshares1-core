@@ -379,6 +379,27 @@
         "aliases" : [ "wallet_create_account", "create_account" ]
       },
       {
+        "method_name": "wallet_account_set_favorite",
+        "description": "Updates the favorited status of the specified account",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the name of the account to set favorited status on"
+            },
+            {
+              "name" : "is_favorite",
+              "type" : "bool",
+              "description" : "True if account should be marked as a favorite; false otherwise",
+              "default_value" : true
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : [ "favor" ]
+      },
+      {
         "method_name": "wallet_set_delegate_trust_level",
         "description": "Updates the trust placed in a given delegate",
         "return_type": "void",
@@ -550,10 +571,10 @@
                   "default_value" : null
                },
                {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
+                  "name" : "delegate_pay_rate",
+                  "type" : "uint32_t",
+                  "description" : "A value between 0 and 100% delegates, 255 for non delegates",
+                  "default_value" : 255
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -599,12 +620,6 @@
                   "type" : "json_variant",
                   "description" : "public data about the account",
                   "default_value" : null
-               },
-               {
-                  "name" : "as_delegate",
-                  "type" : "bool",
-                  "description" : "true if account_name should be upgraded to a delegate.",
-                  "default_value" : false
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -613,6 +628,22 @@
       {
          "method_name" : "wallet_list_accounts",
          "description" : "Lists all accounts associated with this wallet",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_list_favorite_accounts",
+         "description" : "Lists all accounts which have been marked as favorites.",
+         "return_type" : "wallet_account_record_array",
+         "parameters"  : [],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_list_unregistered_accounts",
+         "description" : "Lists all unregistered accounts belonging to this wallet",
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
@@ -861,13 +892,13 @@
       },
       {
          "method_name"  : "wallet_withdraw_delegate_pay",
-         "description"  : "Used to transfer some of the delegates pay from their balance",
+         "description"  : "Used to transfer some of the delegate's pay from their balance",
          "return_type"  : "signed_transaction",
          "parameters"   : [
             {
               "name" : "delegate_name",
               "type" : "account_name",
-              "description" : "the delegate who's pay is being cashed out"
+              "description" : "the delegate whose pay is being cashed out"
             },
             {
               "name" : "to_account_name",
@@ -1051,7 +1082,7 @@
             {
                 "name" : "delegate_name",
                 "type" : "string",
-                "description" : "The delegate to enable/disable block production for"
+                "description" : "The delegate to enable/disable block production for; ALL for all delegate accounts"
             },
             {
                 "name" : "enable",

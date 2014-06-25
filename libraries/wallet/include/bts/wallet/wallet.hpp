@@ -129,6 +129,9 @@ namespace bts { namespace wallet {
          public_key_type  create_account( const string& account_name, 
                                           const variant& private_data = variant() );
 
+         void account_set_favorite ( const string& account_name,
+                                     const bool is_favorite );
+
          address          get_new_address( const string& account_name );
          public_key_type  get_new_public_key( const string& account_name );
 
@@ -150,22 +153,18 @@ namespace bts { namespace wallet {
           **/
          variant get_info()const;
 
-
          /**
           *  Block Generation API
           */
          ///@{
 
+         vector<wallet_account_record> get_my_delegates()const;
+         vector<wallet_account_record> get_my_enabled_delegates()const;
          void enable_delegate_block_production( const string& delegate_id, 
                                                 bool enable = true );
-         /**
-          *  If this wallet has any delegate keys, this method will return the time
-          *  at which this wallet may produce a block.
-          */
-         time_point_sec next_block_production_time();
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
-         void               sign_block( signed_block_header& header )const;
+         void sign_block( signed_block_header& header )const;
 
          ///@} Block Generation API
 
@@ -178,6 +177,8 @@ namespace bts { namespace wallet {
          vector<string> list() const; // list wallets
 
          vector<wallet_account_record> list_accounts()const;
+         vector<wallet_account_record> list_favorite_accounts()const;
+         vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
 
          void import_bitcoin_wallet( const path& wallet_dat,
@@ -292,7 +293,7 @@ namespace bts { namespace wallet {
 
          signed_transaction  cancel_market_order( const address& owner_address );
 
-         owallet_account_record get_account( const string& account_name );
+         owallet_account_record get_account( const string& account_name )const;
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
@@ -301,7 +302,7 @@ namespace bts { namespace wallet {
           */
          wallet_transaction_record register_account( const string& account_name,
                                               const variant& json_data,
-                                              bool  as_delegate, 
+                                              uint8_t delegate_pay_rate,
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
@@ -313,7 +314,6 @@ namespace bts { namespace wallet {
                                                        const string& pay_from_account,
                                                        optional<variant> json_data,
                                                        optional<public_key_type> active = optional<public_key_type>(),
-                                                       bool as_delegate = false,
                                                        bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,

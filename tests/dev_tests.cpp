@@ -12,7 +12,6 @@ BOOST_AUTO_TEST_CASE( timetest )
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
 //   disable_logging();
-   //enable_logging();
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_list_my_accounts" );
    exec( clienta, "wallet_account_balance" );
@@ -204,17 +203,59 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_set_delegate_trust_level delegate69 1" );
    exec( clientb, "balance" );
    exec( clienta, "balance" );
-   exec( clienta, "wallet_transfer 196919765.9801 XTS delegate31 delegate31 change_votes " );
-   exec( clienta, "wallet_transfer 198019800.9801  XTS delegate33 delegate33 change_votes " );
-   exec( clientb, "wallet_transfer 97921.8499 XTS b-account b-account change_votes " );
-   exec( clientb, "wallet_transfer 200004.0123 XTS c-account c-account change_votes " );
-   exec( clientb, "wallet_transfer 197919700.9801 XTS delegate32 delegate32 change_votes " );
-   exec( clientb, "wallet_transfer 197917601.8284 XTS delegate30 delegate30 change_votes " );
+   exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );
+   exec( clienta, "wallet_transfer 10801980.09801  XTS delegate33 delegate33 change_votes " );
+   exec( clientb, "wallet_transfer 9792.18499 XTS b-account b-account change_votes " );
+   exec( clientb, "wallet_transfer 20000.40123 XTS c-account c-account change_votes " );
+   exec( clientb, "wallet_transfer 10791970.09801 XTS delegate32 delegate32 change_votes " );
+   exec( clientb, "wallet_transfer 10791760.18284 XTS delegate30 delegate30 change_votes " );
 
    produce_block( clienta );
    exec( clienta, "balance" );
    exec( clientb, "blockchain_list_delegates" );
 
+   exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );
+   exec( clienta, "wallet_transfer 10801980.09801  XTS delegate33 delegate33 change_votes " );
+   exec( clientb, "wallet_transfer 9792.18499 XTS b-account b-account change_votes " );
+   exec( clientb, "wallet_transfer 20000.40123 XTS c-account c-account change_votes " );
+   exec( clientb, "wallet_transfer 10791970.09801 XTS delegate32 delegate32 change_votes " );
+   exec( clientb, "wallet_transfer 10791760.18284 XTS delegate30 delegate30 change_votes " );
+
+   exec( clientb, "info" );
+   exec( clienta, "info" );
+
+   enable_logging();
+   wlog( "FORKING NETWORKS" );
+   clientb->simulate_disconnect(true);
+   produce_block(clienta);
+   produce_block(clienta);
+   produce_block(clienta);
+   produce_block(clienta);
+   produce_block(clienta);
+   clientb->simulate_disconnect(false);
+
+   clienta->simulate_disconnect(true);
+   produce_block(clientb);
+   produce_block(clientb);
+   produce_block(clientb);
+
+   clienta->simulate_disconnect(false);
+   produce_block(clienta);
+   produce_block(clienta);
+   produce_block(clienta);
+
+   exec( clientb, "info" );
+   exec( clienta, "info" );
+
+   wlog( "JOINING NETWORKS" );
+   for( uint32_t i = 2; i <= clienta->get_chain()->get_head_block_num(); ++i )
+   {
+      auto b = clienta->get_chain()->get_block( i );
+      clientb->get_chain()->push_block(b);
+   }
+
+   exec( clientb, "info" );
+   exec( clienta, "info" );
 
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 

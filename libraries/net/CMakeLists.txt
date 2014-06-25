@@ -4,6 +4,7 @@ set(SOURCES node.cpp
             stcp_socket.cpp
             core_messages.cpp
             peer_database.cpp
+            peer_connection.cpp
             upnp.cpp
             message_oriented_connection.cpp)
 

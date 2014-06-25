@@ -215,6 +215,8 @@ namespace bts { namespace net {
 
         std::vector<potential_peer_record> get_potential_peers()const;
 
+        void disable_peer_advertising();
+
       private:
         std::unique_ptr<detail::node_impl> my;
    };
@@ -224,13 +226,15 @@ namespace bts { namespace net {
        public:
          void      listen_to_p2p_network() override {}
          void      connect_to_p2p_network() override {}
-         void connect_to(const fc::ip::endpoint& ep) override {}
+         void      connect_to(const fc::ip::endpoint& ep) override {}
+
          fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }
 
          void      sync_from( const item_id& ) override {}
-         void broadcast(const message& item_to_broadcast) override;
-         void add_node_delegate(node_delegate* node_delegate_to_add);
-        virtual uint32_t get_connection_count() const override { return 8; }
+         void      broadcast(const message& item_to_broadcast) override;
+         void      add_node_delegate(node_delegate* node_delegate_to_add);
+
+         virtual uint32_t get_connection_count() const override { return 8; }
        private:
          std::vector<bts::net::node_delegate*> network_nodes;
     };
