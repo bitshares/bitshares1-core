@@ -303,14 +303,14 @@
       },
       {
          "method_name" : "blockchain_list_blocks",
-         "description" : "Returns the block headers for blocks in a range",
+         "description" : "Returns the block headers for blocks in a range in a reverse order, from the newest to oldest",
          "return_type" : "block_record_array",
          "parameters"  : [
             {
                "name" : "first_block_number",
                "type" : "int32_t",
-               "description" : "the first block to list",
-               "default_value" : 1
+               "description" : "the position of the first block relate to the head block, 0 is header block",
+               "default_value" : 0
             },
             {
                "name" : "limit",

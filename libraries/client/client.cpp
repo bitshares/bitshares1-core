@@ -679,7 +679,7 @@ config load_config( const fc::path& datadir )
           FC_ASSERT( count <= 1000 );
           vector<block_record> result;
 
-          first = _chain_db->get_head_block_num() - first - count;
+          first = _chain_db->get_head_block_num() - first - count + 1;
 
           int32_t last = std::min<int32_t>( first+count-1, _chain_db->get_head_block_num() );
           if ( last < first )
