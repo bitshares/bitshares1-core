@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
    struct register_account_operation
    {
       static const operation_type_enum type; 
-      register_account_operation():delegate_production_fee(255){}
+      register_account_operation():delegate_pay_rate(255){}
 
       register_account_operation( const std::string& n, 
                                   const fc::variant& d, 
@@ -21,10 +21,10 @@ namespace bts { namespace blockchain {
       fc::variant                 public_data;
       public_key_type             owner_key;
       public_key_type             active_key;
-      bool                        is_delegate()const { return delegate_production_fee <= 100; }
+      bool                        is_delegate()const { return delegate_pay_rate <= 100; }
 
       // 0-100% of the transaction fees to be paid to delegate
-      uint8_t                     delegate_production_fee; 
+      uint8_t                     delegate_pay_rate; 
 
       /**
        *  Meta information is used by clients to evaluate
@@ -70,6 +70,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_production_fee)(meta_data) )
+FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_pay_rate)(meta_data) )
 FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )

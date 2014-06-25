@@ -1,5 +1,44 @@
 #define DEFAULT_LOGGER "p2p"
-#include "peer_connection.hpp"
+
+#include <sstream>
+#include <iomanip>
+#include <deque>
+#include <unordered_set>
+#include <list>
+#include <iostream>
+#include <boost/tuple/tuple.hpp>
+#include <boost/circular_buffer.hpp>
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/logic/tribool.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
+
+#include <fc/thread/thread.hpp>
+#include <fc/thread/future.hpp>
+#include <fc/log/logger.hpp>
+#include <fc/io/json.hpp>
+#include <fc/io/enum_type.hpp>
+#include <fc/crypto/rand.hpp>
+#include <fc/network/rate_limiting.hpp>
+
+#include <bts/net/node.hpp>
+#include <bts/net/peer_database.hpp>
+#include <bts/net/message_oriented_connection.hpp>
+#include <bts/net/stcp_socket.hpp>
+#include <bts/net/config.hpp>
+#include <bts/client/messages.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <fc/git_revision.hpp>
+
+#include <bts/net/peer_connection.hpp>
 
 namespace bts { namespace net { 
   namespace detail 
@@ -7,58 +46,58 @@ namespace bts { namespace net {
     namespace bmi = boost::multi_index;
     class blockchain_tied_message_cache 
     {
-       private:
-         static const uint32_t cache_duration_in_blocks = 2;
+    private:
+      static const uint32_t cache_duration_in_blocks = 2;
 
-         struct message_hash_index{};
-         struct message_contents_hash_index{};
-         struct block_clock_index{};
-         struct message_info
-         {
-           message_hash_type message_hash;
-           message           message_body;
-           uint32_t          block_clock_when_received;
+      struct message_hash_index{};
+      struct message_contents_hash_index{};
+      struct block_clock_index{};
+      struct message_info
+      {
+        message_hash_type message_hash;
+        message           message_body;
+        uint32_t          block_clock_when_received;
 
-           // for network performance stats
-           message_propagation_data propagation_data;
-           fc::uint160_t     message_contents_hash; // hash of whatever the message contains ( if it's a transaction, this is the transaction id, if it's a block, it's the block_id )
+        // for network performance stats
+        message_propagation_data propagation_data;
+        fc::uint160_t     message_contents_hash; // hash of whatever the message contains ( if it's a transaction, this is the transaction id, if it's a block, it's the block_id )
 
-           message_info( const message_hash_type& message_hash,
-                       const message&           message_body,
-                        uint32_t                 block_clock_when_received,
-                       const message_propagation_data& propagation_data,
-                        fc::uint160_t            message_contents_hash ) :
-             message_hash( message_hash ),
-             message_body( message_body ),
-             block_clock_when_received( block_clock_when_received ),
-             propagation_data( propagation_data ),
-             message_contents_hash( message_contents_hash )
-           {}
-         };
-         typedef boost::multi_index_container
-            < message_info, 
-               bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>, 
-                                                     bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
-                                bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
-                                                         bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
-                                bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
-                                                         bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > > 
-            > message_cache_container;
+        message_info( const message_hash_type& message_hash,
+                      const message&           message_body,
+                      uint32_t                 block_clock_when_received,
+                      const message_propagation_data& propagation_data,
+                      fc::uint160_t            message_contents_hash ) :
+          message_hash( message_hash ),
+          message_body( message_body ),
+          block_clock_when_received( block_clock_when_received ),
+          propagation_data( propagation_data ),
+          message_contents_hash( message_contents_hash )
+        {}
+      };
+      typedef boost::multi_index_container
+        < message_info, 
+            bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>, 
+                                                  bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
+                            bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>, 
+                                                      bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
+                            bmi::ordered_non_unique< bmi::tag<block_clock_index>, 
+                                                      bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > > 
+        > message_cache_container;
 
-         message_cache_container _message_cache;
+      message_cache_container _message_cache;
 
-         uint32_t block_clock;
+      uint32_t block_clock;
 
-      public:
-         blockchain_tied_message_cache() :
-           block_clock( 0 )
-         {}
-         void block_accepted();
-         void cache_message( const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
-                           const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash );
-         message get_message( const message_hash_type& hash_of_message_to_lookup );
-         message_propagation_data get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const;
-         size_t size() const { return _message_cache.size(); }
+    public:
+      blockchain_tied_message_cache() :
+        block_clock( 0 )
+      {}
+      void block_accepted();
+      void cache_message( const message& message_to_cache, const message_hash_type& hash_of_message_to_cache, 
+                        const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash );
+      message get_message( const message_hash_type& hash_of_message_to_lookup );
+      message_propagation_data get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const;
+      size_t size() const { return _message_cache.size(); }
     };
 
     void blockchain_tied_message_cache::block_accepted()
@@ -83,7 +122,8 @@ namespace bts { namespace net {
 
     message blockchain_tied_message_cache::get_message( const message_hash_type& hash_of_message_to_lookup )
     {
-      message_cache_container::index<message_hash_index>::type::const_iterator iter = _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup );
+      message_cache_container::index<message_hash_index>::type::const_iterator iter = 
+         _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup );
       if( iter != _message_cache.get<message_hash_index>().end() )
         return iter->message_body;
       FC_THROW_EXCEPTION(  fc::key_not_found_exception, "Requested message not in cache" );
@@ -93,7 +133,8 @@ namespace bts { namespace net {
     {
       if( hash_of_message_contents_to_lookup != fc::uint160_t() )
       {
-        message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup );
+        message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = 
+           _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup );
         if( iter != _message_cache.get<message_contents_hash_index>().end() )
           return iter->propagation_data;
       }
@@ -102,6 +143,29 @@ namespace bts { namespace net {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    // This specifies configuration info for the local node.  It's stored as JSON 
+    // in the configuration directory (application data directory)
+    struct node_configuration
+    {
+      fc::ip::endpoint listen_endpoint;
+      bool wait_if_endpoint_is_busy;
+      /**
+       * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
+       * on the network.  This is now a private key/public key pair, where the public key is used
+       * in place of the old random node-id.  The private part is unused, but might be used in
+       * the future to support some notion of trusted peers.
+       */
+      fc::ecc::private_key private_key;
+    };
+
+
+} } } // end namespace bts::net::detail
+FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
+                                                 (wait_if_endpoint_is_busy)
+                                                 (private_key));
+
+namespace bts { namespace net { namespace detail {
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
     {
@@ -197,6 +261,10 @@ namespace bts { namespace net {
 
       uint32_t _last_reported_number_of_connections; // number of connections last reported to the client ( to avoid sending duplicate messages )
 
+      bool _peer_advertising_disabled;
+
+      fc::future<void> _fetch_updated_peer_lists_loop_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -221,6 +289,8 @@ namespace bts { namespace net {
       void trigger_advertise_inventory_loop();
 
       void terminate_inactive_connections_loop();
+
+      void fetch_updated_peer_lists_loop();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -343,6 +413,8 @@ namespace bts { namespace net {
       void                       set_allowed_peers( const std::vector<node_id_t>& allowed_peers );
       void                       clear_peer_database();
       void                       set_total_bandwidth_limit( uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second );
+      void                       disable_peer_advertising();
+
       fc::variant_object         network_get_info() const;
     }; // end class node_impl
 
@@ -359,7 +431,8 @@ namespace bts { namespace net {
       _most_recent_blocks_accepted( _maximum_number_of_connections ),
       _total_number_of_unfetched_items( 0 ),
       _rate_limiter( 0, 0 ),
-      _last_reported_number_of_connections( 0 )
+      _last_reported_number_of_connections( 0 ),
+      _peer_advertising_disabled(false)
     {
     }
 
@@ -577,6 +650,7 @@ namespace bts { namespace net {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
 
+        std::vector< fc::future<void> >  write_ops;
         for( auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end();  )
         {
           bool item_fetched = false;
@@ -590,20 +664,26 @@ namespace bts { namespace net {
               item_id item_id_to_fetch = *iter;
               iter = _items_to_fetch.erase( iter );
               item_fetched = true;
-              peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
-                                                     std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
+              write_ops.push_back( 
+                    fc::async( [item_id_to_fetch,peer](){
+                      peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
+                      std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
+              }) );
               break;
             }
 #ifndef NDEBUG
-            else if( peer->inventory_peer_advertised_to_us.find(*iter ) != peer->inventory_peer_advertised_to_us.end() )
-            {
-              dlog( "would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
-            }
+//            else if( peer->inventory_peer_advertised_to_us.find(*iter ) != peer->inventory_peer_advertised_to_us.end() )
+//            {
+//              dlog( "would request item ${hash} from peer ${endpoint}, but it is busy", ("hash", iter->item_hash )("endpoint", peer->get_remote_endpoint() ) );
+//            }
 #endif
           }
           if( !item_fetched )
             ++iter;
         }
+
+        for( auto& item : write_ops )
+           item.wait();
 
         if( !_items_to_fetch_updated )
         {
@@ -759,6 +839,17 @@ namespace bts { namespace net {
       } // while(  !canceled  )
     }
 
+    void node_impl::fetch_updated_peer_lists_loop()
+    {
+      while (!_fetch_updated_peer_lists_loop_done.canceled())
+      {
+        fc::usleep(fc::minutes(15));
+
+        for( const peer_connection_ptr& active_peer : _active_connections )
+          active_peer->send_message(address_request_message());
+      }
+    }
+
     bool node_impl::is_accepting_new_connections()
     {
       return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() <= _maximum_number_of_connections;
@@ -839,58 +930,58 @@ namespace bts { namespace net {
            ( "type", bts::net::core_message_type_enum(received_message.msg_type ) )("hash", message_hash )("size", received_message.size )("endpoint", originating_peer->get_remote_endpoint() ) );
       switch ( received_message.msg_type )
       {
-         case core_message_type_enum::hello_message_type:
-           on_hello_message( originating_peer, received_message.as<hello_message>() );
-           break;
-         case core_message_type_enum::connection_accepted_message_type:
-           on_connection_accepted_message( originating_peer, received_message.as<connection_accepted_message>() );
-           break;
-         case core_message_type_enum::connection_rejected_message_type:
-           on_connection_rejected_message( originating_peer, received_message.as<connection_rejected_message>() );
-           break;
-         case core_message_type_enum::address_request_message_type:
-           on_address_request_message( originating_peer, received_message.as<address_request_message>() );
-           break;
-         case core_message_type_enum::address_message_type:
-           on_address_message( originating_peer, received_message.as<address_message>() );
-           break;
-         case core_message_type_enum::fetch_blockchain_item_ids_message_type:
-           on_fetch_blockchain_item_ids_message( originating_peer, received_message.as<fetch_blockchain_item_ids_message>() );
-           break;
-         case core_message_type_enum::blockchain_item_ids_inventory_message_type:
-           on_blockchain_item_ids_inventory_message( originating_peer, received_message.as<blockchain_item_ids_inventory_message>() );
-           break;
-         case core_message_type_enum::fetch_items_message_type:
-           on_fetch_items_message( originating_peer, received_message.as<fetch_items_message>() );
-           break;
-         case core_message_type_enum::item_not_available_message_type:
-           on_item_not_available_message( originating_peer, received_message.as<item_not_available_message>() );
-           break;
-         case core_message_type_enum::item_ids_inventory_message_type:
-           on_item_ids_inventory_message( originating_peer, received_message.as<item_ids_inventory_message>() );
-           break;
-         case core_message_type_enum::closing_connection_message_type:
-           on_closing_connection_message( originating_peer, received_message.as<closing_connection_message>() );
-           break;
-         case bts::client::message_type_enum::block_message_type:
-           process_block_message( originating_peer, received_message, message_hash );
-           break;
-         case core_message_type_enum::current_time_request_message_type:
-           on_current_time_request_message( originating_peer, received_message.as<current_time_request_message>() );
-           break;
-         case core_message_type_enum::current_time_reply_message_type:
-           on_current_time_reply_message( originating_peer, received_message.as<current_time_reply_message>() );
-           break;
-         case core_message_type_enum::check_firewall_message_type:
-           on_check_firewall_message( originating_peer, received_message.as<check_firewall_message>() );
-           break;
-         case core_message_type_enum::check_firewall_reply_message_type:
-           on_check_firewall_reply_message( originating_peer, received_message.as<check_firewall_reply_message>() );
-           break;
+      case core_message_type_enum::hello_message_type:
+        on_hello_message( originating_peer, received_message.as<hello_message>() );
+        break;
+      case core_message_type_enum::connection_accepted_message_type:
+        on_connection_accepted_message( originating_peer, received_message.as<connection_accepted_message>() );
+        break;
+      case core_message_type_enum::connection_rejected_message_type:
+        on_connection_rejected_message( originating_peer, received_message.as<connection_rejected_message>() );
+        break;
+      case core_message_type_enum::address_request_message_type:
+        on_address_request_message( originating_peer, received_message.as<address_request_message>() );
+        break;
+      case core_message_type_enum::address_message_type:
+        on_address_message( originating_peer, received_message.as<address_message>() );
+        break;
+      case core_message_type_enum::fetch_blockchain_item_ids_message_type:
+        on_fetch_blockchain_item_ids_message( originating_peer, received_message.as<fetch_blockchain_item_ids_message>() );
+        break;
+      case core_message_type_enum::blockchain_item_ids_inventory_message_type:
+        on_blockchain_item_ids_inventory_message( originating_peer, received_message.as<blockchain_item_ids_inventory_message>() );
+        break;
+      case core_message_type_enum::fetch_items_message_type:
+        on_fetch_items_message( originating_peer, received_message.as<fetch_items_message>() );
+        break;
+      case core_message_type_enum::item_not_available_message_type:
+        on_item_not_available_message( originating_peer, received_message.as<item_not_available_message>() );
+        break;
+      case core_message_type_enum::item_ids_inventory_message_type:
+        on_item_ids_inventory_message( originating_peer, received_message.as<item_ids_inventory_message>() );
+        break;
+      case core_message_type_enum::closing_connection_message_type:
+        on_closing_connection_message( originating_peer, received_message.as<closing_connection_message>() );
+        break;
+      case bts::client::message_type_enum::block_message_type:
+        process_block_message( originating_peer, received_message, message_hash );
+        break;
+      case core_message_type_enum::current_time_request_message_type:
+        on_current_time_request_message( originating_peer, received_message.as<current_time_request_message>() );
+        break;
+      case core_message_type_enum::current_time_reply_message_type:
+        on_current_time_reply_message( originating_peer, received_message.as<current_time_reply_message>() );
+        break;
+      case core_message_type_enum::check_firewall_message_type:
+        on_check_firewall_message( originating_peer, received_message.as<check_firewall_message>() );
+        break;
+      case core_message_type_enum::check_firewall_reply_message_type:
+        on_check_firewall_reply_message( originating_peer, received_message.as<check_firewall_reply_message>() );
+        break;
 
-         default:
-           process_ordinary_message( originating_peer, received_message, message_hash );
-           break;
+      default:
+        process_ordinary_message( originating_peer, received_message, message_hash );
+        break;
       }
     }
 
@@ -1170,22 +1261,24 @@ namespace bts { namespace net {
       dlog( "Received an address request message" );
 
       address_message reply;
-      reply.addresses.reserve( _active_connections.size()  );
-      for( const peer_connection_ptr& active_peer : _active_connections )
+      if (!_peer_advertising_disabled)
       {
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
-        updated_peer_record.last_seen_time = fc::time_point::now();
-        _potential_peer_db.update_entry( updated_peer_record );
+        reply.addresses.reserve( _active_connections.size()  );
+        for( const peer_connection_ptr& active_peer : _active_connections )
+        {
+          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
+          updated_peer_record.last_seen_time = fc::time_point::now();
+          _potential_peer_db.update_entry( updated_peer_record );
 
-        address_info info_for_peer( *active_peer->get_remote_endpoint(), 
-                                   fc::time_point::now(),
-                                   active_peer->latency,
-                                   active_peer->node_id,
-                                   active_peer->direction,
-                                   active_peer->is_firewalled );
-        reply.addresses.push_back( std::move(info_for_peer ) );
+          address_info info_for_peer( *active_peer->get_remote_endpoint(), 
+                                     fc::time_point::now(),
+                                     active_peer->latency,
+                                     active_peer->node_id,
+                                     active_peer->direction,
+                                     active_peer->is_firewalled );
+          reply.addresses.push_back( std::move(info_for_peer ) );
+        }
       }
-
       //for( const potential_peer_record& record : _potential_peer_db )
       originating_peer->send_message( reply );
     }
@@ -1204,27 +1297,34 @@ namespace bts { namespace net {
       if( new_information_received )
         trigger_p2p_network_connect_loop();
 
-      if( originating_peer->our_state == peer_connection::our_connection_state::connection_rejected )      
-        disconnect_from_peer( originating_peer, "You rejected my connection request (hello message ) so I'm disconnecting" );
-      else if( originating_peer->their_state == peer_connection::their_connection_state::connection_rejected )
-        disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
-      else
+      if (_handshaking_connections.find(originating_peer->shared_from_this()) != _handshaking_connections.end())
       {
-        // not filtering firewalled nodes just incase they have working UPNP or port mapping
-        // TODO: add enhanced firewall detection code
-        // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+        // if we were handshaking, we need to continue with the next step in handshaking (which is either
+        // ending handshaking and starting synchronization or disconnecting)
+        if( originating_peer->our_state == peer_connection::our_connection_state::connection_rejected )      
+          disconnect_from_peer( originating_peer, "You rejected my connection request (hello message ) so I'm disconnecting" );
+        else if( originating_peer->their_state == peer_connection::their_connection_state::connection_rejected )
+          disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
+        else
         {
-          // mark the connection as successful in the database
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
-          updated_peer_record.last_connection_disposition = last_connection_succeeded;
-          _potential_peer_db.update_entry( updated_peer_record );
-        }
+          // not filtering firewalled nodes just incase they have working UPNP or port mapping
+          // TODO: add enhanced firewall detection code
+          // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+          {
+            // mark the connection as successful in the database
+            potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
+            updated_peer_record.last_connection_disposition = last_connection_succeeded;
+            _potential_peer_db.update_entry( updated_peer_record );
+          }
 
-        originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
-        _active_connections.insert( originating_peer->shared_from_this() );
-        _handshaking_connections.erase( originating_peer->shared_from_this() );
-        new_peer_just_added( originating_peer->shared_from_this() );
+          originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
+          _active_connections.insert( originating_peer->shared_from_this() );
+          _handshaking_connections.erase( originating_peer->shared_from_this() );
+          new_peer_just_added( originating_peer->shared_from_this() );
+        }
       }
+      // else if this was an active connection, then this was just a reply to our periodic address requests.
+      // we've processed it, there's nothing else to do
     }
 
     void node_impl::on_fetch_blockchain_item_ids_message( peer_connection* originating_peer, 
@@ -1801,7 +1901,8 @@ namespace bts { namespace net {
             {
               --_total_number_of_unfetched_items;
               block_processed_this_iteration = true;
-              dlog( "sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", ("count", _total_number_of_unfetched_items ) );
+              dlog( "sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", 
+                    ("count", _total_number_of_unfetched_items ) );
               std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
               std::set<peer_connection_ptr> peers_we_need_to_sync_to;
               for( const peer_connection_ptr& peer : _active_connections )
@@ -1831,7 +1932,8 @@ namespace bts { namespace net {
                     ++peer->last_block_number_delegate_has_seen;
 
                     peer->ids_of_items_to_get.pop_front();
-                    dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint() )("len", peer->ids_of_items_to_get.size() ) );
+                    dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}", 
+                          ("endpoint", peer->get_remote_endpoint() )("len", peer->ids_of_items_to_get.size() ) );
 
                     // if we just received the last item in our list from this peer, we will want to 
                     // send another request to find out if we are in sync, but we can't do this yet
@@ -1847,7 +1949,8 @@ namespace bts { namespace net {
                     // the peer's list of sync items is nonempty, and its first item doesn't match
                     // the one we just accepted.  This happens when we're synchronizing with 
                     // peers on two different forks.
-                    dlog( "Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint() )("hash", peer->ids_of_items_to_get.front() ) );
+                    dlog( "Cannot pop first element off peer ${peer}'s list, its first is ${hash}", 
+                          ("peer", peer->get_remote_endpoint() )("hash", peer->ids_of_items_to_get.front() ) );
                   }
                 }
               }
@@ -1880,7 +1983,8 @@ namespace bts { namespace net {
       dlog( "Currently backlog is ${count} blocks", ("count", _received_sync_items.size() ) );
     }
 
-    void node_impl::process_block_during_sync( peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_during_sync( peer_connection* originating_peer,
+                                               const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
     {
       dlog( "received a sync block from peer ${endpoint}", ("endpoint", originating_peer->get_remote_endpoint() ) );
 
@@ -1893,7 +1997,9 @@ namespace bts { namespace net {
       trigger_fetch_sync_items_loop();
     }
 
-    void node_impl::process_block_during_normal_operation( peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_during_normal_operation( peer_connection* originating_peer, 
+                                                           const bts::client::block_message& block_message_to_process, 
+                                                           const message_hash_type& message_hash )
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
@@ -1956,7 +2062,9 @@ namespace bts { namespace net {
         }
       }
     }
-    void node_impl::process_block_message( peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_message( peer_connection* originating_peer, 
+                                           const message& message_to_process, 
+                                           const message_hash_type& message_hash )
     {
       // find out whether we requested this item while we were synchronizing or during normal operation
       // ( it's possible that we request an item during normal operation and then get kicked into sync
@@ -1973,7 +2081,8 @@ namespace bts { namespace net {
       else
       {
         // not during normal operation.  see if we requested it during sync
-        auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( item_id(bts::client::block_message_type, block_message_to_process.block_id ) );
+        auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( item_id(bts::client::block_message_type, 
+                                                                                             block_message_to_process.block_id ) );
         if( sync_item_iter != originating_peer->sync_items_requested_from_peer.end() )
         {
           originating_peer->sync_items_requested_from_peer.erase( sync_item_iter );
@@ -1995,7 +2104,8 @@ namespace bts { namespace net {
       disconnect_from_peer( originating_peer, "You sent me a block that I didn't ask for", true, detailed_error );
     }
 
-    void node_impl::on_current_time_request_message( peer_connection* originating_peer, const current_time_request_message& current_time_request_message_received )
+    void node_impl::on_current_time_request_message( peer_connection* originating_peer, 
+                                                     const current_time_request_message& current_time_request_message_received )
     {
       fc::time_point request_received_time( fc::time_point::now() );
       current_time_reply_message reply( current_time_request_message_received.request_sent_time,
@@ -2004,12 +2114,14 @@ namespace bts { namespace net {
       originating_peer->send_message( reply );
     }
 
-    void node_impl::on_current_time_reply_message( peer_connection* originating_peer, const current_time_reply_message& current_time_reply_message_received )
+    void node_impl::on_current_time_reply_message( peer_connection* originating_peer, 
+                                                   const current_time_reply_message& current_time_reply_message_received )
     {
       // TODO
     }
 
-    void node_impl::on_check_firewall_message( peer_connection* originating_peer, const check_firewall_message& check_firewall_message_received )
+    void node_impl::on_check_firewall_message( peer_connection* originating_peer, 
+                                               const check_firewall_message& check_firewall_message_received )
     {
       // TODO
       check_firewall_reply_message reply;
@@ -2018,7 +2130,8 @@ namespace bts { namespace net {
       reply.result = firewall_check_result::unable_to_check;
     }
 
-    void node_impl::on_check_firewall_reply_message( peer_connection* originating_peer, const check_firewall_reply_message& check_firewall_reply_message_received )
+    void node_impl::on_check_firewall_reply_message( peer_connection* originating_peer, 
+                                                     const check_firewall_reply_message& check_firewall_reply_message_received )
     {
       // TODO
     }
@@ -2028,7 +2141,8 @@ namespace bts { namespace net {
     // messages.  ( transaction messages would be handled here, for example )
     // this just passes the message to the client, and does the bookkeeping 
     // related to requesting and rebroadcasting the message.
-    void node_impl::process_ordinary_message( peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_ordinary_message( peer_connection* originating_peer, 
+                                              const message& message_to_process, const message_hash_type& message_hash )
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
@@ -2109,12 +2223,14 @@ namespace bts { namespace net {
       _fetch_item_loop_done.cancel();
       _advertise_inventory_loop_done.cancel();
       _terminate_inactive_connections_loop_done.cancel();
+      _fetch_updated_peer_lists_loop_done.cancel();
       
       try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
       try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
       try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
       try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
       try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
+      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (... ){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -2165,7 +2281,8 @@ namespace bts { namespace net {
       peer->send_message( message(hello ) );
     }
 
-    void node_impl::connect_to_task( peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint )
+    void node_impl::connect_to_task( peer_connection_ptr new_peer, 
+                                     const fc::ip::endpoint& remote_endpoint )
     {
       // create or find the database entry for the new peer
       // if we're connecting to them, we believe they're not firewalled
@@ -2368,6 +2485,7 @@ namespace bts { namespace net {
       _fetch_item_loop_done = fc::async( [=]() { fetch_items_loop(); } );
       _advertise_inventory_loop_done = fc::async( [=]() { advertise_inventory_loop(); } );
       _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
+      _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
@@ -2720,6 +2838,11 @@ namespace bts { namespace net {
       _rate_limiter.set_download_limit( download_bytes_per_second );
     }
 
+    void node_impl::disable_peer_advertising()
+    {
+      _peer_advertising_disabled = true;
+    }
+
     fc::variant_object node_impl::network_get_info() const
     {
       fc::mutable_variant_object info;
@@ -2859,6 +2982,11 @@ namespace bts { namespace net {
     my->set_total_bandwidth_limit( upload_bytes_per_second, download_bytes_per_second );
   }
 
+  void node::disable_peer_advertising()
+  {
+    my->disable_peer_advertising();
+  }
+
   fc::variant_object node::network_get_info() const
   {
     return my->network_get_info();
@@ -2867,7 +2995,14 @@ namespace bts { namespace net {
   void simulated_network::broadcast( const message& item_to_broadcast  )
   {
       for( node_delegate* network_node : network_nodes )
-        network_node->handle_message( item_to_broadcast, false );
+      {
+         try {
+            network_node->handle_message( item_to_broadcast, false );
+         } catch ( const fc::exception& e )
+         {
+            elog( "${r}", ("r",e.to_detail_string() ) );
+         }
+      }
   }
 
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )

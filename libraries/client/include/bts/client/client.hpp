@@ -83,31 +83,29 @@ namespace bts { namespace client {
          client();
          client(bts::net::simulated_network_ptr network_to_connect_to);
 
+         void simulate_disconnect( bool state );
+
          virtual ~client();
 
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
          void open( const path& data_dir, 
-
                     optional<fc::path> genesis_file_path = optional<fc::path>());
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode); 
 
-
-         /**
-          *  Produces a block every 30 seconds if there is at least
-          *  once transaction.
-          */
-         void run_delegate();
-
          void add_node( const string& ep );
+
+         void start_delegate_loop();
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
-         bts::rpc::rpc_server_ptr   get_rpc_server() const;
+         bts::rpc::rpc_server_ptr   get_rpc_server()const;
          bts::net::node_ptr         get_node()const;
-         fc::path                   get_data_dir() const;
+         fc::path                   get_data_dir()const;
+
+         time_point_sec             get_next_producible_block_timestamp()const;
 
          // returns true if the client is connected to the network
          bool                is_connected() const;

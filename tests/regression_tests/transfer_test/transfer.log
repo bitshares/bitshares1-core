@@ -1,7 +1,7 @@
 default (unlocked) >>> filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
-"XTS6Pe9NCcxAjfxH4dJijQZzHHAntUsuJhgt6JBJf6b6Bmp539oVm"
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
 default (unlocked) >>> wallet_account_balance delegate0
 delegate0:
     99,009.900949 XTS

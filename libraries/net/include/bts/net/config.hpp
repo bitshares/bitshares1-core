@@ -13,7 +13,7 @@
 /**
  * 512 kb
  */
-#define MAX_MESSAGE_SIZE (524288)  
+#define MAX_MESSAGE_SIZE (1024*1024)  
 #define BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME  (30) // seconds
 
 /**

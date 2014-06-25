@@ -87,7 +87,7 @@ namespace bts { namespace net {
     {
       const int BUFFER_SIZE = 16;
       const int LEFTOVER = BUFFER_SIZE - sizeof(message_header);
-      assert(BUFFER_SIZE >= sizeof(message_header));
+      static_assert(BUFFER_SIZE >= sizeof(message_header), "insufficient buffer");
 
       _connected_time = fc::time_point::now();
       try 
@@ -100,7 +100,7 @@ namespace bts { namespace net {
           _bytes_received += BUFFER_SIZE;
           memcpy((char*)&m, buffer, sizeof(message_header));
 
-          assert( m.size <= MAX_MESSAGE_SIZE );
+          FC_ASSERT( m.size <= MAX_MESSAGE_SIZE, "", ("m.size",m.size)("MAX_MESSAGE_SIZE",MAX_MESSAGE_SIZE) );
 
           size_t remaining_bytes_with_padding = 16 * ((m.size - LEFTOVER + 15) / 16);
           m.data.resize(LEFTOVER + remaining_bytes_with_padding); //give extra 16 bytes to allow for padding added in send call

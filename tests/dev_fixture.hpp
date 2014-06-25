@@ -223,9 +223,9 @@ struct chain_fixture
    void produce_block( T my_client )
    {
          auto head_num = my_client->get_chain()->get_head_block_num();
-         auto next_block_production_time = my_client->get_wallet()->next_block_production_time();
-         bts::blockchain::advance_time( (int32_t)((next_block_production_time - bts::blockchain::now()).count()/1000000) );
-         auto b = my_client->get_chain()->generate_block(next_block_production_time);
+         auto next_block_time = my_client->get_next_producible_block_timestamp();
+         bts::blockchain::advance_time( (int32_t)((next_block_time - bts::blockchain::now()).count()/1000000) );
+         auto b = my_client->get_chain()->generate_block(next_block_time);
          my_client->get_wallet()->sign_block( b );
          my_client->get_node()->broadcast( bts::client::block_message( b ) );
          FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
@@ -236,6 +236,7 @@ struct chain_fixture
    {
       fc::configure_logging( fc::logging_config::default_config() );
    }
+
    void disable_logging()
    {
       fc::logging_config cfg;
@@ -258,6 +259,7 @@ struct chain_fixture
    }
 
    std::shared_ptr<bts::net::simulated_network> sim_network;
+   std::shared_ptr<bts::net::simulated_network> sim_network_fork;
    std::shared_ptr<client>        clienta;
    std::shared_ptr<client>        clientb;
    fc::temp_directory             clienta_dir;
