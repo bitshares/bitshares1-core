@@ -392,7 +392,7 @@
             {
               "name" : "is_favorite",
               "type" : "bool",
-              "description" : "True if account should be marked as a favorite; false otherwise",
+              "description" : "true if account should be marked as a favorite; false otherwise",
               "default_value" : true
             }
           ],
@@ -400,7 +400,7 @@
         "aliases" : [ "favor" ]
       },
       {
-        "method_name": "wallet_set_delegate_trust_level",
+        "method_name": "wallet_set_delegate_trust",
         "description": "Updates the trust placed in a given delegate",
         "return_type": "void",
         "parameters" : 
@@ -408,13 +408,13 @@
             { 
               "name" : "delegate_name", 
               "type" : "account_name", 
-              "description" : "the name of the delegate to set trust level on"
+              "description" : "the name of the delegate to set trust on"
             },
             { 
-              "name" : "trust_level", 
-              "type" : "int32_t", 
-              "description" : "Positive for Trust, Negative for Distrust, 0 for Neutral",
-              "default_value" : 0
+              "name" : "trusted",
+              "type" : "bool",
+              "description" : "true for trusted and false for neutral",
+              "default_value" : false
             }
           ],
         "prerequisites" : ["wallet_open"],
@@ -1087,7 +1087,7 @@
             {
                 "name" : "enable",
                 "type" : "bool",
-                "description" : "True to enable block production, false otherwise"
+                "description" : "true to enable block production, false otherwise"
             }
           ],
          "prerequisites" : ["wallet_open"]

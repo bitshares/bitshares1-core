@@ -148,7 +148,7 @@ class BlockchainAPI
   # parameters: 
   #   asset_symbol `quote_symbol` - the symbol name the market is quoted in
   #   asset_symbol `base_symbol` - the item being bought in this market
-  #   int64_t `limit` - the maximum number of items to return, -1 for all
+  #   uint32_t `limit` - the maximum number of items to return, -1 for all
   # return_type: `market_order_array`
   market_list_bids: (quote_symbol, base_symbol, limit) ->
     @rpc.request('blockchain_market_list_bids', [quote_symbol, base_symbol, limit]).then (response) ->
@@ -156,14 +156,14 @@ class BlockchainAPI
 
   # returns the order of delegates that is fixed for the current round
   # parameters: 
-  # return_type: `account_id_array`
+  # return_type: `map<account_id_type, string>`
   list_current_round_active_delegates:  ->
     @rpc.request('blockchain_list_current_round_active_delegates').then (response) ->
       response.result
 
-  # Returns the block headers for blocks in a range
+  # Returns the block headers for blocks in a range in a reverse order, from the newest to oldest
   # parameters: 
-  #   int32_t `first_block_number` - the first block to list
+  #   int32_t `first_block_number` - the position of the first block relate to the head block, 0 is header block
   #   uint32_t `limit` - the maximum number of blocks to return
   # return_type: `block_record_array`
   list_blocks: (first_block_number, limit) ->
@@ -189,10 +189,10 @@ class BlockchainAPI
 
   # Query the block production stats for a particular delegate
   # parameters: 
-  #   account_id_type `delegate_id` - Delegate whose block stats to query
+  #   string `delegate_name` - Delegate whose block stats to query
   # return_type: `delegate_block_stats_map`
-  get_delegate_block_stats: (delegate_id) ->
-    @rpc.request('blockchain_get_delegate_block_stats', [delegate_id]).then (response) ->
+  get_delegate_block_stats: (delegate_name) ->
+    @rpc.request('blockchain_get_delegate_block_stats', [delegate_name]).then (response) ->
       response.result
 
   # Get the delegate that signed a given block
