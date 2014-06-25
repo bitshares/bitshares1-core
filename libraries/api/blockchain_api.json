@@ -386,6 +386,34 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_start_simulated_time",
+        "description": "Begin using simulated time for testing",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "new_simulated_time",
+              "type" : "timestamp",
+              "description" : "The simulated time to start with"
+            }
+        ],
+        "is_const" : false,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_advance_time",
+        "description": "Advance simulated time",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "delta_time_seconds",
+              "type" : "int32_t",
+              "description" : "Advance the simulated time this many seconds"
+            }
+        ],
+        "is_const" : false,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

@@ -2650,6 +2650,16 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_signing_delegate( block_number ).name;
    }
 
+   void client_impl::blockchain_start_simulated_time(const fc::time_point& starting_time)
+   {
+     bts::blockchain::start_simulated_time(starting_time);
+   }
+
+   void client_impl::blockchain_advance_time(int32_t delta_time)
+   {
+     bts::blockchain::advance_time(delta_time);
+   }
+
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       _wallet->enable_delegate_block_production( delegate_name, enable );
