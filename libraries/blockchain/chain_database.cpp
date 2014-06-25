@@ -1412,7 +1412,7 @@ namespace bts { namespace blockchain {
    }
 
    full_block chain_database::generate_block( fc::time_point_sec timestamp )
-   {
+   { try {
       full_block next_block;
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>(shared_from_this());
@@ -1471,7 +1471,7 @@ namespace bts { namespace blockchain {
     //        ( "R", my->_head_block_header.delegate_pay_rate )( "F", total_fees )("N",next_block.delegate_pay_rate) );
 
       return next_block;
-   }
+   } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
    void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
    { try {

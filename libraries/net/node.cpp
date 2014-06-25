@@ -122,7 +122,8 @@ namespace bts { namespace net {
 
     message blockchain_tied_message_cache::get_message( const message_hash_type& hash_of_message_to_lookup )
     {
-      message_cache_container::index<message_hash_index>::type::const_iterator iter = _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup );
+      message_cache_container::index<message_hash_index>::type::const_iterator iter = 
+         _message_cache.get<message_hash_index>().find(hash_of_message_to_lookup );
       if( iter != _message_cache.get<message_hash_index>().end() )
         return iter->message_body;
       FC_THROW_EXCEPTION(  fc::key_not_found_exception, "Requested message not in cache" );
@@ -132,7 +133,8 @@ namespace bts { namespace net {
     {
       if( hash_of_message_contents_to_lookup != fc::uint160_t() )
       {
-        message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup );
+        message_cache_container::index<message_contents_hash_index>::type::const_iterator iter = 
+           _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup );
         if( iter != _message_cache.get<message_contents_hash_index>().end() )
           return iter->propagation_data;
       }
@@ -648,6 +650,7 @@ namespace bts { namespace net { namespace detail {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
 
+        std::vector< fc::future<void> >  write_ops;
         for( auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end();  )
         {
           bool item_fetched = false;
@@ -661,8 +664,11 @@ namespace bts { namespace net { namespace detail {
               item_id item_id_to_fetch = *iter;
               iter = _items_to_fetch.erase( iter );
               item_fetched = true;
-              peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
-                                                     std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
+              write_ops.push_back( 
+                    fc::async( [item_id_to_fetch,peer](){
+                      peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
+                      std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
+              }) );
               break;
             }
 #ifndef NDEBUG
@@ -675,6 +681,9 @@ namespace bts { namespace net { namespace detail {
           if( !item_fetched )
             ++iter;
         }
+
+        for( auto& item : write_ops )
+           item.wait();
 
         if( !_items_to_fetch_updated )
         {
@@ -1892,7 +1901,8 @@ namespace bts { namespace net { namespace detail {
             {
               --_total_number_of_unfetched_items;
               block_processed_this_iteration = true;
-              dlog( "sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", ("count", _total_number_of_unfetched_items ) );
+              dlog( "sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync", 
+                    ("count", _total_number_of_unfetched_items ) );
               std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
               std::set<peer_connection_ptr> peers_we_need_to_sync_to;
               for( const peer_connection_ptr& peer : _active_connections )
@@ -1922,7 +1932,8 @@ namespace bts { namespace net { namespace detail {
                     ++peer->last_block_number_delegate_has_seen;
 
                     peer->ids_of_items_to_get.pop_front();
-                    dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}", ("endpoint", peer->get_remote_endpoint() )("len", peer->ids_of_items_to_get.size() ) );
+                    dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}", 
+                          ("endpoint", peer->get_remote_endpoint() )("len", peer->ids_of_items_to_get.size() ) );
 
                     // if we just received the last item in our list from this peer, we will want to 
                     // send another request to find out if we are in sync, but we can't do this yet
@@ -1938,7 +1949,8 @@ namespace bts { namespace net { namespace detail {
                     // the peer's list of sync items is nonempty, and its first item doesn't match
                     // the one we just accepted.  This happens when we're synchronizing with 
                     // peers on two different forks.
-                    dlog( "Cannot pop first element off peer ${peer}'s list, its first is ${hash}", ("peer", peer->get_remote_endpoint() )("hash", peer->ids_of_items_to_get.front() ) );
+                    dlog( "Cannot pop first element off peer ${peer}'s list, its first is ${hash}", 
+                          ("peer", peer->get_remote_endpoint() )("hash", peer->ids_of_items_to_get.front() ) );
                   }
                 }
               }
@@ -1971,7 +1983,8 @@ namespace bts { namespace net { namespace detail {
       dlog( "Currently backlog is ${count} blocks", ("count", _received_sync_items.size() ) );
     }
 
-    void node_impl::process_block_during_sync( peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_during_sync( peer_connection* originating_peer,
+                                               const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
     {
       dlog( "received a sync block from peer ${endpoint}", ("endpoint", originating_peer->get_remote_endpoint() ) );
 
@@ -1984,7 +1997,9 @@ namespace bts { namespace net { namespace detail {
       trigger_fetch_sync_items_loop();
     }
 
-    void node_impl::process_block_during_normal_operation( peer_connection* originating_peer, const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_during_normal_operation( peer_connection* originating_peer, 
+                                                           const bts::client::block_message& block_message_to_process, 
+                                                           const message_hash_type& message_hash )
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
@@ -2047,7 +2062,9 @@ namespace bts { namespace net { namespace detail {
         }
       }
     }
-    void node_impl::process_block_message( peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_block_message( peer_connection* originating_peer, 
+                                           const message& message_to_process, 
+                                           const message_hash_type& message_hash )
     {
       // find out whether we requested this item while we were synchronizing or during normal operation
       // ( it's possible that we request an item during normal operation and then get kicked into sync
@@ -2064,7 +2081,8 @@ namespace bts { namespace net { namespace detail {
       else
       {
         // not during normal operation.  see if we requested it during sync
-        auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( item_id(bts::client::block_message_type, block_message_to_process.block_id ) );
+        auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( item_id(bts::client::block_message_type, 
+                                                                                             block_message_to_process.block_id ) );
         if( sync_item_iter != originating_peer->sync_items_requested_from_peer.end() )
         {
           originating_peer->sync_items_requested_from_peer.erase( sync_item_iter );
@@ -2086,7 +2104,8 @@ namespace bts { namespace net { namespace detail {
       disconnect_from_peer( originating_peer, "You sent me a block that I didn't ask for", true, detailed_error );
     }
 
-    void node_impl::on_current_time_request_message( peer_connection* originating_peer, const current_time_request_message& current_time_request_message_received )
+    void node_impl::on_current_time_request_message( peer_connection* originating_peer, 
+                                                     const current_time_request_message& current_time_request_message_received )
     {
       fc::time_point request_received_time( fc::time_point::now() );
       current_time_reply_message reply( current_time_request_message_received.request_sent_time,
@@ -2095,12 +2114,14 @@ namespace bts { namespace net { namespace detail {
       originating_peer->send_message( reply );
     }
 
-    void node_impl::on_current_time_reply_message( peer_connection* originating_peer, const current_time_reply_message& current_time_reply_message_received )
+    void node_impl::on_current_time_reply_message( peer_connection* originating_peer, 
+                                                   const current_time_reply_message& current_time_reply_message_received )
     {
       // TODO
     }
 
-    void node_impl::on_check_firewall_message( peer_connection* originating_peer, const check_firewall_message& check_firewall_message_received )
+    void node_impl::on_check_firewall_message( peer_connection* originating_peer, 
+                                               const check_firewall_message& check_firewall_message_received )
     {
       // TODO
       check_firewall_reply_message reply;
@@ -2109,7 +2130,8 @@ namespace bts { namespace net { namespace detail {
       reply.result = firewall_check_result::unable_to_check;
     }
 
-    void node_impl::on_check_firewall_reply_message( peer_connection* originating_peer, const check_firewall_reply_message& check_firewall_reply_message_received )
+    void node_impl::on_check_firewall_reply_message( peer_connection* originating_peer, 
+                                                     const check_firewall_reply_message& check_firewall_reply_message_received )
     {
       // TODO
     }
@@ -2119,7 +2141,8 @@ namespace bts { namespace net { namespace detail {
     // messages.  ( transaction messages would be handled here, for example )
     // this just passes the message to the client, and does the bookkeeping 
     // related to requesting and rebroadcasting the message.
-    void node_impl::process_ordinary_message( peer_connection* originating_peer, const message& message_to_process, const message_hash_type& message_hash )
+    void node_impl::process_ordinary_message( peer_connection* originating_peer, 
+                                              const message& message_to_process, const message_hash_type& message_hash )
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
@@ -2258,7 +2281,8 @@ namespace bts { namespace net { namespace detail {
       peer->send_message( message(hello ) );
     }
 
-    void node_impl::connect_to_task( peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint )
+    void node_impl::connect_to_task( peer_connection_ptr new_peer, 
+                                     const fc::ip::endpoint& remote_endpoint )
     {
       // create or find the database entry for the new peer
       // if we're connecting to them, we believe they're not firewalled
