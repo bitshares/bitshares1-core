@@ -729,26 +729,31 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_list_blocks")
               {
-                  auto blocks = result.as<vector<blockchain::block_record>>();
+                  auto items = result.as<vector<std::pair<bts::blockchain::block_record, bts::blockchain::delegate_block_stats>>>();
 
                   *_out << std::setw(10) << "HEIGHT";
                   *_out << std::setw(30) << "TIME";
                   *_out << std::setw(15) << "TXN COUNT";
                   *_out << std::setw(65) << "SIGNING DELEGATE";
                   *_out << std::setw(8)  << "SIZE";
+                  *_out << std::setw(8)  << "LATENCY";
 
                   *_out << '\n';
-                  for (int i = 0; i < 128; ++i)
+                  for (int i = 0; i < 136; ++i)
                       *_out << '-';
                   *_out << '\n';
 
-                  for (blockchain::block_record block : blocks)
+                  for (const auto& item : items)
                   {
+                      const auto& block = item.first;
+                      const auto& stats = item.second;
+
                       *_out << std::setw(10) << block.block_num
                             << std::setw(30) << time_to_string(block.timestamp)
                             << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
                             << std::setw(8) << block.block_size
+                            << std::setw(8) << ( stats.latency.valid() ? std::to_string( *stats.latency ) : "" )
                             << '\n';
                   }
               }

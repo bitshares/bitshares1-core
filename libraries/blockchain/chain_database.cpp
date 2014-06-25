@@ -982,6 +982,14 @@ namespace bts { namespace blockchain {
      // my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   account_record chain_database::get_signing_delegate( uint32_t block_number )const
+   {
+      auto block_header = get_block_header( block_number );
+      auto delegate_record = get_account_record( block_header.signee() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return *delegate_record;
+   }
+
    account_id_type chain_database::get_signing_delegate_id( const fc::time_point_sec& block_timestamp,
                                                             const std::vector<account_id_type>& sorted_delegates )const
    { try {
@@ -1000,12 +1008,12 @@ namespace bts { namespace blockchain {
       return delegate_record->active_key();
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_timestamp", block_timestamp) ) }
 
-   account_id_type chain_database::get_signing_delegate_id( const fc::time_point_sec& block_timestamp)const
+   account_id_type chain_database::get_signing_delegate_id( const fc::time_point_sec& block_timestamp )const
    {
       return get_signing_delegate_id( block_timestamp, get_active_delegates() );
    }
 
-   public_key_type chain_database::get_signing_delegate_key( const fc::time_point_sec& block_timestamp)const
+   public_key_type chain_database::get_signing_delegate_key( const fc::time_point_sec& block_timestamp )const
    {
       return get_signing_delegate_key( block_timestamp, get_active_delegates() );
    }

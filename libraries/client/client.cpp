@@ -672,13 +672,12 @@ config load_config( const fc::path& datadir )
           return delegates;
        }
 
-       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
+       vector<std::pair<block_record, delegate_block_stats>> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
        {
           FC_ASSERT( count <= 1000 );
           FC_ASSERT( count >= -1000 );
-          vector<block_record> result;
-          if (count == 0)
-              return result;
+          vector<std::pair<block_record, delegate_block_stats>> result;
+          if (count == 0) return result;
 
           auto total_blocks = _chain_db->get_head_block_num();
           FC_ASSERT( first <= total_blocks );
@@ -701,11 +700,21 @@ config load_config( const fc::path& datadir )
             if( first + count - 1 > total_blocks )
               count = total_blocks - first + 1;
           }
-
           result.reserve( count );
 
+          std::map<account_id_type, std::map<uint32_t, delegate_block_stats>> delegate_block_stats_cache;
           for( int32_t block_num = first; count; --count, block_num += increment )
-             result.push_back( *_chain_db->get_block_record( block_num ) );
+          {
+            auto block_record = _chain_db->get_block_record( block_num );
+            FC_ASSERT( block_record.valid() );
+
+            /* Memoize */
+            auto delegate_id = _chain_db->get_signing_delegate( block_num ).id;
+            if( delegate_block_stats_cache.count( delegate_id ) <= 0 )
+                delegate_block_stats_cache[ delegate_id ] = _chain_db->get_delegate_block_stats( delegate_id );
+
+            result.push_back( std::make_pair( *block_record, delegate_block_stats_cache[ delegate_id ][ block_num ] ) );
+          }
 
           return result;
        }
@@ -2634,11 +2643,7 @@ config load_config( const fc::path& datadir )
 
    string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
    {
-      auto block_header = _chain_db->get_block_header( block_number );
-      auto signee = block_header.signee();
-      auto delegate_record = _chain_db->get_account_record( signee );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-      return delegate_record->name;
+      return _chain_db->get_signing_delegate( block_number ).name;
    }
 
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
