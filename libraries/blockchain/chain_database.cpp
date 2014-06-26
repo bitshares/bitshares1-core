@@ -1621,6 +1621,11 @@ namespace bts { namespace blockchain {
       my->_observers.insert(observer);
    }
 
+   void chain_database::remove_observer( chain_observer* observer )
+   {
+      my->_observers.erase(observer);
+   }
+
    bool chain_database::is_known_block( const block_id_type& block_id )const
    {
       auto fork_data = get_block_fork_data( block_id );
