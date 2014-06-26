@@ -111,9 +111,9 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
       options(option_config).run(), option_variables);
     program_options::notify(option_variables);
   }
-  catch (program_options::error&)
+  catch (program_options::error& cmdline_error)
   {
-    std::cerr << "Error parsing command-line options\n\n";
+    std::cerr << "Error: " << cmdline_error.what() << "\n";
     std::cerr << option_config << "\n";
     exit(1);
   }
