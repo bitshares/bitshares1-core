@@ -353,7 +353,7 @@
       {
          "method_name" : "blockchain_list_forks",
          "description" : "returns a list of all blocks for which there is a fork off of the main chain",
-         "return_type" : "uint32_t_array",
+         "return_type" : "map<uint32_t, vector<fork_record>>",
          "parameters"  : [],
          "is_const" : true,
          "aliases" : ["list_forks"],
@@ -416,6 +416,26 @@
               "type" : "string",
               "description" : "The unit of time (\"seconds\", \"blocks\", or \"rounds\")",
               "default_value" : "seconds"
+            }
+        ],
+        "is_const" : false,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_wait_for_block_by_number",
+        "description": "Don't return until the specified block has arrived",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "The block number (or offset) to wait for"
+            },
+            {
+              "name" : "type",
+              "type" : "string",
+              "description" : "Whether to wait for an \"absolute\" block number, or a count of blocks \"relative\" to the current block number",
+              "default_value" : "absolute"
             }
         ],
         "is_const" : false,

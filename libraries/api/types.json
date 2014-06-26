@@ -523,6 +523,11 @@
           "type_name" : "delegate_block_stats_map",
           "cpp_return_type" : "std::map<uint32_t, bts::blockchain::delegate_block_stats>",
           "cpp_include_file" : "bts/blockchain/account_record.hpp"
+      },
+      {
+          "type_name" : "map<uint32_t, vector<fork_record>>",
+          "cpp_return_type" : "std::map<uint32_t, std::vector<bts::blockchain::fork_record>>",
+          "cpp_include_file" : "bts/blockchain/chain_database.hpp"
       }
     ]
 }

@@ -196,7 +196,7 @@
                }
         ],
         "is_const"   : true,
-        "aliases"    : ["errors"]
+        "aliases"    : ["errors"],
         "prerequisites" : ["no_prerequisites"]
       },
       {
@@ -227,7 +227,7 @@
       },
       {
         "method_name" : "clear_errors",
-        "description" : "clears the specified errors from the log"
+        "description" : "clears the specified errors from the log",
         "return_type" : "void",
         "parameters"  : [
               {
@@ -248,7 +248,7 @@
                  "type" : "uint32_t",
                  "default_value" : "20"
               } ],
-          "aliases"    : []
+          "aliases"    : [],
           "prerequisites" : ["no_prerequisites"]
       },
       {

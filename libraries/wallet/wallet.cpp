@@ -1293,7 +1293,7 @@ namespace bts { namespace wallet {
           if( delegate_record.block_production_enabled )
               enabled_delegate_records.push_back( delegate_record );
       }
-      return delegate_records;
+      return enabled_delegate_records;
    }
 
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
@@ -3125,8 +3125,11 @@ namespace bts { namespace wallet {
              {
                 if( b.second.delegate_slate_id() != 0 )
                 {
-                   // TODO: fetch slate, for each delegate in slate...
-             //      raw_votes[ -b.second.delegate_id() ].votes_for += bal.amount;
+                    odelegate_slate slate = my->_blockchain->get_delegate_slate(b.second.delegate_slate_id());
+                    for (auto delegate_id : slate->supported_delegates)
+                    {
+                       raw_votes[ delegate_id ].votes_for += bal.amount;
+                    }
                 }
              }
           }

@@ -983,7 +983,7 @@ namespace bts { namespace cli {
                     if (delegate.second.size() > longest_delegate_name)
                         longest_delegate_name = delegate.second.size();
 
-                  auto name_column_width = 20;
+                  unsigned name_column_width = 20;
                   if (longest_delegate_name + 3 > name_column_width)
                       name_column_width = longest_delegate_name + 3;
 
