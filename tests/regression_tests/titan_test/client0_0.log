@@ -1,0 +1,65 @@
+default (unlocked) >>> blockchain_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> filter_output_for_tests true
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+delegate0:
+    19,801,980.19801 XTS
+default (unlocked) >>> wallet_add_contact_account account-for-client1 "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j"
+OK
+default (unlocked) >>> wallet_transfer 150 XTS delegate0 account-for-client1 "send this back"
+    BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   pending   [time redacted]     delegate0           account-for-clie... send this back                            150.00000 XTS         0.10000 XTS[trx_id redacted]
+default (unlocked) >>> wallet_account_create test-account
+"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+default (unlocked) >>> wallet_account_register test-account delegate0
+{
+  "index": 313,
+  "trx": {
+    "expiration": null,
+    "delegate_slate_id": null,
+    "operations": [{
+        "type": "register_account_op_type",
+        "data": {
+          "name": "test-account",
+          "public_data": null,
+          "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
+          "active_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
+          "delegate_pay_rate": 255,
+          "meta_data": null
+        }
+      },{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+          "amount": 10001,
+          "claim_input_data": ""
+        }
+      }
+    ],
+    "signatures": [
+      "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960bbc8a6b73b1529c6df90f57a1dfdc242f5f0fbecb33d87f95a69b78fb42f3c9f"
+    ]
+  },
+  "transaction_id": "7e7934534f11065b2b0492b90056e1aff76e7c16",
+  "to_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
+  "from_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
+  "amount": {
+    "amount": 0,
+    "asset_id": 0
+  },
+  "fees": 10001,
+  "memo_message": "register test-account",
+  "created_time": "20140620T144000",
+  "received_time": "20140620T144000",
+  "block_num": 0,
+  "transmit_count": 0
+}
+default (unlocked) >>> wallet_account_balance delegate0
+delegate0:
+    19,801,829.99800 XTS
+default (unlocked) >>> blockchain_advance_time 1 blocks
+OK
+default (unlocked) >>> blockchain_wait_for_block_by_number 3 absolute
+OK
