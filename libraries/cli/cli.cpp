@@ -15,6 +15,9 @@
 #include <fc/variant.hpp>
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/range/algorithm/max_element.hpp>
+#include <boost/range/algorithm/min_element.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <boost/optional.hpp>
@@ -727,28 +730,37 @@ namespace bts { namespace cli {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
                   print_unspent_balances(balance_recs);
               }
+              else if (method_name == "network_get_usage_stats" )
+              {
+                  print_network_usage_stats(result.get_object());
+              }
               else if (method_name == "blockchain_list_blocks")
               {
-                  auto blocks = result.as<vector<blockchain::block_record>>();
+                  auto items = result.as<vector<std::pair<bts::blockchain::block_record, bts::blockchain::delegate_block_stats>>>();
 
                   *_out << std::setw(10) << "HEIGHT";
                   *_out << std::setw(30) << "TIME";
                   *_out << std::setw(15) << "TXN COUNT";
                   *_out << std::setw(65) << "SIGNING DELEGATE";
                   *_out << std::setw(8)  << "SIZE";
+                  *_out << std::setw(8)  << "LATENCY";
 
                   *_out << '\n';
-                  for (int i = 0; i < 128; ++i)
+                  for (int i = 0; i < 136; ++i)
                       *_out << '-';
                   *_out << '\n';
 
-                  for (blockchain::block_record block : blocks)
+                  for (const auto& item : items)
                   {
+                      const auto& block = item.first;
+                      const auto& stats = item.second;
+
                       *_out << std::setw(10) << block.block_num
                             << std::setw(30) << time_to_string(block.timestamp)
                             << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
                             << std::setw(8) << block.block_size
+                            << std::setw(8) << ( stats.latency.valid() ? std::to_string( *stats.latency ) : "" )
                             << '\n';
                   }
               }
@@ -967,7 +979,7 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_list_current_round_active_delegates")
               {
                   map<account_id_type, string> delegates = result.as<map<account_id_type, string>>();
-                  int longest_delegate_name = 0;
+                  unsigned longest_delegate_name = 0;
 
                   //Yeah, it's slower, I know, but it's so ugly if I don't. And seriously, it's still O(n) so stop complaining.
                   for (auto delegate : delegates)
@@ -1080,6 +1092,8 @@ namespace bts { namespace cli {
                    *_out << "unexpected exception \n";
                 }
               }
+
+              *_out << std::right; /* Ensure default alignment is restored */
             }
 
             string pretty_shorten(const string& str, uint32_t size)
@@ -1249,7 +1263,11 @@ namespace bts { namespace cli {
                 *_out << std::setw( 15 ) << "VOTES FOR";
                 *_out << std::setw( 15 ) << "TRUSTED";
 
-                *_out << "\n";
+                *_out << '\n';
+                for (int i = 0; i < 151; ++i)
+                    *_out << '-';
+                *_out << '\n';
+
                 auto counter = 0;
                 for( auto acct : account_records )
                 {
@@ -1268,20 +1286,21 @@ namespace bts { namespace cli {
                     if ( acct.is_delegate() )
                     {
                         *_out << std::setw(15) << acct.delegate_info->votes_for;
+
+                        try
+                        {
+                            auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
+                            *_out << std::setw( 15 ) << trust;
+                        }
+                        catch( ... )
+                        {
+                            *_out << std::setw(15) << "???";
+                        }
                     }
                     else
                     {
                         *_out << std::setw(15) << "N/A";
                         *_out << std::setw(15) << "N/A";
-                    }
-                    if ( ! _client->get_wallet()->is_open() )
-                    {
-                        *_out << "?? (wallet closed)";
-                    }
-                    else
-                    {
-                        auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
-                        *_out << std::setw( 15 ) << trust;
                     }
 
                     *_out << "\n";
@@ -1423,6 +1442,44 @@ namespace bts { namespace cli {
 
                     (*_out) << std::right << "\n";
                 }
+            }
+            void print_network_usage_graph(const std::vector<uint32_t>& usage_data)
+            {
+              uint32_t max_value = *boost::max_element(usage_data);
+              uint32_t min_value = *boost::min_element(usage_data);
+              const unsigned num_rows = 10;
+              for (unsigned row = 0; row < num_rows; ++row)
+              {
+                uint32_t threshold = min_value + (max_value - min_value) / (num_rows - 1) * (num_rows - row - 1);
+                for (unsigned column = 0; column < usage_data.size(); ++column)
+                  (*_out) << (usage_data[column] >= threshold ?  "*" : " ");
+                (*_out) << " " << threshold << " bytes/sec\n";
+              }
+              (*_out)  << "\n";
+            }
+            void print_network_usage_stats(const fc::variant_object stats)
+            {
+              std::vector<uint32_t> usage_by_second = stats["usage_by_second"].as<std::vector<uint32_t> >();
+              if (!usage_by_second.empty())
+              {
+                (*_out) << "last minute:\n";
+                print_network_usage_graph(usage_by_second);
+                (*_out)  << "\n";
+              }
+              std::vector<uint32_t> usage_by_minute = stats["usage_by_minute"].as<std::vector<uint32_t> >();
+              if (!usage_by_minute.empty())
+              {
+                (*_out) << "last hour:\n";
+                print_network_usage_graph(usage_by_minute);
+                (*_out)  << "\n";
+              }
+              std::vector<uint32_t> usage_by_hour = stats["usage_by_hour"].as<std::vector<uint32_t> >();
+              if (!usage_by_hour.empty())
+              {
+                (*_out) << "by hour:\n";
+                print_network_usage_graph(usage_by_hour);
+                (*_out)  << "\n";
+              }
             }
 
             std::string time_to_string(const fc::time_point_sec& time);

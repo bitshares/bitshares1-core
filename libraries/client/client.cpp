@@ -435,8 +435,8 @@ config load_config( const fc::path& datadir )
                 _cli->start();
             }
 
-            time_point_sec get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
-            time_point_sec get_next_producible_block_timestamp()const;
+            optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
+            optional<time_point_sec> get_next_producible_block_timestamp()const;
 
             void reschedule_delegate_loop();
             void start_delegate_loop();
@@ -563,20 +563,19 @@ config load_config( const fc::path& datadir )
 
       }
 
-       time_point_sec client_impl::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
+       optional<time_point_sec> client_impl::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
        {
-          if( _wallet->is_locked() ) return fc::time_point_sec();
+          if( _wallet->is_locked() ) return optional<time_point_sec>();
 
           vector<account_id_type> delegate_ids;
           delegate_ids.reserve( delegate_records.size() );
           for( const auto& delegate_record : delegate_records )
               delegate_ids.push_back( delegate_record.id );
 
-          ulog( "active delegates: ${u}", ("u",delegate_ids.size()) );
           return _chain_db->get_next_producible_block_timestamp( delegate_ids );
        }
 
-       time_point_sec client_impl::get_next_producible_block_timestamp()const
+       optional<time_point_sec> client_impl::get_next_producible_block_timestamp()const
        {
           return get_next_producible_block_timestamp( _wallet->get_my_enabled_delegates() );
        }
@@ -613,48 +612,50 @@ config load_config( const fc::path& datadir )
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
           auto next_block_time = get_next_producible_block_timestamp( enabled_delegates );
-          ilog( "Next block time: ${t}", ("t",next_block_time) );
-
-          if( next_block_time != fc::time_point_sec() // TODO: Use optional
-              && next_block_time <= now )
+          if( next_block_time.valid() )
           {
-              try
+              ilog( "Next block time: ${t}", ("t",*next_block_time) );
+              if( *next_block_time <= now )
               {
-                  FC_ASSERT( (now - next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) );
-                  FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                  FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
-                             "Client must have ${count} connections before you may produce blocks",
-                             ("count",_min_delegate_connection_count) );
+                  try
+                  {
+                      FC_ASSERT( (now - *next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ),
+                                 "You missed your slot at ${t}!", ("t",*next_block_time) );
+                      FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
+                      FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
+                                 "Client must have ${count} connections before you may produce blocks",
+                                 ("count",_min_delegate_connection_count) );
 
-                  full_block next_block = _chain_db->generate_block( next_block_time );
-                  ilog( "Producing block #${n}", ("n",next_block.block_num) );
-                  _wallet->sign_block( next_block );
-                  on_new_block( next_block, next_block.id(), false );
-                  _p2p_node->broadcast( block_message( next_block ) );
-               }
-               catch( const fc::exception& e )
-               {
-                  _exception_db.store( e );
-               }
+                      full_block next_block = _chain_db->generate_block( *next_block_time );
+                      _wallet->sign_block( next_block );
+                      on_new_block( next_block, next_block.id(), false );
+                      _p2p_node->broadcast( block_message( next_block ) );
+                      ilog( "Produced block #${n}!", ("n",next_block.block_num) );
+                   }
+                   catch( const fc::exception& e )
+                   {
+                      _exception_db.store( e );
+                   }
+              }
           }
 
-          uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-          next_block_time = fc::time_point_sec( (interval_number + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
-          ilog( "Rescheduling delegate loop for: ${t}", ("t",next_block_time) );
+          auto slot_number = blockchain::get_slot_number( now );
+          auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
+          ilog( "Rescheduling delegate loop for: ${t}", ("t",next_slot_time) );
 
           auto offset = bts::blockchain::ntp_error();
           if( offset < 0 )
           {
               offset = floor( offset );
-              next_block_time += uint32_t( -offset );
+              next_slot_time += uint32_t( -offset );
           }
           else
           {
               offset = ceil( offset );
-              next_block_time -= uint32_t( offset );
+              next_slot_time -= uint32_t( offset );
           }
 
-          _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_block_time );
+          _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
        map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
@@ -672,13 +673,12 @@ config load_config( const fc::path& datadir )
           return delegates;
        }
 
-       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
+       vector<std::pair<block_record, delegate_block_stats>> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
        {
           FC_ASSERT( count <= 1000 );
           FC_ASSERT( count >= -1000 );
-          vector<block_record> result;
-          if (count == 0)
-              return result;
+          vector<std::pair<block_record, delegate_block_stats>> result;
+          if (count == 0) return result;
 
           auto total_blocks = _chain_db->get_head_block_num();
           FC_ASSERT( first <= total_blocks );
@@ -701,11 +701,21 @@ config load_config( const fc::path& datadir )
             if( first + count - 1 > total_blocks )
               count = total_blocks - first + 1;
           }
-
           result.reserve( count );
 
+          std::map<account_id_type, std::map<uint32_t, delegate_block_stats>> delegate_block_stats_cache;
           for( int32_t block_num = first; count; --count, block_num += increment )
-             result.push_back( *_chain_db->get_block_record( block_num ) );
+          {
+            auto block_record = _chain_db->get_block_record( block_num );
+            FC_ASSERT( block_record.valid() );
+
+            /* Memoize */
+            auto delegate_id = _chain_db->get_signing_delegate( block_num ).id;
+            if( delegate_block_stats_cache.count( delegate_id ) <= 0 )
+                delegate_block_stats_cache[ delegate_id ] = _chain_db->get_delegate_block_stats( delegate_id );
+
+            result.push_back( std::make_pair( *block_record, delegate_block_stats_cache[ delegate_id ][ block_num ] ) );
+          }
 
           return result;
        }
@@ -1148,7 +1158,11 @@ config load_config( const fc::path& datadir )
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
-    time_point_sec client::get_next_producible_block_timestamp()const { return my->get_next_producible_block_timestamp(); }
+
+    optional<time_point_sec> client::get_next_producible_block_timestamp()const
+    {
+        return my->get_next_producible_block_timestamp();
+    }
 
     fc::variant_object version_info()
     {
@@ -2260,6 +2274,7 @@ config load_config( const fc::path& datadir )
     {
       fc::mutable_variant_object info;
       auto now = bts::blockchain::now();
+      auto ntp = bts::blockchain::ntp_time();
       auto seconds_remaining = (_wallet->unlocked_until() - now).count()/1000000;
       auto next_block_time = get_next_producible_block_timestamp();
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
@@ -2275,25 +2290,25 @@ config load_config( const fc::path& datadir )
 
       info["network_num_connections"]                           = network_get_connection_count();
 
-      if (ntp_time())
+      if( ntp.valid() )
       {
-        info["ntp_time"]                                          = *ntp_time();
-        info["ntp_error_seconds"]                                 = bts::blockchain::ntp_error();
+        info["ntp_time"]                                        = *ntp;
+        info["ntp_error_seconds"]                               = bts::blockchain::ntp_error();
       }
       else
       {
-        info["ntp_time"]                                          = "NTP time not available";
-        info["ntp_error_seconds"]                                 = "NTP time not available";
+        info["ntp_time"]                                        = "unavailable";
+        info["ntp_error_seconds"]                               = "unavailable";
       }
 
       info["wallet_unlocked_seconds_remaining"]                 = seconds_remaining > 0 ? seconds_remaining : 0;
 
-      if( next_block_time != fc::time_point_sec() )
+      if( next_block_time.valid() )
       {
-        info["wallet_next_block_production_time"]               = next_block_time;
+        info["wallet_next_block_production_time"]               = *next_block_time;
 
-        if( next_block_time > now )
-            info["wallet_seconds_until_next_block_production"]  = (next_block_time - now).count()/1000000;
+        if( *next_block_time > now )
+            info["wallet_seconds_until_next_block_production"]  = (*next_block_time - now).count()/1000000;
         else
             info["wallet_seconds_until_next_block_production"]  = 0;
       }
@@ -2403,6 +2418,11 @@ config load_config( const fc::path& datadir )
     fc::variant_object client_impl::network_get_info() const
     {
       return _p2p_node->network_get_info();
+    }
+
+    fc::variant_object client_impl::network_get_usage_stats() const
+    {
+      return _p2p_node->network_get_usage_stats();
     }
 
     fc::variant_object client_impl::validate_address(const string& address) const
@@ -2634,11 +2654,17 @@ config load_config( const fc::path& datadir )
 
    string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
    {
-      auto block_header = _chain_db->get_block_header( block_number );
-      auto signee = block_header.signee();
-      auto delegate_record = _chain_db->get_account_record( signee );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-      return delegate_record->name;
+      return _chain_db->get_signing_delegate( block_number ).name;
+   }
+
+   void client_impl::blockchain_start_simulated_time(const fc::time_point& starting_time)
+   {
+     bts::blockchain::start_simulated_time(starting_time);
+   }
+
+   void client_impl::blockchain_advance_time(int32_t delta_time)
+   {
+     bts::blockchain::advance_time(delta_time);
    }
 
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )

@@ -34,6 +34,7 @@ namespace bts { namespace blockchain {
        */
       share_type                     pay_balance;
    };
+   typedef fc::optional<delegate_stats> odelegate_stats;
 
    struct delegate_block_stats
    {
@@ -47,6 +48,7 @@ namespace bts { namespace blockchain {
        *  then we store the latency */
       fc::optional<uint32_t> latency;
    };
+   typedef fc::optional<delegate_block_stats> odelegate_block_stats;
 
    struct account_record
    {
@@ -77,7 +79,9 @@ namespace bts { namespace blockchain {
       optional<account_meta_info>            meta_data;
    };
    typedef fc::optional<account_record> oaccount_record;
-} }
+
+} } // bts::blockchain
+
 FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 
 FC_REFLECT( bts::blockchain::account_record,

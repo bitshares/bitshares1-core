@@ -22,7 +22,7 @@ namespace bts { namespace blockchain {
       active_delegate_list_id  = 4,
       chain_id                 = 5, // hash of initial state
       /**
-       *  N = numb delegates
+       *  N = num delegates
        *  Initial condition = 2N
        *  Every time a block is produced subtract 1
        *  Every time a block is missed add 2
@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
        *  Defines how many blocks you must wait to
        *  be 'confirmed' assuming that at least
        *  60% of the blocks in the last 2 rounds
-       *  are present.  Less than 60% and you
+       *  are present. Less than 60% and you
        *  are on the minority chain.
        */
       confirmation_requirement = 6,
@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
       public:
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
-         virtual fc::time_point_sec         now()const = 0;
+         virtual fc::time_point_sec         now()const                                              = 0;
                                                                                                              
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
@@ -62,65 +62,65 @@ namespace bts { namespace blockchain {
          string                             to_pretty_asset( const asset& a )const;
          string                             to_pretty_price( const price& a )const;
 
-         virtual fc::ripemd160              get_current_random_seed()const                      = 0;
+         virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
          /** return the current fee rate in millishares */
-         virtual int64_t                    get_fee_rate()const                                 = 0;
-         virtual int64_t                    get_delegate_pay_rate()const                        = 0;
-         virtual odelegate_slate            get_delegate_slate( slate_id_type id )const         = 0;
+         virtual int64_t                    get_fee_rate()const                                     = 0;
+         virtual int64_t                    get_delegate_pay_rate()const                            = 0;
+         virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
          virtual void                       store_delegate_slate( slate_id_type id, 
-                                                                  const delegate_slate& slate ) = 0;
+                                                                  const delegate_slate& slate )     = 0;
 
          virtual share_type                 get_delegate_registration_fee()const;
          virtual share_type                 get_asset_registration_fee()const;
          virtual share_type                 calculate_data_fee(size_t bytes) const;
 
          virtual int64_t                    get_required_confirmations()const;
-         virtual fc::variant                get_property( chain_property_enum property_id )const   = 0;
+         virtual fc::variant                get_property( chain_property_enum property_id )const    = 0;
          virtual void                       set_property( chain_property_enum property_id, 
-                                                          const fc::variant& property_value )      = 0;
+                                                          const fc::variant& property_value )       = 0;
 
-         virtual oorder_record              get_bid_record( const market_index_key& )const =0;
-         virtual oorder_record              get_ask_record( const market_index_key& )const =0;
-         virtual oorder_record              get_short_record( const market_index_key& )const =0;
-         virtual ocollateral_record         get_collateral_record( const market_index_key& )const =0;
+         virtual oorder_record              get_bid_record( const market_index_key& )const          = 0;
+         virtual oorder_record              get_ask_record( const market_index_key& )const          = 0;
+         virtual oorder_record              get_short_record( const market_index_key& )const        = 0;
+         virtual ocollateral_record         get_collateral_record( const market_index_key& )const   = 0;
                                                                                                             
          virtual void                       store_bid_record( const market_index_key& key, 
-                                                              const order_record& ) =0;
+                                                              const order_record& )                 = 0;
 
          virtual void                       store_ask_record( const market_index_key& key, 
-                                                              const order_record& ) =0;
+                                                              const order_record& )                 = 0;
 
          virtual void                       store_short_record( const market_index_key& key, 
-                                                                const order_record& ) =0;
+                                                                const order_record& )               = 0;
 
          virtual void                       store_collateral_record( const market_index_key& key, 
-                                                                     const collateral_record& ) =0;
+                                                                     const collateral_record& )     = 0;
 
 
-         virtual oasset_record              get_asset_record( asset_id_type id )const             = 0;
-         virtual obalance_record            get_balance_record( const balance_id_type& id )const  = 0;
-         virtual oaccount_record            get_account_record( account_id_type id )const         = 0;
-         virtual oaccount_record            get_account_record( const address& owner )const       = 0;
+         virtual oasset_record              get_asset_record( asset_id_type id )const               = 0;
+         virtual obalance_record            get_balance_record( const balance_id_type& id )const    = 0;
+         virtual oaccount_record            get_account_record( account_id_type id )const           = 0;
+         virtual oaccount_record            get_account_record( const address& owner )const         = 0;
 
          virtual otransaction_record        get_transaction( const transaction_id_type& trx_id, 
-                                                             bool exact = true )const  = 0;
+                                                             bool exact = true )const               = 0;
 
          virtual void                       store_transaction( const transaction_id_type&, 
-                                                                const transaction_record&  ) = 0;
+                                                                const transaction_record&  )        = 0;
                                                                                                   
-         virtual oasset_record              get_asset_record( const std::string& symbol )const    = 0;
-         virtual oaccount_record            get_account_record( const std::string& name )const    = 0;
+         virtual oasset_record              get_asset_record( const std::string& symbol )const      = 0;
+         virtual oaccount_record            get_account_record( const std::string& name )const      = 0;
                                                                                                   
-         virtual void                       store_proposal_record( const proposal_record& r )     = 0;
-         virtual oproposal_record           get_proposal_record( proposal_id_type id )const       = 0;
+         virtual void                       store_proposal_record( const proposal_record& r )       = 0;
+         virtual oproposal_record           get_proposal_record( proposal_id_type id )const         = 0;
                                                                                                   
-         virtual void                       store_proposal_vote( const proposal_vote& r )         = 0;
-         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const    = 0;
+         virtual void                       store_proposal_vote( const proposal_vote& r )           = 0;
+         virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const      = 0;
 
-         virtual void                       store_asset_record( const asset_record& r )           = 0;
-         virtual void                       store_balance_record( const balance_record& r )       = 0;
-         virtual void                       store_account_record( const account_record& r )       = 0;
+         virtual void                       store_asset_record( const asset_record& r )             = 0;
+         virtual void                       store_balance_record( const balance_record& r )         = 0;
+         virtual void                       store_account_record( const account_record& r )         = 0;
 
          virtual void                       apply_deterministic_updates(){}
 
@@ -133,7 +133,15 @@ namespace bts { namespace blockchain {
          virtual proposal_id_type           last_proposal_id()const;
          virtual proposal_id_type           new_proposal_id();
 
-         virtual uint32_t                   get_head_block_num()const = 0;
+         virtual uint32_t                   get_head_block_num()const                               = 0;
+
+         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
+                                                                        uint32_t block_num,
+                                                                        const delegate_block_stats& block_stats )
+                                                                                                    = 0;
+         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
+                                                                      uint32_t block_num )const
+                                                                                                    = 0;
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;

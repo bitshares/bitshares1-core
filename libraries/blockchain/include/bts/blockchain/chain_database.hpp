@@ -112,6 +112,8 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160               get_current_random_seed()const override;
 
+         account_record              get_signing_delegate( uint32_t block_number )const;
+
          account_id_type             get_signing_delegate_id( const fc::time_point_sec& block_timestamp,
                                                               const std::vector<account_id_type>& sorted_delegates )const;
          public_key_type             get_signing_delegate_key( const fc::time_point_sec& block_timestamp,
@@ -120,7 +122,7 @@ namespace bts { namespace blockchain {
          account_id_type             get_signing_delegate_id( const fc::time_point_sec& block_timestamp )const;
          public_key_type             get_signing_delegate_key( const fc::time_point_sec& block_timestamp )const;
 
-         time_point_sec              get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
+         optional<time_point_sec>    get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const;
 
          uint32_t                    get_block_num( const block_id_type& )const;
          signed_block_header         get_block_header( const block_id_type& )const;
@@ -234,6 +236,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_ask_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
+
+         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
+                                                                        uint32_t block_num,
+                                                                        const delegate_block_stats& block_stats )override;
+         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
+                                                                      uint32_t block_num )const override;
 
       private:
          unique_ptr<detail::chain_database_impl> my;

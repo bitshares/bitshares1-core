@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <list>
 #include <iostream>
+#include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 
@@ -19,6 +20,7 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/logic/tribool.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
+#include <boost/range/numeric.hpp>
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
@@ -287,6 +289,11 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _fetch_updated_peer_lists_loop_done;
 
+      boost::circular_buffer<uint32_t> _average_network_usage_seconds;
+      boost::circular_buffer<uint32_t> _average_network_usage_minutes;
+      boost::circular_buffer<uint32_t> _average_network_usage_hours;
+      fc::future<void> _bandwidth_monitor_loop_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -313,6 +320,7 @@ namespace bts { namespace net { namespace detail {
       void terminate_inactive_connections_loop();
 
       void fetch_updated_peer_lists_loop();
+      void bandwidth_monitor_loop();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -438,6 +446,7 @@ namespace bts { namespace net { namespace detail {
       void                       disable_peer_advertising();
 
       fc::variant_object         network_get_info() const;
+      fc::variant_object         network_get_usage_stats() const;
     }; // end class node_impl
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -458,8 +467,12 @@ namespace bts { namespace net { namespace detail {
       _total_number_of_unfetched_items( 0 ),
       _rate_limiter( 0, 0 ),
       _last_reported_number_of_connections( 0 ),
-      _peer_advertising_disabled(false)
+      _peer_advertising_disabled(false),
+      _average_network_usage_seconds(60),
+      _average_network_usage_minutes(60),
+      _average_network_usage_hours(72)
     {
+      _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
     }
 
     node_impl::~node_impl()
@@ -867,6 +880,32 @@ namespace bts { namespace net { namespace detail {
 
         for( const peer_connection_ptr& active_peer : _active_connections )
           active_peer->send_message(address_request_message());
+      }
+    }
+
+    void node_impl::bandwidth_monitor_loop()
+    {
+      unsigned second_counter = 0;
+      unsigned minute_counter = 0;
+      while (!_bandwidth_monitor_loop_done.canceled())
+      {
+        fc::usleep(fc::seconds(1));
+        uint32_t usage_this_second = _rate_limiter.get_actual_download_rate() + _rate_limiter.get_actual_upload_rate();
+        _average_network_usage_seconds.push_back(usage_this_second);
+        ++second_counter;
+        if (second_counter >= 60)
+        {
+          second_counter = 0;
+          ++minute_counter;
+          uint32_t average_this_minute = (uint32_t)boost::accumulate(_average_network_usage_seconds, UINT64_C(0)) / _average_network_usage_seconds.size();
+          _average_network_usage_minutes.push_back(average_this_minute);
+          if (minute_counter >= 60)
+          {
+            minute_counter = 0;
+            uint32_t average_this_hour = (uint32_t)boost::accumulate(_average_network_usage_minutes, UINT64_C(0)) / _average_network_usage_minutes.size();
+            _average_network_usage_hours.push_back(average_this_minute);
+          }
+        }
       }
     }
 
@@ -2244,13 +2283,15 @@ namespace bts { namespace net { namespace detail {
       _advertise_inventory_loop_done.cancel();
       _terminate_inactive_connections_loop_done.cancel();
       _fetch_updated_peer_lists_loop_done.cancel();
-      
+      _bandwidth_monitor_loop_done.cancel();
+
       try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
       try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
       try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
       try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
       try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
       try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (... ){}
+      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (... ){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -2506,6 +2547,7 @@ namespace bts { namespace net { namespace detail {
       _advertise_inventory_loop_done = fc::async( [=]() { advertise_inventory_loop(); } );
       _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
       _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
+      _bandwidth_monitor_loop_done = fc::async([=](){ bandwidth_monitor_loop(); });
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
@@ -2870,6 +2912,17 @@ namespace bts { namespace net { namespace detail {
       info["node_id"] = _node_id;
       return info;
     }
+    fc::variant_object node_impl::network_get_usage_stats() const
+    {
+      std::vector<uint32_t> network_usage_by_second(_average_network_usage_seconds.begin(), _average_network_usage_seconds.end());
+      std::vector<uint32_t> network_usage_by_minute(_average_network_usage_minutes.begin(), _average_network_usage_minutes.end());
+      std::vector<uint32_t> network_usage_by_hour(_average_network_usage_hours.begin(), _average_network_usage_hours.end());
+      fc::mutable_variant_object result;
+      result["usage_by_second"] = network_usage_by_second;
+      result["usage_by_minute"] = network_usage_by_minute;
+      result["usage_by_hour"] = network_usage_by_hour;
+      return result;
+    }
 
   }  // end namespace detail
 
@@ -3010,6 +3063,11 @@ namespace bts { namespace net { namespace detail {
   fc::variant_object node::network_get_info() const
   {
     return my->network_get_info();
+  }
+
+  fc::variant_object node::network_get_usage_stats() const
+  {
+    return my->network_get_usage_stats();
   }
 
   void simulated_network::broadcast( const message& item_to_broadcast  )
