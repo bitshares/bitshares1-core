@@ -458,20 +458,21 @@ namespace bts { namespace cli {
                   *_out << "Rescanning blockchain...\n";
                   uint32_t start;
                   if (arguments.size() == 0)
-                      start = 1;
+                      start = 0;
                   else
                       start = arguments[0].as<uint32_t>();
                   while(true)
                   {
                       try {
+                        if (!_filter_output_for_tests)
+                        {
                           *_out << "|";
                           for(int i = 0; i < 100; i++)
                               *_out << "-";
                           *_out << "|\n|=";
                           uint32_t next_step = 0;
-                          auto cb = [=](uint32_t cur,
-                                                       uint32_t last
-                                                       ) mutable
+                          //TODO: improve documentation for how this works
+                          auto cb = [=](uint32_t cur, uint32_t last) mutable
                           {
                               if (start > last || cur >= last) // if WTF
                                   return;
@@ -483,8 +484,13 @@ namespace bts { namespace cli {
                           };
                           _client->get_wallet()->scan_chain(start, -1, cb);
                           *_out << "|\n";
-                          *_out << "Scan complete.\n";
-                          return fc::variant("Scan complete.");
+                        }
+                        else
+                        {
+                          _client->get_wallet()->scan_chain(start, -1);
+                        }
+                        *_out << "Scan complete.\n";
+                        return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
                       {
