@@ -573,7 +573,7 @@
                {
                   "name" : "delegate_pay_rate",
                   "type" : "uint32_t",
-                  "description" : "A value between 0 and 100% delegates, 255 for non delegates",
+                  "description" : "A value between 0 and 100 delegates, 255 for non delegates",
                   "default_value" : 255
                }
             ],
