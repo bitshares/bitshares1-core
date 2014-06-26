@@ -639,8 +639,8 @@ config load_config( const fc::path& datadir )
               }
           }
 
-          uint32_t interval_number = now.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-          auto next_slot_time = fc::time_point_sec( (interval_number + 1) * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+          auto slot_number = blockchain::get_slot_number( now );
+          auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for: ${t}", ("t",next_slot_time) );
 
           auto offset = bts::blockchain::ntp_error();
@@ -2274,6 +2274,7 @@ config load_config( const fc::path& datadir )
     {
       fc::mutable_variant_object info;
       auto now = bts::blockchain::now();
+      auto ntp = bts::blockchain::ntp_time();
       auto seconds_remaining = (_wallet->unlocked_until() - now).count()/1000000;
       auto next_block_time = get_next_producible_block_timestamp();
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
@@ -2289,15 +2290,15 @@ config load_config( const fc::path& datadir )
 
       info["network_num_connections"]                           = network_get_connection_count();
 
-      if (ntp_time())
+      if( ntp.valid() )
       {
-        info["ntp_time"]                                          = *ntp_time();
-        info["ntp_error_seconds"]                                 = bts::blockchain::ntp_error();
+        info["ntp_time"]                                        = *ntp;
+        info["ntp_error_seconds"]                               = bts::blockchain::ntp_error();
       }
       else
       {
-        info["ntp_time"]                                          = "NTP time not available";
-        info["ntp_error_seconds"]                                 = "NTP time not available";
+        info["ntp_time"]                                        = "unavailable";
+        info["ntp_error_seconds"]                               = "unavailable";
       }
 
       info["wallet_unlocked_seconds_remaining"]                 = seconds_remaining > 0 ? seconds_remaining : 0;

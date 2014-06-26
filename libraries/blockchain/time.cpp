@@ -1,3 +1,4 @@
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
 #include <fc/network/ntp.hpp>
 #include <fc/exception/exception.hpp>
@@ -15,10 +16,11 @@ fc::optional<fc::time_point> ntp_time()
 
 fc::time_point_sec now()
 {
-   if( simulated_time ) return fc::time_point() + fc::seconds(simulated_time + adjusted_time_sec);
+   if( simulated_time )
+       return fc::time_point() + fc::seconds( simulated_time + adjusted_time_sec );
 
    auto ntp = ntp_time();
-   if( ntp )
+   if( ntp.valid() )
       return *ntp + fc::seconds( adjusted_time_sec );
    else
       return fc::time_point::now() + fc::seconds( adjusted_time_sec );
@@ -26,8 +28,8 @@ fc::time_point_sec now()
 
 double ntp_error()
 {
-  FC_ASSERT(ntp_time(), "We don't have NTP time, we can't calculate error");
-  return ( *ntp_time() - fc::time_point::now() ).count() / double( 1000000 );
+   FC_ASSERT( ntp_time().valid(), "We don't have NTP time!" );
+   return ( *ntp_time() - fc::time_point::now() ).count() / double( 1000000 );
 }
 
 void start_simulated_time( const fc::time_point& sim_time )
@@ -38,7 +40,22 @@ void start_simulated_time( const fc::time_point& sim_time )
 
 void advance_time( int32_t delta_seconds )
 {
-  adjusted_time_sec += delta_seconds;
+   adjusted_time_sec += delta_seconds;
+}
+
+uint32_t get_slot_number( const fc::time_point_sec& timestamp )
+{
+   return timestamp.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+}
+
+fc::time_point_sec get_slot_start_time( uint32_t slot_number )
+{
+   return fc::time_point_sec( slot_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+}
+
+fc::time_point_sec get_slot_start_time( const fc::time_point_sec& timestamp )
+{
+   return get_slot_start_time( get_slot_number( timestamp ) );
 }
 
 } } // bts::blockchain

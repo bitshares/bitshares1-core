@@ -989,9 +989,8 @@ namespace bts { namespace blockchain {
    account_id_type chain_database::get_signing_delegate_id( const fc::time_point_sec& block_timestamp,
                                                             const std::vector<account_id_type>& sorted_delegates )const
    { try {
-      uint64_t interval_number = block_timestamp.sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      uint32_t delegate_pos = (uint32_t)(interval_number % BTS_BLOCKCHAIN_NUM_DELEGATES);
-
+      auto slot_number = blockchain::get_slot_number( block_timestamp );
+      auto delegate_pos = slot_number % BTS_BLOCKCHAIN_NUM_DELEGATES;
       FC_ASSERT( delegate_pos < sorted_delegates.size() );
       return sorted_delegates[delegate_pos];
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_timestamp",block_timestamp) ) }
@@ -1016,8 +1015,7 @@ namespace bts { namespace blockchain {
 
    optional<time_point_sec> chain_database::get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const
    { try {
-      uint32_t interval_number = bts::blockchain::now().sec_since_epoch() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-      auto next_block_time = fc::time_point_sec( interval_number * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+      auto next_block_time = blockchain::get_slot_start_time( blockchain::now() );
       if( next_block_time == now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
