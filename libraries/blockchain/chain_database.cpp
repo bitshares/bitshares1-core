@@ -615,7 +615,7 @@ namespace bts { namespace blockchain {
               ++current_block_num;
               current_block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
 
-              auto delegate_id = self->get_signing_delegate_id( current_block_timestamp );
+              auto delegate_id = self->get_signing_delegate_id( current_block_timestamp ); // TODO: Will be wrong between rounds!
               auto delegate_rec = pending_state->get_account_record( delegate_id );
 
               /* For storing in _delegate_block_stats_db */
@@ -1774,15 +1774,15 @@ namespace bts { namespace blockchain {
 
     std::map<uint32_t, std::vector<fork_record>> chain_database::get_forks_list()const
     {
-        ulog("Crikey, that's a big fork!");
+        /* Crikey, that's a big fork! */
         std::map<uint32_t, std::vector<fork_record>> fork_blocks;
         for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
         {
-            ulog("That's not a fork.");
+            /* That's not a fork. */
             try
             {
+                /* THIS is a fork! */
                 auto fork_iter = iter.value();
-                ulog("THIS is a fork!");
                 if( fork_iter.next_blocks.size() > 1 )
                 {
                     vector<fork_record> forks;
