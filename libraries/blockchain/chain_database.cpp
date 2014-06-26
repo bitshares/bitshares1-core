@@ -240,11 +240,11 @@ namespace bts { namespace blockchain {
          return current_blocks;
       }
 
-      void  chain_database_impl::clear_pending(  const full_block& blk )
-      { //try {
+      void chain_database_impl::clear_pending(  const full_block& blk )
+      {
          std::unordered_set<transaction_id_type> confirmed_trx_ids;
 
-         for( auto trx : blk.user_transactions )
+         for( const auto& trx : blk.user_transactions )
          {
             auto id = trx.id();
             confirmed_trx_ids.insert( id );
@@ -275,9 +275,10 @@ namespace bts { namespace blockchain {
             }
             ++itr;
          }
-         for( auto item : trx_to_discard )
+
+         for( const auto& item : trx_to_discard )
             _pending_transaction_db.remove( item );
-      }// FC_CAPTURE_AND_RETHROW( blk ) }
+      }
 
       void chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
       {
@@ -285,7 +286,7 @@ namespace bts { namespace blockchain {
          while( next_ids.size() )
          {
             std::unordered_set<block_id_type> pending;
-            for( auto item : next_ids )
+            for( const auto& item : next_ids )
             {
                 block_fork_data record = _fork_db.fetch( item );
                 record.is_linked = true;
@@ -302,7 +303,7 @@ namespace bts { namespace blockchain {
          while( next_ids.size() )
          {
             std::unordered_set<block_id_type> pending;
-            for( auto item : next_ids )
+            for( const auto& item : next_ids )
             {
                 block_fork_data record = _fork_db.fetch( item );
                 record.is_valid = false;
@@ -456,7 +457,7 @@ namespace bts { namespace blockchain {
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
-            for( auto trx : user_transactions )
+            for( const auto& trx : user_transactions )
             {
                ilog( "applying   ${trx}", ("trx",trx) );
                transaction_evaluation_state_ptr trx_eval_state =
@@ -734,8 +735,7 @@ namespace bts { namespace blockchain {
          }
 
          // just in case something changes while calling observer
-         auto tmp = _observers;
-         for( auto o : tmp )
+         for( const auto& o : _observers )
          {
             try { 
                o->block_applied( summary );
@@ -803,8 +803,8 @@ namespace bts { namespace blockchain {
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         auto tmp = _observers;
-         for( auto o : tmp ) o->state_changed( undo_state );
+         for( const auto& o : _observers )
+             o->state_changed( undo_state );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail
@@ -1077,7 +1077,7 @@ namespace bts { namespace blockchain {
       vector<transaction_record> result;
       result.reserve( block_record.user_transaction_ids.size() );
 
-      for( auto trx_id : block_record.user_transaction_ids )
+      for( const auto& trx_id : block_record.user_transaction_ids )
       {
          auto otrx_record = get_transaction( trx_id );
          if( !otrx_record ) FC_CAPTURE_AND_THROW( unknown_transaction, (trx_id) );
@@ -1269,7 +1269,7 @@ namespace bts { namespace blockchain {
           my->_account_db.remove( record_to_store.id );
           my->_account_index_db.remove( record_to_store.name );
 
-          for( auto item : old_rec->active_key_history )
+          for( const auto& item : old_rec->active_key_history )
              my->_address_to_account_db.remove( address(item.second) );
 
           if( old_rec->is_delegate() )
@@ -1293,7 +1293,7 @@ namespace bts { namespace blockchain {
           my->_account_db.store( record_to_store.id, record_to_store );
           my->_account_index_db.store( record_to_store.name, record_to_store.id );
 
-          for( auto item : record_to_store.active_key_history )
+          for( const auto& item : record_to_store.active_key_history )
           { // re-index all keys for this record
              my->_address_to_account_db.store( address(item.second), record_to_store.id );
           }
@@ -1401,7 +1401,7 @@ namespace bts { namespace blockchain {
    std::vector<transaction_evaluation_state_ptr> chain_database::get_pending_transactions()const
    {
       std::vector<transaction_evaluation_state_ptr> trxs;
-      for( auto item : my->_pending_fee_index )
+      for( const auto& item : my->_pending_fee_index )
       {
           trxs.push_back( item.second );
       }
@@ -1423,7 +1423,7 @@ namespace bts { namespace blockchain {
 
       size_t block_size = 0;
       share_type total_fees = 0;
-      for( auto item : pending_trx )
+      for( const auto& item : pending_trx )
       {
          auto trx_size = item->trx.data_size();
          if( block_size + trx_size > BTS_BLOCKCHAIN_MAX_BLOCK_SIZE )
@@ -1518,11 +1518,11 @@ namespace bts { namespace blockchain {
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 
       fc::uint128 total_unscaled = 0;
-      for( auto item : config.balances ) total_unscaled += int64_t(item.second/1000);
+      for( const auto& item : config.balances ) total_unscaled += int64_t(item.second/1000);
       ilog( "total unscaled: ${s}", ("s", total_unscaled) );
 
       std::vector<name_config> delegate_config;
-      for( auto item : config.names )
+      for( const auto& item : config.names )
       {
          if( item.is_delegate ) delegate_config.push_back( item );
       }
@@ -1538,7 +1538,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec timestamp = config.timestamp;
       std::vector<account_id_type> delegate_ids;
       int32_t account_id = 1;
-      for( auto name : config.names )
+      for( const auto& name : config.names )
       {
          account_record rec;
          rec.id                = account_id;
@@ -1557,7 +1557,7 @@ namespace bts { namespace blockchain {
       }
 
       int64_t n = 0;
-      for( auto item : config.balances )
+      for( const auto& item : config.balances )
       {
          ++n;
 
@@ -1690,7 +1690,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec start_time;
       std::map<uint32_t, std::vector<block_record> > nodes_by_rank;
       //std::set<uint32_t> ranks_in_use;
-      for ( auto block_itr = my->_block_id_to_block_record_db.begin(); block_itr.valid(); ++block_itr)
+      for( auto block_itr = my->_block_id_to_block_record_db.begin(); block_itr.valid(); ++block_itr )
       {
         block_record block_record = block_itr.value();
         if (first)
@@ -1708,16 +1708,16 @@ namespace bts { namespace blockchain {
         }
       }
 
-      for (auto item : nodes_by_rank)
+      for( const auto& item : nodes_by_rank )
       {
         out << "{rank=same l" << item.first << "[style=invis, shape=point] ";
-        for (auto record : item.second)
+        for( const auto& record : item.second )
           out << "; \"" << std::string(record.id()) << "\"";
         out << ";}\n";
       }
-      for (auto blocks_at_time : nodes_by_rank)
+      for( const auto& blocks_at_time : nodes_by_rank )
       {
-        for (auto block : blocks_at_time.second)
+        for( const auto& block : blocks_at_time.second )
         {
           auto delegate_record = get_account_record( address( block.signee() ) );
 
@@ -1734,7 +1734,7 @@ namespace bts { namespace blockchain {
       out << "edge[style=invis];\n";
 
       bool first2 = true;
-      for (auto item : nodes_by_rank)
+      for( const auto& item : nodes_by_rank )
       {
         if (first2)
           first2 = false;

@@ -46,7 +46,7 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
-      for( auto c : str )
+      for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;
           else if( c >= '0' && c <= '9' ) continue;
@@ -150,7 +150,7 @@ namespace bts{ namespace blockchain {
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
          return false;
-      for( auto c : name )
+      for( const auto& c : name )
          if( !std::isalnum(c) || !std::isupper(c) )
             return false;
       return true;
