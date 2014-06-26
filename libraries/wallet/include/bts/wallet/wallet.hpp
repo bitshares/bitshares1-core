@@ -158,10 +158,12 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         void enable_delegate_block_production( const string& delegate_id, bool enable = true );
+         // TODO: Combine into one function with enabled_only and active_only params
          vector<wallet_account_record> get_my_delegates()const;
-         vector<wallet_account_record> get_my_enabled_delegates()const;
-         void enable_delegate_block_production( const string& delegate_id, 
-                                                bool enable = true );
+         vector<wallet_account_record> get_my_enabled_delegates( bool active_only = false )const;
+         // WARNING: Currently does not work for enabled_only = false
+         vector<private_key_type>      get_my_delegate_private_keys( bool enabled_only, bool active_only );
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;
