@@ -948,6 +948,12 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
     interceptor_cpp_file << generate_signature_for_method(method, interceptor_classname, false) << "\n";
     interceptor_cpp_file << "{\n";
     interceptor_cpp_file << "  " << create_logging_statement_for_method(method) << "\n";
+    interceptor_cpp_file << "  struct scope_exit\n";
+    interceptor_cpp_file << "  {\n";
+    interceptor_cpp_file << "    fc::time_point start_time;\n";
+    interceptor_cpp_file << "    scope_exit() : start_time(fc::time_point::now()) {}\n";
+    interceptor_cpp_file << "    ~scope_exit() { dlog(\"RPC call " << method.name << " finished in ${time} ms\", (\"time\", (fc::time_point::now() - start_time).count() / 1000)); }\n";
+    interceptor_cpp_file << "  } execution_time_logger;\n";
     interceptor_cpp_file << "  try\n";
     interceptor_cpp_file << "  {\n";
     interceptor_cpp_file << "    ";
