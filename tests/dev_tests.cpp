@@ -25,24 +25,23 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "wallet_account_balance delegate31" );
    exec( clienta, "wallet_enable_delegate_block_production delegate31 true" );
    exec( clienta, "wallet_enable_delegate_block_production delegate33 true" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate33 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate34 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate35 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate36 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate37 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate38 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate39 1" );
-
-
-   exec( clientb, "wallet_set_delegate_trust_level delegate23 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate24 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate25 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate26 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate27 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate28 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate29 1" );
+   exec( clienta, "wallet_set_delegate_trust delegate33 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate34 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate35 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate36 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate37 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate38 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate39 true" );
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
+   exec( clientb, "wallet_set_delegate_trust delegate23 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate24 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate25 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate26 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate27 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate28 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate29 true" );
+
    exec( clientb, "wallet_list_my_accounts" );
    exec( clientb, "wallet_account_balance" );
    exec( clientb, "wallet_account_balance delegate30" );
@@ -53,7 +52,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_account_create b-account" );
    exec( clientb, "wallet_account_balance b-account" );
 
-   exec( clientb, "wallet_account_register b-account delegate30" );
+   exec( clientb, "wallet_account_register b-account delegate30 null 100" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
@@ -83,13 +82,13 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clientb );
    exec( clientb, "wallet_account_transaction_history c-account" );
    exec( clientb, "blockchain_list_delegates" );
-   exec( clientb, "wallet_set_delegate_trust_level b-account 1" );
+   exec( clientb, "wallet_set_delegate_trust b-account true" );
    exec( clientb, "wallet_list_my_accounts" );
    exec( clientb, "balance" );
    exec( clientb, "wallet_transfer 100000 XTS delegate32 c-account to-me" );
    exec( clientb, "wallet_transfer 100000 XTS delegate30 c-account to-me" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   exec( clienta, "wallet_set_delegate_trust_level b-account 1" );
+   exec( clienta, "wallet_set_delegate_trust b-account true" );
    // TODO: this should throw an exception from the wallet regarding delegate_vote_limit, but it produces
    // the transaction anyway.   
    // TODO: before fixing the wallet production side to include multiple outputs and spread the vote, 
@@ -149,10 +148,10 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 
    exec( clientb, "wallet_transfer 20 USD c-account delegate31 c-d31" );
    exec( clientb, "blockchain_get_pending_transactions" );
-   wlog( "------------------  CLIENT A  -----------------------------------" );
    enable_logging();
    exec( clientb, "wallet_market_order_list USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    disable_logging();
@@ -168,39 +167,40 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_list_delegates" );
 
 
-   exec( clienta, "wallet_set_delegate_trust_level delegate33 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate34 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate35 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate36 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate37 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate38 0" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate39 0" );
+   exec( clienta, "wallet_set_delegate_trust delegate33 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate34 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate35 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate36 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate37 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate38 false" );
+   exec( clienta, "wallet_set_delegate_trust delegate39 false" );
 
 
-   exec( clientb, "wallet_set_delegate_trust_level delegate23 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate24 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate25 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate26 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate27 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate28 0" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate29 0" );
+   exec( clientb, "wallet_set_delegate_trust delegate23 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate24 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate25 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate26 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate27 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate28 false" );
+   exec( clientb, "wallet_set_delegate_trust delegate29 false" );
 
-   exec( clienta, "wallet_set_delegate_trust_level delegate44 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate44 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate45 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate46 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate47 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate48 1" );
-   exec( clienta, "wallet_set_delegate_trust_level delegate49 1" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
+   exec( clienta, "wallet_set_delegate_trust delegate44 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate44 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate45 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate46 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate47 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate48 true" );
+   exec( clienta, "wallet_set_delegate_trust delegate49 true" );
 
-
-   exec( clientb, "wallet_set_delegate_trust_level delegate63 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate64 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate65 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate66 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate67 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate68 1" );
-   exec( clientb, "wallet_set_delegate_trust_level delegate69 1" );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
+   exec( clientb, "wallet_set_delegate_trust delegate63 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate64 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate65 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate66 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate67 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate68 true" );
+   exec( clientb, "wallet_set_delegate_trust delegate69 true" );
    exec( clientb, "balance" );
    exec( clienta, "balance" );
    exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );
@@ -210,18 +210,23 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_transfer 10791970.09801 XTS delegate32 delegate32 change_votes " );
    exec( clientb, "wallet_transfer 10791760.18284 XTS delegate30 delegate30 change_votes " );
 
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    exec( clienta, "balance" );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "blockchain_list_delegates" );
 
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );
    exec( clienta, "wallet_transfer 10801980.09801  XTS delegate33 delegate33 change_votes " );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "wallet_transfer 9792.18499 XTS b-account b-account change_votes " );
    exec( clientb, "wallet_transfer 20000.40123 XTS c-account c-account change_votes " );
    exec( clientb, "wallet_transfer 10791970.09801 XTS delegate32 delegate32 change_votes " );
    exec( clientb, "wallet_transfer 10791760.18284 XTS delegate30 delegate30 change_votes " );
 
    exec( clientb, "info" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "info" );
 
    enable_logging();
@@ -232,19 +237,25 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clienta);
    produce_block(clienta);
    produce_block(clienta);
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    clientb->simulate_disconnect(false);
 
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    clienta->simulate_disconnect(true);
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    produce_block(clientb);
    produce_block(clientb);
    produce_block(clientb);
 
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    clienta->simulate_disconnect(false);
    produce_block(clienta);
    produce_block(clienta);
    produce_block(clienta);
 
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "info" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "info" );
 
    wlog( "JOINING NETWORKS" );
@@ -254,7 +265,9 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
       clientb->get_chain()->push_block(b);
    }
 
+   wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "info" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "info" );
 
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
