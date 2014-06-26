@@ -177,14 +177,16 @@ namespace bts { namespace blockchain {
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
-            void open_database( const fc::path& data_dir );
+            void open_database(const fc::path& data_dir , fc::optional<fc::path> genesis_file);
       };
 
-      void chain_database_impl::open_database( const fc::path& data_dir )
+      void chain_database_impl::open_database( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() )
       { try {
+          bool rebuild_index = false;
+
           if( fc::exists( data_dir / "property_db") )
           {
-              wlog("Updating database directory hierarchy.");
+              ilog("Updating database directory hierarchy.");
               fc::create_directories( data_dir / "index" );
               fc::create_directories( data_dir / "raw_chain" );
 
@@ -200,21 +202,31 @@ namespace bts { namespace blockchain {
                   else
                       target = data_dir / "index" / d->filename();
 
-                  wlog("Renaming ${old} to ${new}", ("old", *d)("new", target));
+                  ilog("Renaming ${old} to ${new}", ("old", *d)("new", target));
                   fc::rename(*d, target);
               }
+          }
+          else if( !fc::exists(data_dir / "index" ))
+          {
+              ilog("Rebuilding database index...");
+              fc::create_directories( data_dir / "index" );
+              rebuild_index = true;
           }
 
           _property_db.open( data_dir / "index/property_db" );
           auto database_version = _property_db.fetch_optional( chain_property_enum::database_version );
           if( !database_version || database_version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
+              if ( !rebuild_index )
+              {
                 wlog( "old database version, upgrade and re-sync" );
                 _property_db.close();
                 fc::remove_all( data_dir );
-                fc::create_directories( data_dir );
+                fc::create_directories( data_dir / "index" );
+                fc::create_directories( data_dir / "raw_chain" );
                 _property_db.open( data_dir / "index/property_db" );
-                self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
+              }
+              self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
@@ -252,6 +264,28 @@ namespace bts { namespace blockchain {
           _collateral_db.open( data_dir / "index/collateral_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+
+          if (rebuild_index)
+          {
+              initialize_genesis(genesis_file);
+              std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
+
+              const char spinner[] = "-\\|/";
+              int blocks_indexed = 0;
+
+              auto block_itr = _block_id_to_block_data_db.begin();
+              while( block_itr.valid() )
+              {
+                  if( ++blocks_indexed % 50 == 0 )
+                      std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
+
+                  auto block = block_itr.value();
+                  ++block_itr;
+
+                  self->push_block(block);
+              }
+              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks.\n" << std::flush;
+          }
 
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
@@ -909,7 +943,7 @@ namespace bts { namespace blockchain {
       {
           fc::create_directories( data_dir );
 
-          my->open_database( data_dir );
+          my->open_database( data_dir, genesis_file );
 
           // TODO: check to see if we crashed during the last write
           //   if so, then apply the last undo operation stored.
@@ -1779,19 +1813,15 @@ namespace bts { namespace blockchain {
 
     std::map<uint32_t, std::vector<fork_record>> chain_database::get_forks_list()const
     {
-        ulog("Crikey, that's a big fork!");
         std::map<uint32_t, std::vector<fork_record>> fork_blocks;
         for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
         {
-            ulog("That's not a fork.");
             try
             {
                 auto fork_iter = iter.value();
-                ulog("THIS is a fork!");
                 if( fork_iter.next_blocks.size() > 1 )
                 {
                     vector<fork_record> forks;
-                    ulog("Processing fork at ${num}", ("num", get_block_num(iter.key())));
 
                     for( auto forked_block_id : fork_iter.next_blocks )
                     {

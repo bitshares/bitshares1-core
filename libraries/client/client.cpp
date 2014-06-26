@@ -96,6 +96,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("clear-peer-database", "Erase all information in the peer database")
                               ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
                                  "fresh copy of the entire blockchain from the network")
+                              ("rebuild-index", "Same as --resync-blockchain, except it preserves the raw blockchain data rather "
+                                 "than downloading a new copy.")
                               ("version", "Print version information and exit")
                               ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(1000000),
                                   "Limit total bandwidth to this many bytes per second")
@@ -285,6 +287,18 @@ void load_and_configure_chain_database( const fc::path& datadir,
       std::cout << "Error while deleting old copy of the blockchain: " << e.what() << "\n";
       std::cout << "You may need to manually delete your blockchain and relaunch the client\n";
     }
+  }
+  else if (option_variables.count("rebuild-index"))
+  {
+      std::cout << "Clearing database index\n";
+      try
+      {
+          fc::remove_all(datadir / "chain/index");
+      }
+      catch (const fc::exception& e)
+      {
+          std::cout << "Error while deleting database index: " << e.what() << "\n";
+      }
   }
   else
   {
