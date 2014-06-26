@@ -160,7 +160,13 @@ namespace bts { namespace blockchain {
       {
          auto prev_value = prev_state->get_delegate_block_stats( item.first.first, item.first.second );
          if( prev_value ) undo_state->store_delegate_block_stats( item.first.first, item.first.second, *prev_value );
-         else undo_state->store_delegate_block_stats( item.first.first, item.first.second, delegate_block_stats() );
+         else
+         {
+             delegate_block_stats invalid_block_stats;
+             invalid_block_stats.missed = true;
+             invalid_block_stats.latency = 0;
+             undo_state->store_delegate_block_stats( item.first.first, item.first.second, invalid_block_stats );
+         }
       }
    }
 

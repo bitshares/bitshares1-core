@@ -2034,9 +2034,7 @@ namespace bts { namespace blockchain {
    void chain_database::store_delegate_slate( slate_id_type id, const delegate_slate& slate ) 
    {
       if( slate.supported_delegates.size() == 0 )
-      {
          my->_slate_db.remove( id );
-      }
       else
          my->_slate_db.store( id, slate );
    }
@@ -2044,7 +2042,10 @@ namespace bts { namespace blockchain {
    void chain_database::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
                                                     const delegate_block_stats& block_stats )
    {
-       my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
+      if( !(block_stats.missed && block_stats.latency.valid()) ) /* If not invalid state */
+         my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
+      else
+         my->_delegate_block_stats_db.remove( std::make_pair( delegate_id, block_num ) );
    }
 
    odelegate_block_stats chain_database::get_delegate_block_stats( const account_id_type& delegate_id,
