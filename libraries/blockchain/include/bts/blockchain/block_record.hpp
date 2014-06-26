@@ -6,14 +6,14 @@ namespace bts { namespace blockchain {
 
    struct block_record : public bts::blockchain::digest_block
    {
-      block_record():block_size(0){}
-      block_record( const digest_block& b, uint64_t s, const fc::ripemd160& r )
-      :digest_block(b),block_size(s),random_seed(r){}
+      block_record():block_size(0),latency(0){}
+      block_record( const digest_block& b, uint64_t s, const fc::ripemd160& r, uint32_t l )
+      :digest_block(b),block_size(s),random_seed(r),latency(l){}
 
-      uint64_t       block_size;
-      fc::ripemd160  random_seed;
+      uint64_t      block_size; /* Bytes */
+      fc::ripemd160 random_seed;
+      uint32_t      latency; /* Seconds */
    };
-
 
    struct transaction_record : public transaction_evaluation_state
    {
@@ -29,13 +29,13 @@ namespace bts { namespace blockchain {
    typedef optional<transaction_record> otransaction_record;
    typedef optional<block_record>       oblock_record;
 
-
 } }
 
 FC_REFLECT_DERIVED( bts::blockchain::block_record, 
                     (bts::blockchain::digest_block), 
                     (block_size)
-                    (random_seed) )
+                    (random_seed)
+                    (latency) )
 
 FC_REFLECT_DERIVED( bts::blockchain::transaction_record, 
                     (bts::blockchain::transaction_evaluation_state), 

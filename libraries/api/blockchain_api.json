@@ -304,7 +304,7 @@
       {
          "method_name" : "blockchain_list_blocks",
          "description" : "Returns the block headers for blocks in a range",
-         "return_type" : "block_record_and_stats_list",
+         "return_type" : "block_record_array",
          "parameters"  : [
             {
                "name" : "first_block_number",

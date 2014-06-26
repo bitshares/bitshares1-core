@@ -336,15 +336,19 @@ namespace bts { namespace blockchain {
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
       { try {
+          auto now = blockchain::now();
           //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
            //     ("n",block_data.block_num)("id",block_id)("prev",block_data.previous) );
 
           // first of all store this block at the given block number
           _block_id_to_block_data_db.store( block_id, block_data );
 
-          _block_id_to_block_record_db.store( block_id, block_record( block_data, 
-                                                                      block_data.block_size(), 
-                                                                      self->get_current_random_seed()) );
+          if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
+          {
+              auto latency = (now - block_data.timestamp).to_seconds();
+              block_record record( block_data, block_data.block_size(), self->get_current_random_seed(), latency );
+              _block_id_to_block_record_db.store( block_id, record);
+          }
 
           // update the parallel block list
           vector<block_id_type> parallel_blocks = fetch_blocks_at_number( block_data.block_num );
@@ -543,11 +547,18 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::update_head_block( const full_block& block_data )
       {
+         auto now = blockchain::now();
+         auto block_id = block_data.id();
+
          _head_block_header = block_data;
-         _head_block_id = block_data.id();
-         _block_id_to_block_record_db.store( block_data.id(), block_record( block_data, 
-                                                                     block_data.block_size(), 
-                                                                     self->get_current_random_seed()) );
+         _head_block_id = block_id;
+
+         if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
+         {
+             auto latency = (now - block_data.timestamp).to_seconds();
+             block_record record( block_data, block_data.block_size(), self->get_current_random_seed(), latency );
+             _block_id_to_block_record_db.store( block_id, record);
+         }
       }
 
       /**
@@ -564,7 +575,6 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
                                                                  const pending_chain_state_ptr& pending_state )
       {
-          auto now = bts::blockchain::now();
           /* Validate secret */
           {
              auto delegate_id = self->get_signing_delegate_id( produced_block.timestamp );
@@ -585,11 +595,12 @@ namespace bts { namespace blockchain {
              pending_state->store_account_record( *delegate_rec );
           }
 
+          // TODO: Clean this up
           auto current_block_num = _head_block_header.block_num;
           auto current_block_timestamp = _head_block_header.timestamp;
 
           /* Handle genesis block timestamp */
-          if( _head_block_header.block_num == 0 )
+          if( _head_block_header.block_num <= 0 )
           {
               current_block_timestamp = produced_block.timestamp;
               current_block_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -620,10 +631,7 @@ namespace bts { namespace blockchain {
                   delegate_rec->delegate_info->blocks_produced += 1;
 
                   block_stats.missed = false;
-                  /* TODO: Use actual block received time rather than time this function was called */
-                  int64_t latency = (now - produced_block.timestamp).to_seconds();
-                  if( latency < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
-                    block_stats.latency = (uint32_t)latency;
+                  block_stats.id = produced_block.id();
               }
 
               pending_state->store_account_record( *delegate_rec );
@@ -986,6 +994,8 @@ namespace bts { namespace blockchain {
       return *delegate_record;
    }
 
+   /* Warning: These will not work on timestamps from previous rounds */
+   // TODO: Make this VERY clear in the code
    account_id_type chain_database::get_signing_delegate_id( const fc::time_point_sec& block_timestamp,
                                                             const std::vector<account_id_type>& sorted_delegates )const
    { try {
@@ -2045,7 +2055,7 @@ namespace bts { namespace blockchain {
    void chain_database::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
                                                     const delegate_block_stats& block_stats )
    {
-      if( !(block_stats.missed && block_stats.latency.valid()) ) /* If not invalid state */
+      if( block_stats.missed || (block_stats.id != block_id_type()) ) /* If in valid state */
          my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
       else
          my->_delegate_block_stats_db.remove( std::make_pair( delegate_id, block_num ) );

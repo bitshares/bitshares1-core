@@ -679,11 +679,11 @@ config load_config( const fc::path& datadir )
           return delegates;
        }
 
-       vector<std::pair<block_record, delegate_block_stats>> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
+       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
        {
           FC_ASSERT( count <= 1000 );
           FC_ASSERT( count >= -1000 );
-          vector<std::pair<block_record, delegate_block_stats>> result;
+          vector<block_record> result;
           if (count == 0) return result;
 
           auto total_blocks = _chain_db->get_head_block_num();
@@ -709,18 +709,11 @@ config load_config( const fc::path& datadir )
           }
           result.reserve( count );
 
-          std::map<account_id_type, std::map<uint32_t, delegate_block_stats>> delegate_block_stats_cache;
           for( int32_t block_num = first; count; --count, block_num += increment )
           {
-            auto block_record = _chain_db->get_block_record( block_num );
-            FC_ASSERT( block_record.valid() );
-
-            /* Memoize */
-            auto delegate_id = _chain_db->get_signing_delegate( block_num ).id;
-            if( delegate_block_stats_cache.count( delegate_id ) <= 0 )
-                delegate_block_stats_cache[ delegate_id ] = _chain_db->get_delegate_block_stats( delegate_id );
-
-            result.push_back( std::make_pair( *block_record, delegate_block_stats_cache[ delegate_id ][ block_num ] ) );
+            auto record = _chain_db->get_block_record( block_num );
+            FC_ASSERT( record.valid() );
+            result.push_back( *record );
           }
 
           return result;
