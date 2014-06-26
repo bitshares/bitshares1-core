@@ -1293,7 +1293,7 @@ namespace bts { namespace wallet {
           if( delegate_record.block_production_enabled )
               enabled_delegate_records.push_back( delegate_record );
       }
-      return delegate_records;
+      return enabled_delegate_records;
    }
 
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
