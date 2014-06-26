@@ -447,8 +447,8 @@ BOOST_AUTO_TEST_CASE(make_genesis_block)
 
 void run_regression_test(fc::path test_dir, bool with_network)
 {
+  bts::blockchain::start_simulated_time(fc::time_point_sec::min());
   set_random_seed_for_testing(fc::sha512());
-
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file
