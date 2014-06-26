@@ -602,6 +602,7 @@ void api_generator::generate_rpc_client_files(const fc::path& rpc_client_output_
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
   write_generated_file_header(cpp_file);
+  cpp_file << "#define DEFAULT_LOGGER \"rpc\"\n";
   cpp_file << "#include <bts/rpc_stubs/" << client_classname << ".hpp>\n";
   cpp_file << "#include <bts/api/conversion_functions.hpp>\n\n";
   cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
@@ -814,6 +815,7 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   header_file << "} } // end namespace bts::rpc_stubs\n";
 
   write_generated_file_header(server_cpp_file);
+  server_cpp_file << "#define DEFAULT_LOGGER \"rpc\"\n";
   server_cpp_file << "#include <bts/rpc_stubs/" << server_classname << ".hpp>\n";
   server_cpp_file << "#include <bts/api/api_metadata.hpp>\n";
   server_cpp_file << "#include <bts/api/conversion_functions.hpp>\n";
@@ -940,6 +942,7 @@ void api_generator::generate_client_files(const fc::path& client_output_dir, con
   interceptor_header_file << "  };\n\n";
   interceptor_header_file << "} } // end namespace bts::rpc_stubs\n";
 
+  interceptor_cpp_file << "#define DEFAULT_LOGGER \"rpc\"\n";
   interceptor_cpp_file << "#include <bts/rpc_stubs/" << interceptor_classname << ".hpp>\n\n";
   interceptor_cpp_file << "namespace bts { namespace rpc_stubs {\n\n";
 

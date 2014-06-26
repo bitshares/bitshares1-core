@@ -8,6 +8,8 @@ namespace bts { namespace blockchain {
 static int32_t simulated_time    = 0;
 static int32_t adjusted_time_sec = 0;
 
+time_discontinuity_signal_type time_discontinuity_signal;
+
 fc::optional<fc::time_point> ntp_time()
 {
    static fc::ntp* ntp_service = new fc::ntp();
@@ -41,6 +43,7 @@ void start_simulated_time( const fc::time_point& sim_time )
 void advance_time( int32_t delta_seconds )
 {
    adjusted_time_sec += delta_seconds;
+   time_discontinuity_signal();
 }
 
 uint32_t get_slot_number( const fc::time_point_sec& timestamp )

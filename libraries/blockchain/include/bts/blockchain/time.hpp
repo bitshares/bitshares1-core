@@ -1,8 +1,12 @@
 #pragma once
 #include <fc/time.hpp>
 #include <fc/optional.hpp>
+#include <fc/signals.hpp>
 
 namespace bts { namespace blockchain {
+
+   typedef fc::signal<void()> time_discontinuity_signal_type;
+   extern time_discontinuity_signal_type time_discontinuity_signal;
 
    fc::optional<fc::time_point> ntp_time();
    fc::time_point_sec           now();
