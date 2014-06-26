@@ -903,7 +903,7 @@ namespace bts { namespace net { namespace detail {
           {
             minute_counter = 0;
             uint32_t average_this_hour = (uint32_t)boost::accumulate(_average_network_usage_minutes, UINT64_C(0)) / _average_network_usage_minutes.size();
-            _average_network_usage_hours.push_back(average_this_minute);
+            _average_network_usage_hours.push_back(average_this_hour);
           }
         }
       }
