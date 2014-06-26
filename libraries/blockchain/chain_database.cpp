@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
             void                       mark_invalid( const block_id_type& id, const fc::exception& reason );
             void                       mark_included( const block_id_type& id, bool state );
             void                       verify_header( const full_block& );
-            void                       apply_transactions( uint32_t block_num,
+            void                       apply_transactions( const signed_block_header& block,
                                                            const std::vector<signed_transaction>&,
                                                            const pending_chain_state_ptr& );
             void                       pay_delegate( fc::time_point_sec time_slot, share_type amount,
@@ -331,7 +331,7 @@ namespace bts { namespace blockchain {
        *          - one for this block
        *          - placeholder for previous
        *      - mark both as unlinked
-       *  3) It it provides the missing link between a the genesis block and existing chain
+       *  3) It provides the missing link between the genesis block and an existing chain
        *      - all next blocks need to be updated to change state to 'linked'
        */
       block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
@@ -348,7 +348,7 @@ namespace bts { namespace blockchain {
           {
               auto latency = (now - block_data.timestamp).to_seconds();
               block_record record( block_data, block_data.block_size(), self->get_current_random_seed(), latency );
-              _block_id_to_block_record_db.store( block_id, record);
+              _block_id_to_block_record_db.store( block_id, record );
           }
 
           // update the parallel block list
@@ -454,12 +454,11 @@ namespace bts { namespace blockchain {
          }
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
-
-      void chain_database_impl::apply_transactions( uint32_t block_num,
+      void chain_database_impl::apply_transactions( const signed_block_header& block,
                                                     const std::vector<signed_transaction>& user_transactions,
                                                     const pending_chain_state_ptr& pending_state )
       {
-         ilog( "apply transactions from block: ${block_num}  ${trxs}", ("block_num",block_num)("trxs",user_transactions) );
+         ilog( "apply transactions from block: ${block_num}  ${trxs}", ("block_num",block.block_num)("trxs",user_transactions) );
          uint32_t trx_num = 0;
          try {
             // apply changes from each transaction
@@ -473,10 +472,18 @@ namespace bts { namespace blockchain {
               // TODO:  capture the evaluation state with a callback for wallets...
               // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
 
-               transaction_location trx_loc( block_num, trx_num );
+               transaction_location trx_loc( block.block_num, trx_num );
                //ilog( "store trx location: ${loc}", ("loc",trx_loc) );
-               pending_state->store_transaction( trx.id(), transaction_record( trx_loc, *trx_eval_state)  );
+               transaction_record record( trx_loc, *trx_eval_state);
+               pending_state->store_transaction( trx.id(), record );
                ++trx_num;
+
+               /* Collect fees in block record */
+               auto block_id = block.id();
+               auto block_record = self->get_block_record( block_id );
+               FC_ASSERT( block_record.valid() );
+               block_record->total_fees += record.get_fees();
+               _block_id_to_block_record_db.store( block_id, *block_record );
             }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
 
@@ -503,7 +510,7 @@ namespace bts { namespace blockchain {
       } FC_RETHROW_EXCEPTIONS( warn, "", ("time_slot",time_slot)("amount",amount) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
-                                               const pending_chain_state_ptr& pending_state )
+                                                 const pending_chain_state_ptr& pending_state )
       { try {
            pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>(nullptr);
            pending_state->get_undo_state( undo_state );
@@ -549,18 +556,8 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::update_head_block( const full_block& block_data )
       {
-         auto now = blockchain::now();
-         auto block_id = block_data.id();
-
          _head_block_header = block_data;
-         _head_block_id = block_id;
-
-         if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
-         {
-             auto latency = (now - block_data.timestamp).to_seconds();
-             block_record record( block_data, block_data.block_size(), self->get_current_random_seed(), latency );
-             _block_id_to_block_record_db.store( block_id, record);
-         }
+         _head_block_id = block_data.id();
       }
 
       /**
@@ -709,7 +706,7 @@ namespace bts { namespace blockchain {
 
             //ilog( "block data: ${block_data}", ("block_data",block_data) );
             ilog( "apply transactions " );
-            apply_transactions( block_data.block_num, block_data.user_transactions, pending_state );
+            apply_transactions( block_data, block_data.user_transactions, pending_state );
             ilog( "pay delegate" );
 
             pay_delegate( block_data.timestamp, block_data.delegate_pay_rate, pending_state );

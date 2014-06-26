@@ -1209,7 +1209,7 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
-   void  wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
+   void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
       for( const auto& addr : req_sigs )
       {
@@ -1228,7 +1228,7 @@ namespace bts { namespace wallet {
       return key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
-   vector<pretty_transaction>         wallet::get_pretty_transaction_history( const string& account_name ) const
+   vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name ) const
    {
        auto history = get_transaction_history( account_name );
        vector<pretty_transaction> pretties;
@@ -1241,7 +1241,7 @@ namespace bts { namespace wallet {
    /** 
     * @return the list of all transactions related to this wallet
     */
-   vector<wallet_transaction_record>    wallet::get_transaction_history( const string& account_name )const
+   vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
 
