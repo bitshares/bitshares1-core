@@ -1256,7 +1256,11 @@ namespace bts { namespace cli {
                 *_out << std::setw( 15 ) << "VOTES FOR";
                 *_out << std::setw( 15 ) << "TRUSTED";
 
-                *_out << "\n";
+                *_out << '\n';
+                for (int i = 0; i < 151; ++i)
+                    *_out << '-';
+                *_out << '\n';
+
                 auto counter = 0;
                 for( auto acct : account_records )
                 {
@@ -1275,20 +1279,21 @@ namespace bts { namespace cli {
                     if ( acct.is_delegate() )
                     {
                         *_out << std::setw(15) << acct.delegate_info->votes_for;
+
+                        try
+                        {
+                            auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
+                            *_out << std::setw( 15 ) << trust;
+                        }
+                        catch( ... )
+                        {
+                            *_out << std::setw(15) << "???";
+                        }
                     }
                     else
                     {
                         *_out << std::setw(15) << "N/A";
                         *_out << std::setw(15) << "N/A";
-                    }
-                    if ( ! _client->get_wallet()->is_open() )
-                    {
-                        *_out << "?? (wallet closed)";
-                    }
-                    else
-                    {
-                        auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
-                        *_out << std::setw( 15 ) << trust;
                     }
 
                     *_out << "\n";
