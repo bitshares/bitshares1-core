@@ -2446,6 +2446,11 @@ config load_config( const fc::path& datadir )
     }
 
 
+    void client_impl::wait_block_interval(uint32_t wait_time) const
+    {
+      fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+    }
+
     vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
     {
        return _wallet->get_unspent_balances( account_name, symbol );
