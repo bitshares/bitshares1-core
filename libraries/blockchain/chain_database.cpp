@@ -1788,15 +1788,16 @@ namespace bts { namespace blockchain {
                     vector<fork_record> forks;
                     ulog("Processing fork at ${num}", ("num", get_block_num(iter.key())));
 
-                    for( auto forked_block_id : fork_iter.next_blocks )
+                    for( const auto& forked_block_id : fork_iter.next_blocks )
                     {
                         fork_record fork;
                         block_fork_data fork_data = my->_fork_db.fetch(forked_block_id);
                         block_record fork_block_record = my->_block_id_to_block_record_db.fetch(forked_block_id);
 
                         fork.block_id = forked_block_id;
-                        fork.signing_delegate = get_signing_delegate_id(fork_block_record.timestamp);
+                        fork.signing_delegate = get_signing_delegate_id(fork_block_record.timestamp); // TODO: Should use signee key
                         fork.transaction_count = fork_block_record.user_transaction_ids.size();
+                        fork.latency = fork_block_record.latency;
                         fork.size = fork_block_record.block_size;
                         fork.timestamp = fork_block_record.timestamp;
                         fork.is_valid = fork_data.is_valid;

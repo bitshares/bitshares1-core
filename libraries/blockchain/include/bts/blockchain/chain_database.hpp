@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
        block_id_type block_id;
        account_id_type signing_delegate;
        uint32_t transaction_count;
-//       fc::optional<uint32_t> latency;
+       uint32_t latency;
        uint32_t size;
        fc::time_point_sec timestamp;
        fc::optional<bool> is_valid;

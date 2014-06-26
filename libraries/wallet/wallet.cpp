@@ -3126,7 +3126,8 @@ namespace bts { namespace wallet {
                 if( b.second.delegate_slate_id() != 0 )
                 {
                     odelegate_slate slate = my->_blockchain->get_delegate_slate(b.second.delegate_slate_id());
-                    for (auto delegate_id : slate->supported_delegates)
+                    FC_ASSERT( slate.valid() );
+                    for( const auto& delegate_id : slate->supported_delegates )
                     {
                        raw_votes[ delegate_id ].votes_for += bal.amount;
                     }
