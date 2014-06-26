@@ -292,6 +292,9 @@ namespace bts { namespace net { namespace detail {
       boost::circular_buffer<uint32_t> _average_network_usage_seconds;
       boost::circular_buffer<uint32_t> _average_network_usage_minutes;
       boost::circular_buffer<uint32_t> _average_network_usage_hours;
+      unsigned _average_network_usage_second_counter;
+      unsigned _average_network_usage_minute_counter;
+
       fc::future<void> _bandwidth_monitor_loop_done;
 
 #ifdef ENABLE_P2P_DEBUGGING_API
@@ -320,6 +323,7 @@ namespace bts { namespace net { namespace detail {
       void terminate_inactive_connections_loop();
 
       void fetch_updated_peer_lists_loop();
+      void update_bandwidth_data(uint32_t usage_this_second);
       void bandwidth_monitor_loop();
 
       bool is_accepting_new_connections();
@@ -470,7 +474,9 @@ namespace bts { namespace net { namespace detail {
       _peer_advertising_disabled(false),
       _average_network_usage_seconds(60),
       _average_network_usage_minutes(60),
-      _average_network_usage_hours(72)
+      _average_network_usage_hours(72),
+      _average_network_usage_second_counter(0),
+      _average_network_usage_minute_counter(0)
     {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
     }
@@ -882,30 +888,38 @@ namespace bts { namespace net { namespace detail {
           active_peer->send_message(address_request_message());
       }
     }
-
+    void node_impl::update_bandwidth_data(uint32_t usage_this_second)
+    {
+      _average_network_usage_seconds.push_back(usage_this_second);
+      ++_average_network_usage_second_counter;
+      if (_average_network_usage_second_counter >= 60)
+      {
+        _average_network_usage_second_counter = 0;
+        ++_average_network_usage_minute_counter;
+        uint32_t average_this_minute = (uint32_t)boost::accumulate(_average_network_usage_seconds, UINT64_C(0)) / _average_network_usage_seconds.size();
+        _average_network_usage_minutes.push_back(average_this_minute);
+        if (_average_network_usage_minute_counter >= 60)
+        {
+          _average_network_usage_minute_counter = 0;
+          uint32_t average_this_hour = (uint32_t)boost::accumulate(_average_network_usage_minutes, UINT64_C(0)) / _average_network_usage_minutes.size();
+          _average_network_usage_hours.push_back(average_this_hour);
+        }
+      }
+    }
     void node_impl::bandwidth_monitor_loop()
     {
-      unsigned second_counter = 0;
-      unsigned minute_counter = 0;
+      fc::time_point_sec last_update_time = fc::time_point::now();
       while (!_bandwidth_monitor_loop_done.canceled())
       {
         fc::usleep(fc::seconds(1));
+        fc::time_point_sec current_time = fc::time_point::now();
+        uint32_t seconds_since_last_update = current_time.sec_since_epoch() - last_update_time.sec_since_epoch();
+        seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
         uint32_t usage_this_second = _rate_limiter.get_actual_download_rate() + _rate_limiter.get_actual_upload_rate();
-        _average_network_usage_seconds.push_back(usage_this_second);
-        ++second_counter;
-        if (second_counter >= 60)
-        {
-          second_counter = 0;
-          ++minute_counter;
-          uint32_t average_this_minute = (uint32_t)boost::accumulate(_average_network_usage_seconds, UINT64_C(0)) / _average_network_usage_seconds.size();
-          _average_network_usage_minutes.push_back(average_this_minute);
-          if (minute_counter >= 60)
-          {
-            minute_counter = 0;
-            uint32_t average_this_hour = (uint32_t)boost::accumulate(_average_network_usage_minutes, UINT64_C(0)) / _average_network_usage_minutes.size();
-            _average_network_usage_hours.push_back(average_this_minute);
-          }
-        }
+        for (uint32_t i = 0; i < seconds_since_last_update - 1; ++i)
+          update_bandwidth_data(0);
+        update_bandwidth_data(usage_this_second);
+        last_update_time = current_time;
       }
     }
 

@@ -66,7 +66,7 @@ namespace bts { namespace wallet {
              * This method is called anytime the blockchain state changes including
              * undo operations.
              */
-            void state_changed( const pending_chain_state_ptr& state )
+            virtual void state_changed( const pending_chain_state_ptr& state )override
             {
                uint32_t last_unlocked_scanned_number = _wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
                if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
@@ -78,9 +78,9 @@ namespace bts { namespace wallet {
             /**
              *  This method is called anytime a block is applied to the chain.
              */
-            void block_applied( const block_summary& summary ) override
+            virtual void block_applied( const block_summary& summary )override
             {
-               if( self->is_unlocked() && self->get_my_enabled_delegates().size() == 0 )
+               if( self->is_unlocked() && self->get_my_enabled_delegates().empty() )
                {
                   auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   scan_block( summary.block_data.block_num, account_priv_keys );
@@ -244,7 +244,7 @@ namespace bts { namespace wallet {
       {
          //std::cout << "scanning block number " << block_num << "    keys: " << keys.size() << "    \r";
          auto current_block = _blockchain->get_block( block_num );
-         for( auto trx : current_block.user_transactions )
+         for( const auto& trx : current_block.user_transactions )
          {
             bool cache_trx = false;
             //std::cout << "scanning block number " << block_num << "    \n";
@@ -262,7 +262,7 @@ namespace bts { namespace wallet {
             current_trx_record->trx = trx;
             current_trx_record->received_time = current_block.timestamp;
 
-            for( auto op : trx.operations )
+            for( const auto& op : trx.operations )
             {
                switch( (operation_type_enum)op.type )
                {
@@ -470,7 +470,7 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   for( auto key : keys )
+                   for( const auto& key : keys )
                    {
                       omemo_status status = deposit.decrypt_memo_data( key );
                       if( status.valid() )
@@ -801,7 +801,7 @@ namespace bts { namespace wallet {
           my->_wallet_relocker_done = fc::async([this](){
             ilog("Starting wallet relocker task");
             struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
-            for (;;)
+            for( ; ; )
             {
               if (bts::blockchain::now() > my->_scheduled_lock_time)
               {
@@ -1177,9 +1177,10 @@ namespace bts { namespace wallet {
          scan_state();
          ++start;
       }
-      if( get_my_enabled_delegates().size() )
+
+      if( !get_my_enabled_delegates().empty() )
       {
-         ulog( "scanning chain disabled because there are active delegates" );
+         ulog( "Wallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
       }
 
@@ -1210,7 +1211,7 @@ namespace bts { namespace wallet {
 
    void  wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
-      for( auto addr : req_sigs )
+      for( const auto& addr : req_sigs )
       {
          trx.sign( get_private_key( addr ), my->_blockchain->chain_id()  );
       }
@@ -1232,7 +1233,7 @@ namespace bts { namespace wallet {
        auto history = get_transaction_history( account_name );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
-       for (auto item : history)
+       for( const auto& item : history )
            pretties.push_back( to_pretty_trx( item ) );
        return pretties;
    }
@@ -1252,7 +1253,7 @@ namespace bts { namespace wallet {
       if( account_name != string() )
          account_pub = get_account_public_key( account_name );
 
-      for( auto iter : my_trxs)
+      for( const auto& iter : my_trxs)
       {
          if( account_name == string() || account_name == "*" ||
              (iter.second.to_account && *iter.second.to_account == account_pub) ||
@@ -1271,30 +1272,6 @@ namespace bts { namespace wallet {
       return recs;
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-
-   vector<wallet_account_record> wallet::get_my_delegates()const
-   {
-      vector<wallet_account_record> delegate_records;
-      const auto& account_records = list_my_accounts();
-      for( const auto& account_record : account_records )
-      {
-          if( account_record.is_delegate() )
-              delegate_records.push_back( account_record );
-      }
-      return delegate_records;
-   }
-
-   vector<wallet_account_record> wallet::get_my_enabled_delegates()const
-   {
-      vector<wallet_account_record> enabled_delegate_records;
-      const auto& delegate_records = get_my_delegates();
-      for( const auto& delegate_record : delegate_records )
-      {
-          if( delegate_record.block_production_enabled )
-              enabled_delegate_records.push_back( delegate_record );
-      }
-      return enabled_delegate_records;
-   }
 
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
@@ -1321,6 +1298,53 @@ namespace bts { namespace wallet {
           delegate_record.block_production_enabled = enable;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
+   }
+
+   vector<wallet_account_record> wallet::get_my_delegates()const
+   {
+      vector<wallet_account_record> delegate_records;
+      const auto& account_records = list_my_accounts();
+      for( const auto& account_record : account_records )
+      {
+          if( account_record.is_delegate() )
+              delegate_records.push_back( account_record );
+      }
+      return delegate_records;
+   }
+
+   vector<wallet_account_record> wallet::get_my_enabled_delegates( bool active_only )const
+   {
+      vector<wallet_account_record> enabled_delegate_records;
+      const auto& delegate_records = get_my_delegates();
+      for( const auto& delegate_record : delegate_records )
+      {
+          if( active_only )
+          {
+              const auto& active_delegates = my->_blockchain->get_active_delegates();
+              if( std::find( active_delegates.begin(), active_delegates.end(), delegate_record.id ) == active_delegates.end() )
+                  continue;
+          }
+
+          if( delegate_record.block_production_enabled )
+              enabled_delegate_records.push_back( delegate_record );
+      }
+      return enabled_delegate_records;
+   }
+
+   vector<private_key_type> wallet::get_my_delegate_private_keys( bool enabled_only, bool active_only )
+   {
+       vector<private_key_type> private_keys;
+
+       vector<wallet_account_record> delegate_records;
+       if( enabled_only ) delegate_records = get_my_enabled_delegates( active_only );
+       else delegate_records = get_my_delegates();
+
+       for( const auto& delegate_record : delegate_records )
+       {
+           if( my->_blockchain->is_active_delegate( delegate_record.id ) )
+               private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
+       }
+       return private_keys;
    }
 
    void wallet::sign_block( signed_block_header& header )const
@@ -1508,7 +1532,7 @@ namespace bts { namespace wallet {
 
        if( sign ) // don't store invalid trxs..
        {
-          for( auto rec : balances_to_store )
+          for( const auto& rec : balances_to_store )
           {
               my->_wallet_db.cache_balance( rec );
           }
@@ -1557,7 +1581,7 @@ namespace bts { namespace wallet {
        signed_transaction trx;
        unordered_set<address> required_signatures;
 
-       owallet_key_record  delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
+       owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
        auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
        required_signatures.insert( delegate_private_key.get_public_key() );
@@ -1716,7 +1740,7 @@ namespace bts { namespace wallet {
          auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
          
          vector<address> to_addresses;
-         for ( auto address_amount : to_address_amounts )
+         for( const auto& address_amount : to_address_amounts )
          {
             auto real_amount_to_transfer = address_amount.second;
             share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->get_precision()));
@@ -2176,7 +2200,7 @@ namespace bts { namespace wallet {
 
       bool found_active_delegate = false;
       auto next_active = my->_blockchain->next_round_active_delegates();
-      for( auto delegate_id : next_active )
+      for( const auto& delegate_id : next_active )
       {
          if( delegate_id == delegate_account->id )
          {
@@ -2537,7 +2561,7 @@ namespace bts { namespace wallet {
       else
          pretty_trx.to_account = "UNKNOWN"; 
 
-      for( auto op : trx.operations )
+      for( const auto& op : trx.operations )
       {
           switch( operation_type_enum( op.type ) )
           {
@@ -2681,7 +2705,7 @@ namespace bts { namespace wallet {
 
       auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
 
-      for( auto key : keys )
+      for( const auto& key : keys )
       {
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
@@ -2706,7 +2730,7 @@ namespace bts { namespace wallet {
 
       auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
 
-      for( auto key : keys )
+      for( const auto& key : keys )
       {
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
@@ -2732,7 +2756,7 @@ namespace bts { namespace wallet {
 
       auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
 
-      for( auto key : keys )
+      for( const auto& key : keys )
       {
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
@@ -2757,7 +2781,7 @@ namespace bts { namespace wallet {
 
       auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
 
-      for( auto key : keys )
+      for( const auto& key : keys )
       {
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
          std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
@@ -3126,7 +3150,8 @@ namespace bts { namespace wallet {
                 if( b.second.delegate_slate_id() != 0 )
                 {
                     odelegate_slate slate = my->_blockchain->get_delegate_slate(b.second.delegate_slate_id());
-                    for (auto delegate_id : slate->supported_delegates)
+                    FC_ASSERT( slate.valid() );
+                    for( const auto& delegate_id : slate->supported_delegates )
                     {
                        raw_votes[ delegate_id ].votes_for += bal.amount;
                     }
@@ -3135,7 +3160,7 @@ namespace bts { namespace wallet {
           }
       }
       account_vote_summary_type result;
-      for( auto item : raw_votes )
+      for( const auto& item : raw_votes )
       {
          auto delegate_account = my->_blockchain->get_account_record( item.first );
          result[delegate_account->name] = item.second;
@@ -3162,11 +3187,11 @@ namespace bts { namespace wallet {
              }
           }
       }
-      for( auto account : raw_results )
+      for( const auto& account : raw_results )
       {
          auto oaccount = my->_wallet_db.lookup_account( account.first );
          string name = oaccount ? oaccount->name : string(account.first);
-         for( auto item : account.second )
+         for( const auto& item : account.second )
          {
             string symbol = my->_blockchain->get_asset_symbol( item.first );
             result[name][symbol] = item.second;

@@ -39,14 +39,10 @@ namespace bts { namespace blockchain {
    struct delegate_block_stats
    {
       delegate_block_stats()
-      :missed(true)
-      {}
+      :missed(true){}
 
-      bool missed;
-
-      /** If we received a signed block within BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC,
-       *  then we store the latency */
-      fc::optional<uint32_t> latency;
+      bool          missed;
+      block_id_type id;
    };
    typedef fc::optional<delegate_block_stats> odelegate_block_stats;
 
@@ -90,4 +86,4 @@ FC_REFLECT( bts::blockchain::account_record,
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(blocks_produced)
             (blocks_missed)(delegate_pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
-FC_REFLECT( bts::blockchain::delegate_block_stats, (missed)(latency) )
+FC_REFLECT( bts::blockchain::delegate_block_stats, (missed)(id) )

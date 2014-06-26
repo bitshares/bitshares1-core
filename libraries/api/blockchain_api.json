@@ -304,7 +304,7 @@
       {
          "method_name" : "blockchain_list_blocks",
          "description" : "Returns the block headers for blocks in a range",
-         "return_type" : "block_record_and_stats_list",
+         "return_type" : "block_record_array",
          "parameters"  : [
             {
                "name" : "first_block_number",
@@ -416,6 +416,26 @@
               "type" : "string",
               "description" : "The unit of time (\"seconds\", \"blocks\", or \"rounds\")",
               "default_value" : "seconds"
+            }
+        ],
+        "is_const" : false,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_wait_for_block_by_number",
+        "description": "Don't return until the specified block has arrived",
+        "return_type": "void",
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "The block number (or offset) to wait for"
+            },
+            {
+              "name" : "type",
+              "type" : "string",
+              "description" : "Whether to wait for an \"absolute\" block number, or a count of blocks \"relative\" to the current block number",
+              "default_value" : "absolute"
             }
         ],
         "is_const" : false,

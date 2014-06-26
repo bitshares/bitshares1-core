@@ -509,7 +509,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
         fc::remove_all(default_data_dir);
       }
 
-
+      std::cout << "cmd-line args=" << line << std::endl;
       //parse line into argc/argv format for boost program_options
       int argc = 0; 
       char** argv = nullptr;
@@ -533,6 +533,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       std::vector<string> input_logs = option_variables["input-log"].as<std::vector<string>>();
       for (string input_log : input_logs)
         {
+        std::cout << "input-log=" << input_log << std::endl;
         std::ifstream input_stream(input_log);
         expected_output_stream << input_stream.rdbuf();
         }
@@ -626,12 +627,12 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
       fc::path test_dir(regression_tests_dir / *directory_itr);
       boost::unit_test::test_unit* test_without_network = 
         boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
-                                                                                   regression_tests_dir / *directory_itr, 
+                                                                                   regression_tests_dir / directory_itr->filename(), 
                                                                                    false)), 
                                                                        directory_itr->filename().string());
       boost::unit_test::test_unit* test_with_network = 
         boost::unit_test::make_test_case(boost::unit_test::callback0<>(boost::bind(&run_regression_test,
-                                                                                   regression_tests_dir / *directory_itr, 
+                                                                                   regression_tests_dir / directory_itr->filename(), 
                                                                                    true)), 
                                                                        directory_itr->filename().string());
       regression_tests_without_network->add(test_without_network);

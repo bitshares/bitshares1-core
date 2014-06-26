@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
        block_id_type block_id;
        account_id_type signing_delegate;
        uint32_t transaction_count;
-//       fc::optional<uint32_t> latency;
+       uint32_t latency;
        uint32_t size;
        fc::time_point_sec timestamp;
        fc::optional<bool> is_valid;
@@ -270,4 +270,4 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::block_fork_data, (next_blocks)(is_linked)(is_valid)(invalid_reason)(is_included)(is_known) )
-FC_REFLECT( bts::blockchain::fork_record, (block_id)(signing_delegate)(size)(timestamp)(is_valid)(invalid_reason)(is_current_fork) )
+FC_REFLECT( bts::blockchain::fork_record, (block_id)(signing_delegate)(transaction_count)(latency)(size)(timestamp)(is_valid)(invalid_reason)(is_current_fork) )
