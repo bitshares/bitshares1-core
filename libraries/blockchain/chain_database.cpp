@@ -182,7 +182,30 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::open_database( const fc::path& data_dir )
       { try {
-          _property_db.open( data_dir / "property_db" );
+          if( fc::exists( data_dir / "property_db") )
+          {
+              wlog("Updating database directory hierarchy.");
+              fc::create_directories( data_dir / "index" );
+              fc::create_directories( data_dir / "raw_chain" );
+
+              fc::directory_iterator end;
+              for( fc::directory_iterator d(data_dir); d != end; ++d)
+              {
+                  if( *d == data_dir / "index" || *d == data_dir / "raw_chain" )
+                      continue;
+
+                  fc::path target;
+                  if( *d == data_dir / "block_id_to_block_data_db" )
+                      target = data_dir / "raw_chain/block_id_to_block_data_db";
+                  else
+                      target = data_dir / "index" / d->filename();
+
+                  wlog("Renaming ${old} to ${new}", ("old", *d)("new", target));
+                  fc::rename(*d, target);
+              }
+          }
+
+          _property_db.open( data_dir / "index/property_db" );
           auto database_version = _property_db.fetch_optional( chain_property_enum::database_version );
           if( !database_version || database_version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
@@ -190,43 +213,43 @@ namespace bts { namespace blockchain {
                 _property_db.close();
                 fc::remove_all( data_dir );
                 fc::create_directories( data_dir );
-                _property_db.open( data_dir / "property_db" );
+                _property_db.open( data_dir / "index/property_db" );
                 self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
              FC_CAPTURE_AND_THROW( new_database_version, (database_version)(BTS_BLOCKCHAIN_DATABASE_VERSION) ); 
           }
-          _fork_number_db.open( data_dir / "fork_number_db" );
-          _fork_db.open( data_dir / "fork_db" );
-          _slate_db.open( data_dir / "slate_db" );
-          _proposal_db.open( data_dir / "proposal_db" );
-          _proposal_vote_db.open( data_dir / "proposal_vote_db" );
+          _fork_number_db.open( data_dir / "index/fork_number_db" );
+          _fork_db.open( data_dir / "index/fork_db" );
+          _slate_db.open( data_dir / "index/slate_db" );
+          _proposal_db.open( data_dir / "index/proposal_db" );
+          _proposal_vote_db.open( data_dir / "index/proposal_vote_db" );
 
-          _undo_state_db.open( data_dir / "undo_state_db" );
+          _undo_state_db.open( data_dir / "index/undo_state_db" );
 
-          _block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
-          _block_id_to_block_record_db.open( data_dir / "block_id_to_block_record_db" );
-          _block_id_to_block_data_db.open( data_dir / "block_id_to_block_data_db" );
-          _id_to_transaction_record_db.open( data_dir / "id_to_transaction_record_db" );
+          _block_num_to_id_db.open( data_dir / "index/block_num_to_id_db" );
+          _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
+          _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
+          _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
-          _pending_transaction_db.open( data_dir / "pending_transaction_db" );
+          _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
-          _asset_db.open( data_dir / "asset_db" );
-          _balance_db.open( data_dir / "balance_db" );
-          _account_db.open( data_dir / "account_db" );
-          _address_to_account_db.open( data_dir / "address_to_account_db" );
+          _asset_db.open( data_dir / "index/asset_db" );
+          _balance_db.open( data_dir / "index/balance_db" );
+          _account_db.open( data_dir / "index/account_db" );
+          _address_to_account_db.open( data_dir / "index/address_to_account_db" );
 
-          _account_index_db.open( data_dir / "account_index_db" );
-          _symbol_index_db.open( data_dir / "symbol_index_db" );
-          _delegate_vote_index_db.open( data_dir / "delegate_vote_index_db" );
+          _account_index_db.open( data_dir / "index/account_index_db" );
+          _symbol_index_db.open( data_dir / "index/symbol_index_db" );
+          _delegate_vote_index_db.open( data_dir / "index/delegate_vote_index_db" );
 
-          _delegate_block_stats_db.open( data_dir / "delegate_block_stats_db" );
+          _delegate_block_stats_db.open( data_dir / "index/delegate_block_stats_db" );
 
-          _ask_db.open( data_dir / "ask_db" );
-          _bid_db.open( data_dir / "bid_db" );
-          _short_db.open( data_dir / "short_db" );
-          _collateral_db.open( data_dir / "collateral_db" );
+          _ask_db.open( data_dir / "index/ask_db" );
+          _bid_db.open( data_dir / "index/bid_db" );
+          _short_db.open( data_dir / "index/short_db" );
+          _collateral_db.open( data_dir / "index/collateral_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
 
