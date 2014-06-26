@@ -1016,7 +1016,7 @@ namespace bts { namespace blockchain {
    optional<time_point_sec> chain_database::get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const
    { try {
       auto next_block_time = blockchain::get_slot_start_time( blockchain::now() );
-      if( next_block_time == now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+      if( next_block_time <= now() ) next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
       auto last_block_time = next_block_time + (BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
       auto active_delegates = get_active_delegates();
@@ -1159,7 +1159,10 @@ namespace bts { namespace blockchain {
    fc::time_point_sec chain_database::now()const
    {
       if( my->_head_block_header.block_num <= 0 ) /* Genesis */
-         return bts::blockchain::now() - fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
+      {
+          auto slot_number = blockchain::get_slot_number( blockchain::now() );
+          return blockchain::get_slot_start_time( slot_number - 1 );
+      }
 
       return my->_head_block_header.timestamp;
    }
