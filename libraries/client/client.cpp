@@ -111,9 +111,9 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
       options(option_config).run(), option_variables);
     program_options::notify(option_variables);
   }
-  catch (program_options::error&)
+  catch (program_options::error& cmdline_error)
   {
-    std::cerr << "Error parsing command-line options\n\n";
+    std::cerr << "Error: " << cmdline_error.what() << "\n";
     std::cerr << option_config << "\n";
     exit(1);
   }
@@ -410,6 +410,7 @@ config load_config( const fc::path& datadir )
 
             fc::shared_ptr<user_appender> _user_appender;
             bool _simulate_disconnect;
+            fc::scoped_connection _time_discontinuity_connection;
 
             client_impl(bts::client::client* self) :
               _simulate_disconnect(false),
@@ -428,7 +429,10 @@ config load_config( const fc::path& datadir )
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-            virtual ~client_impl()override { delete _cli; }
+            virtual ~client_impl() override 
+            { 
+              delete _cli;
+            }
 
             void start()
             {
@@ -588,6 +592,8 @@ config load_config( const fc::path& datadir )
 
        void client_impl::start_delegate_loop()
        {
+          if (!_time_discontinuity_connection.connected())
+            _time_discontinuity_connection = bts::blockchain::time_discontinuity_signal.connect([=](){ reschedule_delegate_loop(); });
           _delegate_loop_complete = fc::async( [=](){ delegate_loop(); } );
        }
 
@@ -2446,6 +2452,11 @@ config load_config( const fc::path& datadir )
     }
 
 
+    void client_impl::wait_block_interval(uint32_t wait_time) const
+    {
+      fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
+    }
+
     vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
     {
        return _wallet->get_unspent_balances( account_name, symbol );
@@ -2662,8 +2673,14 @@ config load_config( const fc::path& datadir )
      bts::blockchain::start_simulated_time(starting_time);
    }
 
-   void client_impl::blockchain_advance_time(int32_t delta_time)
+   void client_impl::blockchain_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
    {
+     if (unit == "blocks")
+       delta_time *= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+     else if (unit == "rounds")
+       delta_time *= BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+     else if (unit != "seconds")
+       FC_THROW_EXCEPTION(fc::invalid_arg_exception, "unit must be \"seconds\", \"blocks\", or \"rounds\", was: \"${unit}\"", ("unit", unit));
      bts::blockchain::advance_time(delta_time);
    }
 

@@ -262,7 +262,7 @@ class WalletAPI
   #   account_name `account_name` - the account that will be updated
   #   account_name `pay_from_account` - the account from which fees will be paid
   #   json_variant `public_data` - public data about the account
-  #   uint32_t `delegate_pay_rate` - A value between 0 and 100% delegates, 255 for non delegates
+  #   uint32_t `delegate_pay_rate` - A value between 0 and 100 delegates, 255 for non delegates
   # return_type: `transaction_record`
   account_register: (account_name, pay_from_account, public_data, delegate_pay_rate) ->
     @rpc.request('wallet_account_register', [account_name, pay_from_account, public_data, delegate_pay_rate]).then (response) ->

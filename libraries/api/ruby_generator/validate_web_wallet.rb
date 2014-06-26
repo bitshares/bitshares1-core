@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require 'json'
 
 class WebWalletValidator
@@ -8,11 +10,16 @@ class WebWalletValidator
     load_api_methods JSON.parse(IO.read('../wallet_api.json'))
     load_api_methods JSON.parse(IO.read('../network_api.json'))
     load_api_methods JSON.parse(IO.read('../blockchain_api.json'))
+    @methods['batch'] = [2, 0]
+    @methods['execute_command_line'] = [1,0]
   end
 
   def load_api_methods(json)
     json['methods'].each do |m|
-      @methods[m['method_name']] = m['parameters'].length
+      params = m['parameters'].length
+      optional = m['parameters'].inject(0) { |sum, p| p.key?('default_value') ? sum + 1 : sum }
+      @methods[m['method_name']] = [params,optional]
+      #puts "#{m['method_name']} #{[params, optional]}"
     end
   end
 
@@ -58,12 +65,14 @@ class WebWalletValidator
 
   def check_method(method, args, filename, linenum)
     unless @methods.key? method
-      puts "#{filename}:#{linenum} : method '#{method}' not found in the api"
+      puts "#{filename}:#{linenum} : api method '#{method}' not found"
       return
     end
     num_args = args ? args.split(',').length : 0
-    unless @methods[method] == num_args
-      puts "#{filename}:#{linenum} : method '#{method}' has incorrect number of args, #{@methods[method]} vs. #{num_args}"
+    method_num_args = @methods[method][0]
+    method_opt_args = @methods[method][1]
+    if num_args > method_num_args or num_args < (method_num_args - method_opt_args)
+      puts "#{filename}:#{linenum} : method '#{method}' has incorrect number of args, #{num_args} vs. #{method_num_args} (#{method_opt_args} optional) "
     end
   end
 

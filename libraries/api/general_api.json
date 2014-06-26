@@ -114,6 +114,21 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "wait_block_interval",
+        "description": "wait for n block intervals",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wait_time_in_block_intervals",
+              "type" : "uint32_t", 
+              "description" : "time in block intervals to wait before accepting more input"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "execute_command_line",
         "description": "Execute the given command as if it were typed on the CLI",
         "return_type": "std::string",
@@ -181,7 +196,7 @@
                }
         ],
         "is_const"   : true,
-        "aliases"    : ["errors"]
+        "aliases"    : ["errors"],
         "prerequisites" : ["no_prerequisites"]
       },
       {
@@ -212,7 +227,7 @@
       },
       {
         "method_name" : "clear_errors",
-        "description" : "clears the specified errors from the log"
+        "description" : "clears the specified errors from the log",
         "return_type" : "void",
         "parameters"  : [
               {
@@ -233,7 +248,7 @@
                  "type" : "uint32_t",
                  "default_value" : "20"
               } ],
-          "aliases"    : []
+          "aliases"    : [],
           "prerequisites" : ["no_prerequisites"]
       },
       {

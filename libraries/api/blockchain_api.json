@@ -409,7 +409,13 @@
             {
               "name" : "delta_time_seconds",
               "type" : "int32_t",
-              "description" : "Advance the simulated time this many seconds"
+              "description" : "How far in the future to advance the time"
+            },
+            {
+              "name" : "unit",
+              "type" : "string",
+              "description" : "The unit of time (\"seconds\", \"blocks\", or \"rounds\")",
+              "default_value" : "seconds"
             }
         ],
         "is_const" : false,
