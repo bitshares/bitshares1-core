@@ -92,7 +92,7 @@ namespace bts { namespace blockchain {
             void                       extend_chain( const full_block& blk );
             vector<block_id_type>      get_fork_history( const block_id_type& id );
             void                       pop_block();
-            void                       mark_invalid( const block_id_type& id );
+            void                       mark_invalid( const block_id_type& id, const fc::exception& reason );
             void                       mark_included( const block_id_type& id, bool state );
             void                       verify_header( const full_block& );
             void                       apply_transactions( uint32_t block_num,
@@ -105,7 +105,7 @@ namespace bts { namespace blockchain {
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
             void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
-            void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids );
+            void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                       update_random_seed( secret_hash_type new_secret, 
                                                           const pending_chain_state_ptr& pending_state );
@@ -296,7 +296,7 @@ namespace bts { namespace blockchain {
             next_ids = pending;
          }
       }
-      void chain_database_impl::recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids )
+      void chain_database_impl::recursive_mark_as_invalid(const std::unordered_set<block_id_type>& ids , const fc::exception& reason)
       {
          std::unordered_set<block_id_type> next_ids = ids;
          while( next_ids.size() )
@@ -306,6 +306,7 @@ namespace bts { namespace blockchain {
             {
                 block_fork_data record = _fork_db.fetch( item );
                 record.is_valid = false;
+                record.invalid_reason = reason;
                 pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
                 //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
                 _fork_db.store( item, record );
@@ -403,14 +404,15 @@ namespace bts { namespace blockchain {
           return current_fork;
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
-      void chain_database_impl::mark_invalid( const block_id_type& block_id )
+      void chain_database_impl::mark_invalid(const block_id_type& block_id , const fc::exception& reason)
       {
          // fetch the fork data for block_id, mark it as invalid and
          // then mark every item after it as invalid as well.
          auto fork_data = _fork_db.fetch( block_id );
          fork_data.is_valid = false;
+         fork_data.invalid_reason = reason;
          _fork_db.store( block_id, fork_data );
-         recursive_mark_as_invalid( fork_data.next_blocks );
+         recursive_mark_as_invalid( fork_data.next_blocks, reason );
       }
 
       void chain_database_impl::mark_included( const block_id_type& block_id, bool included )
@@ -729,7 +731,7 @@ namespace bts { namespace blockchain {
          catch ( const fc::exception& e )
          {
             wlog( "error applying block: ${e}", ("e",e.to_detail_string() ));
-            mark_invalid( block_id );
+            mark_invalid( block_id, e );
             throw;
          }
 
@@ -1752,23 +1754,49 @@ namespace bts { namespace blockchain {
       return std::string();
     }
 
-    std::vector<uint32_t> chain_database::get_forks_list()const
+    std::map<uint32_t, std::vector<fork_record>> chain_database::get_forks_list()const
     {
-        std::vector<uint32_t> fork_blocks;
+        ulog("Crikey, that's a big fork!");
+        std::map<uint32_t, std::vector<fork_record>> fork_blocks;
         for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
         {
+            ulog("That's not a fork.");
             try
             {
-                if( iter.value().next_blocks.size() > 1 )
-                    fork_blocks.push_back( get_block_num( iter.key() ) );
+                auto fork_iter = iter.value();
+                ulog("THIS is a fork!");
+                if( fork_iter.next_blocks.size() > 1 )
+                {
+                    vector<fork_record> forks;
+                    ulog("Processing fork at ${num}", ("num", get_block_num(iter.key())));
+
+                    for( auto forked_block_id : fork_iter.next_blocks )
+                    {
+                        fork_record fork;
+                        block_fork_data fork_data = my->_fork_db.fetch(forked_block_id);
+                        block_record fork_block_record = my->_block_id_to_block_record_db.fetch(forked_block_id);
+
+                        fork.block_id = forked_block_id;
+                        fork.signing_delegate = get_signing_delegate_id(fork_block_record.timestamp);
+                        fork.transaction_count = fork_block_record.user_transaction_ids.size();
+                        fork.size = fork_block_record.block_size;
+                        fork.timestamp = fork_block_record.timestamp;
+                        fork.is_valid = fork_data.is_valid;
+                        fork.invalid_reason = fork_data.invalid_reason;
+                        fork.is_current_fork = fork_data.is_included;
+
+                        forks.push_back(fork);
+                    }
+
+                    fork_blocks[get_block_num( iter.key() )] = forks;
+                }
             }
             catch( ... )
             {
                 wlog( "error fetching block num of block ${b} while building fork list", ("b",iter.key()));
+                throw;
             }
         }
-       
-        std::sort( fork_blocks.begin(), fork_blocks.end() );
        
         return fork_blocks;
     }

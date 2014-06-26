@@ -2640,7 +2640,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->export_fork_graph( start_block, end_block, filename );
    }
 
-   std::vector<uint32_t> client_impl::blockchain_list_forks()const
+   std::map<uint32_t, vector<fork_record>> client_impl::blockchain_list_forks()const
    {
       return _chain_db->get_forks_list();
    }
