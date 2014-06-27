@@ -1329,24 +1329,18 @@ namespace bts { namespace wallet {
       if( header.timestamp == fc::time_point_sec() )
           FC_THROW_EXCEPTION( invalid_timestamp, "Invalid block timestamp! Block production may be disabled" );
 
-      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
-      auto delegate_record = my->_blockchain->get_account_record( signing_delegate_id );
-      FC_ASSERT( delegate_record.valid() && delegate_record->delegate_info.valid() );
-
-      auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
+      auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
+      auto delegate_pub_key = delegate_record.active_key();
       auto delegate_key = get_private_key( address(delegate_pub_key) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      header.previous_secret = my->get_secret( 
-                                      delegate_record->delegate_info->last_block_num_produced,
-                                      delegate_key );
-
+      header.previous_secret = my->get_secret( delegate_record.delegate_info->last_block_num_produced,
+                                               delegate_key );
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
-      header.sign(delegate_key);
+      header.sign( delegate_key );
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
-
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    /**

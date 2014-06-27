@@ -2715,7 +2715,7 @@ config load_config( const fc::path& datadir )
 
    string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
    {
-      return _chain_db->get_signing_delegate( block_number ).name;
+      return _chain_db->get_block_signee( block_number ).name;
    }
 
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
