@@ -749,10 +749,11 @@ namespace bts { namespace cli {
                   *_out << std::setw(15) << "TXN COUNT";
                   *_out << std::setw(65) << "SIGNING DELEGATE";
                   *_out << std::setw(8)  << "SIZE";
+                  *_out << std::setw(14) << "TOTAL FEES";
                   *_out << std::setw(8)  << "LATENCY";
 
                   *_out << '\n';
-                  for (int i = 0; i < 136; ++i)
+                  for (int i = 0; i < 150; ++i)
                       *_out << '-';
                   *_out << '\n';
 
@@ -763,6 +764,7 @@ namespace bts { namespace cli {
                             << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
                             << std::setw(8) << block.block_size
+                            << std::setw(14) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
                             << std::setw(8) << block.latency
                             << '\n';
                   }
