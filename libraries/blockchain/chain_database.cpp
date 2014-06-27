@@ -104,7 +104,7 @@ namespace bts { namespace blockchain {
                                                            const pending_chain_state_ptr& );
             void                       update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
-            void                       recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
+            block_fork_data recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
             void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                       update_random_seed( secret_hash_type new_secret, 
@@ -292,8 +292,11 @@ namespace bts { namespace blockchain {
             _pending_transaction_db.remove( item );
       }
 
-      void chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
+      block_fork_data chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
       {
+         block_fork_data longest_fork;
+         uint32_t highest_block_num = 0;
+
          std::unordered_set<block_id_type> next_ids = ids;
          while( next_ids.size() )
          {
@@ -305,9 +308,18 @@ namespace bts { namespace blockchain {
                 pending.insert( record.next_blocks.begin(), record.next_blocks.end() );
                 //ilog( "store: ${id} => ${data}", ("id",item)("data",record) );
                 _fork_db.store( item, record );
+
+                auto block_record = _block_id_to_block_record_db.fetch(item);
+                if( block_record.block_num > highest_block_num && record.next_blocks.size() > 0 )
+                {
+                    highest_block_num = block_record.block_num;
+                    longest_fork = record;
+                }
             }
             next_ids = pending;
          }
+
+         return longest_fork;
       }
       void chain_database_impl::recursive_mark_as_invalid(const std::unordered_set<block_id_type>& ids , const fc::exception& reason)
       {
@@ -409,7 +421,9 @@ namespace bts { namespace blockchain {
              {
                 // we found the missing link
                 current_fork.is_linked = true;
-                recursive_mark_as_linked( current_fork.next_blocks );
+                block_fork_data longest_fork = recursive_mark_as_linked( current_fork.next_blocks );
+                _fork_db.store( block_id, current_fork );
+                return longest_fork;
              }
           }
           else
@@ -1170,10 +1184,10 @@ namespace bts { namespace blockchain {
          FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
          fork = *new_fork_data;
       }
-      else if( fork.can_link() && block_data.block_num > my->_head_block_header.block_num )
+      else if( fork.can_link() && my->_block_id_to_block_record_db.fetch(*fork.next_blocks.begin()).block_num > my->_head_block_header.block_num )
       {
          try {
-            my->switch_to_fork( block_id );
+            my->switch_to_fork( *fork.next_blocks.begin() );
             optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
             FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
             fork = *new_fork_data;
