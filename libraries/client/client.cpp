@@ -681,19 +681,23 @@ config load_config( const fc::path& datadir )
           auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
-          auto offset = bts::blockchain::ntp_error();
-          if( offset < 0 )
+          if (ntp_time().valid())
           {
-              offset = floor( offset );
-              next_slot_time += uint32_t( -offset );
-          }
-          else
-          {
-              offset = ceil( offset );
-              next_slot_time -= uint32_t( offset );
+            double offset = bts::blockchain::ntp_error();
+            if( offset < 0 )
+            {
+                offset = floor( offset );
+                next_slot_time += uint32_t( -offset );
+            }
+            else
+            {
+                offset = ceil( offset );
+                next_slot_time -= uint32_t( offset );
+            }
           }
 
-          _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
+          if (next_slot_time > fc::time_point::now())
+            _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
        map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
