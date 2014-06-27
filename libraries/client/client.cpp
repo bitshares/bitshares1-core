@@ -2673,12 +2673,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_signing_delegate( block_number ).name;
    }
 
-   void client_impl::blockchain_start_simulated_time(const fc::time_point& starting_time)
+   void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
    {
      bts::blockchain::start_simulated_time(starting_time);
    }
 
-   void client_impl::blockchain_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
+   void client_impl::debug_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
    {
      if (unit == "blocks")
        delta_time *= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
