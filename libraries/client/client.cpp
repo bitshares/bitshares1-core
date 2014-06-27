@@ -440,7 +440,6 @@ config load_config( const fc::path& datadir )
             }
 
             optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
-            optional<time_point_sec> get_next_producible_block_timestamp()const;
 
             void reschedule_delegate_loop();
             void start_delegate_loop();
@@ -579,11 +578,6 @@ config load_config( const fc::path& datadir )
           return _chain_db->get_next_producible_block_timestamp( delegate_ids );
        }
 
-       optional<time_point_sec> client_impl::get_next_producible_block_timestamp()const
-       {
-          return get_next_producible_block_timestamp( _wallet->get_my_enabled_delegates() );
-       }
-
        void client_impl::reschedule_delegate_loop()
        {
           if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
@@ -613,7 +607,7 @@ config load_config( const fc::path& datadir )
           auto now = bts::blockchain::now();
 
           if( _wallet->is_locked() ) return;
-          const auto& enabled_delegates = _wallet->get_my_enabled_delegates();
+          const auto& enabled_delegates = _wallet->get_my_delegates( true, false );
           if( enabled_delegates.empty() ) return;
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
@@ -1157,11 +1151,6 @@ config load_config( const fc::path& datadir )
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
-
-    optional<time_point_sec> client::get_next_producible_block_timestamp()const
-    {
-        return my->get_next_producible_block_timestamp();
-    }
 
     fc::variant_object version_info()
     {
@@ -2272,7 +2261,8 @@ config load_config( const fc::path& datadir )
       auto now = bts::blockchain::now();
       auto ntp = bts::blockchain::ntp_time();
       auto seconds_remaining = (_wallet->unlocked_until() - now).count()/1000000;
-      auto next_block_time = get_next_producible_block_timestamp();
+      const auto& delegates = _wallet->get_my_delegates( true, true );
+      auto next_block_time = get_next_producible_block_timestamp( delegates );
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();
