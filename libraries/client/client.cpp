@@ -593,6 +593,8 @@ config load_config( const fc::path& datadir )
 
        optional<time_point_sec> client_impl::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
        {
+          if( !_wallet->is_open() || _wallet->is_locked() ) return optional<time_point_sec>();
+
           vector<account_id_type> delegate_ids;
           delegate_ids.reserve( delegate_records.size() );
           for( const auto& delegate_record : delegate_records )
@@ -634,8 +636,9 @@ config load_config( const fc::path& datadir )
        {
           auto now = bts::blockchain::now();
 
+          if( !_wallet->is_open() || _wallet->is_locked() ) return;
           const auto& enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
-          if( _wallet->is_locked() || enabled_delegates.empty() ) return;
+          if( enabled_delegates.empty() ) return;
           auto next_block_time = get_next_producible_block_timestamp( enabled_delegates );
 
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
