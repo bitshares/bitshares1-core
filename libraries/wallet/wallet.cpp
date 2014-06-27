@@ -42,16 +42,16 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
-             wallet*                self;
-             wallet_db              _wallet_db;
-             chain_database_ptr     _blockchain;
-             path                   _data_directory;
-             path                   _current_wallet_path;
-             fc::time_point_sec     _scheduled_lock_time;
-             fc::promise<void>::ptr _wallet_shutting_down_promise;
-             fc::future<void>       _wallet_relocker_done;
-             fc::sha512             _wallet_password;
-             bool                   _use_deterministic_one_time_keys;
+             wallet*                            self;
+             wallet_db                          _wallet_db;
+             chain_database_ptr                 _blockchain;
+             path                               _data_directory;
+             path                               _current_wallet_path;
+             fc::sha512                         _wallet_password;
+             fc::optional<fc::time_point_sec>   _scheduled_lock_time;
+             fc::future<void>                   _wallet_relocker_done;
+             fc::promise<void>::ptr             _wallet_shutting_down_promise;
+             bool                               _use_deterministic_one_time_keys;
 
              fc::ecc::private_key create_one_time_key()
              {
@@ -601,7 +601,7 @@ namespace bts { namespace wallet {
           close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
-          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
       }
       catch( ... )
       {
@@ -650,7 +650,7 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
-          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
@@ -718,7 +718,7 @@ namespace bts { namespace wallet {
         my->_wallet_relocker_done.wait();
       }
 
-      my->_scheduled_lock_time = fc::time_point_sec();
+      my->_scheduled_lock_time = fc::optional<fc::time_point_sec>();
       my->_wallet_password = fc::sha512();
       my->_use_deterministic_one_time_keys = false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -756,7 +756,7 @@ namespace bts { namespace wallet {
       {
           create( wallet_name, passphrase );
           my->_wallet_db.import_from_json( filename );
-          unlock( passphrase, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( passphrase, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
       }
       catch( ... )
       {
@@ -767,10 +767,12 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
 
-   void wallet::unlock( const string& password, const fc::microseconds& timeout )
+   void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
+      auto now = blockchain::now();
+      FC_ASSERT( is_open() );
       FC_ASSERT( password.size() >= BTS_WALLET_MIN_PASSWORD_LENGTH ) 
-      FC_ASSERT( timeout >= fc::seconds(1) );
+      FC_ASSERT( timeout_seconds >= 1 );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
       if( !my->_wallet_db.validate_password( my->_wallet_password ) )
@@ -778,65 +780,57 @@ namespace bts { namespace wallet {
          lock();
          FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
       }
-      wallet_lock_state_changed( false );
 
-      if( timeout == microseconds::maximum() )
+      wallet_lock_state_changed( false );
+      my->_scheduled_lock_time = now + timeout_seconds;
+
+      ilog("Checking wallet relocker task");
+      if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
       {
-         my->_scheduled_lock_time = fc::time_point_sec::maximum();
-      }
-      else
-      {
-        // the API lets users specify a 64-bit time offset that can't be represented in our 32-bit time_point_sec class,
-        // so safely convert it to 32-bit here.
-        uint64_t relock_seconds_in_the_future = timeout.count() / fc::seconds(1).count();
-        uint64_t relock_seconds_since_epoch = bts::blockchain::now().sec_since_epoch() + relock_seconds_in_the_future;
-        uint32_t relock_seconds_since_epoch_32 = (int32_t)std::min<uint64_t>(relock_seconds_since_epoch, 
-                                                                             std::numeric_limits<uint32_t>::max());        
-        my->_scheduled_lock_time = fc::time_point_sec(relock_seconds_since_epoch_32);
-        ilog("Checking wallet relocker task");
-        if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
-        {
           ilog("Wallet relocker task not running");
           my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
           my->_wallet_relocker_done = fc::async([this](){
-            ilog("Starting wallet relocker task");
-            struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
-            for( ; ; )
+          ilog("Starting wallet relocker task");
+          struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
+          for( ; ; )
+          {
+            if( !my->_scheduled_lock_time.valid() || (blockchain::now() > *my->_scheduled_lock_time) )
             {
-              if (bts::blockchain::now() > my->_scheduled_lock_time)
-              {
-                lock();
-                ilog("leaving relocker after relock");
-                return;
-              }
-              // if the promise is set, the wallet is shutting down and we need to exit the relocker
-              if (my->_wallet_shutting_down_promise->ready())
-              {
-                ilog("leaving relocker task because promise is ready");
-                return;
-              }
-              try
-              {
-                my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
-                ilog("leaving relocker task because promise waited");
-                return;
-              }
-              catch (const fc::timeout_exception&)
-              {
-              }
+              lock();
+              ilog("Leaving relocker after relock");
+              return;
             }
-          });
-          ilog("Wallet relocker task launched");
-        }
+
+            // if the promise is set, the wallet is shutting down and we need to exit the relocker
+            if( my->_wallet_shutting_down_promise->ready() )
+            {
+              ilog("Leaving relocker task because promise is ready");
+              return;
+            }
+            try
+            {
+              my->_wallet_shutting_down_promise->wait( fc::milliseconds( 200 ) );
+              ilog("Leaving relocker task because promise waited");
+              return;
+            }
+            catch (const fc::timeout_exception&)
+            {
+            }
+          }
+        });
+        ilog("Wallet relocker task launched");
       }
+
+      /* Scan blocks we have missed while locked */
       scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_sec", timeout.count()/1000000 ) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
    void wallet::lock()
    {
+      FC_ASSERT( is_open() );
       my->_wallet_password     = fc::sha512();
-      my->_scheduled_lock_time = fc::time_point();
+      my->_scheduled_lock_time = fc::optional<fc::time_point_sec>();
       wallet_lock_state_changed( true );
    }
 
@@ -854,16 +848,19 @@ namespace bts { namespace wallet {
 
    bool wallet::is_unlocked()const
    {
+      FC_ASSERT( is_open() );
       return !wallet::is_locked();
    }   
 
    bool wallet::is_locked()const
    {
+      FC_ASSERT( is_open() );
       return my->_wallet_password == fc::sha512();
    }
 
-   fc::time_point wallet::unlocked_until()const
+   fc::optional<fc::time_point_sec> wallet::unlocked_until()const
    {
+      FC_ASSERT( is_open() );
       return my->_scheduled_lock_time;
    }
 
