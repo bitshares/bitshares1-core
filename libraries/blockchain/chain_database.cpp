@@ -184,29 +184,7 @@ namespace bts { namespace blockchain {
       { try {
           bool rebuild_index = false;
 
-          if( fc::exists( data_dir / "property_db") )
-          {
-              ilog("Updating database directory hierarchy.");
-              fc::create_directories( data_dir / "index" );
-              fc::create_directories( data_dir / "raw_chain" );
-
-              fc::directory_iterator end;
-              for( fc::directory_iterator d(data_dir); d != end; ++d)
-              {
-                  if( *d == data_dir / "index" || *d == data_dir / "raw_chain" )
-                      continue;
-
-                  fc::path target;
-                  if( *d == data_dir / "block_id_to_block_data_db" )
-                      target = data_dir / "raw_chain/block_id_to_block_data_db";
-                  else
-                      target = data_dir / "index" / d->filename();
-
-                  ilog("Renaming ${old} to ${new}", ("old", *d)("new", target));
-                  fc::rename(*d, target);
-              }
-          }
-          else if( !fc::exists(data_dir / "index" ))
+          if( !fc::exists(data_dir / "index" ) )
           {
               ilog("Rebuilding database index...");
               fc::create_directories( data_dir / "index" );
@@ -221,10 +199,10 @@ namespace bts { namespace blockchain {
               {
                 wlog( "old database version, upgrade and re-sync" );
                 _property_db.close();
-                fc::remove_all( data_dir );
+                fc::remove_all( data_dir / "index" );
                 fc::create_directories( data_dir / "index" );
-                fc::create_directories( data_dir / "raw_chain" );
                 _property_db.open( data_dir / "index/property_db" );
+                rebuild_index = true;
               }
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
           }
@@ -264,29 +242,6 @@ namespace bts { namespace blockchain {
           _collateral_db.open( data_dir / "index/collateral_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-
-          if (rebuild_index)
-          {
-              initialize_genesis(genesis_file);
-              std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
-
-              const char spinner[] = "-\\|/";
-              int blocks_indexed = 0;
-
-              auto block_itr = _block_id_to_block_data_db.begin();
-              while( block_itr.valid() )
-              {
-                  if( ++blocks_indexed % 50 == 0 )
-                      std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
-
-                  auto block = block_itr.value();
-                  ++block_itr;
-
-                  self->push_block(block);
-              }
-              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks.\n" << std::flush;
-          }
-
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
@@ -969,10 +924,28 @@ namespace bts { namespace blockchain {
           if( last_block_num == uint32_t(-1) )
           {
              close();
-             fc::remove_all( data_dir );
-             fc::create_directories( data_dir );
+             fc::remove_all( data_dir / "index" );
+             fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
              my->initialize_genesis(genesis_file);
+
+             std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
+
+             const char spinner[] = "-\\|/";
+             int blocks_indexed = 0;
+
+             auto block_itr = my->_block_id_to_block_data_db.begin();
+             while( block_itr.valid() )
+             {
+                 if( ++blocks_indexed % 50 == 0 )
+                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
+
+                 auto block = block_itr.value();
+                 ++block_itr;
+
+                 push_block(block);
+             }
+             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks.\n" << std::flush;
           }
           my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
 
@@ -1845,14 +1818,14 @@ namespace bts { namespace blockchain {
                     {
                         fork_record fork;
                         block_fork_data fork_data = my->_fork_db.fetch(forked_block_id);
-                        block_record fork_block_record = my->_block_id_to_block_record_db.fetch(forked_block_id);
+                        block_record fork_block = my->_block_id_to_block_record_db.fetch(forked_block_id);
 
                         fork.block_id = forked_block_id;
-                        fork.signing_delegate = get_signing_delegate_id(fork_block_record.timestamp); // TODO: Should use signee key
-                        fork.transaction_count = fork_block_record.user_transaction_ids.size();
-                        fork.latency = fork_block_record.latency;
-                        fork.size = fork_block_record.block_size;
-                        fork.timestamp = fork_block_record.timestamp;
+                        fork.latency = fork_block.latency;
+                        fork.signing_delegate = get_signing_delegate_id(fork_block.timestamp); // TODO: Should use signee key
+                        fork.transaction_count = fork_block.user_transaction_ids.size();
+                        fork.size = fork_block.block_size;
+                        fork.timestamp = fork_block.timestamp;
                         fork.is_valid = fork_data.is_valid;
                         fork.invalid_reason = fork_data.invalid_reason;
                         fork.is_current_fork = fork_data.is_included;
