@@ -21,3 +21,6 @@ target_link_libraries( bts_cli
 target_include_directories( bts_cli 
                             PRIVATE "${readline_includes}"
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+if(WIN32)
+  target_compile_definitions( bts_cli PRIVATE _CRT_NONSTDC_NO_DEPRECATE )
+endif(WIN32)

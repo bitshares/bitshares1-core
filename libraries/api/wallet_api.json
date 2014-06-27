@@ -776,6 +776,7 @@
                   "description" : "the memo to send to the receiver"
                }
             ],
+         "detailed_description" : "The asset being issued must have been created via wallet_asset_create in a previous block.",
          "prerequisites" : ["wallet_unlocked"]
       },
       {

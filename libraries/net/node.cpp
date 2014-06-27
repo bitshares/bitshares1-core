@@ -836,9 +836,9 @@ namespace bts { namespace net { namespace detail {
             peers_to_disconnect_forcibly.push_back( handshaking_peer );
           }
 
-        // timeout for any active peers is a full two rounds ( 101 minutes at present )
-        uint32_t active_timeout = 2 * BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout );
+        // timeout for any active peers is two block intervals
+        uint32_t active_timeout = 2 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
         for( const peer_connection_ptr& active_peer : _active_connections )
           if( active_peer->connection_initiation_time < active_disconnect_threshold &&
               active_peer->get_last_message_received_time() < active_disconnect_threshold &&
@@ -1896,6 +1896,23 @@ namespace bts { namespace net { namespace detail {
         _delegate->connection_count_changed( _active_connections.size() );
         _last_reported_number_of_connections = _active_connections.size();
       }
+
+      if (!originating_peer->sync_items_requested_from_peer.empty())
+      {
+        for (auto sync_item_and_time : originating_peer->sync_items_requested_from_peer)
+          _active_sync_requests.erase(sync_item_and_time.first.item_hash);
+        trigger_fetch_sync_items_loop();
+      }
+      if (!originating_peer->items_requested_from_peer.empty())
+      {
+        for (auto item_and_time : originating_peer->items_requested_from_peer)
+        {
+          // TODO: track and re-insert with original priority
+          _items_to_fetch.insert(prioritized_item_id(item_and_time.first, _items_to_fetch_sequence_counter++));
+        }
+        trigger_fetch_items_loop();
+      }
+
     }
 
     void node_impl::process_backlog_of_sync_blocks()

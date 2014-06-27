@@ -22,6 +22,15 @@ namespace bts { namespace wallet {
       int64_t votes_against;
    };
 
+   enum delegate_status_flags
+   {
+       any_delegate_status = 0x00,
+       enabled_delegate_status = 0x01,
+       active_delegate_status = 0x02,
+       disabled_delegate_status = 0x04,
+       inactive_delegate_status = 0x08
+   };
+
    class wallet
    {
       public:
@@ -158,8 +167,10 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         vector<wallet_account_record> get_my_delegates( bool enabled_only = false, bool active_only = false )const;
-         vector<private_key_type> get_my_delegate_private_keys( bool enabled_only = false, bool active_only = false )const;
+         ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
+         vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;
+         ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
+         vector<private_key_type> get_my_delegate_private_keys( int delegates_to_retrieve = any_delegate_status )const;
          void enable_delegate_block_production( const string& delegate_id, bool enable = true );
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */

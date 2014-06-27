@@ -292,8 +292,8 @@ public:
 bool test_file::compare_files()
 {
   //first check if files are equal size, if not, files are different
-  size_t result_file_size = boost::filesystem::file_size(_result_file.string());
-  size_t expected_result_file_size = boost::filesystem::file_size(_expected_result_file.string());
+  uintmax_t result_file_size = boost::filesystem::file_size(_result_file.string());
+  uintmax_t expected_result_file_size = boost::filesystem::file_size(_expected_result_file.string());
   bool file_sizes_equal = (result_file_size == expected_result_file_size);
   if (!file_sizes_equal)
     return false;
