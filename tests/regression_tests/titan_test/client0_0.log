@@ -1,4 +1,4 @@
-default (unlocked) >>> blockchain_wait_for_block_by_number 1 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
 default (unlocked) >>> filter_output_for_tests true
 OK
@@ -61,5 +61,5 @@ delegate0:
     19,801,829.99800 XTS
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> blockchain_wait_for_block_by_number 3 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
 OK

@@ -73,22 +73,20 @@ namespace bts { namespace wallet {
 
          void    export_to_json( const path& filename )const;
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
-
          ///@}
          
          /**
           *  Lock management & security
           */
          ///@{
-         void     unlock( const string& password,
-                          const fc::microseconds& timeout = microseconds::maximum() );
-         void     lock();
-         void     change_passphrase(const string& new_passphrase);
+         void                               lock();
+         void                               unlock( const string& password, uint32_t timeout_seconds );
 
-         bool     is_unlocked()const;
-         bool     is_locked()const;
+         bool                               is_locked()const;
+         bool                               is_unlocked()const;
+         fc::optional<fc::time_point_sec>   unlocked_until()const;
 
-         fc::time_point unlocked_until()const;
+         void                               change_passphrase(const string& new_passphrase);
          ///@}
 
          void set_setting(const string& name, const variant& value);
@@ -166,23 +164,21 @@ namespace bts { namespace wallet {
           *  Block Generation API
           */
          ///@{
-
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<private_key_type> get_my_delegate_private_keys( int delegates_to_retrieve = any_delegate_status )const;
+
          void enable_delegate_block_production( const string& delegate_id, bool enable = true );
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;
-
          ///@}
 
          /**
           *  Account management API
           */
          ///@{
-
          vector<string> list() const; // list wallets
 
          vector<wallet_account_record> list_accounts()const;
@@ -216,15 +212,12 @@ namespace bts { namespace wallet {
          public_key_type import_wif_private_key( const string& wif_key, 
                                                  const string& account_name,
                                                  bool create_account = false );
-
          ///@}
 
          /**
           *  Transaction Generation Methods
           */
          ///@{
-         
-         
          /**
           *  Multi-Part transfers provide additional security by not combining inputs, but they
           *  show up to the user as multiple unique transfers.  This is an advanced feature
@@ -315,7 +308,6 @@ namespace bts { namespace wallet {
                                               const string& pay_with_account_name,
                                               bool sign = true );
 
-
          void update_account_private_data( const string& account_to_update,
                                            const variant& private_data );
 
@@ -340,7 +332,6 @@ namespace bts { namespace wallet {
 
 
          ///@} Transaction Generation Methods
- 
          string              get_key_label( const public_key_type& key )const;
          pretty_transaction to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
@@ -362,7 +353,6 @@ namespace bts { namespace wallet {
          unordered_map<address,string>    get_receive_addresses()const;
          unordered_map<address,string>    get_send_addresses()const;
          */
-
          
          typedef map<string, vote_status >  account_vote_summary_type;
          account_vote_summary_type get_account_vote_summary( const string& account_name )const;
@@ -405,6 +395,5 @@ namespace bts { namespace wallet {
    typedef shared_ptr<wallet> wallet_ptr;
 
 } } // bts::wallet
-
 
 FC_REFLECT( bts::wallet::vote_status, (votes_for)(votes_against) )

@@ -320,7 +320,7 @@
           [
             { 
               "name" : "timeout", 
-              "type" : "time_interval_in_seconds", 
+              "type" : "uint32_t",
               "description" : "the number of seconds to keep the wallet unlocked"
             },
             { 

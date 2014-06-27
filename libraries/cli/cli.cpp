@@ -745,9 +745,9 @@ namespace bts { namespace cli {
                   auto blocks = result.as<vector<bts::blockchain::block_record>>();
 
                   *_out << std::setw(10) << "HEIGHT";
-                  *_out << std::setw(30) << "TIME";
-                  *_out << std::setw(15) << "TXN COUNT";
+                  *_out << std::setw(30) << "TIMESTAMP";
                   *_out << std::setw(65) << "SIGNING DELEGATE";
+                  *_out << std::setw(15) << "TXN COUNT";
                   *_out << std::setw(8)  << "SIZE";
                   *_out << std::setw(14) << "TOTAL FEES";
                   *_out << std::setw(8)  << "LATENCY";
@@ -761,8 +761,8 @@ namespace bts { namespace cli {
                   {
                       *_out << std::setw(10) << block.block_num
                             << std::setw(30) << time_to_string(block.timestamp)
-                            << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
+                            << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(8) << block.block_size
                             << std::setw(14) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
                             << std::setw(8) << block.latency
