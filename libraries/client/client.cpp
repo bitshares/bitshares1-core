@@ -2689,7 +2689,7 @@ config load_config( const fc::path& datadir )
      bts::blockchain::advance_time(delta_time);
    }
 
-   void client_impl::blockchain_wait_for_block_by_number(uint32_t block_number, const std::string& type /* = "absolute" */)
+   void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const std::string& type /* = "absolute" */)
    {
       if (type == "relative")
         block_number += _chain_db->get_head_block_num();

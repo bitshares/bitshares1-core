@@ -1,10 +1,10 @@
-default (unlocked) >>> blockchain_wait_for_block_by_number 1 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
 default (unlocked) >>> filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp2eBHqxoR53WWyB4CH2QJF" account-for-client1 true false
 OK
-default (unlocked) >>> blockchain_wait_for_block_by_number 2 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
 OK
 default (unlocked) >>> wallet_account_balance account-for-client1
 account-for-client1:
