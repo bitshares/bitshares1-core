@@ -498,7 +498,7 @@ config load_config( const fc::path& datadir )
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
 
-            bts::network::node                                          _delegate_network;
+           // bts::network::node                                          _delegate_network;
 
             std::ofstream                                               _console_log;
             std::unique_ptr<std::ostream>                               _output_stream;
@@ -1160,6 +1160,9 @@ config load_config( const fc::path& datadir )
     { try {
         my->_config   = load_config(data_dir);
 
+        /*
+         *  Don't delete me, I promise I will be used soon 
+         *
         my->_delegate_network.set_client( shared_from_this() );
         my->_delegate_network.listen( my->_config.delegate_server );
         for( auto delegate_host : my->_config.default_delegate_peers )
@@ -1174,6 +1177,7 @@ config load_config( const fc::path& datadir )
            }
 
         }
+        */
 
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
         fc::configure_logging( my->_config.logging );
