@@ -595,7 +595,7 @@ config load_config( const fc::path& datadir )
 
        optional<time_point_sec> client_impl::get_next_producible_block_timestamp()const
        {
-          return get_next_producible_block_timestamp( _wallet->get_my_delegates( true, false ) );
+          return get_next_producible_block_timestamp( _wallet->get_my_delegates( enabled_delegate_status ) );
        }
 
        void client_impl::reschedule_delegate_loop()
@@ -627,7 +627,7 @@ config load_config( const fc::path& datadir )
           auto now = bts::blockchain::now();
 
           if( _wallet->is_locked() ) return;
-          const auto& enabled_delegates = _wallet->get_my_delegates( true, false );
+          const auto& enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( enabled_delegates.empty() ) return;
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
@@ -2286,7 +2286,7 @@ config load_config( const fc::path& datadir )
       auto now = bts::blockchain::now();
       auto ntp = bts::blockchain::ntp_time();
       auto seconds_remaining = (_wallet->unlocked_until() - now).count()/1000000;
-      const auto& delegates = _wallet->get_my_delegates( true, true );
+      const auto& delegates = _wallet->get_my_delegates( enabled_delegate_status | active_delegate_status );
       auto next_block_time = get_next_producible_block_timestamp( delegates );
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
