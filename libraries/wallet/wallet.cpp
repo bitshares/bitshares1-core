@@ -1166,6 +1166,7 @@ namespace bts { namespace wallet {
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
                              const scan_progress_callback& progress_callback )
    { try {
+      elog( "SCAN CHAIN!" );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
@@ -1277,10 +1278,10 @@ namespace bts { namespace wallet {
       for( const auto& account_record : account_records )
       {
           if( !account_record.is_delegate() ) continue;
-          if( delegates_to_retrieve | enabled_delegate_status && !account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve | disabled_delegate_status && account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve | active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
-          if( delegates_to_retrieve | inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve & enabled_delegate_status && !account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & disabled_delegate_status && account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve & inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
           delegate_records.push_back( account_record );
       }
       return delegate_records;

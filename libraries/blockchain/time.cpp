@@ -12,7 +12,16 @@ time_discontinuity_signal_type time_discontinuity_signal;
 
 fc::optional<fc::time_point> ntp_time()
 {
-   static fc::ntp* ntp_service = new fc::ntp();
+   static fc::ntp* ntp_service = nullptr;
+   if( ntp_service == nullptr )
+   {
+      // TODO: allocate, then atomic swap and
+      // free on failure... remove sync calls from
+      // constructor of ntp() and into a "start" method
+      // that is called only if we get a successful 
+      // atomic swap.
+      ntp_service = new fc::ntp();
+   }
    return ntp_service->get_time();
 }
 

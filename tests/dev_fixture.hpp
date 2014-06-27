@@ -222,15 +222,21 @@ struct chain_fixture
    template<typename T>
    void produce_block( T my_client )
    {
-         auto head_num = my_client->get_chain()->get_head_block_num();
-         auto next_block_time = my_client->get_next_producible_block_timestamp();
-         FC_ASSERT( next_block_time.valid() );
-         bts::blockchain::advance_time( (int32_t)((*next_block_time - bts::blockchain::now()).count()/1000000) );
-         auto b = my_client->get_chain()->generate_block(*next_block_time);
-         my_client->get_wallet()->sign_block( b );
-         my_client->get_node()->broadcast( bts::client::block_message( b ) );
-         FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
-         bts::blockchain::advance_time( 7 );
+      if( my_client == clienta )
+         console->print( "A: produce block----------------------------------------\n", fc::console_appender::color::blue );
+      else
+         console->print( "B: produce block----------------------------------------\n", fc::console_appender::color::green );
+
+
+      auto head_num = my_client->get_chain()->get_head_block_num();
+      auto next_block_time = my_client->get_next_producible_block_timestamp();
+      FC_ASSERT( next_block_time.valid() );
+      bts::blockchain::advance_time( (int32_t)((*next_block_time - bts::blockchain::now()).count()/1000000) );
+      auto b = my_client->get_chain()->generate_block(*next_block_time);
+      my_client->get_wallet()->sign_block( b );
+      my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
+      bts::blockchain::advance_time( 7 );
    }
 
    void enable_logging()

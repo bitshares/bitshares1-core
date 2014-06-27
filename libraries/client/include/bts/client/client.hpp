@@ -56,7 +56,9 @@ namespace bts { namespace client {
           default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:"}), 
           ignore_console(false),
           use_upnp(true),
-          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) 
+          maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
+          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
+          default_delegate_peers( vector<string>({"127.0.0.1:9988"}) )
           {
              default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
              default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
@@ -70,6 +72,8 @@ namespace bts { namespace client {
           optional<fc::path>  genesis_config;
           uint16_t            maximum_number_of_connections;
           fc::logging_config  logging;
+          fc::ip::endpoint    delegate_server;
+          vector<string>      default_delegate_peers;
     };
 
 
@@ -157,5 +161,8 @@ extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
-FC_REFLECT( bts::client::config, (rpc)(default_peers)(ignore_console)(logging) )
+FC_REFLECT( bts::client::config, 
+            (rpc)(default_peers)(ignore_console)(logging)
+            (delegate_server)
+            (default_delegate_peers) )
 

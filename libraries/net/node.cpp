@@ -804,6 +804,7 @@ namespace bts { namespace net { namespace detail {
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
         std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
+        std::list<peer_connection_ptr> peers_to_send_keep_alive;
 
         // Disconnect peers that haven't sent us any data recently
         // These numbers are just guesses and we need to think through how this works better.
@@ -837,16 +838,24 @@ namespace bts { namespace net { namespace detail {
           }
 
         // timeout for any active peers is two block intervals
-        uint32_t active_timeout = 2 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_timeout);
+        uint32_t active_disconnect_timeout = 5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2;
+        uint32_t active_send_keepalive_timeount = active_disconnect_timeout / 2;
+        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_disconnect_timeout);
+        fc::time_point active_send_keepalive_threshold = fc::time_point::now() - fc::seconds(active_send_keepalive_timeount);
         for( const peer_connection_ptr& active_peer : _active_connections )
           if( active_peer->connection_initiation_time < active_disconnect_threshold &&
-              active_peer->get_last_message_received_time() < active_disconnect_threshold &&
-              active_peer->get_last_message_sent_time() < active_disconnect_threshold )
+              active_peer->get_last_message_received_time() < active_disconnect_threshold )
           {
             wlog( "Closing connection with peer ${peer} due to inactivity of at least ${timeout} seconds", 
-                 ( "peer", active_peer->get_remote_endpoint() )("timeout", active_timeout ) );
+                 ( "peer", active_peer->get_remote_endpoint() )("timeout", active_disconnect_timeout ) );
             peers_to_disconnect_gently.push_back( active_peer );
+          }
+          else if (active_peer->connection_initiation_time < active_send_keepalive_threshold &&
+                   active_peer->get_last_message_received_time() < active_send_keepalive_threshold)
+          {
+            wlog( "Sending a keepalive message to peer ${peer} who hasn't sent us any messages in the last ${timeout} seconds", 
+                 ( "peer", active_peer->get_remote_endpoint() )("timeout", active_send_keepalive_timeount ) );
+            peers_to_send_keep_alive.push_back(active_peer);
           }
 
         fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT );
@@ -870,9 +879,10 @@ namespace bts { namespace net { namespace detail {
         }
 
         for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
-        {
           peer->close_connection();
-        }
+
+        for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
+          peer->send_message(current_time_request_message());
 
         fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
