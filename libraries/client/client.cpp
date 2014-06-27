@@ -18,6 +18,8 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
 
+#include <bts/network/node.hpp>
+
 #include <bts/db/level_map.hpp>
 
 #include <fc/reflect/variant.hpp>
@@ -435,7 +437,8 @@ config load_config( const fc::path& datadir )
                 _cli->start();
             }
 
-            optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
+            optional<time_point_sec> get_next_producible_block_timestamp( 
+                                      const vector<wallet_account_record>& delegate_records )const;
             optional<time_point_sec> get_next_producible_block_timestamp()const;
 
             void reschedule_delegate_loop();
@@ -443,9 +446,13 @@ config load_config( const fc::path& datadir )
             void cancel_delegate_loop();
             void delegate_loop();
 
-            void configure_rpc_server(config& cfg, const program_options::variables_map& option_variables);
+            void configure_rpc_server(config& cfg, 
+                                      const program_options::variables_map& option_variables);
 
-            block_fork_data on_new_block(const full_block& block, const block_id_type& block_id, bool sync_mode);
+            block_fork_data on_new_block(const full_block& block, 
+                                         const block_id_type& block_id, 
+                                         bool sync_mode);
+
             void on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
@@ -453,7 +460,7 @@ config load_config( const fc::path& datadir )
             virtual bool has_item(const bts::net::item_id& id) override;
             virtual bool handle_message(const bts::net::message&, bool sync_mode) override;
             virtual std::vector<bts::net::item_hash_t> get_item_ids(uint32_t item_type,
-                                                                    const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
+                                                                    const vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                                     uint32_t& remaining_item_count,
                                                                     uint32_t limit = 2000) override;
             virtual bts::net::message get_item(const bts::net::item_id& id) override;
@@ -472,6 +479,8 @@ config load_config( const fc::path& datadir )
             /// @}
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
+
+            bts::network::node                                          _delegate_network;
 
             std::ofstream                                               _console_log;
             std::unique_ptr<std::ostream>                               _output_stream;
@@ -614,6 +623,9 @@ config load_config( const fc::path& datadir )
           auto next_block_time = get_next_producible_block_timestamp( enabled_delegates );
           if( next_block_time.valid() )
           {
+              // sign in to delegate server using private keys of my delegates
+              //_delegate_network.signin( _wallet->get_active_delegate_private_keys() );
+              
               ilog( "Next block time: ${t}", ("t",*next_block_time) );
               if( *next_block_time <= now )
               {
@@ -628,7 +640,11 @@ config load_config( const fc::path& datadir )
 
                       full_block next_block = _chain_db->generate_block( *next_block_time );
                       _wallet->sign_block( next_block );
+
                       on_new_block( next_block, next_block.id(), false );
+
+                      // broadcast block to delegates first, starting with the next delegate
+
                       _p2p_node->broadcast( block_message( next_block ) );
                       ilog( "Produced block #${n}!", ("n",next_block.block_num) );
                    }
@@ -1052,7 +1068,8 @@ config load_config( const fc::path& datadir )
            }
        }
 
-       fc::variants client_impl::batch(const std::string& method_name, const std::vector<fc::variants>& parameters_list) const
+       fc::variants client_impl::batch( const std::string& method_name, 
+                                        const std::vector<fc::variants>& parameters_list) const
        {
           fc::variants result;
           for ( auto parameters : parameters_list )
@@ -1110,6 +1127,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
+
     }
     void client::simulate_disconnect( bool state )
     {
@@ -1119,6 +1137,11 @@ config load_config( const fc::path& datadir )
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
     { try {
         my->_config   = load_config(data_dir);
+
+        my->_delegate_network.set_client( shared_from_this() );
+        if( my->_config.delegate_server.port() != 0 )
+           my->_delegate_network.listen( my->_config.delegate_server );
+
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
         fc::configure_logging( my->_config.logging );
         // re-register the _user_appender which was overwritten by configure_logging()
