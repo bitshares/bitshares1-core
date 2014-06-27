@@ -177,59 +177,71 @@ namespace bts { namespace blockchain {
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
-            void open_database( const fc::path& data_dir );
+            void open_database(const fc::path& data_dir , fc::optional<fc::path> genesis_file);
       };
 
-      void chain_database_impl::open_database( const fc::path& data_dir )
+      void chain_database_impl::open_database( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() )
       { try {
-          _property_db.open( data_dir / "property_db" );
+          bool rebuild_index = false;
+
+          if( !fc::exists(data_dir / "index" ) )
+          {
+              ilog("Rebuilding database index...");
+              fc::create_directories( data_dir / "index" );
+              rebuild_index = true;
+          }
+
+          _property_db.open( data_dir / "index/property_db" );
           auto database_version = _property_db.fetch_optional( chain_property_enum::database_version );
           if( !database_version || database_version->as_int64() < BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
+              if ( !rebuild_index )
+              {
                 wlog( "old database version, upgrade and re-sync" );
                 _property_db.close();
-                fc::remove_all( data_dir );
-                fc::create_directories( data_dir );
-                _property_db.open( data_dir / "property_db" );
-                self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
+                fc::remove_all( data_dir / "index" );
+                fc::create_directories( data_dir / "index" );
+                _property_db.open( data_dir / "index/property_db" );
+                rebuild_index = true;
+              }
+              self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
              FC_CAPTURE_AND_THROW( new_database_version, (database_version)(BTS_BLOCKCHAIN_DATABASE_VERSION) ); 
           }
-          _fork_number_db.open( data_dir / "fork_number_db" );
-          _fork_db.open( data_dir / "fork_db" );
-          _slate_db.open( data_dir / "slate_db" );
-          _proposal_db.open( data_dir / "proposal_db" );
-          _proposal_vote_db.open( data_dir / "proposal_vote_db" );
+          _fork_number_db.open( data_dir / "index/fork_number_db" );
+          _fork_db.open( data_dir / "index/fork_db" );
+          _slate_db.open( data_dir / "index/slate_db" );
+          _proposal_db.open( data_dir / "index/proposal_db" );
+          _proposal_vote_db.open( data_dir / "index/proposal_vote_db" );
 
-          _undo_state_db.open( data_dir / "undo_state_db" );
+          _undo_state_db.open( data_dir / "index/undo_state_db" );
 
-          _block_num_to_id_db.open( data_dir / "block_num_to_id_db" );
-          _block_id_to_block_record_db.open( data_dir / "block_id_to_block_record_db" );
-          _block_id_to_block_data_db.open( data_dir / "block_id_to_block_data_db" );
-          _id_to_transaction_record_db.open( data_dir / "id_to_transaction_record_db" );
+          _block_num_to_id_db.open( data_dir / "index/block_num_to_id_db" );
+          _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
+          _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
+          _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
-          _pending_transaction_db.open( data_dir / "pending_transaction_db" );
+          _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
-          _asset_db.open( data_dir / "asset_db" );
-          _balance_db.open( data_dir / "balance_db" );
-          _account_db.open( data_dir / "account_db" );
-          _address_to_account_db.open( data_dir / "address_to_account_db" );
+          _asset_db.open( data_dir / "index/asset_db" );
+          _balance_db.open( data_dir / "index/balance_db" );
+          _account_db.open( data_dir / "index/account_db" );
+          _address_to_account_db.open( data_dir / "index/address_to_account_db" );
 
-          _account_index_db.open( data_dir / "account_index_db" );
-          _symbol_index_db.open( data_dir / "symbol_index_db" );
-          _delegate_vote_index_db.open( data_dir / "delegate_vote_index_db" );
+          _account_index_db.open( data_dir / "index/account_index_db" );
+          _symbol_index_db.open( data_dir / "index/symbol_index_db" );
+          _delegate_vote_index_db.open( data_dir / "index/delegate_vote_index_db" );
 
-          _delegate_block_stats_db.open( data_dir / "delegate_block_stats_db" );
+          _delegate_block_stats_db.open( data_dir / "index/delegate_block_stats_db" );
 
-          _ask_db.open( data_dir / "ask_db" );
-          _bid_db.open( data_dir / "bid_db" );
-          _short_db.open( data_dir / "short_db" );
-          _collateral_db.open( data_dir / "collateral_db" );
+          _ask_db.open( data_dir / "index/ask_db" );
+          _bid_db.open( data_dir / "index/bid_db" );
+          _short_db.open( data_dir / "index/short_db" );
+          _collateral_db.open( data_dir / "index/collateral_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
       std::vector<block_id_type> chain_database_impl::fetch_blocks_at_number( uint32_t block_num )
@@ -891,7 +903,7 @@ namespace bts { namespace blockchain {
       {
           fc::create_directories( data_dir );
 
-          my->open_database( data_dir );
+          my->open_database( data_dir, genesis_file );
 
           // TODO: check to see if we crashed during the last write
           //   if so, then apply the last undo operation stored.
@@ -909,10 +921,28 @@ namespace bts { namespace blockchain {
           if( last_block_num == uint32_t(-1) )
           {
              close();
-             fc::remove_all( data_dir );
-             fc::create_directories( data_dir );
+             fc::remove_all( data_dir / "index" );
+             fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
              my->initialize_genesis(genesis_file);
+
+             std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
+
+             const char spinner[] = "-\\|/";
+             int blocks_indexed = 0;
+
+             auto block_itr = my->_block_id_to_block_data_db.begin();
+             while( block_itr.valid() )
+             {
+                 if( ++blocks_indexed % 50 == 0 )
+                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
+
+                 auto block = block_itr.value();
+                 ++block_itr;
+
+                 push_block(block);
+             }
+             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks.\n" << std::flush;
           }
           my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
 
@@ -1771,32 +1801,28 @@ namespace bts { namespace blockchain {
 
     std::map<uint32_t, std::vector<fork_record>> chain_database::get_forks_list()const
     {
-        /* Crikey, that's a big fork! */
         std::map<uint32_t, std::vector<fork_record>> fork_blocks;
         for( auto iter = my->_fork_db.begin(); iter.valid(); ++iter )
         {
-            /* That's not a fork. */
             try
             {
-                /* THIS is a fork! */
                 auto fork_iter = iter.value();
                 if( fork_iter.next_blocks.size() > 1 )
                 {
                     vector<fork_record> forks;
-                    ulog("Processing fork at ${num}", ("num", get_block_num(iter.key())));
 
                     for( const auto& forked_block_id : fork_iter.next_blocks )
                     {
                         fork_record fork;
                         block_fork_data fork_data = my->_fork_db.fetch(forked_block_id);
-                        block_record fork_block_record = my->_block_id_to_block_record_db.fetch(forked_block_id);
+                        block_record fork_block = my->_block_id_to_block_record_db.fetch(forked_block_id);
 
                         fork.block_id = forked_block_id;
-                        fork.signing_delegate = get_signing_delegate_id(fork_block_record.timestamp); // TODO: Should use signee key
-                        fork.transaction_count = fork_block_record.user_transaction_ids.size();
-                        fork.latency = fork_block_record.latency;
-                        fork.size = fork_block_record.block_size;
-                        fork.timestamp = fork_block_record.timestamp;
+                        fork.latency = fork_block.latency;
+                        fork.signing_delegate = get_signing_delegate_id(fork_block.timestamp); // TODO: Should use signee key
+                        fork.transaction_count = fork_block.user_transaction_ids.size();
+                        fork.size = fork_block.block_size;
+                        fork.timestamp = fork_block.timestamp;
                         fork.is_valid = fork_data.is_valid;
                         fork.invalid_reason = fork_data.invalid_reason;
                         fork.is_current_fork = fork_data.is_included;

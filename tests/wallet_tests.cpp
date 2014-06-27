@@ -447,8 +447,8 @@ BOOST_AUTO_TEST_CASE(make_genesis_block)
 
 void run_regression_test(fc::path test_dir, bool with_network)
 {
+  bts::blockchain::start_simulated_time(fc::time_point_sec::min());
   set_random_seed_for_testing(fc::sha512());
-
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file
@@ -467,9 +467,6 @@ void run_regression_test(fc::path test_dir, bool with_network)
   // Create an expected output file in the test subdir for the test output.
   fc::path test_output_dir = regression_test_output_directory / test_dir;
   boost::filesystem::create_directories(test_output_dir);
-  fc::path expected_output_file = test_output_dir / "expected_output.log";
-  std::ofstream expected_output_stream(expected_output_file.string());
-
   try 
   {
     std::cout << "*** Executing " << test_dir.string() << std::endl;
@@ -530,13 +527,18 @@ void run_regression_test(fc::path test_dir, bool with_network)
 
       //extract input command files from cmdline options and concatenate into
       //one expected output file so that we can compare against output log
+      std::ostringstream expected_output_filename;
+      expected_output_filename << "expected_output_" << client_name << ".log";
+      fc::path expected_output_file = test_output_dir / expected_output_filename.str();
+      std::ofstream expected_output_stream(expected_output_file.string());
+
       std::vector<string> input_logs = option_variables["input-log"].as<std::vector<string>>();
       for (string input_log : input_logs)
-        {
+      {
         std::cout << "input-log=" << input_log << std::endl;
         std::ifstream input_stream(input_log);
         expected_output_stream << input_stream.rdbuf();
-        }
+      }
       expected_output_stream.close();
 
       //run client with cmdline options
