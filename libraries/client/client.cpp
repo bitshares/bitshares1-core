@@ -1146,8 +1146,7 @@ config load_config( const fc::path& datadir )
 
     optional<time_point_sec> client::get_next_producible_block_timestamp()const
     {
-       const auto& delegates = my->_wallet->get_my_delegates( enabled_delegate_status | active_delegate_status );
-       return my->get_next_producible_block_timestamp(delegates);
+       return my->get_next_producible_block_timestamp();
     }
 
     void client::simulate_disconnect( bool state )
