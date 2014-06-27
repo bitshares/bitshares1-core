@@ -1819,7 +1819,12 @@ namespace bts { namespace blockchain {
 
                         fork.block_id = forked_block_id;
                         fork.latency = fork_block.latency;
-                        fork.signing_delegate = get_signing_delegate_id(fork_block.timestamp); // TODO: Should use signee key
+                        auto osignee = get_account_record( fork_block.signee() );
+                       /// ->id(); //get_signing_delegate_id(fork_block.timestamp); // TODO: Should use signee key
+                        
+                        if( osignee )
+                           fork.signing_delegate = osignee->id;
+
                         fork.transaction_count = fork_block.user_transaction_ids.size();
                         fork.size = fork_block.block_size;
                         fork.timestamp = fork_block.timestamp;
