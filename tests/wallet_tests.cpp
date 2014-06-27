@@ -575,7 +575,6 @@ void run_regression_test(fc::path test_dir, bool with_network)
   } 
   catch ( const fc::exception& e )
   {
-    elog( "${e}", ("e",e.to_detail_string() ) );
     BOOST_FAIL("Caught unexpected exception:" << e.to_detail_string() );
   }
 

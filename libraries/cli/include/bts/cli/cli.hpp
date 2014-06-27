@@ -26,7 +26,7 @@ namespace bts { namespace cli {
    class cli
    {
       public:
-          cli( const client_ptr& client,
+          cli( bts::client::client* client,
                std::istream* command_script = nullptr, 
                std::ostream* output_stream = nullptr );
 
