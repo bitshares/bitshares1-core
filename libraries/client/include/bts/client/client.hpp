@@ -111,8 +111,6 @@ namespace bts { namespace client {
          bts::net::node_ptr         get_node()const;
          fc::path                   get_data_dir()const;
 
-         optional<time_point_sec>   get_next_producible_block_timestamp()const;
-
          // returns true if the client is connected to the network
          bool                is_connected() const;
          bts::net::node_id_t get_node_id() const;
@@ -124,6 +122,8 @@ namespace bts { namespace client {
          void listen_to_p2p_network();
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
+
+         optional<time_point_sec> get_next_producible_block_timestamp()const;
 
          fc::ip::endpoint get_p2p_listening_endpoint() const;
 #ifndef NDEBUG

@@ -12,6 +12,7 @@ BOOST_AUTO_TEST_CASE( timetest )
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
 //   disable_logging();
+   enable_logging();
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_list_my_accounts" );
    exec( clienta, "wallet_account_balance" );
@@ -34,6 +35,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "wallet_set_delegate_trust delegate39 true" );
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
+   exec( clientb, "info" );
    exec( clientb, "wallet_set_delegate_trust delegate23 true" );
    exec( clientb, "wallet_set_delegate_trust delegate24 true" );
    exec( clientb, "wallet_set_delegate_trust delegate25 true" );

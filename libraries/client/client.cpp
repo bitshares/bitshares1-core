@@ -98,6 +98,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("clear-peer-database", "Erase all information in the peer database")
                               ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
                                  "fresh copy of the entire blockchain from the network")
+                              ("rebuild-index", "Same as --resync-blockchain, except it preserves the raw blockchain data rather "
+                                 "than downloading a new copy.")
                               ("version", "Print version information and exit")
                               ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(1000000),
                                   "Limit total bandwidth to this many bytes per second")
@@ -288,6 +290,18 @@ void load_and_configure_chain_database( const fc::path& datadir,
       std::cout << "You may need to manually delete your blockchain and relaunch the client\n";
     }
   }
+  else if (option_variables.count("rebuild-index"))
+  {
+      std::cout << "Clearing database index\n";
+      try
+      {
+          fc::remove_all(datadir / "chain/index");
+      }
+      catch (const fc::exception& e)
+      {
+          std::cout << "Error while deleting database index: " << e.what() << "\n";
+      }
+  }
   else
   {
     std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
@@ -443,7 +457,6 @@ config load_config( const fc::path& datadir )
 
             optional<time_point_sec> get_next_producible_block_timestamp( 
                                       const vector<wallet_account_record>& delegate_records )const;
-            optional<time_point_sec> get_next_producible_block_timestamp()const;
 
             void reschedule_delegate_loop();
             void start_delegate_loop();
@@ -588,11 +601,6 @@ config load_config( const fc::path& datadir )
           return _chain_db->get_next_producible_block_timestamp( delegate_ids );
        }
 
-       optional<time_point_sec> client_impl::get_next_producible_block_timestamp()const
-       {
-          return get_next_producible_block_timestamp( _wallet->get_my_enabled_delegates() );
-       }
-
        void client_impl::reschedule_delegate_loop()
        {
           if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
@@ -622,7 +630,7 @@ config load_config( const fc::path& datadir )
           auto now = bts::blockchain::now();
 
           if( _wallet->is_locked() ) return;
-          const auto& enabled_delegates = _wallet->get_my_enabled_delegates();
+          const auto& enabled_delegates = _wallet->get_my_delegates( true, false );
           if( enabled_delegates.empty() ) return;
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
 
@@ -750,7 +758,9 @@ config load_config( const fc::path& datadir )
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
-       block_fork_data client_impl::on_new_block(const full_block& block, const block_id_type& block_id, bool sync_mode)
+       block_fork_data client_impl::on_new_block(const full_block& block, 
+                                                 const block_id_type& block_id, 
+                                                 bool sync_mode)
        {
          try
          {
@@ -1128,6 +1138,13 @@ config load_config( const fc::path& datadir )
       my->_p2p_node = network_to_connect_to;
 
     }
+
+    optional<time_point_sec> client::get_next_producible_block_timestamp()const
+    {
+       const auto& delegates = my->_wallet->get_my_delegates( true, true );
+       return my->get_next_producible_block_timestamp(delegates);
+    }
+
     void client::simulate_disconnect( bool state )
     {
        my->_simulate_disconnect = state;
@@ -1138,12 +1155,18 @@ config load_config( const fc::path& datadir )
         my->_config   = load_config(data_dir);
 
         my->_delegate_network.set_client( shared_from_this() );
-        if( my->_config.delegate_server.port() != 0 )
-           my->_delegate_network.listen( my->_config.delegate_server );
-
+        my->_delegate_network.listen( my->_config.delegate_server );
         for( auto delegate_host : my->_config.default_delegate_peers )
         {
-           my->_delegate_network.connect_to( fc::ip::endpoint::from_string(delegate_host) );
+           try {
+             wlog( "connecting to delegate peer ${p}", ("p",delegate_host) );
+             my->_delegate_network.connect_to( fc::ip::endpoint::from_string(delegate_host) );
+           }
+           catch ( const fc::exception& e )
+           {
+              wlog( "${e}", ("e", e.to_detail_string() ) );
+           }
+
         }
 
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
@@ -1185,11 +1208,6 @@ config load_config( const fc::path& datadir )
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
-
-    optional<time_point_sec> client::get_next_producible_block_timestamp()const
-    {
-        return my->get_next_producible_block_timestamp();
-    }
 
     fc::variant_object version_info()
     {
@@ -2300,7 +2318,8 @@ config load_config( const fc::path& datadir )
       auto now = bts::blockchain::now();
       auto ntp = bts::blockchain::ntp_time();
       auto seconds_remaining = (_wallet->unlocked_until() - now).count()/1000000;
-      auto next_block_time = get_next_producible_block_timestamp();
+      const auto& delegates = _wallet->get_my_delegates( true, true );
+      auto next_block_time = get_next_producible_block_timestamp( delegates );
       auto share_record = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       auto current_share_supply = share_record.valid() ? share_record->current_share_supply : 0;
       auto advanced_params = network_get_advanced_node_parameters();

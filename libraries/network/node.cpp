@@ -41,6 +41,7 @@ namespace bts { namespace network {
 
    void node::listen( const fc::ip::endpoint& ep )
    { try {
+       ulog( "delegate node listening on ${ep}", ("ep",ep) );
       _server.listen( ep );
       _accept_loop = fc::async( [this](){ accept_loop(); } );
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
@@ -162,6 +163,7 @@ namespace bts { namespace network {
    { try {
       _peers.insert(con);
       auto remote_ep = con->_socket.remote_endpoint();
+      ulog( "node connected ${e}", ("e", remote_ep ) );
 
       _potential_peers[remote_ep].peer_endpoint = remote_ep;
       _potential_peers[remote_ep].is_connected    = true;
@@ -179,6 +181,7 @@ namespace bts { namespace network {
                              const optional<fc::exception>& err )
    {
       auto remote_ep = con->_socket.remote_endpoint();
+      ulog( "node disconnected ${e}", ("e", remote_ep ) );
       _potential_peers[remote_ep].peer_endpoint = remote_ep;
       _potential_peers[remote_ep].is_connected    = false;
       _potential_peers[remote_ep].failed_attempts++;

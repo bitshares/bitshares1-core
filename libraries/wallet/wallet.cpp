@@ -80,7 +80,7 @@ namespace bts { namespace wallet {
              */
             virtual void block_applied( const block_summary& summary )override
             {
-               if( self->is_unlocked() && self->get_my_enabled_delegates().empty() )
+               if( self->is_unlocked() && self->get_my_delegates( true, false ).empty() )
                {
                   auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   scan_block( summary.block_data.block_num, account_priv_keys );
@@ -1169,6 +1169,7 @@ namespace bts { namespace wallet {
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
                              const scan_progress_callback& progress_callback )
    { try {
+      elog( "SCAN CHAIN!" );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
@@ -1178,7 +1179,7 @@ namespace bts { namespace wallet {
          ++start;
       }
 
-      if( !get_my_enabled_delegates().empty() )
+      if( !get_my_delegates( true, false ).empty() )
       {
          ulog( "Wallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
@@ -1273,6 +1274,29 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   vector<wallet_account_record> wallet::get_my_delegates( bool enabled_only, bool active_only )const
+   {
+      vector<wallet_account_record> delegate_records;
+      const auto& account_records = list_my_accounts();
+      for( const auto& account_record : account_records )
+      {
+          if( !account_record.is_delegate() ) continue;
+          if( enabled_only && !account_record.block_production_enabled ) continue;
+          if( active_only && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          delegate_records.push_back( account_record );
+      }
+      return delegate_records;
+   }
+
+   vector<private_key_type> wallet::get_my_delegate_private_keys( bool enabled_only, bool active_only )const
+   {
+       vector<private_key_type> private_keys;
+       const auto& delegate_records = get_my_delegates( enabled_only, active_only );
+       for( const auto& delegate_record : delegate_records )
+          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
+       return private_keys;
+   }
+
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       std::vector<wallet_account_record> delegate_records;
@@ -1290,7 +1314,7 @@ namespace bts { namespace wallet {
       }
       else
       {
-          delegate_records = get_my_delegates();
+          delegate_records = get_my_delegates( false, false );
       }
 
       for( auto& delegate_record : delegate_records )
@@ -1298,53 +1322,6 @@ namespace bts { namespace wallet {
           delegate_record.block_production_enabled = enable;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
-   }
-
-   vector<wallet_account_record> wallet::get_my_delegates()const
-   {
-      vector<wallet_account_record> delegate_records;
-      const auto& account_records = list_my_accounts();
-      for( const auto& account_record : account_records )
-      {
-          if( account_record.is_delegate() )
-              delegate_records.push_back( account_record );
-      }
-      return delegate_records;
-   }
-
-   vector<wallet_account_record> wallet::get_my_enabled_delegates( bool active_only )const
-   {
-      vector<wallet_account_record> enabled_delegate_records;
-      const auto& delegate_records = get_my_delegates();
-      for( const auto& delegate_record : delegate_records )
-      {
-          if( active_only )
-          {
-              const auto& active_delegates = my->_blockchain->get_active_delegates();
-              if( std::find( active_delegates.begin(), active_delegates.end(), delegate_record.id ) == active_delegates.end() )
-                  continue;
-          }
-
-          if( delegate_record.block_production_enabled )
-              enabled_delegate_records.push_back( delegate_record );
-      }
-      return enabled_delegate_records;
-   }
-
-   vector<private_key_type> wallet::get_my_delegate_private_keys( bool enabled_only, bool active_only )
-   {
-       vector<private_key_type> private_keys;
-
-       vector<wallet_account_record> delegate_records;
-       if( enabled_only ) delegate_records = get_my_enabled_delegates( active_only );
-       else delegate_records = get_my_delegates();
-
-       for( const auto& delegate_record : delegate_records )
-       {
-           if( my->_blockchain->is_active_delegate( delegate_record.id ) )
-               private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
-       }
-       return private_keys;
    }
 
    void wallet::sign_block( signed_block_header& header )const

@@ -955,6 +955,79 @@ namespace bts { namespace cli {
                   if(!record.public_data.is_null())
                       *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data) << "\n";
               }
+              else if (method_name == "blockchain_list_forks")
+              {
+                  std::map<uint32_t, std::vector<fork_record>> forks = result.as<std::map<uint32_t, std::vector<fork_record>>>();
+                  std::map<block_id_type, std::string> invalid_reasons; //Your reasons are invalid.
+
+                  if (forks.empty())
+                      *_out << "No forks.\n";
+                  else
+                  {
+                      *_out << std::setw(15) << "FORKED BLOCK"
+                            << std::setw(30) << "FORKING BLOCK ID"
+                            << std::setw(30) << "SIGNING DELEGATE"
+                            << std::setw(15) << "TXN COUNT"
+                            << std::setw(10) << "SIZE"
+                            << std::setw(20) << "TIMESTAMP"
+                            << std::setw(10) << "LATENCY"
+                            << std::setw(8)  << "VALID"
+                            << std::setw(20)  << "IN CURRENT CHAIN"
+                            << "\n" << std::string(158, '-') << "\n";
+
+                      for (auto fork : forks)
+                      {
+                          *_out << std::setw(15) << fork.first << "\n";
+
+                          for (auto tine : fork.second)
+                          {
+                              *_out << std::setw(45) << fc::variant(tine.block_id).as_string();
+
+                              auto delegate_record = _client->get_chain()->get_account_record(tine.signing_delegate);
+                              if (delegate_record.valid() && delegate_record->name.size() < 29)
+                                  *_out << std::setw(30) << delegate_record->name;
+                              else
+                                  *_out << std::setw(30) << std::string("Delegate ID ") + fc::variant(tine.signing_delegate).as_string();
+
+                              *_out << std::setw(15) << tine.transaction_count
+                                    << std::setw(10) << tine.size
+                                    << std::setw(20) << time_to_string(tine.timestamp)
+                                    << std::setw(10) << tine.latency
+                                    << std::setw(8);
+
+                              if (tine.is_valid.valid()) {
+                                  if (*tine.is_valid) {
+                                      *_out << "YES";
+                                  }
+                                  else {
+                                      *_out << "NO";
+                                      if (tine.invalid_reason.valid())
+                                          invalid_reasons[tine.block_id] = tine.invalid_reason->to_detail_string();
+                                      else
+                                          invalid_reasons[tine.block_id] = "No reason given.";
+                                  }
+                              }
+                              else
+                                  *_out << "N/A";
+
+                              *_out << std::setw(20);
+                              if (tine.is_current_fork)
+                                  *_out << "YES";
+                              else
+                                      *_out << "NO";
+
+                              *_out << "\n";
+                          }
+                      }
+
+                      if (invalid_reasons.size() > 0) {
+                          *_out << "REASONS FOR INVALID BLOCKS\n";
+
+                          for (auto excuse : invalid_reasons)
+                              *_out << excuse.first << ": " << excuse.second << "\n";
+                      }
+                  }
+              }
               else if (method_name == "blockchain_get_pending_transactions")
               {
                   auto transactions = result.as<vector<signed_transaction>>();
