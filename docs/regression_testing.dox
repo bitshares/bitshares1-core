@@ -34,6 +34,7 @@ The --input-log says to create one client named client1 and send it CLI input
 commands from clien1.log and create a second client named client2 and send
 it CLI input commands from client2.log. Each client can also be configured
 with other bitshares_command line arguments as desired (e.g. --unpn=false).
+Multiple --input-logs args can be passed to a client.
 
 Regression Test Results Directories
 -----------------------------------
@@ -95,19 +96,22 @@ To create a regression test, you need to do perform the following steps:
    located in bitshares_toolkit\tests\test_genesis.json. The public/private key pairs for
    the delegates in this test genesis block are stored in 
    bitshares_toolkit\tests\test_genesis.json.keyparis. These two files were originally created
-   by running "wallet_tests.exe --t make_test_genesis_block". To record a test log session with
-   one or more clients, you can run these batch scripts: client0.bat, client1.bat, client2.bat.
+   by running "wallet_tests.exe --t make_test_genesis_block". 
+3. To record a test log session with  one or more clients, you can run these batch scripts: 
+   client0.bat, client1.bat, client2.bat.
    These scripts will spawn clients that just run locally and connect to each other. They store
-   their datadirs in bitshares_toolkit\regression_tests\new_test, so be sure you delete this directory
+   their datadirs in bitshares_toolkit\regression_tests\_new_test, so be sure you delete this directory
    before you commit.
-3. Generally, you should type "quit" as the last line in your script to avoid the test
+4. Generally, you should type "quit" as the last line in your script to avoid the test
    stopping at a command prompt and prompting for console input after the script finishes.
    However, you may want to temporarily remove the quit from a test when you'd like to
    type commands to a client after it's finished executing the script to check the client's
    status, just don't forget to add the quit back to the script afterwards.
-4. Create a test.config in your test directory that specifies on each line the
+5. Create a test.config in your test directory that specifies on each line the
    command-line arguments for a single client. The first parameter on the line
    should be used to name each client. Try to use useful client names when possible.
    For example, if your test is performing a transfer from one client to another,
    you could name the first client "sender" and the second client "receiver".
+6. By convention, scripts that are useful in many tests should be stored in this directory:
+   regresssion_tests\_common_logs   
 */

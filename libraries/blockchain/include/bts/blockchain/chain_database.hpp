@@ -47,10 +47,28 @@ namespace bts { namespace blockchain {
       /** if at any time this block was determiend to be valid or invalid then this
        * flag will be set.
        */
-      fc::optional<bool>         is_valid;
-      bool                       is_included; ///< is included in the current chain database
-      bool                       is_known; ///< do we know the content of this block
+      fc::optional<bool>           is_valid;
+      fc::optional<fc::exception>  invalid_reason;
+      bool                         is_included; ///< is included in the current chain database
+      bool                         is_known; ///< do we know the content of this block
    };
+
+   struct fork_record
+   {
+       fork_record()
+       {}
+
+       block_id_type block_id;
+       account_id_type signing_delegate;
+       uint32_t transaction_count;
+       uint32_t latency;
+       uint32_t size;
+       fc::time_point_sec timestamp;
+       fc::optional<bool> is_valid;
+       fc::optional<fc::exception> invalid_reason;
+       bool is_current_fork;
+   };
+   typedef fc::optional<fork_record> ofork_record;
 
    class chain_observer
    {
@@ -158,7 +176,7 @@ namespace bts { namespace blockchain {
 
          std::map<uint32_t, delegate_block_stats> get_delegate_block_stats( const account_id_type& delegate_id )const;
 
-         std::vector<uint32_t> get_forks_list()const;
+         std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
          std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
 
          /** should perform any chain reorganization required
@@ -251,4 +269,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::block_fork_data, (next_blocks)(is_linked)(is_valid)(is_included)(is_known) )
+FC_REFLECT( bts::blockchain::block_fork_data, (next_blocks)(is_linked)(is_valid)(invalid_reason)(is_included)(is_known) )
+FC_REFLECT( bts::blockchain::fork_record, (block_id)(signing_delegate)(transaction_count)(latency)(size)(timestamp)(is_valid)(invalid_reason)(is_current_fork) )

@@ -113,9 +113,9 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
       options(option_config).run(), option_variables);
     program_options::notify(option_variables);
   }
-  catch (program_options::error&)
+  catch (program_options::error& cmdline_error)
   {
-    std::cerr << "Error parsing command-line options\n\n";
+    std::cerr << "Error: " << cmdline_error.what() << "\n";
     std::cerr << option_config << "\n";
     exit(1);
   }
@@ -412,6 +412,7 @@ config load_config( const fc::path& datadir )
 
             fc::shared_ptr<user_appender> _user_appender;
             bool _simulate_disconnect;
+            fc::scoped_connection _time_discontinuity_connection;
 
             client_impl(bts::client::client* self) :
               _simulate_disconnect(false),
@@ -430,7 +431,10 @@ config load_config( const fc::path& datadir )
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-            virtual ~client_impl()override { delete _cli; }
+            virtual ~client_impl() override 
+            { 
+              delete _cli;
+            }
 
             void start()
             {
@@ -597,6 +601,8 @@ config load_config( const fc::path& datadir )
 
        void client_impl::start_delegate_loop()
        {
+          if (!_time_discontinuity_connection.connected())
+            _time_discontinuity_connection = bts::blockchain::time_discontinuity_signal.connect([=](){ reschedule_delegate_loop(); });
           _delegate_loop_complete = fc::async( [=](){ delegate_loop(); } );
        }
 
@@ -689,11 +695,11 @@ config load_config( const fc::path& datadir )
           return delegates;
        }
 
-       vector<std::pair<block_record, delegate_block_stats>> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
+       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
        {
           FC_ASSERT( count <= 1000 );
           FC_ASSERT( count >= -1000 );
-          vector<std::pair<block_record, delegate_block_stats>> result;
+          vector<block_record> result;
           if (count == 0) return result;
 
           auto total_blocks = _chain_db->get_head_block_num();
@@ -719,18 +725,11 @@ config load_config( const fc::path& datadir )
           }
           result.reserve( count );
 
-          std::map<account_id_type, std::map<uint32_t, delegate_block_stats>> delegate_block_stats_cache;
           for( int32_t block_num = first; count; --count, block_num += increment )
           {
-            auto block_record = _chain_db->get_block_record( block_num );
-            FC_ASSERT( block_record.valid() );
-
-            /* Memoize */
-            auto delegate_id = _chain_db->get_signing_delegate( block_num ).id;
-            if( delegate_block_stats_cache.count( delegate_id ) <= 0 )
-                delegate_block_stats_cache[ delegate_id ] = _chain_db->get_delegate_block_stats( delegate_id );
-
-            result.push_back( std::make_pair( *block_record, delegate_block_stats_cache[ delegate_id ][ block_num ] ) );
+            auto record = _chain_db->get_block_record( block_num );
+            FC_ASSERT( record.valid() );
+            result.push_back( *record );
           }
 
           return result;
@@ -1436,7 +1435,6 @@ config load_config( const fc::path& datadir )
       _wallet->rename_account(current_account_name, new_account_name);
     }
 
-
     wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
     { try {
       auto opt_account = _wallet->get_account(account_name);
@@ -1445,12 +1443,10 @@ config load_config( const fc::path& datadir )
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history(const string& account)
     {
       return _wallet->get_pretty_transaction_history(account);
     }
-
 
     oaccount_record detail::client_impl::blockchain_get_account_record(const string& name) const
     {
@@ -2668,7 +2664,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->export_fork_graph( start_block, end_block, filename );
    }
 
-   std::vector<uint32_t> client_impl::blockchain_list_forks()const
+   std::map<uint32_t, vector<fork_record>> client_impl::blockchain_list_forks()const
    {
       return _chain_db->get_forks_list();
    }
@@ -2690,9 +2686,54 @@ config load_config( const fc::path& datadir )
      bts::blockchain::start_simulated_time(starting_time);
    }
 
-   void client_impl::blockchain_advance_time(int32_t delta_time)
+   void client_impl::blockchain_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
    {
+     if (unit == "blocks")
+       delta_time *= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+     else if (unit == "rounds")
+       delta_time *= BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+     else if (unit != "seconds")
+       FC_THROW_EXCEPTION(fc::invalid_arg_exception, "unit must be \"seconds\", \"blocks\", or \"rounds\", was: \"${unit}\"", ("unit", unit));
      bts::blockchain::advance_time(delta_time);
+   }
+
+   void client_impl::blockchain_wait_for_block_by_number(uint32_t block_number, const std::string& type /* = "absolute" */)
+   {
+      if (type == "relative")
+        block_number += _chain_db->get_head_block_num();
+      else if (type != "absolute")
+        FC_THROW_EXCEPTION(fc::invalid_arg_exception, "type must be \"absolute\", or \"relative\", was: \"${type}\"", ("type", type));
+      if (_chain_db->get_head_block_num() >= block_number)
+        return;
+      fc::promise<void>::ptr block_arrived_promise(new fc::promise<void>());
+      class wait_for_block : public bts::blockchain::chain_observer
+      {
+        uint32_t               _block_number;
+        fc::promise<void>::ptr _completion_promise;
+      public:
+        wait_for_block(uint32_t block_number, fc::promise<void>::ptr completion_promise) : 
+          _block_number(block_number),
+          _completion_promise(completion_promise)
+        {}
+        void state_changed(const pending_chain_state_ptr& state) override {}
+        void block_applied(const block_summary& summary) override
+        {
+          if (summary.block_data.block_num >= _block_number)
+            _completion_promise->set_value();
+        }
+      };
+      wait_for_block block_waiter(block_number, block_arrived_promise);
+      _chain_db->add_observer(&block_waiter);
+      try
+      {
+        block_arrived_promise->wait();
+      }
+      catch (...)
+      {
+        _chain_db->remove_observer(&block_waiter);
+        throw;
+      }
+      _chain_db->remove_observer(&block_waiter);
    }
 
    void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )

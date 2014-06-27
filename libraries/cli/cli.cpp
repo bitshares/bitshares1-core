@@ -458,20 +458,21 @@ namespace bts { namespace cli {
                   *_out << "Rescanning blockchain...\n";
                   uint32_t start;
                   if (arguments.size() == 0)
-                      start = 1;
+                      start = 0;
                   else
                       start = arguments[0].as<uint32_t>();
                   while(true)
                   {
                       try {
+                        if (!_filter_output_for_tests)
+                        {
                           *_out << "|";
                           for(int i = 0; i < 100; i++)
                               *_out << "-";
                           *_out << "|\n|=";
                           uint32_t next_step = 0;
-                          auto cb = [=](uint32_t cur,
-                                                       uint32_t last
-                                                       ) mutable
+                          //TODO: improve documentation for how this works
+                          auto cb = [=](uint32_t cur, uint32_t last) mutable
                           {
                               if (start > last || cur >= last) // if WTF
                                   return;
@@ -483,8 +484,13 @@ namespace bts { namespace cli {
                           };
                           _client->get_wallet()->scan_chain(start, -1, cb);
                           *_out << "|\n";
-                          *_out << "Scan complete.\n";
-                          return fc::variant("Scan complete.");
+                        }
+                        else
+                        {
+                          _client->get_wallet()->scan_chain(start, -1);
+                        }
+                        *_out << "Scan complete.\n";
+                        return fc::variant("Scan complete.");
                       }
                       catch( const rpc_wallet_open_needed_exception& )
                       {
@@ -736,31 +742,30 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_list_blocks")
               {
-                  auto items = result.as<vector<std::pair<bts::blockchain::block_record, bts::blockchain::delegate_block_stats>>>();
+                  auto blocks = result.as<vector<bts::blockchain::block_record>>();
 
                   *_out << std::setw(10) << "HEIGHT";
                   *_out << std::setw(30) << "TIME";
                   *_out << std::setw(15) << "TXN COUNT";
                   *_out << std::setw(65) << "SIGNING DELEGATE";
                   *_out << std::setw(8)  << "SIZE";
+                  *_out << std::setw(14) << "TOTAL FEES";
                   *_out << std::setw(8)  << "LATENCY";
 
                   *_out << '\n';
-                  for (int i = 0; i < 136; ++i)
+                  for (int i = 0; i < 150; ++i)
                       *_out << '-';
                   *_out << '\n';
 
-                  for (const auto& item : items)
+                  for (const auto& block : blocks)
                   {
-                      const auto& block = item.first;
-                      const auto& stats = item.second;
-
                       *_out << std::setw(10) << block.block_num
                             << std::setw(30) << time_to_string(block.timestamp)
                             << std::setw(15) << block.user_transaction_ids.size()
                             << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
                             << std::setw(8) << block.block_size
-                            << std::setw(8) << ( stats.latency.valid() ? std::to_string( *stats.latency ) : "" )
+                            << std::setw(14) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
+                            << std::setw(8) << block.latency
                             << '\n';
                   }
               }
@@ -986,7 +991,7 @@ namespace bts { namespace cli {
                     if (delegate.second.size() > longest_delegate_name)
                         longest_delegate_name = delegate.second.size();
 
-                  auto name_column_width = 20;
+                  unsigned name_column_width = 20;
                   if (longest_delegate_name + 3 > name_column_width)
                       name_column_width = longest_delegate_name + 3;
 

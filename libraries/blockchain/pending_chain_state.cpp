@@ -45,8 +45,8 @@ namespace bts { namespace blockchain {
       return std::make_shared<pending_chain_state>(prev_state);
    }
 
-   /** apply changes from this pending state to the previous state */
-   void  pending_chain_state::apply_changes()const
+   /** Apply changes from this pending state to the previous state */
+   void pending_chain_state::apply_changes()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( !prev_state ) return;
@@ -65,7 +65,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : _block_stats )    prev_state->store_delegate_block_stats( item.first.first, item.first.second, item.second );
    }
 
-   otransaction_record  pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
+   otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
                                                               bool exact  )const
    {
       auto itr = transactions.find( trx_id );
@@ -160,26 +160,31 @@ namespace bts { namespace blockchain {
       {
          auto prev_value = prev_state->get_delegate_block_stats( item.first.first, item.first.second );
          if( prev_value ) undo_state->store_delegate_block_stats( item.first.first, item.first.second, *prev_value );
-         else undo_state->store_delegate_block_stats( item.first.first, item.first.second, delegate_block_stats() );
+         else
+         {
+             delegate_block_stats invalid_block_stats;
+             invalid_block_stats.missed = false;
+             invalid_block_stats.id = block_id_type();
+             undo_state->store_delegate_block_stats( item.first.first, item.first.second, invalid_block_stats );
+         }
       }
    }
 
    /** load the state from a variant */
-   void                    pending_chain_state::from_variant( const fc::variant& v )
+   void pending_chain_state::from_variant( const fc::variant& v )
    {
       fc::from_variant( v, *this );
    }
 
    /** convert the state to a variant */
-   fc::variant                 pending_chain_state::to_variant()const
+   fc::variant pending_chain_state::to_variant()const
    {
       fc::variant v;
       fc::to_variant( *this, v );
       return v;
    }
 
-
-   oasset_record        pending_chain_state::get_asset_record( asset_id_type asset_id )const
+   oasset_record pending_chain_state::get_asset_record( asset_id_type asset_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = assets.find( asset_id );
@@ -190,7 +195,7 @@ namespace bts { namespace blockchain {
       return oasset_record();
    }
 
-   oasset_record         pending_chain_state::get_asset_record( const std::string& symbol )const
+   oasset_record pending_chain_state::get_asset_record( const std::string& symbol )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = symbol_id_index.find( symbol );
@@ -200,14 +205,16 @@ namespace bts { namespace blockchain {
         return prev_state->get_asset_record( symbol );
       return oasset_record();
    }
-   int64_t  pending_chain_state::get_fee_rate()const
+
+   int64_t pending_chain_state::get_fee_rate()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) 
         return prev_state->get_fee_rate();
       FC_ASSERT( false, "No current fee rate set" );
    }
-   int64_t  pending_chain_state::get_delegate_pay_rate()const
+
+   int64_t pending_chain_state::get_delegate_pay_rate()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) 
@@ -215,7 +222,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
-   fc::time_point_sec  pending_chain_state::now()const
+   fc::time_point_sec pending_chain_state::now()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) 
@@ -223,7 +230,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( false, "No current timestamp set" );
    }
 
-   obalance_record      pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
+   obalance_record pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = balances.find( balance_id );
@@ -233,7 +240,8 @@ namespace bts { namespace blockchain {
         return prev_state->get_balance_record( balance_id );
       return obalance_record();
    }
-   odelegate_slate      pending_chain_state::get_delegate_slate( slate_id_type id )const
+
+   odelegate_slate pending_chain_state::get_delegate_slate( slate_id_type id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = slates.find(id);
@@ -242,13 +250,12 @@ namespace bts { namespace blockchain {
       return odelegate_slate();
    }
 
-   void                 pending_chain_state::store_delegate_slate( slate_id_type id, 
-                                                                   const delegate_slate& slate )
+   void pending_chain_state::store_delegate_slate( slate_id_type id, const delegate_slate& slate )
    {
       slates[id] = slate;
    }
 
-   oaccount_record         pending_chain_state::get_account_record( const address& owner )const
+   oaccount_record pending_chain_state::get_account_record( const address& owner )const
    {
       auto itr = key_to_account.find(owner);
       if( itr != key_to_account.end() ) return get_account_record( itr->second );
@@ -257,8 +264,7 @@ namespace bts { namespace blockchain {
       return prev_state->get_account_record( owner );
    }
 
-
-   oaccount_record         pending_chain_state::get_account_record( account_id_type account_id )const
+   oaccount_record pending_chain_state::get_account_record( account_id_type account_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = accounts.find( account_id );
@@ -269,7 +275,7 @@ namespace bts { namespace blockchain {
       return oaccount_record();
    }
 
-   oaccount_record         pending_chain_state::get_account_record( const std::string& name )const
+   oaccount_record pending_chain_state::get_account_record( const std::string& name )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = account_id_index.find( name );
@@ -280,17 +286,17 @@ namespace bts { namespace blockchain {
       return oaccount_record();
    }
 
-   void        pending_chain_state::store_asset_record( const asset_record& r )
+   void pending_chain_state::store_asset_record( const asset_record& r )
    {
       assets[r.id] = r;
    }
 
-   void      pending_chain_state::store_balance_record( const balance_record& r )
+   void pending_chain_state::store_balance_record( const balance_record& r )
    {
       balances[r.id()] = r;
    }
 
-   void         pending_chain_state::store_account_record( const account_record& r )
+   void pending_chain_state::store_account_record( const account_record& r )
    {
       accounts[r.id] = r;
       account_id_index[r.name] = r.id;
@@ -299,7 +305,7 @@ namespace bts { namespace blockchain {
       key_to_account[address(r.owner_key)] = r.id;
    }
 
-   fc::variant  pending_chain_state::get_property( chain_property_enum property_id )const
+   fc::variant pending_chain_state::get_property( chain_property_enum property_id )const
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end()  ) return property_itr->second;
@@ -307,18 +313,18 @@ namespace bts { namespace blockchain {
       if( prev_state ) return prev_state->get_property( property_id );
       return fc::variant();
    }
-   void  pending_chain_state::set_property( chain_property_enum property_id, 
+   void pending_chain_state::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
       properties[property_id] = property_value;
    }
 
-   void                  pending_chain_state::store_proposal_record( const proposal_record& r )
+   void pending_chain_state::store_proposal_record( const proposal_record& r )
    {
       proposals[r.id] = r;
    }
 
-   oproposal_record      pending_chain_state::get_proposal_record( proposal_id_type id )const
+   oproposal_record pending_chain_state::get_proposal_record( proposal_id_type id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = proposals.find(id);
@@ -327,12 +333,12 @@ namespace bts { namespace blockchain {
       return oproposal_record();
    }
                                                                                                           
-   void                  pending_chain_state::store_proposal_vote( const proposal_vote& r )
+   void pending_chain_state::store_proposal_vote( const proposal_vote& r )
    {
       proposal_votes[r.id] = r;
    }
 
-   oproposal_vote        pending_chain_state::get_proposal_vote( proposal_vote_id_type id )const
+   oproposal_vote pending_chain_state::get_proposal_vote( proposal_vote_id_type id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = proposal_votes.find(id);
@@ -340,7 +346,8 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_proposal_vote( id );
       return oproposal_vote();
    }
-   oorder_record         pending_chain_state::get_bid_record( const market_index_key& key )const
+
+   oorder_record pending_chain_state::get_bid_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = bids.find( key );
@@ -348,7 +355,8 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_bid_record( key );
       return oorder_record();
    }
-   oorder_record         pending_chain_state::get_ask_record( const market_index_key& key )const
+
+   oorder_record pending_chain_state::get_ask_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = asks.find( key );
@@ -356,7 +364,8 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_ask_record( key );
       return oorder_record();
    }
-   oorder_record         pending_chain_state::get_short_record( const market_index_key& key )const
+
+   oorder_record pending_chain_state::get_short_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = shorts.find( key );
@@ -364,7 +373,8 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_short_record( key );
       return oorder_record();
    }
-   ocollateral_record    pending_chain_state::get_collateral_record( const market_index_key& key )const
+
+   ocollateral_record pending_chain_state::get_collateral_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = collateral.find( key );
@@ -377,6 +387,7 @@ namespace bts { namespace blockchain {
    {
       bids[key] = rec;
    }
+
    void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec ) 
    {
       asks[key] = rec;
@@ -385,6 +396,7 @@ namespace bts { namespace blockchain {
    {
       shorts[key] = rec;
    }
+
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {
       collateral[key] = rec;

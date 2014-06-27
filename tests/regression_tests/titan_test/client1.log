@@ -1,0 +1,21 @@
+default (unlocked) >>> blockchain_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> filter_output_for_tests true
+OK
+default (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp2eBHqxoR53WWyB4CH2QJF" account-for-client1 true false
+OK
+default (unlocked) >>> blockchain_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> wallet_account_balance account-for-client1
+account-for-client1:
+    150.00000 XTS
+default (unlocked) >>> wallet_transfer 100 XTS account-for-client1 test-account "take this"
+    BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   pending   [time redacted]     account-for-clie... test-account        take this                                 100.00000 XTS         0.10000 XTS[trx_id redacted]
+default (unlocked) >>> blockchain_advance_time 1 blocks
+OK
+default (unlocked) >>> wallet_account_balance account-for-client1
+account-for-client1:
+    49.90000 XTS
+default (unlocked) >>> quit

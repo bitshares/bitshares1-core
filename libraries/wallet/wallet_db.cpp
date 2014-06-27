@@ -385,7 +385,7 @@ namespace bts{ namespace wallet {
    void wallet_db::clear_pending_transactions()
    {
        vector<transaction_id_type> clear_list;
-       for (auto id_trx_pair : transactions)
+       for( const auto& id_trx_pair : transactions )
        {
            if (id_trx_pair.second.block_num == 0)
            {
@@ -393,7 +393,7 @@ namespace bts{ namespace wallet {
                my->_records.remove( id_trx_pair.second.wallet_record_index );
            }
        }
-       for( auto id : clear_list ) transactions.erase(id);
+       for( const auto& id : clear_list ) transactions.erase(id);
    }
 
    void wallet_db::export_to_json( const path& filename )const
@@ -445,7 +445,7 @@ namespace bts{ namespace wallet {
    { try {
        private_keys keys;
        keys.reserve( accounts.size() );
-       for( auto item : accounts )
+       for( const auto& item : accounts )
        {
           auto key_rec = lookup_key(item.second.account_address);
           if( key_rec.valid() && key_rec->has_private_key() )
@@ -619,7 +619,7 @@ namespace bts{ namespace wallet {
       remove_item( acct.wallet_record_index );
       keys.erase( address(acct.owner_key) );
       address_to_account_wallet_record_index.erase( address(acct.owner_key) );
-      for( auto time_key_pair : acct.active_key_history )
+      for( const auto& time_key_pair : acct.active_key_history )
       {
           keys.erase( address(time_key_pair.second) );
           address_to_account_wallet_record_index.erase( address(time_key_pair.second) );
@@ -642,7 +642,7 @@ namespace bts{ namespace wallet {
       name_to_account_wallet_record_index.erase( old_account_name );
       accounts[acct.wallet_record_index] = acct;
       address_to_account_wallet_record_index[address(acct.owner_key)] = acct.wallet_record_index;
-      for (auto time_key_pair : acct.active_key_history)
+      for( const auto& time_key_pair : acct.active_key_history )
           address_to_account_wallet_record_index[address(time_key_pair.second)] = acct.wallet_record_index;
 
    }

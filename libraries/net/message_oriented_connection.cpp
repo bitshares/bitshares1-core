@@ -125,7 +125,7 @@ namespace bts { namespace net {
           catch ( fc::exception& e ) 
           { 
             /// Here loop should be continued so exception should be just caught locally.
-            wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
+            //wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
           }
         }
       } 
