@@ -1306,9 +1306,9 @@ namespace bts { namespace wallet {
               FC_THROW_EXCEPTION( invalid_name, "Invalid delegate name!", ("delegate_name",delegate_name) );
 
           auto delegate_record = get_account( delegate_name );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
           auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
-          FC_ASSERT( key.valid() && key->has_private_key() );
+          FC_ASSERT( key.valid() && key->has_private_key(), "Unable to find private key for ${name}.", ("name", delegate_name) );
           delegate_records.push_back( *delegate_record );
       }
       else
