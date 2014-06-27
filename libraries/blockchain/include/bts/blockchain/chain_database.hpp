@@ -56,6 +56,11 @@ namespace bts { namespace blockchain {
    struct fork_record
    {
        fork_record()
+        : signing_delegate(0),
+          transaction_count(0),
+          latency(0),
+          size(0),
+          is_current_fork(false)
        {}
 
        block_id_type block_id;

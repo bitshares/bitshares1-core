@@ -1819,9 +1819,8 @@ namespace bts { namespace blockchain {
 
                         fork.block_id = forked_block_id;
                         fork.latency = fork_block.latency;
+
                         auto osignee = get_account_record( fork_block.signee() );
-                       /// ->id(); //get_signing_delegate_id(fork_block.timestamp); // TODO: Should use signee key
-                        
                         if( osignee )
                            fork.signing_delegate = osignee->id;
 
