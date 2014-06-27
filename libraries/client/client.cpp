@@ -630,7 +630,7 @@ config load_config( const fc::path& datadir )
           if( next_block_time.valid() )
           {
               // sign in to delegate server using private keys of my delegates
-              //_delegate_network.signin( _wallet->get_active_delegate_private_keys() );
+              _delegate_network.signin( _wallet->get_my_delegate_private_keys(true, true) );
               
               ilog( "Next block time: ${t}", ("t",*next_block_time) );
               if( *next_block_time <= now )
@@ -1140,6 +1140,11 @@ config load_config( const fc::path& datadir )
         my->_delegate_network.set_client( shared_from_this() );
         if( my->_config.delegate_server.port() != 0 )
            my->_delegate_network.listen( my->_config.delegate_server );
+
+        for( auto delegate_host : my->_config.default_delegate_peers )
+        {
+           my->_delegate_network.connect_to( fc::ip::endpoint::from_string(delegate_host) );
+        }
 
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
         fc::configure_logging( my->_config.logging );
