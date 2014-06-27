@@ -59,7 +59,7 @@ default (unlocked) >>> wallet_account_register test-account delegate0
 default (unlocked) >>> wallet_account_balance delegate0
 delegate0:
     19,801,829.99800 XTS
-default (unlocked) >>> blockchain_advance_time 1 blocks
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> blockchain_wait_for_block_by_number 3 absolute
 OK
