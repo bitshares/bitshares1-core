@@ -177,10 +177,10 @@ namespace bts { namespace blockchain {
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
-            void open_database(const fc::path& data_dir , fc::optional<fc::path> genesis_file);
+            void open_database(const fc::path& data_dir );
       };
 
-      void chain_database_impl::open_database( const fc::path& data_dir, fc::optional<fc::path> genesis_file = fc::optional<fc::path>() )
+      void chain_database_impl::open_database( const fc::path& data_dir )
       { try {
           bool rebuild_index = false;
 
@@ -903,7 +903,7 @@ namespace bts { namespace blockchain {
       {
           fc::create_directories( data_dir );
 
-          my->open_database( data_dir, genesis_file );
+          my->open_database( data_dir );
 
           // TODO: check to see if we crashed during the last write
           //   if so, then apply the last undo operation stored.

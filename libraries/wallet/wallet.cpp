@@ -80,7 +80,7 @@ namespace bts { namespace wallet {
              */
             virtual void block_applied( const block_summary& summary )override
             {
-               if( self->is_unlocked() && self->get_my_delegates( true, false ).empty() )
+               if( self->is_unlocked() && self->get_my_delegates( enabled_delegate_status ).empty() )
                {
                   auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   scan_block( summary.block_data.block_num, account_priv_keys );
@@ -1175,7 +1175,7 @@ namespace bts { namespace wallet {
          ++start;
       }
 
-      if( !get_my_delegates( true, false ).empty() )
+      if( !get_my_delegates( enabled_delegate_status ).empty() )
       {
          ulog( "Wallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
@@ -1270,24 +1270,26 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   vector<wallet_account_record> wallet::get_my_delegates( bool enabled_only, bool active_only )const
+   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
    {
       vector<wallet_account_record> delegate_records;
       const auto& account_records = list_my_accounts();
       for( const auto& account_record : account_records )
       {
           if( !account_record.is_delegate() ) continue;
-          if( enabled_only && !account_record.block_production_enabled ) continue;
-          if( active_only && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve | enabled_delegate_status && !account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve | disabled_delegate_status && account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve | active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve | inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
           delegate_records.push_back( account_record );
       }
       return delegate_records;
    }
 
-   vector<private_key_type> wallet::get_my_delegate_private_keys( bool enabled_only, bool active_only )const
+   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
    {
        vector<private_key_type> private_keys;
-       const auto& delegate_records = get_my_delegates( enabled_only, active_only );
+       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
        for( const auto& delegate_record : delegate_records )
           private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
        return private_keys;
@@ -1303,14 +1305,14 @@ namespace bts { namespace wallet {
               FC_THROW_EXCEPTION( invalid_name, "Invalid delegate name!", ("delegate_name",delegate_name) );
 
           auto delegate_record = get_account( delegate_name );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
           auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
-          FC_ASSERT( key.valid() && key->has_private_key() );
+          FC_ASSERT( key.valid() && key->has_private_key(), "Unable to find private key for ${name}.", ("name", delegate_name) );
           delegate_records.push_back( *delegate_record );
       }
       else
       {
-          delegate_records = get_my_delegates( false, false );
+          delegate_records = get_my_delegates( any_delegate_status );
       }
 
       for( auto& delegate_record : delegate_records )

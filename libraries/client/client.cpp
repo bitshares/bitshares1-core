@@ -454,6 +454,7 @@ config load_config( const fc::path& datadir )
             }
 
             optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
+            optional<time_point_sec> get_next_producible_block_timestamp()const;
 
             void reschedule_delegate_loop();
             void start_delegate_loop();
@@ -592,6 +593,11 @@ config load_config( const fc::path& datadir )
           return _chain_db->get_next_producible_block_timestamp( delegate_ids );
        }
 
+       optional<time_point_sec> client_impl::get_next_producible_block_timestamp()const
+       {
+          return get_next_producible_block_timestamp( _wallet->get_my_delegates( enabled_delegate_status ) );
+       }
+
        void client_impl::reschedule_delegate_loop()
        {
           if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
@@ -620,7 +626,7 @@ config load_config( const fc::path& datadir )
        {
           auto now = bts::blockchain::now();
 
-          const auto& enabled_delegates = _wallet->get_my_delegates( true, false );
+          const auto& enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( _wallet->is_locked() || enabled_delegates.empty() )
           {
               _next_block_production_time = optional<time_point_sec>();
@@ -1169,6 +1175,11 @@ config load_config( const fc::path& datadir )
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
+
+    optional<time_point_sec> client::get_next_producible_block_timestamp()const
+    {
+        return my->get_next_producible_block_timestamp();
+    }
 
     fc::variant_object version_info()
     {
@@ -2667,12 +2678,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_signing_delegate( block_number ).name;
    }
 
-   void client_impl::blockchain_start_simulated_time(const fc::time_point& starting_time)
+   void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
    {
      bts::blockchain::start_simulated_time(starting_time);
    }
 
-   void client_impl::blockchain_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
+   void client_impl::debug_advance_time(int32_t delta_time, const std::string& unit /* = "seconds" */)
    {
      if (unit == "blocks")
        delta_time *= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;

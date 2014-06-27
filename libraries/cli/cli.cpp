@@ -841,7 +841,7 @@ namespace bts { namespace cli {
                       std::stringstream ss;
                       auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
                       FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
-                      float percent = 100.0 * delegate_rec.net_votes() / opt_rec->current_share_supply;
+                      float percent = 100.f * delegate_rec.net_votes() / opt_rec->current_share_supply;
                       ss << std::setprecision(10);
                       ss << std::fixed;
                       ss << percent;
