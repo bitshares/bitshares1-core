@@ -164,12 +164,14 @@ namespace bts { namespace wallet {
           *  Block Generation API
           */
          ///@{
+         void enable_delegate_block_production( const string& delegate_id, bool enable = true );
+
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<private_key_type> get_my_delegate_private_keys( int delegates_to_retrieve = any_delegate_status )const;
 
-         void enable_delegate_block_production( const string& delegate_id, bool enable = true );
+         optional<time_point_sec> get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const;
 
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;

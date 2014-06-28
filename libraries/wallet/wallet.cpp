@@ -1271,31 +1271,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
-   {
-      vector<wallet_account_record> delegate_records;
-      const auto& account_records = list_my_accounts();
-      for( const auto& account_record : account_records )
-      {
-          if( !account_record.is_delegate() ) continue;
-          if( delegates_to_retrieve & enabled_delegate_status && !account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve & disabled_delegate_status && account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve & active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
-          if( delegates_to_retrieve & inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
-          delegate_records.push_back( account_record );
-      }
-      return delegate_records;
-   }
-
-   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
-   {
-       vector<private_key_type> private_keys;
-       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
-       for( const auto& delegate_record : delegate_records )
-          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
-       return private_keys;
-   }
-
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       std::vector<wallet_account_record> delegate_records;
@@ -1321,6 +1296,44 @@ namespace bts { namespace wallet {
           delegate_record.block_production_enabled = enable;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
+   }
+
+   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
+   {
+      FC_ASSERT( is_open() );
+      vector<wallet_account_record> delegate_records;
+      const auto& account_records = list_my_accounts();
+      for( const auto& account_record : account_records )
+      {
+          if( !account_record.is_delegate() ) continue;
+          if( delegates_to_retrieve & enabled_delegate_status && !account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & disabled_delegate_status && account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve & inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          delegate_records.push_back( account_record );
+      }
+      return delegate_records;
+   }
+
+   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
+   {
+       vector<private_key_type> private_keys;
+       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
+       for( const auto& delegate_record : delegate_records )
+          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
+       return private_keys;
+   }
+
+   optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
+   {
+      if( !is_open() || is_locked() ) return optional<time_point_sec>();
+
+      vector<account_id_type> delegate_ids;
+      delegate_ids.reserve( delegate_records.size() );
+      for( const auto& delegate_record : delegate_records )
+          delegate_ids.push_back( delegate_record.id );
+
+      return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
    }
 
    void wallet::sign_block( signed_block_header& header )const
