@@ -359,7 +359,7 @@ namespace bts { namespace blockchain {
           if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
           {
               auto latency = (now - block_data.timestamp).to_seconds();
-              block_record record( block_data, block_data.block_size(), self->get_current_random_seed(), latency );
+              block_record record( block_data, self->get_current_random_seed(), block_data.block_size(), latency );
               _block_id_to_block_record_db.store( block_id, record );
           }
 
@@ -598,8 +598,8 @@ namespace bts { namespace blockchain {
                          ("delegate_record",delegate_record) );
           }
 
-          delegate_record->delegate_info->next_secret_hash         = produced_block.next_secret_hash;
-          delegate_record->delegate_info->last_block_num_produced  = produced_block.block_num;
+          delegate_record->delegate_info->next_secret_hash = produced_block.next_secret_hash;
+          delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
 
           // TODO: Clean this up
           auto current_block_num = _head_block_header.block_num;
@@ -1140,7 +1140,8 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
-      auto block_id        = block_data.id();
+      auto processing_start_time = time_point::now();
+      auto block_id = block_data.id();
       auto current_head_id = my->_head_block_id;
 
       block_fork_data fork = my->store_and_index( block_id, block_data );
@@ -1169,9 +1170,15 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
+
+      /* Store processing time */
+      auto record = get_block_record( block_id );
+      FC_ASSERT( record.valid() );
+      record->processing_time = time_point::now() - processing_start_time;
+      my->_block_id_to_block_record_db.store( block_id, *record );
+
       return fork;
    } FC_CAPTURE_AND_RETHROW( (block_data) )  }
-
 
   std::vector<block_id_type> chain_database::get_fork_history( const block_id_type& id )
   {

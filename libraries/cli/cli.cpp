@@ -744,28 +744,31 @@ namespace bts { namespace cli {
               {
                   auto blocks = result.as<vector<bts::blockchain::block_record>>();
 
-                  *_out << std::setw(10) << "HEIGHT";
-                  *_out << std::setw(30) << "TIMESTAMP";
-                  *_out << std::setw(65) << "SIGNING DELEGATE";
-                  *_out << std::setw(15) << "TXN COUNT";
+                  *_out << std::left;
+                  *_out << std::setw(8) << "HEIGHT";
+                  *_out << std::setw(20) << "TIMESTAMP";
+                  *_out << std::setw(32) << "SIGNING DELEGATE";
+                  *_out << std::setw(8) << "# TXS";
                   *_out << std::setw(8)  << "SIZE";
-                  *_out << std::setw(14) << "TOTAL FEES";
+                  *_out << std::setw(16) << "TOTAL FEES";
                   *_out << std::setw(8)  << "LATENCY";
+                  *_out << std::setw(15)  << "PROCESSING TIME";
 
                   *_out << '\n';
-                  for (int i = 0; i < 150; ++i)
+                  for (int i = 0; i < 115; ++i)
                       *_out << '-';
                   *_out << '\n';
 
                   for (const auto& block : blocks)
                   {
-                      *_out << std::setw(10) << block.block_num
-                            << std::setw(30) << time_to_string(block.timestamp)
-                            << std::setw(65) << _client->blockchain_get_signing_delegate(block.block_num)
-                            << std::setw(15) << block.user_transaction_ids.size()
+                      *_out << std::setw(8) << block.block_num
+                            << std::setw(20) << time_to_string(block.timestamp)
+                            << std::setw(32) << _client->blockchain_get_signing_delegate(block.block_num)
+                            << std::setw(8) << block.user_transaction_ids.size()
                             << std::setw(8) << block.block_size
-                            << std::setw(14) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
+                            << std::setw(16) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
                             << std::setw(8) << block.latency
+                            << std::setw(15) << block.processing_time.count() / double( 1000000 )
                             << '\n';
                   }
               }
