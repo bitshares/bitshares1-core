@@ -786,16 +786,17 @@ config load_config( const fc::path& datadir )
                         network_broadcast_transaction( trx );
                    }
 
-                   if (_cli &&
-                       result.is_included &&
-                       (fc::time_point::now() - block.timestamp) > fc::minutes(5) &&
-                       _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(30)))
+                   auto now = blockchain::now();
+                   if (_cli
+                       && result.is_included
+                       && (now - block.timestamp) > fc::minutes(5)
+                       && _last_sync_status_message_time < (now - fc::seconds(30)))
                    {
                       std::ostringstream message;
                       message << "--- syncing with p2p network, our last block was created "
                               << fc::get_approximate_relative_time_string(block.timestamp);
                       ulog( message.str() );
-                      _last_sync_status_message_time = fc::time_point::now();
+                      _last_sync_status_message_time = now;
                    }
 
                    return result;
@@ -1081,7 +1082,8 @@ config load_config( const fc::path& datadir )
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         if (_cli && _last_sync_status_message_time < (fc::time_point::now() - fc::seconds(10)))
+         auto now = blockchain::now();
+         if (_cli && _last_sync_status_message_time < (now - fc::seconds(10)))
          {
            std::ostringstream message;
            if (item_count > 100)
@@ -1090,7 +1092,7 @@ config load_config( const fc::path& datadir )
               message << "--- in sync with p2p network";
            if (!message.str().empty())
                ulog( message.str() );
-           _last_sync_status_message_time = fc::time_point::now();
+           _last_sync_status_message_time = now;
          }
        }
 
