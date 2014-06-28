@@ -161,10 +161,10 @@ class BlockchainAPI
     @rpc.request('blockchain_list_current_round_active_delegates').then (response) ->
       response.result
 
-  # Returns the block headers for blocks in a range in a reverse order, from the newest to oldest
+  # Returns the block headers for blocks in a range
   # parameters: 
-  #   int32_t `first_block_number` - the position of the first block relate to the head block, 0 is header block
-  #   uint32_t `limit` - the maximum number of blocks to return
+  #   uint32_t `first_block_number` - the first block to list. If limit is negative, a first_block_number of 0 indicates the head block; otherwise, 0 indicates the first block
+  #   int32_t `limit` - the maximum number of blocks to return. A negative value means to start at the head block and work backwards; a positive value means to start at the first block
   # return_type: `block_record_array`
   list_blocks: (first_block_number, limit) ->
     @rpc.request('blockchain_list_blocks', [first_block_number, limit]).then (response) ->
@@ -182,7 +182,7 @@ class BlockchainAPI
 
   # returns a list of all blocks for which there is a fork off of the main chain
   # parameters: 
-  # return_type: `uint32_t_array`
+  # return_type: `map<uint32_t, vector<fork_record>>`
   list_forks:  ->
     @rpc.request('blockchain_list_forks').then (response) ->
       response.result

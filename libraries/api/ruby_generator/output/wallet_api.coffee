@@ -158,7 +158,7 @@ class WalletAPI
 
   # Unlock the private keys in the wallet to enable spending operations
   # parameters: 
-  #   time_interval_in_seconds `timeout` - the number of seconds to keep the wallet unlocked
+  #   uint32_t `timeout` - the number of seconds to keep the wallet unlocked
   #   passphrase `passphrase` - the passphrase for encrypting the wallet
   # return_type: `void`
   unlock: (timeout, passphrase) ->
@@ -426,8 +426,8 @@ class WalletAPI
 
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.
   # parameters: 
-  #   amount `fee` - the priority fee to be set.
-  # return_type: `void`
+  #   real_amount `fee` - the wallet priority fee to be set
+  # return_type: `real_amount`
   set_priority_fee: (fee) ->
     @rpc.request('wallet_set_priority_fee', [fee]).then (response) ->
       response.result

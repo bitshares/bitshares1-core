@@ -2438,6 +2438,7 @@ namespace bts { namespace wallet {
 
    asset wallet::get_priority_fee( const string& symbol )const
    {
+      FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
       auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if ( priority_fee.is_null() )
@@ -2452,6 +2453,7 @@ namespace bts { namespace wallet {
    
    void wallet::set_priority_fee( uint64_t fee )
    {
+      FC_ASSERT( is_open () );
       my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(fee) );
    }
 

@@ -924,12 +924,13 @@
       {
          "method_name"  : "wallet_set_priority_fee",
          "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "void",
+         "return_type"  : "real_amount",
          "parameters"   : [
          {
             "name" : "fee",
-            "type" : "amount",
-            "description" : "the priority fee to be set."
+            "type" : "real_amount",
+            "description" : "the wallet priority fee to be set",
+            "default_value" : "0"
          }
          ],
          "prerequisites" : ["wallet_open"],

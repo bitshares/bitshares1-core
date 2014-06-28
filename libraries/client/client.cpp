@@ -2573,17 +2573,22 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
-   void client_impl::wallet_set_priority_fee( int64_t fee )
-   {
-      try {
-         FC_ASSERT( fee >= 0, "Priority fee should be non negative." );
-         _wallet->set_priority_fee(fee);
-      } FC_CAPTURE_AND_RETHROW( (fee) ) }
+   double client_impl::wallet_set_priority_fee( double fee )
+   { try {
+      FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
+      if( fee > 0 )
+      {
+          auto converted_fee = uint64_t( fee * BTS_BLOCKCHAIN_PRECISION );
+          _wallet->set_priority_fee( converted_fee );
+      }
+      return _wallet->get_priority_fee().amount / double ( BTS_BLOCKCHAIN_PRECISION );
+   } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {
       return _chain_db->get_proposals( first, count );
    }
+
    vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
    {
       return _chain_db->get_proposal_votes( proposal_id );
