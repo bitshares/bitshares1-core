@@ -864,7 +864,7 @@
       {
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total balances of all accounts sorted by account and asset",
-         "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
+         "return_type"    : "map<account_name, map<asset_symbol, share_type>>",
          "parameters"     : [
          {
             "name" : "account_name",

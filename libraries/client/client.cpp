@@ -2516,7 +2516,7 @@ config load_config( const fc::path& datadir )
         return summaries;
     }
 
-   unordered_map<string, map<string, int64_t> >  client_impl::wallet_account_balance( const string& account_name )
+   map<string, map<string, int64_t>> client_impl::wallet_account_balance( const string& account_name )
    {
       if( account_name == string() || account_name == "*")
          return _wallet->get_account_balances();
@@ -2528,12 +2528,11 @@ config load_config( const fc::path& datadir )
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
-         auto all = _wallet->get_account_balances();
-
-         unordered_map<string, map<string,int64_t> > tmp;
-         tmp[account_name] = all[account_name];
-         tmp[account_name][BTS_BLOCKCHAIN_SYMBOL] = all[account_name][BTS_BLOCKCHAIN_SYMBOL];
-         return tmp;
+         auto all_balances = _wallet->get_account_balances();
+         map<string, map<string,int64_t>> balance;
+         balance[account_name] = all_balances[account_name];
+         balance[account_name][BTS_BLOCKCHAIN_SYMBOL] = all_balances[account_name][BTS_BLOCKCHAIN_SYMBOL];
+         return balance;
       }
    }
 

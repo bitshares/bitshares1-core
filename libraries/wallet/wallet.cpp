@@ -3153,12 +3153,12 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   wallet::account_balance_summary_type    wallet::get_account_balances()const
+   wallet::account_balance_summary_type wallet::get_account_balances()const
    { try {
-
+      FC_ASSERT( is_open() );
       auto pending_state = my->_blockchain->get_pending_state();
       account_balance_summary_type result;
-      unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
+      map< address, map< asset_id_type, share_type> > raw_results;
       for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );

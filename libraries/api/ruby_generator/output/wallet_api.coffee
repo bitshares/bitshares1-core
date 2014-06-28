@@ -400,7 +400,7 @@ class WalletAPI
   # Lists the total balances of all accounts sorted by account and asset
   # parameters: 
   #   account_name `account_name` - the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned
-  # return_type: `map< account_name, map< asset_symbol, share_type> >`
+  # return_type: `map<account_name, map<asset_symbol, share_type>>`
   account_balance: (account_name) ->
     @rpc.request('wallet_account_balance', [account_name]).then (response) ->
       response.result
