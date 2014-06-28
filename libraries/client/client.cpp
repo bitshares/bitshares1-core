@@ -2310,12 +2310,14 @@ config load_config( const fc::path& datadir )
       fc::mutable_variant_object info;
 
       /* Blockchain */
-      info["blockchain_head_block_num"]                         = _chain_db->get_head_block_num();
+      auto head_block_num                                       = _chain_db->get_head_block_num();
+      info["blockchain_head_block_num"]                         = head_block_num;
       auto head_block_timestamp                                 = _chain_db->now();
       info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
       info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
 
       info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
+      info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
       auto share_record                                         = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );

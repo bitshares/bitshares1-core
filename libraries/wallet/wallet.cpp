@@ -1178,7 +1178,7 @@ namespace bts { namespace wallet {
 
       if( !get_my_delegates( enabled_delegate_status ).empty() )
       {
-         ulog( "Wallet blockchain scanning disabled because there are enabled delegates!\n" );
+         ulog( "\nWallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
       }
 
