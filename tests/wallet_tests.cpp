@@ -490,8 +490,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
     string line = " --min-delegate-connection-count=0 ";
-    fc::future<void> client_done;
-    while (std::getline(test_config_file,line))
+    std::vector<bts::client::client_ptr> clients;
+    while (std::getline(test_config_file, line))
     {
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
@@ -541,6 +541,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
       }
       expected_output_stream.close();
 
+      fc::future<void> client_done;
+
       //run client with cmdline options
       if (with_network)
       {
@@ -549,7 +551,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
       else
       {
         bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
-        client->configure_from_command_line(argc,argv);
+        clients.push_back(client);
+        client->configure_from_command_line(argc, argv);
         client_done = client->start();
       }
 
@@ -575,7 +578,6 @@ void run_regression_test(fc::path test_dir, bool with_network)
   } 
   catch ( const fc::exception& e )
   {
-    elog( "${e}", ("e",e.to_detail_string() ) );
     BOOST_FAIL("Caught unexpected exception:" << e.to_detail_string() );
   }
 

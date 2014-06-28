@@ -681,19 +681,23 @@ config load_config( const fc::path& datadir )
           auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
-          auto offset = bts::blockchain::ntp_error();
-          if( offset < 0 )
+          if (ntp_time().valid())
           {
-              offset = floor( offset );
-              next_slot_time += uint32_t( -offset );
-          }
-          else
-          {
-              offset = ceil( offset );
-              next_slot_time -= uint32_t( offset );
+            double offset = bts::blockchain::ntp_error();
+            if( offset < 0 )
+            {
+                offset = floor( offset );
+                next_slot_time += uint32_t( -offset );
+            }
+            else
+            {
+                offset = ceil( offset );
+                next_slot_time -= uint32_t( offset );
+            }
           }
 
-          _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
+          if (next_slot_time > fc::time_point::now())
+            _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
        map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
@@ -1987,7 +1991,7 @@ config load_config( const fc::path& datadir )
     {
       if( argc == 0 && argv == nullptr )
       {
-        my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+        my->_cli = new bts::cli::cli( this, nullptr, &std::cout );
         return;
       }
       // parse command-line options
@@ -2085,7 +2089,7 @@ config load_config( const fc::path& datadir )
       if( option_variables.count("daemon") || my->_config.ignore_console )
       {
         std::cout << "Running in daemon mode, ignoring console\n";
-        my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+        my->_cli = new bts::cli::cli( this, nullptr, &std::cout );
         my->_cli->set_daemon_mode(true);
       }
       else //we will accept input from the console
@@ -2109,12 +2113,12 @@ config load_config( const fc::path& datadir )
         my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));;
         my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
 
-        my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), my->_tee_stream.get() );
+        my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), my->_tee_stream.get() );
         //echo command input to the log file
         my->_cli->set_input_stream_log(my->_console_log);
     #else
         //don't create a log file, just output to console
-        my->_cli = new bts::cli::cli( this->shared_from_this(), my->_command_script_holder.get(), &std::cout );
+        my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), &std::cout );
     #endif
       } //end else we will accept input from the console
 
@@ -2149,7 +2153,7 @@ config load_config( const fc::path& datadir )
     void client::init_cli()
     {
       if( !my->_cli )
-         my->_cli = new bts::cli::cli( this->shared_from_this(), nullptr, &std::cout );
+         my->_cli = new bts::cli::cli( this, nullptr, &std::cout );
     }
 
     void client::set_daemon_mode(bool daemon_mode)

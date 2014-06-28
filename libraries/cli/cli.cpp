@@ -53,7 +53,7 @@ namespace bts { namespace cli {
       class cli_impl
       {
          public:
-            client_ptr                                      _client;
+            bts::client::client*                            _client;
             rpc_server_ptr                                  _rpc_server;
             bts::cli::cli*                                  _self;
             fc::thread                                      _cin_thread;
@@ -72,7 +72,7 @@ namespace bts { namespace cli {
             bool _filter_output_for_tests;
 
 
-            cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream);
+            cli_impl(bts::client::client* client, std::istream* command_script, std::ostream* output_stream);
 
             void process_commands(std::istream* input_stream);
 
@@ -1584,7 +1584,7 @@ namespace bts { namespace cli {
     extern "C" int get_character(FILE* stream);
 #endif
 
-    cli_impl::cli_impl(const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
+    cli_impl::cli_impl(bts::client::client* client, std::istream* command_script, std::ostream* output_stream)
     :_client(client)
     ,_rpc_server(client->get_rpc_server())
     ,_quit(false)
@@ -1777,7 +1777,7 @@ namespace bts { namespace cli {
 
   } // end namespace detail
 
-   cli::cli( const client_ptr& client, std::istream* command_script, std::ostream* output_stream)
+   cli::cli( bts::client::client* client, std::istream* command_script, std::ostream* output_stream)
   :my( new detail::cli_impl(client,command_script,output_stream) )
   {
     my->_self = this;
