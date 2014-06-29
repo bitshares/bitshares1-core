@@ -16,7 +16,7 @@ namespace bts { namespace blockchain {
       :votes_for(0),
        blocks_produced(0),
        blocks_missed(0),
-       last_block_num_produced(-1),
+       last_block_num_produced(0),
        delegate_pay_rate(100),
        pay_balance(0){}
 

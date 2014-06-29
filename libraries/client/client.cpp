@@ -679,22 +679,43 @@ config load_config( const fc::path& datadir )
             _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
-       map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()
+       vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
        {
-          map<account_id_type, string> delegates;
+          if( first > 0 ) --first;
+          FC_ASSERT( first < BTS_BLOCKCHAIN_NUM_DELEGATES );
+          FC_ASSERT( first + count <= BTS_BLOCKCHAIN_NUM_DELEGATES );
+          const auto& all_delegate_ids = _chain_db->get_active_delegates();
+          FC_ASSERT( all_delegate_ids.size() == BTS_BLOCKCHAIN_NUM_DELEGATES );
+          auto delegate_ids = vector<account_id_type>( all_delegate_ids.begin() + first, all_delegate_ids.begin() + first + count );
 
-          auto delegate_ids = _chain_db->current_round_active_delegates();
+          vector<account_record> delegate_records;
+          delegate_records.reserve( count );
           for( const auto& delegate_id : delegate_ids )
           {
-              auto delegate_record = _chain_db->get_account_record( delegate_id );
-              FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-              delegates[ delegate_id ] = delegate_record->name ;
+            auto delegate_record = _chain_db->get_account_record( delegate_id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+            delegate_records.push_back( *delegate_record );
           }
-
-          return delegates;
+          return delegate_records;
        }
 
-       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count)
+       vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, uint32_t count )const
+       {
+          if( first > 0 ) --first;
+          const auto& delegate_ids = _chain_db->get_delegates_by_vote( first, count );
+
+          vector<account_record> delegate_records;
+          delegate_records.reserve( count );
+          for( const auto& delegate_id : delegate_ids )
+          {
+            auto delegate_record = _chain_db->get_account_record( delegate_id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+            delegate_records.push_back( *delegate_record );
+          }
+          return delegate_records;
+       }
+
+       vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count )
        {
           FC_ASSERT( count <= 1000 );
           FC_ASSERT( count >= -1000 );
@@ -1589,7 +1610,6 @@ config load_config( const fc::path& datadir )
          }
     } FC_CAPTURE_AND_RETHROW( (address_or_public_key) ) }
 
-
     vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
     {
       return _chain_db->get_accounts(first, count);
@@ -1598,16 +1618,6 @@ config load_config( const fc::path& datadir )
     vector<asset_record> detail::client_impl::blockchain_list_registered_assets( const string& first, int32_t count) const
     {
       return _chain_db->get_assets(first, count);
-    }
-
-    vector<account_record> detail::client_impl::blockchain_list_delegates(uint32_t first, uint32_t count) const
-    {
-      auto delegates = _chain_db->get_delegates_by_vote(first, count);
-      vector<account_record> delegate_records;
-      delegate_records.reserve( delegates.size() );
-      for( auto delegate_id : delegates )
-        delegate_records.push_back( *_chain_db->get_account_record( delegate_id ) );
-      return delegate_records;
     }
 
     std::vector<fc::variant_object> detail::client_impl::network_get_peer_info() const

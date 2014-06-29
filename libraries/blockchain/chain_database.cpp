@@ -840,11 +840,6 @@ namespace bts { namespace blockchain {
       return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
 
-   vector<account_id_type> chain_database::current_round_active_delegates()const
-   {
-      return get_property( chain_property_enum::active_delegate_list_id ).as<vector<account_id_type>>();
-   }
-
    /**
     *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */

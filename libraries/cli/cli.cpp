@@ -296,7 +296,7 @@ namespace bts { namespace cli {
                                                                const bts::api::method_data& method_data)
             { try {
               fc::variants arguments;
-              for (unsigned i = 0; i < method_data.parameters.size(); ++i)
+              for( unsigned i = 0; i < method_data.parameters.size(); ++i )
               {
                 try
                 {
@@ -665,7 +665,7 @@ namespace bts { namespace cli {
                             << std::setw(15) << "Votes\n";
                      (*_out) <<"--------------------------------------------------------------\n";
                   auto votes = result.as<bts::wallet::wallet::account_vote_summary_type>();
-                  for( auto vote : votes )
+                  for( const auto& vote : votes )
                   {
                      (*_out) << std::setw(25) << vote.first 
                             << std::setw(15) << vote.second.votes_for <<"\n";
@@ -677,7 +677,7 @@ namespace bts { namespace cli {
                   if (error_map.empty())
                       *_out << "No errors.\n";
                   else
-                    for( auto item : error_map )
+                    for( const auto& item : error_map )
                     {
                        (*_out) << string(item.first) << " (" << fc::get_approximate_relative_time_string( item.first ) << " )\n";
                        (*_out) << item.second.to_detail_string();
@@ -737,7 +737,7 @@ namespace bts { namespace cli {
                   if (wallets.empty())
                       *_out << "No wallets found.\n";
                   else
-                      for (auto wallet : wallets)
+                      for( const auto& wallet : wallets )
                           *_out << wallet << "\n";
               }
               else if (method_name == "wallet_list_unspent_balances" )
@@ -764,15 +764,14 @@ namespace bts { namespace cli {
                   *_out << std::setw(15)  << "PROCESSING TIME";
 
                   *_out << '\n';
-                  for (int i = 0; i < 115; ++i)
-                      *_out << '-';
+                  for( int i = 0; i < 115; ++i ) *_out << '-';
                   *_out << '\n';
 
-                  for (const auto& block : blocks)
+                  for( const auto& block : blocks )
                   {
                       *_out << std::setw(8) << block.block_num
-                            << std::setw(20) << time_to_string(block.timestamp)
-                            << std::setw(32) << _client->blockchain_get_signing_delegate(block.block_num)
+                            << std::setw(20) << time_to_string( block.timestamp )
+                            << std::setw(32) << pretty_shorten( _client->blockchain_get_signing_delegate(block.block_num), 32 )
                             << std::setw(8) << block.user_transaction_ids.size()
                             << std::setw(8) << block.block_size
                             << std::setw(16) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
@@ -803,7 +802,7 @@ namespace bts { namespace cli {
                   *_out << std::setw(16) << "FEES COLLECTED";
                   *_out << std::setw(16) << "REGISTERED";
                   *_out << "\n";
-                  for (auto asset : records)
+                  for( const auto& asset : records )
                   {
                       *_out << std::setprecision(15);
                       *_out << std::setw(6) << asset.id;
@@ -817,57 +816,11 @@ namespace bts { namespace cli {
                       *_out << "\n";
                   }
               }
-              else if (method_name == "blockchain_list_delegates")
+              else if( method_name == "blockchain_list_delegates"
+                       || method_name == "blockchain_list_active_delegates" )
               {
-                  auto delegates = result.as<vector<account_record>>();
-                  uint32_t current = 0;
-                  uint32_t count = 1000000;
-                  if (arguments.size() > 0)
-                      current = arguments[0].as<uint32_t>();
-                  if (arguments.size() > 1)
-                      count = arguments[1].as<uint32_t>();
-                  auto max = current + count;
-                  auto num_active = BTS_BLOCKCHAIN_NUM_DELEGATES - current;
-
-                  *_out << std::setw(5) << "ID";
-                  *_out << std::setw(30) << "NAME";
-                  *_out << std::setw(20) << "APPROVAL";
-                  *_out << std::setw(16) << "BLOCKS PRODUCED";
-                  *_out << std::setw(16) << "BLOCKS MISSED";
-                  *_out << "\n---------------------------------------------------------\n";
-
-                  if (current < num_active)
-                      *_out << "** Top:\n";
-
-                  auto total_delegates = delegates.size();
-                  for( auto delegate_rec : delegates )
-                  {
-                      if (current > max || current == total_delegates)
-                          return;
-                      if (current == num_active)
-                          *_out << "** Standby:\n";
-
-                      *_out << std::setw(5)  << std::left << delegate_rec.id;
-                      *_out << std::setw(30) << pretty_shorten( delegate_rec.name, 24 );
-                      
-                      std::stringstream ss;
-                      auto opt_rec = _client->get_chain()->get_asset_record(asset_id_type(0));
-                      FC_ASSERT(opt_rec.valid(), "No asset with id 0??");
-                      float percent = 100.f * delegate_rec.net_votes() / opt_rec->current_share_supply;
-                      ss << std::setprecision(10);
-                      ss << std::fixed;
-                      ss << percent;
-                      ss << " %";
-                      //*_out << std::setw(20) << _client->get_chain()->to_pretty_asset( asset(delegate_rec.net_votes(),0) );
-                      *_out << std::setw(20) << ss.str();
-
-                      *_out << std::setw(16) << delegate_rec.delegate_info->blocks_produced;
-                      *_out << std::setw(16) << delegate_rec.delegate_info->blocks_missed;
-
-                      *_out << "\n";
-                      current++;
-                  }
-                  *_out << "  Use \"blockchain_list_delegates <start_num> <count>\" to see more.\n";
+                  const auto& delegates = result.as<vector<account_record>>();
+                  print_delegate_list( delegates );
               }
               else if (method_name == "blockchain_get_proposal_votes")
               {
@@ -879,7 +832,7 @@ namespace bts { namespace cli {
                   *_out << std::setw(35) << "MESSAGE";
                   *_out << "\n----------------------------------------------------------------";
                   *_out << "-----------------------\n";
-                  for (auto vote : votes)
+                  for( const auto& vote : votes )
                   {
                       auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
                       *_out << std::setw(15) << pretty_shorten(rec->name, 14);
@@ -925,7 +878,7 @@ namespace bts { namespace cli {
                   {
                       *_out << "History of active keys:\n";
 
-                      for (auto key : record.active_key_history)
+                      for( const auto& key : record.active_key_history )
                           *_out << "  Key " << std::string(key.second) << " last used " << fc::get_approximate_relative_time_string(key.first) << "\n";
                   }
 
@@ -939,7 +892,7 @@ namespace bts { namespace cli {
                       *_out << std::setw(16) << "LAST BLOCK #";
                       *_out << std::setw(20) << "TOTAL PAY";
                       _out->put('\n');
-                      for (int i=0; i < 148; ++i)
+                      for( int i=0; i < 148; ++i )
                           _out->put('-');
                       _out->put('\n');
 
@@ -987,11 +940,11 @@ namespace bts { namespace cli {
                             << std::setw(20)  << "IN CURRENT CHAIN"
                             << "\n" << std::string(158, '-') << "\n";
 
-                      for (auto fork : forks)
+                      for( const auto& fork : forks )
                       {
                           *_out << std::setw(15) << fork.first << "\n";
 
-                          for (auto tine : fork.second)
+                          for( const auto& tine : fork.second )
                           {
                               *_out << std::setw(45) << fc::variant(tine.block_id).as_string();
 
@@ -1035,7 +988,7 @@ namespace bts { namespace cli {
                       if (invalid_reasons.size() > 0) {
                           *_out << "REASONS FOR INVALID BLOCKS\n";
 
-                          for (auto excuse : invalid_reasons)
+                          for( const auto& excuse : invalid_reasons )
                               *_out << excuse.first << ": " << excuse.second << "\n";
                       }
                   }
@@ -1056,7 +1009,7 @@ namespace bts { namespace cli {
                             << std::setw(25) << "SIGNATURE COUNT"
                             << "\n" << std::string(70, '-') << "\n";
 
-                      for (signed_transaction transaction : transactions)
+                      for( const auto& transaction : transactions )
                       {
                           *_out << std::setw(10) << transaction.id().str().substr(0, 8)
                                 << std::setw(10) << transaction.data_size()
@@ -1064,31 +1017,6 @@ namespace bts { namespace cli {
                                 << std::setw(25) << transaction.signatures.size()
                                 << "\n";
                       }
-                  }
-              }
-              else if (method_name == "blockchain_list_current_round_active_delegates")
-              {
-                  map<account_id_type, string> delegates = result.as<map<account_id_type, string>>();
-                  unsigned longest_delegate_name = 0;
-
-                  //Yeah, it's slower, I know, but it's so ugly if I don't. And seriously, it's still O(n) so stop complaining.
-                  for (auto delegate : delegates)
-                    if (delegate.second.size() > longest_delegate_name)
-                        longest_delegate_name = delegate.second.size();
-
-                  unsigned name_column_width = 20;
-                  if (longest_delegate_name + 3 > name_column_width)
-                      name_column_width = longest_delegate_name + 3;
-
-                  *_out << std::setw(name_column_width) << "DELEGATE NAME"
-                        << std::setw(5) << "ID"
-                        << "\n" << std::string(name_column_width + 5, '-') << "\n";
-
-                  for (auto delegate : delegates)
-                  {
-                      *_out << std::setw(name_column_width) << delegate.second
-                            << std::setw(5) << delegate.first
-                            << "\n";
                   }
               }
               else if (method_name == "blockchain_list_proposals")
@@ -1106,7 +1034,7 @@ namespace bts { namespace cli {
                   *_out << "\n------------------------------------------------------------";
                   *_out << "-----------------------------------------------------------------";
                   *_out << "------------------\n";
-                  for (auto prop : proposals)
+                  for( const auto& prop : proposals )
                   {
                       *_out << std::setw(10) << prop.id;
                       auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
@@ -1132,7 +1060,7 @@ namespace bts { namespace cli {
                   *_out << std::setw(30) << "LAST ERROR";
 
                   *_out<< "\n";
-                  for (auto peer : peers)
+                  for( const auto& peer : peers )
                   {
                       *_out<< std::setw(25) << string(peer.endpoint);
                       *_out<< std::setw(25) << time_to_string(peer.last_seen_time);
@@ -1186,14 +1114,14 @@ namespace bts { namespace cli {
               *_out << std::right; /* Ensure default alignment is restored */
             }
 
-            string pretty_shorten(const string& str, uint32_t size)
+            string pretty_shorten( const string& str, uint32_t size )
             {
                 if (str.size() < size)
                     return str;
                 return str.substr(0, size - 3) + "...";
             }
 
-            void print_transfer_summary(const signed_transaction& trx)
+            void print_transfer_summary( const signed_transaction& trx )
             {
                 auto trx_rec = _client->get_wallet()->lookup_transaction(trx.id());
                 auto pretty = _client->get_wallet()->to_pretty_trx( *trx_rec );
@@ -1201,7 +1129,7 @@ namespace bts { namespace cli {
                 print_transaction_history(list);
             }
 
-            void print_unspent_balances(const vector<wallet_balance_record>& balance_recs)
+            void print_unspent_balances( const vector<wallet_balance_record>& balance_recs )
             {
                 *_out << std::right;
                 *_out << std::setw(18) << "BALANCE";
@@ -1210,7 +1138,7 @@ namespace bts { namespace cli {
                 *_out << "\n";
                 *_out << "-------------------------------------------------------------";
                 *_out << "-------------------------------------------------------------\n";
-                for( auto balance_rec : balance_recs )
+                for( const auto& balance_rec : balance_recs )
                 {
                     *_out << std::setw(18) << _client->get_chain()->to_pretty_asset( asset(balance_rec.balance, 0) );
                     switch (withdraw_condition_types(balance_rec.condition.type))
@@ -1266,7 +1194,7 @@ namespace bts { namespace cli {
                 } // for balance in balances
             }
 
-            void print_contact_account_list(const vector<wallet_account_record> account_records)
+            void print_contact_account_list( const vector<wallet_account_record>& account_records )
             {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 *_out << std::setw( 64 ) << "KEY";
@@ -1275,7 +1203,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 15 ) << "TRUSTED";
                 *_out << "\n";
 
-                for( auto acct : account_records )
+                for( const auto& acct : account_records )
                 {
                     if (acct.is_delegate())
                       *_out << std::setw(35) << pretty_shorten(acct.name, 33) + " *";
@@ -1299,7 +1227,7 @@ namespace bts { namespace cli {
                 }
             }
 
-            void print_receive_account_list(const vector<wallet_account_record>& account_records)
+            void print_receive_account_list( const vector<wallet_account_record>& account_records )
             {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 *_out << std::setw( 64 ) << "KEY";
@@ -1309,7 +1237,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
-                for( auto acct : account_records )
+                for( const auto& acct : account_records )
                 {
                     if (acct.is_delegate())
                     {
@@ -1345,7 +1273,7 @@ namespace bts { namespace cli {
                 }
             }
 
-            void print_registered_account_list(const vector<account_record> account_records, int32_t count )
+            void print_registered_account_list( const vector<account_record>& account_records, int32_t count )
             {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
                 *_out << std::setw( 64 ) << "KEY";
@@ -1354,12 +1282,12 @@ namespace bts { namespace cli {
                 *_out << std::setw( 15 ) << "TRUSTED";
 
                 *_out << '\n';
-                for (int i = 0; i < 151; ++i)
+                for( int i = 0; i < 151; ++i )
                     *_out << '-';
                 *_out << '\n';
 
                 auto counter = 0;
-                for( auto acct : account_records )
+                for( const auto& acct : account_records )
                 {
                     if (acct.is_delegate())
                     {
@@ -1405,6 +1333,65 @@ namespace bts { namespace cli {
 
                 }
             }
+
+            void print_delegate_list( const vector<account_record>& delegate_records )
+            {
+                *_out << std::left;
+                *_out << std::setw(6) << "ID";
+                *_out << std::setw(32) << "NAME";
+                *_out << std::setw(13) << "APPROVAL";
+                *_out << std::setw(9) << "PRODUCED";
+                *_out << std::setw(7) << "MISSED";
+                *_out << std::setw(12) << "RELIABILITY";
+                *_out << std::setw(9) << "PAY RATE";
+                *_out << std::setw(12) << "PAY BALANCE";
+                *_out << std::setw(10) << "LAST BLOCK";
+
+                *_out << '\n';
+                for( int i = 0; i < 110; ++i ) *_out << '-';
+                *_out << '\n';
+
+                for( const auto& delegate_record : delegate_records )
+                {
+                    *_out << std::setw(6)  << delegate_record.id;
+                    *_out << std::setw(32) << pretty_shorten( delegate_record.name, 32 );
+
+                    {
+                        auto asset_record = _client->get_chain()->get_asset_record( asset_id_type() );
+                        FC_ASSERT( asset_record.valid() );
+                        float percent = 100.f * delegate_record.net_votes() / asset_record->current_share_supply;
+                        std::stringstream ss;
+                        ss << std::setprecision(10);
+                        ss << std::fixed;
+                        ss << percent;
+                        //*_out << std::setw(20) << _client->get_chain()->to_pretty_asset( asset(delegate_rec.net_votes(),0) );
+                        *_out << std::setw(13) << ss.str();
+                    }
+
+                    auto num_produced = delegate_record.delegate_info->blocks_produced;
+                    auto num_missed = delegate_record.delegate_info->blocks_missed;
+                    *_out << std::setw(9) << num_produced;
+                    *_out << std::setw(7) << num_missed;
+
+                    {
+                        float percent = 100.f * num_produced / (num_produced + num_missed);
+                        std::stringstream ss;
+                        ss << std::setprecision(2);
+                        ss << std::fixed;
+                        ss << percent;
+                        *_out << std::setw(12) << ss.str();
+                    }
+
+                    *_out << std::setw(9) << uint32_t( delegate_record.delegate_info->delegate_pay_rate );
+                    *_out << std::setw(12) << delegate_record.delegate_info->pay_balance / double( BTS_BLOCKCHAIN_PRECISION );
+
+                    auto last_block = delegate_record.delegate_info->last_block_num_produced;
+                    *_out << std::setw(10) << ( (last_block > 0 && last_block != -1 ) ? std::to_string( last_block ) : "none" );
+
+                    *_out << "\n";
+                }
+            }
+
             void print_wallet_market_order_list( const vector<market_order_status>& order_list )
             {
                 if( !_out ) return;
@@ -1419,7 +1406,7 @@ namespace bts { namespace cli {
                 out << "\n";
                 out <<"-----------------------------------------------------------------------------------------------------------\n";
 
-                for( auto order : order_list )
+                for( const auto& order : order_list )
                 {
                    out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
                    out << std::setw( 10  )  << variant( order.get_type() ).as_string();
@@ -1431,7 +1418,7 @@ namespace bts { namespace cli {
                 out << "\n";
             }
 
-            void print_transaction_history(const vector<bts::wallet::pretty_transaction> txs)
+            void print_transaction_history( const vector<bts::wallet::pretty_transaction>& txs )
             {
                 /* Print header */
                 if( !_out ) return;
@@ -1450,7 +1437,7 @@ namespace bts { namespace cli {
                 (*_out) << std::right; 
                 
                 int count = 1;
-                for( auto tx : txs )
+                for( const auto& tx : txs )
                 {
                     count++;
 
@@ -1498,7 +1485,7 @@ namespace bts { namespace cli {
                     /*
                     bool has_deposit = false;
                     std::stringstream ss;
-                    for (auto op : tx.operations)
+                    for( auto op : tx.operations )
                     {
                         if (op.get_object()["op_name"].as<string>() == "deposit")
                         {
@@ -1533,21 +1520,23 @@ namespace bts { namespace cli {
                     (*_out) << std::right << "\n";
                 }
             }
-            void print_network_usage_graph(const std::vector<uint32_t>& usage_data)
+
+            void print_network_usage_graph( const std::vector<uint32_t>& usage_data )
             {
               uint32_t max_value = *boost::max_element(usage_data);
               uint32_t min_value = *boost::min_element(usage_data);
               const unsigned num_rows = 10;
-              for (unsigned row = 0; row < num_rows; ++row)
+              for( unsigned row = 0; row < num_rows; ++row )
               {
                 uint32_t threshold = min_value + (max_value - min_value) / (num_rows - 1) * (num_rows - row - 1);
-                for (unsigned column = 0; column < usage_data.size(); ++column)
+                for( unsigned column = 0; column < usage_data.size(); ++column )
                   (*_out) << (usage_data[column] >= threshold ?  "*" : " ");
                 (*_out) << " " << threshold << " bytes/sec\n";
               }
               (*_out)  << "\n";
             }
-            void print_network_usage_stats(const fc::variant_object stats)
+
+            void print_network_usage_stats( const fc::variant_object& stats )
             {
               std::vector<uint32_t> usage_by_second = stats["usage_by_second"].as<std::vector<uint32_t> >();
               if (!usage_by_second.empty())
@@ -1630,11 +1619,11 @@ namespace bts { namespace cli {
       {
         _method_data_is_initialized = true;
         vector<bts::api::method_data> method_data_list = _rpc_server->get_all_method_data();
-        for (const bts::api::method_data& method_data : method_data_list)
+        for( const auto& method_data : method_data_list )
         {
           _method_data_map[method_data.name] = method_data;
           _method_alias_map[method_data.name] = method_data.name;
-          for (const string& alias : method_data.aliases)
+          for( const auto& alias : method_data.aliases )
             _method_alias_map[alias] = method_data.name;
         }
       }

@@ -118,15 +118,6 @@ class BlockchainAPI
     @rpc.request('blockchain_get_asset_record_by_id', [asset_id]).then (response) ->
       response.result
 
-  # Returns the list of delegates sorted by vote
-  # parameters: 
-  #   uint32_t `first` - 
-  #   uint32_t `count` - 
-  # return_type: `account_record_array`
-  list_delegates: (first, count) ->
-    @rpc.request('blockchain_list_delegates', [first, count]).then (response) ->
-      response.result
-
   # Returns the list of proposals
   # parameters: 
   #   uint32_t `first` - 
@@ -154,11 +145,22 @@ class BlockchainAPI
     @rpc.request('blockchain_market_list_bids', [quote_symbol, base_symbol, limit]).then (response) ->
       response.result
 
-  # returns the order of delegates that is fixed for the current round
+  # Returns a list of the current round's active delegates in signing order
   # parameters: 
-  # return_type: `map<account_id_type, string>`
-  list_current_round_active_delegates:  ->
-    @rpc.request('blockchain_list_current_round_active_delegates').then (response) ->
+  #   uint32_t `first` - 
+  #   uint32_t `count` - 
+  # return_type: `account_record_array`
+  list_active_delegates: (first, count) ->
+    @rpc.request('blockchain_list_active_delegates', [first, count]).then (response) ->
+      response.result
+
+  # Returns a list of all the delegates sorted by vote
+  # parameters: 
+  #   uint32_t `first` - 
+  #   uint32_t `count` - 
+  # return_type: `account_record_array`
+  list_delegates: (first, count) ->
+    @rpc.request('blockchain_list_delegates', [first, count]).then (response) ->
       response.result
 
   # Returns the block headers for blocks in a range
