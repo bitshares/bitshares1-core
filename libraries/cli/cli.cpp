@@ -1,4 +1,5 @@
 #include <bts/cli/cli.hpp>
+#include <bts/cli/pretty.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
@@ -22,9 +23,6 @@
 
 #include <boost/optional.hpp>
 
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <fstream>
 
 
@@ -47,7 +45,7 @@
 #endif
 
 namespace bts { namespace cli {
-
+  
   namespace detail
   {
       class cli_impl
@@ -69,7 +67,6 @@ namespace bts { namespace cli {
             std::istream*                  _command_script;
             std::istream*                  _input_stream;
             boost::optional<std::ostream&> _input_stream_log;
-            bool _filter_output_for_tests;
 
 
             cli_impl(bts::client::client* client, std::istream* command_script, std::ostream* output_stream);
@@ -464,7 +461,7 @@ namespace bts { namespace cli {
                   while(true)
                   {
                       try {
-                        if (!_filter_output_for_tests)
+                        if (!FILTER_OUTPUT_FOR_TESTS)
                         {
                           *_out << "|";
                           for(int i = 0; i < 100; i++)
@@ -749,36 +746,25 @@ namespace bts { namespace cli {
               {
                   print_network_usage_stats(result.get_object());
               }
+              else if( method_name == "blockchain_list_delegates"
+                       || method_name == "blockchain_list_active_delegates" )
+              {
+                  const auto& delegate_records = result.as<vector<account_record>>();
+                  const auto& asset_record = _client->get_chain()->get_asset_record( asset_id_type() );
+                  FC_ASSERT( asset_record.valid() );
+                  *_out << pretty_delegate_list( delegate_records, asset_record->current_share_supply );
+              }
               else if (method_name == "blockchain_list_blocks")
               {
-                  auto blocks = result.as<vector<bts::blockchain::block_record>>();
-
-                  *_out << std::left;
-                  *_out << std::setw(8) << "HEIGHT";
-                  *_out << std::setw(20) << "TIMESTAMP";
-                  *_out << std::setw(32) << "SIGNING DELEGATE";
-                  *_out << std::setw(8) << "# TXS";
-                  *_out << std::setw(8)  << "SIZE";
-                  *_out << std::setw(16) << "TOTAL FEES";
-                  *_out << std::setw(8)  << "LATENCY";
-                  *_out << std::setw(15)  << "PROCESSING TIME";
-
-                  *_out << '\n';
-                  for( int i = 0; i < 115; ++i ) *_out << '-';
-                  *_out << '\n';
-
-                  for( const auto& block : blocks )
+                  const auto& block_records = result.as<vector<bts::blockchain::block_record>>();
+                  vector<std::pair<block_record, std::string>> items;
+                  items.reserve( block_records.size() );
+                  for( const auto& block_record : block_records )
                   {
-                      *_out << std::setw(8) << block.block_num
-                            << std::setw(20) << time_to_string( block.timestamp )
-                            << std::setw(32) << pretty_shorten( _client->blockchain_get_signing_delegate(block.block_num), 32 )
-                            << std::setw(8) << block.user_transaction_ids.size()
-                            << std::setw(8) << block.block_size
-                            << std::setw(16) << block.total_fees / double( BTS_BLOCKCHAIN_PRECISION )
-                            << std::setw(8) << block.latency
-                            << std::setw(15) << block.processing_time.count() / double( 1000000 )
-                            << '\n';
+                      const auto& delegate_name = _client->blockchain_get_signing_delegate( block_record.block_num );
+                      items.push_back( std::make_pair( block_record, delegate_name ) );
                   }
+                  *_out << pretty_block_list( items );
               }
               else if (method_name == "blockchain_list_registered_accounts")
               {
@@ -812,15 +798,9 @@ namespace bts { namespace cli {
                       *_out << std::setw(16) << double(asset.current_share_supply) / asset.precision;
                       *_out << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
                       *_out << std::setw(16) << double(asset.collected_fees) / asset.precision;
-                      *_out << std::setw(16) << time_to_string(asset.registration_date);
+                      *_out << std::setw(16) << pretty_timestamp(asset.registration_date);
                       *_out << "\n";
                   }
-              }
-              else if( method_name == "blockchain_list_delegates"
-                       || method_name == "blockchain_list_active_delegates" )
-              {
-                  const auto& delegates = result.as<vector<account_record>>();
-                  print_delegate_list( delegates );
               }
               else if (method_name == "blockchain_get_proposal_votes")
               {
@@ -836,7 +816,7 @@ namespace bts { namespace cli {
                   {
                       auto rec = _client->get_chain()->get_account_record( vote.id.delegate_id );
                       *_out << std::setw(15) << pretty_shorten(rec->name, 14);
-                      *_out << std::setw(20) << time_to_string(vote.timestamp);
+                      *_out << std::setw(20) << pretty_timestamp(vote.timestamp);
                       if (vote.vote == proposal_vote::no)
                       {
                           *_out << std::setw(5) << "NO";
@@ -956,7 +936,7 @@ namespace bts { namespace cli {
 
                               *_out << std::setw(15) << tine.transaction_count
                                     << std::setw(10) << tine.size
-                                    << std::setw(20) << time_to_string(tine.timestamp)
+                                    << std::setw(20) << pretty_timestamp(tine.timestamp)
                                     << std::setw(10) << tine.latency
                                     << std::setw(8);
 
@@ -1039,7 +1019,7 @@ namespace bts { namespace cli {
                       *_out << std::setw(10) << prop.id;
                       auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
                       *_out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
-                      *_out << std::setw(20) << time_to_string(prop.submission_date);
+                      *_out << std::setw(20) << pretty_timestamp(prop.submission_date);
                       *_out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
                       *_out << std::setw(20) << pretty_shorten(prop.subject, 19);
                       *_out << std::setw(35) << pretty_shorten(prop.body, 34);
@@ -1063,8 +1043,8 @@ namespace bts { namespace cli {
                   for( const auto& peer : peers )
                   {
                       *_out<< std::setw(25) << string(peer.endpoint);
-                      *_out<< std::setw(25) << time_to_string(peer.last_seen_time);
-                      *_out << std::setw(25) << time_to_string(peer.last_connection_attempt_time);
+                      *_out<< std::setw(25) << pretty_timestamp(peer.last_seen_time);
+                      *_out << std::setw(25) << pretty_timestamp(peer.last_connection_attempt_time);
                       *_out << std::setw(30) << peer.number_of_successful_connection_attempts;
                       *_out << std::setw(30) << peer.number_of_failed_connection_attempts;
                       *_out << std::setw(35) << string( peer.last_connection_disposition );
@@ -1112,13 +1092,6 @@ namespace bts { namespace cli {
               }
 
               *_out << std::right; /* Ensure default alignment is restored */
-            }
-
-            string pretty_shorten( const string& str, uint32_t size )
-            {
-                if (str.size() < size)
-                    return str;
-                return str.substr(0, size - 3) + "...";
             }
 
             void print_transfer_summary( const signed_transaction& trx )
@@ -1215,7 +1188,7 @@ namespace bts { namespace cli {
                     if( acct.id == 0 )
                       *_out << std::setw( 22 ) << "NO";
                     else 
-                      *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
+                      *_out << std::setw( 22 ) << pretty_timestamp(acct.registration_date);
 
                     if( acct.is_favorite )
                       *_out << std::setw( 15 ) << "YES";
@@ -1256,7 +1229,7 @@ namespace bts { namespace cli {
                     } 
                     else 
                     {
-                        *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
+                        *_out << std::setw( 22 ) << pretty_timestamp(acct.registration_date);
                     }
 
                     if( acct.is_favorite )
@@ -1299,7 +1272,7 @@ namespace bts { namespace cli {
                     }
                     
                     *_out << std::setw(64) << string( acct.active_key() );
-                    *_out << std::setw( 22 ) << time_to_string(acct.registration_date);
+                    *_out << std::setw( 22 ) << pretty_timestamp(acct.registration_date);
 
                     if ( acct.is_delegate() )
                     {
@@ -1331,64 +1304,6 @@ namespace bts { namespace cli {
                     }
                     counter++;
 
-                }
-            }
-
-            void print_delegate_list( const vector<account_record>& delegate_records )
-            {
-                *_out << std::left;
-                *_out << std::setw(6) << "ID";
-                *_out << std::setw(32) << "NAME";
-                *_out << std::setw(13) << "APPROVAL";
-                *_out << std::setw(9) << "PRODUCED";
-                *_out << std::setw(7) << "MISSED";
-                *_out << std::setw(12) << "RELIABILITY";
-                *_out << std::setw(9) << "PAY RATE";
-                *_out << std::setw(12) << "PAY BALANCE";
-                *_out << std::setw(10) << "LAST BLOCK";
-
-                *_out << '\n';
-                for( int i = 0; i < 110; ++i ) *_out << '-';
-                *_out << '\n';
-
-                for( const auto& delegate_record : delegate_records )
-                {
-                    *_out << std::setw(6)  << delegate_record.id;
-                    *_out << std::setw(32) << pretty_shorten( delegate_record.name, 32 );
-
-                    {
-                        auto asset_record = _client->get_chain()->get_asset_record( asset_id_type() );
-                        FC_ASSERT( asset_record.valid() );
-                        float percent = 100.f * delegate_record.net_votes() / asset_record->current_share_supply;
-                        std::stringstream ss;
-                        ss << std::setprecision(10);
-                        ss << std::fixed;
-                        ss << percent;
-                        //*_out << std::setw(20) << _client->get_chain()->to_pretty_asset( asset(delegate_rec.net_votes(),0) );
-                        *_out << std::setw(13) << ss.str();
-                    }
-
-                    auto num_produced = delegate_record.delegate_info->blocks_produced;
-                    auto num_missed = delegate_record.delegate_info->blocks_missed;
-                    *_out << std::setw(9) << num_produced;
-                    *_out << std::setw(7) << num_missed;
-
-                    {
-                        float percent = 100.f * num_produced / (num_produced + num_missed);
-                        std::stringstream ss;
-                        ss << std::setprecision(2);
-                        ss << std::fixed;
-                        ss << percent;
-                        *_out << std::setw(12) << ss.str();
-                    }
-
-                    *_out << std::setw(9) << uint32_t( delegate_record.delegate_info->pay_rate );
-                    *_out << std::setw(12) << delegate_record.delegate_info->pay_balance / double( BTS_BLOCKCHAIN_PRECISION );
-
-                    auto last_block = delegate_record.delegate_info->last_block_num_produced;
-                    *_out << std::setw(10) << ( (last_block > 0 && last_block != -1 ) ? std::to_string( last_block ) : "none" );
-
-                    *_out << "\n";
                 }
             }
 
@@ -1453,7 +1368,7 @@ namespace bts { namespace cli {
                     }
 
                     /* Print timestamp */
-                     (*_out) << std::setw( 20 ) << time_to_string(fc::time_point_sec(tx.received_time));
+                     (*_out) << std::setw( 20 ) << pretty_timestamp(fc::time_point_sec(tx.received_time));
 
                     // Print "from" account
                      (*_out) << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
@@ -1512,8 +1427,8 @@ namespace bts { namespace cli {
 
                     (*_out) << std::right;
                     /* Print transaction ID */
-                    if (_filter_output_for_tests)
-                      (*_out) << std::setw( 16 ) << "[trx_id redacted]";
+                    if (FILTER_OUTPUT_FOR_TESTS)
+                      (*_out) << std::setw( 16 ) << "[redacted]";
                     else
                       (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
 
@@ -1561,8 +1476,6 @@ namespace bts { namespace cli {
               }
             }
 
-            std::string time_to_string(const fc::time_point_sec& time);
-
             void display_status_message(const std::string& message);
 #ifdef HAVE_READLINE
             typedef std::map<string, bts::api::method_data> method_data_map_type;
@@ -1595,7 +1508,6 @@ namespace bts { namespace cli {
     , _saved_out(nullptr)
     ,_out(output_stream ? output_stream : &nullstream)
     ,_command_script(command_script)
-    ,_filter_output_for_tests(false)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline
@@ -1768,14 +1680,6 @@ namespace bts { namespace cli {
       wlog( "process commands exiting" );
     }  FC_CAPTURE_AND_RETHROW() }
 
-    std::string cli_impl::time_to_string(const fc::time_point_sec& time)
-    {
-      if (_filter_output_for_tests)
-        return "[time redacted]";
-      boost::posix_time::ptime posix_time = boost::posix_time::from_time_t(time_t(time.sec_since_epoch()));
-      return boost::posix_time::to_iso_extended_string(posix_time);
-    }
-
   } // end namespace detail
 
    cli::cli( bts::client::client* client, std::istream* command_script, std::ostream* output_stream)
@@ -1843,7 +1747,7 @@ namespace bts { namespace cli {
 
   void cli::filter_output_for_tests(bool enable_flag)
   {
-    my->_filter_output_for_tests = enable_flag;
+    FILTER_OUTPUT_FOR_TESTS = enable_flag;
   }
 
   bool cli::execute_command_line( const string& line, std::ostream* output)

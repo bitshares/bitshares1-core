@@ -1,4 +1,5 @@
 #pragma once
+
 #include <bts/client/client.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <fc/variant.hpp>
@@ -22,6 +23,8 @@ namespace bts { namespace cli {
    using namespace bts::wallet;
 
    namespace detail {  class cli_impl; }
+
+   extern bool FILTER_OUTPUT_FOR_TESTS;
 
    class cli
    {
