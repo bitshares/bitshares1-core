@@ -506,7 +506,7 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_rate = delegate_record->delegate_info->delegate_pay_rate;
+            auto pay_rate = delegate_record->delegate_info->pay_rate;
             FC_ASSERT( pay_rate <= 100 );
             auto pay = (amount*pay_rate)/100;
 

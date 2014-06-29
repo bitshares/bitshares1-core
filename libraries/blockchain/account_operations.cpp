@@ -67,7 +67,7 @@ namespace bts { namespace blockchain {
       if (this->is_delegate())
       {
           new_record.delegate_info = delegate_stats();
-          new_record.delegate_info->delegate_pay_rate = this->delegate_pay_rate;
+          new_record.delegate_info->pay_rate = this->delegate_pay_rate;
           eval_state.required_fees += asset(eval_state._current_state->get_delegate_registration_fee(),0);
       }
       new_record.meta_data = this->meta_data;

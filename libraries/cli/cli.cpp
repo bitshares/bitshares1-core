@@ -1382,7 +1382,7 @@ namespace bts { namespace cli {
                         *_out << std::setw(12) << ss.str();
                     }
 
-                    *_out << std::setw(9) << uint32_t( delegate_record.delegate_info->delegate_pay_rate );
+                    *_out << std::setw(9) << uint32_t( delegate_record.delegate_info->pay_rate );
                     *_out << std::setw(12) << delegate_record.delegate_info->pay_balance / double( BTS_BLOCKCHAIN_PRECISION );
 
                     auto last_block = delegate_record.delegate_info->last_block_num_produced;
