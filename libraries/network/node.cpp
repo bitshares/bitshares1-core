@@ -44,7 +44,12 @@ namespace bts { namespace network {
       _accept_loop = fc::async( [this](){ accept_loop(); } );
       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(2) );
        ulog( "delegate node listening on ${ep}", ("ep",ep) );
-      _server.listen( ep );
+       try {
+         _server.listen( ep );
+       } catch ( const fc::exception& e )
+       {
+          ulog( "${e}", ("e",e.to_detail_string() ) );
+       }
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
 
    vector<peer_info> node::get_peers()const
@@ -269,6 +274,7 @@ namespace bts { namespace network {
       }
       if( _peers.size() < _desired_peer_count )
       {
+         ulog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
          _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(60) );
       }
       else {
