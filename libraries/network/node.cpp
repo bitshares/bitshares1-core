@@ -93,8 +93,8 @@ namespace bts { namespace network {
                break;
             case peer_response:
                break;
-            case block:
-               ulog( "on block message" );
+            case message_type::block:
+               ulog( "on block message  ${block}", ("block",msg.as<block_message>().block) );
                on_block_message( con, msg.as<block_message>() );
                break;
             case keep_alive:

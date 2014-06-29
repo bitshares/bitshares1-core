@@ -16,6 +16,9 @@ namespace bts { namespace network {
 
       message():size(0),type(0){}
 
+      message( const message& copy )
+      :size(copy.size),type(copy.type),data(copy.data){}
+
       /**
        *  Assumes that T::type specifies the message type
        */
@@ -33,9 +36,10 @@ namespace bts { namespace network {
          FC_ASSERT( T::type == type );
 
          T tmp;
-         if( data.size() )
+         if( size )
          {
-            fc::datastream<const char*> ds( data.data(), data.size() );
+            FC_ASSERT( size <= data.size() );
+            fc::datastream<const char*> ds( data.data(), size );
             fc::raw::unpack( ds, tmp );
          }
          else
@@ -46,8 +50,7 @@ namespace bts { namespace network {
          }
          return tmp;
       }
-   };
-
+   }; 
    enum message_type
    {
       keep_alive      =  0,
@@ -97,8 +100,8 @@ namespace bts { namespace network {
       enum type_enum { type = message_type::block };
 
       block_message(){}
-      block_message( full_block b )
-      :block(std::move(b)){}
+      block_message( const full_block& b )
+      :block(b){}
 
       full_block block;
    };
