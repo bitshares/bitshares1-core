@@ -115,7 +115,7 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block                  generate_block( time_point_sec timestamp );
+         full_block                  generate_block( const time_point_sec& timestamp );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the
@@ -200,7 +200,6 @@ namespace bts { namespace blockchain {
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
-         vector<account_id_type>            current_round_active_delegates()const;
                                             
          vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1) )const;
          vector<account_record>             get_delegate_records_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1))const;

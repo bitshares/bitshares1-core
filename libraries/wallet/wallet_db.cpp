@@ -1,3 +1,4 @@
+#include <bts/blockchain/time.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/db/level_map.hpp>
 #include <fc/crypto/aes.hpp>
@@ -539,7 +540,7 @@ namespace bts{ namespace wallet {
       war.id = 0;
       war.account_address = address( new_account_key );
       war.owner_key = new_account_key;
-      war.set_active_key( fc::time_point::now(), new_account_key );
+      war.set_active_key( blockchain::now(), new_account_key );
       war.private_data = private_data;
 
       war.wallet_record_index = new_wallet_record_index();

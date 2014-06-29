@@ -93,9 +93,9 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
-   std::vector<account_id_type> chain_interface::get_active_delegates()const
+   vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
-      return get_property( active_delegate_list_id ).as<std::vector<account_id_type> >();
+      return get_property( active_delegate_list_id ).as<std::vector<account_id_type>>();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )

@@ -156,7 +156,7 @@ namespace bts { namespace network {
 
       FC_ASSERT( account.valid() );
 
-      auto active_delegate_ids = chain->current_round_active_delegates();
+      auto active_delegate_ids = chain->get_active_delegates();
       auto location = std::find( active_delegate_ids.begin(), active_delegate_ids.end(), account->id );
 
       FC_ASSERT( location != active_delegate_ids.end(), 

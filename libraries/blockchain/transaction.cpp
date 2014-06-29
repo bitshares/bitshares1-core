@@ -9,6 +9,7 @@
 #include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/error_codes.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <fc/log/logger.hpp>
@@ -136,7 +137,7 @@ namespace bts { namespace blockchain {
    {
      submit_proposal_operation op;
      op.submitting_delegate_id = delegate_id;
-     op.submission_date = fc::time_point::now();
+     op.submission_date = blockchain::now();
      op.subject = subject;
      op.body = body;
      op.proposal_type = proposal_type;
@@ -152,7 +153,7 @@ namespace bts { namespace blockchain {
      vote_proposal_operation op;
      op.id.proposal_id = proposal_id;
      op.id.delegate_id = voter_id;
-     op.timestamp = fc::time_point::now();
+     op.timestamp = blockchain::now();
      op.vote = vote;
      op.message = message;
      operations.push_back(op);

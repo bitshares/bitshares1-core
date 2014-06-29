@@ -16,7 +16,7 @@ namespace bts { namespace blockchain {
       :votes_for(0),
        blocks_produced(0),
        blocks_missed(0),
-       last_block_num_produced(-1),
+       last_block_num_produced(0),
        delegate_pay_rate(100),
        pay_balance(0){}
 
@@ -38,6 +38,9 @@ namespace bts { namespace blockchain {
 
    struct delegate_block_stats
    {
+      delegate_block_stats( bool m, const block_id_type& b )
+      :missed(m),id(b){}
+
       delegate_block_stats()
       :missed(true){}
 
