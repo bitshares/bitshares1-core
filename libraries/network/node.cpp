@@ -41,10 +41,10 @@ namespace bts { namespace network {
 
    void node::listen( const fc::ip::endpoint& ep )
    { try {
-       ulog( "delegate node listening on ${ep}", ("ep",ep) );
-      _server.listen( ep );
       _accept_loop = fc::async( [this](){ accept_loop(); } );
       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(2) );
+       ulog( "delegate node listening on ${ep}", ("ep",ep) );
+      _server.listen( ep );
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
 
    vector<peer_info> node::get_peers()const
@@ -120,7 +120,7 @@ namespace bts { namespace network {
    void node::on_block_message( const shared_ptr<peer_connection>& con, 
                                 const block_message& msg )
    {
-       ilog( "received block ${block_num}", ("block_num",msg.block.block_num) );
+       ulog( "received block ${block_num}", ("block_num",msg.block.block_num) );
        // copy this..
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
@@ -250,7 +250,6 @@ namespace bts { namespace network {
 
    void node::attempt_new_connection()
    {
-      ulog( "attempt new delegate connections............." );
       for( auto p : _potential_peers )
       {
         // try a connection...
@@ -270,7 +269,7 @@ namespace bts { namespace network {
       }
       if( _peers.size() < _desired_peer_count )
       {
-         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(10) );
+         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(60) );
       }
       else {
          ulog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
@@ -279,6 +278,7 @@ namespace bts { namespace network {
 
    void node::broadcast_block( const full_block& block_to_broadcast )
    {
+       ulog( "broadcasting block ${b}", ("b",block_to_broadcast.block_num) );
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
        {
