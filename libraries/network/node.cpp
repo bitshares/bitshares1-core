@@ -80,7 +80,7 @@ namespace bts { namespace network {
                                    const message& msg )
    {
       try {
-         ulog( "type ${t}", ("t",msg.type) );
+         ilog( "type ${t}", ("t",msg.type) );
          switch ( (message_type)msg.type )
          {
             case message_type::signin:
@@ -98,7 +98,7 @@ namespace bts { namespace network {
                on_block_message( con, msg.as<block_message>() );
                break;
             case keep_alive:
-               ulog( "keep alive ${peer}", ("peer",con->_socket.remote_endpoint()) );
+               ilog( "keep alive ${peer}", ("peer",con->_socket.remote_endpoint()) );
                break;
             default:
                FC_ASSERT( !"unknown message type", "",("type",msg.type) );
@@ -148,7 +148,7 @@ namespace bts { namespace network {
        {
            fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); } );
        }
-       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(2) );
+       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(30) );
    }
 
    void node::on_signin_request( const shared_ptr<peer_connection>& con, 
@@ -196,7 +196,6 @@ namespace bts { namespace network {
       }
 
       auto con = std::make_shared<peer_connection>();
-      ulog( "bind... to ${ep}", ("ep", _server.local_endpoint() ) );
       con->_socket.bind( _server.local_endpoint() );
       con->_socket.connect_to( remote_peer );
       on_connect( con );
