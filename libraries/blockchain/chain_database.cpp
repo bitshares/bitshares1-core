@@ -1470,7 +1470,7 @@ namespace bts { namespace blockchain {
 
       auto head_block = get_head_block();
 
-      next_block.previous           = head_block.id();
+      next_block.previous           = head_block.block_num ? head_block.id() : block_id_type();
       next_block.block_num          = head_block.block_num + 1;
       next_block.fee_rate           = next_block.next_fee( head_block.fee_rate, block_size );
 
