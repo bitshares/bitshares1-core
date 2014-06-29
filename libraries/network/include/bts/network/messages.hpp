@@ -1,5 +1,6 @@
 #pragma once
 #include <fc/io/raw.hpp>
+#include <bts/blockchain/block.hpp>
 #include <bts/network/peer_info.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -49,10 +50,12 @@ namespace bts { namespace network {
 
    enum message_type
    {
+      keep_alive      =  0,
       signin          =  1,
       goodbye         = -1,
       peer_request    =  2,
-      peer_response   = -2
+      peer_response   = -2,
+      block           =  3
    };
 
    struct signin_request
@@ -89,15 +92,40 @@ namespace bts { namespace network {
       vector<peer_info>  peers;
    };
 
+   struct block_message
+   {
+      enum type_enum { type = message_type::block };
+
+      block_message(){}
+      block_message( full_block b )
+      :block(std::move(b)){}
+
+      full_block block;
+   };
+
+   struct keep_alive_message
+   {
+      enum type_enum { type = keep_alive };
+      keep_alive_message(){}
+      keep_alive_message( const fc::time_point& n ):time(n){}
+
+      fc::time_point  time;
+   };
+
 
 } } // bts::network
 
 FC_REFLECT_ENUM( bts::network::message_type,
+                 (keep_alive)
                  (signin)
                  (goodbye)
                  (peer_request)
-                 (peer_response) )
+                 (peer_response) 
+                 (block)
+                 )
 
 FC_REFLECT( bts::network::signin_request, (signature) )
 FC_REFLECT( bts::network::goodbye_message, (reason) )
 FC_REFLECT( bts::network::peer_response_message, (peers) )
+FC_REFLECT( bts::network::block_message, (block) )
+FC_REFLECT( bts::network::keep_alive_message, (time) );

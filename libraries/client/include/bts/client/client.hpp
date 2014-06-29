@@ -58,7 +58,7 @@ namespace bts { namespace client {
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
           delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
-          default_delegate_peers( vector<string>({"127.0.0.1:9988"}) )
+          default_delegate_peers( vector<string>({"107.170.30.182:9988"}) )
           {
              default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
              default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );

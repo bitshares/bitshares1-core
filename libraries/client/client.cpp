@@ -494,7 +494,7 @@ config load_config( const fc::path& datadir )
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
 
-           // bts::network::node                                          _delegate_network;
+            bts::network::node                                          _delegate_network;
 
             std::ofstream                                               _console_log;
             std::unique_ptr<std::ostream>                               _output_stream;
@@ -642,8 +642,10 @@ config load_config( const fc::path& datadir )
                       full_block next_block = _chain_db->generate_block( *next_block_time );
                       _wallet->sign_block( next_block );
 
+
                       on_new_block( next_block, next_block.id(), false );
 
+                      _delegate_network.broadcast_block( next_block );
                       // broadcast block to delegates first, starting with the next delegate
 
                       _p2p_node->broadcast( block_message( next_block ) );
@@ -1142,8 +1144,12 @@ config load_config( const fc::path& datadir )
         /*
          *  Don't delete me, I promise I will be used soon 
          *
+         *  TODO: this creates a memory leak / circular reference between client and 
+         *  delegate network.
+        */
         my->_delegate_network.set_client( shared_from_this() );
         my->_delegate_network.listen( my->_config.delegate_server );
+
         for( auto delegate_host : my->_config.default_delegate_peers )
         {
            try {
@@ -1156,7 +1162,6 @@ config load_config( const fc::path& datadir )
            }
 
         }
-        */
 
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
         fc::configure_logging( my->_config.logging );
