@@ -1200,7 +1200,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "TRUSTED";
+                *_out << std::setw( 15 ) << "APPROVED";
                 *_out << "\n";
 
                 for( const auto& acct : account_records )
@@ -1222,7 +1222,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 10) << acct.trusted;
+                    *_out << std::setw( 10) << acct.approved;
                     *_out << "\n";
                 }
             }
@@ -1233,7 +1233,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "TRUSTED";
+                *_out << std::setw( 15 ) << "APPROVED";
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
@@ -1264,7 +1264,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 15 ) << acct.trusted;
+                    *_out << std::setw( 15 ) << acct.approved;
                     if (acct.is_delegate())
                         *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
@@ -1279,7 +1279,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "VOTES FOR";
-                *_out << std::setw( 15 ) << "TRUSTED";
+                *_out << std::setw( 15 ) << "APPROVED";
 
                 *_out << '\n';
                 for( int i = 0; i < 151; ++i )
@@ -1307,8 +1307,8 @@ namespace bts { namespace cli {
 
                         try
                         {
-                            auto trust = _client->get_wallet()->get_delegate_trust( acct.name );
-                            *_out << std::setw( 15 ) << trust;
+                            auto approval = _client->get_wallet()->get_delegate_approval( acct.name );
+                            *_out << std::setw( 15 ) << approval;
                         }
                         catch( ... )
                         {

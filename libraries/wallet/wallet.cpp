@@ -3040,7 +3040,7 @@ namespace bts { namespace wallet {
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.trusted )
+         if( acct_rec.second.approved )
              for_candidates.push_back( acct_rec.second.id );
       }
       std::sort( for_candidates.begin(), for_candidates.end() );
@@ -3062,13 +3062,13 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   void wallet::set_delegate_trust( const string& delegate_name, bool trusted )
+   void wallet::set_delegate_approval( const string& delegate_name, bool approved )
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
       if( war.valid() )
       {
-         war->trusted = trusted;
+         war->approved = approved;
          my->_wallet_db.cache_account( *war );
       }
       else
@@ -3079,16 +3079,16 @@ namespace bts { namespace wallet {
             FC_ASSERT( !"Not a Registered Account" );
          }
          add_contact_account( delegate_name, reg_account->active_key() );
-         set_delegate_trust( delegate_name, trusted );
+         set_delegate_approval( delegate_name, approved );
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("trusted", trusted) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved", approved) ) }
 
-   bool wallet::get_delegate_trust( const string& delegate_name )const
+   bool wallet::get_delegate_approval( const string& delegate_name )const
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
       FC_ASSERT( war.valid() );
-      return war->trusted;
+      return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 
    vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,

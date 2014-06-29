@@ -400,25 +400,25 @@
         "aliases" : [ "favor" ]
       },
       {
-        "method_name": "wallet_set_delegate_trust",
-        "description": "Updates the trust placed in a given delegate",
+        "method_name": "wallet_approve_delegate",
+        "description": "Updates your approval of the specified delegate",
         "return_type": "void",
         "parameters" : 
           [
             { 
               "name" : "delegate_name", 
               "type" : "account_name", 
-              "description" : "the name of the delegate to set trust on"
+              "description" : "the name of the delegate to set approval for"
             },
             { 
-              "name" : "trusted",
+              "name" : "approved",
               "type" : "bool",
-              "description" : "true for trusted and false for neutral",
+              "description" : "true to approve and false for neutral",
               "default_value" : false
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : [ "trust", "set_trust" ]
+        "aliases" : [ "approve", "set_approval" ]
       },
       {
         "method_name": "wallet_add_contact_account",

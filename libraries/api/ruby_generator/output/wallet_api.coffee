@@ -198,13 +198,13 @@ class WalletAPI
     @rpc.request('wallet_account_set_favorite', [account_name, is_favorite]).then (response) ->
       response.result
 
-  # Updates the trust placed in a given delegate
+  # Updates your approval of the specified delegate
   # parameters: 
-  #   account_name `delegate_name` - the name of the delegate to set trust on
-  #   bool `trusted` - true for trusted and false for neutral
+  #   account_name `delegate_name` - the name of the delegate to set approval for
+  #   bool `approved` - true to approve and false for neutral
   # return_type: `void`
-  set_delegate_trust: (delegate_name, trusted) ->
-    @rpc.request('wallet_set_delegate_trust', [delegate_name, trusted]).then (response) ->
+  approve_delegate: (delegate_name, approved) ->
+    @rpc.request('wallet_approve_delegate', [delegate_name, approved]).then (response) ->
       response.result
 
   # Add new account for sending payments
