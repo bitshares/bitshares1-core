@@ -96,7 +96,7 @@ namespace bts { namespace network {
                on_block_message( con, msg.as<block_message>() );
                break;
             case keep_alive:
-               ilog( "keep alive ${peer}", ("peer",con->_socket.remote_endpoint()) );
+               ulog( "keep alive ${peer}", ("peer",con->_socket.remote_endpoint()) );
                break;
             default:
                FC_ASSERT( !"unknown message type", "",("type",msg.type) );
@@ -104,7 +104,7 @@ namespace bts { namespace network {
       } 
       catch ( const fc::exception& e )
       {
-         wlog( "exception processing message ${m}", ("m",e.to_detail_string() ) );
+         ulog( "exception processing message ${m}", ("m",e.to_detail_string() ) );
          con->send_message( goodbye_message(e) ); 
          con->_socket.close();
       }
