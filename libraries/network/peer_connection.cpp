@@ -42,6 +42,8 @@ namespace bts { namespace network {
 
          _shared_secret = one_time_key.get_shared_secret( remote_one_time_key );
 
+         ulog( "handshake complete... reading messages");
+
          message next_message;
          next_message.data.resize( BTS_NETWORK_MAX_MESSAGE_SIZE );
 
@@ -49,6 +51,7 @@ namespace bts { namespace network {
          {
             // read a message
             _socket.read( (char*)&next_message.size, sizeof(next_message.size) );
+            ulog( "read message of size ${s}", ("s", next_message.size) );
 
             if( next_message.size > BTS_NETWORK_MAX_MESSAGE_SIZE )
             {
@@ -80,7 +83,7 @@ namespace bts { namespace network {
    { 
       try {
          { synchronized( _write_mutex )
-
+            ulog( "sending message of size ${s}", ("s",m.size) );
             _socket.write( (char*)&m.size, sizeof(m.size) );
             _socket.write( (char*)&m.type, sizeof(m.type) );
 
