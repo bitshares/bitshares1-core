@@ -676,7 +676,7 @@ config load_config( const fc::path& datadir )
           }
 
           if (next_slot_time > fc::time_point::now())
-            _delegate_loop_complete = fc::thread::current().schedule( [=](){ delegate_loop(); }, next_slot_time );
+            _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
        map<account_id_type, string> client_impl::blockchain_list_current_round_active_delegates()

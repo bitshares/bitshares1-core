@@ -38,6 +38,9 @@ namespace bts { namespace blockchain {
 
    struct delegate_block_stats
    {
+      delegate_block_stats( bool m, const block_id_type& b )
+      :missed(m),id(b){}
+
       delegate_block_stats()
       :missed(true){}
 

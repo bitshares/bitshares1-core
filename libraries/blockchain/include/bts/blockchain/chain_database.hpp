@@ -115,7 +115,7 @@ namespace bts { namespace blockchain {
          /** Produce a block for the given timeslot, the block is not signed because that is the
           *  role of the wallet.
           */
-         full_block                  generate_block( time_point_sec timestamp );
+         full_block                  generate_block( const time_point_sec& timestamp );
 
          /**
           *  The chain ID is the hash of the initial_config loaded when the
