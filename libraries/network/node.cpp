@@ -215,6 +215,12 @@ namespace bts { namespace network {
               {
                  on_disconnect( con, err );
               } );
+      con->received_message.connect( 
+              [this]( const shared_ptr<peer_connection>& con, 
+                      const message& msg )
+              {
+                 on_received_message( con, msg );
+              } );
       con->start_read_loop();
    } FC_CAPTURE_AND_RETHROW() }
 

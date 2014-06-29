@@ -51,7 +51,6 @@ namespace bts { namespace network {
          {
             // read a message
             _socket.read( (char*)&next_message.size, sizeof(next_message.size) );
-            ulog( "read message of size ${s}", ("s", next_message.size) );
 
             if( next_message.size > BTS_NETWORK_MAX_MESSAGE_SIZE )
             {
@@ -61,6 +60,7 @@ namespace bts { namespace network {
             }
 
             _socket.read( (char*)&next_message.type, sizeof(next_message.type) );
+            ulog( "read message of size ${s}   type ${t}", ("s", next_message.size)("t",int(next_message.type)) );
             _socket.read( next_message.data.data(), next_message.size );
 
             received_message( shared_from_this(), next_message );
