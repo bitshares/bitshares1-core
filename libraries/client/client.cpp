@@ -59,6 +59,8 @@
 using namespace boost;
 using std::string;
 
+// delegate network breaks win32
+#define DISABLE_DELEGATE_NETWORK 1
 
 namespace bts { namespace client {
 
@@ -494,7 +496,9 @@ config load_config( const fc::path& datadir )
             bts::client::client*                                        _self;
             bts::cli::cli*                                              _cli;
 
+#ifndef DISABLE_DELEGATE_NETWORK
             bts::network::node                                          _delegate_network;
+#endif
 
             std::ofstream                                               _console_log;
             std::unique_ptr<std::ostream>                               _output_stream;
@@ -625,8 +629,10 @@ config load_config( const fc::path& datadir )
           {
               ilog( "Producing block at time: ${t}", ("t",*next_block_time) );
 
+#ifndef DISABLE_DELEGATE_NETWORK
               // sign in to delegate server using private keys of my delegates
               //_delegate_network.signin( _wallet->get_my_delegate( enabled_delegate_status | active_delegate_status ) );
+#endif
               
               if( *next_block_time <= now )
               {
@@ -645,8 +651,10 @@ config load_config( const fc::path& datadir )
 
                       on_new_block( next_block, next_block.id(), false );
 
+#ifndef DISABLE_DELEGATE_NETWORK
                       _delegate_network.broadcast_block( next_block );
                       // broadcast block to delegates first, starting with the next delegate
+#endif
 
                       _p2p_node->broadcast( block_message( next_block ) );
                       ilog( "Produced block #${n}!", ("n",next_block.block_num) );
@@ -1164,6 +1172,7 @@ config load_config( const fc::path& datadir )
     { try {
         my->_config   = load_config(data_dir);
 
+#ifndef DISABLE_DELEGATE_NETWORK
         /*
          *  Don't delete me, I promise I will be used soon 
          *
@@ -1185,6 +1194,7 @@ config load_config( const fc::path& datadir )
            }
 
         }
+#endif
 
         //std::cout << fc::json::to_pretty_string( cfg ) <<"\n";
         fc::configure_logging( my->_config.logging );
