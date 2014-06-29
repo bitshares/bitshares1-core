@@ -80,6 +80,7 @@ namespace bts { namespace network {
                                    const message& msg )
    {
       try {
+         ulog( "type ${t}", ("t",msg.type) );
          switch ( (message_type)msg.type )
          {
             case message_type::signin:
@@ -93,6 +94,7 @@ namespace bts { namespace network {
             case peer_response:
                break;
             case block:
+               ulog( "on block message" );
                on_block_message( con, msg.as<block_message>() );
                break;
             case keep_alive:
