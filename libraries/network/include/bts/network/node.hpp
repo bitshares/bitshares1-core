@@ -69,7 +69,7 @@ namespace bts { namespace network {
 
          map<fc::ip::endpoint, peer_status>    _potential_peers;
          
-         int32_t                               _desired_peer_count;
+         uint32_t                              _desired_peer_count;
          fc::future<void>                      _accept_loop;
          fc::future<void>                      _keep_alive_task;
          fc::future<void>                      _attempt_new_connections_task;
