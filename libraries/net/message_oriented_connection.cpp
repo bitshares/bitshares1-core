@@ -9,6 +9,11 @@
 #include <bts/net/stcp_socket.hpp>
 #include <bts/net/config.hpp>
 
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
+#define DEFAULT_LOGGER "p2p"
+
 namespace bts { namespace net {
   namespace detail
   {
