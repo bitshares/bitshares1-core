@@ -86,20 +86,12 @@ class BlockchainAPI
     @rpc.request('blockchain_get_block_by_number', [block_number]).then (response) ->
       response.result
 
-  # Retrieves the name record
+  # Retrieves the record for the given account name or ID
   # parameters: 
-  #   account_name `account_name` - the name of the account retrieve
+  #   string `account` - account name or account ID to retrieve
   # return_type: `optional_account_record`
-  get_account_record: (account_name) ->
-    @rpc.request('blockchain_get_account_record', [account_name]).then (response) ->
-      response.result
-
-  # Retrieves the name record for the given account_id
-  # parameters: 
-  #   account_id_type `account_id` - the id of the name record to retrieve
-  # return_type: `optional_account_record`
-  get_account_record_by_id: (account_id) ->
-    @rpc.request('blockchain_get_account_record_by_id', [account_id]).then (response) ->
+  get_account_record: (account) ->
+    @rpc.request('blockchain_get_account_record', [account]).then (response) ->
       response.result
 
   # Retrieves the asset record by the ticker symbol

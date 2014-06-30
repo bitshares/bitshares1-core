@@ -1501,14 +1501,19 @@ config load_config( const fc::path& datadir )
       return _wallet->get_pretty_transaction_history(account);
     }
 
-    oaccount_record detail::client_impl::blockchain_get_account_record(const string& name) const
+    oaccount_record detail::client_impl::blockchain_get_account_record( const string& account )const
     {
-      return _chain_db->get_account_record(name);
-    }
-
-    oaccount_record detail::client_impl::blockchain_get_account_record_by_id(const name_id_type& name_id) const
-    {
-      return _chain_db->get_account_record(name_id);
+      try
+      {
+          if( !std::all_of( account.begin(), account.end(), ::isdigit) )
+              return _chain_db->get_account_record( account );
+          else
+              return _chain_db->get_account_record( std::stoi( account ) );
+      }
+      catch( ... )
+      {
+          return oaccount_record();
+      }
     }
 
     oasset_record detail::client_impl::blockchain_get_asset_record(const string& symbol) const

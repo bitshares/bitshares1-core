@@ -42,7 +42,9 @@ string pretty_percent( double part, double whole, int precision )
 
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client )
 {
+    if( delegate_records.empty() ) return "No delegates found.\n";
     FC_ASSERT( client != nullptr );
+
     std::stringstream out;
     out << std::left;
 
@@ -89,7 +91,9 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
 string pretty_block_list( const vector<block_record>& block_records, cptr client )
 {
+    if( block_records.empty() ) return "No blocks found.\n";
     FC_ASSERT( client != nullptr );
+
     std::stringstream out;
     out << std::left;
 
@@ -135,7 +139,9 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
 string pretty_transaction_list( const vector<pretty_transaction>& transactions, cptr client )
 {
+    if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
+
     std::stringstream out;
 
     out << std::setw(  7 ) << std::right << "BLK" << ".";
@@ -181,6 +187,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
 string pretty_vote_summary( const account_vote_summary_type& votes )
 {
+    if( votes.empty() ) return "No votes found.\n";
+
     std::stringstream out;
     out << std::left;
 
@@ -203,33 +211,35 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
     return out.str();
 }
 
-string pretty_account( const account_record& account, cptr client )
+string pretty_account( const oaccount_record& record, cptr client )
 {
+    if( !record.valid() ) return "No account found.\n";
     FC_ASSERT( client != nullptr );
+
     std::stringstream out;
     out << std::left;
 
-    out << "Name: " << account.name << "\n";
-    out << "Registered: " << pretty_timestamp( account.registration_date ) << "\n";
-    out << "Last Updated: " << fc::get_approximate_relative_time_string( account.last_update ) << "\n";
-    out << "Owner Key: " << std::string( account.owner_key ) << "\n";
+    out << "Name: " << record->name << "\n";
+    out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
+    out << "Last Updated: " << fc::get_approximate_relative_time_string( record->last_update ) << "\n";
+    out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
     /* Only print active key history if there are keys in the history which are not the owner key */
-    if( account.active_key_history.size() > 1
-        || account.active_key_history.begin()->second != account.owner_key )
+    if( record->active_key_history.size() > 1
+        || record->active_key_history.begin()->second != record->owner_key )
     {
       out << "Active Key History:\n";
 
-      for( const auto& key : account.active_key_history )
+      for( const auto& key : record->active_key_history )
       {
           out << "  Key: " << std::string( key.second )
               << ", last used " << fc::get_approximate_relative_time_string( key.first ) << "\n";
       }
     }
 
-    if( account.is_delegate() )
+    if( record->is_delegate() )
     {
-      const vector<account_record> delegate_records = { account };
+      const vector<account_record> delegate_records = { *record };
       out << "\n" << pretty_delegate_list( delegate_records, client ) << "\n";
     }
     else
@@ -237,10 +247,10 @@ string pretty_account( const account_record& account, cptr client )
       out << "Not a delegate.\n";
     }
 
-    if( !account.public_data.is_null() )
+    if( !record->public_data.is_null() )
     {
       out << "Public Data:\n";
-      out << fc::json::to_pretty_string( account.public_data ) << "\n";
+      out << fc::json::to_pretty_string( record->public_data ) << "\n";
     }
 
     return out.str();

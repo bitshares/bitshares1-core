@@ -819,9 +819,9 @@ namespace bts { namespace cli {
                   }
                   *_out << "\n";
               }
-              else if (method_name.find("blockchain_get_account_record") != std::string::npos)
+              else if( method_name == "blockchain_get_account_record" )
               {
-                  const auto& account = result.as<account_record>();
+                  const auto& account = result.as<oaccount_record>();
                   *_out << pretty_account( account, _client );
               }
               else if (method_name == "blockchain_list_forks")

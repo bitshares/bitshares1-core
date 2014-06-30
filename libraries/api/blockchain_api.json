@@ -151,33 +151,18 @@
       },
       {
         "method_name": "blockchain_get_account_record",
-        "description": "Retrieves the name record",
+        "description": "Retrieves the record for the given account name or ID",
         "return_type": "optional_account_record",
         "parameters" : [
             {
-              "name" : "account_name", 
-              "type" : "account_name", 
-              "description" : "the name of the account retrieve"
+              "name" : "account",
+              "type" : "string",
+              "description" : "account name or account ID to retrieve"
             }
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
-        "aliases" : ["blockchain_get_name"]
-      },
-      {
-        "method_name": "blockchain_get_account_record_by_id",
-        "description": "Retrieves the name record for the given account_id",
-        "return_type": "optional_account_record",
-        "parameters" : [
-            {
-              "name" : "account_id", 
-              "type" : "account_id_type", 
-              "description" : "the id of the name record to retrieve"
-            }
-        ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
-        "aliases" : ["blockchain_get_name_by_id"]
+        "aliases" : ["get_account"]
       },
       {
         "method_name": "blockchain_get_asset_record",
