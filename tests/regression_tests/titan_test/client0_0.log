@@ -8,9 +8,9 @@ delegate0:
 default (unlocked) >>> wallet_add_contact_account account-for-client1 "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j"
 OK
 default (unlocked) >>> wallet_transfer 150 XTS delegate0 account-for-client1 "send this back"
-    BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   pending   [redacted]     delegate0           account-for-clie... send this back                            150.00000 XTS         0.10000 XTS[redacted]
+    BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT              FEE                 MEMO                                   ID      
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+   PENDING   [redacted]          delegate0           account-for-client1 150.00000 XTS       0.10000 XTS         send this back                         [redacted]
 default (unlocked) >>> wallet_account_create test-account
 "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
 default (unlocked) >>> wallet_account_register test-account delegate0
