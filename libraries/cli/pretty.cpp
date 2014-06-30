@@ -102,8 +102,15 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
     out << pretty_line( 115 );
 
+    auto last_block_timestamp = block_records.front().timestamp;
+
     for( const auto& block_record : block_records )
     {
+        int missed_blocks = (block_record.timestamp - last_block_timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC - 1;
+        if( missed_blocks > 0 )
+            out << "*** Missed " << missed_blocks << " blocks ***\n";
+        last_block_timestamp = block_record.timestamp;
+
         out << std::setw(  8 ) << block_record.block_num;
         out << std::setw( 20 ) << pretty_timestamp( block_record.timestamp );
 
