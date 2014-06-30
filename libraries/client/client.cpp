@@ -1258,7 +1258,7 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations START
-    bts::blockchain::block_id_type detail::client_impl::blockchain_get_blockhash(uint32_t block_number) const
+    block_id_type detail::client_impl::blockchain_get_blockhash(uint32_t block_number) const
     {
       return _chain_db->get_block(block_number).id();
     }
@@ -1544,14 +1544,19 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transaction(id, exact);
     }
 
-    digest_block detail::client_impl::blockchain_get_block(const block_id_type& block_id) const
+    optional<digest_block> detail::client_impl::blockchain_get_block( const string& block )const
     {
-      return _chain_db->get_block_digest(block_id);
-    }
-
-    digest_block detail::client_impl::blockchain_get_block_by_number(uint32_t block_number) const
-    {
-      return _chain_db->get_block_digest(block_number);
+      try
+      {
+          if( block.size() == 40 )
+              return _chain_db->get_block_digest( block_id_type( block ) );
+          else
+              return _chain_db->get_block_digest( std::stoi( block ) );
+      }
+      catch( ... )
+      {
+      }
+      return optional<digest_block>();
     }
 
     void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
@@ -1748,9 +1753,11 @@ config load_config( const fc::path& datadir )
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 
-    bts::blockchain::digest_block detail::client_impl::bitcoin_getblock(const bts::blockchain::block_id_type& block_id) const
+    digest_block detail::client_impl::bitcoin_getblock( const block_id_type& block_id )const
     {
-       return blockchain_get_block(block_id);
+       const auto& block = blockchain_get_block( block_id.str() );
+       FC_ASSERT( block.valid() );
+       return *block;
     }
 
     uint32_t detail::client_impl::bitcoin_getblockcount() const

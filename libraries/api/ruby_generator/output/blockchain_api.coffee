@@ -33,8 +33,8 @@ class BlockchainAPI
   #   account_name `first_account_name` - the first account name to include
   #   int32_t `limit` - the maximum number of items to list
   # return_type: `account_record_array`
-  list_registered_accounts: (first_account_name, limit) ->
-    @rpc.request('blockchain_list_registered_accounts', [first_account_name, limit]).then (response) ->
+  list_accounts: (first_account_name, limit) ->
+    @rpc.request('blockchain_list_accounts', [first_account_name, limit]).then (response) ->
       response.result
 
   # Returns registered assets starting with a given name upto a the limit provided
@@ -42,8 +42,8 @@ class BlockchainAPI
   #   asset_symbol `first_symbol` - the prefix of the first asset symbol name to include
   #   int32_t `limit` - the maximum number of items to list
   # return_type: `asset_record_array`
-  list_registered_assets: (first_symbol, limit) ->
-    @rpc.request('blockchain_list_registered_assets', [first_symbol, limit]).then (response) ->
+  list_assets: (first_symbol, limit) ->
+    @rpc.request('blockchain_list_assets', [first_symbol, limit]).then (response) ->
       response.result
 
   # Return a list of transactions that are not yet in a block.
@@ -62,12 +62,12 @@ class BlockchainAPI
     @rpc.request('blockchain_get_transaction', [transaction_id, exact]).then (response) ->
       response.result
 
-  # Retrieves the block header for the given block hash
+  # Retrieves the block header for the given block number or ID
   # parameters: 
-  #   block_id_type `block_id` - the id of the block to return
-  # return_type: `digest_block`
-  get_block: (block_id) ->
-    @rpc.request('blockchain_get_block', [block_id]).then (response) ->
+  #   string `block` - block number or ID to retrieve
+  # return_type: `odigest_block`
+  get_block: (block) ->
+    @rpc.request('blockchain_get_block', [block]).then (response) ->
       response.result
 
   # Retrieves the detailed transaction information for a block
@@ -78,36 +78,20 @@ class BlockchainAPI
     @rpc.request('blockchain_get_transactions_for_block', [block_id]).then (response) ->
       response.result
 
-  # Retrieves the block header for the given block number
-  # parameters: 
-  #   uint32_t `block_number` - the number of the block to return
-  # return_type: `digest_block`
-  get_block_by_number: (block_number) ->
-    @rpc.request('blockchain_get_block_by_number', [block_number]).then (response) ->
-      response.result
-
   # Retrieves the record for the given account name or ID
   # parameters: 
   #   string `account` - account name or account ID to retrieve
   # return_type: `optional_account_record`
-  get_account_record: (account) ->
-    @rpc.request('blockchain_get_account_record', [account]).then (response) ->
+  get_account: (account) ->
+    @rpc.request('blockchain_get_account', [account]).then (response) ->
       response.result
 
-  # Retrieves the asset record by the ticker symbol
+  # Retrieves the record for the given asset ticker symbol or ID
   # parameters: 
-  #   asset_symbol `symbol` - the ticker symbol to retrieve
+  #   string `asset` - asset ticker symbol or ID to retrieve
   # return_type: `optional_asset_record`
-  get_asset_record: (symbol) ->
-    @rpc.request('blockchain_get_asset_record', [symbol]).then (response) ->
-      response.result
-
-  # Retrieves the asset record by the id
-  # parameters: 
-  #   asset_id_type `asset_id` - the id of the asset to retrieve
-  # return_type: `optional_asset_record`
-  get_asset_record_by_id: (asset_id) ->
-    @rpc.request('blockchain_get_asset_record_by_id', [asset_id]).then (response) ->
+  get_asset: (asset) ->
+    @rpc.request('blockchain_get_asset', [asset]).then (response) ->
       response.result
 
   # Returns the list of proposals
@@ -193,8 +177,8 @@ class BlockchainAPI
   # parameters: 
   #   uint32_t `block_number` - Block whose signing delegate to return
   # return_type: `string`
-  get_signing_delegate: (block_number) ->
-    @rpc.request('blockchain_get_signing_delegate', [block_number]).then (response) ->
+  get_block_signee: (block_number) ->
+    @rpc.request('blockchain_get_block_signee', [block_number]).then (response) ->
       response.result
 
 

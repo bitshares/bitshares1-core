@@ -109,17 +109,18 @@
       },
       {
         "method_name": "blockchain_get_block",
-        "description": "Retrieves the block header for the given block hash",
-        "return_type": "digest_block",
+        "description": "Retrieves the block header for the given block number or ID",
+        "return_type": "odigest_block",
         "parameters" : [
             {
-              "name" : "block_id", 
-              "type" : "block_id_type", 
-              "description" : "the id of the block to return"
+              "name" : "block",
+              "type" : "string",
+              "description" : "block number or ID to retrieve"
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["get_block"]
       },
       {
         "method_name": "blockchain_get_transactions_for_block",
@@ -130,20 +131,6 @@
               "name" : "block_id", 
               "type" : "block_id_type", 
               "description" : "the id of the block to return"
-            }
-        ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "blockchain_get_block_by_number",
-        "description": "Retrieves the block header for the given block number",
-        "return_type": "digest_block",
-        "parameters" : [
-            {
-              "name" : "block_number", 
-              "type" : "uint32_t", 
-              "description" : "the number of the block to return"
             }
         ],
         "is_const" : true,
@@ -166,7 +153,7 @@
       },
       {
         "method_name": "blockchain_get_asset",
-        "description": "Retrieves the record for the given asset by ticker symbol or ID",
+        "description": "Retrieves the record for the given asset ticker symbol or ID",
         "return_type": "optional_asset_record",
         "parameters" : [
             {

@@ -355,6 +355,11 @@
         "cpp_include_file" : "bts/blockchain/block.hpp"
       },
       {
+        "type_name" : "odigest_block",
+        "cpp_return_type" : "fc::optional<bts::blockchain::digest_block>",
+        "cpp_include_file" : "bts/blockchain/block.hpp"
+      },
+      {
         "type_name" : "account_id_type",
         "cpp_return_type" : "bts::blockchain::account_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp"
