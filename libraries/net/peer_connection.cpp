@@ -1,8 +1,28 @@
-#define DEFAULT_LOGGER "p2p"
 #include <bts/net/peer_connection.hpp>
+
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
+#define DEFAULT_LOGGER "p2p"
+
 
 namespace bts { namespace net
   {
+    peer_connection::~peer_connection()
+    {
+      if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())
+      {
+        _send_queued_messages_done.cancel();
+        try 
+        { 
+          _send_queued_messages_done.wait(); 
+        } 
+        catch (...)
+        {
+        }
+      }
+    }
+
     fc::tcp_socket& peer_connection::get_socket()
     {
       return _message_connection.get_socket();
@@ -86,9 +106,38 @@ namespace bts { namespace net
       _node->on_connection_closed( this );
     }
 
+    void peer_connection::send_queued_messages_task()
+    {
+      while (!_queued_messages.empty())
+      {
+        _queued_messages.front().transmission_start_time = fc::time_point::now();
+        try
+        {
+          _message_connection.send_message(_queued_messages.front().message_to_send);
+        }
+        catch (const fc::exception& send_error)
+        {
+          elog("Error sending message: ${exception}.  Closing connection.", ("exception", send_error));
+          try
+          {
+            close_connection();
+          }
+          catch (const fc::exception& close_error)
+          {
+            elog("Caught error while closing connection.", ("exception", close_error));
+          }
+          return;
+        }
+        _queued_messages.front().transmission_finish_time = fc::time_point::now();
+        _queued_messages.pop();
+      }
+    }
+
     void peer_connection::send_message( const message& message_to_send )
     {
-      _message_connection.send_message( message_to_send );
+      _queued_messages.emplace(queued_message(message_to_send));
+      if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
+        _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
     }
 
     void peer_connection::close_connection()

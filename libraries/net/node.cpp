@@ -1,10 +1,9 @@
-#define DEFAULT_LOGGER "p2p"
-
 #include <sstream>
 #include <iomanip>
 #include <deque>
 #include <unordered_set>
 #include <list>
+#include <forward_list>
 #include <iostream>
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
@@ -41,6 +40,11 @@
 #include <fc/git_revision.hpp>
 
 #include <bts/net/peer_connection.hpp>
+
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
+#define DEFAULT_LOGGER "p2p"
 
 namespace bts { namespace net { 
   namespace detail 
@@ -695,6 +699,7 @@ namespace bts { namespace net { namespace detail {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
 
+        std::forward_list< std::pair<peer_connection_ptr, item_id> > fetch_messages_to_send;
         std::vector< fc::future<void> >  write_ops;
         for( auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end();  )
         {
@@ -709,11 +714,7 @@ namespace bts { namespace net { namespace detail {
               item_id item_id_to_fetch = iter->item;
               iter = _items_to_fetch.erase( iter );
               item_fetched = true;
-              write_ops.push_back( 
-                    fc::async( [item_id_to_fetch,peer](){
-                      peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
-                      std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
-              }) );
+              fetch_messages_to_send.emplace_front(std::make_pair(peer, item_id_to_fetch));
               break;
             }
           }
@@ -721,8 +722,9 @@ namespace bts { namespace net { namespace detail {
             ++iter;
         }
 
-        for( auto& item : write_ops )
-           item.wait();
+        for( const auto& peer_and_item : fetch_messages_to_send )
+          peer_and_item.first->send_message(fetch_items_message(peer_and_item.second.item_type, 
+                                                                std::vector<item_hash_t>{peer_and_item.second.item_hash}));
 
         if( !_items_to_fetch_updated )
         {
@@ -840,9 +842,12 @@ namespace bts { namespace net { namespace detail {
         // timeout for any active peers is two block intervals
         uint32_t active_disconnect_timeout = 5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2;
         uint32_t active_send_keepalive_timeount = active_disconnect_timeout / 2;
+        uint32_t active_ignored_request_timeount = std::max<uint32_t>(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 4, 10);
         fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_disconnect_timeout);
         fc::time_point active_send_keepalive_threshold = fc::time_point::now() - fc::seconds(active_send_keepalive_timeount);
+        fc::time_point active_ignored_request_threshold = fc::time_point::now() - fc::seconds(active_ignored_request_timeount);
         for( const peer_connection_ptr& active_peer : _active_connections )
+        {
           if( active_peer->connection_initiation_time < active_disconnect_threshold &&
               active_peer->get_last_message_received_time() < active_disconnect_threshold )
           {
@@ -850,13 +855,51 @@ namespace bts { namespace net { namespace detail {
                  ( "peer", active_peer->get_remote_endpoint() )("timeout", active_disconnect_timeout ) );
             peers_to_disconnect_gently.push_back( active_peer );
           }
-          else if (active_peer->connection_initiation_time < active_send_keepalive_threshold &&
-                   active_peer->get_last_message_received_time() < active_send_keepalive_threshold)
+          else
           {
-            wlog( "Sending a keepalive message to peer ${peer} who hasn't sent us any messages in the last ${timeout} seconds", 
-                 ( "peer", active_peer->get_remote_endpoint() )("timeout", active_send_keepalive_timeount ) );
-            peers_to_send_keep_alive.push_back(active_peer);
+            bool disconnect_due_to_request_timeout = false;
+            for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->sync_items_requested_from_peer)
+              if (item_and_time.second < active_ignored_request_threshold)
+              {
+                wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ${id}",
+                     ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
+                disconnect_due_to_request_timeout = true;
+                break;
+              }
+            if (!disconnect_due_to_request_timeout &&
+                active_peer->item_ids_requested_from_peer &&
+                active_peer->item_ids_requested_from_peer->get<1>() < active_ignored_request_threshold)
+              {
+                wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ids after ${id}",
+                      ("peer", active_peer->get_remote_endpoint())
+                      ("id", active_peer->item_ids_requested_from_peer->get<0>().item_hash));
+                disconnect_due_to_request_timeout = true;
+              }
+            if (!disconnect_due_to_request_timeout)
+              for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->items_requested_from_peer)
+                if (item_and_time.second < active_ignored_request_threshold)
+                {
+                  wlog("Disconnecting peer ${peer} because they didn't respond to my request for item ${id}",
+                       ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
+                  disconnect_due_to_request_timeout = true;
+                  break;
+                }
+            if (disconnect_due_to_request_timeout)
+            {
+              // we should probably disconnect nicely and give them a reason, but right now the logic
+              // for rescheduling the requests only executes when the connection is fully closed,
+              // and we want to get those requests rescheduled as soon as possible
+              peers_to_disconnect_forcibly.push_back(active_peer);
+            }
+            else if (active_peer->connection_initiation_time < active_send_keepalive_threshold &&
+                     active_peer->get_last_message_received_time() < active_send_keepalive_threshold)
+            {
+              wlog( "Sending a keepalive message to peer ${peer} who hasn't sent us any messages in the last ${timeout} seconds", 
+                   ( "peer", active_peer->get_remote_endpoint() )("timeout", active_send_keepalive_timeount ) );
+              peers_to_send_keep_alive.push_back(active_peer);
+            }
           }
+        }
 
         fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT );
         for( const peer_connection_ptr& closing_peer : _closing_connections )

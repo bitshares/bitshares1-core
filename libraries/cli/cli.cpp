@@ -855,8 +855,10 @@ namespace bts { namespace cli {
                               auto delegate_record = _client->get_chain()->get_account_record(tine.signing_delegate);
                               if (delegate_record.valid() && delegate_record->name.size() < 29)
                                   *_out << std::setw(30) << delegate_record->name;
-                              else
+                              else if (tine.signing_delegate > 0)
                                   *_out << std::setw(30) << std::string("Delegate ID ") + fc::variant(tine.signing_delegate).as_string();
+                              else
+                                  *_out << std::setw(30) << "Unknown Delegate";
 
                               *_out << std::setw(15) << tine.transaction_count
                                     << std::setw(10) << tine.size

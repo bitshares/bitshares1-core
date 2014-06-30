@@ -63,6 +63,20 @@ The CLI output logs in these directories can be visually diffed for changes when
 there is a mismatch between an input log file located under the regression_tests directory and
 the corresponding output log file located under the regression_tests_output directory.
 
+The test generates an "expected_output" file for each client in the test. This expected_output
+file is a concatenation of all the files fed to the client via --input-log. After all
+clients have completed (due to each receiving a "quit" command), the test system does
+a binary comparison between each expected_output file and the corresponding client's
+console.log. The expected_output files are in regression_tests_output under the given
+test directory. The console.log files are located in the data dirs (under the test
+directory in regression_tests_output).
+
+In the event that a test fails due to a binary mismatch, you can diff the expected_output file
+and the failing console.log to see what caused the test failure. If an output formatting
+change caused the test to fail, you only need to cut/paste the appropriate lines
+from the console.log file to the test files located in regression_tests directory
+in the repo.
+
 Launching the Regression Tests
 ------------------------------
 Currently, regression tests are inappropriately located in "wallet_test".
