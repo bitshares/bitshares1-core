@@ -5,6 +5,7 @@
 #include <bts/blockchain/types.hpp>
 #include <bts/client/client.hpp>
 #include <bts/wallet/pretty.hpp>
+#include <bts/wallet/wallet.hpp>
 
 #include <fc/time.hpp>
 

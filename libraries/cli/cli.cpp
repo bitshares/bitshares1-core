@@ -1,10 +1,9 @@
+#include <bts/blockchain/withdraw_types.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/cli/pretty.hpp>
-#include <bts/rpc/rpc_server.hpp>
 #include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -15,16 +14,14 @@
 #include <fc/thread/thread.hpp>
 #include <fc/variant.hpp>
 
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/range/algorithm/max_element.hpp>
 #include <boost/range/algorithm/min_element.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <boost/optional.hpp>
-
-#include <fstream>
-
+#include <iomanip>
+#include <iostream>
 
 #ifdef HAVE_READLINE
 # include <readline/readline.h>
@@ -836,8 +833,7 @@ namespace bts { namespace cli {
                       return;
                   }
                   *_out << "Record for '" << record.name << "' -- Registered on ";
-                  *_out << boost::posix_time::to_simple_string(
-                             boost::posix_time::from_time_t(time_t(record.registration_date.sec_since_epoch())));
+                  *_out << pretty_timestamp( record.registration_date );
                   *_out << ", last update was " << fc::get_approximate_relative_time_string(record.last_update) << "\n";
                   *_out << "Owner's key: " << std::string(record.owner_key) << "\n";
 
